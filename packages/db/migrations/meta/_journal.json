@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1770912411587,
+      "tag": "0000_medical_greymalkin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770913512453,
+      "tag": "0001_colorful_may_parker",
+      "breakpoints": true
+    }
+  ]
+}
