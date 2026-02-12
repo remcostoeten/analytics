@@ -7,21 +7,29 @@
     "packages/ox/*"
   ],
   "scripts": {
+    "build": "bun run --filter '*' build",
+    "test": "bun run --filter '*' test",
+    "typecheck": "bun run --filter '*' typecheck",
     "lint": "bun run -C packages/ox/lint lint:all",
     "fmt": "bun run -C packages/ox/fmt fmt:all",
     "fmt:check": "bun run -C packages/ox/fmt fmt:check:all",
-    "typecheck": "bun run typecheck:all",
-    "typecheck:all": "bun --filter '*' run typecheck",
-    "test": "bun --filter '*' run test",
     "dev:ingestion": "bun run -C apps/ingestion dev"
   },
   "devDependencies": {
     "typescript": "catalog:ts"
   },
-  "catalog": {
-    "ts": "5.6.3",
-    "hono": "4.6.10",
-    "oxlint": "0.10.0",
-    "oxfmt": "0.0.0"
+  "catalogs": {
+    "ts": {
+      "typescript": "5.6.3"
+    },
+    "hono": {
+      "hono": "4.6.10"
+    },
+    "oxlint": {
+      "oxlint": "0.10.0"
+    },
+    "oxfmt": {
+      "oxfmt": "0.0.0"
+    }
   }
 }

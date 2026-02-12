@@ -4,14 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
-    "hono": "catalog:hono"
+    "hono": "catalog:hono",
+    "@remcostoeten/db": "workspace:*",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "typescript": "catalog:ts"
+    "typescript": "catalog:ts",
+    "@types/node": "^20.10.0"
   },
   "scripts": {
     "dev": "bun run src/dev.ts",
+    "build": "bun build src/dev.ts --target bun --outdir dist",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "echo \"no tests\""
+    "test": "bun test"
   }
 }
