@@ -1,8 +1,8 @@
 # Remco Analytics
 
-Status: Draft  
-Owner: Remco  
-Repo: github.com/remcostoeten/analytics  
+Status: Draft
+Owner: Remco
+Repo: github.com/remcostoeten/analytics
 License: MIT
 
 Purpose
