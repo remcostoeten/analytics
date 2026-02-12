@@ -1,0 +1,17 @@
+{
+  "name": "@remcostoeten/ingestion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "hono": "catalog:hono"
+  },
+  "devDependencies": {
+    "typescript": "catalog:ts"
+  },
+  "scripts": {
+    "dev": "bun run src/dev.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "echo \"no tests\""
+  }
+}

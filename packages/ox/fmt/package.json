@@ -1,0 +1,13 @@
+{
+  "name": "@remcostoeten/oxfmt",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "devDependencies": {
+    "oxfmt": "catalog:oxfmt"
+  },
+  "scripts": {
+    "fmt:all": "oxfmt ../../apps ../../packages",
+    "fmt:check:all": "oxfmt --check ../../apps ../../packages"
+  }
+}
