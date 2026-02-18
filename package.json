@@ -14,7 +14,8 @@
         "lint": "bun run -C packages/ox/lint lint:all",
         "fmt": "bun run -C packages/ox/fmt fmt:all",
         "fmt:check": "bun run -C packages/ox/fmt fmt:check:all",
-        "dev:ingestion": "bun run -C apps/ingestion dev"
+        "dev:ingestion": "bun run -C apps/ingestion dev",
+        "deploy": "bun run deploy.ts"
     },
     "devDependencies": {
         "typescript": "catalog:ts"
