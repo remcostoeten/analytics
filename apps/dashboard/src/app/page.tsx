@@ -8,11 +8,22 @@ import { TimeseriesChart } from "@/components/timeseries-chart";
 import { MetricCard } from "@/components/metric-card";
 import { FilterBar } from "@/components/filter-bar";
 
-async function DashboardData({ range }: { range: string }) {
+async function DashboardData({
+  range,
+  showBots,
+  showLocalhost
+}: {
+  range: string;
+  showBots: boolean;
+  showLocalhost: boolean;
+}) {
   const projectId = "localhost";
   const dateRange = rangeFromPreset(range as "24h" | "7d" | "30d" | "90d");
 
-  const metrics = await fetchMetrics(projectId, dateRange);
+  const metrics = await fetchMetrics(projectId, dateRange, {
+    showBots,
+    showLocalhost,
+  });
 
   return (
     <div className="space-y-8">
@@ -126,10 +137,16 @@ function DashboardSkeleton() {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    bots?: string;
+    localhost?: string;
+  }>;
 }) {
   const params = await searchParams;
   const range = params.range || "7d";
+  const showBots = params.bots === "true";
+  const showLocalhost = params.localhost === "true";
 
   return (
     <>
@@ -146,7 +163,11 @@ export default async function DashboardPage({
             </p>
           </div>
           <Suspense fallback={<DashboardSkeleton />}>
-            <DashboardData range={range} />
+            <DashboardData
+              range={range}
+              showBots={showBots}
+              showLocalhost={showLocalhost}
+            />
           </Suspense>
         </div>
       </div>

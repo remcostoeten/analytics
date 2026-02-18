@@ -13,7 +13,7 @@ export type TimeseriesPoint = {
 };
 
 export type TopPage = {
-  path: string;
+  path: string | null;
   views: number;
 };
 
@@ -39,19 +39,31 @@ export type DashboardMetrics = {
   geo: GeoEntry[];
 };
 
-function rangeFilter(projectId: string, range: DateRange) {
-  return and(
+export type FilterOptions = {
+  showBots?: boolean;
+  showLocalhost?: boolean;
+};
+
+function rangeFilter(projectId: string, range: DateRange, filters?: FilterOptions) {
+  const conditions = [
     eq(events.projectId, projectId),
     gte(events.ts, range.start),
     lte(events.ts, range.end)
-  );
+  ];
+
+  if (!filters?.showLocalhost) {
+    conditions.push(eq(events.isLocalhost, false));
+  }
+
+  return and(...conditions);
 }
 
 export async function fetchMetrics(
   projectId: string,
-  range: DateRange
+  range: DateRange,
+  filters?: FilterOptions
 ): Promise<DashboardMetrics> {
-  const base = rangeFilter(projectId, range);
+  const base = rangeFilter(projectId, range, filters);
   const pageviewFilter = and(base, eq(events.type, "pageview"));
 
   const [pageviewsResult, visitorsResult, sessionsResult] = await Promise.all([
@@ -67,10 +79,10 @@ export async function fetchMetrics(
   ]);
 
   const [timeseries, topPages, topReferrers, geo] = await Promise.all([
-    fetchTimeseries(projectId, range, "day"),
-    fetchTopPages(projectId, range, 10),
-    fetchTopReferrers(projectId, range, 10),
-    fetchGeo(projectId, range),
+    fetchTimeseries(projectId, range, "day", filters),
+    fetchTopPages(projectId, range, 10, filters),
+    fetchTopReferrers(projectId, range, 10, filters),
+    fetchGeo(projectId, range, filters),
   ]);
 
   return {
@@ -87,10 +99,22 @@ export async function fetchMetrics(
 export async function fetchTimeseries(
   projectId: string,
   range: DateRange,
-  granularity: TimeGranularity = "day"
+  granularity: TimeGranularity = "day",
+  filters?: FilterOptions
 ): Promise<TimeseriesPoint[]> {
   const trunc = granularity === "hour" ? "hour" : "day";
   const bucket = sql`date_trunc(${trunc}, ${events.ts})`;
+
+  const conditions = [
+    eq(events.projectId, projectId),
+    eq(events.type, "pageview"),
+    gte(events.ts, range.start),
+    lte(events.ts, range.end)
+  ];
+
+  if (!filters?.showLocalhost) {
+    conditions.push(eq(events.isLocalhost, false));
+  }
 
   const result = await db
     .select({
@@ -98,14 +122,7 @@ export async function fetchTimeseries(
       count: sql<number>`count(*)`,
     })
     .from(events)
-    .where(
-      and(
-        eq(events.projectId, projectId),
-        eq(events.type, "pageview"),
-        gte(events.ts, range.start),
-        lte(events.ts, range.end)
-      )
-    )
+    .where(and(...conditions))
     .groupBy(bucket)
     .orderBy(sql`${bucket} asc`);
 
@@ -115,22 +132,27 @@ export async function fetchTimeseries(
 export async function fetchTopPages(
   projectId: string,
   range: DateRange,
-  limit: number = 10
+  limit: number = 10,
+  filters?: FilterOptions
 ): Promise<TopPage[]> {
+  const conditions = [
+    eq(events.projectId, projectId),
+    eq(events.type, "pageview"),
+    gte(events.ts, range.start),
+    lte(events.ts, range.end)
+  ];
+
+  if (!filters?.showLocalhost) {
+    conditions.push(eq(events.isLocalhost, false));
+  }
+
   const result = await db
     .select({
       path: events.path,
       views: sql<number>`count(*)`,
     })
     .from(events)
-    .where(
-      and(
-        eq(events.projectId, projectId),
-        eq(events.type, "pageview"),
-        gte(events.ts, range.start),
-        lte(events.ts, range.end)
-      )
-    )
+    .where(and(...conditions))
     .groupBy(events.path)
     .orderBy(desc(sql`count(*)`))
     .limit(limit);
@@ -141,23 +163,28 @@ export async function fetchTopPages(
 export async function fetchTopReferrers(
   projectId: string,
   range: DateRange,
-  limit: number = 10
+  limit: number = 10,
+  filters?: FilterOptions
 ): Promise<TopReferrer[]> {
+  const conditions = [
+    eq(events.projectId, projectId),
+    gte(events.ts, range.start),
+    lte(events.ts, range.end),
+    isNotNull(events.referrer),
+    sql`${events.referrer} != ''`
+  ];
+
+  if (!filters?.showLocalhost) {
+    conditions.push(eq(events.isLocalhost, false));
+  }
+
   const result = await db
     .select({
       referrer: events.referrer,
       visits: sql<number>`count(*)`,
     })
     .from(events)
-    .where(
-      and(
-        eq(events.projectId, projectId),
-        gte(events.ts, range.start),
-        lte(events.ts, range.end),
-        isNotNull(events.referrer),
-        sql`${events.referrer} != ''`
-      )
-    )
+    .where(and(...conditions))
     .groupBy(events.referrer)
     .orderBy(desc(sql`count(*)`))
     .limit(limit);
@@ -170,8 +197,19 @@ export async function fetchTopReferrers(
 
 export async function fetchGeo(
   projectId: string,
-  range: DateRange
+  range: DateRange,
+  filters?: FilterOptions
 ): Promise<GeoEntry[]> {
+  const conditions = [
+    eq(events.projectId, projectId),
+    gte(events.ts, range.start),
+    lte(events.ts, range.end)
+  ];
+
+  if (!filters?.showLocalhost) {
+    conditions.push(eq(events.isLocalhost, false));
+  }
+
   const result = await db
     .select({
       country: events.country,
@@ -180,13 +218,7 @@ export async function fetchGeo(
       visitors: sql<number>`count(distinct ${events.visitorId})`,
     })
     .from(events)
-    .where(
-      and(
-        eq(events.projectId, projectId),
-        gte(events.ts, range.start),
-        lte(events.ts, range.end)
-      )
-    )
+    .where(and(...conditions))
     .groupBy(events.country, events.region, events.city)
     .orderBy(desc(sql`count(distinct ${events.visitorId})`))
     .limit(50);
