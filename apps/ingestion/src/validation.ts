@@ -1,17 +1,19 @@
 import { z } from 'zod'
 
+const nullableString = z.string().optional().nullable().transform(v => v ?? null)
+
 export const eventSchema = z.object({
   projectId: z.string().min(1),
   type: z.string().min(1).default('pageview'),
-  path: z.string().optional().nullable(),
-  referrer: z.string().optional().nullable(),
-  origin: z.string().optional().nullable(),
-  host: z.string().optional().nullable(),
-  ua: z.string().optional().nullable(),
-  lang: z.string().optional().nullable(),
-  visitorId: z.string().optional().nullable(),
-  sessionId: z.string().optional().nullable(),
-  meta: z.record(z.unknown()).optional().nullable(),
+  path: nullableString,
+  referrer: nullableString,
+  origin: nullableString,
+  host: nullableString,
+  ua: nullableString,
+  lang: nullableString,
+  visitorId: nullableString,
+  sessionId: nullableString,
+  meta: z.record(z.unknown()).optional().nullable().transform(v => v ?? null),
 })
 
 export type EventPayload = z.infer<typeof eventSchema>

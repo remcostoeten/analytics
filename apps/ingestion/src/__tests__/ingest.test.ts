@@ -33,7 +33,7 @@ describe('POST /ingest', () => {
 
     expect(response.status).toBe(200)
 
-    const data = await response.json()
+    const data = await response.json() as { ok: boolean; deduped?: boolean }
     expect(data.ok).toBe(true)
   })
 
@@ -50,7 +50,7 @@ describe('POST /ingest', () => {
 
     expect(response.status).toBe(400)
 
-    const data = await response.json()
+    const data = await response.json() as { ok: boolean; error: string }
     expect(data.ok).toBe(false)
     expect(data.error).toBe('Invalid payload')
   })

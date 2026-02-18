@@ -14,11 +14,11 @@
         "db:studio": "drizzle-kit studio"
     },
     "dependencies": {
-        "@neondatabase/serverless": "^0.9.0",
-        "drizzle-orm": "^0.45.1"
+        "@neondatabase/serverless": "catalog:neon",
+        "drizzle-orm": "catalog:drizzle"
     },
     "devDependencies": {
-        "drizzle-kit": "^0.31.9",
+        "drizzle-kit": "catalog:drizzle",
         "typescript": "catalog:ts"
     }
 }

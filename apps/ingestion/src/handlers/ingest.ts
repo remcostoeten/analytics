@@ -34,7 +34,7 @@ export async function handleIngest(c: Context) {
 
     // Extract IP and hash it
     const ip = extractIpAddress(req)
-    const ipHash = hashIp(ip)
+    const ipHash = hashIp(ip ?? null)
 
     // Extract geographic data from headers
     const geo = extractGeoFromRequest(req)

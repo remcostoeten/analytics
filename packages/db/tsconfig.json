@@ -1,4 +1,7 @@
 {
-  "extends": "../typescript/tsconfig.base.json",
-  "include": ["src/**/*.ts"]
+    "extends": "../typescript/tsconfig.base.json",
+    "compilerOptions": {
+        "types": ["bun-types"]
+    },
+    "include": ["src/**/*.ts"]
 }
