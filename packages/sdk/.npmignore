@@ -1,0 +1,43 @@
+# Source files
+src/
+__tests__/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+bun.lockb
+
+# Development
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Build artifacts
+*.tsbuildinfo
+
+# Documentation (keep README.md)
+docs/
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
