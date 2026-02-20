@@ -6,6 +6,30 @@ export type BotDetectionResult = {
   confidence: 'high' | 'medium' | 'low'
 }
 
+type HeaderBag = {
+  get(name: string): string | null
+}
+
+type ReqData = {
+  headers?: HeaderBag | null
+}
+
+function emptyHeaders(): HeaderBag {
+  return {
+    get() {
+      return null
+    },
+  }
+}
+
+function getHeaders(req: ReqData | null | undefined): HeaderBag {
+  const headers = req?.headers
+  if (!headers) {
+    return emptyHeaders()
+  }
+  return headers
+}
+
 /**
  * Comprehensive list of bot patterns
  * Includes search engines, AI scrapers, headless browsers, and security scanners
@@ -113,13 +137,15 @@ export function isBotUserAgent(ua: string | null): boolean {
     return false
   }
 
-  return BOT_PATTERNS.some(pattern => pattern.test(ua))
+  return BOT_PATTERNS.some(function (pattern) {
+    return pattern.test(ua)
+  })
 }
 
 /**
  * Check if request has Vercel bot header
  */
-function isBotByVercelHeader(headers: Headers): boolean {
+function isBotByVercelHeader(headers: HeaderBag): boolean {
   const isBot = headers.get('x-vercel-bot')
   return isBot === '1' || isBot === 'true'
 }
@@ -128,7 +154,7 @@ function isBotByVercelHeader(headers: Headers): boolean {
  * Check if request has valid browser headers
  * Real browsers almost always send certain headers
  */
-function hasValidBrowserHeaders(headers: Headers): boolean {
+function hasValidBrowserHeaders(headers: HeaderBag): boolean {
   const ua = headers.get('user-agent')
   const accept = headers.get('accept')
   const acceptLanguage = headers.get('accept-language')
@@ -155,8 +181,8 @@ function hasValidBrowserHeaders(headers: Headers): boolean {
  * Detect if request is from a bot
  * Uses multiple detection methods with confidence levels
  */
-export function detectBot(req: Request): BotDetectionResult {
-  const headers = req.headers
+export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
+  const headers = getHeaders(req)
   const ua = headers.get('user-agent')
 
   // Check Vercel bot header (high confidence)

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { serve } from 'bun'
-import { handleIngest } from './handlers/ingest'
+import { handleIngest } from './ingest.js'
 
 type TResp = { ok: true }
 

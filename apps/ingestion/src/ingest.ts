@@ -1,21 +1,18 @@
-// apps/ingestion/src/handlers/ingest.ts
 import { Context } from 'hono'
-import { db, events } from '../db.js'
-import { validateEventPayload } from '../validation.js'
-import { extractGeoFromRequest, extractIpAddress, isLocalhost } from '../geo.js'
-import { hashIp } from '../ip-hash.js'
-import { detectBot, classifyDevice } from '../bot-detection.js'
-import { generateFingerprint, dedupeCache, metrics } from '../dedupe.js'
+import { db, events } from './db.js'
+import { validateEventPayload } from './validation.js'
+import { extractGeoFromRequest, extractIpAddress, isLocalhost } from './geo.js'
+import { hashIp } from './ip-hash.js'
+import { detectBot, classifyDevice } from './bot-detection.js'
+import { generateFingerprint, dedupeCache, metrics } from './dedupe.js'
 
 export async function handleIngest(c: Context) {
   try {
-    // Record request for metrics
     metrics.recordRequest()
 
     const body = await c.req.json()
     const req = c.req.raw
 
-    // Validate payload
     const result = validateEventPayload(body)
 
     if (!result.success) {
@@ -31,23 +28,17 @@ export async function handleIngest(c: Context) {
 
     const payload = result.data
 
-    // Extract IP and hash it
     const ip = extractIpAddress(req)
     const ipHash = hashIp(ip ?? null)
 
-    // Extract geographic data from headers
     const geo = extractGeoFromRequest(req)
 
-    // Detect bots
     const botResult = detectBot(req)
 
-    // Classify device type
     const deviceType = classifyDevice(payload.ua, botResult.isBot)
 
-    // Determine if localhost
     const localhost = isLocalhost(payload.host)
 
-    // Generate fingerprint for deduplication
     const fingerprint = generateFingerprint({
       projectId: payload.projectId,
       visitorId: payload.visitorId,
@@ -57,18 +48,14 @@ export async function handleIngest(c: Context) {
       timestamp: Date.now(),
     })
 
-    // Check for duplicate
     if (dedupeCache.isDuplicate(fingerprint)) {
       metrics.recordDuplicate()
       return c.json({ ok: true, deduped: true })
     }
 
-    // Add to cache before DB insert to prevent race conditions
     dedupeCache.add(fingerprint)
 
-    // Insert to database with all extracted data
     await db.insert(events).values({
-      // Original payload
       projectId: payload.projectId,
       type: payload.type || 'pageview',
       path: payload.path,
@@ -79,16 +66,12 @@ export async function handleIngest(c: Context) {
       lang: payload.lang,
       visitorId: payload.visitorId,
       sessionId: payload.sessionId,
-
-      // Extracted data
       ipHash,
       country: geo.country,
       region: geo.region,
       city: geo.city,
       isLocalhost: localhost,
       deviceType,
-
-      // Custom metadata (include bot detection info and fingerprint)
       meta: {
         ...payload.meta,
         botDetected: botResult.isBot,

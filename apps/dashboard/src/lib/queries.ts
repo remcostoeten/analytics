@@ -103,7 +103,7 @@ export async function fetchTimeseries(
   filters?: FilterOptions
 ): Promise<TimeseriesPoint[]> {
   const trunc = granularity === "hour" ? "hour" : "day";
-  const bucket = sql`date_trunc(${trunc}, ${events.ts})`;
+  const bucket = sql<Date>`date_trunc(${trunc}, ${events.ts})`;
 
   const conditions = [
     eq(events.projectId, projectId),
@@ -118,13 +118,13 @@ export async function fetchTimeseries(
 
   const result = await db
     .select({
-      ts: sql<Date>`${bucket}`,
+      ts: bucket,
       count: sql<number>`count(*)`,
     })
     .from(events)
     .where(and(...conditions))
-    .groupBy(bucket)
-    .orderBy(sql`${bucket} asc`);
+    .groupBy(sql`1`)
+    .orderBy(sql`1 asc`);
 
   return result;
 }

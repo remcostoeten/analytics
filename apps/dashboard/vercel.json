@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd ../.. && bun install",
+  "installCommand": "bun install",
   "buildCommand": "bun run build",
   "framework": "nextjs"
 }

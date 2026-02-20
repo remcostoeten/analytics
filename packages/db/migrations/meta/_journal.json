@@ -15,6 +15,13 @@
       "when": 1770913512453,
       "tag": "0001_colorful_may_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771447852284,
+      "tag": "0002_lame_bruce_banner",
+      "breakpoints": true
     }
   ]
 }

@@ -1,23 +1,25 @@
 // apps/ingestion/src/app.ts
 import { Hono } from 'hono'
-import { handleIngest } from './handlers/ingest'
-import { metrics } from './dedupe'
-
-type TResp = { ok: true }
-
-function jsonOk(): TResp {
-  return { ok: true }
-}
+import { cors } from 'hono/cors'
+import { handleIngest } from './ingest.js'
+import { metrics } from './dedupe.js'
 
 const app = new Hono()
 
-app.get('/health', (c) => c.json(jsonOk()))
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+  })
+)
+
+app.get('/health', (c) => c.json({ ok: true }))
 
 app.post('/ingest', handleIngest)
 
-app.get('/metrics', (c) => {
-  const metricsData = metrics.getMetrics()
-  return c.json(metricsData)
-})
+app.get('/metrics', (c) => c.json(metrics.getMetrics()))
 
+export default app
 export { app }

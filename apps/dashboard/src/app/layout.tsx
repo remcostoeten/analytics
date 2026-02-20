@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import "./globals.css";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export const metadata: Metadata = {
   title: "Remco Analytics - Privacy-focused Analytics Dashboard",
@@ -32,8 +33,10 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
-        <DashboardLayout>{children}</DashboardLayout>
-      </body>
+			  <NuqsAdapter>
+				  <DashboardLayout>{children}</DashboardLayout>
+					</NuqsAdapter>
+			  </body>
     </html>
   );
 }

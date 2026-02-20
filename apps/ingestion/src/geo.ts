@@ -1,15 +1,34 @@
-// apps/ingestion/src/geo.ts
-
 export type GeoData = {
   country: string | null
   region: string | null
   city: string | null
 }
 
-/**
- * Extract geographic data from Vercel edge headers
- */
-function extractGeoFromVercelHeaders(headers: Headers): GeoData {
+type HeaderBag = {
+  get(name: string): string | null
+}
+
+type ReqData = {
+  headers?: HeaderBag | null
+}
+
+function emptyHeaders(): HeaderBag {
+  return {
+    get() {
+      return null
+    },
+  }
+}
+
+function getHeaders(req: ReqData | null | undefined): HeaderBag {
+  const headers = req?.headers
+  if (!headers) {
+    return emptyHeaders()
+  }
+  return headers
+}
+
+function extractGeoFromVercelHeaders(headers: HeaderBag): GeoData {
   const country = headers.get('x-vercel-ip-country')
   const region = headers.get('x-vercel-ip-country-region')
   const city = headers.get('x-vercel-ip-city')
@@ -29,10 +48,7 @@ function extractGeoFromVercelHeaders(headers: Headers): GeoData {
   }
 }
 
-/**
- * Extract geographic data from Cloudflare headers (fallback)
- */
-function extractGeoFromCloudflareHeaders(headers: Headers): GeoData {
+function extractGeoFromCloudflareHeaders(headers: HeaderBag): GeoData {
   const country = headers.get('cf-ipcountry')
 
   if (country && country !== 'XX') {
@@ -50,26 +66,16 @@ function extractGeoFromCloudflareHeaders(headers: Headers): GeoData {
   }
 }
 
-/**
- * Extract geographic data from request headers
- * Tries Vercel headers first, then Cloudflare, then returns nulls
- */
-export function extractGeoFromRequest(req: Request): GeoData {
-  const headers = req.headers
-
-  // Try Vercel headers first
+export function extractGeoFromRequest(req: ReqData | null | undefined): GeoData {
+  const headers = getHeaders(req)
   const vercelGeo = extractGeoFromVercelHeaders(headers)
   if (vercelGeo.country) {
     return vercelGeo
   }
-
-  // Try Cloudflare headers as fallback
   const cfGeo = extractGeoFromCloudflareHeaders(headers)
   if (cfGeo.country) {
     return cfGeo
   }
-
-  // No geo data available
   return {
     country: null,
     region: null,
@@ -77,39 +83,23 @@ export function extractGeoFromRequest(req: Request): GeoData {
   }
 }
 
-/**
- * Extract IP address from request headers
- * Tries multiple headers in order of preference
- */
-export function extractIpAddress(req: Request): string | null {
-  const headers = req.headers
-
-  // Vercel provides this
+export function extractIpAddress(req: ReqData | null | undefined): string | null {
+  const headers = getHeaders(req)
   const vercelIp = headers.get('x-real-ip')
   if (vercelIp) {
     return vercelIp
   }
-
-  // Cloudflare
   const cfIp = headers.get('cf-connecting-ip')
   if (cfIp) {
     return cfIp
   }
-
-  // Standard proxy headers
   const forwarded = headers.get('x-forwarded-for')
   if (forwarded) {
-    // Take first IP in chain (client IP)
     return forwarded.split(',')[0].trim()
   }
-
-  // Local development
   return null
 }
 
-/**
- * Check if host is localhost
- */
 export function isLocalhost(host: string | null): boolean {
   if (!host) {
     return false
@@ -129,20 +119,15 @@ export function isLocalhost(host: string | null): boolean {
   )
 }
 
-/**
- * Check if environment is a preview deployment
- */
 export function isPreviewEnvironment(host: string | null): boolean {
   if (!host) {
     return false
   }
 
-  // Vercel preview deployments
   if (host.includes('.vercel.app') && !host.startsWith('www.')) {
     return true
   }
 
-  // Custom preview patterns
   if (host.includes('-preview.') || host.includes('.preview.')) {
     return true
   }

@@ -43,7 +43,7 @@ export class DedupeCache {
   private cache: Map<string, DedupeEntry>
   private readonly ttlMs: number
   private readonly maxSize: number
-  private cleanupInterval: Timer | null = null
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null
 
   constructor(ttlMs: number = 60000, maxSize: number = 100000) {
     this.cache = new Map()
