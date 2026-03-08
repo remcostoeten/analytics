@@ -55,6 +55,10 @@ function rangeFilter(projectId: string, range: DateRange, filters?: FilterOption
     conditions.push(eq(events.isLocalhost, false));
   }
 
+  if (!filters?.showBots) {
+    conditions.push(sql`NOT (${events.meta}->>'botDetected') = 'true'`);
+  }
+
   return and(...conditions);
 }
 

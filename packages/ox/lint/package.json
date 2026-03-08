@@ -7,6 +7,6 @@
     "oxlint": "catalog:oxlint"
   },
   "scripts": {
-    "lint:all": "oxlint ../../apps ../../packages --deny-warnings"
+    "lint:all": "oxlint ../../../apps ../../../packages --deny-warnings"
   }
 }

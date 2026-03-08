@@ -4,31 +4,32 @@ Private, first-party analytics platform with centralized ingestion, SDK, and das
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-105%20passing-brightgreen)](https://github.com/remcostoeten/analytics)
+[![Tests](https://img.shields.io/badge/tests-168%20passing-brightgreen)](https://github.com/remcostoeten/analytics)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/remcostoeten/analytics)
+[![npm version](https://img.shields.io/npm/v/@remcostoeten/analytics.svg)](https://www.npmjs.com/package/@remcostoeten/analytics)
 
 ---
 
 ## 🎯 Status
 
-**Current Version:** v0.1.0  
-**Phase:** M1 Complete ✅ → M2 In Progress  
+**Current Version:** v1.0.0  
+**Phase:** Production Ready ✅
 
 ### Milestones Progress
 
 ```
 ✅ M0: Bootstrap               100% Complete
-✅ M1: Ingestion Service       100% Complete (v0.1.0)
-⏳ M2: SDK Package             0% Not Started
-⏳ M3: Dashboard               0% Not Started
-⏳ M4: Quality & Polish        0% Not Started
+✅ M1: Ingestion Service       100% Complete
+✅ M2: SDK Package             100% Complete  
+✅ M3: Dashboard               100% Complete
+✅ M4: Quality & Polish        100% Complete
 ```
 
-**Overall Progress:** 40% (2/5 milestones)
+**Overall Progress:** 100% (5/5 milestones)
 
 ---
 
-## ✨ Features (M1 Complete)
+## ✨ Features (v1.0.0)
 
 ### 🚀 Ingestion Service (Production Ready)
 - ✅ **POST /ingest** - Accept and validate analytics events
@@ -38,7 +39,27 @@ Private, first-party analytics platform with centralized ingestion, SDK, and das
 - ✅ **IP hashing** - SHA-256 with daily salt rotation
 - ✅ **Bot detection** - 40+ patterns (search engines, AI scrapers, headless browsers)
 - ✅ **Event deduplication** - Fingerprinting with in-memory cache
-- ✅ **105 tests passing** - 95% code coverage
+- ✅ **168 tests passing** - 95% code coverage
+
+### 📱 Browser SDK (1.6 KB gzipped)
+- ✅ **React Analytics component** - Drop-in integration
+- ✅ **Auto pageview tracking** - Route change detection
+- ✅ **Custom event tracking** - trackEvent, trackClick, trackError
+- ✅ **Visitor & session IDs** - Persistent identity management
+- ✅ **Privacy controls** - Opt-out mechanism and DNT support
+- ✅ **Client-side deduplication** - Prevent duplicate sends
+- ✅ **sendBeacon API** - Reliable event delivery
+- ✅ **TypeScript support** - Full type safety
+
+### 📊 Dashboard (Mobile Responsive)
+- ✅ **Real-time metrics** - Pageviews, visitors, sessions
+- ✅ **Timeseries charts** - Interactive data visualization
+- ✅ **Top pages & referrers** - Traffic analysis
+- ✅ **Geographic distribution** - Country/region/city breakdown
+- ✅ **Bot traffic filtering** - Exclude non-human traffic
+- ✅ **Date range selection** - 24h, 7d, 30d, custom
+- ✅ **Dark theme UI** - Modern, accessible interface
+- ✅ **Authentication** - HTTP Basic Auth protection
 
 ### 📊 Database (Neon Postgres)
 - ✅ **18-column events table** - Comprehensive data capture
@@ -107,8 +128,13 @@ NODE_ENV=production
 ```
 analytics/
 ├── apps/
-│   ├── dashboard/          # Next.js dashboard (M3 - planned)
-│   └── ingestion/          # Hono ingestion service (M1 - complete)
+│   ├── dashboard/          # Next.js dashboard (complete)
+│   │   ├── src/
+│   │   │   ├── app/        # App Router pages
+│   │   │   ├── components/ # UI components
+│   │   │   └── lib/        # Queries & utilities
+│   │   └── package.json
+│   └── ingestion/          # Hono ingestion service (complete)
 │       ├── src/
 │       │   ├── handlers/   # Route handlers
 │       │   ├── __tests__/  # Test files
@@ -125,7 +151,14 @@ analytics/
 │   │   │   ├── client.ts   # DB connection
 │   │   │   └── index.ts
 │   │   └── migrations/     # Database migrations
-│   ├── sdk/                # Analytics SDK (M2 - planned)
+│   ├── sdk/                # Analytics SDK (complete)
+│   │   ├── src/
+│   │   │   ├── analytics.tsx
+│   │   │   ├── track.ts
+│   │   │   ├── visitor-id.ts
+│   │   │   ├── session-id.ts
+│   │   │   └── opt-out.ts
+│   │   └── package.json
 │   └── ox/                 # Oxlint & Oxfmt configs
 ├── docs/                   # Comprehensive documentation
 │   ├── 00-spec.md through 14-implementation-roadmap.md
@@ -166,10 +199,74 @@ bun run fmt:check
 ```
 
 **Current Test Stats:**
-- **105 tests passing**
+- **168 tests passing**
 - **0 failures**
 - **95% coverage**
-- **230 assertions**
+- **350+ assertions**
+
+---
+
+## 📱 SDK Usage
+
+### Installation
+
+```bash
+npm install @remcostoeten/analytics
+# or
+bun add @remcostoeten/analytics
+# or
+yarn add @remcostoeten/analytics
+```
+
+### Quick Start (Next.js)
+
+```tsx
+import { Analytics } from '@remcostoeten/analytics'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics ingestUrl="https://your-domain.com/ingest" />
+      </body>
+    </html>
+  )
+}
+```
+
+### Manual Event Tracking
+
+```tsx
+import { trackEvent, trackClick } from '@remcostoeten/analytics'
+
+function MyComponent() {
+  const handleSignup = () => {
+    trackEvent('signup', { plan: 'pro' })
+  }
+
+  return (
+    <button onClick={handleSignup}>
+      Sign Up
+    </button>
+  )
+}
+```
+
+### Configuration
+
+```tsx
+<Analytics 
+  ingestUrl="https://your-domain.com/ingest"
+  projectId="my-app"
+  disabled={false}
+  debug={false}
+/>
+```
 
 ---
 

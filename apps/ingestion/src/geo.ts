@@ -29,6 +29,8 @@ function getHeaders(req: ReqData | null | undefined): HeaderBag {
 }
 
 function extractGeoFromVercelHeaders(headers: HeaderBag): GeoData {
+  // Prefer Vercel's canonical headers to prevent spoofing
+  // x-vercel-forwarded-for is overwritten by Vercel to prevent client manipulation
   const country = headers.get('x-vercel-ip-country')
   const region = headers.get('x-vercel-ip-country-region')
   const city = headers.get('x-vercel-ip-city')
@@ -85,18 +87,27 @@ export function extractGeoFromRequest(req: ReqData | null | undefined): GeoData 
 
 export function extractIpAddress(req: ReqData | null | undefined): string | null {
   const headers = getHeaders(req)
+  
+  // Priority 1: Vercel's canonical headers (cannot be spoofed by client)
   const vercelIp = headers.get('x-real-ip')
   if (vercelIp) {
     return vercelIp
   }
+  
+  // Priority 2: Cloudflare's canonical header (if using CF as proxy)
   const cfIp = headers.get('cf-connecting-ip')
   if (cfIp) {
     return cfIp
   }
+  
+  // Priority 3: x-forwarded-for (can be spoofed, only use if behind trusted proxy)
+  // Note: This should only be used if you control the entire proxy chain
   const forwarded = headers.get('x-forwarded-for')
   if (forwarded) {
+    // Take the leftmost IP (original client)
     return forwarded.split(',')[0].trim()
   }
+  
   return null
 }
 

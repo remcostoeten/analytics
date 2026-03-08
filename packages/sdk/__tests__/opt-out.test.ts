@@ -9,6 +9,12 @@ describe("opt-out", () => {
   beforeEach(() => {
     originalLocalStorage = global.localStorage;
     const store: Record<string, string> = {};
+    
+    // Mock window if it doesn't exist
+    if (!global.window) {
+      (global as any).window = {};
+    }
+    
     global.localStorage = {
       getItem: (key: string) => store[key] || null,
       setItem: (key: string, value: string) => {
@@ -20,7 +26,9 @@ describe("opt-out", () => {
       clear: () => {
         Object.keys(store).forEach((key) => delete store[key]);
       },
-      length: Object.keys(store).length,
+      get length() {
+        return Object.keys(store).length;
+      },
       key: (index: number) => Object.keys(store)[index] || null,
     } as Storage;
   });

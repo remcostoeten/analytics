@@ -26,9 +26,9 @@ async function DashboardData({
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <MetricCard
           title="Page Views"
           value={formatCompact(metrics.pageviews)}
@@ -44,14 +44,14 @@ async function DashboardData({
       </div>
 
       {/* Timeseries Chart */}
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-xl font-semibold mb-4">Page Views Over Time</h2>
-        <TimeseriesChart data={metrics.timeseries} height={350} />
+      <div className="rounded-lg border bg-card p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Page Views Over Time</h2>
+        <TimeseriesChart data={metrics.timeseries} height={300} />
       </div>
 
       {/* Top Pages */}
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-xl font-semibold mb-4">Top Pages</h2>
+      <div className="rounded-lg border bg-card p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Top Pages</h2>
         {metrics.topPages.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">No pages tracked yet</p>
         ) : (
@@ -67,8 +67,8 @@ async function DashboardData({
       </div>
 
       {/* Top Referrers */}
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-xl font-semibold mb-4">Top Referrers</h2>
+      <div className="rounded-lg border bg-card p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Top Referrers</h2>
         {metrics.topReferrers.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">No referrers tracked yet</p>
         ) : (
@@ -151,17 +151,16 @@ export default async function DashboardPage({
   return (
     <>
       <FilterBar />
-      <div className="p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold">Analytics Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              {range === "24h" && "Last 24 hours"}
-              {range === "7d" && "Last 7 days"}
-              {range === "30d" && "Last 30 days"}
-              {range === "90d" && "Last 90 days"}
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold">Analytics Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            {range === "24h" && "Last 24 hours"}
+            {range === "7d" && "Last 7 days"}
+            {range === "30d" && "Last 30 days"}
+            {range === "90d" && "Last 90 days"}
+          </p>
+        </div>
           <Suspense fallback={<DashboardSkeleton />}>
             <DashboardData
               range={range}
@@ -169,7 +168,6 @@ export default async function DashboardPage({
               showLocalhost={showLocalhost}
             />
           </Suspense>
-        </div>
       </div>
     </>
   );

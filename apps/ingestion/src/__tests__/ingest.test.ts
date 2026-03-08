@@ -1,7 +1,7 @@
 import { describe, test, expect, mock } from 'bun:test'
 import { Hono } from 'hono'
 
-mock.module('@remcostoeten/db', () => ({
+mock.module('../db.js', () => ({
   db: {
     insert: () => ({
       values: () => Promise.resolve(),

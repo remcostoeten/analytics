@@ -11,10 +11,10 @@
         "build": "bun run --filter '*' build",
         "test": "bun run --filter '*' test",
         "typecheck": "bun run --filter '*' typecheck",
-        "lint": "bun run -C packages/ox/lint lint:all",
-        "fmt": "bun run -C packages/ox/fmt fmt:all",
-        "fmt:check": "bun run -C packages/ox/fmt fmt:check:all",
-        "dev:ingestion": "bun run -C apps/ingestion dev",
+        "lint": "./packages/ox/lint/node_modules/.bin/oxlint apps packages --deny-warnings",
+        "fmt": "bun run --cwd packages/ox/fmt fmt:all",
+        "fmt:check": "bun run --cwd packages/ox/fmt fmt:check:all",
+        "dev:ingestion": "bun run --cwd apps/ingestion dev",
         "deploy": "bun run deploy.ts"
     },
     "devDependencies": {
