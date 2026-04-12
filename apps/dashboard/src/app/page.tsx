@@ -2,22 +2,23 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { Suspense } from "react";
-import { fetchMetrics } from "@/lib/queries";
+import { fetchMetrics, fetchProjects } from "@/lib/queries";
 import { rangeFromPreset, formatCompact } from "@/lib/date-utils";
 import { TimeseriesChart } from "@/components/timeseries-chart";
 import { MetricCard } from "@/components/metric-card";
 import { FilterBar } from "@/components/filter-bar";
 
 async function DashboardData({
+  projectId,
   range,
   showBots,
   showLocalhost
 }: {
+  projectId: string;
   range: string;
   showBots: boolean;
   showLocalhost: boolean;
 }) {
-  const projectId = "localhost";
   const dateRange = rangeFromPreset(range as "24h" | "7d" | "30d" | "90d");
 
   const metrics = await fetchMetrics(projectId, dateRange, {
@@ -138,19 +139,23 @@ export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    project?: string;
     range?: string;
     bots?: string;
     localhost?: string;
   }>;
 }) {
   const params = await searchParams;
+  const projectId = params.project || "localhost";
   const range = params.range || "7d";
   const showBots = params.bots === "true";
   const showLocalhost = params.localhost === "true";
 
+  const projects = await fetchProjects();
+
   return (
     <>
-      <FilterBar />
+      <FilterBar projects={projects} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold">Analytics Dashboard</h1>
@@ -163,6 +168,7 @@ export default async function DashboardPage({
         </div>
           <Suspense fallback={<DashboardSkeleton />}>
             <DashboardData
+              projectId={projectId}
               range={range}
               showBots={showBots}
               showLocalhost={showLocalhost}

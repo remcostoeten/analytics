@@ -1,5 +1,4 @@
 // apps/ingestion/src/dedupe.ts
-import { createHash } from 'crypto'
 
 export type EventFingerprint = {
   projectId: string
@@ -9,12 +8,11 @@ export type EventFingerprint = {
   path: string | null
   timestamp: number
 }
-
 /**
  * Generate SHA-256 fingerprint from event key fields
  * Rounds timestamp to 10-second window to handle minor clock skew
  */
-export function generateFingerprint(event: EventFingerprint): string {
+export async function generateFingerprint(event: EventFingerprint): Promise<string> {
   // Round timestamp to nearest 10 seconds
   const roundedTimestamp = Math.floor(event.timestamp / 10000) * 10000
 
@@ -28,8 +26,12 @@ export function generateFingerprint(event: EventFingerprint): string {
   ]
 
   const key = parts.join('::')
-  return createHash('sha256').update(key).digest('hex')
+  const msgUint8 = new TextEncoder().encode(key)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
 
 type DedupeEntry = {
   expiresAt: number
@@ -120,12 +122,7 @@ export class DedupeCache {
   private startCleanup(): void {
     this.cleanupInterval = setInterval(() => {
       this.cleanup()
-    }, 60000) // Every minute
-
-    // Don't keep process alive for cleanup
-    if (this.cleanupInterval.unref) {
-      this.cleanupInterval.unref()
-    }
+    }, 60000)
   }
 
   /**

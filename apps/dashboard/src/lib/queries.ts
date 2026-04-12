@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "./db";
-import { events } from "./schema";
+import { events } from "@remcostoeten/db";
 import { eq, and, gte, lte, sql, desc, isNotNull } from "drizzle-orm";
 import type { DateRange } from "./date-utils";
 
@@ -228,4 +228,22 @@ export async function fetchGeo(
     .limit(50);
 
   return result;
+}
+export async function fetchProjects(): Promise<string[]> {
+  const result = await db
+    .select({
+      projectId: events.projectId,
+    })
+    .from(events)
+    .groupBy(events.projectId)
+    .orderBy(events.projectId);
+
+  const projects = result.map((r) => r.projectId).filter(Boolean) as string[];
+  
+  // Ensure localhost is always an option
+  if (!projects.includes("localhost")) {
+    return ["localhost", ...projects];
+  }
+  
+  return projects;
 }

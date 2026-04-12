@@ -1,4 +1,3 @@
-// apps/ingestion/src/handlers/metrics.ts
 import { Context } from 'hono'
 import { metrics } from '../dedupe.js'
 import { rateLimiter, botRateLimiter } from '../rate-limit.js'

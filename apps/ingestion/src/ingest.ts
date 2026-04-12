@@ -29,7 +29,7 @@ export async function handleIngest(c: Context) {
     const payload = result.data
 
     const ip = extractIpAddress(req)
-    const ipHash = hashIp(ip ?? null)
+    const ipHash = await hashIp(ip ?? null)
 
     const geo = extractGeoFromRequest(req)
 
@@ -39,7 +39,7 @@ export async function handleIngest(c: Context) {
 
     const localhost = isLocalhost(payload.host)
 
-    const fingerprint = generateFingerprint({
+    const fingerprint = await generateFingerprint({
       projectId: payload.projectId,
       visitorId: payload.visitorId,
       sessionId: payload.sessionId,

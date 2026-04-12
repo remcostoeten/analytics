@@ -1,4 +1,3 @@
-// apps/ingestion/src/handlers/admin.ts
 import { Context } from 'hono'
 import { dataRetainer } from '../data-retention.js'
 

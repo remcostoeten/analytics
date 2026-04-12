@@ -1,11 +1,8 @@
-// apps/ingestion/src/ip-hash.ts
-import { createHash } from 'crypto'
-
 /**
  * Generate daily salt from IP_HASH_SECRET + current date
  * This ensures same IP gets same hash within a day, but different hash on different days
  */
-function getDailySalt(): string {
+async function getDailySalt(): Promise<string> {
   const today = new Date().toISOString().split('T')[0]
   const secret = process.env.IP_HASH_SECRET || 'default-secret-change-me'
 
@@ -13,7 +10,10 @@ function getDailySalt(): string {
     console.warn('WARNING: Using default IP_HASH_SECRET in production!')
   }
 
-  return createHash('sha256').update(secret + today).digest('hex')
+  const msgUint8 = new TextEncoder().encode(secret + today)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 /**
@@ -21,14 +21,18 @@ function getDailySalt(): string {
  * Returns null if IP is null or undefined
  * Uses SHA-256 for security
  */
-export function hashIp(ip: string | null): string | null {
+export async function hashIp(ip: string | null): Promise<string | null> {
   if (!ip) {
     return null
   }
 
-  const salt = getDailySalt()
-  return createHash('sha256').update(ip + salt).digest('hex')
+  const salt = await getDailySalt()
+  const msgUint8 = new TextEncoder().encode(ip + salt)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
 
 /**
  * Validate that IP_HASH_SECRET is set in production

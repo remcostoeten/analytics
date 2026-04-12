@@ -1,5 +1,8 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
-  ]
+  ],
+  "buildCommand": "bun run scripts/build.ts",
+  "installCommand": "echo 'dependencies bundled'",
+  "framework": null
 }

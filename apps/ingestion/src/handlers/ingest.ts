@@ -67,7 +67,7 @@ export async function handleIngest(c: Context) {
 
     // Extract IP and hash it for rate limiting
     const ip = extractIpAddress(req)
-    const ipHash = hashIp(ip ?? null)
+    const ipHash = await hashIp(ip ?? null)
 
     // Check origin for security
     const origin = c.req.header('origin') ?? null
@@ -111,7 +111,7 @@ export async function handleIngest(c: Context) {
     const localhost = isLocalhost(payload.host)
 
     // Generate fingerprint for deduplication
-    const fingerprint = generateFingerprint({
+    const fingerprint = await generateFingerprint({
       projectId: payload.projectId,
       visitorId: payload.visitorId,
       sessionId: payload.sessionId,
