@@ -1,17 +1,5 @@
-import { Hono } from 'hono'
+import app from './app.js'
 import { serve } from 'bun'
-import { handleIngest } from './ingest.js'
-
-type TResp = { ok: true }
-
-function jsonOk(): TResp {
-  return { ok: true }
-}
-
-const app = new Hono()
-
-app.get('/health', (c) => c.json(jsonOk()))
-app.post('/ingest', handleIngest)
 
 serve({ fetch: app.fetch, port: 3000 })
 
