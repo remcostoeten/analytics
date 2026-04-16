@@ -205,3 +205,59 @@ export function trackError(
     ...meta,
   }, options);
 }
+
+// -----------------------------------------------------------------------------
+// Advanced Analytics Strongly-Typed Helpers
+// -----------------------------------------------------------------------------
+
+export function trackTransaction(
+  revenue: number,
+  currency: string = "USD",
+  orderId?: string,
+  items?: number,
+  options?: TrackOptions
+): void {
+  track("event", {
+    eventName: "transaction",
+    revenue,
+    currency,
+    orderId,
+    items,
+  }, options);
+}
+
+export function trackSearch(
+  query: string,
+  resultCount: number,
+  options?: TrackOptions
+): void {
+  track("event", {
+    eventName: "site_search",
+    query,
+    resultCount,
+  }, options);
+}
+
+export function identifyUser(
+  userProperties: Record<string, string | number | boolean>,
+  options?: TrackOptions
+): void {
+  track("event", {
+    eventName: "identify",
+    userProperties,
+  }, options);
+}
+
+export function setExperiment(
+  experimentId: string,
+  variantId: string,
+  options?: TrackOptions
+): void {
+  track("event", {
+    eventName: "experiment_exposure",
+    experiments: {
+      [experimentId]: variantId
+    }
+  }, options);
+}
+

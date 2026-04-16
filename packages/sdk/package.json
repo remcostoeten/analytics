@@ -1,6 +1,6 @@
 {
   "name": "@remcostoeten/analytics",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Privacy-focused analytics SDK for tracking page views and custom events",
   "license": "MIT",
   "author": "Remco Stoeten",
