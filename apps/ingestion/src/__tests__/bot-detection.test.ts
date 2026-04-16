@@ -144,9 +144,11 @@ describe('detectBot', () => {
     expect(result.confidence).toBe('high')
   })
 
-  test('detects missing browser headers', () => {
+  test('detects missing browser headers for navigation requests', () => {
     const headers = new Headers({
       'user-agent': 'SomeCustomUA/1.0',
+      'accept': 'text/html,application/xhtml+xml',
+      'sec-fetch-mode': 'navigate',
     })
     const req = new Request('http://localhost', { headers })
 
@@ -176,6 +178,7 @@ describe('detectBot', () => {
     const headers = new Headers({
       'user-agent': 'Mozilla/5.0',
       'accept-language': 'en-US',
+      'sec-fetch-mode': 'navigate',
     })
     const req = new Request('http://localhost', { headers })
 
@@ -190,6 +193,7 @@ describe('detectBot', () => {
       'user-agent': 'Mozilla/5.0',
       'accept': 'application/json',
       'accept-language': 'en-US',
+      'sec-fetch-mode': 'navigate',
     })
     const req = new Request('http://localhost', { headers })
 
@@ -197,6 +201,24 @@ describe('detectBot', () => {
 
     expect(result.isBot).toBe(true)
     expect(result.confidence).toBe('medium')
+  })
+
+  test('allows sdk post requests without navigation headers', () => {
+    const headers = new Headers({
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+      'content-type': 'application/json',
+      'accept': '*/*',
+    })
+    const req = new Request('http://localhost/ingest', {
+      method: 'POST',
+      headers,
+    })
+
+    const result = detectBot(req)
+
+    expect(result.isBot).toBe(false)
+    expect(result.reason).toBeNull()
+    expect(result.confidence).toBe('low')
   })
 })
 

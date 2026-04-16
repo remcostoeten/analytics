@@ -6,10 +6,14 @@ import { handleAdminCleanup, handleAdminStats } from './handlers/admin.js'
 
 const app = new Hono()
 
+function getCorsOrigin(origin: string | undefined): string | undefined {
+  return origin
+}
+
 app.use(
   '*',
   cors({
-    origin: (origin) => origin || '*',
+    origin: getCorsOrigin,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'X-Requested-With'],
     credentials: true,

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { trackPageView } from "./track";
+import { observePageViews } from "./pageview";
+import { observePerformance } from "./performance";
+import { observeScroll } from "./scroll";
+import { observeTimeOnPage } from "./time-on-page";
 
 type AnalyticsProps = {
   projectId?: string;
@@ -24,7 +27,17 @@ export function Analytics({
       return;
     }
 
-    trackPageView(undefined, { projectId, ingestUrl, debug });
+    const cleanupPageViews = observePageViews({ projectId, ingestUrl, debug });
+    const cleanupPerformance = observePerformance({ projectId, ingestUrl, debug });
+    const cleanupScroll = observeScroll({ projectId, ingestUrl, debug });
+    const cleanupTimeOnPage = observeTimeOnPage({ projectId, ingestUrl, debug });
+
+    return function cleanup() {
+      cleanupPageViews();
+      cleanupPerformance();
+      cleanupScroll();
+      cleanupTimeOnPage();
+    };
   }, [projectId, ingestUrl, disabled, debug]);
 
   return null;

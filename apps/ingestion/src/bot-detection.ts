@@ -12,6 +12,7 @@ type HeaderBag = {
 
 type ReqData = {
   headers?: HeaderBag | null
+  method?: string | null
 }
 
 function emptyHeaders(): HeaderBag {
@@ -28,6 +29,10 @@ function getHeaders(req: ReqData | null | undefined): HeaderBag {
     return emptyHeaders()
   }
   return headers
+}
+
+function getMethod(req: ReqData | null | undefined): string {
+  return req?.method?.toUpperCase() ?? 'GET'
 }
 
 /**
@@ -177,12 +182,33 @@ function hasValidBrowserHeaders(headers: HeaderBag): boolean {
   return true
 }
 
+function isNavigationRequest(headers: HeaderBag, method: string): boolean {
+  if (method !== 'GET' && method !== 'HEAD') {
+    return false
+  }
+
+  const secFetchMode = headers.get('sec-fetch-mode')
+  const secFetchDest = headers.get('sec-fetch-dest')
+  const accept = headers.get('accept')
+
+  if (secFetchMode === 'navigate') {
+    return true
+  }
+
+  if (secFetchDest === 'document') {
+    return true
+  }
+
+  return accept?.includes('text/html') ?? false
+}
+
 /**
  * Detect if request is from a bot
  * Uses multiple detection methods with confidence levels
  */
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
   const headers = getHeaders(req)
+  const method = getMethod(req)
   const ua = headers.get('user-agent')
 
   // Check Vercel bot header (high confidence)
@@ -204,7 +230,7 @@ export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
   }
 
   // Check for missing browser headers (medium confidence)
-  if (!hasValidBrowserHeaders(headers)) {
+  if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
     return {
       isBot: true,
       reason: 'invalid-headers',

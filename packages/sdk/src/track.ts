@@ -1,6 +1,7 @@
 import { getVisitorId } from "./visitor-id";
 import { getSessionId, extendSession } from "./session-id";
 import { isOptedOut, checkDoNotTrack } from "./opt-out";
+import { collectEnrichment } from "./enrich";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
@@ -79,7 +80,10 @@ function buildPayload(
     lang: navigator.language,
     visitorId,
     sessionId,
-    meta,
+    meta: {
+      ...collectEnrichment(),
+      ...meta,
+    },
   };
 }
 

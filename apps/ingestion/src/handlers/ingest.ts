@@ -6,6 +6,7 @@ import { hashIp } from '../ip-hash.js'
 import { detectBot, classifyDevice } from '../bot-detection.js'
 import { generateFingerprint, dedupeCache, metrics } from '../dedupe.js'
 import { rateLimiter, botRateLimiter } from '../rate-limit.js'
+import { UAParser } from 'ua-parser-js'
 
 // Lazy import to avoid requiring DATABASE_URL during tests
 let db: any = null
@@ -129,6 +130,11 @@ export async function handleIngest(c: Context) {
     // Add to cache before DB insert to prevent race conditions
     dedupeCache.add(fingerprint)
 
+    // Parse User Agent for browser and OS details
+    const uaParser = new UAParser(payload.ua || '')
+    const browser = uaParser.getBrowser()
+    const os = uaParser.getOS()
+
     // Insert to database with all extracted data
     const { db, events } = await getDb()
     await db.insert(events).values({
@@ -152,13 +158,17 @@ export async function handleIngest(c: Context) {
       isLocalhost: localhost,
       deviceType,
 
-      // Custom metadata (include bot detection info and fingerprint)
+      // Custom metadata (include bot detection info, fingerprint, screen, utm, browser)
       meta: {
         ...payload.meta,
         botDetected: botResult.isBot,
         botReason: botResult.reason,
         botConfidence: botResult.confidence,
         fingerprint,
+        browser: browser.name,
+        browserVersion: browser.version,
+        os: os.name,
+        osVersion: os.version,
       },
     })
 

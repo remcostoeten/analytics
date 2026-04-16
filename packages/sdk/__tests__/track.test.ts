@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { track, trackPageView, trackEvent, trackClick, trackError } from "../src/track";
+import { observePageViews } from "../src/pageview";
 
 describe("track", () => {
   let originalLocalStorage: Storage | undefined;
@@ -263,6 +264,126 @@ describe("trackPageView", () => {
     const blob = beaconMock.mock.calls[0][1];
     const payload = JSON.parse(blob.content[0]);
     expect(payload.meta).toEqual(meta);
+  });
+});
+
+describe("observePageViews", () => {
+  let beaconMock: ReturnType<typeof mock>;
+  let pushState: History["pushState"];
+  let replaceState: History["replaceState"];
+  let listeners: Record<string, Array<EventListener>>;
+
+  beforeEach(() => {
+    const localStore: Record<string, string> = {};
+    global.localStorage = {
+      getItem: (key: string) => localStore[key] || null,
+      setItem: (key: string, value: string) => {
+        localStore[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete localStore[key];
+      },
+      clear: () => {},
+      length: 0,
+      key: () => null,
+    } as Storage;
+
+    const sessionStore: Record<string, string> = {};
+    global.sessionStorage = {
+      getItem: (key: string) => sessionStore[key] || null,
+      setItem: (key: string, value: string) => {
+        sessionStore[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete sessionStore[key];
+      },
+      clear: () => {},
+      length: 0,
+      key: () => null,
+    } as Storage;
+
+    beaconMock = mock(() => true);
+    listeners = {};
+    pushState = mock((_data: unknown, _unused: string, url?: string | URL | null) => {
+      if (typeof url === "string") {
+        (global as any).window.location.pathname = new URL(url, "http://localhost").pathname;
+      }
+    }) as unknown as History["pushState"];
+    replaceState = mock((_data: unknown, _unused: string, url?: string | URL | null) => {
+      if (typeof url === "string") {
+        (global as any).window.location.pathname = new URL(url, "http://localhost").pathname;
+      }
+    }) as unknown as History["replaceState"];
+
+    (global as any).navigator = {
+      sendBeacon: beaconMock,
+      userAgent: "Test",
+      language: "en",
+    };
+    (global as any).window = {
+      location: {
+        pathname: "/test",
+        hostname: "localhost",
+        origin: "http://localhost",
+        host: "localhost",
+      },
+      history: {
+        pushState,
+        replaceState,
+      },
+      addEventListener(type: string, listener: EventListener) {
+        listeners[type] ??= [];
+        listeners[type].push(listener);
+      },
+      removeEventListener(type: string, listener: EventListener) {
+        listeners[type] = (listeners[type] || []).filter(function (entry) {
+          return entry !== listener;
+        });
+      },
+      dispatchEvent(event: Event) {
+        for (const listener of listeners[event.type] || []) {
+          listener(event);
+        }
+        return true;
+      },
+    };
+    (global as any).document = { referrer: "" };
+    (global as any).Blob = class Blob {
+      constructor(public content: any[], public options: any) {}
+    };
+    (global as any).Event = class Event {
+      type: string;
+
+      constructor(type: string) {
+        this.type = type;
+      }
+    };
+  });
+
+  test("tracks initial pageview and client-side route changes", () => {
+    const cleanup = observePageViews();
+
+    expect(beaconMock).toHaveBeenCalledTimes(1);
+
+    global.window.history.pushState({}, "", "/pricing");
+
+    expect(beaconMock).toHaveBeenCalledTimes(2);
+
+    const blob = beaconMock.mock.calls[1][1];
+    const payload = JSON.parse(blob.content[0]);
+    expect(payload.path).toBe("/pricing");
+
+    cleanup();
+  });
+
+  test("does not track when pathname does not change", () => {
+    const cleanup = observePageViews();
+
+    global.window.history.replaceState({}, "", "/test");
+
+    expect(beaconMock).toHaveBeenCalledTimes(1);
+
+    cleanup();
   });
 });
 

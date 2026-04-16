@@ -8,7 +8,7 @@ import {
 } from '../dedupe'
 
 describe('generateFingerprint', () => {
-  test('generates consistent fingerprint for same event', () => {
+  test('generates consistent fingerprint for same event', async () => {
     const event = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -18,14 +18,14 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    const fp1 = generateFingerprint(event)
-    const fp2 = generateFingerprint(event)
+    const fp1 = await generateFingerprint(event)
+    const fp2 = await generateFingerprint(event)
 
     expect(fp1).toBe(fp2)
-    expect(fp1).toMatch(/^[a-f0-9]{64}$/) // SHA-256 hex
+    expect(fp1).toMatch(/^[a-f0-9]{64}$/)
   })
 
-  test('generates different fingerprints for different paths', () => {
+  test('generates different fingerprints for different paths', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -37,13 +37,13 @@ describe('generateFingerprint', () => {
 
     const event2 = { ...event1, path: '/about' }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).not.toBe(fp2)
   })
 
-  test('generates different fingerprints for different projects', () => {
+  test('generates different fingerprints for different projects', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -55,13 +55,13 @@ describe('generateFingerprint', () => {
 
     const event2 = { ...event1, projectId: 'other.com' }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).not.toBe(fp2)
   })
 
-  test('generates different fingerprints for different visitors', () => {
+  test('generates different fingerprints for different visitors', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -73,13 +73,13 @@ describe('generateFingerprint', () => {
 
     const event2 = { ...event1, visitorId: 'visitor-789' }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).not.toBe(fp2)
   })
 
-  test('rounds timestamps to prevent minor variations', () => {
+  test('rounds timestamps to prevent minor variations', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -89,16 +89,15 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    // 5 seconds later (within 10-second window)
     const event2 = { ...event1, timestamp: 1000000005000 }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).toBe(fp2)
   })
 
-  test('generates different fingerprints outside 10-second window', () => {
+  test('generates different fingerprints outside 10-second window', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -108,16 +107,15 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    // 11 seconds later (outside 10-second window)
     const event2 = { ...event1, timestamp: 1000000011000 }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).not.toBe(fp2)
   })
 
-  test('handles null visitorId', () => {
+  test('handles null visitorId', async () => {
     const event = {
       projectId: 'example.com',
       visitorId: null,
@@ -127,12 +125,12 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    const fingerprint = generateFingerprint(event)
+    const fingerprint = await generateFingerprint(event)
 
     expect(fingerprint).toMatch(/^[a-f0-9]{64}$/)
   })
 
-  test('handles null sessionId', () => {
+  test('handles null sessionId', async () => {
     const event = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -142,12 +140,12 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    const fingerprint = generateFingerprint(event)
+    const fingerprint = await generateFingerprint(event)
 
     expect(fingerprint).toMatch(/^[a-f0-9]{64}$/)
   })
 
-  test('handles null path', () => {
+  test('handles null path', async () => {
     const event = {
       projectId: 'example.com',
       visitorId: 'visitor-123',
@@ -157,12 +155,12 @@ describe('generateFingerprint', () => {
       timestamp: 1000000000000,
     }
 
-    const fingerprint = generateFingerprint(event)
+    const fingerprint = await generateFingerprint(event)
 
     expect(fingerprint).toMatch(/^[a-f0-9]{64}$/)
   })
 
-  test('generates same fingerprint for events with all nulls', () => {
+  test('generates same fingerprint for events with all nulls', async () => {
     const event1 = {
       projectId: 'example.com',
       visitorId: null,
@@ -174,8 +172,8 @@ describe('generateFingerprint', () => {
 
     const event2 = { ...event1 }
 
-    const fp1 = generateFingerprint(event1)
-    const fp2 = generateFingerprint(event2)
+    const fp1 = await generateFingerprint(event1)
+    const fp2 = await generateFingerprint(event2)
 
     expect(fp1).toBe(fp2)
   })

@@ -42,13 +42,14 @@
       "version": "0.0.1",
       "dependencies": {
         "@neondatabase/serverless": "^0.10.0",
-        "@remcostoeten/db": "workspace:*",
         "drizzle-orm": "^0.36.0",
         "hono": "4.6.10",
+        "ua-parser-js": "^2.0.9",
         "zod": "^3.22.4",
       },
       "devDependencies": {
         "@types/node": "^20.10.0",
+        "@types/ua-parser-js": "^0.7.39",
         "bun-types": "^1.3.9",
         "typescript": "5.6.3",
       },
@@ -379,6 +380,8 @@
 
     "@types/react-dom": ["@types/react-dom@19.2.3", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ=="],
 
+    "@types/ua-parser-js": ["@types/ua-parser-js@0.7.39", "", {}, "sha512-P/oDfpofrdtF5xw433SPALpdSchtJmY7nsJItf8h3KXqOslkbySh8zq4dSWXH2oTjRvJ5PczVEoCZPow6GicLg=="],
+
     "acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 
     "any-promise": ["any-promise@1.3.0", "", {}, "sha512-7UvmKalWRt1wgjL1RrGxoSJW/0QZFIegpeGvZG9kjp8vrRu55XTHbwnqq2GpXm9uLbcuhxm3IqX9OB4MZR1b2A=="],
@@ -457,6 +460,8 @@
 
     "dequal": ["dequal@2.0.3", "", {}, "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA=="],
 
+    "detect-europe-js": ["detect-europe-js@0.1.2", "", {}, "sha512-lgdERlL3u0aUdHocoouzT10d9I89VVhk0qNRmll7mXdGfJT1/wqZ2ZLA4oJAjeACPY5fT1wsbq2AT+GkuInsow=="],
+
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
 
     "didyoumean": ["didyoumean@1.2.2", "", {}, "sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw=="],
@@ -518,6 +523,8 @@
     "is-glob": ["is-glob@4.0.3", "", { "dependencies": { "is-extglob": "^2.1.1" } }, "sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg=="],
 
     "is-number": ["is-number@7.0.0", "", {}, "sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng=="],
+
+    "is-standalone-pwa": ["is-standalone-pwa@0.1.1", "", {}, "sha512-9Cbovsa52vNQCjdXOzeQq5CnCbAcRk05aU62K20WO372NrTv0NxibLFCK6lQ4/iZEFdEA3p3t2VNOn8AJ53F5g=="],
 
     "jiti": ["jiti@1.21.7", "", { "bin": { "jiti": "bin/jiti.js" } }, "sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A=="],
 
@@ -690,6 +697,10 @@
     "tsup": ["tsup@8.5.1", "", { "dependencies": { "bundle-require": "^5.1.0", "cac": "^6.7.14", "chokidar": "^4.0.3", "consola": "^3.4.0", "debug": "^4.4.0", "esbuild": "^0.27.0", "fix-dts-default-cjs-exports": "^1.0.0", "joycon": "^3.1.1", "picocolors": "^1.1.1", "postcss-load-config": "^6.0.1", "resolve-from": "^5.0.0", "rollup": "^4.34.8", "source-map": "^0.7.6", "sucrase": "^3.35.0", "tinyexec": "^0.3.2", "tinyglobby": "^0.2.11", "tree-kill": "^1.2.2" }, "peerDependencies": { "@microsoft/api-extractor": "^7.36.0", "@swc/core": "^1", "postcss": "^8.4.12", "typescript": ">=4.5.0" }, "optionalPeers": ["@microsoft/api-extractor", "@swc/core", "postcss", "typescript"], "bin": { "tsup": "dist/cli-default.js", "tsup-node": "dist/cli-node.js" } }, "sha512-xtgkqwdhpKWr3tKPmCkvYmS9xnQK3m3XgxZHwSUjvfTjp7YfXe5tT3GgWi0F2N+ZSMsOeWeZFh7ZZFg5iPhing=="],
 
     "typescript": ["typescript@5.6.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw=="],
+
+    "ua-is-frozen": ["ua-is-frozen@0.1.2", "", {}, "sha512-RwKDW2p3iyWn4UbaxpP2+VxwqXh0jpvdxsYpZ5j/MLLiQOfbsV5shpgQiw93+KMYQPcteeMQ289MaAFzs3G9pw=="],
+
+    "ua-parser-js": ["ua-parser-js@2.0.9", "", { "dependencies": { "detect-europe-js": "^0.1.2", "is-standalone-pwa": "^0.1.1", "ua-is-frozen": "^0.1.2" }, "bin": { "ua-parser-js": "script/cli.js" } }, "sha512-OsqGhxyo/wGdLSXMSJxuMGN6H4gDnKz6Fb3IBm4bxZFMnyy0sdf6MN96Ie8tC6z/btdO+Bsy8guxlvLdwT076w=="],
 
     "ufo": ["ufo@1.6.3", "", {}, "sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q=="],
 
