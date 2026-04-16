@@ -14,6 +14,19 @@ const OS = [
   { name: "iOS", version: "17.0" },
   { name: "Android", version: "14" },
 ];
+const COUNTRIES = ["United States", "Netherlands", "United Kingdom", "Germany", "France", "Canada", "Australia", "Japan", "Brazil"];
+const REGIONS = {
+  "United States": ["California", "New York", "Texas", "Florida"],
+  "Netherlands": ["North Holland", "South Holland", "Utrecht", "North Brabant"],
+  "United Kingdom": ["London", "Manchester", "Birmingham", "Scotland"],
+  "Germany": ["Berlin", "Bavaria", "Hamburg", "Hesse"],
+};
+const CITIES = {
+  "California": ["San Francisco", "Los Angeles", "San Diego"],
+  "New York": ["New York City", "Buffalo", "Rochester"],
+  "North Holland": ["Amsterdam", "Haarlem", "Zaanstad"],
+  "London": ["Westminster", "Camden", "Greenwich"],
+};
 const PATHS = ["/", "/features", "/pricing", "/docs", "/blog", "/about"];
 const REFERRERS = ["https://google.com", "https://twitter.com", "https://github.com", ""];
 const DEVICES = ["desktop", "mobile", "tablet"];
@@ -44,6 +57,13 @@ async function seed() {
     const lang = "en-US";
     const screenSize = deviceType === "mobile" ? "390x844" : "1920x1080";
     const viewport = deviceType === "mobile" ? "390x844" : "1440x900";
+    
+    // Geographic data for this visitor
+    const country = getRandomItem(COUNTRIES);
+    const regionList = (REGIONS as any)[country] || ["Unknown"];
+    const region = getRandomItem(regionList);
+    const cityList = (CITIES as any)[region] || ["Unknown"];
+    const city = getRandomItem(cityList);
 
     // Advanced traits for this visitor (Segmentation & A/B tests)
     const userProperties = {
@@ -110,6 +130,9 @@ async function seed() {
           sessionId,
           deviceType,
           lang,
+          country,
+          region,
+          city,
           meta,
         });
 
@@ -117,21 +140,27 @@ async function seed() {
         if (isFunnelSession && funnelStep === 1) {
           entries.push({
              projectId, type: "event", ts: new Date(timestamp.getTime() + 2000), path, visitorId, sessionId, deviceType,
-             meta: { ...meta, eventName: "signup" }
+             meta: { ...meta, eventName: "signup" },
+             country,
+             region,
+             city,
           });
         }
         if (isFunnelSession && funnelStep === 2) {
           entries.push({
              projectId, type: "event", ts: new Date(timestamp.getTime() + 3000), path, visitorId, sessionId, deviceType,
-             meta: { 
-               ...meta, 
-               eventName: "transaction", 
-               revenue: getRandomInt(29, 299),
-               currency: "USD",
-               items: getRandomInt(1, 5),
-               orderId: `ORD-${getRandomInt(1000, 9999)}`
-             }
-          });
+              meta: { 
+                ...meta, 
+                eventName: "transaction", 
+                revenue: getRandomInt(29, 299),
+                currency: "USD",
+                items: getRandomInt(1, 5),
+                orderId: `ORD-${getRandomInt(1000, 9999)}`
+              },
+              country,
+              region,
+              city,
+           });
         }
         
         funnelStep++;
@@ -145,7 +174,10 @@ async function seed() {
                eventName: "site_search", 
                query: getRandomItem(["how to invite", "pricing tiers", "dark mode"]),
                resultCount: Math.random() > 0.8 ? 0 : getRandomInt(1, 10)
-             }
+             },
+              country,
+              region,
+              city,
           });
         }
 
@@ -160,6 +192,9 @@ async function seed() {
               fcp: getRandomInt(200, 1000),
               lcp: getRandomInt(500, 2500)
             },
+            country,
+            region,
+            city,
           });
         }
 
@@ -167,6 +202,9 @@ async function seed() {
           entries.push({
             projectId, type: "event", ts: new Date(timestamp.getTime() + 15000), path, visitorId, sessionId, deviceType,
             meta: { ...meta, eventName: "time-on-page", timeOnPageMs: getRandomInt(5000, 120000) },
+            country,
+            region,
+            city,
           });
         }
       }

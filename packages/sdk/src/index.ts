@@ -1,3 +1,5 @@
+"use client";
+
 export { Analytics } from "./analytics";
 export { 
   track, 
