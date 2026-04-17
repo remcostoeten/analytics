@@ -3,7 +3,11 @@ type RateLimitEntry = {
 	windowStart: number;
 };
 
-export function createRateLimiter(windowMs: number = 60000, maxRequests: number = 100, startCleanup: boolean = true) {
+export function createRateLimiter(
+	windowMs: number = 60000,
+	maxRequests: number = 100,
+	startCleanup: boolean = true,
+) {
 	const cache = new Map<string, RateLimitEntry>();
 	const cleanupIntervalMs = windowMs * 2;
 

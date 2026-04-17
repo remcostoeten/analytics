@@ -20,11 +20,15 @@ async function getDb(): Promise<DbModule> {
 }
 
 const ORIGIN_ALLOWLIST: string[] = process.env.ORIGIN_ALLOWLIST
-	? process.env.ORIGIN_ALLOWLIST.split(",").map(function (o) { return o.trim(); })
+	? process.env.ORIGIN_ALLOWLIST.split(",").map(function (o) {
+			return o.trim();
+		})
 	: [];
 
 const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
-	? process.env.INTERNAL_IP_HASHES.split(",").map(function (h) { return h.trim(); })
+	? process.env.INTERNAL_IP_HASHES.split(",").map(function (h) {
+			return h.trim();
+		})
 	: [];
 
 function isOriginAllowed(origin: string | null): boolean {
@@ -142,10 +146,7 @@ export async function handleIngest(c: Context) {
 			const resetTime = limiter.getResetTime(ipHash ?? "");
 			const remaining = limiter.getRemainingRequests(ipHash ?? "");
 
-			return c.json(
-				{ ok: false, error: "Rate limit exceeded", resetTime, remaining },
-				429,
-			);
+			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
 		const geo = extractGeoFromRequest(req);

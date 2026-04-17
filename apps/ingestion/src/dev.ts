@@ -24,10 +24,13 @@ const repoUrl = "https://github.com/remcostoeten/analytics";
 
 try {
 	gitHash = execSync("git rev-parse --short HEAD", { stdio: "pipe" }).toString().trim();
-	gitMessage = execSync("git log -1 --pretty=%B", { stdio: "pipe" }).toString().trim().split("\n")[0];
+	gitMessage = execSync("git log -1 --pretty=%B", { stdio: "pipe" })
+		.toString()
+		.trim()
+		.split("\n")[0];
 	gitDate = execSync("git log -1 --format=%cd --date=short", { stdio: "pipe" }).toString().trim();
 } catch {
-    // Ignore if not in a git repo
+	// Ignore if not in a git repo
 }
 
 let npmVersion = "fetching...";
@@ -130,7 +133,9 @@ function request(path: string) {
 				);
 			} else {
 				const data = await res.text();
-				console.log(`    ${colors.dim}${data.substring(0, 500)}${data.length > 500 ? "...\n[TRUNCATED]" : ""}${colors.reset}`);
+				console.log(
+					`    ${colors.dim}${data.substring(0, 500)}${data.length > 500 ? "...\n[TRUNCATED]" : ""}${colors.reset}`,
+				);
 			}
 
 			prompt();
@@ -154,9 +159,11 @@ function info() {
 	console.log(`  ${colors.dim}─${colors.reset}`.repeat(60));
 	console.log(`  ${pad("Base URL:", 15)} ${colors.green}${baseUrl}${colors.reset}`);
 	console.log(`  ${pad("Process ID:", 15)} ${colors.cyan}${process.pid}${colors.reset}`);
-	console.log(`  ${pad("Environment:", 15)} ${colors.magenta}${process.env.NODE_ENV || "development"}${colors.reset}`);
+	console.log(
+		`  ${pad("Environment:", 15)} ${colors.magenta}${process.env.NODE_ENV || "development"}${colors.reset}`,
+	);
 	console.log(`  ${pad("Bun Version:", 15)} ${colors.yellow}${Bun.version}${colors.reset}`);
-	
+
 	console.log(`\n  ${colors.bold}Repository & Registry${colors.reset}`);
 	console.log(`  ${colors.dim}─${colors.reset}`.repeat(60));
 	console.log(`  ${pad("NPM Version:", 15)} ${colors.cyan}${npmVersion}${colors.reset}`);
@@ -180,9 +187,15 @@ function quit() {
 function header() {
 	console.clear();
 	console.log("");
-	console.log(`  ${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`);
-	console.log(`  ${colors.cyan}║${colors.reset}  ${colors.bold}🚀 Ingestion Service Dev Server${colors.reset}                         ${colors.cyan}║${colors.reset}`);
-	console.log(`  ${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}`);
+	console.log(
+		`  ${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`,
+	);
+	console.log(
+		`  ${colors.cyan}║${colors.reset}  ${colors.bold}🚀 Ingestion Service Dev Server${colors.reset}                         ${colors.cyan}║${colors.reset}`,
+	);
+	console.log(
+		`  ${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}`,
+	);
 	console.log("");
 	console.log(`  ${colors.dim}Listening at ${colors.bold}${colors.green}${baseUrl}${colors.reset}`);
 }
@@ -199,12 +212,14 @@ const ENDPOINTS = [
 
 function prompt() {
 	console.log("");
-	
+
 	if (showEndpoints) {
 		console.log(`  ${colors.bold}Available Endpoints:${colors.reset}`);
 		for (const ep of ENDPOINTS) {
 			const mcolor = ep.method.trim() === "POST" ? colors.magenta : colors.green;
-			console.log(`  ${mcolor}${ep.method}${colors.reset} ${colors.blue}${pad(ep.path, 15)}${colors.reset} ${colors.dim}·${colors.reset} ${ep.desc}`);
+			console.log(
+				`  ${mcolor}${ep.method}${colors.reset} ${colors.blue}${pad(ep.path, 15)}${colors.reset} ${colors.dim}·${colors.reset} ${ep.desc}`,
+			);
 		}
 		console.log("");
 	}
@@ -212,7 +227,7 @@ function prompt() {
 	console.log(`  ${colors.bold}Available Commands:${colors.reset}`);
 	const cmds = [
 		{ key: "o", desc: "Open in browser" },
-		{ key: "e", desc: (showEndpoints ? "Hide endpoints" : "Show endpoints") },
+		{ key: "e", desc: showEndpoints ? "Hide endpoints" : "Show endpoints" },
 		{ key: "r", desc: "Request /" },
 		{ key: "h", desc: "Request /health" },
 		{ key: "b", desc: "Build ingestion" },

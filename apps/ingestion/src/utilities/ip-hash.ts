@@ -9,9 +9,11 @@ async function getDailySalt(): Promise<string> {
 	const msgUint8 = new TextEncoder().encode(secret + today);
 	const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
 	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	return hashArray.map(function (b) {
-		return b.toString(16).padStart(2, "0");
-	}).join("");
+	return hashArray
+		.map(function (b) {
+			return b.toString(16).padStart(2, "0");
+		})
+		.join("");
 }
 
 export async function hashIp(ip: string | null): Promise<string | null> {
@@ -21,9 +23,11 @@ export async function hashIp(ip: string | null): Promise<string | null> {
 	const msgUint8 = new TextEncoder().encode(ip + salt);
 	const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
 	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	return hashArray.map(function (b) {
-		return b.toString(16).padStart(2, "0");
-	}).join("");
+	return hashArray
+		.map(function (b) {
+			return b.toString(16).padStart(2, "0");
+		})
+		.join("");
 }
 
 export function validateIpHashSecret(): boolean {

@@ -61,7 +61,9 @@ try {
 	commitMsg =
 		process.env.VERCEL_GIT_COMMIT_MESSAGE ||
 		execSync("git log -1 --pretty=%B", { stdio: "pipe" }).toString().trim().split("\n")[0];
-	commitDate = execSync("git log -1 --format=%cd --date=short", { stdio: "pipe" }).toString().trim();
+	commitDate = execSync("git log -1 --format=%cd --date=short", { stdio: "pipe" })
+		.toString()
+		.trim();
 } catch {
 	// Fallback when git is unavailable
 }
