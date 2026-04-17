@@ -4,9 +4,14 @@ import { getVisitorId, resetVisitorId } from "../src/identity/visitor";
 describe("visitor-id", () => {
 	const VISITOR_ID_KEY = "__analytics_visitor_id";
 	let originalLocalStorage: Storage | undefined;
+	let originalWindow: any;
 
 	beforeEach(() => {
 		originalLocalStorage = global.localStorage;
+		originalWindow = global.window;
+		if (!global.window) {
+			(global as any).window = {};
+		}
 		const store: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => store[key] || null,
@@ -27,6 +32,11 @@ describe("visitor-id", () => {
 	afterEach(() => {
 		if (originalLocalStorage) {
 			global.localStorage = originalLocalStorage;
+		}
+		if (originalWindow === undefined) {
+			delete (global as any).window;
+		} else {
+			(global as any).window = originalWindow;
 		}
 	});
 

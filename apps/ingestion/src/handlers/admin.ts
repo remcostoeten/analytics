@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { dataRetainer } from "../data-retention.js";
+import { dataRetainer } from "../utilities/data-retention.js";
 
 export async function handleAdminCleanup(c: Context) {
 	try {

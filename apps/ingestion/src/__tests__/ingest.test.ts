@@ -4,10 +4,16 @@ import { Hono } from "hono";
 mock.module("../db.js", () => ({
 	db: {
 		insert: () => ({
-			values: () => Promise.resolve(),
+			values: () => ({
+				onConflictDoUpdate: () => Promise.resolve(),
+			}),
 		}),
 	},
 	events: {},
+	visitors: {
+		fingerprint: "fingerprint",
+		visitCount: "visit_count",
+	},
 }));
 
 const { handleIngest } = await import("../handlers/ingest");

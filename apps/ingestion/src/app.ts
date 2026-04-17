@@ -3,8 +3,36 @@ import { cors } from "hono/cors";
 import { handleIngest } from "./handlers/ingest.js";
 import { handleMetrics } from "./handlers/metrics.js";
 import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
+import { execSync } from "child_process";
 
 const app = new Hono();
+
+let requestCount = 0;
+
+const listeners = new Set<(data: string) => void>();
+
+function incrementRequestCount(req: Request) {
+	requestCount++;
+
+	const payload = JSON.stringify({
+		type: "request",
+		count: requestCount,
+		method: req.method,
+		path: new URL(req.url).pathname,
+		timestamp: Date.now(),
+	});
+
+	for (const send of listeners) {
+		send(payload);
+	}
+}
+
+function requestCounter() {
+	return async function (c: any, next: any) {
+		incrementRequestCount(c.req.raw);
+		await next();
+	};
+}
 
 function getCorsOrigin(origin: string | undefined): string | undefined {
 	return origin;
@@ -20,157 +48,297 @@ app.use(
 	}),
 );
 
+app.use("*", requestCounter());
+
+let commitHash = "unknown";
+let commitMsg = "development setup";
+let commitDate = new Date().toISOString().split("T")[0];
+
+try {
+	commitHash =
+		process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+		execSync("git rev-parse --short HEAD", { stdio: "pipe" }).toString().trim();
+	commitMsg =
+		process.env.VERCEL_GIT_COMMIT_MESSAGE ||
+		execSync("git log -1 --pretty=%B", { stdio: "pipe" }).toString().trim().split("\n")[0];
+	commitDate = execSync("git log -1 --format=%cd --date=short", { stdio: "pipe" })
+		.toString()
+		.trim();
+} catch {
+	// Fallback when git is unavailable
+}
+
 app.get("/", (c) => {
-	const html = `<!DOCTYPE html>
+	const repoLink = `https://github.com/remcostoeten/analytics`;
+	const commitLink = `${repoLink}/commit/${commitHash}`;
+	const npmLink = `https://www.npmjs.com/package/@remcostoeten/analytics`;
+
+	return c.html(`<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>remco-analytics-ingestion</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0a;
-      color: #e5e5e5;
-      line-height: 1.6;
-      padding: 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
-    .version { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
-    .endpoint { border-bottom: 1px solid #222; }
-    .endpoint-header {
-      display: flex;
-      align-items: baseline;
-      gap: 1rem;
-      padding: 0.75rem 0;
-      cursor: pointer;
-    }
-    .endpoint-header::before {
-      content: '›';
-      color: #444;
-      font-size: 1.25rem;
-      line-height: 1;
-      transition: transform 0.2s;
-      transform: rotate(90deg);
-    }
-    .endpoint.open .endpoint-header::before { transform: rotate(90deg); }
-    .endpoint-header:hover { background: #111; margin: 0 -0.5rem; padding: 0.75rem 0.5rem; }
-    .endpoint-details {
-      display: none;
-      padding: 0 0 0.75rem 4.5rem;
-      color: #666;
-      font-size: 0.875rem;
-    }
-    .endpoint.open .endpoint-details { display: block; }
-    .method {
-      font-family: monospace;
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      min-width: 60px;
-      text-align: center;
-    }
-    .method.get { background: #1a3a1a; color: #4ade80; }
-    .method.post { background: #1a2a3a; color: #60a5fa; }
-    .path { font-family: monospace; color: #fff; }
-    .desc { color: #888; margin-left: auto; }
-    code { background: #222; padding: 0.125rem 0.375rem; border-radius: 3px; color: #aaa; }
-    footer { margin-top: 2rem; color: #444; font-size: 0.75rem; }
-    a { color: #666; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>remco-analytics-ingestion</title>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+	font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI;
+	background: #0a0a0a;
+	color: #e5e5e5;
+	padding: 32px;
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+h1 { font-size: 20px; font-weight: 600; }
+
+.meta {
+	color: #777;
+	font-size: 12px;
+	margin: 8px 0 24px;
+	display: flex;
+	gap: 16px;
+}
+
+.block {
+	border-top: 1px solid #1a1a1a;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 0;
+	border-bottom: 1px solid #1a1a1a;
+}
+
+.left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.method {
+	font-family: monospace;
+	font-size: 11px;
+	padding: 3px 6px;
+	border: 1px solid #2a2a2a;
+	color: #aaa;
+	width: 54px;
+	text-align: center;
+}
+
+.method.post { color: #7aa2f7; }
+.method.get { color: #9ece6a; }
+
+.path {
+	font-family: monospace;
+	color: #fff;
+}
+
+.desc {
+	color: #777;
+	font-size: 13px;
+}
+
+footer {
+	margin-top: 32px;
+	padding-top: 24px;
+	border-top: 1px solid #1a1a1a;
+	color: #555;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.small {
+	color: #777;
+}
+
+a {
+    color: #7aa2f7;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin-top: 12px;
+}
+
+.lbl { color: #888; }
+.val { color: #ccc; }
+</style>
 </head>
+
 <body>
-  <h1>remco-analytics-ingestion</h1>
-  <div class="version">v0.0.1</div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method get">GET</span>
-      <span class="path">/</span>
-      <span class="desc">API overview</span>
+
+<h1>remco-analytics-ingestion</h1>
+
+<div class="meta">
+	<span>Requests: <strong style="color:#fff" id="req">0</strong></span>
+    <span>Live: <strong style="color:#9ece6a">Online</strong></span>
+</div>
+
+<div class="block">
+
+	<div class="row">
+		<div class="left">
+			<div class="method get">GET</div>
+			<div class="path">/</div>
+		</div>
+		<div class="desc">API overview</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method get">GET</div>
+			<div class="path">/health</div>
+		</div>
+		<div class="desc">Health check</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method post">POST</div>
+			<div class="path">/ingest</div>
+		</div>
+		<div class="desc">Ingest analytics events</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method get">GET</div>
+			<div class="path">/metrics</div>
+		</div>
+		<div class="desc">Get metrics</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method get">GET</div>
+			<div class="path">/admin/stats</div>
+		</div>
+		<div class="desc">Admin statistics</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method post">POST</div>
+			<div class="path">/admin/cleanup</div>
+		</div>
+		<div class="desc">Trigger cleanup</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method get">GET</div>
+			<div class="path">/events</div>
+		</div>
+		<div class="desc">Live SSE stream</div>
+	</div>
+
+</div>
+
+<footer>
+    <strong>System State</strong>
+    <div class="metadata-grid">
+        <span class="lbl">NPM Version</span>
+        <span class="val"><a href="${npmLink}" target="_blank" rel="noopener">v<span id="npm-ver">fetching...</span></a></span>
+        
+        <span class="lbl">Last Commit</span>
+        <span class="val"><a href="${commitLink}" target="_blank" rel="noopener">${commitHash}</a></span>
+        
+        <span class="lbl">Commit Message</span>
+        <span class="val">"${commitMsg}"</span>
+        
+        <span class="lbl">Commit Date</span>
+        <span class="val">${commitDate}</span>
+        
+        <span class="lbl">Repository</span>
+        <span class="val"><a href="${repoLink}" target="_blank" rel="noopener">${repoLink.replace("https://", "")}</a></span>
     </div>
-    <div class="endpoint-details">Returns this documentation page.</div>
-  </div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method get">GET</span>
-      <span class="path">/health</span>
-      <span class="desc">Health check</span>
-    </div>
-    <div class="endpoint-details">Returns <code>{"ok": true, "timestamp": "..."}</code>. Use for monitoring.</div>
-  </div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method post">POST</span>
-      <span class="path">/ingest</span>
-      <span class="desc">Ingest analytics events</span>
-    </div>
-    <div class="endpoint-details">Accepts JSON payload with <code>type</code>, <code>url</code>, <code>referrer</code>, <code>ua</code>, <code>screen</code>. Returns <code>{"ok": true}</code>.</div>
-  </div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method get">GET</span>
-      <span class="path">/metrics</span>
-      <span class="desc">Get metrics</span>
-    </div>
-    <div class="endpoint-details">Returns aggregated analytics metrics. Query params: <code>period</code> (24h, 7d, 30d, 90d).</div>
-  </div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method get">GET</span>
-      <span class="path">/admin/stats</span>
-      <span class="desc">Admin statistics</span>
-    </div>
-    <div class="endpoint-details">Returns database statistics. Requires auth.</div>
-  </div>
-  <div class="endpoint">
-    <div class="endpoint-header">
-      <span class="method post">POST</span>
-      <span class="path">/admin/cleanup</span>
-      <span class="desc">Trigger data cleanup</span>
-    </div>
-    <div class="endpoint-details">Triggers deduplication and cleanup. Requires auth.</div>
-  </div>
-  <footer>
-    <a href="https://github.com/remcostoeten/analytics">GitHub</a>
-    <span> · </span>
-    <a href="https://www.npmjs.com/package/@remcostoeten/analytics">npm</a>
-    <span> · </span>
-    <span>Last updated: <span id="commit-date">loading...</span> (Amsterdam)</span>
-    <script>
-      document.querySelectorAll('.endpoint-header').forEach(el => {
-        el.addEventListener('click', () => el.parentElement.classList.toggle('open'));
-      });
-      fetch('https://api.github.com/repos/remcostoeten/analytics/commits?per_page=1')
-        .then(r => r.json())
-        .then(d => {
-          const commit = d[0];
-          if (commit?.sha) {
-            const date = new Date(commit.commit.author.date);
-            const amsterdam = date.toLocaleString('en-NL', { timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-            const short = commit.sha.substring(0, 7);
-            document.getElementById('commit-date').innerHTML = '<a href="https://github.com/remcostoeten/analytics/commit/' + commit.sha + '" style="color:#666">' + short + '</a> ' + amsterdam;
-          }
-        })
-        .catch(() => { document.getElementById('commit-date').textContent = 'unknown'; });
-    </script>
-  </footer>
+</footer>
+
+<script>
+const es = new EventSource("/events");
+
+es.onmessage = (e) => {
+	const data = JSON.parse(e.data);
+	if (data.count !== undefined) {
+		document.getElementById("req").textContent = data.count;
+	}
+};
+
+fetch("https://registry.npmjs.org/@remcostoeten/analytics/latest")
+  .then(res => res.json())
+  .then(data => {
+     document.getElementById("npm-ver").textContent = data.version;
+  })
+  .catch(() => {
+     document.getElementById("npm-ver").textContent = "unavailable";
+  });
+</script>
+
 </body>
-</html>`;
-	return c.html(html);
+</html>`);
 });
 
-app.get("/health", (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));
-
-app.post("/ingest", handleIngest);
+app.get("/health", (c) => {
+	return c.json({
+		ok: true,
+		timestamp: new Date().toISOString(),
+		requests: requestCount,
+	});
+});
 
 app.get("/metrics", handleMetrics);
 
+app.post("/ingest", handleIngest);
+
 app.get("/admin/stats", handleAdminStats);
 app.post("/admin/cleanup", handleAdminCleanup);
+
+app.get("/events", (c) => {
+	return new Response(
+		new ReadableStream({
+			start(controller) {
+				const encoder = new TextEncoder();
+
+				function send(data: string) {
+					controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+				}
+
+				listeners.add(send);
+
+				send(
+					JSON.stringify({
+						type: "connected",
+						count: requestCount,
+					}),
+				);
+
+				c.req.raw.signal.addEventListener("abort", () => {
+					listeners.delete(send);
+					controller.close();
+				});
+			},
+		}),
+		{
+			headers: {
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache",
+				Connection: "keep-alive",
+			},
+		},
+	);
+});
 
 export default app;
 export { app };

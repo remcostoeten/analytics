@@ -1,16 +1,18 @@
 import { Context } from "hono";
-import { validateEventPayload } from "../validation.js";
-import { extractGeoFromRequest, extractIpAddress, isLocalhost } from "../geo.js";
-import { hashIp } from "../ip-hash.js";
-import { detectBot, classifyDevice } from "../bot-detection.js";
-import { generateFingerprint, dedupeCache, metrics } from "../dedupe.js";
-import { rateLimiter, botRateLimiter } from "../rate-limit.js";
+import { validateEventPayload } from "../utilities/validation.js";
+import { extractGeoFromRequest, extractIpAddress, isLocalhost } from "../utilities/geo.js";
+import { hashIp } from "../utilities/ip-hash.js";
+import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
+import { generateFingerprint, dedupeCache, metrics } from "../utilities/dedupe.js";
+import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
 import { UAParser } from "ua-parser-js";
 import { sql as drizzleSql } from "drizzle-orm";
 
-let dbModule: any = null;
+type DbModule = typeof import("../db.js");
 
-async function getDb() {
+let dbModule: DbModule | null = null;
+
+async function getDb(): Promise<DbModule> {
 	if (!dbModule) {
 		dbModule = await import("../db.js");
 	}
@@ -18,56 +20,50 @@ async function getDb() {
 }
 
 const ORIGIN_ALLOWLIST: string[] = process.env.ORIGIN_ALLOWLIST
-	? process.env.ORIGIN_ALLOWLIST.split(",").map((o) => o.trim())
+	? process.env.ORIGIN_ALLOWLIST.split(",").map(function (o) {
+			return o.trim();
+		})
 	: [];
 
 const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
-	? process.env.INTERNAL_IP_HASHES.split(",").map((h) => h.trim())
+	? process.env.INTERNAL_IP_HASHES.split(",").map(function (h) {
+			return h.trim();
+		})
 	: [];
 
 function isOriginAllowed(origin: string | null): boolean {
-	if (ORIGIN_ALLOWLIST.length === 0) {
-		return true;
-	}
-
-	if (origin && ORIGIN_ALLOWLIST.includes(origin)) {
-		return true;
-	}
-
+	if (ORIGIN_ALLOWLIST.length === 0) return true;
+	if (origin && ORIGIN_ALLOWLIST.includes(origin)) return true;
 	return true;
 }
 
 function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
-	if (localhost) {
-		return true;
-	}
-
-	if (ipHash && INTERNAL_IPS.includes(ipHash)) {
-		return true;
-	}
-
+	if (localhost) return true;
+	if (ipHash && INTERNAL_IPS.includes(ipHash)) return true;
 	return false;
 }
 
+type VisitorData = {
+	ipHash: string | null;
+	deviceType: string;
+	browser: string | undefined;
+	browserVersion: string | undefined;
+	os: string | undefined;
+	osVersion: string | undefined;
+	language: string | null;
+	country: string | null;
+	region: string | null;
+	city: string | null;
+	ua: string | null;
+	screenResolution: string | null;
+	isInternal: boolean;
+};
+
 async function upsertVisitor(
-	db: any,
-	visitors: any,
+	db: DbModule["db"],
+	visitors: DbModule["visitors"],
 	visitorId: string,
-	data: {
-		ipHash: string | null;
-		deviceType: string;
-		browser: string | undefined;
-		browserVersion: string | undefined;
-		os: string | undefined;
-		osVersion: string | undefined;
-		language: string | null;
-		country: string | null;
-		region: string | null;
-		city: string | null;
-		ua: string | null;
-		screenResolution: string | null;
-		isInternal: boolean;
-	},
+	data: VisitorData,
 ): Promise<void> {
 	try {
 		await db
@@ -140,13 +136,7 @@ export async function handleIngest(c: Context) {
 
 		const origin = c.req.header("origin") ?? null;
 		if (!isOriginAllowed(origin)) {
-			return c.json(
-				{
-					ok: false,
-					error: "Origin not allowed",
-				},
-				403,
-			);
+			return c.json({ ok: false, error: "Origin not allowed" }, 403);
 		}
 
 		const botResult = detectBot(req);
@@ -156,21 +146,11 @@ export async function handleIngest(c: Context) {
 			const resetTime = limiter.getResetTime(ipHash ?? "");
 			const remaining = limiter.getRemainingRequests(ipHash ?? "");
 
-			return c.json(
-				{
-					ok: false,
-					error: "Rate limit exceeded",
-					resetTime,
-					remaining,
-				},
-				429,
-			);
+			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
 		const geo = extractGeoFromRequest(req);
-
 		const deviceType = classifyDevice(payload.ua, botResult.isBot);
-
 		const localhost = isLocalhost(payload.host);
 
 		const fingerprint = await generateFingerprint({
@@ -256,12 +236,6 @@ export async function handleIngest(c: Context) {
 		return c.json({ ok: true });
 	} catch (error) {
 		console.error("Ingest error:", error);
-		return c.json(
-			{
-				ok: false,
-				error: "Internal server error",
-			},
-			500,
-		);
+		return c.json({ ok: false, error: "Internal server error" }, 500);
 	}
 }

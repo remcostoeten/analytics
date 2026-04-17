@@ -4,7 +4,9 @@ const nullableString = z
 	.string()
 	.optional()
 	.nullable()
-	.transform((v) => v ?? null);
+	.transform(function (v) {
+		return v ?? null;
+	});
 
 export const eventSchema = z.object({
 	projectId: z.string().min(1),
@@ -21,7 +23,9 @@ export const eventSchema = z.object({
 		.record(z.unknown())
 		.optional()
 		.nullable()
-		.transform((v) => v ?? null),
+		.transform(function (v) {
+			return v ?? null;
+		}),
 });
 
 export type EventPayload = z.infer<typeof eventSchema>;
