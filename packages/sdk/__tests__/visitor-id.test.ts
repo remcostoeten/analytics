@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { getVisitorId, resetVisitorId } from "../src/identity/visitor";
 
 describe("visitor-id", () => {
-	const VISITOR_ID_KEY = "remco_analytics_visitor_id";
+	const VISITOR_ID_KEY = "__analytics_visitor_id";
 	let originalLocalStorage: Storage | undefined;
 
 	beforeEach(() => {

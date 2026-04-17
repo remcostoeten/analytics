@@ -2,8 +2,8 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { optOut, optIn, isOptedOut, checkDoNotTrack } from "../src/api/privacy";
 
 describe("opt-out", () => {
-	const OPT_OUT_KEY = "remco_analytics_opt_out";
-	const VISITOR_ID_KEY = "remco_analytics_visitor_id";
+	const OPT_OUT_KEY = "__analytics_opt_out";
+	const VISITOR_ID_KEY = "__analytics_visitor_id";
 	let originalLocalStorage: Storage | undefined;
 
 	beforeEach(() => {
