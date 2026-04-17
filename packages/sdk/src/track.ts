@@ -32,10 +32,10 @@ const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
 function resolveDefaultProjectId(): string {
-	if (isServer()) {
+	if (isServer() || typeof window === "undefined") {
 		return "unknown";
 	}
-	return window.location.hostname;
+	return window.location?.hostname || "unknown";
 }
 
 function resolveDefaultIngestUrl(): string {
