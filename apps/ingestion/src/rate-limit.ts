@@ -12,13 +12,15 @@ export class RateLimiter {
 	private readonly maxRequests: number;
 	private readonly cleanupIntervalMs: number;
 
-	constructor(windowMs: number = 60000, maxRequests: number = 100) {
+	constructor(windowMs: number = 60000, maxRequests: number = 100, startCleanup: boolean = true) {
 		this.windowMs = windowMs;
 		this.maxRequests = maxRequests;
 		this.cleanupIntervalMs = windowMs * 2; // Clean up every 2 windows
 
 		// Start cleanup interval
-		setInterval(() => this.cleanup(), this.cleanupIntervalMs);
+		if (startCleanup) {
+			setInterval(() => this.cleanup(), this.cleanupIntervalMs);
+		}
 	}
 
 	isAllowed(ipHash: string): boolean {

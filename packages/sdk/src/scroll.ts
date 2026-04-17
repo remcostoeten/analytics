@@ -46,6 +46,7 @@ export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	updateScrollDepth();
 
 	return function cleanup() {
+		handleBeforeUnload();
 		window.removeEventListener("scroll", handleScroll);
 		window.removeEventListener("beforeunload", handleBeforeUnload);
 	};
