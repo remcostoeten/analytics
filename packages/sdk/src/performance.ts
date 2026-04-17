@@ -1,5 +1,6 @@
 import { track } from "./track";
 import { isServer } from "./utils";
+import { noop } from "./noop";
 
 
 type PerformanceOptions = {
@@ -65,7 +66,7 @@ function observeLcp(callback: (value: number) => void): void {
 
     observer.observe({ type: "largest-contentful-paint", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 
@@ -89,7 +90,7 @@ function observeCls(callback: (value: number) => void): void {
 
     observer.observe({ type: "layout-shift", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 
@@ -109,7 +110,7 @@ function observeInp(callback: (value: number) => void): void {
 
     observer.observe({ type: "event", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 

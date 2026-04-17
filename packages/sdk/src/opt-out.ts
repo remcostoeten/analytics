@@ -1,4 +1,5 @@
 import { isServer } from "./utils";
+import { noop } from "./noop";
 
 function isLocalStorageAvailable(): boolean {
   if (isServer() || typeof localStorage === "undefined") {
@@ -7,7 +8,7 @@ function isLocalStorageAvailable(): boolean {
   try {
     const test = "__storage_test__";
     localStorage.setItem(test, test);
-    localStorage.r(test);
+    localStorage.removeItem(test);
     return true;
   } catch {
     return false;
@@ -26,7 +27,7 @@ export function optOut(): void {
     localStorage.setItem(OPT_OUT_KEY, "true");
     localStorage.removeItem(VISITOR_ID_KEY);
   } catch {
-    // Silent fail
+    noop();
   }
 }
 
@@ -38,7 +39,7 @@ export function optIn(): void {
   try {
     localStorage.removeItem(OPT_OUT_KEY);
   } catch {
-    // Silent fail
+    noop();
   }
 }
 

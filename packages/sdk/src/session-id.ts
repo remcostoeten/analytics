@@ -1,4 +1,5 @@
 import { isServer, now } from "./utils";
+import { noop } from "./noop";
 
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -56,7 +57,7 @@ function updateSessionTimeout(): void {
     const timeout = now() + SESSION_TIMEOUT_MS;
     sessionStorage.setItem(SESSION_TIMEOUT_KEY, timeout.toString());
   } catch {
-    // Silent fail
+    noop();
   }
 }
 
