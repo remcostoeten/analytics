@@ -34,11 +34,14 @@ let npmVersion = "fetching...";
 const npmUrl = "https://www.npmjs.com/package/@remcostoeten/analytics";
 
 fetch("https://registry.npmjs.org/@remcostoeten/analytics/latest")
-	.then((r) => r.json())
-	.then((data) => {
-		npmVersion = data.version;
+	.then(function (r) {
+		return r.json();
 	})
-	.catch(() => {
+	.then(function (data: unknown) {
+		const result = data as { version: string };
+		npmVersion = result.version;
+	})
+	.catch(function () {
 		npmVersion = "unavailable";
 	});
 
