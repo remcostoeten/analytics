@@ -55,9 +55,9 @@ export async function getPageviewsKPI(projectId?: string): Promise<KPIMetric> {
 	const { from, to } = getTimeRangeFilter(24);
 	const previousRange = getTimeRangeFilter(48);
 	const [currentResult] =
-		await sql`SELECT COUNT(*) as count FROM events WHERE type = 'pageview' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND type = 'pageview' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const [previousResult] =
-		await sql`SELECT COUNT(*) as count FROM events WHERE type = 'pageview' AND ts >= ${previousRange.from} AND ts < ${from} ${projectId ? sql`AND project_id = ${projectId}` : sql``} `;
+		await sql`SELECT COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND type = 'pageview' AND ts >= ${previousRange.from} AND ts < ${from} ${projectId ? sql`AND project_id = ${projectId}` : sql``} `;
 	const current = Number(currentResult?.count || 0);
 	const previous = Number(previousResult?.count || 0);
 	return {
@@ -73,9 +73,9 @@ export async function getUniqueVisitorsKPI(projectId?: string): Promise<KPIMetri
 	const { from, to } = getTimeRangeFilter(24);
 	const previousRange = getTimeRangeFilter(48);
 	const [currentResult] =
-		await sql`SELECT COUNT(DISTINCT visitor_id) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(DISTINCT visitor_id) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const [previousResult] =
-		await sql`SELECT COUNT(DISTINCT visitor_id) as count FROM events WHERE ts >= ${previousRange.from} AND ts < ${from} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(DISTINCT visitor_id) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${previousRange.from} AND ts < ${from} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const current = Number(currentResult?.count || 0);
 	const previous = Number(previousResult?.count || 0);
 	return {
@@ -90,7 +90,7 @@ export async function getUniqueVisitorsKPI(projectId?: string): Promise<KPIMetri
 export async function getSessionsKPI(projectId?: string): Promise<KPIMetric> {
 	const { from, to } = getTimeRangeFilter(24);
 	const [result] =
-		await sql`SELECT COUNT(DISTINCT session_id) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(DISTINCT session_id) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const val = Number(result?.count || 0);
 	return { id: "sessions", label: "Sessions", value: val, formattedValue: formatNumber(val) };
 }
@@ -98,7 +98,7 @@ export async function getSessionsKPI(projectId?: string): Promise<KPIMetric> {
 export async function getEventsKPI(projectId?: string): Promise<KPIMetric> {
 	const { from, to } = getTimeRangeFilter(24);
 	const [result] =
-		await sql`SELECT COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const val = Number(result?.count || 0);
 	return { id: "events", label: "Total Events", value: val, formattedValue: formatNumber(val) };
 }
@@ -106,7 +106,7 @@ export async function getEventsKPI(projectId?: string): Promise<KPIMetric> {
 export async function getBotRateKPI(projectId?: string): Promise<KPIMetric> {
 	const { from, to } = getTimeRangeFilter(24);
 	const [result] =
-		await sql`SELECT COUNT(*) FILTER (WHERE meta->>'botDetected' = 'true') as bots, COUNT(*) as total FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) FILTER (WHERE meta->>'botDetected' = 'true') as bots, COUNT(*) as total FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const total = Number(result?.total || 0);
 	const bots = Number(result?.bots || 0);
 	const rate = total > 0 ? (bots / total) * 100 : 0;
@@ -122,7 +122,7 @@ export async function getBotRateKPI(projectId?: string): Promise<KPIMetric> {
 export async function getErrorCountKPI(projectId?: string): Promise<KPIMetric> {
 	const { from, to } = getTimeRangeFilter(24);
 	const [result] =
-		await sql`SELECT COUNT(*) as count FROM events WHERE type = 'error' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND type = 'error' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const val = Number(result?.count || 0);
 	return { id: "errors", label: "Errors", value: val, formattedValue: formatNumber(val) };
 }
@@ -133,7 +133,7 @@ export async function getPageviewsTrend(
 ): Promise<TimeSeries> {
 	const { from, to } = getTimeRangeFilter(hours);
 	const results =
-		await sql`SELECT date_trunc('hour', ts) as bucket, COUNT(*) as count FROM events WHERE type = 'pageview' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
+		await sql`SELECT date_trunc('hour', ts) as bucket, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND type = 'pageview' AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
 	return {
 		id: "pageviews-trend",
 		label: "Pageviews",
@@ -148,7 +148,7 @@ export async function getVisitorsTrend(
 ): Promise<TimeSeries> {
 	const { from, to } = getTimeRangeFilter(hours);
 	const results =
-		await sql`SELECT date_trunc('hour', ts) as bucket, COUNT(DISTINCT visitor_id) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
+		await sql`SELECT date_trunc('hour', ts) as bucket, COUNT(DISTINCT visitor_id) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
 	return {
 		id: "visitors-trend",
 		label: "Visitors",
@@ -163,7 +163,7 @@ export async function getTopPages(
 ): Promise<ContentMetric[]> {
 	const { from, to } = getTimeRangeFilter(24);
 	const results =
-		await sql`SELECT path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE type = 'pageview' AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY views DESC LIMIT ${limit}`;
+		await sql`SELECT path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND type = 'pageview' AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY views DESC LIMIT ${limit}`;
 	return results.map((r) => ({
 		path: r.path as string,
 		views: Number(r.views),
@@ -177,7 +177,7 @@ export async function getTopReferrers(
 ): Promise<ReferrerMetric[]> {
 	const { from, to } = getTimeRangeFilter(24);
 	const results =
-		await sql`SELECT referrer, COUNT(*) as visits FROM events WHERE ts >= ${from} AND ts <= ${to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY visits DESC LIMIT ${limit}`;
+		await sql`SELECT referrer, COUNT(*) as visits FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY visits DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => {
 		const referrer = r.referrer as string;
@@ -200,7 +200,7 @@ export async function getGeoDistribution(
 ): Promise<GeoDistribution[]> {
 	const { from, to } = getTimeRangeFilter(24);
 	const results =
-		await sql`SELECT country, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT ${limit}`;
+		await sql`SELECT country, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => {
 		const name = r.country as string;
@@ -216,7 +216,7 @@ export async function getGeoDistribution(
 export async function getDeviceBreakdown(projectId?: string): Promise<DeviceBreakdown[]> {
 	const { from, to } = getTimeRangeFilter(24);
 	const results =
-		await sql`SELECT COALESCE(device_type, 'Unknown') as device_type, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY device_type ORDER BY count DESC`;
+		await sql`SELECT COALESCE(device_type, 'Unknown') as device_type, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY device_type ORDER BY count DESC`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		type: r.device_type as string,
@@ -230,7 +230,7 @@ export async function getRecentEvents(
 	limit: number = 20,
 ): Promise<SignalEvent[]> {
 	const results =
-		await sql`SELECT id, type, path, ts, country, device_type, meta FROM events WHERE TRUE ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
+		await sql`SELECT id, type, path, ts, country, device_type, meta FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND TRUE ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
 	return results.map((r) => {
 		const meta = (r.meta as Record<string, unknown>) || {};
 		const isBot = meta.botDetected === true;
@@ -282,7 +282,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		getRecentEvents(projectId),
 		(async () => {
 			const res =
-				await sql`SELECT COALESCE(meta->>'browser', 'Unknown') as browser, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY browser ORDER BY count DESC LIMIT 10`;
+				await sql`SELECT COALESCE(meta->>'browser', 'Unknown') as browser, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY browser ORDER BY count DESC LIMIT 10`;
 			const total = res.reduce((sum: number, r: any) => sum + Number(r.count), 0);
 			return res.map((r) => ({
 				browser: r.browser,
@@ -292,7 +292,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		})(),
 		(async () => {
 			const res =
-				await sql`SELECT COALESCE(meta->>'os', 'Unknown') as os, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY os ORDER BY count DESC LIMIT 10`;
+				await sql`SELECT COALESCE(meta->>'os', 'Unknown') as os, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY os ORDER BY count DESC LIMIT 10`;
 			const total = res.reduce((sum: number, r: any) => sum + Number(r.count), 0);
 			return res.map((r) => ({
 				os: r.os,
@@ -302,7 +302,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		})(),
 		(async () => {
 			const res =
-				await sql`SELECT COALESCE(lang, 'Unknown') as language, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY lang ORDER BY count DESC LIMIT 10`;
+				await sql`SELECT COALESCE(lang, 'Unknown') as language, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY lang ORDER BY count DESC LIMIT 10`;
 			const total = res.reduce((sum: number, r: any) => sum + Number(r.count), 0);
 			return res.map((r) => ({
 				language: r.language,
@@ -312,7 +312,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		})(),
 		(async () => {
 			const res =
-				await sql`SELECT COALESCE(meta->>'screenSize', 'Unknown') as screen_size, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY screen_size ORDER BY count DESC LIMIT 10`;
+				await sql`SELECT COALESCE(meta->>'screenSize', 'Unknown') as screen_size, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY screen_size ORDER BY count DESC LIMIT 10`;
 			const total = res.reduce((sum: number, r: any) => sum + Number(r.count), 0);
 			return res.map((r) => ({
 				screenSize: r.screen_size,
@@ -379,7 +379,7 @@ export async function getProjects() {
 
 export async function getOverviewExtended(from: Date, to: Date, projectId: string | null) {
 	const [stats] =
-		await sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = stats || {
 		total_events: 0,
 		pageviews: 0,
@@ -409,7 +409,7 @@ export async function getGeoCities(
 	projectId: string | null,
 ) {
 	const results =
-		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${country ? sql`AND country = ${country}` : sql``} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 100`;
+		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${country ? sql`AND country = ${country}` : sql``} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 100`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		city: r.city,
@@ -428,10 +428,10 @@ export async function getReferrerDetail(
 	projectId: string | null,
 ) {
 	const [stats] =
-		await sql`SELECT COUNT(*) as total_visits, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as total_visits, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = stats || { total_visits: 0, unique_visitors: 0, sessions: 0 };
 	const landingPages =
-		await sql`SELECT path, COUNT(*) as visits FROM events WHERE ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visits DESC LIMIT 10`;
+		await sql`SELECT path, COUNT(*) as visits FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visits DESC LIMIT 10`;
 	return {
 		domain,
 		totalVisits: Number(s.total_visits || 0),
@@ -443,7 +443,7 @@ export async function getReferrerDetail(
 
 export async function getWebVitals(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT AVG(CAST(meta->>'ttfb' as float)) as ttfb, AVG(CAST(meta->>'fcp' as float)) as fcp, AVG(CAST(meta->>'lcp' as float)) as lcp, AVG(CAST(meta->>'cls' as float)) as cls, AVG(CAST(meta->>'inp' as float)) as inp, COUNT(*) as sample_count FROM events WHERE ts >= ${from} AND ts <= ${to} AND meta->>'eventName' = 'web-vitals' ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT AVG(CAST(meta->>'ttfb' as float)) as ttfb, AVG(CAST(meta->>'fcp' as float)) as fcp, AVG(CAST(meta->>'lcp' as float)) as lcp, AVG(CAST(meta->>'cls' as float)) as cls, AVG(CAST(meta->>'inp' as float)) as inp, COUNT(*) as sample_count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND meta->>'eventName' = 'web-vitals' ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const r = results[0] || {};
 	return {
 		ttfb: { avg: Math.round(Number(r.ttfb) || 0), unit: "ms" },
@@ -457,7 +457,7 @@ export async function getWebVitals(from: Date, to: Date, projectId: string | nul
 
 export async function getSessionStats(from: Date, to: Date, projectId: string | null) {
 	const sessionData =
-		await sql`WITH session_stats AS (SELECT session_id, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, MAX(ts) - MIN(ts) as duration, COUNT(DISTINCT path) as unique_pages FROM events WHERE ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id) SELECT AVG(pageviews) as avg_pageviews, AVG(EXTRACT(EPOCH FROM duration)) as avg_duration_seconds, AVG(unique_pages) as avg_unique_pages, COUNT(*) as total_sessions, COUNT(*) FILTER (WHERE pageviews = 1) as single_page_sessions FROM session_stats`;
+		await sql`WITH session_stats AS (SELECT session_id, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, MAX(ts) - MIN(ts) as duration, COUNT(DISTINCT path) as unique_pages FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id) SELECT AVG(pageviews) as avg_pageviews, AVG(EXTRACT(EPOCH FROM duration)) as avg_duration_seconds, AVG(unique_pages) as avg_unique_pages, COUNT(*) as total_sessions, COUNT(*) FILTER (WHERE pageviews = 1) as single_page_sessions FROM session_stats`;
 	const s = sessionData[0] || {};
 	return {
 		avgPageviews: Math.round((Number(s.avg_pageviews) || 0) * 10) / 10,
@@ -473,7 +473,7 @@ export async function getSessionStats(from: Date, to: Date, projectId: string | 
 
 export async function getUTMCampaigns(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT meta->>'utmSource' as utm_source, meta->>'utmMedium' as utm_medium, meta->>'utmCampaign' as utm_campaign, COUNT(*) as visits, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ts >= ${from} AND ts <= ${to} AND meta->>'utmSource' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY utm_source, utm_medium, utm_campaign ORDER BY visits DESC LIMIT 20`;
+		await sql`SELECT meta->>'utmSource' as utm_source, meta->>'utmMedium' as utm_medium, meta->>'utmCampaign' as utm_campaign, COUNT(*) as visits, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND meta->>'utmSource' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY utm_source, utm_medium, utm_campaign ORDER BY visits DESC LIMIT 20`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => ({
 		source: r.utm_source || "direct",
@@ -487,7 +487,7 @@ export async function getUTMCampaigns(from: Date, to: Date, projectId: string | 
 
 export async function getEngagementMetrics(from: Date, to: Date, projectId: string | null) {
 	const topEngaged =
-		await sql`SELECT path, AVG(CAST(meta->>'timeOnPageMs' as float)) as avg_time, COUNT(*) as samples FROM events WHERE ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`;
+		await sql`SELECT path, AVG(CAST(meta->>'timeOnPageMs' as float)) as avg_time, COUNT(*) as samples FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`;
 	return {
 		topEngagedPages: topEngaged.map((r) => ({
 			path: r.path,
@@ -499,7 +499,7 @@ export async function getEngagementMetrics(from: Date, to: Date, projectId: stri
 
 export async function getHourlyHeatmap(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT EXTRACT(DOW FROM ts) as day_of_week, EXTRACT(HOUR FROM ts) as hour, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND type = 'pageview' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY day_of_week, hour ORDER BY day_of_week, hour`;
+		await sql`SELECT EXTRACT(DOW FROM ts) as day_of_week, EXTRACT(HOUR FROM ts) as hour, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY day_of_week, hour ORDER BY day_of_week, hour`;
 	const heatmap = Array(7)
 		.fill(null)
 		.map(() => Array(24).fill(0));
@@ -518,7 +518,7 @@ export async function getHourlyHeatmap(from: Date, to: Date, projectId: string |
 
 export async function getBrowsersDetailed(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT COALESCE(meta->>'browser', 'Unknown') as browser, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND meta->>'browser' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY browser ORDER BY count DESC LIMIT 10`;
+		await sql`SELECT COALESCE(meta->>'browser', 'Unknown') as browser, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND meta->>'browser' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY browser ORDER BY count DESC LIMIT 10`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		name: r.browser,
@@ -529,7 +529,7 @@ export async function getBrowsersDetailed(from: Date, to: Date, projectId: strin
 
 export async function getOSDetailed(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT COALESCE(meta->>'os', 'Unknown') as os, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} AND meta->>'os' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY os ORDER BY count DESC LIMIT 10`;
+		await sql`SELECT COALESCE(meta->>'os', 'Unknown') as os, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND meta->>'os' IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY os ORDER BY count DESC LIMIT 10`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		name: r.os,
@@ -540,7 +540,7 @@ export async function getOSDetailed(from: Date, to: Date, projectId: string | nu
 
 export async function getLanguages(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT COALESCE(lang, 'Unknown') as lang, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY lang ORDER BY count DESC LIMIT 10`;
+		await sql`SELECT COALESCE(lang, 'Unknown') as lang, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY lang ORDER BY count DESC LIMIT 10`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		name: r.lang,
@@ -551,7 +551,7 @@ export async function getLanguages(from: Date, to: Date, projectId: string | nul
 
 export async function getScreenSizes(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT COALESCE(meta->>'screenSize', 'Unknown') as screen_size, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY screen_size ORDER BY count DESC LIMIT 10`;
+		await sql`SELECT COALESCE(meta->>'screenSize', 'Unknown') as screen_size, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY screen_size ORDER BY count DESC LIMIT 10`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		name: r.screen_size,
@@ -562,15 +562,15 @@ export async function getScreenSizes(from: Date, to: Date, projectId: string | n
 
 export async function getConnectionTypes(from: Date, to: Date, projectId: string | null) {
 	const results =
-		await sql`SELECT COALESCE(meta->>'connectionType', 'Unknown') as connection_type, COUNT(*) as count FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY connection_type ORDER BY count DESC`;
+		await sql`SELECT COALESCE(meta->>'connectionType', 'Unknown') as connection_type, COUNT(*) as count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY connection_type ORDER BY count DESC`;
 	return results.map((r) => ({ type: r.connection_type, count: Number(r.count) }));
 }
 
 export async function getEntryExitPages(from: Date, to: Date, projectId: string | null) {
 	const entryPages =
-		await sql`WITH first_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts ASC) SELECT path, COUNT(*) as count FROM first_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
+		await sql`WITH first_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts ASC) SELECT path, COUNT(*) as count FROM first_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
 	const exitPages =
-		await sql`WITH last_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts DESC) SELECT path, COUNT(*) as count FROM last_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
+		await sql`WITH last_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts DESC) SELECT path, COUNT(*) as count FROM last_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
 	return {
 		entryPages: entryPages.map((r) => ({ path: r.path, count: Number(r.count) })),
 		exitPages: exitPages.map((r) => ({ path: r.path, count: Number(r.count) })),
@@ -580,14 +580,14 @@ export async function getEntryExitPages(from: Date, to: Date, projectId: string 
 export async function getLiveNow(projectId: string | null) {
 	const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 	const [liveStats] =
-		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors, COUNT(DISTINCT session_id) as active_sessions, COUNT(*) as events_count FROM events WHERE ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors, COUNT(DISTINCT session_id) as active_sessions, COUNT(*) as events_count FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = liveStats || { active_visitors: 0, active_sessions: 0, events_count: 0 };
 	const activePages =
-		await sql`SELECT path, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ts >= ${fiveMinutesAgo} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visitors DESC LIMIT 10`;
+		await sql`SELECT path, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${fiveMinutesAgo} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visitors DESC LIMIT 10`;
 	const recentActivity =
-		await sql`SELECT type, path, ts FROM events WHERE ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT 20`;
+		await sql`SELECT type, path, ts FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT 20`;
 	const liveGeo =
-		await sql`SELECT country, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ts >= ${fiveMinutesAgo} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY visitors DESC LIMIT 20`;
+		await sql`SELECT country, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${fiveMinutesAgo} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY visitors DESC LIMIT 20`;
 	return {
 		activeVisitors: Number(s.active_visitors || 0),
 		activeSessions: Number(s.active_sessions || 0),
@@ -604,7 +604,7 @@ export async function getLiveNow(projectId: string | null) {
 export async function getRetention(projectId: string | null) {
 	const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000);
 	const retention =
-		await sql`WITH visitor_cohorts AS (SELECT visitor_id, DATE_TRUNC('week', MIN(ts)) as cohort_week FROM events WHERE TRUE ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY visitor_id), weekly_activity AS (SELECT e.visitor_id, vc.cohort_week, DATE_TRUNC('week', e.ts) as activity_week, EXTRACT(WEEK FROM e.ts) - EXTRACT(WEEK FROM vc.cohort_week) as weeks_since_cohort FROM events e JOIN visitor_cohorts vc ON e.visitor_id = vc.visitor_id WHERE e.ts >= ${fiveWeeksAgo} ${projectId ? sql`AND e.project_id = ${projectId}` : sql``}) SELECT cohort_week, weeks_since_cohort::int as week_number, COUNT(DISTINCT visitor_id) as visitors FROM weekly_activity WHERE weeks_since_cohort >= 0 AND weeks_since_cohort <= 4 GROUP BY cohort_week, weeks_since_cohort ORDER BY cohort_week, week_number`;
+		await sql`WITH visitor_cohorts AS (SELECT visitor_id, DATE_TRUNC('week', MIN(ts)) as cohort_week FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND TRUE ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY visitor_id), weekly_activity AS (SELECT e.visitor_id, vc.cohort_week, DATE_TRUNC('week', e.ts) as activity_week, EXTRACT(WEEK FROM e.ts) - EXTRACT(WEEK FROM vc.cohort_week) as weeks_since_cohort FROM events e JOIN visitor_cohorts vc ON e.visitor_id = vc.visitor_id WHERE e.ts >= ${fiveWeeksAgo} ${projectId ? sql`AND e.project_id = ${projectId}` : sql``}) SELECT cohort_week, weeks_since_cohort::int as week_number, COUNT(DISTINCT visitor_id) as visitors FROM weekly_activity WHERE weeks_since_cohort >= 0 AND weeks_since_cohort <= 4 GROUP BY cohort_week, weeks_since_cohort ORDER BY cohort_week, week_number`;
 	const cohortMap = new Map();
 	const cohortSizes = new Map();
 	retention.forEach((r) => {
@@ -633,7 +633,7 @@ export async function getRetention(projectId: string | null) {
 
 export async function getTopPaths(from: Date, to: Date, projectId: string | null) {
 	const paths =
-		await sql`WITH session_paths AS (SELECT session_id, ARRAY_AGG(path ORDER BY ts) as path_sequence FROM events WHERE ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id HAVING COUNT(*) > 1), path_strings AS (SELECT array_to_string(path_sequence[1:5], ' → ') as path, COUNT(*) as count FROM session_paths GROUP BY path) SELECT * FROM path_strings ORDER BY count DESC LIMIT 15`;
+		await sql`WITH session_paths AS (SELECT session_id, ARRAY_AGG(path ORDER BY ts) as path_sequence FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id HAVING COUNT(*) > 1), path_strings AS (SELECT array_to_string(path_sequence[1:5], ' → ') as path, COUNT(*) as count FROM session_paths GROUP BY path) SELECT * FROM path_strings ORDER BY count DESC LIMIT 15`;
 	const total = paths.reduce((s, r) => s + Number(r.count), 0);
 	return paths.map((r) => ({
 		path: r.path,
@@ -652,7 +652,7 @@ export async function getSegmentedMetrics(
 	if (segment === "pro") segmentFilter = sql`AND meta->'userProperties'->>'plan' = 'pro'`;
 	else if (segment === "free") segmentFilter = sql`AND meta->'userProperties'->>'plan' = 'free'`;
 	const [metrics] =
-		await sql`SELECT COUNT(*) as events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions, COALESCE(SUM(CAST(meta->>'revenue' AS numeric)), 0) as revenue, COUNT(*) FILTER (WHERE path = '/signup') as signups, AVG(CAST(meta->>'timeOnPageMs' AS float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${segmentFilter}`;
+		await sql`SELECT COUNT(*) as events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions, COALESCE(SUM(CAST(meta->>'revenue' AS numeric)), 0) as revenue, COUNT(*) FILTER (WHERE path = '/signup') as signups, AVG(CAST(meta->>'timeOnPageMs' AS float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${segmentFilter}`;
 	const m = metrics || {
 		events: 0,
 		pageviews: 0,
@@ -663,7 +663,7 @@ export async function getSegmentedMetrics(
 		avg_time: 0,
 	};
 	const planDist =
-		await sql`SELECT COALESCE(meta->'userProperties'->>'plan', 'unknown') as plan, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY plan`;
+		await sql`SELECT COALESCE(meta->'userProperties'->>'plan', 'unknown') as plan, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE (is_localhost = false OR is_localhost IS NULL) AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY plan`;
 	return {
 		segment,
 		events: Number(m.events || 0),

@@ -7,21 +7,21 @@ import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
 const app = new Hono();
 
 function getCorsOrigin(origin: string | undefined): string | undefined {
-  return origin;
+	return origin;
 }
 
 app.use(
-  "*",
-  cors({
-    origin: getCorsOrigin,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "X-Requested-With"],
-    credentials: true,
-  }),
+	"*",
+	cors({
+		origin: getCorsOrigin,
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "X-Requested-With"],
+		credentials: true,
+	}),
 );
 
 app.get("/", (c) => {
-  const html = `<!DOCTYPE html>
+	const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -160,7 +160,7 @@ app.get("/", (c) => {
   </footer>
 </body>
 </html>`;
-  return c.html(html);
+	return c.html(html);
 });
 
 app.get("/health", (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));

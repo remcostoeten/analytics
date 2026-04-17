@@ -74,6 +74,7 @@ export const visitors = pgTable(
 		firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
 		lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
 		visitCount: integer("visit_count").notNull().default(1),
+		isInternal: boolean("is_internal").notNull().default(false),
 		deviceType: text("device_type"),
 		os: text("os"),
 		osVersion: text("os_version"),
@@ -91,6 +92,7 @@ export const visitors = pgTable(
 	},
 	(table) => ({
 		lastSeenIdx: index("idx_visitors_last_seen").on(table.lastSeen),
+		fingerprintIdx: index("idx_visitors_fingerprint").on(table.fingerprint),
 	}),
 );
 
