@@ -1,26 +1,26 @@
 {
-  "name": "@remcostoeten/ingestion",
-  "private": true,
-  "version": "0.0.1",
-  "type": "module",
-  "packageManager": "bun@1.3.11",
-  "dependencies": {
-    "@neondatabase/serverless": "^0.10.0",
-    "drizzle-orm": "^0.36.0",
-    "hono": "4.6.10",
-    "ua-parser-js": "^2.0.9",
-    "zod": "^3.22.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/ua-parser-js": "^0.7.39",
-    "bun-types": "^1.3.9",
-    "typescript": "5.6.3"
-  },
-  "scripts": {
-    "dev": "bun run src/dev.ts",
-    "build": "bun build src/dev.ts --target bun --outdir dist",
-    "typecheck": "tsc -p tsconfig.json",
-    "test": "bun test"
-  }
+	"name": "@remcostoeten/ingestion",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun run src/dev.ts",
+		"build": "bun build src/dev.ts --target bun --outdir dist",
+		"typecheck": "tsc -p tsconfig.json",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@neondatabase/serverless": "^0.10.0",
+		"drizzle-orm": "^0.36.0",
+		"hono": "4.6.10",
+		"ua-parser-js": "^2.0.9",
+		"zod": "^3.22.4"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.0",
+		"@types/ua-parser-js": "^0.7.39",
+		"bun-types": "^1.3.9",
+		"typescript": "5.6.3"
+	},
+	"packageManager": "bun@1.3.11"
 }
