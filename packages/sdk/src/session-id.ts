@@ -1,7 +1,6 @@
 import { now, generateUUID, isSessionStorageAvailable } from "./utils";
 import { noop } from "./noop";
 
-
 const SESSION_ID_KEY = "remco_analytics_session_id";
 const SESSION_TIMEOUT_KEY = "remco_analytics_session_timeout";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;

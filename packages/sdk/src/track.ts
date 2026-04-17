@@ -36,7 +36,7 @@ function resolveDefaultProjectId(): string {
     return "unknown";
   }
   return window.location.hostname;
-}
+})();
 
 function resolveDefaultIngestUrl(): string {
   if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL) {
@@ -50,6 +50,14 @@ function resolveDefaultIngestUrl(): string {
   }
 
   return "http://localhost:3001";
+})();
+
+function getDefaultProjectId(): string {
+  return DEFAULT_PROJECT_ID;
+}
+
+function getDefaultIngestUrl(): string {
+  return DEFAULT_INGEST_URL;
 }
 
 const DEFAULT_PROJECT_ID = resolveDefaultProjectId();

@@ -1,6 +1,5 @@
 import { generateUUID, isLocalStorageAvailable } from "./utils";
 
-
 const VISITOR_ID_KEY = "remco_analytics_visitor_id";
 
 export function getVisitorId(): string {

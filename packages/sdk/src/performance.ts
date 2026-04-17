@@ -2,7 +2,6 @@ import { track } from "./track";
 import { isServer } from "./utils";
 import { noop } from "./noop";
 
-
 type PerformanceOptions = {
   projectId?: string;
   ingestUrl?: string;
