@@ -6,6 +6,7 @@ import { observePerformance } from "./performance";
 import { observeScroll } from "./scroll";
 import { observeTimeOnPage } from "./time-on-page";
 import { type AnalyticsOptions } from "./track";
+import { debugLog } from "./logger";
 
 type Props = AnalyticsOptions & {
   disabled?: boolean;
@@ -19,9 +20,7 @@ export function Analytics({
 }: Props) {
   useEffect(() => {
     if (disabled) {
-      if (debug) {
-        console.log("[Analytics] Tracking disabled via prop");
-      }
+      debugLog(debug, "Tracking disabled via prop");
       return;
     }
 

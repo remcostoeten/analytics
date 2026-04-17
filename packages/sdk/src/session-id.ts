@@ -1,30 +1,6 @@
-import { isServer, now } from "./utils";
+import { now, generateUUID, isSessionStorageAvailable } from "./utils";
 import { noop } from "./noop";
 
-function generateUUID(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function isSessionStorageAvailable(): boolean {
-  if (isServer() || typeof sessionStorage === "undefined") {
-    return false;
-  }
-  try {
-    const test = "__storage_test__";
-    sessionStorage.setItem(test, test);
-    sessionStorage.removeItem(test);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const SESSION_ID_KEY = "remco_analytics_session_id";
 const SESSION_TIMEOUT_KEY = "remco_analytics_session_timeout";
