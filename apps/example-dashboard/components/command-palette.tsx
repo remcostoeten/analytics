@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+// import { useRouter } from "next/navigation" (Removed)
 import {
 	BarChart3,
 	Users,
@@ -10,14 +10,11 @@ import {
 	CalendarDays,
 	Route,
 	Radio,
-	Globe,
 	FileText,
 	ExternalLink,
 	Clock,
-	TrendingUp,
 	Search,
 	Zap,
-	Filter,
 } from "lucide-react";
 import {
 	CommandDialog,

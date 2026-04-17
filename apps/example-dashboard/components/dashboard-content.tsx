@@ -13,7 +13,6 @@ import { ReferrerDetailPanel } from "@/components/referrer-detail-panel";
 import { WebVitalsCard } from "@/components/web-vitals-card";
 import { HourlyHeatmap } from "@/components/hourly-heatmap";
 import { SessionStatsCard } from "@/components/session-stats-card";
-import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
 import { EngagementMetrics } from "@/components/engagement-metrics";
 import { TechnologyBreakdown } from "@/components/technology-breakdown";
 import { VisitorsTable } from "@/components/visitors-table";
@@ -76,7 +75,6 @@ export function DashboardContent({
 	const [activeTab, setActiveTab] = useState("live");
 	const [typeFilter, setTypeFilter] = useState<SignalEvent["type"] | "all">("all");
 	const [timeRange, setTimeRange] = useState("30d");
-	const [activeSegment, setActiveSegment] = useState("all");
 	const [selectedProject, setSelectedProject] = useState<string | null>(null);
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<GeoDistribution | null>(null);
@@ -151,7 +149,7 @@ export function DashboardContent({
 		refreshInterval: 30000,
 	});
 
-	const { data: utmCampaigns } = useSWR(buildQuery("utm-campaigns"), fetcher, {
+	useSWR(buildQuery("utm-campaigns"), fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
 	});

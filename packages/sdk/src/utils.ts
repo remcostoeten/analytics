@@ -33,7 +33,7 @@ export function generateUUID(): string {
 	bytes[6] = (bytes[6] & 0x0f) | 0x40;
 	bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
-	const h = new Array(16);
+	const h = Array.from({ length: 16 }, () => "");
 	for (let i = 0; i < 16; i++) {
 		h[i] = bytes[i].toString(16).padStart(2, "0");
 	}

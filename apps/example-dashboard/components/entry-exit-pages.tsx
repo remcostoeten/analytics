@@ -80,7 +80,7 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 						<p className="text-[10px] text-muted-foreground">No pages recorded</p>
 					</div>
 				) : (
-					activeData.slice(0, 8).map((page, i) => (
+					activeData.slice(0, 8).map((page) => (
 						<div key={page.path} className="space-y-1">
 							<div className="flex items-center justify-between">
 								<span className="text-[10px] text-foreground font-mono truncate max-w-[180px]">

@@ -1,6 +1,5 @@
 import type {
 	DashboardData,
-	KPIMetric,
 	SignalEvent,
 	ContentMetric,
 	ReferrerMetric,

@@ -82,7 +82,7 @@ export function SiteSearch({ data }: SiteSearchProps) {
 						</div>
 					) : (
 						<div className="space-y-2">
-							{data.topQueries.slice(0, 10).map((query, i) => {
+							{data.topQueries.slice(0, 10).map((query) => {
 								const maxCount = Math.max(...data.topQueries.map((q) => q.count));
 								const width = maxCount > 0 ? (query.count / maxCount) * 100 : 0;
 

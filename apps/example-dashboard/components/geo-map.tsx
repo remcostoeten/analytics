@@ -281,15 +281,6 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 	// Calculate color intensity based on percentage
 	const maxPercentage = useMemo(() => Math.max(...data.map((d) => d.percentage), 1), [data]);
 
-	const getCountryColor = (numericCode: string) => {
-		const countryData = dataByNumericCode.get(numericCode);
-		if (!countryData) return "hsl(var(--muted))";
-
-		// Calculate intensity from 0.2 to 1 based on percentage
-		const intensity = 0.2 + (countryData.percentage / maxPercentage) * 0.8;
-		return `hsl(var(--primary) / ${intensity})`;
-	};
-
 	return (
 		<div className={cn("bg-card border border-border rounded-sm overflow-hidden", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
@@ -314,7 +305,6 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 							return geographies.map((geo) => {
 								const numericCode = String(geo.id);
 								const countryData = dataByNumericCode.get(numericCode);
-								const fillColor = getCountryColor(String(geo.id));
 								const hasData = !!countryData;
 
 								return (

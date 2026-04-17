@@ -197,7 +197,7 @@ export function RevenueDashboard({ data }: RevenueDashboardProps) {
 					</CardHeader>
 					<CardContent className="p-4 pt-0">
 						<div className="space-y-2">
-							{data.bySource.slice(0, 6).map((source, i) => {
+							{data.bySource.slice(0, 6).map((source) => {
 								const maxRevenue = Math.max(...data.bySource.map((s) => s.revenue));
 								const width = maxRevenue > 0 ? (source.revenue / maxRevenue) * 100 : 0;
 								return (

@@ -71,7 +71,7 @@ async function seed() {
 		// Geographic data for this visitor
 		const country = getRandomItem(COUNTRIES);
 		const regionList = (REGIONS as any)[country] || ["Unknown"];
-		const region = getRandomItem(regionList);
+		const region = getRandomItem(regionList) as string;
 		const cityList = (CITIES as any)[region] || ["Unknown"];
 		const city = getRandomItem(cityList);
 
