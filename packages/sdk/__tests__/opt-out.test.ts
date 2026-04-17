@@ -5,9 +5,11 @@ describe("opt-out", () => {
 	const OPT_OUT_KEY = "__analytics_opt_out";
 	const VISITOR_ID_KEY = "__analytics_visitor_id";
 	let originalLocalStorage: Storage | undefined;
+	let originalWindow: any;
 
 	beforeEach(() => {
 		originalLocalStorage = global.localStorage;
+		originalWindow = global.window;
 		const store: Record<string, string> = {};
 
 		// Mock window if it doesn't exist
@@ -36,6 +38,11 @@ describe("opt-out", () => {
 	afterEach(() => {
 		if (originalLocalStorage) {
 			global.localStorage = originalLocalStorage;
+		}
+		if (originalWindow === undefined) {
+			delete (global as any).window;
+		} else {
+			(global as any).window = originalWindow;
 		}
 	});
 
