@@ -246,6 +246,22 @@ export async function getRecentEvents(
 	});
 }
 
+export async function getLocalhostRateKPI(projectId?: string): Promise<KPIMetric> {
+	const { from, to } = getTimeRangeFilter(24);
+	const [result] =
+		await sql`SELECT COUNT(*) FILTER (WHERE is_localhost = true) as localhost, COUNT(*) as total FROM events WHERE ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+	const total = Number(result?.total || 0);
+	const localhost = Number(result?.localhost || 0);
+	const rate = total > 0 ? (localhost / total) * 100 : 0;
+	return {
+		id: "localhost-rate",
+		label: "Localhost",
+		value: rate,
+		formattedValue: `${rate.toFixed(1)}%`,
+		unit: "%",
+	};
+}
+
 export async function getDashboardData(projectId?: string): Promise<DashboardData> {
 	const { from, to } = getTimeRangeFilter(24);
 	const [
@@ -255,6 +271,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		eventsKPI,
 		botRateKPI,
 		errorsKPI,
+		localhostRateKPI,
 		pageviewsTrend,
 		visitorsTrend,
 		topPages,
@@ -273,6 +290,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 		getEventsKPI(projectId),
 		getBotRateKPI(projectId),
 		getErrorCountKPI(projectId),
+		getLocalhostRateKPI(projectId),
 		getPageviewsTrend(projectId),
 		getVisitorsTrend(projectId),
 		getTopPages(projectId),
@@ -329,13 +347,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 			sessions: sessionsKPI,
 			events: eventsKPI,
 			botRate: botRateKPI,
-			localhostRate: {
-				id: "localhost-rate",
-				label: "Localhost",
-				value: 0,
-				formattedValue: "0%",
-				unit: "%",
-			},
+			localhostRate: localhostRateKPI,
 			errorCount: errorsKPI,
 		},
 		trends: {
@@ -362,7 +374,7 @@ export async function getDashboardData(projectId?: string): Promise<DashboardDat
 			dedupedEventCount: 0,
 			ingestionRate: 0,
 			errorRate: 0,
-			localhostTraffic: 0,
+			localhostTraffic: localhostRateKPI.value,
 			eventTypeMix: [],
 		},
 		realtime: { recentEvents, liveSessions: [], liveSessionCount: 0, recentBotDetections: [] },
@@ -679,35 +691,35 @@ export async function getSegmentedMetrics(
 
 export async function getRecentVisitors(projectId: string | null, limit: number = 50) {
 	const results = await sql`
-    SELECT DISTINCT ON (visitor_id)
-      visitor_id as id,
-      visitor_id as fingerprint,
-      MIN(ts) as first_seen,
-      MAX(ts) as last_seen,
-      COUNT(*) as visit_count,
-      device_type,
-      COALESCE(meta->>'browser', 'Unknown') as browser,
-      COALESCE(meta->>'os', 'Unknown') as os,
-      COALESCE(meta->>'browserVersion', 'Unknown') as browser_version,
-      COALESCE(meta->>'osVersion', 'Unknown') as os_version,
-      COALESCE(meta->>'screenSize', 'Unknown') as screen_resolution,
-      COALESCE(lang, 'Unknown') as language,
+    SELECT
+      id,
+      fingerprint,
+      first_seen,
+      last_seen,
+      visit_count,
+      is_internal,
+      COALESCE(device_type, 'Unknown') as device_type,
+      COALESCE(browser, 'Unknown') as browser,
+      COALESCE(os, 'Unknown') as os,
+      COALESCE(browser_version, 'Unknown') as browser_version,
+      COALESCE(os_version, 'Unknown') as os_version,
+      COALESCE(screen_resolution, 'Unknown') as screen_resolution,
+      COALESCE(language, 'Unknown') as language,
       country,
       region,
       city
-    FROM events
-    WHERE visitor_id IS NOT NULL 
-      ${projectId ? sql`AND project_id = ${projectId}` : sql``}
-    GROUP BY visitor_id, device_type, meta, lang, country, region, city
-    ORDER BY visitor_id, last_seen DESC
+    FROM visitors
+    WHERE is_internal = false
+    ORDER BY last_seen DESC
     LIMIT ${limit}
   `;
 	return results.map((r) => ({
-		id: r.id,
+		id: String(r.id),
 		fingerprint: r.fingerprint,
 		firstSeen: r.first_seen,
 		lastSeen: r.last_seen,
 		visitCount: Number(r.visit_count),
+		isInternal: r.is_internal,
 		deviceType: r.device_type,
 		browser: r.browser,
 		os: r.os,
