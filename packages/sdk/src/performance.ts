@@ -1,7 +1,6 @@
 import { track } from "./track";
-import { isServer } from "./utils";
+import { isRuntime } from "./utilities";
 import { noop } from "./noop";
-
 
 type PerformanceOptions = {
 	projectId?: string;
@@ -18,7 +17,7 @@ type WebVitals = {
 };
 
 function getNavigationTiming(): WebVitals {
-	if (isServer() || !window.performance) {
+	if (isRuntime("server") || !window.performance) {
 		return {};
 	}
 
@@ -36,7 +35,7 @@ function getNavigationTiming(): WebVitals {
 }
 
 function getFcp(): number | undefined {
-	if (isServer() || !window.performance) {
+	if (isRuntime("server") || !window.performance) {
 		return undefined;
 	}
 
@@ -118,7 +117,7 @@ function observeInp(callback: (value: number) => void): void {
 }
 
 export function observePerformance(options: PerformanceOptions = {}): () => void {
-	if (isServer()) {
+	if (isRuntime("server")) {
 		return function cleanup() {};
 	}
 

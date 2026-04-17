@@ -1,7 +1,13 @@
-import { isServer } from "./utils";
+import { isRuntime } from "./runtime";
 
+/**
+ * Logs a message to the console if debugging is enabled and the environment is a browser.
+ * @param {boolean | undefined} enabled - Whether logging is enabled.
+ * @param {string} message - The message to log.
+ * @param {unknown} [data] - Optional data to log alongside the message.
+ */
 export function debugLog(enabled: boolean | undefined, message: string, data?: unknown): void {
-	if (!enabled || isServer()) {
+	if (!enabled || isRuntime("server")) {
 		return;
 	}
 

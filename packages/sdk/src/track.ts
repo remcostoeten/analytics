@@ -1,10 +1,8 @@
 import { getVisitorId } from "./visitor-id";
 import { getSessionId, extendSession } from "./session-id";
 import { isOptedOut, checkDoNotTrack } from "./opt-out";
-import { collectEnrichment } from "./enrich";
-import { isServer } from "./utils";
+import { isRuntime, debugLog, collectEnrichment } from "./utilities";
 import { noop } from "./noop";
-import { debugLog } from "./logger";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
@@ -32,7 +30,7 @@ const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
 function resolveDefaultProjectId(): string {
-	if (isServer() || typeof window === "undefined") {
+	if (isRuntime("server") || typeof window === "undefined") {
 		return "unknown";
 	}
 	return window.location?.hostname || "unknown";
@@ -82,7 +80,7 @@ function buildPayload(
 	meta: Record<string, unknown> | undefined,
 	options: AnalyticsOptions,
 ): EventPayload | null {
-	if (isServer()) {
+	if (isRuntime("server")) {
 		return null;
 	}
 
