@@ -1,4 +1,5 @@
 import { trackPageView, type AnalyticsOptions } from "./track";
+import { isServer } from "./utils";
 
 const NAVIGATION_EVENT = "remco-analytics:navigate";
 
@@ -21,7 +22,7 @@ function trackPathChange(
 }
 
 export function observePageViews(options: AnalyticsOptions = {}): () => void {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return function cleanup() { };
   }
 

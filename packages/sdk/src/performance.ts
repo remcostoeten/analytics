@@ -1,4 +1,6 @@
 import { track } from "./track";
+import { isServer } from "./utils";
+import { noop } from "./noop";
 
 
 type PerformanceOptions = {
@@ -16,7 +18,7 @@ type WebVitals = {
 };
 
 function getNavigationTiming(): WebVitals {
-  if (typeof window === "undefined" || !window.performance) {
+  if (isServer() || !window.performance) {
     return {};
   }
 
@@ -34,7 +36,7 @@ function getNavigationTiming(): WebVitals {
 }
 
 function getFcp(): number | undefined {
-  if (typeof window === "undefined" || !window.performance) {
+  if (isServer() || !window.performance) {
     return undefined;
   }
 
@@ -64,7 +66,7 @@ function observeLcp(callback: (value: number) => void): void {
 
     observer.observe({ type: "largest-contentful-paint", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 
@@ -88,7 +90,7 @@ function observeCls(callback: (value: number) => void): void {
 
     observer.observe({ type: "layout-shift", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 
@@ -108,12 +110,12 @@ function observeInp(callback: (value: number) => void): void {
 
     observer.observe({ type: "event", buffered: true });
   } catch {
-    // PerformanceObserver not supported
+    noop();
   }
 }
 
 export function observePerformance(options: PerformanceOptions = {}): () => void {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return function cleanup() { };
   }
 

@@ -1,7 +1,9 @@
+import { isServer } from "./utils";
+
 type EnrichmentData = Record<string, unknown>;
 
 function getScreenInfo(): EnrichmentData {
-  if (typeof window === "undefined" || !window.screen) {
+  if (isServer() || !window.screen) {
     return {};
   }
 
@@ -13,7 +15,7 @@ function getScreenInfo(): EnrichmentData {
 }
 
 function getUtmParams(): EnrichmentData {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return {};
   }
 
@@ -40,7 +42,7 @@ function getConnectionInfo(): EnrichmentData {
     return {};
   }
 
-  const conn = (navigator as unknown as { connection?: { effectiveType?: string; downlink?: number } }).connection;
+  const conn = (navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number } }).connection;
 
   if (!conn) {
     return {};
