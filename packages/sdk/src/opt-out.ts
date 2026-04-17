@@ -1,11 +1,13 @@
+import { isServer } from "./utils";
+
 function isLocalStorageAvailable(): boolean {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+  if (isServer() || typeof localStorage === "undefined") {
     return false;
   }
   try {
     const test = "__storage_test__";
     localStorage.setItem(test, test);
-    localStorage.removeItem(test);
+    localStorage.r(test);
     return true;
   } catch {
     return false;
@@ -53,7 +55,7 @@ export function isOptedOut(): boolean {
 }
 
 export function checkDoNotTrack(): boolean {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
+  if (isServer() || typeof navigator === "undefined") {
     return false;
   }
 

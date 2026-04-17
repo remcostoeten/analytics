@@ -1,3 +1,5 @@
+import { isServer, now } from "./utils";
+
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -10,7 +12,7 @@ function generateUUID(): string {
 }
 
 function isSessionStorageAvailable(): boolean {
-  if (typeof window === "undefined" || typeof sessionStorage === "undefined") {
+  if (isServer() || typeof sessionStorage === "undefined") {
     return false;
   }
   try {
@@ -39,7 +41,7 @@ function isSessionExpired(): boolean {
     }
 
     const timeout = parseInt(timeoutStr, 10);
-    return Date.now() > timeout;
+    return now() > timeout;
   } catch {
     return true;
   }
@@ -51,7 +53,7 @@ function updateSessionTimeout(): void {
   }
 
   try {
-    const timeout = Date.now() + SESSION_TIMEOUT_MS;
+    const timeout = now() + SESSION_TIMEOUT_MS;
     sessionStorage.setItem(SESSION_TIMEOUT_KEY, timeout.toString());
   } catch {
     // Silent fail

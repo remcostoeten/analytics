@@ -2,6 +2,7 @@ import { getVisitorId } from "./visitor-id";
 import { getSessionId, extendSession } from "./session-id";
 import { isOptedOut, checkDoNotTrack } from "./opt-out";
 import { collectEnrichment } from "./enrich";
+import { isServer } from "./utils";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
@@ -29,7 +30,7 @@ const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
 function getDefaultProjectId(): string {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return "unknown";
   }
   return window.location.hostname;
@@ -61,7 +62,7 @@ function buildPayload(
   meta: Record<string, unknown> | undefined,
   options: TrackOptions
 ): EventPayload | null {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return null;
   }
 
