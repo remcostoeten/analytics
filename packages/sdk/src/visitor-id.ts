@@ -1,3 +1,5 @@
+import { isServer } from "./utils";
+
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -10,7 +12,7 @@ function generateUUID(): string {
 }
 
 function isLocalStorageAvailable(): boolean {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+  if (isServer() || typeof localStorage === "undefined") {
     return false;
   }
   try {

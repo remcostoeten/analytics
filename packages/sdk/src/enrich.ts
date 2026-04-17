@@ -1,7 +1,9 @@
+import { isServer } from "./utils";
+
 type EnrichmentData = Record<string, unknown>;
 
 function getScreenInfo(): EnrichmentData {
-  if (typeof window === "undefined" || !window.screen) {
+  if (isServer() || !window.screen) {
     return {};
   }
 
@@ -13,7 +15,7 @@ function getScreenInfo(): EnrichmentData {
 }
 
 function getUtmParams(): EnrichmentData {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return {};
   }
 

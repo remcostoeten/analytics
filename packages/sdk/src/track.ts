@@ -2,6 +2,8 @@ import { getVisitorId } from "./visitor-id";
 import { getSessionId, extendSession } from "./session-id";
 import { isOptedOut, checkDoNotTrack } from "./opt-out";
 import { collectEnrichment } from "./enrich";
+import { isServer } from "./utils";
+import { noop } from "./noop";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
@@ -28,18 +30,33 @@ type EventPayload = {
 const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
-function getDefaultProjectId(): string {
-  if (typeof window === "undefined") {
+const DEFAULT_PROJECT_ID = (() => {
+  if (isServer()) {
     return "unknown";
   }
   return window.location.hostname;
-}
+})();
 
-function getDefaultIngestUrl(): string {
+const DEFAULT_INGEST_URL = (() => {
   if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL) {
     return process.env.NEXT_PUBLIC_REMCO_ANALYTICS_URL;
   }
+  
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_REMCO_ANALYTICS_URL) {
+    // @ts-ignore
+    return import.meta.env.VITE_REMCO_ANALYTICS_URL;
+  }
+
   return "http://localhost:3001";
+})();
+
+function getDefaultProjectId(): string {
+  return DEFAULT_PROJECT_ID;
+}
+
+function getDefaultIngestUrl(): string {
+  return DEFAULT_INGEST_URL;
 }
 
 function createEventKey(payload: EventPayload): string {
@@ -59,9 +76,9 @@ function isDuplicate(payload: EventPayload): boolean {
 function buildPayload(
   type: EventType,
   meta: Record<string, unknown> | undefined,
-  options: TrackOptions
+  options: AnalyticsOptions
 ): EventPayload | null {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return null;
   }
 
@@ -113,11 +130,9 @@ function sendWithFetch(url: string, payload: EventPayload): void {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       keepalive: true,
-    }).catch(() => {
-      // Silent fail
-    });
+    }).catch(noop);
   } catch {
-    // Silent fail
+    noop();
   }
 }
 
