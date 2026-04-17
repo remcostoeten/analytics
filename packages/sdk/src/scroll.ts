@@ -1,7 +1,8 @@
 import { track, type AnalyticsOptions } from "./track";
+import { isServer } from "./utils";
 
 export function observeScroll(options: AnalyticsOptions = {}): () => void {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return function cleanup() { };
   }
 

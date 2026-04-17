@@ -1,18 +1,19 @@
 import { track, type AnalyticsOptions } from "./track";
+import { isServer, now, timeSince } from "./utils";
 
 export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
-  if (typeof window === "undefined") {
+  if (isServer()) {
     return function cleanup() {};
   }
 
-  const startTime = Date.now();
+  const startTime = now();
   let sent = false;
 
   function sendTimeOnPage(): void {
     if (sent) {
       return;
     }
-    const timeOnPageMs = Date.now() - startTime;
+    const timeOnPageMs = timeSince(startTime);
     if (timeOnPageMs > 0) {
       sent = true;
       track("event", { eventName: "time-on-page", timeOnPageMs }, options);
