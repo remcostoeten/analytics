@@ -1,5 +1,5 @@
 import { describe, it, expect, setSystemTime, afterEach } from "bun:test";
-import { createRateLimiter } from "../rate-limit";
+import { createRateLimiter } from "../utilities/rate-limit";
 
 describe("rateLimiter", () => {
 	afterEach(() => {

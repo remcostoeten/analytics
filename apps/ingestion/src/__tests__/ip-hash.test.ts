@@ -1,5 +1,5 @@
 import { describe, it, expect, setSystemTime, afterEach } from "bun:test";
-import { hashIp, validateIpHashSecret } from "../ip-hash";
+import { hashIp, validateIpHashSecret } from "../utilities/ip-hash";
 
 describe("ip-hash", () => {
 	afterEach(() => {

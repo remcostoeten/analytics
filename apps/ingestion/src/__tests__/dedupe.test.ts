@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { generateFingerprint, getDedupeWindow, metrics } from "../dedupe";
-import { createDedupeCache } from "../dedupe";
+import { generateFingerprint, getDedupeWindow, metrics } from "../utilities/dedupe";
+import { createDedupeCache } from "../utilities/dedupe";
 
 describe("generateFingerprint", () => {
 	test("generates consistent fingerprint for same event", async () => {
