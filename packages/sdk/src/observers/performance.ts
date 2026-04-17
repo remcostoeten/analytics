@@ -1,12 +1,7 @@
-import { track } from "./track";
-import { isRuntime } from "./utilities";
-import { noop } from "./noop";
-
-type PerformanceOptions = {
-	projectId?: string;
-	ingestUrl?: string;
-	debug?: boolean;
-};
+import { track } from "../api/track";
+import { type AnalyticsOptions } from "../types";
+import { isRuntime } from "../utilities";
+import { noop } from "../utilities/noop";
 
 type WebVitals = {
 	ttfb?: number;
@@ -55,7 +50,7 @@ function observeLcp(callback: (value: number) => void): void {
 	}
 
 	try {
-		const observer = new PerformanceObserver(function (list) {
+		const observer = new PerformanceObserver((list) => {
 			const entries = list.getEntries();
 			const last = entries[entries.length - 1];
 			if (last) {
@@ -77,7 +72,7 @@ function observeCls(callback: (value: number) => void): void {
 	let clsValue = 0;
 
 	try {
-		const observer = new PerformanceObserver(function (list) {
+		const observer = new PerformanceObserver((list) => {
 			for (const entry of list.getEntries()) {
 				const layoutShift = entry as PerformanceEntry & {
 					hadRecentInput?: boolean;
@@ -102,7 +97,7 @@ function observeInp(callback: (value: number) => void): void {
 	}
 
 	try {
-		const observer = new PerformanceObserver(function (list) {
+		const observer = new PerformanceObserver((list) => {
 			const entries = list.getEntries();
 			const last = entries[entries.length - 1] as PerformanceEntry & { duration?: number };
 			if (last && last.duration) {
@@ -116,7 +111,14 @@ function observeInp(callback: (value: number) => void): void {
 	}
 }
 
-export function observePerformance(options: PerformanceOptions = {}): () => void {
+/**
+ * Collects Web Vitals (LCP, CLS, INP, TTFB, FCP) using PerformanceObserver.
+ * Reports data when the page visibility changes to hidden or on beforeunload.
+ *
+ * @param {AnalyticsOptions} [options={}] - Tracking options.
+ * @returns {() => void} Cleanup function to remove event listeners.
+ */
+export function observePerformance(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) {
 		return function cleanup() {};
 	}
@@ -140,15 +142,15 @@ export function observePerformance(options: PerformanceOptions = {}): () => void
 		track("event", { eventName: "web-vitals", ...merged }, options);
 	}
 
-	observeLcp(function (value) {
+	observeLcp((value) => {
 		vitals.lcp = value;
 	});
 
-	observeCls(function (value) {
+	observeCls((value) => {
 		vitals.cls = value;
 	});
 
-	observeInp(function (value) {
+	observeInp((value) => {
 		vitals.inp = value;
 	});
 

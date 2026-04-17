@@ -1,6 +1,6 @@
 import { describe, it, expect, spyOn, beforeEach, afterEach } from "bun:test";
-import { observeScroll } from "../src/scroll";
-import * as trackModule from "../src/track";
+import { observeScroll } from "../src/observers/scroll";
+import * as trackModule from "../src/api/track";
 
 describe("scroll tracking", () => {
 	let trackSpy: any;

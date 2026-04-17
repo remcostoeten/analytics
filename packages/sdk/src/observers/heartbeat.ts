@@ -1,6 +1,15 @@
-import { track, type AnalyticsOptions } from "./track";
-import { isRuntime, time } from "./utilities";
+import { track } from "../api/track";
+import { type AnalyticsOptions } from "../types";
+import { isRuntime, time } from "../utilities";
 
+/**
+ * Tracks the total active time a user spends on the page.
+ * Pauses tracking when the tab is hidden and resumes when visible.
+ * Sends the accumulated time on beforeunload or component cleanup.
+ *
+ * @param {AnalyticsOptions} [options={}] - Tracking options.
+ * @returns {() => void} Cleanup function to remove listeners.
+ */
 export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) {
 		return function cleanup() {};

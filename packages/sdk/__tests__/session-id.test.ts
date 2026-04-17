@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { getSessionId, resetSessionId, extendSession } from "../src/session-id";
+import { getSessionId, resetSessionId, extendSession } from "../src/identity/session";
 
 describe("session-id", () => {
 	const SESSION_ID_KEY = "remco_analytics_session_id";

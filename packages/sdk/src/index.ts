@@ -1,6 +1,11 @@
 "use client";
 
-export { Analytics } from "./analytics";
+/**
+ * @remcostoeten/analytics
+ * Privacy-focused analytics SDK for tracking page views and custom events.
+ */
+
+export { Analytics } from "./components/analytics";
 export {
 	track,
 	trackPageView,
@@ -11,11 +16,12 @@ export {
 	trackSearch,
 	identifyUser,
 	setExperiment,
-} from "./track";
-export { getVisitorId, resetVisitorId } from "./visitor-id";
-export { getSessionId, resetSessionId, extendSession } from "./session-id";
-export { optOut, optIn, isOptedOut, checkDoNotTrack } from "./opt-out";
-export { observePageViews } from "./pageview";
-export { observePerformance } from "./performance";
-export { observeScroll } from "./scroll";
-export { observeTimeOnPage } from "./time-on-page";
+} from "./api/track";
+export { getVisitorId, resetVisitorId } from "./identity/visitor";
+export { getSessionId, resetSessionId, extendSession } from "./identity/session";
+export { optOut, optIn, isOptedOut, checkDoNotTrack } from "./api/privacy";
+export { observePageViews } from "./observers/pageview";
+export { observePerformance } from "./observers/performance";
+export { observeScroll } from "./observers/scroll";
+export { observeTimeOnPage } from "./observers/heartbeat";
+export * from "./types";

@@ -1,5 +1,5 @@
-import { time, generateUUID, isStorageAvailable } from "./utilities";
-import { noop } from "./noop";
+import { time, generateUUID, isStorageAvailable } from "../utilities";
+import { noop } from "../utilities/noop";
 
 const SESSION_ID_KEY = "remco_analytics_session_id";
 const SESSION_TIMEOUT_KEY = "remco_analytics_session_timeout";
@@ -36,6 +36,11 @@ function updateSessionTimeout(): void {
 	}
 }
 
+/**
+ * Retrieves the current session ID from session storage.
+ * If the session has expired or doesn't exist, a new one is created.
+ * @returns {string} The session ID.
+ */
 export function getSessionId(): string {
 	if (!isStorageAvailable("session")) {
 		return generateUUID();
@@ -59,6 +64,10 @@ export function getSessionId(): string {
 	}
 }
 
+/**
+ * Forcefully resets the current session ID.
+ * @returns {string} The new session ID.
+ */
 export function resetSessionId(): string {
 	if (!isStorageAvailable("session")) {
 		return generateUUID();
@@ -74,6 +83,9 @@ export function resetSessionId(): string {
 	}
 }
 
+/**
+ * Extends the current session timeout.
+ */
 export function extendSession(): void {
 	updateSessionTimeout();
 }
