@@ -1,6 +1,14 @@
-import { track, type AnalyticsOptions } from "./track";
-import { isRuntime } from "./utilities";
+import { track } from "../api/track";
+import { type AnalyticsOptions } from "../types";
+import { isRuntime } from "../utilities";
 
+/**
+ * Monitors the maximum vertical scroll depth reached on the page.
+ * Reports the percentage (0-100) when the page is unloaded.
+ *
+ * @param {AnalyticsOptions} [options={}] - Tracking options.
+ * @returns {() => void} Cleanup function to remove listeners.
+ */
 export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) {
 		return function cleanup() {};
@@ -26,7 +34,7 @@ export function observeScroll(options: AnalyticsOptions = {}): () => void {
 
 	function handleScroll(): void {
 		if (!ticking) {
-			window.requestAnimationFrame(function () {
+			window.requestAnimationFrame(() => {
 				updateScrollDepth();
 				ticking = false;
 			});

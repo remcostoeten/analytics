@@ -1,30 +1,9 @@
-import { getVisitorId } from "./visitor-id";
-import { getSessionId, extendSession } from "./session-id";
-import { isOptedOut, checkDoNotTrack } from "./opt-out";
-import { isRuntime, debugLog, collectEnrichment } from "./utilities";
-import { noop } from "./noop";
-
-type EventType = "pageview" | "event" | "click" | "error";
-
-export type AnalyticsOptions = {
-	projectId?: string;
-	ingestUrl?: string;
-	debug?: boolean;
-};
-
-type EventPayload = {
-	type: EventType;
-	projectId: string;
-	path: string;
-	referrer: string | null;
-	origin: string;
-	host: string;
-	ua: string;
-	lang: string;
-	visitorId: string;
-	sessionId: string;
-	meta?: Record<string, unknown>;
-};
+import { getVisitorId } from "../identity/visitor";
+import { getSessionId, extendSession } from "../identity/session";
+import { isOptedOut, checkDoNotTrack } from "./privacy";
+import { isRuntime, debugLog, collectEnrichment } from "../utilities";
+import { noop } from "../utilities/noop";
+import { type AnalyticsOptions, type EventPayload, type EventType } from "../types";
 
 const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
@@ -138,6 +117,14 @@ function sendWithFetch(url: string, payload: EventPayload): void {
 	}
 }
 
+/**
+ * Core tracking function that sends an event to the ingestion endpoint.
+ * Handles deduplication, opt-out checks, and environment enrichment.
+ *
+ * @param {EventType} type - The type of event to track.
+ * @param {Record<string, unknown>} [meta] - Optional metadata to include.
+ * @param {AnalyticsOptions} [options={}] - Override default tracking options.
+ */
 export function track(
 	type: EventType,
 	meta?: Record<string, unknown>,
@@ -213,10 +200,6 @@ export function trackError(
 		options,
 	);
 }
-
-// -----------------------------------------------------------------------------
-// Advanced Analytics Strongly-Typed Helpers
-// -----------------------------------------------------------------------------
 
 export function trackTransaction(
 	revenue: number,

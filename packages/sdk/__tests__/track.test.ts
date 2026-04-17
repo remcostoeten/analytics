@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { track, trackPageView, trackEvent, trackClick, trackError } from "../src/track";
-import { observePageViews } from "../src/pageview";
+import { track, trackPageView, trackEvent, trackClick, trackError } from "../src/api/track";
+import { observePageViews } from "../src/observers/pageview";
 
 describe("track", () => {
 	let originalLocalStorage: Storage | undefined;

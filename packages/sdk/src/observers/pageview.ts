@@ -1,5 +1,6 @@
-import { trackPageView, type AnalyticsOptions } from "./track";
-import { isRuntime } from "./utilities";
+import { trackPageView } from "../api/track";
+import { type AnalyticsOptions } from "../types";
+import { isRuntime } from "../utilities";
 
 const NAVIGATION_EVENT = "remco-analytics:navigate";
 
@@ -18,6 +19,12 @@ function trackPathChange(currentPath: { value: string }, options: AnalyticsOptio
 	trackPageView(undefined, options);
 }
 
+/**
+ * Monitors URL changes in SPAs by monkey-patching history API and listening for popstate events.
+ *
+ * @param {AnalyticsOptions} [options={}] - Tracking options.
+ * @returns {() => void} Cleanup function to restore original history methods and remove listeners.
+ */
 export function observePageViews(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) {
 		return function cleanup() {};
@@ -31,11 +38,13 @@ export function observePageViews(options: AnalyticsOptions = {}): () => void {
 		trackPathChange(currentPath, options);
 	}
 
+	/** @type {typeof window.history.pushState} */
 	function pushState(...args: Parameters<History["pushState"]>): void {
 		originalPushState(...args);
 		dispatchNavigationEvent();
 	}
 
+	/** @type {typeof window.history.replaceState} */
 	function replaceState(...args: Parameters<History["replaceState"]>): void {
 		originalReplaceState(...args);
 		dispatchNavigationEvent();

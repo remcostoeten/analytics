@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { optOut, optIn, isOptedOut, checkDoNotTrack } from "../src/opt-out";
+import { optOut, optIn, isOptedOut, checkDoNotTrack } from "../src/api/privacy";
 
 describe("opt-out", () => {
 	const OPT_OUT_KEY = "remco_analytics_opt_out";

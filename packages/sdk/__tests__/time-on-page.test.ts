@@ -1,6 +1,6 @@
 import { describe, it, expect, spyOn, beforeEach, afterEach, setSystemTime } from "bun:test";
-import { observeTimeOnPage } from "../src/time-on-page";
-import * as trackModule from "../src/track";
+import { observeTimeOnPage } from "../src/observers/heartbeat";
+import * as trackModule from "../src/api/track";
 
 describe("time-on-page tracking", () => {
 	let trackSpy: any;

@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { observePageViews } from "./pageview";
-import { observePerformance } from "./performance";
-import { observeScroll } from "./scroll";
-import { observeTimeOnPage } from "./time-on-page";
-import { type AnalyticsOptions } from "./track";
-import { debugLog } from "./utilities";
+import { observePageViews } from "../observers/pageview";
+import { observePerformance } from "../observers/performance";
+import { observeScroll } from "../observers/scroll";
+import { observeTimeOnPage } from "../observers/heartbeat";
+import { type AnalyticsOptions } from "../types";
+import { debugLog } from "../utilities";
 
 type Props = AnalyticsOptions & {
 	disabled?: boolean;
 };
 
+/**
+ * Root analytics component that initializes all behavioral trackers.
+ * Best used in a root layout or a high-level provider.
+ *
+ * @param {Props} props - Component props and tracking options.
+ */
 export function Analytics({ projectId, ingestUrl, disabled = false, debug = false }: Props) {
 	useEffect(() => {
 		if (disabled) {
