@@ -42,7 +42,7 @@ function getConnectionInfo(): EnrichmentData {
     return {};
   }
 
-  const conn = (navigator as unknown as { connection?: { effectiveType?: string; downlink?: number } }).connection;
+  const conn = (navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number } }).connection;
 
   if (!conn) {
     return {};

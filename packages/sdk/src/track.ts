@@ -4,6 +4,7 @@ import { isOptedOut, checkDoNotTrack } from "./opt-out";
 import { collectEnrichment } from "./enrich";
 import { isServer } from "./utils";
 import { noop } from "./noop";
+import { debugLog } from "./logger";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
@@ -30,18 +31,18 @@ type EventPayload = {
 const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
-const DEFAULT_PROJECT_ID = (() => {
+function resolveDefaultProjectId(): string {
   if (isServer()) {
     return "unknown";
   }
   return window.location.hostname;
 })();
 
-const DEFAULT_INGEST_URL = (() => {
+function resolveDefaultIngestUrl(): string {
   if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL) {
     return process.env.NEXT_PUBLIC_REMCO_ANALYTICS_URL;
   }
-  
+
   // @ts-ignore
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_REMCO_ANALYTICS_URL) {
     // @ts-ignore
@@ -50,6 +51,17 @@ const DEFAULT_INGEST_URL = (() => {
 
   return "http://localhost:3001";
 })();
+
+function getDefaultProjectId(): string {
+  return DEFAULT_PROJECT_ID;
+}
+
+function getDefaultIngestUrl(): string {
+  return DEFAULT_INGEST_URL;
+}
+
+const DEFAULT_PROJECT_ID = resolveDefaultProjectId();
+const DEFAULT_INGEST_URL = resolveDefaultIngestUrl();
 
 function getDefaultProjectId(): string {
   return DEFAULT_PROJECT_ID;
@@ -142,31 +154,23 @@ export function track(
   options: AnalyticsOptions = {}
 ): void {
   if (isOptedOut()) {
-    if (options.debug) {
-      console.log("[Analytics] User has opted out");
-    }
+    debugLog(options.debug, "User has opted out");
     return;
   }
 
   if (checkDoNotTrack()) {
-    if (options.debug) {
-      console.log("[Analytics] Do Not Track is enabled");
-    }
+    debugLog(options.debug, "Do Not Track is enabled");
     return;
   }
 
   const payload = buildPayload(type, meta, options);
   if (!payload) {
-    if (options.debug) {
-      console.log("[Analytics] SSR detected, skipping track");
-    }
+    debugLog(options.debug, "SSR detected, skipping track");
     return;
   }
 
   if (isDuplicate(payload)) {
-    if (options.debug) {
-      console.log("[Analytics] Duplicate event blocked", payload);
-    }
+    debugLog(options.debug, "Duplicate event blocked", payload);
     return;
   }
 
@@ -181,9 +185,7 @@ export function track(
     sendWithFetch(endpoint, payload);
   }
 
-  if (options.debug) {
-    console.log("[Analytics] Event tracked", payload);
-  }
+  debugLog(options.debug, "Event tracked", payload);
 }
 
 export function trackPageView(
