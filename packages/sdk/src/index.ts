@@ -1,16 +1,16 @@
 "use client";
 
 export { Analytics } from "./analytics";
-export { 
-  track, 
-  trackPageView, 
-  trackEvent,
-  trackClick,
-  trackError,
-  trackTransaction,
-  trackSearch,
-  identifyUser,
-  setExperiment
+export {
+	track,
+	trackPageView,
+	trackEvent,
+	trackClick,
+	trackError,
+	trackTransaction,
+	trackSearch,
+	identifyUser,
+	setExperiment,
 } from "./track";
 export { getVisitorId, resetVisitorId } from "./visitor-id";
 export { getSessionId, resetSessionId, extendSession } from "./session-id";

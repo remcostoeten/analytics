@@ -1,8 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
-  ],
-  "buildCommand": "bun run scripts/build.ts",
-  "installCommand": "bun install",
-  "framework": null
+	"rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+	"buildCommand": "bun run scripts/build.ts",
+	"installCommand": "bun install",
+	"framework": null
 }

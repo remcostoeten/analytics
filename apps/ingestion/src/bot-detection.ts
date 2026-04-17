@@ -1,38 +1,38 @@
 // apps/ingestion/src/bot-detection.ts
 
 export type BotDetectionResult = {
-  isBot: boolean
-  reason: string | null
-  confidence: 'high' | 'medium' | 'low'
-}
+	isBot: boolean;
+	reason: string | null;
+	confidence: "high" | "medium" | "low";
+};
 
 type HeaderBag = {
-  get(name: string): string | null
-}
+	get(name: string): string | null;
+};
 
 type ReqData = {
-  headers?: HeaderBag | null
-  method?: string | null
-}
+	headers?: HeaderBag | null;
+	method?: string | null;
+};
 
 function emptyHeaders(): HeaderBag {
-  return {
-    get() {
-      return null
-    },
-  }
+	return {
+		get() {
+			return null;
+		},
+	};
 }
 
 function getHeaders(req: ReqData | null | undefined): HeaderBag {
-  const headers = req?.headers
-  if (!headers) {
-    return emptyHeaders()
-  }
-  return headers
+	const headers = req?.headers;
+	if (!headers) {
+		return emptyHeaders();
+	}
+	return headers;
 }
 
 function getMethod(req: ReqData | null | undefined): string {
-  return req?.method?.toUpperCase() ?? 'GET'
+	return req?.method?.toUpperCase() ?? "GET";
 }
 
 /**
@@ -40,119 +40,119 @@ function getMethod(req: ReqData | null | undefined): string {
  * Includes search engines, AI scrapers, headless browsers, and security scanners
  */
 const BOT_PATTERNS = [
-  // Generic bot indicators
-  /bot/i,
-  /crawler/i,
-  /spider/i,
-  /scraper/i,
+	// Generic bot indicators
+	/bot/i,
+	/crawler/i,
+	/spider/i,
+	/scraper/i,
 
-  // Search engines
-  /googlebot/i,
-  /bingbot/i,
-  /slurp/i, // Yahoo
-  /duckduckbot/i,
-  /baiduspider/i,
-  /yandexbot/i,
-  /sogou/i,
-  /exabot/i,
+	// Search engines
+	/googlebot/i,
+	/bingbot/i,
+	/slurp/i, // Yahoo
+	/duckduckbot/i,
+	/baiduspider/i,
+	/yandexbot/i,
+	/sogou/i,
+	/exabot/i,
 
-  // Social media crawlers
-  /facebookexternalhit/i,
-  /facebookcatalog/i,
-  /twitterbot/i,
-  /linkedinbot/i,
-  /whatsapp/i,
-  /telegrambot/i,
-  /slackbot/i,
-  /discordbot/i,
+	// Social media crawlers
+	/facebookexternalhit/i,
+	/facebookcatalog/i,
+	/twitterbot/i,
+	/linkedinbot/i,
+	/whatsapp/i,
+	/telegrambot/i,
+	/slackbot/i,
+	/discordbot/i,
 
-  // Monitoring and uptime
-  /pingdom/i,
-  /uptimerobot/i,
-  /statuscake/i,
-  /monitor/i,
-  /newrelic/i,
-  /datadog/i,
+	// Monitoring and uptime
+	/pingdom/i,
+	/uptimerobot/i,
+	/statuscake/i,
+	/monitor/i,
+	/newrelic/i,
+	/datadog/i,
 
-  // Headless browsers
-  /headless/i,
-  /phantom/i,
-  /selenium/i,
-  /webdriver/i,
-  /puppeteer/i,
-  /playwright/i,
-  /chrome-lighthouse/i,
+	// Headless browsers
+	/headless/i,
+	/phantom/i,
+	/selenium/i,
+	/webdriver/i,
+	/puppeteer/i,
+	/playwright/i,
+	/chrome-lighthouse/i,
 
-  // Security scanners
-  /scanner/i,
-  /nikto/i,
-  /nmap/i,
-  /masscan/i,
-  /nessus/i,
-  /acunetix/i,
-  /qualys/i,
+	// Security scanners
+	/scanner/i,
+	/nikto/i,
+	/nmap/i,
+	/masscan/i,
+	/nessus/i,
+	/acunetix/i,
+	/qualys/i,
 
-  // Command-line tools
-  /curl/i,
-  /wget/i,
-  /python-requests/i,
-  /python-urllib/i,
-  /java\//i,
-  /go-http-client/i,
-  /okhttp/i,
-  /apache-httpclient/i,
+	// Command-line tools
+	/curl/i,
+	/wget/i,
+	/python-requests/i,
+	/python-urllib/i,
+	/java\//i,
+	/go-http-client/i,
+	/okhttp/i,
+	/apache-httpclient/i,
 
-  // AI scrapers
-  /gptbot/i,
-  /chatgpt/i,
-  /claude-web/i,
-  /anthropic-ai/i,
-  /cohere-ai/i,
-  /perplexitybot/i,
-  /ai2bot/i,
-  /bytespider/i, // TikTok
-  /claudebot/i,
+	// AI scrapers
+	/gptbot/i,
+	/chatgpt/i,
+	/claude-web/i,
+	/anthropic-ai/i,
+	/cohere-ai/i,
+	/perplexitybot/i,
+	/ai2bot/i,
+	/bytespider/i, // TikTok
+	/claudebot/i,
 
-  // SEO tools
-  /ahrefsbot/i,
-  /semrushbot/i,
-  /mj12bot/i,
-  /dotbot/i,
-  /rogerbot/i,
-  /screaming frog/i,
+	// SEO tools
+	/ahrefsbot/i,
+	/semrushbot/i,
+	/mj12bot/i,
+	/dotbot/i,
+	/rogerbot/i,
+	/screaming frog/i,
 
-  // Content scrapers
-  /feedfetcher/i,
-  /feedparser/i,
-  /rss/i,
-  /aggregator/i,
-  /newspaper/i,
+	// Content scrapers
+	/feedfetcher/i,
+	/feedparser/i,
+	/rss/i,
+	/aggregator/i,
+	/newspaper/i,
 
-  // Archive bots
-  /archive\.org_bot/i,
-  /ia_archiver/i,
-  /wayback/i,
-]
+	// Archive bots
+	/archive\.org_bot/i,
+	/ia_archiver/i,
+	/wayback/i,
+];
 
 /**
  * Check if user agent matches known bot patterns
  */
 export function isBotUserAgent(ua: string | null): boolean {
-  if (!ua) {
-    return false
-  }
+	if (!ua) {
+		return false;
+	}
 
-  return BOT_PATTERNS.some(function (pattern) {
-    return pattern.test(ua)
-  })
+	return BOT_PATTERNS.some(function (pattern) {
+		return pattern.test(ua);
+	});
 }
 
 /**
  * Check if request has Vercel bot header
  */
 function isBotByVercelHeader(headers: HeaderBag): boolean {
-  const isBot = headers.get('x-vercel-bot')
-  return isBot === '1' || isBot === 'true'
+	const isBot = headers.get("x-vercel-bot");
+	return isBot === "1" || isBot === "true";
 }
 
 /**
@@ -160,46 +160,46 @@ function isBotByVercelHeader(headers: HeaderBag): boolean {
  * Real browsers almost always send certain headers
  */
 function hasValidBrowserHeaders(headers: HeaderBag): boolean {
-  const ua = headers.get('user-agent')
-  const accept = headers.get('accept')
-  const acceptLanguage = headers.get('accept-language')
+	const ua = headers.get("user-agent");
+	const accept = headers.get("accept");
+	const acceptLanguage = headers.get("accept-language");
 
-  // Real browsers almost always send these
-  if (!ua || !accept) {
-    return false
-  }
+	// Real browsers almost always send these
+	if (!ua || !accept) {
+		return false;
+	}
 
-  // Real browsers send text/html in accept
-  if (!accept.includes('text/html')) {
-    return false
-  }
+	// Real browsers send text/html in accept
+	if (!accept.includes("text/html")) {
+		return false;
+	}
 
-  // Most real browsers send accept-language
-  if (!acceptLanguage) {
-    return false
-  }
+	// Most real browsers send accept-language
+	if (!acceptLanguage) {
+		return false;
+	}
 
-  return true
+	return true;
 }
 
 function isNavigationRequest(headers: HeaderBag, method: string): boolean {
-  if (method !== 'GET' && method !== 'HEAD') {
-    return false
-  }
+	if (method !== "GET" && method !== "HEAD") {
+		return false;
+	}
 
-  const secFetchMode = headers.get('sec-fetch-mode')
-  const secFetchDest = headers.get('sec-fetch-dest')
-  const accept = headers.get('accept')
+	const secFetchMode = headers.get("sec-fetch-mode");
+	const secFetchDest = headers.get("sec-fetch-dest");
+	const accept = headers.get("accept");
 
-  if (secFetchMode === 'navigate') {
-    return true
-  }
+	if (secFetchMode === "navigate") {
+		return true;
+	}
 
-  if (secFetchDest === 'document') {
-    return true
-  }
+	if (secFetchDest === "document") {
+		return true;
+	}
 
-  return accept?.includes('text/html') ?? false
+	return accept?.includes("text/html") ?? false;
 }
 
 /**
@@ -207,94 +207,91 @@ function isNavigationRequest(headers: HeaderBag, method: string): boolean {
  * Uses multiple detection methods with confidence levels
  */
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
-  const headers = getHeaders(req)
-  const method = getMethod(req)
-  const ua = headers.get('user-agent')
+	const headers = getHeaders(req);
+	const method = getMethod(req);
+	const ua = headers.get("user-agent");
 
-  // Check Vercel bot header (high confidence)
-  if (isBotByVercelHeader(headers)) {
-    return {
-      isBot: true,
-      reason: 'vercel-bot-header',
-      confidence: 'high',
-    }
-  }
+	// Check Vercel bot header (high confidence)
+	if (isBotByVercelHeader(headers)) {
+		return {
+			isBot: true,
+			reason: "vercel-bot-header",
+			confidence: "high",
+		};
+	}
 
-  // Check user agent patterns (high confidence)
-  if (isBotUserAgent(ua)) {
-    return {
-      isBot: true,
-      reason: 'bot-user-agent',
-      confidence: 'high',
-    }
-  }
+	// Check user agent patterns (high confidence)
+	if (isBotUserAgent(ua)) {
+		return {
+			isBot: true,
+			reason: "bot-user-agent",
+			confidence: "high",
+		};
+	}
 
-  // Check for missing browser headers (medium confidence)
-  if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
-    return {
-      isBot: true,
-      reason: 'invalid-headers',
-      confidence: 'medium',
-    }
-  }
+	// Check for missing browser headers (medium confidence)
+	if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
+		return {
+			isBot: true,
+			reason: "invalid-headers",
+			confidence: "medium",
+		};
+	}
 
-  // Not detected as bot
-  return {
-    isBot: false,
-    reason: null,
-    confidence: 'low',
-  }
+	// Not detected as bot
+	return {
+		isBot: false,
+		reason: null,
+		confidence: "low",
+	};
 }
 
 /**
  * Classify device type from user agent
  */
 export function classifyDevice(ua: string | null, isBot: boolean = false): string {
-  if (!ua) {
-    return 'unknown'
-  }
+	if (!ua) {
+		return "unknown";
+	}
 
-  // Bots override device classification
-  if (isBot) {
-    return 'bot'
-  }
+	// Bots override device classification
+	if (isBot) {
+		return "bot";
+	}
 
-  const lower = ua.toLowerCase()
+	const lower = ua.toLowerCase();
 
-  // Tablets (check before mobile since some include 'android')
-  if (
-    lower.includes('ipad') ||
-    lower.includes('tablet')
-  ) {
-    return 'tablet'
-  }
+	// Tablets (check before mobile since some include 'android')
+	if (lower.includes("ipad") || lower.includes("tablet")) {
+		return "tablet";
+	}
 
-  // Android tablets (has android but not mobile)
-  if (lower.includes('android') && !lower.includes('mobile')) {
-    return 'tablet'
-  }
+	// Android tablets (has android but not mobile)
+	if (lower.includes("android") && !lower.includes("mobile")) {
+		return "tablet";
+	}
 
-  // Mobile devices
-  if (
-    lower.includes('mobile') ||
-    lower.includes('android') ||
-    lower.includes('iphone') ||
-    lower.includes('ipod') ||
-    lower.includes('blackberry') ||
-    lower.includes('windows phone')
-  ) {
-    return 'mobile'
-  }
+	// Mobile devices
+	if (
+		lower.includes("mobile") ||
+		lower.includes("android") ||
+		lower.includes("iphone") ||
+		lower.includes("ipod") ||
+		lower.includes("blackberry") ||
+		lower.includes("windows phone")
+	) {
+		return "mobile";
+	}
 
-  // Desktop
-  if (
-    lower.includes('windows') ||
-    lower.includes('macintosh') ||
-    lower.includes('linux') ||
-    lower.includes('x11')
-  ) {
-    return 'desktop'
-  }
+	// Desktop
+	if (
+		lower.includes("windows") ||
+		lower.includes("macintosh") ||
+		lower.includes("linux") ||
+		lower.includes("x11")
+	) {
+		return "desktop";
+	}
 
-  return 'unknown'
+	return "unknown";
 }

@@ -1,27 +1,27 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { handleIngest } from './handlers/ingest.js'
-import { handleMetrics } from './handlers/metrics.js'
-import { handleAdminCleanup, handleAdminStats } from './handlers/admin.js'
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { handleIngest } from "./handlers/ingest.js";
+import { handleMetrics } from "./handlers/metrics.js";
+import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
 
-const app = new Hono()
+const app = new Hono();
 
 function getCorsOrigin(origin: string | undefined): string | undefined {
-  return origin
+	return origin;
 }
 
 app.use(
-  '*',
-  cors({
-    origin: getCorsOrigin,
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'X-Requested-With'],
-    credentials: true,
-  })
-)
+	"*",
+	cors({
+		origin: getCorsOrigin,
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "X-Requested-With"],
+		credentials: true,
+	}),
+);
 
-app.get('/', (c) => {
-  const html = `<!DOCTYPE html>
+app.get("/", (c) => {
+	const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -60,6 +60,8 @@ app.get('/', (c) => {
     .path { font-family: monospace; color: #fff; }
     .desc { color: #888; margin-left: auto; }
     footer { margin-top: 2rem; color: #444; font-size: 0.75rem; }
+    a { color: #666; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -71,20 +73,30 @@ app.get('/', (c) => {
   <div class="endpoint"><span class="method get">GET</span><span class="path">/metrics</span><span class="desc">Get metrics</span></div>
   <div class="endpoint"><span class="method get">GET</span><span class="path">/admin/stats</span><span class="desc">Admin statistics</span></div>
   <div class="endpoint"><span class="method post">POST</span><span class="path">/admin/cleanup</span><span class="desc">Trigger data cleanup</span></div>
-  <footer>${new Date().toISOString()}</footer>
+  <footer>
+    <a href="https://github.com/remcostoeten/analytics">GitHub</a>
+    <span> · </span>
+    <span>Last updated: <span id="commit-date">loading...</span></span>
+    <script>
+      fetch('https://api.github.com/repos/remcostoeten/analytics/commits?per_page=1')
+        .then(r => r.json())
+        .then(d => { document.getElementById('commit-date').textContent = d[0]?.commit?.author?.date || 'unknown'; })
+        .catch(() => { document.getElementById('commit-date').textContent = 'unknown'; });
+    </script>
+  </footer>
 </body>
-</html>`
-  return c.html(html)
-})
+</html>`;
+	return c.html(html);
+});
 
-app.get('/health', (c) => c.json({ ok: true, timestamp: new Date().toISOString() }))
+app.get("/health", (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));
 
-app.post('/ingest', handleIngest)
+app.post("/ingest", handleIngest);
 
-app.get('/metrics', handleMetrics)
+app.get("/metrics", handleMetrics);
 
-app.get('/admin/stats', handleAdminStats)
-app.post('/admin/cleanup', handleAdminCleanup)
+app.get("/admin/stats", handleAdminStats);
+app.post("/admin/cleanup", handleAdminCleanup);
 
-export default app
-export { app }
+export default app;
+export { app };

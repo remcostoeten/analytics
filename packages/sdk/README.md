@@ -40,17 +40,17 @@ bun add @remcostoeten/analytics
 ### Next.js App Router
 
 ```tsx
-import { Analytics } from '@remcostoeten/analytics';
+import { Analytics } from "@remcostoeten/analytics";
 
 export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>
-        {children}
-        <Analytics />
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en">
+			<body>
+				{children}
+				<Analytics />
+			</body>
+		</html>
+	);
 }
 ```
 
@@ -58,15 +58,15 @@ export default function RootLayout({ children }) {
 
 ```tsx
 // pages/_app.tsx
-import { Analytics } from '@remcostoeten/analytics';
+import { Analytics } from "@remcostoeten/analytics";
 
 export default function App({ Component, pageProps }) {
-  return (
-    <>
-      <Component {...pageProps} />
-      <Analytics />
-    </>
-  );
+	return (
+		<>
+			<Component {...pageProps} />
+			<Analytics />
+		</>
+	);
 }
 ```
 
@@ -74,15 +74,15 @@ export default function App({ Component, pageProps }) {
 
 ```tsx
 // App.tsx
-import { Analytics } from '@remcostoeten/analytics';
+import { Analytics } from "@remcostoeten/analytics";
 
 function App() {
-  return (
-    <>
-      <Analytics />
-      {/* Your app content */}
-    </>
-  );
+	return (
+		<>
+			<Analytics />
+			{/* Your app content */}
+		</>
+	);
 }
 ```
 
@@ -99,10 +99,10 @@ NEXT_PUBLIC_REMCO_ANALYTICS_URL=https://your-ingestion-url.com
 
 ```tsx
 <Analytics
-  projectId="my-project"           // Optional: defaults to hostname
-  ingestUrl="https://example.com"  // Optional: override ingestion URL
-  disabled={false}                 // Optional: disable tracking
-  debug={false}                    // Optional: enable debug logging
+	projectId="my-project" // Optional: defaults to hostname
+	ingestUrl="https://example.com" // Optional: override ingestion URL
+	disabled={false} // Optional: disable tracking
+	debug={false} // Optional: enable debug logging
 />
 ```
 
@@ -113,6 +113,7 @@ NEXT_PUBLIC_REMCO_ANALYTICS_URL=https://your-ingestion-url.com
 React component that automatically tracks page views.
 
 **Props:**
+
 - `projectId?: string` - Project identifier (defaults to `window.location.hostname`)
 - `ingestUrl?: string` - Ingestion endpoint URL (defaults to env var or `http://localhost:3001`)
 - `disabled?: boolean` - Disable all tracking (default: `false`)
@@ -123,12 +124,13 @@ React component that automatically tracks page views.
 Core tracking function for custom events.
 
 ```tsx
-import { track } from '@remcostoeten/analytics';
+import { track } from "@remcostoeten/analytics";
 
-track('event', { action: 'button_click', label: 'signup' });
+track("event", { action: "button_click", label: "signup" });
 ```
 
 **Parameters:**
+
 - `type: 'pageview' | 'event' | 'click' | 'error'` - Event type
 - `meta?: Record<string, unknown>` - Custom metadata
 - `options?: TrackOptions` - Configuration options
@@ -138,9 +140,9 @@ track('event', { action: 'button_click', label: 'signup' });
 Track a page view event.
 
 ```tsx
-import { trackPageView } from '@remcostoeten/analytics';
+import { trackPageView } from "@remcostoeten/analytics";
 
-trackPageView({ source: 'navigation' });
+trackPageView({ source: "navigation" });
 ```
 
 ### `trackEvent(eventName, meta?, options?)`
@@ -148,9 +150,9 @@ trackPageView({ source: 'navigation' });
 Track a custom event with a name.
 
 ```tsx
-import { trackEvent } from '@remcostoeten/analytics';
+import { trackEvent } from "@remcostoeten/analytics";
 
-trackEvent('signup', { plan: 'pro', trial: true });
+trackEvent("signup", { plan: "pro", trial: true });
 ```
 
 ### `trackClick(elementName, meta?, options?)`
@@ -158,9 +160,9 @@ trackEvent('signup', { plan: 'pro', trial: true });
 Track a click event.
 
 ```tsx
-import { trackClick } from '@remcostoeten/analytics';
+import { trackClick } from "@remcostoeten/analytics";
 
-trackClick('cta_button', { position: 'hero' });
+trackClick("cta_button", { position: "hero" });
 ```
 
 ### `trackError(error, meta?, options?)`
@@ -168,12 +170,12 @@ trackClick('cta_button', { position: 'hero' });
 Track an error event.
 
 ```tsx
-import { trackError } from '@remcostoeten/analytics';
+import { trackError } from "@remcostoeten/analytics";
 
 try {
-  // Some code
+	// Some code
 } catch (error) {
-  trackError(error as Error, { context: 'checkout' });
+	trackError(error as Error, { context: "checkout" });
 }
 ```
 
@@ -181,27 +183,27 @@ try {
 
 ```tsx
 import {
-  getVisitorId,
-  resetVisitorId,
-  getSessionId,
-  resetSessionId,
-} from '@remcostoeten/analytics';
+	getVisitorId,
+	resetVisitorId,
+	getSessionId,
+	resetSessionId,
+} from "@remcostoeten/analytics";
 
-const visitorId = getVisitorId();   // Get current visitor ID
-resetVisitorId();                   // Generate new visitor ID
+const visitorId = getVisitorId(); // Get current visitor ID
+resetVisitorId(); // Generate new visitor ID
 
-const sessionId = getSessionId();   // Get current session ID (30min timeout)
-resetSessionId();                   // Generate new session ID
+const sessionId = getSessionId(); // Get current session ID (30min timeout)
+resetSessionId(); // Generate new session ID
 ```
 
 ### Privacy Controls
 
 ```tsx
-import { optOut, optIn, isOptedOut } from '@remcostoeten/analytics';
+import { optOut, optIn, isOptedOut } from "@remcostoeten/analytics";
 
-optOut();           // Disable tracking for this user
-optIn();            // Re-enable tracking
-isOptedOut();       // Check opt-out status (returns boolean)
+optOut(); // Disable tracking for this user
+optIn(); // Re-enable tracking
+isOptedOut(); // Check opt-out status (returns boolean)
 ```
 
 ## Examples
@@ -209,79 +211,79 @@ isOptedOut();       // Check opt-out status (returns boolean)
 ### Track Custom Events
 
 ```tsx
-'use client';
+"use client";
 
-import { trackEvent } from '@remcostoeten/analytics';
+import { trackEvent } from "@remcostoeten/analytics";
 
 export function SignupButton() {
-  function handleSignup() {
-    trackEvent('signup_initiated', {
-      plan: 'premium',
-      source: 'pricing_page',
-    });
-  }
+	function handleSignup() {
+		trackEvent("signup_initiated", {
+			plan: "premium",
+			source: "pricing_page",
+		});
+	}
 
-  return <button onClick={handleSignup}>Sign Up</button>;
+	return <button onClick={handleSignup}>Sign Up</button>;
 }
 ```
 
 ### Track Errors
 
 ```tsx
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { trackError } from '@remcostoeten/analytics';
+import { useEffect } from "react";
+import { trackError } from "@remcostoeten/analytics";
 
 export function ErrorBoundary({ children }) {
-  useEffect(() => {
-    function handleError(event: ErrorEvent) {
-      trackError(event.error, {
-        message: event.message,
-        filename: event.filename,
-        lineno: event.lineno,
-      });
-    }
+	useEffect(() => {
+		function handleError(event: ErrorEvent) {
+			trackError(event.error, {
+				message: event.message,
+				filename: event.filename,
+				lineno: event.lineno,
+			});
+		}
 
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, []);
+		window.addEventListener("error", handleError);
+		return () => window.removeEventListener("error", handleError);
+	}, []);
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
 ```
 
 ### Privacy Controls UI
 
 ```tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { optOut, optIn, isOptedOut } from '@remcostoeten/analytics';
+import { useState, useEffect } from "react";
+import { optOut, optIn, isOptedOut } from "@remcostoeten/analytics";
 
 export function PrivacySettings() {
-  const [opted, setOpted] = useState(false);
+	const [opted, setOpted] = useState(false);
 
-  useEffect(() => {
-    setOpted(isOptedOut());
-  }, []);
+	useEffect(() => {
+		setOpted(isOptedOut());
+	}, []);
 
-  function handleToggle() {
-    if (opted) {
-      optIn();
-      setOpted(false);
-    } else {
-      optOut();
-      setOpted(true);
-    }
-  }
+	function handleToggle() {
+		if (opted) {
+			optIn();
+			setOpted(false);
+		} else {
+			optOut();
+			setOpted(true);
+		}
+	}
 
-  return (
-    <label>
-      <input type="checkbox" checked={opted} onChange={handleToggle} />
-      Opt out of analytics
-    </label>
-  );
+	return (
+		<label>
+			<input type="checkbox" checked={opted} onChange={handleToggle} />
+			Opt out of analytics
+		</label>
+	);
 }
 ```
 
@@ -289,9 +291,9 @@ export function PrivacySettings() {
 
 ```tsx
 <Analytics
-  projectId="my-app"
-  disabled={process.env.NODE_ENV === 'development'}
-  debug={process.env.NODE_ENV === 'development'}
+	projectId="my-app"
+	disabled={process.env.NODE_ENV === "development"}
+	debug={process.env.NODE_ENV === "development"}
 />
 ```
 
@@ -346,7 +348,7 @@ Uses `navigator.sendBeacon` with automatic fallback to `fetch` with `keepalive`.
 Full TypeScript support included. Types are automatically exported:
 
 ```typescript
-import type { TrackOptions, EventPayload } from '@remcostoeten/analytics';
+import type { TrackOptions, EventPayload } from "@remcostoeten/analytics";
 ```
 
 ## Performance

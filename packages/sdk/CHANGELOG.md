@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Functionality
+
 - `<Analytics />` React component for automatic page view tracking
 - `track()` function for custom event tracking
 - `trackPageView()` helper for manual page view tracking
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `trackError()` helper for error tracking
 
 #### Identity Management
+
 - `getVisitorId()` - Persistent visitor identification via localStorage
 - `resetVisitorId()` - Generate new visitor ID
 - `getSessionId()` - Session identification via sessionStorage with 30-minute timeout
@@ -25,12 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `extendSession()` - Extend current session timeout
 
 #### Privacy Controls
+
 - `optOut()` - Disable tracking and clear visitor data
 - `optIn()` - Re-enable tracking
 - `isOptedOut()` - Check user opt-out status
 - `checkDoNotTrack()` - Respect browser Do Not Track setting
 
 #### Technical Features
+
 - Client-side deduplication (5-second window)
 - `sendBeacon` API with `fetch` fallback
 - SSR compatibility (Next.js App Router + Pages Router)
