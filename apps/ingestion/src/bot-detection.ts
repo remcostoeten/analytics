@@ -1,5 +1,3 @@
-// apps/ingestion/src/bot-detection.ts
-
 export type BotDetectionResult = {
 	isBot: boolean;
 	reason: string | null;
@@ -25,9 +23,7 @@ function emptyHeaders(): HeaderBag {
 
 function getHeaders(req: ReqData | null | undefined): HeaderBag {
 	const headers = req?.headers;
-	if (!headers) {
-		return emptyHeaders();
-	}
+	if (!headers) return emptyHeaders();
 	return headers;
 }
 
@@ -35,28 +31,21 @@ function getMethod(req: ReqData | null | undefined): string {
 	return req?.method?.toUpperCase() ?? "GET";
 }
 
-/**
- * Comprehensive list of bot patterns
- * Includes search engines, AI scrapers, headless browsers, and security scanners
- */
 const BOT_PATTERNS = [
-	// Generic bot indicators
 	/bot/i,
 	/crawler/i,
 	/spider/i,
 	/scraper/i,
 
-	// Search engines
 	/googlebot/i,
 	/bingbot/i,
-	/slurp/i, // Yahoo
+	/slurp/i,
 	/duckduckbot/i,
 	/baiduspider/i,
 	/yandexbot/i,
 	/sogou/i,
 	/exabot/i,
 
-	// Social media crawlers
 	/facebookexternalhit/i,
 	/facebookcatalog/i,
 	/twitterbot/i,
@@ -66,7 +55,6 @@ const BOT_PATTERNS = [
 	/slackbot/i,
 	/discordbot/i,
 
-	// Monitoring and uptime
 	/pingdom/i,
 	/uptimerobot/i,
 	/statuscake/i,
@@ -74,7 +62,6 @@ const BOT_PATTERNS = [
 	/newrelic/i,
 	/datadog/i,
 
-	// Headless browsers
 	/headless/i,
 	/phantom/i,
 	/selenium/i,
@@ -83,7 +70,6 @@ const BOT_PATTERNS = [
 	/playwright/i,
 	/chrome-lighthouse/i,
 
-	// Security scanners
 	/scanner/i,
 	/nikto/i,
 	/nmap/i,
@@ -92,7 +78,6 @@ const BOT_PATTERNS = [
 	/acunetix/i,
 	/qualys/i,
 
-	// Command-line tools
 	/curl/i,
 	/wget/i,
 	/python-requests/i,
@@ -102,7 +87,6 @@ const BOT_PATTERNS = [
 	/okhttp/i,
 	/apache-httpclient/i,
 
-	// AI scrapers
 	/gptbot/i,
 	/chatgpt/i,
 	/claude-web/i,
@@ -110,10 +94,9 @@ const BOT_PATTERNS = [
 	/cohere-ai/i,
 	/perplexitybot/i,
 	/ai2bot/i,
-	/bytespider/i, // TikTok
+	/bytespider/i,
 	/claudebot/i,
 
-	// SEO tools
 	/ahrefsbot/i,
 	/semrushbot/i,
 	/mj12bot/i,
@@ -121,157 +104,84 @@ const BOT_PATTERNS = [
 	/rogerbot/i,
 	/screaming frog/i,
 
-	// Content scrapers
 	/feedfetcher/i,
 	/feedparser/i,
 	/rss/i,
 	/aggregator/i,
 	/newspaper/i,
 
-	// Archive bots
 	/archive\.org_bot/i,
 	/ia_archiver/i,
 	/wayback/i,
 ];
 
-/**
- * Check if user agent matches known bot patterns
- */
 export function isBotUserAgent(ua: string | null): boolean {
-	if (!ua) {
-		return false;
-	}
+	if (!ua) return false;
 
 	return BOT_PATTERNS.some(function (pattern) {
 		return pattern.test(ua);
 	});
 }
 
-/**
- * Check if request has Vercel bot header
- */
 function isBotByVercelHeader(headers: HeaderBag): boolean {
 	const isBot = headers.get("x-vercel-bot");
 	return isBot === "1" || isBot === "true";
 }
 
-/**
- * Check if request has valid browser headers
- * Real browsers almost always send certain headers
- */
 function hasValidBrowserHeaders(headers: HeaderBag): boolean {
 	const ua = headers.get("user-agent");
 	const accept = headers.get("accept");
 	const acceptLanguage = headers.get("accept-language");
 
-	// Real browsers almost always send these
-	if (!ua || !accept) {
-		return false;
-	}
-
-	// Real browsers send text/html in accept
-	if (!accept.includes("text/html")) {
-		return false;
-	}
-
-	// Most real browsers send accept-language
-	if (!acceptLanguage) {
-		return false;
-	}
+	if (!ua || !accept) return false;
+	if (!accept.includes("text/html")) return false;
+	if (!acceptLanguage) return false;
 
 	return true;
 }
 
 function isNavigationRequest(headers: HeaderBag, method: string): boolean {
-	if (method !== "GET" && method !== "HEAD") {
-		return false;
-	}
+	if (method !== "GET" && method !== "HEAD") return false;
 
 	const secFetchMode = headers.get("sec-fetch-mode");
 	const secFetchDest = headers.get("sec-fetch-dest");
 	const accept = headers.get("accept");
 
-	if (secFetchMode === "navigate") {
-		return true;
-	}
-
-	if (secFetchDest === "document") {
-		return true;
-	}
+	if (secFetchMode === "navigate") return true;
+	if (secFetchDest === "document") return true;
 
 	return accept?.includes("text/html") ?? false;
 }
 
-/**
- * Detect if request is from a bot
- * Uses multiple detection methods with confidence levels
- */
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 	const headers = getHeaders(req);
 	const method = getMethod(req);
 	const ua = headers.get("user-agent");
 
-	// Check Vercel bot header (high confidence)
 	if (isBotByVercelHeader(headers)) {
-		return {
-			isBot: true,
-			reason: "vercel-bot-header",
-			confidence: "high",
-		};
+		return { isBot: true, reason: "vercel-bot-header", confidence: "high" };
 	}
 
-	// Check user agent patterns (high confidence)
 	if (isBotUserAgent(ua)) {
-		return {
-			isBot: true,
-			reason: "bot-user-agent",
-			confidence: "high",
-		};
+		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
 	}
 
-	// Check for missing browser headers (medium confidence)
 	if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
-		return {
-			isBot: true,
-			reason: "invalid-headers",
-			confidence: "medium",
-		};
+		return { isBot: true, reason: "invalid-headers", confidence: "medium" };
 	}
 
-	// Not detected as bot
-	return {
-		isBot: false,
-		reason: null,
-		confidence: "low",
-	};
+	return { isBot: false, reason: null, confidence: "low" };
 }
 
-/**
- * Classify device type from user agent
- */
 export function classifyDevice(ua: string | null, isBot: boolean = false): string {
-	if (!ua) {
-		return "unknown";
-	}
-
-	// Bots override device classification
-	if (isBot) {
-		return "bot";
-	}
+	if (!ua) return "unknown";
+	if (isBot) return "bot";
 
 	const lower = ua.toLowerCase();
 
-	// Tablets (check before mobile since some include 'android')
-	if (lower.includes("ipad") || lower.includes("tablet")) {
-		return "tablet";
-	}
+	if (lower.includes("ipad") || lower.includes("tablet")) return "tablet";
+	if (lower.includes("android") && !lower.includes("mobile")) return "tablet";
 
-	// Android tablets (has android but not mobile)
-	if (lower.includes("android") && !lower.includes("mobile")) {
-		return "tablet";
-	}
-
-	// Mobile devices
 	if (
 		lower.includes("mobile") ||
 		lower.includes("android") ||
@@ -283,7 +193,6 @@ export function classifyDevice(ua: string | null, isBot: boolean = false): strin
 		return "mobile";
 	}
 
-	// Desktop
 	if (
 		lower.includes("windows") ||
 		lower.includes("macintosh") ||

@@ -1,6 +1,6 @@
-// apps/ingestion/src/__tests__/dedupe.test.ts
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { generateFingerprint, DedupeCache, getDedupeWindow, metrics } from "../dedupe";
+import { generateFingerprint, getDedupeWindow, metrics } from "../dedupe";
+import { createDedupeCache } from "../dedupe";
 
 describe("generateFingerprint", () => {
 	test("generates consistent fingerprint for same event", async () => {
@@ -174,11 +174,11 @@ describe("generateFingerprint", () => {
 	});
 });
 
-describe("DedupeCache", () => {
-	let cache: DedupeCache;
+describe("dedupeCache", () => {
+	let cache: ReturnType<typeof createDedupeCache>;
 
 	beforeEach(() => {
-		cache = new DedupeCache(1000, 100); // 1 second TTL, 100 max size
+		cache = createDedupeCache(1000, 100);
 	});
 
 	afterEach(() => {
@@ -208,7 +208,6 @@ describe("DedupeCache", () => {
 		cache.add(fingerprint);
 		expect(cache.isDuplicate(fingerprint)).toBe(true);
 
-		// Wait for TTL to expire
 		await Bun.sleep(1100);
 
 		expect(cache.isDuplicate(fingerprint)).toBe(false);
@@ -236,14 +235,12 @@ describe("DedupeCache", () => {
 	});
 
 	test("enforces max size limit", () => {
-		const smallCache = new DedupeCache(60000, 10);
+		const smallCache = createDedupeCache(60000, 10);
 
-		// Add 20 entries (exceeds max of 10)
 		for (let i = 0; i < 20; i++) {
 			smallCache.add(`fp-${i}`);
 		}
 
-		// Should have evicted some entries
 		expect(smallCache.size()).toBeLessThan(20);
 		expect(smallCache.size()).toBeGreaterThan(0);
 
@@ -251,19 +248,16 @@ describe("DedupeCache", () => {
 	});
 
 	test("evicts oldest entries when max size reached", () => {
-		const smallCache = new DedupeCache(60000, 10);
+		const smallCache = createDedupeCache(60000, 10);
 
-		// Add 10 entries
 		for (let i = 0; i < 10; i++) {
 			smallCache.add(`fp-${i}`);
 		}
 
 		expect(smallCache.size()).toBe(10);
 
-		// Add one more to trigger eviction
 		smallCache.add("fp-new");
 
-		// Should have evicted ~10% (1 entry) plus added 1
 		expect(smallCache.size()).toBeLessThanOrEqual(10);
 
 		smallCache.stopCleanup();
@@ -285,10 +279,8 @@ describe("DedupeCache", () => {
 	test("handles many concurrent operations", () => {
 		const fingerprints = Array.from({ length: 50 }, (_, i) => `fp-${i}`);
 
-		// Add all fingerprints
 		fingerprints.forEach((fp) => cache.add(fp));
 
-		// All should be duplicates
 		fingerprints.forEach((fp) => {
 			expect(cache.isDuplicate(fp)).toBe(true);
 		});
@@ -332,7 +324,7 @@ describe("getDedupeWindow", () => {
 	});
 });
 
-describe("DedupeMetrics", () => {
+describe("metrics", () => {
 	beforeEach(() => {
 		metrics.reset();
 	});
@@ -368,7 +360,7 @@ describe("DedupeMetrics", () => {
 
 		const data = metrics.getMetrics();
 
-		expect(data.hitRate).toBe(25); // 1/4 = 25%
+		expect(data.hitRate).toBe(25);
 	});
 
 	test("returns 0 hit rate when no requests", () => {
@@ -417,7 +409,6 @@ describe("DedupeMetrics", () => {
 
 		const data = metrics.getMetrics();
 
-		// 1/3 = 33.33%
 		expect(data.hitRate).toBe(33.33);
 	});
 });

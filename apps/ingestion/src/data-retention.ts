@@ -1,64 +1,50 @@
-// Data retention policies for privacy and compliance
-// Implements automatic cleanup of old data
-
 import { eq, ne, and, lt, sql } from "drizzle-orm";
 
-// Lazy import to avoid requiring DATABASE_URL during tests
-let db: any = null;
-let events: any = null;
+type DbModule = typeof import("./db.js");
 
-async function getDb() {
-	if (!db) {
-		const dbModule = await import("./db.js");
-		db = dbModule.db;
-		events = dbModule.events;
+let cached: DbModule | null = null;
+
+async function getDb(): Promise<DbModule> {
+	if (!cached) {
+		cached = await import("./db.js");
 	}
-	return { db, events };
+	return cached;
 }
 
-export interface RetentionPolicy {
-	// Default retention periods (in days)
+export type RetentionPolicy = {
 	readonly pageviewRetentionDays: number;
 	readonly eventRetentionDays: number;
 	readonly localhostRetentionDays: number;
 	readonly botRetentionDays: number;
-}
+};
 
-export class DataRetainer {
-	private policy: RetentionPolicy;
+const DEFAULT_POLICY: RetentionPolicy = {
+	pageviewRetentionDays: 90,
+	eventRetentionDays: 30,
+	localhostRetentionDays: 7,
+	botRetentionDays: 7,
+};
 
-	constructor(policy?: Partial<RetentionPolicy>) {
-		this.policy = {
-			pageviewRetentionDays: 90, // 3 months for pageviews
-			eventRetentionDays: 30, // 1 month for custom events
-			localhostRetentionDays: 7, // 1 week for localhost traffic
-			botRetentionDays: 7, // 1 week for bot traffic
-			...policy,
-		};
-	}
+export function createRetainer(overrides?: Partial<RetentionPolicy>) {
+	const policy: RetentionPolicy = { ...DEFAULT_POLICY, ...overrides };
 
-	async cleanupOldData(): Promise<void> {
+	async function cleanupOldData(): Promise<void> {
 		const { db, events } = await getDb();
 		const now = new Date();
 
-		// Clean up old pageviews
 		const pageviewCutoff = new Date(now);
-		pageviewCutoff.setDate(pageviewCutoff.getDate() - this.policy.pageviewRetentionDays);
+		pageviewCutoff.setDate(pageviewCutoff.getDate() - policy.pageviewRetentionDays);
 
-		// Clean up old custom events
 		const eventCutoff = new Date(now);
-		eventCutoff.setDate(eventCutoff.getDate() - this.policy.eventRetentionDays);
+		eventCutoff.setDate(eventCutoff.getDate() - policy.eventRetentionDays);
 
-		// Clean up localhost traffic
 		const localhostCutoff = new Date(now);
-		localhostCutoff.setDate(localhostCutoff.getDate() - this.policy.localhostRetentionDays);
+		localhostCutoff.setDate(localhostCutoff.getDate() - policy.localhostRetentionDays);
 
-		// Clean up bot traffic
 		const botCutoff = new Date(now);
-		botCutoff.setDate(botCutoff.getDate() - this.policy.botRetentionDays);
+		botCutoff.setDate(botCutoff.getDate() - policy.botRetentionDays);
 
 		try {
-			// Delete old pageviews
 			await db
 				.delete(events)
 				.where(
@@ -70,7 +56,6 @@ export class DataRetainer {
 					),
 				);
 
-			// Delete old custom events
 			await db
 				.delete(events)
 				.where(
@@ -82,12 +67,10 @@ export class DataRetainer {
 					),
 				);
 
-			// Delete old localhost traffic
 			await db
 				.delete(events)
 				.where(and(eq(events.isLocalhost, true), lt(events.ts, localhostCutoff)));
 
-			// Delete old bot traffic
 			await db
 				.delete(events)
 				.where(and(sql`(${events.meta}->>'botDetected') = 'true'`, lt(events.ts, botCutoff)));
@@ -104,35 +87,26 @@ export class DataRetainer {
 		}
 	}
 
-	async getRetentionStats(): Promise<{
-		totalEvents: number;
-		eventsByType: Record<string, number>;
-		oldestEvent: Date | null;
-		newestEvent: Date | null;
-	}> {
+	async function getRetentionStats() {
 		const { db, events } = await getDb();
 
 		try {
-			// Get total count
 			const totalResult = await db.select({ count: sql<number>`count(*)` }).from(events);
-
 			const totalEvents = totalResult[0]?.count || 0;
 
-			// Get counts by type
 			const typeResults = await db
 				.select({ type: events.type, count: sql<number>`count(*)` })
 				.from(events)
 				.groupBy(events.type);
 
 			const eventsByType = typeResults.reduce(
-				(acc: Record<string, number>, row: any) => {
+				function (acc: Record<string, number>, row: { type: string; count: number }) {
 					acc[row.type || "unknown"] = row.count;
 					return acc;
 				},
 				{} as Record<string, number>,
 			);
 
-			// Get date range
 			const dateResult = await db
 				.select({
 					oldest: sql<Date>`min(${events.ts})`,
@@ -152,21 +126,21 @@ export class DataRetainer {
 		}
 	}
 
-	getPolicy(): RetentionPolicy {
-		return { ...this.policy };
+	function getPolicy(): RetentionPolicy {
+		return { ...policy };
 	}
+
+	return { cleanupOldData, getRetentionStats, getPolicy };
 }
 
-// Default retainer with standard policies
-export const dataRetainer = new DataRetainer();
+export const dataRetainer = createRetainer();
 
-// Run cleanup daily (86400000 ms)
 if (process.env.NODE_ENV === "production") {
-	setInterval(async () => {
+	setInterval(async function () {
 		try {
 			await dataRetainer.cleanupOldData();
 		} catch (error) {
 			console.error("Scheduled data cleanup failed:", error);
 		}
-	}, 86400000); // 24 hours
+	}, 86400000);
 }
