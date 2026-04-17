@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-// Country name to ISO code mapping for common countries
 const countryToCode: Record<string, string> = {
 	"United States": "USA",
 	"United Kingdom": "GBR",

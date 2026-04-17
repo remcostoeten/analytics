@@ -6,23 +6,30 @@ export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 		return function cleanup() {};
 	}
 
-	const startTime = now();
-	let sent = false;
+	let totalTimeMs = 0;
+	let lastStartTime = now();
+	let isPaused = false;
 
 	function sendTimeOnPage(): void {
-		if (sent) {
-			return;
-		}
-		const timeOnPageMs = timeSince(startTime);
-		if (timeOnPageMs > 0) {
-			sent = true;
-			track("event", { eventName: "time-on-page", timeOnPageMs }, options);
+		const currentSessionTime = isPaused ? 0 : timeSince(lastStartTime);
+		const finalTimeMs = totalTimeMs + currentSessionTime;
+
+		if (finalTimeMs > 0) {
+			track("event", { eventName: "time-on-page", timeOnPageMs: finalTimeMs }, options);
 		}
 	}
 
 	function handleVisibilityChange(): void {
 		if (document.visibilityState === "hidden") {
-			sendTimeOnPage();
+			if (!isPaused) {
+				totalTimeMs += timeSince(lastStartTime);
+				isPaused = true;
+			}
+		} else {
+			if (isPaused) {
+				lastStartTime = now();
+				isPaused = false;
+			}
 		}
 	}
 
@@ -34,6 +41,7 @@ export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 	window.addEventListener("beforeunload", handleBeforeUnload);
 
 	return function cleanup() {
+		sendTimeOnPage();
 		document.removeEventListener("visibilitychange", handleVisibilityChange);
 		window.removeEventListener("beforeunload", handleBeforeUnload);
 	};
