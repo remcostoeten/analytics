@@ -7,7 +7,7 @@
         "packages/*"
     ],
     "scripts": {
-        "prebuild": "bun run scripts/pipeline.ts",
+        "prebuild": "bun run scripts/pipeline.ts --no-build",
         "pipeline": "bun run scripts/pipeline.ts",
         "build": "bun run --filter '*' build",
         "test": "bun run --filter '*' test",

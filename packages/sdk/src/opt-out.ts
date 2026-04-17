@@ -1,11 +1,11 @@
-import { isServer, isLocalStorageAvailable } from "./utils";
+import { isRuntime, isStorageAvailable } from "./utilities";
 import { noop } from "./noop";
 
 const OPT_OUT_KEY = "remco_analytics_opt_out";
 const VISITOR_ID_KEY = "remco_analytics_visitor_id";
 
 export function optOut(): void {
-	if (!isLocalStorageAvailable()) {
+	if (!isStorageAvailable("local")) {
 		return;
 	}
 
@@ -18,7 +18,7 @@ export function optOut(): void {
 }
 
 export function optIn(): void {
-	if (!isLocalStorageAvailable()) {
+	if (!isStorageAvailable("local")) {
 		return;
 	}
 
@@ -30,7 +30,7 @@ export function optIn(): void {
 }
 
 export function isOptedOut(): boolean {
-	if (!isLocalStorageAvailable()) {
+	if (!isStorageAvailable("local")) {
 		return false;
 	}
 
@@ -42,7 +42,7 @@ export function isOptedOut(): boolean {
 }
 
 export function checkDoNotTrack(): boolean {
-	if (isServer() || typeof navigator === "undefined") {
+	if (isRuntime("server") || typeof navigator === "undefined") {
 		return false;
 	}
 

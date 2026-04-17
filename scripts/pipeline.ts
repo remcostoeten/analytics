@@ -17,13 +17,18 @@ const THEME = {
   black: "\x1b[30m",
 };
 
+const isPrebuild = process.argv.includes("--no-build");
+
 const tasks = [
   { name: "Lint", command: ["bun", "run", "lint"] },
   { name: "Format", command: ["bun", "run", "fmt"] },
   { name: "Typecheck", command: ["bun", "run", "typecheck"] },
   { name: "Test", command: ["bun", "run", "test"] },
-  { name: "Build", command: ["bun", "run", "build"], env: { SKIP_PIPELINE: "1" } }
 ];
+
+if (!isPrebuild) {
+  tasks.push({ name: "Build", command: ["bun", "run", "build"], env: { SKIP_PIPELINE: "1" } });
+}
 
 async function runTask({ name, command, env }: { name: string; command: string[]; env?: Record<string, string> }) {
   const startTime = performance.now();

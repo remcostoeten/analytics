@@ -1,17 +1,17 @@
 import { track, type AnalyticsOptions } from "./track";
-import { isServer, now, timeSince } from "./utils";
+import { isRuntime, time } from "./utilities";
 
 export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
-	if (isServer()) {
+	if (isRuntime("server")) {
 		return function cleanup() {};
 	}
 
 	let totalTimeMs = 0;
-	let lastStartTime = now();
+	let lastStartTime = time();
 	let isPaused = false;
 
 	function sendTimeOnPage(): void {
-		const currentSessionTime = isPaused ? 0 : timeSince(lastStartTime);
+		const currentSessionTime = isPaused ? 0 : time(lastStartTime);
 		const finalTimeMs = totalTimeMs + currentSessionTime;
 
 		if (finalTimeMs > 0) {
@@ -22,12 +22,12 @@ export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 	function handleVisibilityChange(): void {
 		if (document.visibilityState === "hidden") {
 			if (!isPaused) {
-				totalTimeMs += timeSince(lastStartTime);
+				totalTimeMs += time(lastStartTime);
 				isPaused = true;
 			}
 		} else {
 			if (isPaused) {
-				lastStartTime = now();
+				lastStartTime = time();
 				isPaused = false;
 			}
 		}

@@ -1,9 +1,16 @@
-import { isServer } from "./utils";
+import { isRuntime } from "./runtime";
 
+/**
+ * Enrichment data object containing collected browser/environment information.
+ */
 type EnrichmentData = Record<string, unknown>;
 
+/**
+ * Collects screen and viewport information.
+ * @returns {EnrichmentData} Screen information object.
+ */
 function getScreenInfo(): EnrichmentData {
-	if (isServer() || !window.screen) {
+	if (isRuntime("server") || !window.screen) {
 		return {};
 	}
 
@@ -14,8 +21,12 @@ function getScreenInfo(): EnrichmentData {
 	};
 }
 
+/**
+ * Parses UTM parameters from the current URL.
+ * @returns {EnrichmentData} Object containing camelCased UTM parameters.
+ */
 function getUtmParams(): EnrichmentData {
-	if (isServer()) {
+	if (isRuntime("server")) {
 		return {};
 	}
 
@@ -37,6 +48,10 @@ function getUtmParams(): EnrichmentData {
 	return utm;
 }
 
+/**
+ * Collects network connection information if available.
+ * @returns {EnrichmentData} Connection information object.
+ */
 function getConnectionInfo(): EnrichmentData {
 	if (typeof navigator === "undefined") {
 		return {};
@@ -56,6 +71,10 @@ function getConnectionInfo(): EnrichmentData {
 	};
 }
 
+/**
+ * Core enrichment utility to gather environment data for event tracking.
+ * @returns {EnrichmentData} The compiled enrichment data.
+ */
 export function collectEnrichment(): EnrichmentData {
 	return {
 		...getScreenInfo(),

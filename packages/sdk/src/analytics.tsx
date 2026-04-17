@@ -6,7 +6,7 @@ import { observePerformance } from "./performance";
 import { observeScroll } from "./scroll";
 import { observeTimeOnPage } from "./time-on-page";
 import { type AnalyticsOptions } from "./track";
-import { debugLog } from "./logger";
+import { debugLog } from "./utilities";
 
 type Props = AnalyticsOptions & {
 	disabled?: boolean;

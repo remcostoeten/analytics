@@ -1,4 +1,4 @@
-import { now, generateUUID, isSessionStorageAvailable } from "./utils";
+import { time, generateUUID, isStorageAvailable } from "./utilities";
 import { noop } from "./noop";
 
 const SESSION_ID_KEY = "remco_analytics_session_id";
@@ -6,7 +6,7 @@ const SESSION_TIMEOUT_KEY = "remco_analytics_session_timeout";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 function isSessionExpired(): boolean {
-	if (!isSessionStorageAvailable()) {
+	if (!isStorageAvailable("session")) {
 		return true;
 	}
 
@@ -17,19 +17,19 @@ function isSessionExpired(): boolean {
 		}
 
 		const timeout = parseInt(timeoutStr, 10);
-		return now() > timeout;
+		return time() > timeout;
 	} catch {
 		return true;
 	}
 }
 
 function updateSessionTimeout(): void {
-	if (!isSessionStorageAvailable()) {
+	if (!isStorageAvailable("session")) {
 		return;
 	}
 
 	try {
-		const timeout = now() + SESSION_TIMEOUT_MS;
+		const timeout = time() + SESSION_TIMEOUT_MS;
 		sessionStorage.setItem(SESSION_TIMEOUT_KEY, timeout.toString());
 	} catch {
 		noop();
@@ -37,7 +37,7 @@ function updateSessionTimeout(): void {
 }
 
 export function getSessionId(): string {
-	if (!isSessionStorageAvailable()) {
+	if (!isStorageAvailable("session")) {
 		return generateUUID();
 	}
 
@@ -60,7 +60,7 @@ export function getSessionId(): string {
 }
 
 export function resetSessionId(): string {
-	if (!isSessionStorageAvailable()) {
+	if (!isStorageAvailable("session")) {
 		return generateUUID();
 	}
 

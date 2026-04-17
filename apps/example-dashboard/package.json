@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "cd ../../packages/sdk && bun run build && cd ../../apps/example-dashboard && bun --bun next build",
+		"build": "next build",
 		"start": "next start",
 		"lint": "eslint ."
 	},

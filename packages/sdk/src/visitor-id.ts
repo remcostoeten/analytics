@@ -1,9 +1,9 @@
-import { generateUUID, isLocalStorageAvailable } from "./utils";
+import { generateUUID, isStorageAvailable } from "./utilities";
 
 const VISITOR_ID_KEY = "remco_analytics_visitor_id";
 
 export function getVisitorId(): string {
-	if (!isLocalStorageAvailable()) {
+	if (!isStorageAvailable("local")) {
 		return generateUUID();
 	}
 
@@ -22,7 +22,7 @@ export function getVisitorId(): string {
 }
 
 export function resetVisitorId(): string {
-	if (!isLocalStorageAvailable()) {
+	if (!isStorageAvailable("local")) {
 		return generateUUID();
 	}
 
