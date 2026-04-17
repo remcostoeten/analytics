@@ -1,5 +1,5 @@
 export * from "./enrichment";
-export * from "./generate-uuid";
+export * from "./uuid";
 export * from "./logger";
 export * from "./noop";
 export * from "./runtime";

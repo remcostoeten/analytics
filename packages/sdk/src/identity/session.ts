@@ -1,20 +1,15 @@
-import { time, generateUUID, isStorageAvailable } from "../utilities";
-import { noop } from "../utilities/noop";
+import { time, uuid, isStorageAvailable, noop } from "../utilities";
 
-const SESSION_ID_KEY = "remco_analytics_session_id";
-const SESSION_TIMEOUT_KEY = "remco_analytics_session_timeout";
+const SESSION_ID_KEY = "__analytics_session_id";
+const SESSION_TIMEOUT_KEY = "__analytics_session_timeout";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 function isSessionExpired(): boolean {
-	if (!isStorageAvailable("session")) {
-		return true;
-	}
+	if (!isStorageAvailable("session")) return true;
 
 	try {
 		const timeoutStr = sessionStorage.getItem(SESSION_TIMEOUT_KEY);
-		if (!timeoutStr) {
-			return true;
-		}
+		if (!timeoutStr) return true;
 
 		const timeout = parseInt(timeoutStr, 10);
 		return time() > timeout;
@@ -24,9 +19,7 @@ function isSessionExpired(): boolean {
 }
 
 function updateSessionTimeout(): void {
-	if (!isStorageAvailable("session")) {
-		return;
-	}
+	if (!isStorageAvailable("session")) return;
 
 	try {
 		const timeout = time() + SESSION_TIMEOUT_MS;
@@ -36,15 +29,8 @@ function updateSessionTimeout(): void {
 	}
 }
 
-/**
- * Retrieves the current session ID from session storage.
- * If the session has expired or doesn't exist, a new one is created.
- * @returns {string} The session ID.
- */
 export function getSessionId(): string {
-	if (!isStorageAvailable("session")) {
-		return generateUUID();
-	}
+	if (!isStorageAvailable("session")) return uuid();
 
 	try {
 		const existing = sessionStorage.getItem(SESSION_ID_KEY);
@@ -55,37 +41,28 @@ export function getSessionId(): string {
 			return existing;
 		}
 
-		const newId = generateUUID();
-		sessionStorage.setItem(SESSION_ID_KEY, newId);
+		const id = uuid();
+		sessionStorage.setItem(SESSION_ID_KEY, id);
 		updateSessionTimeout();
-		return newId;
+		return id;
 	} catch {
-		return generateUUID();
+		return uuid();
 	}
 }
 
-/**
- * Forcefully resets the current session ID.
- * @returns {string} The new session ID.
- */
 export function resetSessionId(): string {
-	if (!isStorageAvailable("session")) {
-		return generateUUID();
-	}
+	if (!isStorageAvailable("session")) return uuid();
 
 	try {
-		const newId = generateUUID();
-		sessionStorage.setItem(SESSION_ID_KEY, newId);
+		const id = uuid();
+		sessionStorage.setItem(SESSION_ID_KEY, id);
 		updateSessionTimeout();
-		return newId;
+		return id;
 	} catch {
-		return generateUUID();
+		return uuid();
 	}
 }
 
-/**
- * Extends the current session timeout.
- */
 export function extendSession(): void {
 	updateSessionTimeout();
 }

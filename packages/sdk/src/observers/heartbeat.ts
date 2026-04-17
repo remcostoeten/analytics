@@ -2,18 +2,8 @@ import { track } from "../api/track";
 import { type AnalyticsOptions } from "../types";
 import { isRuntime, time } from "../utilities";
 
-/**
- * Tracks the total active time a user spends on the page.
- * Pauses tracking when the tab is hidden and resumes when visible.
- * Sends the accumulated time on beforeunload or component cleanup.
- *
- * @param {AnalyticsOptions} [options={}] - Tracking options.
- * @returns {() => void} Cleanup function to remove listeners.
- */
 export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
-	if (isRuntime("server")) {
-		return function cleanup() {};
-	}
+	if (isRuntime("server")) return () => {};
 
 	let totalTimeMs = 0;
 	let lastStartTime = time();
@@ -42,16 +32,12 @@ export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 		}
 	}
 
-	function handleBeforeUnload(): void {
-		sendTimeOnPage();
-	}
-
 	document.addEventListener("visibilitychange", handleVisibilityChange);
-	window.addEventListener("beforeunload", handleBeforeUnload);
+	window.addEventListener("beforeunload", sendTimeOnPage);
 
-	return function cleanup() {
+	return () => {
 		sendTimeOnPage();
 		document.removeEventListener("visibilitychange", handleVisibilityChange);
-		window.removeEventListener("beforeunload", handleBeforeUnload);
+		window.removeEventListener("beforeunload", sendTimeOnPage);
 	};
 }

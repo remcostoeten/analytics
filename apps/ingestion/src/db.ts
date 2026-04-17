@@ -1,6 +1,15 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { bigserial, boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+	bigserial,
+	boolean,
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+} from "drizzle-orm/pg-core";
 
 export const events = pgTable(
 	"events",
@@ -43,6 +52,38 @@ export const events = pgTable(
 	},
 );
 
+export const visitors = pgTable(
+	"visitors",
+	{
+		id: bigserial("id", { mode: "bigint" }).primaryKey(),
+		fingerprint: text("fingerprint").notNull().unique(),
+		firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
+		lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
+		visitCount: integer("visit_count").notNull().default(1),
+		isInternal: boolean("is_internal").notNull().default(false),
+		deviceType: text("device_type"),
+		os: text("os"),
+		osVersion: text("os_version"),
+		browser: text("browser"),
+		browserVersion: text("browser_version"),
+		screenResolution: text("screen_resolution"),
+		timezone: text("timezone"),
+		language: text("language"),
+		country: text("country"),
+		region: text("region"),
+		city: text("city"),
+		ipHash: text("ip_hash"),
+		ua: text("ua"),
+		meta: jsonb("meta"),
+	},
+	function (table) {
+		return {
+			lastSeenIdx: index("idx_visitors_last_seen").on(table.lastSeen),
+			fingerprintIdx: index("idx_visitors_fingerprint").on(table.fingerprint),
+		};
+	},
+);
+
 function getDbClient() {
 	const databaseUrl = process.env.DATABASE_URL;
 
@@ -51,7 +92,7 @@ function getDbClient() {
 	}
 
 	const sql = neon(databaseUrl);
-	return drizzle(sql, { schema: { events } });
+	return drizzle(sql, { schema: { events, visitors } });
 }
 
 export const db = getDbClient();

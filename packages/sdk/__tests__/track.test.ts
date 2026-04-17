@@ -166,7 +166,7 @@ describe("track", () => {
 	});
 
 	test("respects opt-out flag", () => {
-		global.localStorage.setItem("remco_analytics_opt_out", "true");
+		global.localStorage.setItem("__analytics_opt_out", "true");
 		track("pageview");
 		expect(beaconMock).not.toHaveBeenCalled();
 	});

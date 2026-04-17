@@ -1,44 +1,32 @@
 import { getVisitorId } from "../identity/visitor";
 import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
-import { isRuntime, debugLog, collectEnrichment } from "../utilities";
-import { noop } from "../utilities/noop";
+import { isRuntime, debugLog, collectEnrichment, noop } from "../utilities";
 import { type AnalyticsOptions, type EventPayload, type EventType } from "../types";
 
 const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
 
 function resolveDefaultProjectId(): string {
-	if (isRuntime("server") || typeof window === "undefined") {
-		return "unknown";
-	}
+	if (isRuntime("server") || typeof window === "undefined") return "unknown";
 	return window.location?.hostname || "unknown";
 }
 
 function resolveDefaultIngestUrl(): string {
-	if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL) {
-		return process.env.NEXT_PUBLIC_REMCO_ANALYTICS_URL;
-	}
-
-	// @ts-ignore
-	if (typeof import.meta !== "undefined" && import.meta.env?.VITE_REMCO_ANALYTICS_URL) {
-		// @ts-ignore
-		return import.meta.env.VITE_REMCO_ANALYTICS_URL;
-	}
-
-	return "http://localhost:3001";
+	const env =
+		(typeof process !== "undefined" ? process.env : null) ||
+		(typeof import.meta !== "undefined" ? (import.meta as any).env : null);
+	return (
+		env?.NEXT_PUBLIC_ANALYTICS_URL ||
+		env?.VITE_ANALYTICS_URL ||
+		env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL ||
+		env?.VITE_REMCO_ANALYTICS_URL ||
+		"http://localhost:3001"
+	);
 }
 
 const DEFAULT_PROJECT_ID = resolveDefaultProjectId();
 const DEFAULT_INGEST_URL = resolveDefaultIngestUrl();
-
-function getDefaultProjectId(): string {
-	return DEFAULT_PROJECT_ID;
-}
-
-function getDefaultIngestUrl(): string {
-	return DEFAULT_INGEST_URL;
-}
 
 function createEventKey(payload: EventPayload): string {
 	return `${payload.type}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
@@ -46,9 +34,7 @@ function createEventKey(payload: EventPayload): string {
 
 function isDuplicate(payload: EventPayload): boolean {
 	const key = createEventKey(payload);
-	if (recentEvents.has(key)) {
-		return true;
-	}
+	if (recentEvents.has(key)) return true;
 	recentEvents.add(key);
 	setTimeout(() => recentEvents.delete(key), DEDUPE_WINDOW_MS);
 	return false;
@@ -59,41 +45,27 @@ function buildPayload(
 	meta: Record<string, unknown> | undefined,
 	options: AnalyticsOptions,
 ): EventPayload | null {
-	if (isRuntime("server")) {
-		return null;
-	}
-
-	const projectId = options.projectId || getDefaultProjectId();
-	const visitorId = getVisitorId();
-	const sessionId = getSessionId();
+	if (isRuntime("server")) return null;
 
 	return {
 		type,
-		projectId,
+		projectId: options.projectId || DEFAULT_PROJECT_ID,
 		path: window.location.pathname,
 		referrer: document.referrer || null,
 		origin: window.location.origin,
 		host: window.location.host,
 		ua: navigator.userAgent,
 		lang: navigator.language,
-		visitorId,
-		sessionId,
-		meta: {
-			...collectEnrichment(),
-			...meta,
-		},
+		visitorId: getVisitorId(),
+		sessionId: getSessionId(),
+		meta: { ...collectEnrichment(), ...meta },
 	};
 }
 
 function sendWithBeacon(url: string, payload: EventPayload): boolean {
-	if (typeof navigator === "undefined" || !navigator.sendBeacon) {
-		return false;
-	}
-
+	if (typeof navigator === "undefined" || !navigator.sendBeacon) return false;
 	try {
-		const blob = new Blob([JSON.stringify(payload)], {
-			type: "application/json",
-		});
+		const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
 		return navigator.sendBeacon(url, blob);
 	} catch {
 		return false;
@@ -101,64 +73,42 @@ function sendWithBeacon(url: string, payload: EventPayload): boolean {
 }
 
 function sendWithFetch(url: string, payload: EventPayload): void {
-	if (typeof fetch === "undefined") {
-		return;
-	}
-
-	try {
-		fetch(url, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-			keepalive: true,
-		}).catch(noop);
-	} catch {
-		noop();
-	}
+	if (typeof fetch === "undefined") return;
+	fetch(url, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload),
+		keepalive: true,
+	}).catch(noop);
 }
 
-/**
- * Core tracking function that sends an event to the ingestion endpoint.
- * Handles deduplication, opt-out checks, and environment enrichment.
- *
- * @param {EventType} type - The type of event to track.
- * @param {Record<string, unknown>} [meta] - Optional metadata to include.
- * @param {AnalyticsOptions} [options={}] - Override default tracking options.
- */
 export function track(
 	type: EventType,
 	meta?: Record<string, unknown>,
 	options: AnalyticsOptions = {},
 ): void {
 	if (isOptedOut()) {
-		debugLog(options.debug, "User has opted out");
+		debugLog(options.debug, "User opted out");
 		return;
 	}
 
 	if (checkDoNotTrack()) {
-		debugLog(options.debug, "Do Not Track is enabled");
+		debugLog(options.debug, "DNT enabled");
 		return;
 	}
 
 	const payload = buildPayload(type, meta, options);
-	if (!payload) {
-		debugLog(options.debug, "SSR detected, skipping track");
-		return;
-	}
+	if (!payload) return;
 
 	if (isDuplicate(payload)) {
-		debugLog(options.debug, "Duplicate event blocked", payload);
+		debugLog(options.debug, "Duplicate blocked", payload);
 		return;
 	}
 
-	const ingestUrl = options.ingestUrl || getDefaultIngestUrl();
-	const endpoint = `${ingestUrl}/ingest`;
-
+	const endpoint = `${options.ingestUrl || DEFAULT_INGEST_URL}/ingest`;
 	extendSession();
 
-	const beaconSent = sendWithBeacon(endpoint, payload);
-
-	if (!beaconSent) {
+	if (!sendWithBeacon(endpoint, payload)) {
 		sendWithFetch(endpoint, payload);
 	}
 
@@ -190,15 +140,7 @@ export function trackError(
 	meta?: Record<string, unknown>,
 	options?: AnalyticsOptions,
 ): void {
-	track(
-		"error",
-		{
-			message: error.message,
-			stack: error.stack,
-			...meta,
-		},
-		options,
-	);
+	track("error", { message: error.message, stack: error.stack, ...meta }, options);
 }
 
 export function trackTransaction(
@@ -208,43 +150,18 @@ export function trackTransaction(
 	items?: number,
 	options?: AnalyticsOptions,
 ): void {
-	track(
-		"event",
-		{
-			eventName: "transaction",
-			revenue,
-			currency,
-			orderId,
-			items,
-		},
-		options,
-	);
+	track("event", { eventName: "transaction", revenue, currency, orderId, items }, options);
 }
 
 export function trackSearch(query: string, resultCount: number, options?: AnalyticsOptions): void {
-	track(
-		"event",
-		{
-			eventName: "site_search",
-			query,
-			resultCount,
-		},
-		options,
-	);
+	track("event", { eventName: "site_search", query, resultCount }, options);
 }
 
 export function identifyUser(
 	userProperties: Record<string, string | number | boolean>,
 	options?: AnalyticsOptions,
 ): void {
-	track(
-		"event",
-		{
-			eventName: "identify",
-			userProperties,
-		},
-		options,
-	);
+	track("event", { eventName: "identify", userProperties }, options);
 }
 
 export function setExperiment(
@@ -254,12 +171,7 @@ export function setExperiment(
 ): void {
 	track(
 		"event",
-		{
-			eventName: "experiment_exposure",
-			experiments: {
-				[experimentId]: variantId,
-			},
-		},
+		{ eventName: "experiment_exposure", experiments: { [experimentId]: variantId } },
 		options,
 	);
 }
