@@ -1,3 +1,3 @@
-"use client"
+"use client";
 
-export { Analytics } from "@remcostoeten/analytics"
+export { Analytics } from "@remcostoeten/analytics";

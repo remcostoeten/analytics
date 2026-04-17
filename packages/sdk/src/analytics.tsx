@@ -9,33 +9,28 @@ import { type AnalyticsOptions } from "./track";
 import { debugLog } from "./logger";
 
 type Props = AnalyticsOptions & {
-  disabled?: boolean;
+	disabled?: boolean;
 };
 
-export function Analytics({
-  projectId,
-  ingestUrl,
-  disabled = false,
-  debug = false,
-}: Props) {
-  useEffect(() => {
-    if (disabled) {
-      debugLog(debug, "Tracking disabled via prop");
-      return;
-    }
+export function Analytics({ projectId, ingestUrl, disabled = false, debug = false }: Props) {
+	useEffect(() => {
+		if (disabled) {
+			debugLog(debug, "Tracking disabled via prop");
+			return;
+		}
 
-    const cleanupPageViews = observePageViews({ projectId, ingestUrl, debug });
-    const cleanupPerformance = observePerformance({ projectId, ingestUrl, debug });
-    const cleanupScroll = observeScroll({ projectId, ingestUrl, debug });
-    const cleanupTimeOnPage = observeTimeOnPage({ projectId, ingestUrl, debug });
+		const cleanupPageViews = observePageViews({ projectId, ingestUrl, debug });
+		const cleanupPerformance = observePerformance({ projectId, ingestUrl, debug });
+		const cleanupScroll = observeScroll({ projectId, ingestUrl, debug });
+		const cleanupTimeOnPage = observeTimeOnPage({ projectId, ingestUrl, debug });
 
-    return function cleanup() {
-      cleanupPageViews();
-      cleanupPerformance();
-      cleanupScroll();
-      cleanupTimeOnPage();
-    };
-  }, [projectId, ingestUrl, disabled, debug]);
+		return function cleanup() {
+			cleanupPageViews();
+			cleanupPerformance();
+			cleanupScroll();
+			cleanupTimeOnPage();
+		};
+	}, [projectId, ingestUrl, disabled, debug]);
 
-  return null;
+	return null;
 }

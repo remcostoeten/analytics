@@ -1,27 +1,27 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { handleIngest } from './handlers/ingest.js'
-import { handleMetrics } from './handlers/metrics.js'
-import { handleAdminCleanup, handleAdminStats } from './handlers/admin.js'
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { handleIngest } from "./handlers/ingest.js";
+import { handleMetrics } from "./handlers/metrics.js";
+import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
 
-const app = new Hono()
+const app = new Hono();
 
 function getCorsOrigin(origin: string | undefined): string | undefined {
-  return origin
+	return origin;
 }
 
 app.use(
-  '*',
-  cors({
-    origin: getCorsOrigin,
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'X-Requested-With'],
-    credentials: true,
-  })
-)
+	"*",
+	cors({
+		origin: getCorsOrigin,
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "X-Requested-With"],
+		credentials: true,
+	}),
+);
 
-app.get('/', (c) => {
-  const html = `<!DOCTYPE html>
+app.get("/", (c) => {
+	const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -73,18 +73,18 @@ app.get('/', (c) => {
   <div class="endpoint"><span class="method post">POST</span><span class="path">/admin/cleanup</span><span class="desc">Trigger data cleanup</span></div>
   <footer>${new Date().toISOString()}</footer>
 </body>
-</html>`
-  return c.html(html)
-})
+</html>`;
+	return c.html(html);
+});
 
-app.get('/health', (c) => c.json({ ok: true, timestamp: new Date().toISOString() }))
+app.get("/health", (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));
 
-app.post('/ingest', handleIngest)
+app.post("/ingest", handleIngest);
 
-app.get('/metrics', handleMetrics)
+app.get("/metrics", handleMetrics);
 
-app.get('/admin/stats', handleAdminStats)
-app.post('/admin/cleanup', handleAdminCleanup)
+app.get("/admin/stats", handleAdminStats);
+app.post("/admin/cleanup", handleAdminCleanup);
 
-export default app
-export { app }
+export default app;
+export { app };
