@@ -1,5 +1,6 @@
 import { track } from "./track";
 
+
 type PerformanceOptions = {
   projectId?: string;
   ingestUrl?: string;
@@ -113,7 +114,7 @@ function observeInp(callback: (value: number) => void): void {
 
 export function observePerformance(options: PerformanceOptions = {}): () => void {
   if (typeof window === "undefined") {
-    return function cleanup() {};
+    return function cleanup() { };
   }
 
   const vitals: WebVitals = {};

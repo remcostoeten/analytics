@@ -1,4 +1,4 @@
-# 🚀 Quick Start - Deploy v0.0.1
+# Quick Start - Deploy v0.0.1
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ bun run deploy
 $ bun run deploy
 
 ╔════════════════════════════════════════════════════════════╗
-║  🚀 Remco Analytics Deployment Tool                       ║
+║  Remco Analytics Deployment Tool                          ║
 ╚════════════════════════════════════════════════════════════╝
 
 1. Build all packages
@@ -117,7 +117,7 @@ Continue? (y/n): y
 ✓ Tag pushed successfully!
 
 ╔════════════════════════════════════════════════════════════╗
-║  🎉 Release Complete!                                      ║
+║  Release Complete!                                         ║
 ╚════════════════════════════════════════════════════════════╝
 
 Press Enter to continue...
@@ -166,4 +166,4 @@ chmod +x deploy.ts
 
 ---
 
-**Ready to deploy?** Run `bun run deploy` and let's ship v0.0.1! 🚀
+**Ready to deploy?** Run `bun run deploy` and let's ship v0.0.1!

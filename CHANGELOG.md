@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.1] - 2024-02-13
 
-🎉 **First Alpha Release** - Complete analytics platform with ingestion, SDK, and dashboard.
+**First Alpha Release** - Complete analytics platform with ingestion, SDK, and dashboard.
 
 ### Added
 
-#### 📊 Dashboard (M3)
+#### Dashboard (M3)
 - Real-time analytics dashboard with Next.js 15
 - Beautiful timeseries chart using Recharts
 - Metric cards for pageviews, unique visitors, and sessions
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dark theme with Geist font
 - Responsive layout (basic)
 
-#### 📦 SDK Package (@remcostoeten/analytics)
+#### SDK Package (@remcostoeten/analytics)
 - React `<Analytics />` component for auto page tracking
 - Custom event tracking functions:
   - `track()` - Core tracking function
@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 1.6 KB gzipped bundle size
 - Zero runtime dependencies
 
-#### 🔧 Ingestion Service (M1)
+#### Ingestion Service (M1)
 - POST `/ingest` - Event ingestion endpoint
 - GET `/health` - Health check endpoint
 - GET `/metrics` - Deduplication statistics
@@ -60,19 +60,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Event deduplication with in-memory cache
 - Privacy-first design (no cookies, no raw IPs)
 
-#### 🗄️ Database (Neon Postgres)
+#### Database (Neon Postgres)
 - Comprehensive events table with 18 columns
 - 8 strategic indexes for query optimization
 - Drizzle ORM for type-safe database access
 - Migration system with version control
 
-#### 🧪 Testing
+#### Testing
 - 168 tests passing (95% coverage)
 - Unit tests for all core functionality
 - Integration tests for database and API
 - Zero test failures
 
-#### 📚 Documentation
+#### Documentation
 - Comprehensive README with examples
 - M3-COMPLETION-PLAN.md (task breakdown)
 - M3-PROGRESS-UPDATE.md (detailed progress)

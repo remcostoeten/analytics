@@ -1,14 +1,8 @@
-import { track } from "./track";
+import { track, type AnalyticsOptions } from "./track";
 
-type ScrollOptions = {
-  projectId?: string;
-  ingestUrl?: string;
-  debug?: boolean;
-};
-
-export function observeScroll(options: ScrollOptions = {}): () => void {
+export function observeScroll(options: AnalyticsOptions = {}): () => void {
   if (typeof window === "undefined") {
-    return function cleanup() {};
+    return function cleanup() { };
   }
 
   let maxScrollDepth = 0;
@@ -17,13 +11,13 @@ export function observeScroll(options: ScrollOptions = {}): () => void {
   function updateScrollDepth(): void {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    
+
     if (height <= 0) {
-      return; // Can't scroll
+      return;
     }
-    
+
     const depth = Math.round((scrollTop / height) * 100);
-    
+
     if (depth > maxScrollDepth) {
       maxScrollDepth = depth;
     }
@@ -47,8 +41,7 @@ export function observeScroll(options: ScrollOptions = {}): () => void {
 
   window.addEventListener("scroll", handleScroll, { passive: true });
   window.addEventListener("beforeunload", handleBeforeUnload);
-  
-  // Initial check in case they loaded partway down
+
   updateScrollDepth();
 
   return function cleanup() {

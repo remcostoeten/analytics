@@ -1,16 +1,27 @@
 # @remcostoeten/analytics
 
-Privacy-focused analytics SDK for tracking page views and custom events in React and Next.js applications.
+Privacy-focused analytics SDK designed for high-performance tracking of page views and custom events in React and Next.js applications. It prioritizes user privacy by operating without cookies and utilizing secure, server-side IP hashing.
 
 ## Features
 
-- 🔒 **Privacy-First**: No cookies, no raw IP storage, GDPR-friendly
-- 🚀 **Lightweight**: Only 1.6 KB gzipped
-- ⚡ **Fast**: Uses `sendBeacon` API with fetch fallback
-- 🎯 **Type-Safe**: Written in TypeScript with full type definitions
-- 🔄 **SSR Compatible**: Works with Next.js App Router and Pages Router
-- 🛡️ **Built-in Protection**: Opt-out support, DNT respect, client-side deduplication
-- 📊 **Simple API**: Drop-in component + helper functions
+- **Privacy-First**: Operates without cookies or raw IP storage, ensuring GDPR and CCPA compliance.
+- **Lightweight**: Minimal footprint (approx 1.6 KB gzipped) to maintain optimal page load performance.
+- **Reliable Data Delivery**: Leverages the `sendBeacon` API for non-blocking background transmissions, with a robust `fetch` fallback.
+- **TypeScript First**: First-class support with exhaustive type definitions for a better developer experience.
+- **Framework Agnostic (React)**: Seamlessly integrates with Next.js (App and Pages Router) and standard React SPAs.
+- **Compliance Built-in**: Native respect for "Do Not Track" (DNT) headers and user opt-out mechanisms.
+- **Intelligent Deduplication**: Client-side logic prevents duplicate event firing during rapid interactions.
+
+## How it Works
+
+The SDK operates on a "thin client" philosophy. It captures minimal client-side signals (path, referrer, browser language) and combines them with a persistent `visitorId` (stored in `localStorage`) and a `sessionId` (stored in `sessionStorage`).
+
+### Event Lifecycle
+
+1. **Initialization**: The `<Analytics />` component initializes tracking and listens for route changes.
+2. **Capture**: When an event occurs (page view or custom event), the SDK gathers environmental metadata.
+3. **Dispatch**: Data is dispatched to the ingestion endpoint. The SDK uses `navigator.sendBeacon` to ensure the event is sent even if the user is navigating away from the page.
+4. **Ingestion**: The server validates the payload, extracts geographical data from headers, hashes the IP address, and persists the event to the database.
 
 ## Installation
 
@@ -29,7 +40,6 @@ bun add @remcostoeten/analytics
 ### Next.js App Router
 
 ```tsx
-// app/layout.tsx
 import { Analytics } from '@remcostoeten/analytics';
 
 export default function RootLayout({ children }) {
@@ -315,12 +325,12 @@ Each tracking call sends:
 
 ### Privacy Features
 
-- ✅ **No HTTP cookies** - Uses localStorage/sessionStorage only
-- ✅ **No raw IPs** - IPs are hashed server-side with daily salt rotation
-- ✅ **Opt-out support** - Users can disable tracking permanently
-- ✅ **DNT respect** - Honors Do Not Track browser setting
-- ✅ **Client deduplication** - Prevents duplicate events within 5 seconds
-- ✅ **SSR safe** - Automatically skips tracking on server
+- **No HTTP cookies**: Uses localStorage/sessionStorage only.
+- **No raw IPs**: IPs are hashed server-side with daily salt rotation.
+- **Opt-out support**: Users can disable tracking permanently.
+- **DNT respect**: Honors Do Not Track browser setting.
+- **Client deduplication**: Prevents duplicate events within 5 seconds.
+- **SSR safe**: Automatically skips tracking on server.
 
 ## Browser Support
 

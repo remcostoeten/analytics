@@ -1,10 +1,10 @@
 {
-  "name": "my-project",
+  "name": "@remcostoeten/example-dashboard",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "cd ../../packages/sdk && bun run build && cd ../../apps/new-dashboard && bun --bun next build",
+    "build": "cd ../../packages/sdk && bun run build && cd ../../apps/example-dashboard && bun --bun next build",
     "start": "next start",
     "lint": "eslint ."
   },

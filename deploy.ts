@@ -109,7 +109,7 @@ async function deployDashboard() {
     log(`Deploying dashboard${isProduction ? " to production" : ""}...`, "blue")
 
     const command = isProduction ? "vercel --prod" : "vercel"
-    const result = await execCommand(command, "apps/dashboard")
+    const result = await execCommand(command, "apps/example-dashboard")
 
     if (result.code === 0) {
         log("✓ Dashboard deployed successfully!", "green")
@@ -261,13 +261,13 @@ async function fullRelease() {
     await publishSDK()
     await createGitTag()
 
-    header("🎉 Release Complete!")
+    header("Release Complete!")
     log("All steps completed successfully!", "green")
 }
 
 async function showMenu() {
     console.clear()
-    header("🚀 Remco Analytics Deployment Tool")
+    header("Remco Analytics Deployment Tool")
 
     log("1. Build all packages", "cyan")
     log("2. Build SDK only", "cyan")
@@ -291,7 +291,7 @@ async function showMenu() {
             await buildPackage("SDK", "packages/sdk")
             break
         case "3":
-            await buildPackage("Dashboard", "apps/dashboard")
+            await buildPackage("Dashboard", "apps/example-dashboard")
             break
         case "4":
             await buildPackage("Ingestion", "apps/ingestion")
@@ -315,7 +315,7 @@ async function showMenu() {
             await fullRelease()
             break
         case "0":
-            log("Goodbye! 👋", "green")
+            log("Goodbye!", "green")
             process.exit(0)
         default:
             log("Invalid option", "red")

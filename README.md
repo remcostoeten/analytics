@@ -15,7 +15,7 @@ Premium, first-party analytics platform with centralized ingestion, dedicated SD
 
 | Package | Purpose | Tech |
 | :--- | :--- | :--- |
-| `apps/new-dashboard` | Modern analytics UI with ⌘K command palette | Next.js 16.2, React 19, Recharts |
+| `apps/example-dashboard` | Modern analytics UI with ⌘K command palette | Next.js 16.2, React 19, Recharts |
 | `apps/ingestion` | High-throughput Hono ingestion service | Hono, Zod, Vercel Edge |
 | `packages/sdk` | Client-side tracking library (@remcostoeten/analytics) | TypeScript, Fetch/Beacon API |
 | `packages/db` | Shared database schema and client | Neon Postgres, Drizzle ORM |
@@ -66,11 +66,11 @@ bun run dev
 Create a project on [Neon.tech](https://neon.tech) and get your `DATABASE_URL`.
 
 ### 2. Dashboard & Ingestion (Vercel)
-Both `apps/new-dashboard` and `apps/ingestion` are designed for Vercel deployment.
+Both `apps/example-dashboard` and `apps/ingestion` are designed for Vercel deployment.
 
 ```bash
 # Deploy Dashboard
-cd apps/new-dashboard
+cd apps/example-dashboard
 vercel --prod
 
 # Deploy Ingestion

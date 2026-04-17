@@ -1,12 +1,6 @@
-import { track } from "./track";
+import { track, type AnalyticsOptions } from "./track";
 
-type TimeOnPageOptions = {
-  projectId?: string;
-  ingestUrl?: string;
-  debug?: boolean;
-};
-
-export function observeTimeOnPage(options: TimeOnPageOptions = {}): () => void {
+export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
   if (typeof window === "undefined") {
     return function cleanup() {};
   }
