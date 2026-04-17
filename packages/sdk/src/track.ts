@@ -5,7 +5,7 @@ import { collectEnrichment } from "./enrich";
 
 type EventType = "pageview" | "event" | "click" | "error";
 
-type TrackOptions = {
+export type AnalyticsOptions = {
   projectId?: string;
   ingestUrl?: string;
   debug?: boolean;
@@ -124,7 +124,7 @@ function sendWithFetch(url: string, payload: EventPayload): void {
 export function track(
   type: EventType,
   meta?: Record<string, unknown>,
-  options: TrackOptions = {}
+  options: AnalyticsOptions = {}
 ): void {
   if (isOptedOut()) {
     if (options.debug) {
@@ -173,7 +173,7 @@ export function track(
 
 export function trackPageView(
   meta?: Record<string, unknown>,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("pageview", meta, options);
 }
@@ -181,7 +181,7 @@ export function trackPageView(
 export function trackEvent(
   eventName: string,
   meta?: Record<string, unknown>,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("event", { eventName, ...meta }, options);
 }
@@ -189,7 +189,7 @@ export function trackEvent(
 export function trackClick(
   elementName: string,
   meta?: Record<string, unknown>,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("click", { elementName, ...meta }, options);
 }
@@ -197,7 +197,7 @@ export function trackClick(
 export function trackError(
   error: Error,
   meta?: Record<string, unknown>,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("error", {
     message: error.message,
@@ -215,7 +215,7 @@ export function trackTransaction(
   currency: string = "USD",
   orderId?: string,
   items?: number,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("event", {
     eventName: "transaction",
@@ -229,7 +229,7 @@ export function trackTransaction(
 export function trackSearch(
   query: string,
   resultCount: number,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("event", {
     eventName: "site_search",
@@ -240,7 +240,7 @@ export function trackSearch(
 
 export function identifyUser(
   userProperties: Record<string, string | number | boolean>,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("event", {
     eventName: "identify",
@@ -251,7 +251,7 @@ export function identifyUser(
 export function setExperiment(
   experimentId: string,
   variantId: string,
-  options?: TrackOptions
+  options?: AnalyticsOptions
 ): void {
   track("event", {
     eventName: "experiment_exposure",

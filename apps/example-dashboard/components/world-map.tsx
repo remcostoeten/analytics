@@ -1,7 +1,5 @@
 "use client"
 
-
-
 import { useState, useMemo } from "react"
 import {
   ComposableMap,
@@ -86,7 +84,7 @@ interface WorldMapProps {
 
 export function WorldMap({ data, onCountryClick, selectedCountry, className }: WorldMapProps) {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null)
-
+  
   // Create a lookup map for fast access
   const dataByCountry = useMemo(() => {
     const map = new Map<string, GeoData>()
@@ -98,34 +96,34 @@ export function WorldMap({ data, onCountryClick, selectedCountry, className }: W
     })
     return map
   }, [data])
-
+  
   // Calculate max for color scaling
   const maxCount = useMemo(() => {
     return Math.max(...data.map(d => d.count), 1)
   }, [data])
-
+  
   const getCountryColor = (countryName: string, countryCode: string) => {
     const countryData = dataByCountry.get(countryName) || dataByCountry.get(countryCode)
-
+    
     if (!countryData) {
       return "hsl(var(--muted))"
     }
-
+    
     // Scale from light to dark based on count
     const intensity = Math.min(countryData.count / maxCount, 1)
     const lightness = 75 - (intensity * 45) // 75% to 30%
-
+    
     if (selectedCountry === countryName || selectedCountry === countryCode) {
       return "hsl(var(--chart-1))"
     }
-
+    
     if (hoveredCountry === countryName || hoveredCountry === countryCode) {
       return `hsl(210, 80%, ${lightness - 10}%)`
     }
-
+    
     return `hsl(210, 70%, ${lightness}%)`
   }
-
+  
   const getCountryData = (countryName: string, countryCode: string): GeoData | null => {
     return dataByCountry.get(countryName) || dataByCountry.get(countryCode) || null
   }
@@ -152,7 +150,7 @@ export function WorldMap({ data, onCountryClick, selectedCountry, className }: W
                     const countryName = geo.properties.name
                     const countryCode = geo.id
                     const countryData = getCountryData(countryName, countryCode)
-
+                    
                     return (
                       <Tooltip key={geo.rsmKey}>
                         <TooltipTrigger asChild>
@@ -194,7 +192,7 @@ export function WorldMap({ data, onCountryClick, selectedCountry, className }: W
           </ComposableMap>
         </div>
       </TooltipProvider>
-
+      
       {/* Legend */}
       <div className="px-3 py-2 border-t border-border flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">

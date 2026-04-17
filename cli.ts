@@ -71,12 +71,12 @@ async function testMenu() {
     const action = await select({
         message: "Test Options:",
         choices: [
-            { value: "all", name: "🚀 Run All Tests" },
-            { value: "individual", name: "📋 Run Individual Package Tests" },
-            { value: "files", name: "📄 Run Specific Test Files" },
-            { value: "watch", name: "👀 Watch Mode" },
-            { value: "coverage", name: "📊 Run with Coverage" },
-            { value: "back", name: "← Back" }
+            { value: "all", name: "Run All Tests" },
+            { value: "individual", name: "Run Individual Package Tests" },
+            { value: "files", name: "Run Specific Test Files" },
+            { value: "watch", name: "Watch Mode" },
+            { value: "coverage", name: "Run with Coverage" },
+            { value: "back", name: "Back" }
         ]
     })
 
@@ -95,7 +95,7 @@ async function testMenu() {
                 { value: "packages/db", name: "Database" },
                 { value: "apps/ingestion", name: "Ingestion" },
                 { value: "packages/sdk", name: "SDK" },
-                { value: "apps/dashboard", name: "Dashboard" }
+                { value: "apps/example-dashboard", name: "Dashboard" }
             ]
         })
 
@@ -126,9 +126,9 @@ async function buildMenu() {
     const action = await select({
         message: "Build Options:",
         choices: [
-            { value: "all", name: "🏗️  Build All" },
-            { value: "individual", name: "📦 Build Individual Packages" },
-            { value: "back", name: "← Back" }
+            { value: "all", name: "Build All" },
+            { value: "individual", name: "Build Individual Packages" },
+            { value: "back", name: "Back" }
         ]
     })
 
@@ -141,7 +141,7 @@ async function buildMenu() {
             message: "Select packages to build:",
             choices: [
                 { value: "apps/ingestion", name: "Ingestion" },
-                { value: "apps/dashboard", name: "Dashboard" },
+                { value: "apps/example-dashboard", name: "Dashboard" },
                 { value: "packages/sdk", name: "SDK" },
                 { value: "packages/db", name: "Database" }
             ]
@@ -157,13 +157,13 @@ async function devMenu() {
     const action = await select({
         message: "Development Options:",
         choices: [
-            { value: "ingestion", name: "🚀 Start Ingestion Server" },
-            { value: "dashboard", name: "📊 Start Dashboard Server" },
-            { value: "typecheck", name: "✓ Type Check All" },
-            { value: "lint", name: "🔍 Lint All" },
-            { value: "fmt:check", name: "💅 Format Check" },
-            { value: "fmt", name: "✨ Format Fix" },
-            { value: "back", name: "← Back" }
+            { value: "ingestion", name: "Start Ingestion Server" },
+            { value: "dashboard", name: "Start Dashboard Server" },
+            { value: "typecheck", name: "Type Check All" },
+            { value: "lint", name: "Lint All" },
+            { value: "fmt:check", name: "Format Check" },
+            { value: "fmt", name: "Format Fix" },
+            { value: "back", name: "Back" }
         ]
     })
 
@@ -171,7 +171,7 @@ async function devMenu() {
 
     const commandMap: Record<string, { command: string; cwd?: string }> = {
         ingestion: { command: "bun run dev", cwd: "apps/ingestion" },
-        dashboard: { command: "bun run dev", cwd: "apps/dashboard" },
+        dashboard: { command: "bun run dev", cwd: "apps/example-dashboard" },
         typecheck: { command: "bun run typecheck" },
         lint: { command: "bun run lint" },
         "fmt:check": { command: "bun run fmt:check" },
@@ -186,10 +186,10 @@ async function dbMenu() {
     const action = await select({
         message: "Database Options:",
         choices: [
-            { value: "generate", name: "📝 Generate Migration" },
-            { value: "migrate", name: "🚀 Run Migration" },
-            { value: "studio", name: "🎨 Open Drizzle Studio" },
-            { value: "back", name: "← Back" }
+            { value: "generate", name: "Generate Migration" },
+            { value: "migrate", name: "Run Migration" },
+            { value: "studio", name: "Open Drizzle Studio" },
+            { value: "back", name: "Back" }
         ]
     })
 
@@ -215,18 +215,18 @@ async function main() {
         const choice = await select({
             message: "What would you like to do?",
             choices: [
-                { value: "test", name: "🧪 Tests" },
-                { value: "build", name: "🏗️  Build" },
-                { value: "dev", name: "⚡ Development" },
-                { value: "db", name: "🗄️  Database" },
-                { value: "install", name: "📦 Install Dependencies" },
-                { value: "clean", name: "🧹 Clean & Reinstall" },
-                { value: "exit", name: "👋 Exit" }
+                { value: "test", name: "Tests" },
+                { value: "build", name: "Build" },
+                { value: "dev", name: "Development" },
+                { value: "db", name: "Database" },
+                { value: "install", name: "Install Dependencies" },
+                { value: "clean", name: "Clean & Reinstall" },
+                { value: "exit", name: "Exit" }
             ]
         })
 
         if (choice === "exit") {
-            log("\nGoodbye! 👋\n", colors.green)
+            log("\nGoodbye!\n", colors.green)
             process.exit(0)
         }
 

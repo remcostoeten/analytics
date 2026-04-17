@@ -5,12 +5,10 @@ import { observePageViews } from "./pageview";
 import { observePerformance } from "./performance";
 import { observeScroll } from "./scroll";
 import { observeTimeOnPage } from "./time-on-page";
+import { type AnalyticsOptions } from "./track";
 
-type AnalyticsProps = {
-  projectId?: string;
-  ingestUrl?: string;
+type Props = AnalyticsOptions & {
   disabled?: boolean;
-  debug?: boolean;
 };
 
 export function Analytics({
@@ -18,7 +16,7 @@ export function Analytics({
   ingestUrl,
   disabled = false,
   debug = false,
-}: AnalyticsProps) {
+}: Props) {
   useEffect(() => {
     if (disabled) {
       if (debug) {

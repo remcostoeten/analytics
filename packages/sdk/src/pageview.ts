@@ -1,10 +1,4 @@
-import { trackPageView } from "./track";
-
-type TrackOptions = {
-  projectId?: string;
-  ingestUrl?: string;
-  debug?: boolean;
-};
+import { trackPageView, type AnalyticsOptions } from "./track";
 
 const NAVIGATION_EVENT = "remco-analytics:navigate";
 
@@ -14,7 +8,7 @@ function dispatchNavigationEvent(): void {
 
 function trackPathChange(
   currentPath: { value: string },
-  options: TrackOptions
+  options: AnalyticsOptions
 ): void {
   const nextPath = window.location.pathname;
 
@@ -26,9 +20,9 @@ function trackPathChange(
   trackPageView(undefined, options);
 }
 
-export function observePageViews(options: TrackOptions = {}): () => void {
+export function observePageViews(options: AnalyticsOptions = {}): () => void {
   if (typeof window === "undefined") {
-    return function cleanup() {};
+    return function cleanup() { };
   }
 
   const currentPath = { value: window.location.pathname };

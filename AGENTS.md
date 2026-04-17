@@ -5,8 +5,8 @@ This repository is owned and designed by Remco.
 All agents working on this codebase must follow the conventions below unless explicitly instructed otherwise.
 
 Spec precedence
-- docs/ is implementation source of truth per subsystem.
-- If AGENTS.md conflicts with a subsystem spec in docs/, follow the docs file for that subsystem.
+- .internal/docs/ is implementation source of truth per subsystem.
+- If AGENTS.md conflicts with a subsystem spec in .internal/docs/, follow the docs file for that subsystem.
 
 Core philosophy
 - Prioritize simplicity, correctness, and boring reliability.
