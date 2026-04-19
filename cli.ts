@@ -92,7 +92,7 @@ async function testMenu() {
         const selected = await multiselect({
             message: "Select packages to test:",
             choices: [
-                { value: "packages/db", name: "Database" },
+                
                 { value: "apps/ingestion", name: "Ingestion" },
                 { value: "packages/sdk", name: "SDK" },
                 { value: "apps/example-dashboard", name: "Dashboard" }
@@ -142,8 +142,7 @@ async function buildMenu() {
             choices: [
                 { value: "apps/ingestion", name: "Ingestion" },
                 { value: "apps/example-dashboard", name: "Dashboard" },
-                { value: "packages/sdk", name: "SDK" },
-                { value: "packages/db", name: "Database" }
+                { value: "packages/sdk", name: "SDK" }
             ]
         })
 
@@ -202,7 +201,7 @@ async function dbMenu() {
     }
 
     if (commandMap[action]) {
-        await runCommand(commandMap[action], "packages/db")
+        await runCommand(commandMap[action], "apps/ingestion")
     }
 }
 

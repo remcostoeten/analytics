@@ -18,7 +18,7 @@ Premium, first-party analytics platform with centralized ingestion, dedicated SD
 | `apps/example-dashboard` | Modern analytics UI with ⌘K command palette | Next.js 16.2, React 19, Recharts |
 | `apps/ingestion` | High-throughput Hono ingestion service | Hono, Zod, Vercel Edge |
 | `packages/sdk` | Client-side tracking library (@remcostoeten/analytics) | TypeScript, Fetch/Beacon API |
-| `packages/db` | Shared database schema and client | Neon Postgres, Drizzle ORM |
+| `apps/ingestion/src/db` | Database schema and client | Neon Postgres, Drizzle ORM |
 
 ## Tech Stack
 
@@ -44,7 +44,7 @@ cp .env.example .env
 # Set DATABASE_URL and IP_HASH_SECRET (min 32 chars)
 
 # Setup Database
-cd packages/db
+cd apps/ingestion
 bun run db:push
 
 # Start Ingestion

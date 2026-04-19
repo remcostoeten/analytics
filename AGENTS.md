@@ -65,7 +65,7 @@ Ingestion contract
 Database
 - Postgres on Neon.
 - Drizzle ORM.
-- Schema lives in packages/db.
+- Schema lives in apps/ingestion/src/db/.
 
 Testing and quality gates
 - Favor integration tests for behavior, with a practical split of roughly 60% unit, 30% integration, 10% E2E.
