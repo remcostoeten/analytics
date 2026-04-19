@@ -1,6 +1,6 @@
-// apps/ingestion/src/__tests__/bot-detection.test.ts
+// apps/ingestion/tests/unit/bot-detection.test.ts
 import { describe, test, expect } from "bun:test";
-import { isBotUserAgent, detectBot, classifyDevice } from "../utilities/bot-detection";
+import { isBotUserAgent, detectBot, classifyDevice } from "../../src/utilities/bot-detection";
 
 describe("isBotUserAgent", () => {
 	test("detects googlebot", () => {

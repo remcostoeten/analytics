@@ -1,7 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { Hono } from "hono";
 
-mock.module("../db.js", () => ({
+mock.module("../../src/db.js", () => ({
 	db: {
 		insert: () => ({
 			values: () => ({
@@ -16,7 +16,7 @@ mock.module("../db.js", () => ({
 	},
 }));
 
-const { handleIngest } = await import("../handlers/ingest");
+const { handleIngest } = await import("../../src/handlers/ingest");
 
 const app = new Hono();
 app.post("/ingest", handleIngest);

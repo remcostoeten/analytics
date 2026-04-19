@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { events, resume, visitors, visitorEvents } from "../schema";
+import { events, resume, visitors, visitorEvents } from "../../src/db/schema";
 
 describe("events schema", () => {
 	test("has all required columns", () => {

@@ -8,15 +8,19 @@ import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
 import { UAParser } from "ua-parser-js";
 import { sql as drizzleSql } from "drizzle-orm";
 
-type DbModule = typeof import("../db.js");
+type DbModule = typeof import("../db/index.js");
 
 let dbModule: DbModule | null = null;
 
 async function getDb(): Promise<DbModule> {
 	if (!dbModule) {
-		dbModule = await import("../db.js");
+		dbModule = await import("../db/index.js");
 	}
 	return dbModule;
+}
+
+export function __setDbModule(mock: any) {
+	dbModule = mock;
 }
 
 const ORIGIN_ALLOWLIST: string[] = process.env.ORIGIN_ALLOWLIST

@@ -1,11 +1,11 @@
-// apps/ingestion/src/__tests__/geo.test.ts
+// apps/ingestion/tests/unit/geo.test.ts
 import { describe, test, expect } from "bun:test";
 import {
 	extractGeoFromRequest,
 	extractIpAddress,
 	isLocalhost,
 	isPreviewEnvironment,
-} from "../utilities/geo";
+} from "../../src/utilities/geo";
 
 describe("extractGeoFromRequest", () => {
 	test("extracts from Vercel headers", () => {

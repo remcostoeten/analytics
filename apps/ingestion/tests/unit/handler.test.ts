@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "http";
 let lastRequest: Request | null = null;
 let shouldThrow = false;
 
-mock.module("../app.js", () => ({
+mock.module("../../src/app.js", () => ({
 	app: {
 		async fetch(request: Request) {
 			lastRequest = request;
@@ -24,7 +24,7 @@ mock.module("../app.js", () => ({
 	},
 }));
 
-const { default: handler } = await import("../handler.js");
+const { default: handler } = await import("../../src/handler.js");
 
 type MockRequest = IncomingMessage & AsyncIterable<string>;
 

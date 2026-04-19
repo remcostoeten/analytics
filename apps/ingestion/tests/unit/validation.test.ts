@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { validateEventPayload } from "../utilities/validation";
+import { validateEventPayload } from "../../src/utilities/validation";
 
 describe("validateEventPayload", () => {
 	test("accepts valid minimal payload", () => {

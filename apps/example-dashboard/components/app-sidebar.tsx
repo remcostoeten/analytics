@@ -124,13 +124,13 @@ export function AppSidebar() {
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" className="h-10 hover:bg-muted/50 transition-colors">
 							<Avatar className="size-6 border border-border">
-								<AvatarImage src="https://github.com/remcostoeten.png" />
+								<AvatarImage src="" />
 								<AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-medium leading-none">
-									RS
+									JD
 								</AvatarFallback>
 							</Avatar>
 							<div className="flex flex-col leading-tight ml-1">
-								<span className="text-xs font-semibold">Remco Stoeten</span>
+								<span className="text-xs font-semibold">John Doe</span>
 								<span className="text-[10px] text-muted-foreground">Admin</span>
 							</div>
 						</SidebarMenuButton>

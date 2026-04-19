@@ -10,7 +10,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
 	title: "Analytics Dashboard",
 	description: "Real-time analytics dashboard with traffic, visitor, session, and event tracking",
-	generator: "v0.app",
+
 	icons: {
 		icon: [
 			{
@@ -48,7 +48,7 @@ export default function RootLayout({
 				</ThemeProvider>
 				<Analytics
 					projectId="analytics-dashboard"
-					ingestUrl={process.env.NEXT_PUBLIC_INGEST_URL || "https://ingestion-beryl.vercel.app"}
+					ingestUrl={process.env.NEXT_PUBLIC_INGEST_URL || ""}
 					debug={process.env.NODE_ENV === "development"}
 				/>
 			</body>

@@ -1,12 +1,12 @@
 import { eq, ne, and, lt, sql } from "drizzle-orm";
 
-type DbModule = typeof import("../db.js");
+type DbModule = typeof import("../db/index.js");
 
 let cached: DbModule | null = null;
 
 async function getDb(): Promise<DbModule> {
 	if (!cached) {
-		cached = await import("../db.js");
+		cached = await import("../db/index.js");
 	}
 	return cached;
 }
