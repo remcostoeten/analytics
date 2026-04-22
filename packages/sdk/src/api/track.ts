@@ -21,11 +21,16 @@ function getEnv() {
 
 export function validateIngestUrl(url: string): boolean {
 	try {
-		const parsed = new URL(url);
+		const normalized = url.replace(/\/+$/, "");
+		const parsed = new URL(normalized);
 		return parsed.protocol === "http:" || parsed.protocol === "https:";
 	} catch {
 		return false;
 	}
+}
+
+function normalizeIngestUrl(url: string): string {
+	return url.replace(/\/+$/, "");
 }
 
 export function resolveDefaultIngestUrl(): string {
