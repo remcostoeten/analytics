@@ -1,11 +1,12 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { Hono } from "hono";
 
-mock.module("../../src/db.js", () => ({
+const dbModule = {
 	db: {
 		insert: () => ({
 			values: () => ({
 				onConflictDoUpdate: () => Promise.resolve(),
+				returning: () => Promise.resolve(),
 			}),
 		}),
 	},
@@ -14,9 +15,10 @@ mock.module("../../src/db.js", () => ({
 		fingerprint: "fingerprint",
 		visitCount: "visit_count",
 	},
-}));
+};
 
-const { handleIngest } = await import("../../src/handlers/ingest");
+const { handleIngest, __setDbModule } = await import("../../src/handlers/ingest");
+__setDbModule(dbModule);
 
 const app = new Hono();
 app.post("/ingest", handleIngest);
