@@ -751,7 +751,13 @@ function DemoDataNotice() {
 		>
 			<div className="flex items-center gap-2">
 				<BadgeInfo className="h-4 w-4 shrink-0 text-sky-400" />
-				<span className="text-xs text-muted-foreground">All data is illustrative! Learn <Link href="https://docs.analytics.remcostoeten.nl" className="underline">here</Link> on how to connect your database.</span>
+				<span className="text-xs text-muted-foreground">
+					All data is illustrative! Learn{" "}
+					<Link href="https://docs.analytics.remcostoeten.nl" className="underline">
+						here
+					</Link>{" "}
+					on how to connect your database.
+				</span>
 			</div>
 			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
 		</button>

@@ -4,9 +4,13 @@ import { dataRetainer } from "../utilities/data-retention.js";
 function requireAdminAuth(c: Context): Response | null {
 	const secret = process.env.ADMIN_SECRET;
 	if (!secret) {
-		return c.json({ ok: false, error: "Admin endpoints are disabled (ADMIN_SECRET not configured)" }, 403);
+		return c.json(
+			{ ok: false, error: "Admin endpoints are disabled (ADMIN_SECRET not configured)" },
+			403,
+		);
 	}
-	const provided = c.req.header("x-admin-secret") || c.req.header("authorization")?.replace("Bearer ", "");
+	const provided =
+		c.req.header("x-admin-secret") || c.req.header("authorization")?.replace("Bearer ", "");
 	if (provided !== secret) {
 		return c.json({ ok: false, error: "Unauthorized" }, 401);
 	}

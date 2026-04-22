@@ -55,7 +55,8 @@ mock.module("../../lib/db.ts", () => {
 });
 
 // Import queries after mocking
-const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages } = await import("../../lib/queries");
+const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages } =
+	await import("../../lib/queries");
 
 describe("Dashboard Queries Integration", () => {
 	test("getPageviewsKPI returns correct count", async () => {

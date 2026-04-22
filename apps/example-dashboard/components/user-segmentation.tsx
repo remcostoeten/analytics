@@ -17,10 +17,10 @@ interface SegmentData {
 	planDistribution: { plan: string; visitors: number }[];
 }
 
-	type Props = { 
-		data: SegmentData | null;
+type Props = {
+	data: SegmentData | null;
 	onSegmentChange?: (segment: string) => void;
-}
+};
 
 export function UserSegmentation({ data, onSegmentChange }: Props) {
 	const [activeSegment, setActiveSegment] = useState<string>("all");

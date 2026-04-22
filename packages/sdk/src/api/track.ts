@@ -30,13 +30,10 @@ export function validateIngestUrl(url: string): boolean {
 
 export function resolveDefaultIngestUrl(): string {
 	const env = getEnv();
-	const url =
-		env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL || "http://localhost:3001";
+	const url = env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL || "http://localhost:3001";
 
 	if (typeof window !== "undefined" && !validateIngestUrl(url)) {
-		console.error(
-			`[Analytics] Invalid ingestUrl: "${url}". Must be a valid http/https URL.`,
-		);
+		console.error(`[Analytics] Invalid ingestUrl: "${url}". Must be a valid http/https URL.`);
 		return "http://localhost:3001";
 	}
 
@@ -125,10 +122,7 @@ export function track(
 
 	let ingestUrl = options.ingestUrl;
 	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
-		debugLog(
-			options.debug,
-			`Invalid ingestUrl: "${ingestUrl}". Using default.`,
-		);
+		debugLog(options.debug, `Invalid ingestUrl: "${ingestUrl}". Using default.`);
 		ingestUrl = undefined;
 	}
 
