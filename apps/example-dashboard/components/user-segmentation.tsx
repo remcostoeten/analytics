@@ -17,12 +17,12 @@ interface SegmentData {
 	planDistribution: { plan: string; visitors: number }[];
 }
 
-interface UserSegmentationProps {
-	data: SegmentData | null;
+	type Props = { 
+		data: SegmentData | null;
 	onSegmentChange?: (segment: string) => void;
 }
 
-export function UserSegmentation({ data, onSegmentChange }: UserSegmentationProps) {
+export function UserSegmentation({ data, onSegmentChange }: Props) {
 	const [activeSegment, setActiveSegment] = useState<string>("all");
 
 	const segments = [
@@ -64,31 +64,31 @@ export function UserSegmentation({ data, onSegmentChange }: UserSegmentationProp
 					))}
 				</div>
 
-				{/* Segment Stats */}
 				{data ? (
 					<div className="space-y-4">
-						{/* Main Stats Grid */}
 						<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 							<div className="p-3 rounded-lg bg-muted/30 text-center">
 								<p className="text-lg font-bold text-foreground">
-									{data.visitors.toLocaleString()}
+									{data.visitors ? data.visitors.toLocaleString() : "N/A"}
 								</p>
 								<p className="text-xs text-muted-foreground">Visitors</p>
 							</div>
 							<div className="p-3 rounded-lg bg-muted/30 text-center">
 								<p className="text-lg font-bold text-foreground">
-									{data.pageviews.toLocaleString()}
+									{data.pageviews ? data.pageviews.toLocaleString() : "N/A"}
 								</p>
 								<p className="text-xs text-muted-foreground">Pageviews</p>
 							</div>
 							<div className="p-3 rounded-lg bg-muted/30 text-center">
 								<p className="text-lg font-bold text-emerald-500">
-									${data.revenue.toLocaleString()}
+									${data.revenue ? data.revenue.toLocaleString() : "N/A"}
 								</p>
 								<p className="text-xs text-muted-foreground">Revenue</p>
 							</div>
 							<div className="p-3 rounded-lg bg-muted/30 text-center">
-								<p className="text-lg font-bold text-foreground">{data.signups}</p>
+								<p className="text-lg font-bold text-foreground">
+									{data.signups ? data.signups.toLocaleString() : "N/A"}
+								</p>
 								<p className="text-xs text-muted-foreground">Signups</p>
 							</div>
 						</div>

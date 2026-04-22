@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { KPICardsGrid } from "@/components/kpi-cards";
 import { SignalStream } from "@/components/signal-stream";
@@ -32,6 +32,8 @@ import type {
 	GeoDistribution,
 } from "@/lib/types";
 import {
+	AlertTriangle,
+	BadgeInfo,
 	ChevronRight,
 	BarChart3,
 	Users,
@@ -39,10 +41,34 @@ import {
 	CalendarDays,
 	Route,
 	Radio,
+	X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+type ApiError = Error & {
+	status?: number;
+	info?: {
+		code?: string;
+		error?: string;
+		message?: string;
+		requiredEnv?: string;
+	};
+};
+
+async function fetcher(url: string) {
+	const response = await fetch(url);
+	const info = await response.json();
+
+	if (!response.ok) {
+		const error = new Error(info?.message || info?.error || "Analytics request failed") as ApiError;
+		error.status = response.status;
+		error.info = info;
+		throw error;
+	}
+
+	return info;
+}
 
 function formatNumber(n: number): string {
 	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -61,14 +87,23 @@ function formatDuration(ms: number): string {
 
 type DashboardContentProps = {
 	data: DashboardData;
+	databaseReady?: boolean;
+	databaseIssue?: "missing_database_url" | "query_failed";
 	breadcrumbs?: BreadcrumbItem[];
 	description?: string;
 };
 
 type DashboardView = "overview" | "realtime" | "retention" | "behavior" | "technology" | "audience";
 
+type SelectedCountry = GeoDistribution & {
+	cities?: number;
+	visitors?: number;
+};
+
 export function DashboardContent({
 	data: initialData,
+	databaseReady = true,
+	databaseIssue,
 	breadcrumbs = [{ label: "Analytics", href: "#" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
 }: DashboardContentProps) {
@@ -77,7 +112,8 @@ export function DashboardContent({
 	const [timeRange, setTimeRange] = useState("30d");
 	const [selectedProject, setSelectedProject] = useState<string | null>(null);
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
-	const [selectedCountry, setSelectedCountry] = useState<GeoDistribution | null>(null);
+	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+	const [activeSegment, setActiveSegment] = useState("all");
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -90,6 +126,7 @@ export function DashboardContent({
 	};
 
 	const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
+	const canFetch = databaseReady;
 
 	const buildQuery = (metric: string, extraParams: string = "") => {
 		const params = new URLSearchParams();
@@ -99,125 +136,147 @@ export function DashboardContent({
 		return `/api/analytics?${params.toString()}${extraParams ? "&" + extraParams : ""}`;
 	};
 
-	const { data: projects } = useSWR(`/api/analytics?metric=projects`, fetcher, {
+	const { data: projects, error: projectsError } = useSWR(
+		canFetch ? `/api/analytics?metric=projects` : null,
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 60000,
+		},
+	);
+
+	const { data: overview, error: overviewError } = useSWR(
+		canFetch ? buildQuery("overview-extended") : null,
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 30000,
+		},
+	);
+
+	const { data: pages } = useSWR(canFetch ? buildQuery("pages") : null, fetcher, {
 		fallbackData: [],
-		refreshInterval: 60000,
+		refreshInterval: 30000,
 	});
 
-	const { data: overview } = useSWR(buildQuery("overview-extended"), fetcher, {
+	const { data: referrers } = useSWR(canFetch ? buildQuery("referrers") : null, fetcher, {
+		fallbackData: [],
+		refreshInterval: 30000,
+	});
+
+	const { data: geo } = useSWR(canFetch ? buildQuery("geo") : null, fetcher, {
+		fallbackData: [],
+		refreshInterval: 30000,
+	});
+
+	const { data: devices } = useSWR(canFetch ? buildQuery("devices") : null, fetcher, {
+		fallbackData: [],
+		refreshInterval: 30000,
+	});
+
+	const { data: trend } = useSWR(canFetch ? buildQuery("trend") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
 
-	const { data: pages } = useSWR(buildQuery("pages"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
-
-	const { data: referrers } = useSWR(buildQuery("referrers"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
-
-	const { data: geo } = useSWR(buildQuery("geo"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
-
-	const { data: devices } = useSWR(buildQuery("devices"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
-
-	const { data: trend } = useSWR(buildQuery("trend"), fetcher, {
-		fallbackData: null,
-		refreshInterval: 30000,
-	});
-
-	const { data: events } = useSWR(buildQuery("events"), fetcher, {
+	const { data: events } = useSWR(canFetch ? buildQuery("events") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 10000,
 	});
 
-	const { data: webVitals } = useSWR(buildQuery("web-vitals"), fetcher, {
+	const { data: webVitals } = useSWR(canFetch ? buildQuery("web-vitals") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 	});
 
-	const { data: sessionStats } = useSWR(buildQuery("session-stats"), fetcher, {
+	const { data: sessionStats } = useSWR(canFetch ? buildQuery("session-stats") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
 
-	useSWR(buildQuery("utm-campaigns"), fetcher, {
+	useSWR(canFetch ? buildQuery("utm-campaigns") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
 	});
 
-	const { data: engagement } = useSWR(buildQuery("engagement"), fetcher, {
+	const { data: engagement } = useSWR(canFetch ? buildQuery("engagement") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
 
-	const { data: heatmap } = useSWR(buildQuery("hourly-heatmap"), fetcher, {
+	const { data: heatmap } = useSWR(canFetch ? buildQuery("hourly-heatmap") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 	});
 
-	const { data: browsers } = useSWR(buildQuery("browsers-detailed"), fetcher, {
+	const { data: browsers } = useSWR(canFetch ? buildQuery("browsers-detailed") : null, fetcher, {
 		fallbackData: initialData.audience.browsers,
 		refreshInterval: 60000,
 	});
 
-	const { data: operatingSystems } = useSWR(buildQuery("os-detailed"), fetcher, {
+	const { data: operatingSystems } = useSWR(canFetch ? buildQuery("os-detailed") : null, fetcher, {
 		fallbackData: initialData.audience.os,
 		refreshInterval: 60000,
 	});
 
-	const { data: languages } = useSWR(buildQuery("languages"), fetcher, {
+	const { data: languages } = useSWR(canFetch ? buildQuery("languages") : null, fetcher, {
 		fallbackData: initialData.audience.languages,
 		refreshInterval: 60000,
 	});
 
-	const { data: screenSizes } = useSWR(buildQuery("screen-sizes"), fetcher, {
+	const { data: screenSizes } = useSWR(canFetch ? buildQuery("screen-sizes") : null, fetcher, {
 		fallbackData: initialData.audience.screenResolutions,
 		refreshInterval: 60000,
 	});
 
-	const { data: connectionTypes } = useSWR(buildQuery("connection-types"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 60000,
-	});
+	const { data: connectionTypes } = useSWR(
+		canFetch ? buildQuery("connection-types") : null,
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 60000,
+		},
+	);
 
-	const { data: visitors } = useSWR(buildQuery("visitors"), fetcher, {
+	const { data: visitors } = useSWR(canFetch ? buildQuery("visitors") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
 	});
 
-	const { data: entryExitPages } = useSWR(buildQuery("entry-exit-pages"), fetcher, {
-		fallbackData: null,
-		refreshInterval: 30000,
-	});
+	const { data: entryExitPages } = useSWR(
+		canFetch ? buildQuery("entry-exit-pages") : null,
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 30000,
+		},
+	);
 
-	const { data: liveNow } = useSWR(buildQuery("live-now"), fetcher, {
+	const { data: liveNow } = useSWR(canFetch ? buildQuery("live-now") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 5000,
 	});
 
-	const { data: retention } = useSWR(buildQuery("retention"), fetcher, {
+	const { data: retention } = useSWR(canFetch ? buildQuery("retention") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 	});
 
-	const { data: paths } = useSWR(buildQuery("paths"), fetcher, {
+	const { data: paths } = useSWR(canFetch ? buildQuery("paths") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
 
-	const { data: segments } = useSWR(buildQuery("segments"), fetcher, {
-		fallbackData: [],
-		refreshInterval: 60000,
-	});
+	const { data: segments } = useSWR(
+		canFetch ? buildQuery("segments", `segment=${activeSegment}`) : null,
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 60000,
+		},
+	);
+	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
+	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
 
 	const kpiArray = useMemo((): KPIMetric[] => {
 		if (!overview) return Object.values(initialData.kpis);
@@ -389,6 +448,9 @@ export function DashboardContent({
 							<p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>
 						</div>
 					</div>
+
+					{!databaseReady && <DatabaseNotice issue={setupIssue} />}
+					<DemoDataNotice />
 
 					<div className="overflow-x-auto -mx-3 px-3">
 						<div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full">
@@ -593,7 +655,9 @@ export function DashboardContent({
 							)}
 							<div>
 								<h3 className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
-								<p className="text-sm text-muted-foreground">{selectedCountry.cities} cities</p>
+								<p className="text-sm text-muted-foreground">
+									{selectedCountry.cities || 0} cities
+								</p>
 							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-4">
@@ -605,7 +669,7 @@ export function DashboardContent({
 							</div>
 							<div>
 								<p className="text-2xl font-bold text-foreground">
-									{selectedCountry.visitors.toLocaleString()}
+									{(selectedCountry.visitors || 0).toLocaleString()}
 								</p>
 								<p className="text-xs text-muted-foreground">Visitors</p>
 							</div>
@@ -629,6 +693,74 @@ export function DashboardContent({
 			)}
 		</>
 	);
+}
+
+function DatabaseNotice({ issue }: { issue?: "missing_database_url" | "query_failed" }) {
+	const [dismissed, setDismissed] = useState(false);
+
+	useEffect(() => {
+		if (sessionStorage.getItem("db-notice-dismissed") === "true") {
+			setDismissed(true);
+		}
+	}, []);
+
+	if (dismissed) return null;
+
+	const detail =
+		issue === "query_failed"
+			? "Database unavailable. Check Neon connection and server logs."
+			: "Add DATABASE_URL to connect your database.";
+
+	return (
+		<button
+			type="button"
+			onClick={() => {
+				sessionStorage.setItem("db-notice-dismissed", "true");
+				setDismissed(true);
+			}}
+			className="group relative w-full rounded-md border border-amber-500/30 bg-amber-500/[0.07] px-3 py-2 text-left hover:bg-amber-500/[0.1] transition-colors"
+		>
+			<div className="flex items-center gap-2">
+				<AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+				<span className="text-xs text-muted-foreground">{detail}</span>
+			</div>
+			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+		</button>
+	);
+}
+
+function DemoDataNotice() {
+	const [dismissed, setDismissed] = useState(false);
+
+	useEffect(() => {
+		if (sessionStorage.getItem("demo-notice-dismissed") === "true") {
+			setDismissed(true);
+		}
+	}, []);
+
+	if (dismissed) return null;
+
+	return (
+		<button
+			type="button"
+			onClick={() => {
+				sessionStorage.setItem("demo-notice-dismissed", "true");
+				setDismissed(true);
+			}}
+			className="group relative w-full rounded-md border border-sky-500/30 bg-sky-500/[0.07] px-3 py-2 text-left hover:bg-sky-500/[0.1] transition-colors"
+		>
+			<div className="flex items-center gap-2">
+				<BadgeInfo className="h-4 w-4 shrink-0 text-sky-400" />
+				<span className="text-xs text-muted-foreground">All data is illustrative! Learn <Link href="https://docs.analytics.remcostoeten.nl" className="underline">here</Link> on how to connect your database.</span>
+			</div>
+			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+		</button>
+	);
+}
+
+function isDatabaseError(error: unknown): boolean {
+	const apiError = error as ApiError | undefined;
+	return apiError?.info?.code === "missing_database_url";
 }
 
 function getFlagEmoji(countryCode: string): string {

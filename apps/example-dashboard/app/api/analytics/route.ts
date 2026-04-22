@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as query from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +7,7 @@ export async function GET(request: NextRequest) {
 	const timeRange = searchParams.get("timeRange") || "24h";
 	const metric = searchParams.get("metric") || "overview";
 	const projectId = searchParams.get("projectId") || null;
+	const projectFilter = projectId || undefined;
 
 	const hours =
 		timeRange === "1h"
@@ -26,23 +26,37 @@ export async function GET(request: NextRequest) {
 	const to = new Date();
 
 	try {
+		if (!process.env.DATABASE_URL) {
+			return NextResponse.json(
+				{
+					code: "missing_database_url",
+					error: "Database connection is not configured",
+					message: "Set DATABASE_URL to connect the dashboard to Neon.",
+					requiredEnv: "DATABASE_URL",
+				},
+				{ status: 503 },
+			);
+		}
+
+		const query = await import("@/lib/queries");
+
 		switch (metric) {
 			case "projects":
 				return NextResponse.json(await query.getProjects());
 			case "overview-extended":
 				return NextResponse.json(await query.getOverviewExtended(from, to, projectId));
 			case "pages":
-				return NextResponse.json(await query.getTopPages(projectId));
+				return NextResponse.json(await query.getTopPages(projectFilter));
 			case "referrers":
-				return NextResponse.json(await query.getTopReferrers(projectId));
+				return NextResponse.json(await query.getTopReferrers(projectFilter));
 			case "geo":
-				return NextResponse.json(await query.getGeoDistribution(projectId));
+				return NextResponse.json(await query.getGeoDistribution(projectFilter));
 			case "devices":
-				return NextResponse.json(await query.getDeviceBreakdown(projectId));
+				return NextResponse.json(await query.getDeviceBreakdown(projectFilter));
 			case "trend":
-				return NextResponse.json(await query.getPageviewsTrend(projectId));
+				return NextResponse.json(await query.getPageviewsTrend(projectFilter));
 			case "events":
-				return NextResponse.json(await query.getRecentEvents(projectId));
+				return NextResponse.json(await query.getRecentEvents(projectFilter));
 			case "visitors":
 				return NextResponse.json(await query.getRecentVisitors(projectId));
 			case "geo-cities":

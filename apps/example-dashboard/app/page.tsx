@@ -5,29 +5,42 @@ import { mockDashboardData } from "@/lib/mock-data";
 import type { DashboardData } from "@/lib/types";
 import { Suspense } from "react";
 
-// =============================================================================
-// DATA FETCHING
-// Uses Neon PostgreSQL when DATABASE_URL is set, falls back to mock data
-// =============================================================================
-async function fetchDashboardData(): Promise<DashboardData> {
-	// Check if DATABASE_URL is configured
+type DashboardResult = {
+	data: DashboardData;
+	databaseReady: boolean;
+	databaseIssue?: "missing_database_url" | "query_failed";
+};
+
+async function fetchDashboardData(): Promise<DashboardResult> {
 	if (process.env.DATABASE_URL) {
 		try {
-			// Dynamic import to avoid errors when DATABASE_URL is not set
 			const { getDashboardData } = await import("@/lib/queries");
-			return await getDashboardData();
+			const data = await getDashboardData();
+
+			return {
+				data,
+				databaseReady: true,
+			};
 		} catch (error) {
 			console.error("[v0] Database query failed, falling back to mock data:", error);
-			return mockDashboardData;
+
+			return {
+				data: mockDashboardData,
+				databaseReady: false,
+				databaseIssue: "query_failed",
+			};
 		}
 	}
 
-	// No database configured, use mock data
-	return mockDashboardData;
+	return {
+		data: mockDashboardData,
+		databaseReady: false,
+		databaseIssue: "missing_database_url",
+	};
 }
 
 export default async function DashboardPage() {
-	const data = await fetchDashboardData();
+	const { data, databaseReady, databaseIssue } = await fetchDashboardData();
 
 	return (
 		<SidebarProvider>
@@ -38,6 +51,8 @@ export default async function DashboardPage() {
 				<Suspense fallback={<div className="flex-1 p-4">Loading dashboard...</div>}>
 					<DashboardContent
 						data={data}
+						databaseReady={databaseReady}
+						databaseIssue={databaseIssue}
 						breadcrumbs={[{ label: "Analytics", href: "#" }, { label: "Live operations" }]}
 						description="Real-time sessions, regional load, and ingest health across your edge network"
 					/>

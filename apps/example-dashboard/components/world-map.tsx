@@ -174,9 +174,9 @@ export function WorldMap({ data, onCountryClick, selectedCountry, className }: W
 													<TooltipContent side="top" className="text-xs">
 														<div className="font-medium">{countryName}</div>
 														<div className="text-muted-foreground mt-1 space-y-0.5">
-															<div>{countryData.count.toLocaleString()} events</div>
-															<div>{countryData.visitors.toLocaleString()} visitors</div>
-															<div>{countryData.percentage.toFixed(1)}% of traffic</div>
+															<div>{countryData.count?.toLocaleString()} events</div>
+															<div>{countryData.visitors?.toLocaleString()} visitors</div>
+															<div>{countryData.percentage?.toFixed(1)}% of traffic</div>
 														</div>
 													</TooltipContent>
 												)}
