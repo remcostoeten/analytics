@@ -10,6 +10,15 @@ type WebVitals = {
 	inp?: number;
 };
 
+type LayoutShift = PerformanceEntry & {
+	hadRecentInput?: boolean;
+	value?: number;
+};
+
+type InteractionEntry = PerformanceEntry & {
+	duration?: number;
+};
+
 function getFcp(): number | undefined {
 	if (isRuntime("server") || !window.performance) return undefined;
 	const entry = performance.getEntriesByName("first-contentful-paint")[0];
@@ -46,7 +55,7 @@ function observeCls(callback: (value: number) => void): void {
 	try {
 		new PerformanceObserver((list) => {
 			for (const entry of list.getEntries()) {
-				const shift = entry as any;
+				const shift = entry as LayoutShift;
 				if (!shift.hadRecentInput && shift.value) clsValue += shift.value;
 			}
 			callback(Math.round(clsValue * 1000) / 1000);
@@ -60,7 +69,7 @@ function observeInp(callback: (value: number) => void): void {
 	if (typeof PerformanceObserver === "undefined") return;
 	try {
 		new PerformanceObserver((list) => {
-			const last = list.getEntries().at(-1) as any;
+			const last = list.getEntries().at(-1) as InteractionEntry | undefined;
 			if (last?.duration) callback(Math.round(last.duration));
 		}).observe({ type: "event", buffered: true });
 	} catch {

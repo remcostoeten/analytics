@@ -1,5 +1,5 @@
 import { db } from "./client";
-import { events } from "./schema";
+import { events, type NewEvent } from "./schema";
 
 const PROJECTS = ["analytics-demo.io", "skriuw.dev", "personal-site.com"];
 const BROWSERS = [
@@ -30,18 +30,21 @@ const REGIONS = {
 	Netherlands: ["North Holland", "South Holland", "Utrecht", "North Brabant"],
 	"United Kingdom": ["London", "Manchester", "Birmingham", "Scotland"],
 	Germany: ["Berlin", "Bavaria", "Hamburg", "Hesse"],
-};
+} satisfies Partial<Record<(typeof COUNTRIES)[number], readonly string[]>>;
 const CITIES = {
 	California: ["San Francisco", "Los Angeles", "San Diego"],
 	"New York": ["New York City", "Buffalo", "Rochester"],
 	"North Holland": ["Amsterdam", "Haarlem", "Zaanstad"],
 	London: ["Westminster", "Camden", "Greenwich"],
-};
+} satisfies Record<string, readonly string[]>;
 const PATHS = ["/", "/features", "/pricing", "/docs", "/blog", "/about"];
 const REFERRERS = ["https://google.com", "https://twitter.com", "https://github.com", ""];
 const DEVICES = ["desktop", "mobile", "tablet"];
 
-function getRandomItem<T>(arr: T[]): T {
+type SeedValue = string | number | boolean | Record<string, string | number | boolean>;
+type SeedMeta = Record<string, SeedValue>;
+
+function getRandomItem<T>(arr: readonly T[]): T {
 	return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -49,15 +52,24 @@ function getRandomInt(min: number, max: number): number {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function getRegions(country: string): readonly string[] {
+	if (country in REGIONS) return REGIONS[country as keyof typeof REGIONS];
+	return ["Unknown"];
+}
+
+function getCities(region: string): readonly string[] {
+	if (region in CITIES) return CITIES[region as keyof typeof CITIES];
+	return ["Unknown"];
+}
+
 async function seed() {
-	console.log("🌱 Starting advanced seed...");
+	console.log("Starting advanced seed...");
 
 	const now = new Date();
 	const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-	const entries: any[] = [];
+	const entries: NewEvent[] = [];
 
-	// Generate 200 visitors
 	for (let i = 0; i < 200; i++) {
 		const visitorId = `v-${Math.random().toString(36).substring(7)}`;
 		const projectId = getRandomItem(PROJECTS);
@@ -68,14 +80,12 @@ async function seed() {
 		const screenSize = deviceType === "mobile" ? "390x844" : "1920x1080";
 		const viewport = deviceType === "mobile" ? "390x844" : "1440x900";
 
-		// Geographic data for this visitor
 		const country = getRandomItem(COUNTRIES);
-		const regionList = (REGIONS as any)[country] || ["Unknown"];
-		const region = getRandomItem(regionList) as string;
-		const cityList = (CITIES as any)[region] || ["Unknown"];
+		const regionList = getRegions(country);
+		const region = getRandomItem(regionList);
+		const cityList = getCities(region);
 		const city = getRandomItem(cityList);
 
-		// Advanced traits for this visitor (Segmentation & A/B tests)
 		const userProperties = {
 			plan: Math.random() > 0.8 ? "pro" : "free",
 			role: Math.random() > 0.9 ? "admin" : "user",
@@ -84,7 +94,6 @@ async function seed() {
 			pricing_color: Math.random() > 0.5 ? "green" : "red",
 		};
 
-		// Each visitor has 1-5 sessions
 		const sessionCount = getRandomInt(1, 5);
 		for (let s = 0; s < sessionCount; s++) {
 			const sessionId = `s-${Math.random().toString(36).substring(7)}`;
@@ -94,7 +103,6 @@ async function seed() {
 			);
 			let lastEventTime = sessionStart;
 
-			// Force a funnel for ~30% of sessions
 			const isFunnelSession = Math.random() > 0.7;
 			let funnelStep = 0;
 
@@ -102,7 +110,6 @@ async function seed() {
 			for (let p = 0; p < pageviewCount; p++) {
 				let path = getRandomItem(PATHS);
 
-				// Force funnel path progression
 				if (isFunnelSession) {
 					if (funnelStep === 0) {
 						path = "/";
@@ -117,8 +124,7 @@ async function seed() {
 				const timestamp = new Date(lastEventTime.getTime() + getRandomInt(1000, 60000));
 				lastEventTime = timestamp;
 
-				// Base metadata (injecting user attributes & experiments uniformly)
-				const meta: any = {
+				const meta: SeedMeta = {
 					browser: browser.name,
 					browserVersion: browser.version,
 					os: os.name,
@@ -135,7 +141,6 @@ async function seed() {
 					meta.utmMedium = "social";
 				}
 
-				// 1. Pageview
 				entries.push({
 					projectId,
 					type: "pageview",
@@ -152,7 +157,6 @@ async function seed() {
 					meta,
 				});
 
-				// 2. Funnel conversion events
 				if (isFunnelSession && funnelStep === 1) {
 					entries.push({
 						projectId,
@@ -193,7 +197,6 @@ async function seed() {
 
 				funnelStep++;
 
-				// 3. Search events
 				if (Math.random() > 0.8) {
 					entries.push({
 						projectId,
@@ -215,7 +218,6 @@ async function seed() {
 					});
 				}
 
-				// 4. Performance & Engagement
 				if (Math.random() > 0.3) {
 					entries.push({
 						projectId,
@@ -268,12 +270,12 @@ async function seed() {
 		await db.insert(events).values(entries);
 	}
 
-	console.log("✅ Advanced seed complete!");
+	console.log("Advanced seed complete!");
 	process.exit(0);
 }
 
 seed().catch((err) => {
-	console.error("❌ Seed failed:");
+	console.error("Seed failed:");
 	console.error(err);
 	process.exit(1);
 });

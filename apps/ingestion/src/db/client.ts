@@ -1,21 +1,48 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { events, resume, visitors, visitorEvents } from "./schema";
+import { events, visitors } from "./schema";
 
-function getDbClient() {
+function createDb(databaseUrl: string) {
+	const sql = neon(databaseUrl);
+	return drizzle(sql, { schema: { events, visitors } });
+}
+
+type DbClient = ReturnType<typeof createDb>;
+
+function createFallbackDb(): DbClient {
+	return {
+		select() {
+			return {
+				from() {
+					return [];
+				},
+			};
+		},
+		insert() {
+			return {
+				values() {
+					return {
+						returning() {
+							return [];
+						},
+					};
+				},
+			};
+		},
+		async execute() {
+			return { rows: [] };
+		},
+	} as unknown as DbClient;
+}
+
+function getDbClient(): DbClient {
 	const databaseUrl = process.env.DATABASE_URL;
 
 	if (!databaseUrl) {
-		// Return dummy client during build or test if url is missing, or if env not set
-		return {
-			select: () => ({ from: () => [] }),
-			insert: () => ({ values: () => ({ returning: () => [] }) }),
-			execute: async () => ({ rows: [] }),
-		} as any;
+		return createFallbackDb();
 	}
 
-	const sql = neon(databaseUrl);
-	return drizzle(sql, { schema: { events, resume, visitors, visitorEvents } });
+	return createDb(databaseUrl);
 }
 
 export const db = getDbClient();

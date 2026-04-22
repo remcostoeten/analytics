@@ -13,8 +13,8 @@
         "test": "bun run --filter '*' test",
         "typecheck": "bun run --filter '*' typecheck",
         "lint": "oxlint apps packages --deny-warnings",
-        "fmt": "oxfmt apps packages",
-        "fmt:check": "oxfmt --check apps packages",
+        "fmt": "oxfmt apps packages '!**/dist/**'",
+        "fmt:check": "oxfmt --check apps packages '!**/dist/**'",
         "dev:ingestion": "bun run --cwd apps/ingestion dev",
         "deploy": "bun run deploy.ts"
     },
