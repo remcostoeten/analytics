@@ -1,6 +1,14 @@
 import { isRuntime } from "./runtime";
+import { type TrackMeta } from "../types";
 
-type EnrichmentData = Record<string, unknown>;
+type EnrichmentData = TrackMeta;
+type NetworkInformation = {
+	effectiveType?: string;
+	downlink?: number;
+};
+type NavigatorConnection = Navigator & {
+	connection?: NetworkInformation;
+};
 
 function getScreenInfo(): EnrichmentData {
 	if (isRuntime("server") || !window.screen) return {};
@@ -28,7 +36,7 @@ function getUtmParams(): EnrichmentData {
 
 function getConnectionInfo(): EnrichmentData {
 	if (typeof navigator === "undefined") return {};
-	const conn = (navigator as any).connection;
+	const conn = (navigator as NavigatorConnection).connection;
 	if (!conn) return {};
 	return {
 		connectionType: conn.effectiveType || null,

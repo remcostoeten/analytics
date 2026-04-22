@@ -2,7 +2,7 @@ import { getVisitorId } from "../identity/visitor";
 import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
 import { isRuntime, debugLog, collectEnrichment, noop } from "../utilities";
-import { type AnalyticsOptions, type EventPayload, type EventType } from "../types";
+import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
 const recentEvents = new Set<string>();
 const DEDUPE_WINDOW_MS = 5000;
@@ -12,10 +12,15 @@ function resolveDefaultProjectId(): string {
 	return window.location?.hostname || "unknown";
 }
 
-function getEnv() {
+type Env = Record<string, string | undefined>;
+type ImportMetaEnv = ImportMeta & {
+	env?: Env;
+};
+
+function getEnv(): Env {
 	if (typeof process !== "undefined" && process.env) return process.env;
-	if (typeof import.meta !== "undefined" && (import.meta as any).env)
-		return (import.meta as any).env;
+	const meta = import.meta as ImportMetaEnv;
+	if (meta.env) return meta.env;
 	return {};
 }
 
@@ -62,7 +67,7 @@ function isDuplicate(payload: EventPayload): boolean {
 
 function buildPayload(
 	type: EventType,
-	meta: Record<string, unknown> | undefined,
+	meta: TrackMeta | undefined,
 	options: AnalyticsOptions,
 ): EventPayload | null {
 	if (isRuntime("server")) return null;
@@ -102,11 +107,7 @@ function sendWithFetch(url: string, payload: EventPayload): void {
 	}).catch(noop);
 }
 
-export function track(
-	type: EventType,
-	meta?: Record<string, unknown>,
-	options: AnalyticsOptions = {},
-): void {
+export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptions = {}): void {
 	if (isOptedOut()) {
 		debugLog(options.debug, "User opted out");
 		return;
@@ -125,9 +126,7 @@ export function track(
 		return;
 	}
 
-	let ingestUrl = options.ingestUrl
-		? normalizeIngestUrl(options.ingestUrl)
-		: undefined;
+	let ingestUrl = options.ingestUrl ? normalizeIngestUrl(options.ingestUrl) : undefined;
 	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
 		debugLog(options.debug, `Invalid ingestUrl: "${ingestUrl}". Using default.`);
 		ingestUrl = undefined;
@@ -143,31 +142,23 @@ export function track(
 	debugLog(options.debug, "Event tracked", payload);
 }
 
-export function trackPageView(meta?: Record<string, unknown>, options?: AnalyticsOptions): void {
+export function trackPageView(meta?: TrackMeta, options?: AnalyticsOptions): void {
 	track("pageview", meta, options);
 }
 
-export function trackEvent(
-	eventName: string,
-	meta?: Record<string, unknown>,
-	options?: AnalyticsOptions,
-): void {
+export function trackEvent(eventName: string, meta?: TrackMeta, options?: AnalyticsOptions): void {
 	track("event", { eventName, ...meta }, options);
 }
 
 export function trackClick(
 	elementName: string,
-	meta?: Record<string, unknown>,
+	meta?: TrackMeta,
 	options?: AnalyticsOptions,
 ): void {
 	track("click", { elementName, ...meta }, options);
 }
 
-export function trackError(
-	error: Error,
-	meta?: Record<string, unknown>,
-	options?: AnalyticsOptions,
-): void {
+export function trackError(error: Error, meta?: TrackMeta, options?: AnalyticsOptions): void {
 	track("error", { message: error.message, stack: error.stack, ...meta }, options);
 }
 

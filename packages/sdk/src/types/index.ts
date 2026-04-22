@@ -1,8 +1,8 @@
-/**
- * Core types and options for the analytics SDK.
- */
-
-export type EventType = "pageview" | "event" | "click" | "error";
+export type KnownEventType = "pageview" | "event" | "click" | "error";
+export type EventType = KnownEventType | (string & {});
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
+export type TrackMeta = Record<string, JsonValue | undefined>;
 
 export type AnalyticsOptions = {
 	projectId?: string;
@@ -10,8 +10,12 @@ export type AnalyticsOptions = {
 	debug?: boolean;
 };
 
-export type EventPayload = {
-	type: EventType;
+export type AnalyticsProps = AnalyticsOptions & {
+	disabled?: boolean;
+};
+
+export type EventPayload<Type extends EventType = EventType> = {
+	type: Type;
 	projectId: string;
 	path: string;
 	referrer: string | null;
@@ -21,5 +25,5 @@ export type EventPayload = {
 	lang: string;
 	visitorId: string;
 	sessionId: string;
-	meta?: Record<string, unknown>;
+	meta?: TrackMeta;
 };

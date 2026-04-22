@@ -1,10 +1,3 @@
-"use client";
-
-/**
- * @remcostoeten/analytics
- * Privacy-focused analytics SDK for tracking page views and custom events.
- */
-
 export { Analytics } from "./components/analytics";
 export {
 	track,

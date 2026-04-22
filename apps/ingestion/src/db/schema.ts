@@ -1,7 +1,6 @@
 import {
 	pgTable,
 	bigserial,
-	bigint,
 	integer,
 	text,
 	timestamp,
@@ -45,27 +44,6 @@ export const events = pgTable(
 	}),
 );
 
-export const resume = pgTable("resume", {
-	id: bigserial("id", { mode: "bigint" }).primaryKey(),
-	event: text("event").notNull(),
-	ts: timestamp("ts", { withTimezone: true }).notNull().defaultNow(),
-	path: text("path"),
-	referrer: text("referrer"),
-	origin: text("origin"),
-	host: text("host"),
-	isLocalhost: boolean("is_localhost"),
-	ua: text("ua"),
-	lang: text("lang"),
-	ipHash: text("ip_hash"),
-	visitorId: text("visitor_id"),
-	country: text("country"),
-	region: text("region"),
-	city: text("city"),
-	deviceType: text("device_type"),
-	resumeVersion: text("resume_version"),
-	meta: jsonb("meta"),
-});
-
 export const visitors = pgTable(
 	"visitors",
 	{
@@ -96,34 +74,7 @@ export const visitors = pgTable(
 	}),
 );
 
-export const visitorEvents = pgTable(
-	"visitor_events",
-	{
-		id: bigserial("id", { mode: "bigint" }).primaryKey(),
-		visitorId: bigint("visitor_id", { mode: "bigint" })
-			.notNull()
-			.references(() => visitors.id),
-		eventType: text("event_type").notNull(),
-		ts: timestamp("ts", { withTimezone: true }).notNull().defaultNow(),
-		path: text("path"),
-		referrer: text("referrer"),
-		sessionId: text("session_id"),
-		durationMs: integer("duration_ms"),
-		meta: jsonb("meta"),
-	},
-	(table) => ({
-		visitorIdIdx: index("idx_visitor_events_visitor_id").on(table.visitorId),
-		eventTypeIdx: index("idx_visitor_events_event_type").on(table.eventType),
-		sessionIdIdx: index("idx_visitor_events_session_id").on(table.sessionId),
-		tsIdx: index("idx_visitor_events_ts").on(table.ts),
-	}),
-);
-
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
-export type Resume = typeof resume.$inferSelect;
-export type NewResume = typeof resume.$inferInsert;
 export type Visitor = typeof visitors.$inferSelect;
 export type NewVisitor = typeof visitors.$inferInsert;
-export type VisitorEvent = typeof visitorEvents.$inferSelect;
-export type NewVisitorEvent = typeof visitorEvents.$inferInsert;

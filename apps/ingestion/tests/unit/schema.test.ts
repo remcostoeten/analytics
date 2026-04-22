@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { events, resume, visitors, visitorEvents } from "../../src/db/schema";
+import { events, visitors } from "../../src/db/schema";
 
 describe("events schema", () => {
 	test("has all required columns", () => {
@@ -43,16 +43,7 @@ describe("events schema", () => {
 	});
 });
 
-describe("legacy tables schema", () => {
-	test("exports resume table columns", () => {
-		const columns = Object.keys(resume);
-
-		expect(columns).toContain("id");
-		expect(columns).toContain("event");
-		expect(columns).toContain("ts");
-		expect(columns).toContain("resumeVersion");
-	});
-
+describe("visitors schema", () => {
 	test("exports visitors table columns", () => {
 		const columns = Object.keys(visitors);
 
@@ -60,14 +51,5 @@ describe("legacy tables schema", () => {
 		expect(columns).toContain("fingerprint");
 		expect(columns).toContain("firstSeen");
 		expect(columns).toContain("lastSeen");
-	});
-
-	test("exports visitorEvents table columns", () => {
-		const columns = Object.keys(visitorEvents);
-
-		expect(columns).toContain("id");
-		expect(columns).toContain("visitorId");
-		expect(columns).toContain("eventType");
-		expect(columns).toContain("sessionId");
 	});
 });

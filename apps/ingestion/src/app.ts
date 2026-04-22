@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { handleIngest } from "./handlers/ingest.js";
 import { handleMetrics } from "./handlers/metrics.js";
@@ -28,10 +29,10 @@ function incrementRequestCount(req: Request) {
 }
 
 function requestCounter() {
-	return async function (c: any, next: any) {
+	return async function (c, next) {
 		incrementRequestCount(c.req.raw);
 		await next();
-	};
+	} satisfies MiddlewareHandler;
 }
 
 function getCorsOrigin(origin: string | undefined): string | undefined {

@@ -19,15 +19,9 @@ async function getDb(): Promise<DbModule> {
 	return dbModule;
 }
 
-export function __setDbModule(mock: any) {
+export function __setDbModule(mock: DbModule) {
 	dbModule = mock;
 }
-
-const ORIGIN_ALLOWLIST: string[] = process.env.ORIGIN_ALLOWLIST
-	? process.env.ORIGIN_ALLOWLIST.split(",").map(function (o) {
-			return o.trim();
-		})
-	: [];
 
 const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
 	? process.env.INTERNAL_IP_HASHES.split(",").map(function (h) {
@@ -35,10 +29,21 @@ const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
 		})
 	: [];
 
+function getOriginAllowlist(): string[] {
+	if (!process.env.ORIGIN_ALLOWLIST) return [];
+
+	return process.env.ORIGIN_ALLOWLIST.split(",")
+		.map(function (origin) {
+			return origin.trim();
+		})
+		.filter(Boolean);
+}
+
 function isOriginAllowed(origin: string | null): boolean {
-	if (ORIGIN_ALLOWLIST.length === 0) return true;
-	if (origin && ORIGIN_ALLOWLIST.includes(origin)) return true;
-	return true;
+	const allowlist = getOriginAllowlist();
+	if (allowlist.length === 0) return true;
+	if (origin && allowlist.includes(origin)) return true;
+	return false;
 }
 
 function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {

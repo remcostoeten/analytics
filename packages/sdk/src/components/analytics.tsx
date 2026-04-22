@@ -1,18 +1,17 @@
-"use client";
-
 import { useEffect } from "react";
 import { observePageViews } from "../observers/pageview";
 import { observePerformance } from "../observers/performance";
 import { observeScroll } from "../observers/scroll";
 import { observeTimeOnPage } from "../observers/heartbeat";
-import { type AnalyticsOptions } from "../types";
+import { type AnalyticsProps } from "../types";
 import { debugLog } from "../utilities";
 
-type Props = AnalyticsOptions & {
-	disabled?: boolean;
-};
-
-export function Analytics({ projectId, ingestUrl, disabled = false, debug = false }: Props) {
+export function Analytics({
+	projectId,
+	ingestUrl,
+	disabled = false,
+	debug = false,
+}: AnalyticsProps) {
 	useEffect(() => {
 		if (disabled) {
 			debugLog(debug, "Tracking disabled");

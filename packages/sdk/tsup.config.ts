@@ -12,9 +12,5 @@ export default defineConfig({
 	external: ["react"],
 	target: "es2020",
 	outDir: "dist",
-	esbuildOptions(options) {
-		options.banner = {
-			js: '"use client";',
-		};
-	},
+	onSuccess: "bun run scripts/client-directive.ts",
 });

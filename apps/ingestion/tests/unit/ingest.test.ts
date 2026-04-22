@@ -45,6 +45,38 @@ describe("POST /ingest", () => {
 		expect(data.ok).toBe(true);
 	});
 
+	test("rejects origins outside configured allowlist", async () => {
+		const previous = process.env.ORIGIN_ALLOWLIST;
+		process.env.ORIGIN_ALLOWLIST = "https://allowed.example";
+
+		try {
+			const response = await app.request("/ingest", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Origin: "https://blocked.example",
+				},
+				body: JSON.stringify({
+					projectId: "example.com",
+					type: "pageview",
+					path: "/home",
+				}),
+			});
+
+			expect(response.status).toBe(403);
+
+			const data = (await response.json()) as { ok: boolean; error: string };
+			expect(data.ok).toBe(false);
+			expect(data.error).toBe("Origin not allowed");
+		} finally {
+			if (previous) {
+				process.env.ORIGIN_ALLOWLIST = previous;
+			} else {
+				delete process.env.ORIGIN_ALLOWLIST;
+			}
+		}
+	});
+
 	test("rejects invalid payload", async () => {
 		const payload = {
 			type: "pageview",
