@@ -125,7 +125,9 @@ export function track(
 		return;
 	}
 
-	let ingestUrl = options.ingestUrl;
+	let ingestUrl = options.ingestUrl
+		? normalizeIngestUrl(options.ingestUrl)
+		: undefined;
 	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
 		debugLog(options.debug, `Invalid ingestUrl: "${ingestUrl}". Using default.`);
 		ingestUrl = undefined;
