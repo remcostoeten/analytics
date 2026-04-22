@@ -16,6 +16,7 @@ export {
 	trackSearch,
 	identifyUser,
 	setExperiment,
+	validateIngestUrl,
 } from "./api/track";
 export { getVisitorId, resetVisitorId } from "./identity/visitor";
 export { getSessionId, resetSessionId, extendSession } from "./identity/session";

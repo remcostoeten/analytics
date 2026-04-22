@@ -12,17 +12,35 @@ function resolveDefaultProjectId(): string {
 	return window.location?.hostname || "unknown";
 }
 
-function resolveDefaultIngestUrl(): string {
-	const env =
-		(typeof process !== "undefined" ? process.env : null) ||
-		(typeof import.meta !== "undefined" ? (import.meta as any).env : null);
-	return (
-		env?.NEXT_PUBLIC_ANALYTICS_URL ||
-		env?.VITE_ANALYTICS_URL ||
-		env?.NEXT_PUBLIC_REMCO_ANALYTICS_URL ||
-		env?.VITE_REMCO_ANALYTICS_URL ||
-		"http://localhost:3001"
-	);
+function getEnv() {
+	if (typeof process !== "undefined" && process.env) return process.env;
+	if (typeof import.meta !== "undefined" && (import.meta as any).env)
+		return (import.meta as any).env;
+	return {};
+}
+
+export function validateIngestUrl(url: string): boolean {
+	try {
+		const parsed = new URL(url);
+		return parsed.protocol === "http:" || parsed.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
+export function resolveDefaultIngestUrl(): string {
+	const env = getEnv();
+	const url =
+		env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL || "http://localhost:3001";
+
+	if (typeof window !== "undefined" && !validateIngestUrl(url)) {
+		console.error(
+			`[Analytics] Invalid ingestUrl: "${url}". Must be a valid http/https URL.`,
+		);
+		return "http://localhost:3001";
+	}
+
+	return url;
 }
 
 const DEFAULT_PROJECT_ID = resolveDefaultProjectId();
@@ -105,7 +123,16 @@ export function track(
 		return;
 	}
 
-	const endpoint = `${options.ingestUrl || DEFAULT_INGEST_URL}/ingest`;
+	let ingestUrl = options.ingestUrl;
+	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
+		debugLog(
+			options.debug,
+			`Invalid ingestUrl: "${ingestUrl}". Using default.`,
+		);
+		ingestUrl = undefined;
+	}
+
+	const endpoint = `${ingestUrl || DEFAULT_INGEST_URL}/ingest`;
 	extendSession();
 
 	if (!sendWithBeacon(endpoint, payload)) {

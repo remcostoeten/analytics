@@ -91,8 +91,11 @@ function App() {
 ### Environment Variables
 
 ```bash
-# .env.local
-NEXT_PUBLIC_REMCO_ANALYTICS_URL=https://your-ingestion-url.com
+# Next.js - .env.local
+NEXT_PUBLIC_ANALYTICS_URL=https://your-ingestion-url.com
+
+# Vite - .env
+VITE_ANALYTICS_URL=https://your-ingestion-url.com
 ```
 
 ### Component Props
