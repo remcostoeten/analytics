@@ -118,7 +118,7 @@ describe("POST /ingest", () => {
 		const event = insertedEvents.at(-1);
 		expect(event).toBeDefined();
 		if (!event) throw new Error("event missing");
-		expect((event.meta as Record<string, unknown>).isPreview).toBe(true);
+		expect(event.isPreview).toBe(true);
 	});
 
 	test("keeps production vercel deployments as public traffic", async () => {
@@ -139,6 +139,6 @@ describe("POST /ingest", () => {
 		const event = insertedEvents.at(-1);
 		expect(event).toBeDefined();
 		if (!event) throw new Error("event missing");
-		expect((event.meta as Record<string, unknown>).isPreview).toBe(false);
+		expect(event.isPreview).toBe(false);
 	});
 });

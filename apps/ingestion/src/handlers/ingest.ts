@@ -1,9 +1,15 @@
 import { Context } from "hono";
 import { validateEventPayload } from "../utilities/validation.js";
-import { extractGeoFromRequest, extractIpAddress, isLocalhost } from "../utilities/geo.js";
+import {
+	extractGeoFromRequest,
+	extractIpAddress,
+	isLocalhost,
+	isPreviewEnvironment,
+	getHostFromOrigin,
+} from "../utilities/geo.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
-import { generateFingerprint, dedupeCache, metrics } from "../utilities/dedupe.js";
+import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../utilities/dedupe.js";
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
 import { UAParser } from "ua-parser-js";
 import { sql as drizzleSql } from "drizzle-orm";
@@ -29,14 +35,17 @@ const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
 		})
 	: [];
 
-function getOriginAllowlist(): string[] {
-	if (!process.env.ORIGIN_ALLOWLIST) return [];
+let cachedAllowlist: string[] | null = null;
+let cachedAllowlistEnv: string | undefined = undefined;
 
-	return process.env.ORIGIN_ALLOWLIST.split(",")
-		.map(function (origin) {
-			return origin.trim();
-		})
-		.filter(Boolean);
+function getOriginAllowlist(): string[] {
+	const current = process.env.ORIGIN_ALLOWLIST;
+	if (current === cachedAllowlistEnv && cachedAllowlist !== null) return cachedAllowlist;
+	cachedAllowlistEnv = current;
+	cachedAllowlist = current
+		? current.split(",").map(function (o) { return o.trim(); }).filter(Boolean)
+		: [];
+	return cachedAllowlist;
 }
 
 function isOriginAllowed(origin: string | null): boolean {
@@ -50,20 +59,6 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 	if (localhost) return true;
 	if (ipHash && INTERNAL_IPS.includes(ipHash)) return true;
 	return false;
-}
-
-function getHostFromOrigin(origin: string | null): string | null {
-	if (!origin) return null;
-	try {
-		return new URL(origin).host;
-	} catch {
-		return null;
-	}
-}
-
-function isVercelPreviewHost(host: string | null): boolean {
-	if (!host) return false;
-	return /(-git-|-[a-z0-9]{8,}-)[^.]*[.]vercel[.]app$/i.test(host);
 }
 
 type VisitorData = {
@@ -176,7 +171,7 @@ export async function handleIngest(c: Context) {
 		const deviceType = classifyDevice(payload.ua, botResult.isBot);
 		const localhost = isLocalhost(payload.host);
 		const preview =
-			isVercelPreviewHost(payload.host) || isVercelPreviewHost(getHostFromOrigin(origin));
+			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
 		const fingerprint = await generateFingerprint({
 			projectId: payload.projectId,
@@ -192,7 +187,7 @@ export async function handleIngest(c: Context) {
 			return c.json({ ok: true, deduped: true });
 		}
 
-		dedupeCache.add(fingerprint);
+		dedupeCache.add(fingerprint, getDedupeWindow(payload.type || "pageview"));
 
 		const uaParser = new UAParser(payload.ua || "");
 		const browser = uaParser.getBrowser();
@@ -224,20 +219,20 @@ export async function handleIngest(c: Context) {
 			region: geo.region,
 			city: geo.city,
 			isLocalhost: localhost,
+			isPreview: preview,
+			botDetected: botResult.isBot,
+			isInternal: internal,
 			deviceType,
 
 			meta: {
 				...payload.meta,
-				botDetected: botResult.isBot,
 				botReason: botResult.reason,
 				botConfidence: botResult.confidence,
 				fingerprint,
-				isPreview: preview,
 				browser: browser.name,
 				browserVersion: browser.version,
 				os: os.name,
 				osVersion: os.version,
-				isInternal: internal,
 			},
 		});
 

@@ -84,8 +84,8 @@ export function createDedupeCache(ttlMs: number = 60000, maxSize: number = 10000
 			return true;
 		},
 
-		add(fingerprint: string): void {
-			cache.set(fingerprint, { expiresAt: Date.now() + ttlMs });
+		add(fingerprint: string, ttl?: number): void {
+			cache.set(fingerprint, { expiresAt: Date.now() + (ttl ?? ttlMs) });
 
 			if (cache.size > maxSize) {
 				evictOldest();

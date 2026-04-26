@@ -93,9 +93,18 @@ export function isLocalhost(host: string | null): boolean {
 export function isPreviewEnvironment(host: string | null): boolean {
 	if (!host) return false;
 
-	if (host.includes(".vercel.app") && !host.startsWith("www.")) return true;
+	if (/(-git-|-[a-z0-9]{8,}-)[^.]*\.vercel\.app$/i.test(host)) return true;
 	if (host.includes("-preview.") || host.includes(".preview.")) return true;
 	if (host.startsWith("preview-") || host.startsWith("staging-")) return true;
 
 	return false;
+}
+
+export function getHostFromOrigin(origin: string | null): string | null {
+	if (!origin) return null;
+	try {
+		return new URL(origin).host;
+	} catch {
+		return null;
+	}
 }
