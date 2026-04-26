@@ -4,10 +4,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
-	const timeRange = searchParams.get("timeRange") || "30d";
+	const rawTimeRange = searchParams.get("timeRange") || "30d";
 	const metric = searchParams.get("metric") || "overview";
 	const projectId = searchParams.get("projectId") || null;
 	const projectFilter = projectId || undefined;
+
+	const VALID_RANGES = new Set(["30d", "60d", "90d", "180d", "all"]);
+	if (!VALID_RANGES.has(rawTimeRange)) {
+		return NextResponse.json({ error: `Invalid timeRange: ${rawTimeRange}` }, { status: 400 });
+	}
+	const timeRange = rawTimeRange;
 
 	const hours =
 		timeRange === "60d" ? 1440 : timeRange === "90d" ? 2160 : timeRange === "180d" ? 4320 : 720;

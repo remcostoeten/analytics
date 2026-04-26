@@ -58,7 +58,6 @@ export function resolveDefaultIngestUrl(): string {
 }
 
 const DEFAULT_PROJECT_ID = resolveDefaultProjectId();
-const DEFAULT_INGEST_URL = resolveDefaultIngestUrl();
 
 function createEventKey(payload: EventPayload): string {
 	return `${payload.type}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
@@ -139,7 +138,7 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 		ingestUrl = undefined;
 	}
 
-	const baseUrl = ingestUrl || DEFAULT_INGEST_URL;
+	const baseUrl = ingestUrl || resolveDefaultIngestUrl();
 	if (!baseUrl) {
 		debugLog(options.debug, "No ingest URL configured, event dropped.");
 		return;

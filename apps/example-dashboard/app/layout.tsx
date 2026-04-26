@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 	},
 };
 
-const analyticsUrl = process.env.NEXT_PUBLIC_ANALYTICS_URL || "https://ingestion.remcostoeten.nl/";
+const analyticsUrl = process.env.NEXT_PUBLIC_ANALYTICS_URL || "https://ingestion.remcostoeten.nl";
 
 export default function RootLayout({
 	children,

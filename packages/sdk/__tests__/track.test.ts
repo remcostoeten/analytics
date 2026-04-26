@@ -11,6 +11,7 @@ describe("track", () => {
 	let fetchMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		originalLocalStorage = global.localStorage;
 		originalSessionStorage = global.sessionStorage;
 		originalNavigator = global.navigator;
@@ -83,6 +84,7 @@ describe("track", () => {
 	});
 
 	afterEach(() => {
+		delete process.env.NEXT_PUBLIC_ANALYTICS_URL;
 		if (originalLocalStorage) {
 			global.localStorage = originalLocalStorage;
 		}
@@ -97,7 +99,7 @@ describe("track", () => {
 		track("pageview");
 		expect(beaconMock).toHaveBeenCalled();
 		const callArgs = beaconMock.mock.calls[0];
-		expect(callArgs[0]).toContain("/ingest");
+		expect(callArgs[0]).toContain("/e");
 	});
 
 	test("includes all required fields in payload", () => {
@@ -147,7 +149,7 @@ describe("track", () => {
 	test("uses custom ingestUrl from options", () => {
 		track("pageview", undefined, { ingestUrl: "https://custom.com" });
 		const callArgs = beaconMock.mock.calls[0];
-		expect(callArgs[0]).toBe("https://custom.com/ingest");
+		expect(callArgs[0]).toBe("https://custom.com/e");
 	});
 
 	test("includes meta data in payload", () => {
@@ -203,6 +205,7 @@ describe("trackPageView", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => localStore[key] || null,
@@ -278,6 +281,7 @@ describe("observePageViews", () => {
 	let listeners: Record<string, Array<EventListener>>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => localStore[key] || null,
@@ -398,6 +402,7 @@ describe("trackEvent", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => localStore[key] || null,
@@ -471,6 +476,7 @@ describe("trackClick", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => localStore[key] || null,
@@ -536,6 +542,7 @@ describe("trackError", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
 			getItem: (key: string) => localStore[key] || null,

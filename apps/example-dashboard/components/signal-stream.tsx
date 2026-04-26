@@ -74,7 +74,7 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	const duration = numberMeta(metadata.duration);
 	const region = stringMeta(metadata.region);
 	const userAgent = stringMeta(metadata.userAgent);
-	const hasDetails = Object.keys(metadata).length > 0;
+	const hasDetails = !!(endpoint || method || statusCode !== null || duration !== null || region || requestId || userAgent);
 
 	return (
 		<div
@@ -158,7 +158,7 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 								</span>
 							</div>
 						)}
-						{statusCode && (
+						{statusCode !== null && (
 							<div className="flex items-center gap-2">
 								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Status:</span>
@@ -175,7 +175,7 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 								</span>
 							</div>
 						)}
-						{duration && (
+						{duration !== null && (
 							<div className="flex items-center gap-2">
 								<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Duration:</span>
