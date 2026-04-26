@@ -9,6 +9,7 @@ import { TrendChart } from "@/components/trend-chart";
 import { DonutChart } from "@/components/breakdown-chart";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { GeoMap } from "@/components/geo-map";
+import { GeoDetails } from "@/components/geo-details";
 import { ReferrerDetailPanel } from "@/components/referrer-detail-panel";
 import { WebVitalsCard } from "@/components/web-vitals-card";
 import { HourlyHeatmap } from "@/components/hourly-heatmap";
@@ -20,7 +21,6 @@ import { EntryExitPages } from "@/components/entry-exit-pages";
 import { LiveNowWidget } from "@/components/live-now-widget";
 import { RetentionHeatmap } from "@/components/retention-heatmap";
 import { SessionPaths } from "@/components/session-paths";
-import { UserSegmentation } from "@/components/user-segmentation";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -107,17 +107,17 @@ export function DashboardContent({
 	breadcrumbs = [{ label: "Analytics", href: "#" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
 }: DashboardContentProps) {
-	const [activeTab, setActiveTab] = useState("live");
-	const [typeFilter, setTypeFilter] = useState<SignalEvent["type"] | "all">("all");
-	const [timeRange, setTimeRange] = useState("30d");
-	const [selectedProject, setSelectedProject] = useState<string | null>(null);
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-	const [activeSegment, setActiveSegment] = useState("all");
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const activeView = (searchParams.get("view") as DashboardView) || "overview";
+	const selectedProject = searchParams.get("projectId");
+	const timeRange = searchParams.get("timeRange") || "30d";
+	const typeFilter = ((searchParams.get("status") as SignalEvent["type"] | null) || "all") as
+		| SignalEvent["type"]
+		| "all";
 
 	const setActiveView = (view: DashboardView) => {
 		const newParams = new URLSearchParams(searchParams.toString());
@@ -125,8 +125,47 @@ export function DashboardContent({
 		router.push(`/?${newParams.toString()}`);
 	};
 
+	const setSelectedProject = (projectId: string | null) => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		if (projectId) {
+			newParams.set("projectId", projectId);
+		} else {
+			newParams.delete("projectId");
+		}
+		router.push(`/?${newParams.toString()}`);
+	};
+
+	const setTimeRange = (range: string) => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		if (range === "30d") {
+			newParams.delete("timeRange");
+		} else {
+			newParams.set("timeRange", range);
+		}
+		router.push(`/?${newParams.toString()}`);
+	};
+
+	const setTypeFilter = (type: SignalEvent["type"] | "all") => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		if (type === "all") {
+			newParams.delete("status");
+		} else {
+			newParams.set("status", type);
+		}
+		router.push(`/?${newParams.toString()}`);
+	};
+
 	const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 	const canFetch = databaseReady;
+
+	useEffect(() => {
+		function openPalette() {
+			setPaletteOpen(true);
+		}
+
+		window.addEventListener("open-command-palette", openPalette);
+		return () => window.removeEventListener("open-command-palette", openPalette);
+	}, [setPaletteOpen]);
 
 	const buildQuery = (metric: string, extraParams: string = "") => {
 		const params = new URLSearchParams();
@@ -167,6 +206,11 @@ export function DashboardContent({
 	const { data: geo } = useSWR(canFetch ? buildQuery("geo") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
+	});
+
+	const { data: geoDetail } = useSWR(canFetch ? buildQuery("geo-detail") : null, fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
 	});
 
 	const { data: devices } = useSWR(canFetch ? buildQuery("devices") : null, fetcher, {
@@ -267,14 +311,6 @@ export function DashboardContent({
 		refreshInterval: 30000,
 	});
 
-	const { data: segments } = useSWR(
-		canFetch ? buildQuery("segments", `segment=${activeSegment}`) : null,
-		fetcher,
-		{
-			fallbackData: [],
-			refreshInterval: 60000,
-		},
-	);
 	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
 
@@ -401,18 +437,7 @@ export function DashboardContent({
 
 	return (
 		<>
-			<DashboardHeader
-				onSearchOpen={() => setPaletteOpen(true)}
-				activeTab={activeTab}
-				onTabChange={setActiveTab}
-				typeFilter={typeFilter}
-				onTypeFilterChange={setTypeFilter}
-				timeRange={timeRange}
-				onTimeRangeChange={setTimeRange}
-				projects={projects}
-				selectedProject={selectedProject}
-				onProjectChange={setSelectedProject}
-			/>
+			<DashboardHeader typeFilter={typeFilter} onTypeFilterChange={setTypeFilter} />
 
 			<CommandPalette
 				open={paletteOpen}
@@ -482,6 +507,7 @@ export function DashboardContent({
 									data={geo || initialData.audience.geoByCountry}
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
+								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<TopPagesTable data={pages || initialData.content.topPages} />
 									<ReferrersTable
@@ -520,6 +546,7 @@ export function DashboardContent({
 									data={geo || initialData.audience.geoByCountry}
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
+								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<TopPagesTable data={pages || initialData.content.topPages} />
 									<EntryExitPages data={entryExitPages} />
@@ -545,8 +572,8 @@ export function DashboardContent({
 								<HourlyHeatmap data={heatmap} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
-								<UserSegmentation data={segments} onSegmentChange={setActiveSegment} />
 								<SessionStatsCard data={sessionStats} />
+								<EngagementMetrics data={engagement} />
 							</div>
 						</div>
 					)}
@@ -611,10 +638,10 @@ export function DashboardContent({
 									data={geo || initialData.audience.geoByCountry}
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
+								<GeoDetails data={geoDetail} />
 								<VisitorsTable data={visitors || []} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
-								<UserSegmentation data={segments} onSegmentChange={setActiveSegment} />
 								<DonutChart
 									title="Devices"
 									data={deviceData.map((d) => ({

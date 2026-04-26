@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -137,55 +137,53 @@ export function WorldMap({ data, onCountryClick, selectedCountry, className }: W
 						}}
 						style={{ width: "100%", height: "100%" }}
 					>
-						<ZoomableGroup>
-							<Geographies geography={GEO_URL}>
-								{({ geographies }) =>
-									geographies.map((geo) => {
-										const countryName = geo.properties.name;
-										const countryCode = geo.id;
-										const countryData = getCountryData(countryName, countryCode);
+						<Geographies geography={GEO_URL}>
+							{({ geographies }) =>
+								geographies.map((geo) => {
+									const countryName = String(geo.properties.name ?? "");
+									const countryCode = String(geo.id ?? "");
+									const countryData = getCountryData(countryName, countryCode);
 
-										return (
-											<Tooltip key={geo.rsmKey}>
-												<TooltipTrigger asChild>
-													<Geography
-														geography={geo}
-														fill={getCountryColor(countryName, countryCode)}
-														stroke="hsl(var(--border))"
-														strokeWidth={0.5}
-														style={{
-															default: { outline: "none" },
-															hover: {
-																outline: "none",
-																cursor: countryData ? "pointer" : "default",
-															},
-															pressed: { outline: "none" },
-														}}
-														onMouseEnter={() => setHoveredCountry(countryName)}
-														onMouseLeave={() => setHoveredCountry(null)}
-														onClick={() => {
-															if (countryData && onCountryClick) {
-																onCountryClick(countryName);
-															}
-														}}
-													/>
-												</TooltipTrigger>
-												{countryData && (
-													<TooltipContent side="top" className="text-xs">
-														<div className="font-medium">{countryName}</div>
-														<div className="text-muted-foreground mt-1 space-y-0.5">
-															<div>{countryData.count?.toLocaleString()} events</div>
-															<div>{countryData.visitors?.toLocaleString()} visitors</div>
-															<div>{countryData.percentage?.toFixed(1)}% of traffic</div>
-														</div>
-													</TooltipContent>
-												)}
-											</Tooltip>
-										);
-									})
-								}
-							</Geographies>
-						</ZoomableGroup>
+									return (
+										<Tooltip key={geo.rsmKey}>
+											<TooltipTrigger asChild>
+												<Geography
+													geography={geo}
+													fill={getCountryColor(countryName, countryCode)}
+													stroke="hsl(var(--border))"
+													strokeWidth={0.5}
+													style={{
+														default: { outline: "none" },
+														hover: {
+															outline: "none",
+															cursor: countryData ? "pointer" : "default",
+														},
+														pressed: { outline: "none" },
+													}}
+													onMouseEnter={() => setHoveredCountry(countryName)}
+													onMouseLeave={() => setHoveredCountry(null)}
+													onClick={() => {
+														if (countryData && onCountryClick) {
+															onCountryClick(countryName);
+														}
+													}}
+												/>
+											</TooltipTrigger>
+											{countryData && (
+												<TooltipContent side="top" className="text-xs">
+													<div className="font-medium">{countryName}</div>
+													<div className="text-muted-foreground mt-1 space-y-0.5">
+														<div>{countryData.count?.toLocaleString()} events</div>
+														<div>{countryData.visitors?.toLocaleString()} visitors</div>
+														<div>{countryData.percentage?.toFixed(1)}% of traffic</div>
+													</div>
+												</TooltipContent>
+											)}
+										</Tooltip>
+									);
+								})
+							}
+						</Geographies>
 					</ComposableMap>
 				</div>
 			</TooltipProvider>

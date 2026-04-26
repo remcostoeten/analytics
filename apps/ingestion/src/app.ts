@@ -208,6 +208,14 @@ a:hover {
 	<div class="row">
 		<div class="left">
 			<div class="method post">POST</div>
+			<div class="path">/e</div>
+		</div>
+		<div class="desc">Ingest analytics events (short alias)</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
+			<div class="method post">POST</div>
 			<div class="path">/ingest</div>
 		</div>
 		<div class="desc">Ingest analytics events</div>
@@ -301,6 +309,7 @@ app.get("/health", (c) => {
 
 app.get("/metrics", handleMetrics);
 
+app.post("/e", handleIngest);
 app.post("/ingest", handleIngest);
 
 app.get("/admin/stats", handleAdminStats);

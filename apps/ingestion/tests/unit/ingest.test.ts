@@ -1,13 +1,18 @@
 import { describe, test, expect } from "bun:test";
 import { Hono } from "hono";
 
+const insertedEvents: Record<string, unknown>[] = [];
+
 const dbModule = {
 	db: {
 		insert: () => ({
-			values: () => ({
-				onConflictDoUpdate: () => Promise.resolve(),
-				returning: () => Promise.resolve(),
-			}),
+			values: (value: Record<string, unknown>) => {
+				if ("projectId" in value) insertedEvents.push(value);
+				return {
+					onConflictDoUpdate: () => Promise.resolve(),
+					returning: () => Promise.resolve(),
+				};
+			},
 		}),
 	},
 	events: {},
@@ -93,5 +98,47 @@ describe("POST /ingest", () => {
 		const data = (await response.json()) as { ok: boolean; error: string };
 		expect(data.ok).toBe(false);
 		expect(data.error).toBe("Invalid payload");
+	});
+
+	test("marks feature branch vercel deployments as preview", async () => {
+		insertedEvents.length = 0;
+
+		const response = await app.request("/ingest", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				projectId: "example.com",
+				type: "pageview",
+				path: "/preview-vercel",
+				host: "analytics-git-feature-remco.vercel.app",
+			}),
+		});
+
+		expect(response.status).toBe(200);
+		const event = insertedEvents.at(-1);
+		expect(event).toBeDefined();
+		if (!event) throw new Error("event missing");
+		expect(event.isPreview).toBe(true);
+	});
+
+	test("keeps production vercel deployments as public traffic", async () => {
+		insertedEvents.length = 0;
+
+		const response = await app.request("/ingest", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				projectId: "example.com",
+				type: "pageview",
+				path: "/production-vercel",
+				host: "analytics.vercel.app",
+			}),
+		});
+
+		expect(response.status).toBe(200);
+		const event = insertedEvents.at(-1);
+		expect(event).toBeDefined();
+		if (!event) throw new Error("event missing");
+		expect(event.isPreview).toBe(false);
 	});
 });

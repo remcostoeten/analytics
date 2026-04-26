@@ -21,6 +21,9 @@ export const events = pgTable(
 		origin: text("origin"),
 		host: text("host"),
 		isLocalhost: boolean("is_localhost").default(false),
+		isPreview: boolean("is_preview").default(false),
+		botDetected: boolean("bot_detected").default(false),
+		isInternal: boolean("is_internal").default(false),
 		ua: text("ua"),
 		lang: text("lang"),
 		deviceType: text("device_type"),
@@ -41,6 +44,8 @@ export const events = pgTable(
 		hostIdx: index("events_host_idx").on(table.host),
 		countryIdx: index("events_country_idx").on(table.country),
 		projectTsTypeIdx: index("events_project_ts_type_idx").on(table.projectId, table.ts, table.type),
+		previewIdx: index("events_is_preview_idx").on(table.isPreview),
+		botIdx: index("events_bot_detected_idx").on(table.botDetected),
 	}),
 );
 

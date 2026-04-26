@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { dataRetainer } from "../utilities/data-retention.js";
 
-function requireAdminAuth(c: Context): Response | null {
+export function requireAdminAuth(c: Context): Response | null {
 	const secret = process.env.ADMIN_SECRET;
 	if (!secret) {
 		return c.json(

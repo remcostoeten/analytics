@@ -4,26 +4,22 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
-	const timeRange = searchParams.get("timeRange") || "24h";
+	const rawTimeRange = searchParams.get("timeRange") || "30d";
 	const metric = searchParams.get("metric") || "overview";
 	const projectId = searchParams.get("projectId") || null;
 	const projectFilter = projectId || undefined;
 
-	const hours =
-		timeRange === "1h"
-			? 1
-			: timeRange === "6h"
-				? 6
-				: timeRange === "24h"
-					? 24
-					: timeRange === "7d"
-						? 168
-						: timeRange === "30d"
-							? 720
-							: 24;
+	const VALID_RANGES = new Set(["30d", "60d", "90d", "180d", "all"]);
+	if (!VALID_RANGES.has(rawTimeRange)) {
+		return NextResponse.json({ error: `Invalid timeRange: ${rawTimeRange}` }, { status: 400 });
+	}
+	const timeRange = rawTimeRange;
 
-	const from = new Date(Date.now() - hours * 60 * 60 * 1000);
+	const hours =
+		timeRange === "60d" ? 1440 : timeRange === "90d" ? 2160 : timeRange === "180d" ? 4320 : 720;
+
 	const to = new Date();
+	const from = timeRange === "all" ? new Date(0) : new Date(to.getTime() - hours * 60 * 60 * 1000);
 
 	try {
 		if (!process.env.DATABASE_URL) {
@@ -46,19 +42,21 @@ export async function GET(request: NextRequest) {
 			case "overview-extended":
 				return NextResponse.json(await query.getOverviewExtended(from, to, projectId));
 			case "pages":
-				return NextResponse.json(await query.getTopPages(projectFilter));
+				return NextResponse.json(await query.getTopPages(projectFilter, 10, from, to));
 			case "referrers":
-				return NextResponse.json(await query.getTopReferrers(projectFilter));
+				return NextResponse.json(await query.getTopReferrers(projectFilter, 10, from, to));
 			case "geo":
-				return NextResponse.json(await query.getGeoDistribution(projectFilter));
+				return NextResponse.json(await query.getGeoDistribution(projectFilter, 100, from, to));
+			case "geo-detail":
+				return NextResponse.json(await query.getGeoDetail(from, to, projectId));
 			case "devices":
-				return NextResponse.json(await query.getDeviceBreakdown(projectFilter));
+				return NextResponse.json(await query.getDeviceBreakdown(projectFilter, from, to));
 			case "trend":
-				return NextResponse.json(await query.getPageviewsTrend(projectFilter));
+				return NextResponse.json(await query.getPageviewsTrend(projectFilter, hours, from, to));
 			case "events":
-				return NextResponse.json(await query.getRecentEvents(projectFilter));
+				return NextResponse.json(await query.getRecentEvents(projectFilter, 20, from, to));
 			case "visitors":
-				return NextResponse.json(await query.getRecentVisitors(projectId));
+				return NextResponse.json(await query.getRecentVisitors(projectId, 50, from, to));
 			case "geo-cities":
 				const country = searchParams.get("country");
 				return NextResponse.json(await query.getGeoCities(from, to, country, projectId));
