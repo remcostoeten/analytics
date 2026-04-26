@@ -89,11 +89,11 @@ export function CommandPalette({
 	];
 
 	const timeRanges = [
-		{ value: "1h", label: "Last 1 hour" },
-		{ value: "6h", label: "Last 6 hours" },
-		{ value: "24h", label: "Last 24 hours" },
-		{ value: "7d", label: "Last 7 days" },
+		{ value: "all", label: "All time" },
 		{ value: "30d", label: "Last 30 days" },
+		{ value: "60d", label: "Last 60 days" },
+		{ value: "90d", label: "Last 90 days" },
+		{ value: "180d", label: "Last 180 days" },
 	];
 
 	return (

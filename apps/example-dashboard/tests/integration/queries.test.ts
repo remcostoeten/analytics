@@ -1,8 +1,11 @@
-import { describe, test, expect, mock } from "bun:test";
+import { afterAll, describe, test, expect, mock } from "bun:test";
 import { setupTestDb } from "../setup";
 
-// Initialize test DB
-const { pg } = await setupTestDb();
+const { pg, cleanup } = await setupTestDb();
+
+afterAll(function () {
+	cleanup();
+});
 
 // Mock the dashboard's db client
 mock.module("../../lib/db.ts", () => {
@@ -116,5 +119,24 @@ describe("Dashboard Queries Integration", () => {
 		expect(top[0].views).toBe(2);
 		expect(top[1].path).toBe("/about");
 		expect(top[1].views).toBe(1);
+	});
+
+	test("preview vercel events are excluded while production vercel stays", async () => {
+		await pg.exec("DELETE FROM events");
+		await pg.exec(`
+            INSERT INTO events (project_id, type, ts, is_localhost, host, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'analytics-git-feature-remco.vercel.app', '{}');
+            INSERT INTO events (project_id, type, ts, is_localhost, host, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'analytics-a1b2c3d4-remco.vercel.app', '{}');
+            INSERT INTO events (project_id, type, ts, is_localhost, host, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'analytics.remcostoeten.nl', '{"isPreview": true}');
+            INSERT INTO events (project_id, type, ts, is_localhost, host, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'analytics.vercel.app', '{}');
+            INSERT INTO events (project_id, type, ts, is_localhost, host, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'analytics.remcostoeten.nl', '{}');
+        `);
+
+		const kpi = await getPageviewsKPI("test-project");
+		expect(kpi.value).toBe(2);
 	});
 });

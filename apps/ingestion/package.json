@@ -12,7 +12,8 @@
 		"db:migrate": "drizzle-kit up:pg",
 		"db:studio": "drizzle-kit studio",
 		"db:seed": "bun run src/db/seed.ts",
-		"ops": "bun run scripts/ops.ts"
+		"ops": "bun run scripts/ops.ts",
+		"ops:build": "bun build --compile --outfile dist/analytics-ops scripts/ops.ts"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^0.10.0",

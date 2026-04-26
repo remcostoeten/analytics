@@ -301,6 +301,7 @@ app.get("/health", (c) => {
 
 app.get("/metrics", handleMetrics);
 
+app.post("/e", handleIngest);
 app.post("/ingest", handleIngest);
 
 app.get("/admin/stats", handleAdminStats);

@@ -17,6 +17,7 @@
         "fmt:check": "oxfmt --check apps packages '!**/dist/**'",
         "dev:ingestion": "bun run --cwd apps/ingestion dev",
         "ops": "bun run --cwd apps/ingestion ops",
+        "ops:build": "bun run --cwd apps/ingestion ops:build",
         "deploy": "bun run deploy.ts"
     },
     "devDependencies": {

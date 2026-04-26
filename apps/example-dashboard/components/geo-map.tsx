@@ -312,7 +312,6 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 										key={geo.rsmKey}
 										geography={geo}
 										fill={hasData ? "var(--color-primary)" : "var(--color-muted)"}
-										fillOpacity={hasData ? 0.2 + (countryData.percentage / maxPercentage) * 0.8 : 1}
 										stroke="var(--color-border)"
 										strokeWidth={0.5}
 										onMouseEnter={(e) => {
@@ -336,6 +335,9 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 											default: {
 												outline: "none",
 												cursor: hasData ? "pointer" : "default",
+												fillOpacity: hasData
+													? 0.2 + (countryData.percentage / maxPercentage) * 0.8
+													: 1,
 											},
 											hover: {
 												fill: hasData

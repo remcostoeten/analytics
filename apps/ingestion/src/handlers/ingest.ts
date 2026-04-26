@@ -52,6 +52,20 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 	return false;
 }
 
+function getHostFromOrigin(origin: string | null): string | null {
+	if (!origin) return null;
+	try {
+		return new URL(origin).host;
+	} catch {
+		return null;
+	}
+}
+
+function isVercelPreviewHost(host: string | null): boolean {
+	if (!host) return false;
+	return /(-git-|-[a-z0-9]{8,}-)[^.]*[.]vercel[.]app$/i.test(host);
+}
+
 type VisitorData = {
 	ipHash: string | null;
 	deviceType: string;
@@ -161,6 +175,8 @@ export async function handleIngest(c: Context) {
 		const geo = extractGeoFromRequest(req);
 		const deviceType = classifyDevice(payload.ua, botResult.isBot);
 		const localhost = isLocalhost(payload.host);
+		const preview =
+			isVercelPreviewHost(payload.host) || isVercelPreviewHost(getHostFromOrigin(origin));
 
 		const fingerprint = await generateFingerprint({
 			projectId: payload.projectId,
@@ -216,6 +232,7 @@ export async function handleIngest(c: Context) {
 				botReason: botResult.reason,
 				botConfidence: botResult.confidence,
 				fingerprint,
+				isPreview: preview,
 				browser: browser.name,
 				browserVersion: browser.version,
 				os: os.name,

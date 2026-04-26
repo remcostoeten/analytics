@@ -30,6 +30,8 @@ export const metadata: Metadata = {
 	},
 };
 
+const analyticsUrl = process.env.NEXT_PUBLIC_ANALYTICS_URL || "https://ingestion.remcostoeten.nl/";
+
 export default function RootLayout({
 	children,
 }: Readonly<{
@@ -48,7 +50,7 @@ export default function RootLayout({
 				</ThemeProvider>
 				<Analytics
 					projectId="analytics-dashboard"
-					ingestUrl={process.env.NEXT_PUBLIC_INGEST_URL || ""}
+					ingestUrl={analyticsUrl}
 					debug={process.env.NODE_ENV === "development"}
 				/>
 			</body>

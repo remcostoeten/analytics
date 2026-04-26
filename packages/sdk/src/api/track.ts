@@ -40,11 +40,18 @@ function normalizeIngestUrl(url: string): string {
 
 export function resolveDefaultIngestUrl(): string {
 	const env = getEnv();
-	const url = env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL || "http://localhost:3001";
+	const url = env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL;
+
+	if (!url) {
+		if (typeof window !== "undefined") {
+			console.error("[Analytics] No ingest URL configured. Set NEXT_PUBLIC_ANALYTICS_URL or VITE_ANALYTICS_URL.");
+		}
+		return "";
+	}
 
 	if (typeof window !== "undefined" && !validateIngestUrl(url)) {
 		console.error(`[Analytics] Invalid ingestUrl: "${url}". Must be a valid http/https URL.`);
-		return "http://localhost:3001";
+		return "";
 	}
 
 	return url;
@@ -132,7 +139,13 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 		ingestUrl = undefined;
 	}
 
-	const endpoint = `${ingestUrl || DEFAULT_INGEST_URL}/ingest`;
+	const baseUrl = ingestUrl || DEFAULT_INGEST_URL;
+	if (!baseUrl) {
+		debugLog(options.debug, "No ingest URL configured, event dropped.");
+		return;
+	}
+
+	const endpoint = `${baseUrl}/e`;
 	extendSession();
 
 	if (!sendWithBeacon(endpoint, payload)) {

@@ -27,6 +27,21 @@ function formatTimeAgo(timestamp: Date | string): string {
 	return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+function stringMeta(value: unknown): string | null {
+	if (typeof value === "string" && value.length > 0) return value;
+	if (typeof value === "number") return String(value);
+	return null;
+}
+
+function numberMeta(value: unknown): number | null {
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "string" && value.length > 0) {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : null;
+	}
+	return null;
+}
+
 // Dark mode compatible badge styles
 const badgeStyles: Record<SignalEvent["type"], string> = {
 	ok: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
@@ -52,7 +67,14 @@ interface SignalItemProps {
 function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	const timeAgo = formatTimeAgo(signal.timestamp);
 	const metadata = signal.metadata || {};
-	const hasDetails = Object.keys(metadata).length > 0 || metadata.endpoint || metadata.requestId;
+	const endpoint = stringMeta(metadata.endpoint);
+	const requestId = stringMeta(metadata.requestId);
+	const method = stringMeta(metadata.method);
+	const statusCode = numberMeta(metadata.statusCode);
+	const duration = numberMeta(metadata.duration);
+	const region = stringMeta(metadata.region);
+	const userAgent = stringMeta(metadata.userAgent);
+	const hasDetails = Object.keys(metadata).length > 0;
 
 	return (
 		<div
@@ -79,18 +101,18 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 						<p className="text-[11px] font-medium text-foreground leading-tight">
 							{signal.category}
 						</p>
-						{metadata.endpoint && (
+						{endpoint && (
 							<code className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono">
-								{String(metadata.endpoint)}
+								{endpoint}
 							</code>
 						)}
 					</div>
 					<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{signal.message}</p>
-					{metadata.requestId && (
+					{requestId && (
 						<div className="flex items-center gap-1 mt-1">
 							<Hash className="h-2.5 w-2.5 text-muted-foreground/70" />
 							<span className="text-[9px] text-muted-foreground/70 font-mono">
-								{String(metadata.requestId).slice(0, 12)}...
+								{requestId.slice(0, 12)}...
 							</span>
 						</div>
 					)}
@@ -110,81 +132,77 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 			{isExpanded && hasDetails && (
 				<div className="px-3 pb-2 pt-0 ml-7">
 					<div className="bg-muted/50 rounded-sm p-2 space-y-1.5 text-[10px]">
-						{metadata.endpoint && (
+						{endpoint && (
 							<div className="flex items-center gap-2">
 								<Server className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Endpoint:</span>
 								<code className="text-foreground font-mono bg-background/50 px-1 rounded">
-									{String(metadata.endpoint)}
+									{endpoint}
 								</code>
 							</div>
 						)}
-						{metadata.method && (
+						{method && (
 							<div className="flex items-center gap-2">
 								<ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Method:</span>
 								<span
 									className={cn(
 										"font-mono font-medium",
-										metadata.method === "GET" && "text-emerald-600 dark:text-emerald-400",
-										metadata.method === "POST" && "text-blue-600 dark:text-blue-400",
-										metadata.method === "PUT" && "text-amber-600 dark:text-amber-400",
-										metadata.method === "DELETE" && "text-red-600 dark:text-red-400",
+										method === "GET" && "text-emerald-600 dark:text-emerald-400",
+										method === "POST" && "text-blue-600 dark:text-blue-400",
+										method === "PUT" && "text-amber-600 dark:text-amber-400",
+										method === "DELETE" && "text-red-600 dark:text-red-400",
 									)}
 								>
-									{String(metadata.method)}
+									{method}
 								</span>
 							</div>
 						)}
-						{metadata.statusCode && (
+						{statusCode && (
 							<div className="flex items-center gap-2">
 								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Status:</span>
 								<span
 									className={cn(
 										"font-mono font-medium",
-										Number(metadata.statusCode) < 300 && "text-emerald-600 dark:text-emerald-400",
-										Number(metadata.statusCode) >= 300 &&
-											Number(metadata.statusCode) < 400 &&
-											"text-blue-600 dark:text-blue-400",
-										Number(metadata.statusCode) >= 400 &&
-											Number(metadata.statusCode) < 500 &&
-											"text-amber-600 dark:text-amber-400",
-										Number(metadata.statusCode) >= 500 && "text-red-600 dark:text-red-400",
+										statusCode < 300 && "text-emerald-600 dark:text-emerald-400",
+										statusCode >= 300 && statusCode < 400 && "text-blue-600 dark:text-blue-400",
+										statusCode >= 400 && statusCode < 500 && "text-amber-600 dark:text-amber-400",
+										statusCode >= 500 && "text-red-600 dark:text-red-400",
 									)}
 								>
-									{String(metadata.statusCode)}
+									{statusCode}
 								</span>
 							</div>
 						)}
-						{metadata.duration && (
+						{duration && (
 							<div className="flex items-center gap-2">
 								<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Duration:</span>
-								<span className="text-foreground font-mono">{String(metadata.duration)}ms</span>
+								<span className="text-foreground font-mono">{duration}ms</span>
 							</div>
 						)}
-						{metadata.region && (
+						{region && (
 							<div className="flex items-center gap-2">
 								<Globe className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Region:</span>
-								<span className="text-foreground">{String(metadata.region)}</span>
+								<span className="text-foreground">{region}</span>
 							</div>
 						)}
-						{metadata.requestId && (
+						{requestId && (
 							<div className="flex items-center gap-2">
 								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
 								<span className="text-muted-foreground">Request ID:</span>
 								<code className="text-foreground font-mono text-[9px] bg-background/50 px-1 rounded">
-									{String(metadata.requestId)}
+									{requestId}
 								</code>
 							</div>
 						)}
-						{metadata.userAgent && (
+						{userAgent && (
 							<div className="flex items-start gap-2">
 								<span className="text-muted-foreground shrink-0">UA:</span>
 								<span className="text-foreground/70 text-[9px] break-all">
-									{String(metadata.userAgent).slice(0, 80)}...
+									{userAgent.slice(0, 80)}...
 								</span>
 							</div>
 						)}
