@@ -4,16 +4,16 @@ import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 import { useMemo, useState } from "react";
 
-interface HourlyHeatmapData {
+type HourlyHeatmapData = {
 	data: number[][];
 	maxCount: number;
 	days: string[];
-}
+};
 
-interface HourlyHeatmapProps {
+type HourlyHeatmapProps = {
 	data: HourlyHeatmapData | null;
 	className?: string;
-}
+};
 
 export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 	const [hoveredCell, setHoveredCell] = useState<{ day: number; hour: number } | null>(null);
@@ -37,10 +37,16 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 		);
 	}
 
-	const getIntensity = (count: number) => {
+	function getIntensity(count: number): number {
 		if (count === 0) return 0;
-		return Math.max(0.1, count / data.maxCount);
-	};
+		return Math.max(0.22, count / data.maxCount);
+	}
+
+	function getCellColor(count: number): string {
+		if (count === 0) return "hsl(var(--muted) / 0.24)";
+		const intensity = getIntensity(count);
+		return `hsl(var(--foreground) / ${0.16 + intensity * 0.5})`;
+	}
 
 	const hoveredInfo = hoveredCell
 		? {
@@ -61,7 +67,6 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 				)}
 			</div>
 			<div className="p-3">
-				{/* Hour labels */}
 				<div className="flex mb-1">
 					<div className="w-8 shrink-0" />
 					<div className="flex-1 flex">
@@ -77,7 +82,6 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 					</div>
 				</div>
 
-				{/* Heatmap grid */}
 				<div className="space-y-0.5">
 					{data.days.map((day, dayIndex) => (
 						<div key={day} className="flex items-center gap-1">
@@ -85,7 +89,6 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 							<div className="flex-1 flex gap-px">
 								{hours.map((_, hourIndex) => {
 									const count = data.data[dayIndex][hourIndex];
-									const intensity = getIntensity(count);
 									const isHovered =
 										hoveredCell?.day === dayIndex && hoveredCell?.hour === hourIndex;
 
@@ -93,12 +96,12 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 										<div
 											key={hourIndex}
 											className={cn(
-												"flex-1 aspect-square rounded-[2px] transition-all cursor-crosshair",
-												isHovered && "ring-1 ring-primary ring-offset-1 ring-offset-background",
+												"flex-1 aspect-square rounded-[3px] border border-border/40 transition-all cursor-crosshair",
+												isHovered &&
+													"scale-[1.06] border-foreground/60 shadow-[0_0_0_1px_hsl(var(--background)),0_0_18px_hsl(var(--foreground)/0.08)]",
 											)}
 											style={{
-												backgroundColor:
-													count === 0 ? "hsl(var(--muted))" : `hsl(var(--chart-1) / ${intensity})`,
+												backgroundColor: getCellColor(count),
 												minWidth: 0,
 											}}
 											onMouseEnter={() => setHoveredCell({ day: dayIndex, hour: hourIndex })}
@@ -111,17 +114,18 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 					))}
 				</div>
 
-				{/* Legend */}
 				<div className="flex items-center justify-end gap-2 mt-3">
 					<span className="text-[9px] text-muted-foreground">Less</span>
 					<div className="flex gap-px">
 						{[0, 0.25, 0.5, 0.75, 1].map((intensity, i) => (
 							<div
 								key={i}
-								className="w-3 h-3 rounded-[2px]"
+								className="h-3 w-3 rounded-[2px] border border-border/40"
 								style={{
 									backgroundColor:
-										intensity === 0 ? "hsl(var(--muted))" : `hsl(var(--chart-1) / ${intensity})`,
+										intensity === 0
+											? "hsl(var(--muted) / 0.24)"
+											: `hsl(var(--foreground) / ${0.16 + intensity * 0.5})`,
 								}}
 							/>
 						))}

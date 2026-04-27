@@ -73,6 +73,11 @@ export function AppSidebar() {
 		{ id: "technology", label: "Technology", icon: Settings2 },
 	];
 
+	function buildHref(path: string, params: URLSearchParams): string {
+		const query = params.toString();
+		return query ? `${path}?${query}` : path;
+	}
+
 	function setSelectedProject(projectId: string | null) {
 		const params = new URLSearchParams(searchParams.toString());
 		if (projectId) {
@@ -80,7 +85,7 @@ export function AppSidebar() {
 		} else {
 			params.delete("projectId");
 		}
-		router.push(`/?${params.toString()}`);
+		router.push(buildHref(pathname || "/", params));
 	}
 
 	function setTimeRange(range: string) {
@@ -90,13 +95,18 @@ export function AppSidebar() {
 		} else {
 			params.set("timeRange", range);
 		}
-		router.push(`/?${params.toString()}`);
+		router.push(buildHref(pathname || "/", params));
 	}
 
 	function viewHref(id: string) {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("view", id);
-		return `/?${params.toString()}`;
+		return buildHref("/", params);
+	}
+
+	function pageHref(path: string) {
+		const params = new URLSearchParams(searchParams.toString());
+		return buildHref(path, params);
 	}
 
 	function openSearch() {
@@ -172,7 +182,7 @@ export function AppSidebar() {
 									tooltip="Service Health"
 									className="h-8 text-xs font-medium"
 								>
-									<Link href="/health">
+									<Link href={pageHref("/health")}>
 										<Server className="size-3.5" />
 										<span>Health</span>
 									</Link>
@@ -180,7 +190,7 @@ export function AppSidebar() {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild tooltip="Settings" className="h-8 text-xs font-medium">
-									<Link href="/settings">
+									<Link href={pageHref("/settings")}>
 										<Settings className="size-3.5" />
 										<span>Settings</span>
 									</Link>

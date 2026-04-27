@@ -3,18 +3,18 @@
 import { cn } from "@/lib/utils";
 import { Clock, Layers, ArrowLeftRight, Users } from "lucide-react";
 
-interface SessionStatsData {
+type SessionStatsData = {
 	avgPageviews: number;
 	avgDuration: number;
 	avgUniquePages: number;
 	totalSessions: number;
 	bounceRate: number;
-}
+};
 
-interface SessionStatsCardProps {
+type SessionStatsCardProps = {
 	data: SessionStatsData | null;
 	className?: string;
-}
+};
 
 function formatDuration(seconds: number): string {
 	if (seconds < 60) return `${seconds}s`;
@@ -40,13 +40,13 @@ export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 			label: "Avg. Duration",
 			value: formatDuration(data.avgDuration),
 			icon: Clock,
-			color: "text-chart-1",
+			color: "text-foreground/70",
 		},
 		{
 			label: "Pages / Session",
 			value: data.avgPageviews.toFixed(1),
 			icon: Layers,
-			color: "text-chart-2",
+			color: "text-foreground/60",
 		},
 		{
 			label: "Bounce Rate",
@@ -54,16 +54,16 @@ export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 			icon: ArrowLeftRight,
 			color:
 				data.bounceRate > 70
-					? "text-red-500"
+					? "text-rose-400"
 					: data.bounceRate > 50
-						? "text-amber-500"
-						: "text-emerald-500",
+						? "text-amber-300"
+						: "text-foreground/50",
 		},
 		{
 			label: "Sessions",
 			value: data.totalSessions.toLocaleString(),
 			icon: Users,
-			color: "text-chart-4",
+			color: "text-foreground/65",
 		},
 	];
 
@@ -76,7 +76,9 @@ export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 				{stats.map((stat) => (
 					<div key={stat.label} className="bg-card p-3">
 						<div className="flex items-center gap-1.5 mb-1">
-							<stat.icon className={cn("h-3 w-3", stat.color)} />
+							<div className="flex h-5 w-5 items-center justify-center rounded-sm border border-border/60 bg-muted/30">
+								<stat.icon className={cn("h-3 w-3", stat.color)} />
+							</div>
 							<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
 								{stat.label}
 							</span>
