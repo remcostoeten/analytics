@@ -97,9 +97,9 @@ export function TrendChart({
 									if (!active || !payload?.length) return null;
 									const p = payload[0].payload;
 									return (
-										<div className="bg-popover border border-border rounded px-2 py-1 shadow-sm">
+										<div className="bg-background border border-border rounded px-2.5 py-1.5 shadow-lg">
 											<p className="text-[10px] text-muted-foreground">{p.formattedTime}</p>
-											<p className="text-xs font-medium text-foreground">
+											<p className="text-sm font-semibold text-foreground">
 												{Number(p.value).toLocaleString()}
 											</p>
 										</div>

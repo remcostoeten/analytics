@@ -475,7 +475,7 @@ export function DashboardContent({
 					</div>
 
 					{!databaseReady && <DatabaseNotice issue={setupIssue} />}
-					<DemoDataNotice />
+					{!databaseReady && <DemoDataNotice />}
 
 					<div className="overflow-x-auto -mx-3 px-3">
 						<div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full">
@@ -745,10 +745,10 @@ function DatabaseNotice({ issue }: { issue?: "missing_database_url" | "query_fai
 				sessionStorage.setItem("db-notice-dismissed", "true");
 				setDismissed(true);
 			}}
-			className="group relative w-full rounded-md border border-amber-500/30 bg-amber-500/[0.07] px-3 py-2 text-left hover:bg-amber-500/[0.1] transition-colors"
+			className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
 		>
 			<div className="flex items-center gap-2">
-				<AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+				<AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />
 				<span className="text-xs text-muted-foreground">{detail}</span>
 			</div>
 			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -758,6 +758,8 @@ function DatabaseNotice({ issue }: { issue?: "missing_database_url" | "query_fai
 
 function DemoDataNotice() {
 	const [dismissed, setDismissed] = useState(false);
+	const isPersonalDashboard = typeof window !== "undefined" && 
+		window.location.hostname === process.env.NEXT_PUBLIC_PERSONAL_DASHBOARD_HOSTNAME;
 
 	useEffect(() => {
 		if (sessionStorage.getItem("demo-notice-dismissed") === "true") {
@@ -765,7 +767,7 @@ function DemoDataNotice() {
 		}
 	}, []);
 
-	if (dismissed) return null;
+	if (dismissed || isPersonalDashboard) return null;
 
 	return (
 		<button
@@ -774,10 +776,10 @@ function DemoDataNotice() {
 				sessionStorage.setItem("demo-notice-dismissed", "true");
 				setDismissed(true);
 			}}
-			className="group relative w-full rounded-md border border-sky-500/30 bg-sky-500/[0.07] px-3 py-2 text-left hover:bg-sky-500/[0.1] transition-colors"
+			className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
 		>
 			<div className="flex items-center gap-2">
-				<BadgeInfo className="h-4 w-4 shrink-0 text-sky-400" />
+				<BadgeInfo className="h-4 w-4 shrink-0 text-muted-foreground" />
 				<span className="text-xs text-muted-foreground">
 					All data is illustrative! Learn{" "}
 					<Link href="https://docs.analytics.remcostoeten.nl" className="underline">

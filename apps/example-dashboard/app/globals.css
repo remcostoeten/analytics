@@ -138,30 +138,29 @@
 	}
 }
 
-/* Dark themed scrollbars */
-* {
+/* Custom tooltip styles for charts */
+.recharts-tooltip-wrapper {
+	outline: none !important;
+}
+
+.recharts-default-tooltip {
+	background: var(--background) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: calc(var(--radius)) !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Scrollbar - light mode fallback */
+.light * {
 	scrollbar-width: thin;
-	scrollbar-color: #3f3f46 #18181b;
+	scrollbar-color: #e5e5e5 #ffffff;
 }
 
-*::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
+.light *::-webkit-scrollbar-track {
+	background: #ffffff;
 }
 
-*::-webkit-scrollbar-track {
-	background: #18181b;
-}
-
-*::-webkit-scrollbar-thumb {
-	background: #3f3f46;
+.light *::-webkit-scrollbar-thumb {
+	background: #e5e5e5;
 	border-radius: 4px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-	background: #52525b;
-}
-
-*::-webkit-scrollbar-corner {
-	background: #18181b;
 }

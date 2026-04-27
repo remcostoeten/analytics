@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
+		"dev": "NEXT_CACHE_DIRECTORY=/tmp/next-cache next dev",
 		"build": "cd ../../packages/sdk && bun install && bun run build && cd ../../apps/example-dashboard && next build",
 		"start": "next start",
 		"test": "bun test",

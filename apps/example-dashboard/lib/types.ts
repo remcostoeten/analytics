@@ -128,6 +128,7 @@ export interface GeoDistribution {
 
 export interface ContentMetric {
 	path: string;
+	host?: string;
 	views: number;
 	uniqueVisitors: number;
 	avgDuration?: number;

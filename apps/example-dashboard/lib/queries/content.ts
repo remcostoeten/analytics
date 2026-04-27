@@ -10,8 +10,9 @@ export async function getTopPages(
 ): Promise<ContentMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic()} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY views DESC LIMIT ${limit}`;
+		await sql`SELECT host, path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic()} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY host, path ORDER BY views DESC LIMIT ${limit}`;
 	return results.map((r) => ({
+		host: r.host as string,
 		path: r.path as string,
 		views: Number(r.views),
 		uniqueVisitors: Number(r.unique_visitors),

@@ -341,7 +341,7 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 											},
 											hover: {
 												fill: hasData
-													? "hsl(var(--primary))"
+													? "hsl(var(--foreground) / 0.8)"
 													: "hsl(var(--muted-foreground) / 0.2)",
 												outline: "none",
 												cursor: hasData ? "pointer" : "default",
@@ -358,7 +358,7 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 				{/* Tooltip */}
 				{tooltipContent && (
 					<div
-						className="fixed z-50 px-2 py-1.5 bg-popover border border-border rounded shadow-lg pointer-events-none"
+						className="fixed z-50 px-2.5 py-1.5 bg-background border border-border rounded shadow-lg pointer-events-none"
 						style={{
 							left: tooltipPos.x + 10,
 							top: tooltipPos.y - 40,
@@ -392,7 +392,7 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 							className="w-16 h-3 rounded-sm"
 							style={{
 								background:
-									"linear-gradient(to right, hsl(var(--primary) / 0.2), hsl(var(--primary)))",
+									"linear-gradient(to right, hsl(var(--muted-foreground) / 0.3), hsl(var(--foreground) / 0.8))",
 							}}
 						/>
 						<span className="text-[10px] text-muted-foreground">Traffic</span>

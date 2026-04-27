@@ -22,7 +22,7 @@ function KPICard({ metric, compact = false }: KPICardProps) {
 						{label}
 					</p>
 					<div className="flex items-baseline gap-2 mt-0.5">
-						<span className="text-xl font-semibold text-foreground tabular-nums">
+						<span className="text-xl font-semibold text-foreground tabular-nums tracking-tight">
 							{formattedValue}
 						</span>
 						{trend && (

@@ -70,7 +70,7 @@ export function DataTable<T extends object>({
 								<tr
 									key={i}
 									className={cn(
-										"hover:bg-muted/50 transition-colors",
+										"border-b border-border/50 hover:bg-muted/30 transition-colors",
 										onRowClick && "cursor-pointer",
 									)}
 									onClick={() => onRowClick?.(row)}
@@ -78,17 +78,17 @@ export function DataTable<T extends object>({
 									{columns.map((col) => {
 										const value = row[col.key as keyof T];
 										return (
-											<td
-												key={String(col.key)}
-												className={cn(
-													"px-3 py-1.5 text-foreground",
-													col.align === "right"
-														? "text-right tabular-nums"
-														: col.align === "center"
-															? "text-center"
-															: "text-left",
-												)}
-											>
+<td
+											key={String(col.key)}
+											className={cn(
+												"px-3 py-1.5 text-foreground",
+												col.align === "right"
+													? "text-right tabular-nums font-medium"
+													: col.align === "center"
+														? "text-center"
+														: "text-left",
+											)}
+										>
 												{col.render ? col.render(value, row) : String(value ?? "")}
 											</td>
 										);
@@ -117,6 +117,16 @@ export function TopPagesTable({ data, className }: TopPagesTableProps) {
 			title="Top Pages"
 			className={className}
 			columns={[
+				{
+					key: "host",
+					label: "Domain",
+					width: "120px",
+					render: (v) => (
+						<span className="text-[10px] truncate block text-muted-foreground">
+							{(v as string) || "—"}
+						</span>
+					),
+				},
 				{
 					key: "path",
 					label: "Path",

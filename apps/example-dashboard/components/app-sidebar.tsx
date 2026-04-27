@@ -150,8 +150,8 @@ export function AppSidebar() {
 										className="h-8 text-xs font-medium"
 									>
 										<Link href={viewHref(item.id)}>
-											<item.icon className="size-3.5" />
-											<span>{item.label}</span>
+											<item.icon className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+											<span className="text-foreground">{item.label}</span>
 										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -235,8 +235,8 @@ function TimeRangeSwitcher({ value, onChange }: TimeRangeProps) {
 					variant="ghost"
 					className="h-9 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
 				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-muted/50">
-						<CalendarDays className="size-3.5" />
+					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
+						<CalendarDays className="size-3.5 text-muted-foreground" />
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
 						<div className="truncate text-xs font-medium leading-tight">{currentRange.label}</div>
@@ -280,8 +280,8 @@ function ProjectSwitcher({ projects, selectedProject, onProjectChange }: Project
 					variant="ghost"
 					className="h-10 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
 				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-muted/50">
-						<Zap className="size-3.5" />
+					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
+						<Zap className="size-3.5 text-muted-foreground" />
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
 						<div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
