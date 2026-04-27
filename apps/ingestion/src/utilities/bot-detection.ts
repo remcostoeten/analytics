@@ -163,22 +163,29 @@ function hasPrivacyBrowser(ua: string | null): boolean {
 	return /brave\/|firefox\/|librewolf/i.test(ua);
 }
 
+function hasSecChUaBrave(secChUa: string | null): boolean {
+	if (!secChUa) return false;
+	return /brave/i.test(secChUa);
+}
+
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 	const headers = getHeaders(req);
 	const method = getMethod(req);
 	const ua = headers.get("user-agent");
+	const secChUa = headers.get("sec-ch-ua");
 
 	if (isBotByVercelHeader(headers)) {
 		return { isBot: true, reason: "vercel-bot-header", confidence: "high" };
 	}
 
-	if (isBotUserAgent(ua)) {
-		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
+	// Privacy browsers (Brave, Firefox, LibreWolf) - check BEFORE bot UA check
+	// Brave identifies via sec-ch-ua header, not just user-agent
+	if (hasPrivacyBrowser(ua) || hasSecChUaBrave(secChUa)) {
+		return { isBot: false, reason: null, confidence: "low" };
 	}
 
-	// Privacy browsers should never be flagged as bots
-	if (hasPrivacyBrowser(ua)) {
-		return { isBot: false, reason: null, confidence: "low" };
+	if (isBotUserAgent(ua)) {
+		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
 	}
 
 	if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
