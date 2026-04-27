@@ -150,6 +150,21 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
+/* Scrollbar - dark theme */
+:root.dark * {
+	scrollbar-width: thin;
+	scrollbar-color: #404040 #171717;
+}
+
+:root.dark *::-webkit-scrollbar-track {
+	background: #171717;
+}
+
+:root.dark *::-webkit-scrollbar-thumb {
+	background: #404040;
+	border-radius: 4px;
+}
+
 /* Scrollbar - light mode fallback */
 .light * {
 	scrollbar-width: thin;

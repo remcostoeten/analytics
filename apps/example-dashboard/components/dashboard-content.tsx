@@ -98,6 +98,18 @@ type DashboardView = "overview" | "realtime" | "retention" | "behavior" | "techn
 type SelectedCountry = GeoDistribution & {
 	cities?: number;
 	visitors?: number;
+	countryCode?: string;
+};
+
+type CountryDetail = {
+	country: string;
+	totalEvents: number;
+	uniqueVisitors: number;
+	sessions: number;
+	topCities: { city: string; count: number }[];
+	topRegions: { region: string; count: number }[];
+	topPages: { path: string; count: number }[];
+	topReferrers: { referrer: string; count: number }[];
 };
 
 export function DashboardContent({
@@ -109,6 +121,7 @@ export function DashboardContent({
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+	const [countryDetail, setCountryDetail] = useState<CountryDetail | null>(null);
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -310,6 +323,19 @@ export function DashboardContent({
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
+
+	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR(
+		selectedCountry && canFetch
+			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}&timeRange=${timeRange}${selectedProject ? `&projectId=${selectedProject}` : ""}`
+			: null,
+		fetcher,
+	);
+
+	useEffect(() => {
+		if (countryDetailData) {
+			setCountryDetail(countryDetailData);
+		}
+	}, [countryDetailData]);
 
 	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
@@ -673,48 +699,138 @@ export function DashboardContent({
 					onClick={() => setSelectedCountry(null)}
 				>
 					<div
-						className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-xl p-6 w-80 z-50"
+						className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-xl w-[480px] max-h-[80vh] overflow-hidden z-50 flex flex-col"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div className="flex items-center gap-3 mb-4">
-							{selectedCountry.countryCode && (
-								<span className="text-2xl">{getFlagEmoji(selectedCountry.countryCode)}</span>
-							)}
-							<div>
-								<h3 className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
-								<p className="text-sm text-muted-foreground">
-									{selectedCountry.cities || 0} cities
-								</p>
+						{countryDetailLoading || !countryDetail ? (
+							<div className="flex items-center justify-center p-12">
+								<div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
 							</div>
-						</div>
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<p className="text-2xl font-bold text-foreground">
-									{selectedCountry.count.toLocaleString()}
-								</p>
-								<p className="text-xs text-muted-foreground">Events</p>
-							</div>
-							<div>
-								<p className="text-2xl font-bold text-foreground">
-									{(selectedCountry.visitors || 0).toLocaleString()}
-								</p>
-								<p className="text-xs text-muted-foreground">Visitors</p>
-							</div>
-						</div>
-						<div className="mt-4 pt-4 border-t border-border">
-							<div className="flex items-center justify-between">
-								<span className="text-sm text-muted-foreground">Traffic share</span>
-								<span className="text-sm font-semibold text-foreground">
-									{selectedCountry.percentage.toFixed(1)}%
-								</span>
-							</div>
-						</div>
-						<button
-							onClick={() => setSelectedCountry(null)}
-							className="mt-4 w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
-						>
-							Close
-						</button>
+						) : (
+							<>
+								<div className="px-5 py-4 border-b border-border shrink-0">
+									<div className="flex items-center gap-3">
+										{selectedCountry.countryCode && (
+											<span className="text-3xl">{getFlagEmoji(selectedCountry.countryCode)}</span>
+										)}
+										<div>
+											<h3 className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
+											<p className="text-sm text-muted-foreground">Country details</p>
+										</div>
+									</div>
+								</div>
+
+								<div className="overflow-y-auto flex-1 p-5 space-y-5">
+									<div className="grid grid-cols-4 gap-3">
+										<div className="bg-muted/50 rounded-lg p-3 text-center">
+											<p className="text-xl font-bold text-foreground">
+												{countryDetail.totalEvents.toLocaleString()}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Events</p>
+										</div>
+										<div className="bg-muted/50 rounded-lg p-3 text-center">
+											<p className="text-xl font-bold text-foreground">
+												{countryDetail.uniqueVisitors.toLocaleString()}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Visitors</p>
+										</div>
+										<div className="bg-muted/50 rounded-lg p-3 text-center">
+											<p className="text-xl font-bold text-foreground">
+												{countryDetail.sessions.toLocaleString()}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sessions</p>
+										</div>
+										<div className="bg-muted/50 rounded-lg p-3 text-center">
+											<p className="text-xl font-bold text-foreground">
+												{countryDetail.topCities.length}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Cities</p>
+										</div>
+									</div>
+
+									{countryDetail.topCities.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">Top Cities</h4>
+											<div className="flex flex-wrap gap-1.5">
+												{countryDetail.topCities.map((c) => (
+													<span
+														key={c.city}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
+													>
+														<span className="text-foreground">{c.city}</span>
+														<span className="text-muted-foreground">{c.count.toLocaleString()}</span>
+													</span>
+												))}
+											</div>
+										</div>
+									)}
+
+									{countryDetail.topRegions.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">Top Regions</h4>
+											<div className="flex flex-wrap gap-1.5">
+												{countryDetail.topRegions.map((r) => (
+													<span
+														key={r.region}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
+													>
+														<span className="text-foreground">{r.region}</span>
+														<span className="text-muted-foreground">{r.count.toLocaleString()}</span>
+													</span>
+												))}
+											</div>
+										</div>
+									)}
+
+									{countryDetail.topPages.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">Top Pages</h4>
+											<div className="space-y-1">
+												{countryDetail.topPages.slice(0, 5).map((p) => (
+													<div
+														key={p.path}
+														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
+													>
+														<span className="text-foreground truncate max-w-[300px]">{p.path || "/"}</span>
+														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+															{p.count.toLocaleString()}
+														</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+									{countryDetail.topReferrers.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">Top Sources</h4>
+											<div className="space-y-1">
+												{countryDetail.topReferrers.slice(0, 4).map((r) => (
+													<div
+														key={r.referrer}
+														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
+													>
+														<span className="text-foreground truncate max-w-[300px]">{r.referrer}</span>
+														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+															{r.count.toLocaleString()}
+														</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+
+								<div className="px-5 py-3 border-t border-border shrink-0">
+									<button
+										onClick={() => setSelectedCountry(null)}
+										className="w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
+									>
+										Close
+									</button>
+								</div>
+							</>
+						)}
 					</div>
 				</div>
 			)}

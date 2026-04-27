@@ -158,3 +158,40 @@ export async function getTopPaths(from: Date, to: Date, projectId: string | null
 		percentage: total > 0 ? Math.round((Number(r.count) / total) * 1000) / 10 : 0,
 	}));
 }
+
+export async function getCountryDetail(from: Date, to: Date, country: string, projectId: string | null) {
+	const [stats] =
+		await sql`SELECT COUNT(*) as total_events, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+	const s = stats || { total_events: 0, unique_visitors: 0, sessions: 0 };
+
+	const topCities =
+		await sql`SELECT city, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city ORDER BY count DESC LIMIT 8`;
+
+	const topRegions =
+		await sql`SELECT region, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region ORDER BY count DESC LIMIT 6`;
+
+	const topPages =
+		await sql`SELECT path, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'pageview' AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY count DESC LIMIT 8`;
+
+	const topReferrers =
+		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
+
+	function extractDomain(ref: string): string {
+		try {
+			return new URL(ref).hostname;
+		} catch {
+			return ref;
+		}
+	}
+
+	return {
+		country,
+		totalEvents: Number(s.total_events || 0),
+		uniqueVisitors: Number(s.unique_visitors || 0),
+		sessions: Number(s.sessions || 0),
+		topCities: topCities.map((r) => ({ city: r.city, count: Number(r.count) })),
+		topRegions: topRegions.map((r) => ({ region: r.region, count: Number(r.count) })),
+		topPages: topPages.map((r) => ({ path: r.path, count: Number(r.count) })),
+		topReferrers: topReferrers.map((r) => ({ referrer: extractDomain(r.referrer), count: Number(r.count) })),
+	};
+}

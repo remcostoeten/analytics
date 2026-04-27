@@ -153,6 +153,11 @@ function isNavigationRequest(headers: HeaderBag, method: string): boolean {
 	return accept?.includes("text/html") ?? false;
 }
 
+function hasBraveBrowser(ua: string | null): boolean {
+	if (!ua) return false;
+	return /brave/i.test(ua);
+}
+
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 	const headers = getHeaders(req);
 	const method = getMethod(req);
@@ -164,6 +169,11 @@ export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 
 	if (isBotUserAgent(ua)) {
 		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
+	}
+
+	// Brave browser should never be flagged as a bot
+	if (hasBraveBrowser(ua)) {
+		return { isBot: false, reason: null, confidence: "low" };
 	}
 
 	if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {

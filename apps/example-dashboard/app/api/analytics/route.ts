@@ -94,6 +94,12 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(await query.getRetention(projectId));
 			case "paths":
 				return NextResponse.json(await query.getTopPaths(from, to, projectId));
+			case "country-detail":
+				const c = searchParams.get("country");
+				if (!c) {
+					return NextResponse.json({ error: "Country required" }, { status: 400 });
+				}
+				return NextResponse.json(await query.getCountryDetail(from, to, c, projectId));
 			case "segments":
 				const segmentId = searchParams.get("segment") || "all";
 				return NextResponse.json(await query.getSegmentedMetrics(from, to, segmentId, projectId));
