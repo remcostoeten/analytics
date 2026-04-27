@@ -97,6 +97,21 @@ export async function GET(request: NextRequest) {
 			case "segments":
 				const segmentId = searchParams.get("segment") || "all";
 				return NextResponse.json(await query.getSegmentedMetrics(from, to, segmentId, projectId));
+			case "skriuw-events":
+				return NextResponse.json(await query.getSkriuwEventCounts(projectFilter ?? "skriuw", from, to));
+			case "skriuw-trend":
+				return NextResponse.json(await query.getSkriuwEventTrend(projectFilter ?? "skriuw", from, to));
+			case "skriuw-notes":
+				return NextResponse.json(await query.getSkriuwNotesActivity(projectFilter ?? "skriuw", from, to));
+			case "skriuw-journal":
+				return NextResponse.json(await query.getSkriuwJournalActivity(projectFilter ?? "skriuw", from, to));
+			case "skriuw-auth":
+				return NextResponse.json(await query.getSkriuwAuthMetrics(projectFilter ?? "skriuw", from, to));
+			case "skriuw-recent":
+				const skriuwLimit = parseInt(searchParams.get("limit") || "50");
+				return NextResponse.json(await query.getSkriuwRecentEvents(projectFilter ?? "skriuw", skriuwLimit, from, to));
+			case "skriuw-searches":
+				return NextResponse.json(await query.getSkriuwTopSearches(projectFilter ?? "skriuw", 20, from, to));
 			default:
 				return NextResponse.json({ error: "Unknown metric" }, { status: 400 });
 		}
