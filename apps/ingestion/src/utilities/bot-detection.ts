@@ -158,6 +158,11 @@ function hasBraveBrowser(ua: string | null): boolean {
 	return /brave/i.test(ua);
 }
 
+function hasPrivacyBrowser(ua: string | null): boolean {
+	if (!ua) return false;
+	return /brave\/|firefox\/|librewolf/i.test(ua);
+}
+
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 	const headers = getHeaders(req);
 	const method = getMethod(req);
@@ -171,8 +176,8 @@ export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
 		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
 	}
 
-	// Brave browser should never be flagged as a bot
-	if (hasBraveBrowser(ua)) {
+	// Privacy browsers should never be flagged as bots
+	if (hasPrivacyBrowser(ua)) {
 		return { isBot: false, reason: null, confidence: "low" };
 	}
 
