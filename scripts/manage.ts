@@ -125,7 +125,7 @@ async function handleSdkPublish() {
 async function runDevServer() {
 	// Dynamically import the app to avoid loading it if not needed
 	// and to ensure process.env.DATABASE_URL can be set if needed
-	const { default: app } = await import("../apps/ingestion/src/app");
+	const { app } = await import("@remcostoeten/ingestion");
 	
 	let server: any = null;
 	const port = 3000;

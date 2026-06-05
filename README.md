@@ -20,7 +20,7 @@ First-party analytics you self-host. Cookie-free, privacy-first, built for Next.
 
 1. Create a [Neon](https://neon.tech) Postgres database
 2. Deploy `apps/ingestion` with `DATABASE_URL` + `IP_HASH_SECRET`
-3. Run migrations: `cd apps/ingestion && bun run db:migrate`
+3. Run migrations: `cd packages/ingestion && bun run db:migrate`
 4. In your app: `npm install @remcostoeten/analytics`
 5. Set `NEXT_PUBLIC_ANALYTICS_URL` to your ingestion **base URL**
 6. Add `<Analytics projectId="your-project" />` to your root layout
@@ -335,7 +335,8 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | Path | Purpose |
 | --- | --- |
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
-| `apps/ingestion` | Hono ingestion service |
+| `packages/ingestion` | `@remcostoeten/ingestion` npm package (publishable) |
+| `apps/ingestion` | Thin Vercel deploy shell for ingestion |
 | `apps/example-dashboard` | Next.js analytics UI |
 
 **Stack:** TypeScript, Bun, Neon Postgres, Drizzle ORM, Hono, Next.js, React.

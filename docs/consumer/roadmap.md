@@ -42,9 +42,9 @@ Consumer app stays lean. Ingestion weight lives in a second project — same as 
 
 | # | Feature | Why | Done when |
 | --- | --- | --- | --- |
-| 3.1 | Publish `@remcostoeten/ingestion` | Replace monorepo clone for analytics-api project | Separate Vercel deploy works with one handler file |
-| 3.2 | Package size discipline | Avoid shipping dev UI, optional peer deps | Documented bundle budget; subpath exports |
-| 3.3 | `create-analytics` CLI | Manual wiring still error-prone | Tier 1 scaffold in < 5 min; asks which tier |
+| 3.1 | Publish `@remcostoeten/ingestion` | Replace monorepo clone for analytics-api project | **Done** — package extracted, apps/ingestion is thin deploy |
+| 3.2 | Package size discipline | Avoid shipping dev UI, optional peer deps | **Done** — peer deps + `/vercel` subpath |
+| 3.3 | `create-analytics` CLI | Manual wiring still error-prone | Pending |
 | 3.4 | README + docs update | Default path must be Tier 1 | README shows separate deploy as recommended |
 
 ### 3.1 `@remcostoeten/ingestion` package

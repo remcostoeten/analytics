@@ -1,4 +1,4 @@
-import app from "./app.js";
+import app from "@remcostoeten/ingestion";
 import { serve } from "bun";
 import { execSync } from "child_process";
 

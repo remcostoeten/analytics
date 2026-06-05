@@ -22,7 +22,7 @@ function run(cmd: string, args: string[]): Promise<void> {
 
 await run("bun", [
 	"build",
-	"src/handler.ts",
+	"../../packages/ingestion/dist/vercel.js",
 	"--outfile",
 	join(funcDir, "index.js"),
 	"--target",

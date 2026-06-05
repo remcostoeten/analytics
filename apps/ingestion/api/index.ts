@@ -1,3 +1,1 @@
-import handler from "../src/handler.js";
-
-export default handler;
+export { default } from "@remcostoeten/ingestion/vercel";

@@ -294,7 +294,8 @@ async function showMenu() {
             await buildPackage("Dashboard", "apps/example-dashboard")
             break
         case "4":
-            await buildPackage("Ingestion", "apps/ingestion")
+            await buildPackage("Ingestion", "packages/ingestion")
+            await buildPackage("Ingestion deploy", "apps/ingestion")
             break
         case "5":
             await deployDashboard()
