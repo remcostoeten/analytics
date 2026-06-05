@@ -148,7 +148,7 @@ my-app/
 | # | Feature | Why | Done when |
 | --- | --- | --- | --- |
 | 5.1 | `@remcostoeten/analytics/server` | Browser SDK no-ops on server | Works in server actions + API routes |
-| 5.2 | Optional ingest auth | Server events need trust boundary | HMAC or API key on `/ingest` |
+| 5.2 | Optional ingest auth | Server events need trust boundary | `INGEST_SECRET` bearer token on `/e` |
 
 Separate export path — zero browser bundle impact.
 
@@ -191,7 +191,7 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 | 2 — Declarative | High | Low | Done |
 | 3 — Deploy (tiered) | Very high | Medium | **Done** |
 | 4 — Privacy | High (EU) | Medium | **Done** |
-| 5 — Server | Medium | Medium | Pending |
+| 5 — Server | Medium | Medium | **Done** |
 | 6 — Reliability | Medium | Medium | Pending |
 | 7 — Auto observers | Medium | Low | Pending |
 | 8 — Dashboard | Low | High | Pending |
@@ -223,4 +223,4 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 
 ## Start here
 
-**Sprint 5** is next: `@remcostoeten/analytics/server` + optional ingest auth.
+**Sprint 6** is next: offline queue + batch ingest API.

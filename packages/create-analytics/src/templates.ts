@@ -33,8 +33,12 @@ function webPage(): string {
 }
 
 function webEnvExample(ingestUrl: string): string {
-	return `# Base URL of your ingestion service (no path suffix)
+	return `# Browser SDK (public)
 NEXT_PUBLIC_ANALYTICS_URL=${ingestUrl}
+
+# Server tracking (private — never use NEXT_PUBLIC_)
+ANALYTICS_URL=${ingestUrl}
+INGEST_SECRET=replace-with-a-long-random-secret
 `;
 }
 
@@ -49,7 +53,7 @@ function webPackageJson(): string {
 				start: "next start",
 			},
 			dependencies: {
-				"@remcostoeten/analytics": "^1.4.0",
+				"@remcostoeten/analytics": "^1.5.0",
 				next: "^15.0.0",
 				react: "^19.0.0",
 				"react-dom": "^19.0.0",
@@ -118,6 +122,8 @@ function apiPackageJson(): string {
 function apiEnvExample(): string {
 	return `DATABASE_URL=postgres://user:password@host/db
 IP_HASH_SECRET=replace-with-at-least-32-characters
+ORIGIN_ALLOWLIST=https://your-app.vercel.app
+INGEST_SECRET=replace-with-a-long-random-secret
 `;
 }
 
@@ -148,6 +154,19 @@ export const POST = handle;
 `;
 }
 
+function serverTrackingExample(projectId: string): string {
+	return `import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+export async function POST() {
+	// your server logic here
+
+	await trackServerEvent("example_action", { projectId: "${projectId}", path: "/api/example" });
+
+	return Response.json({ ok: true });
+}
+`;
+}
+
 function colocatedPackageJson(projectName: string): string {
 	return JSON.stringify(
 		{
@@ -159,7 +178,7 @@ function colocatedPackageJson(projectName: string): string {
 				start: "next start",
 			},
 			dependencies: {
-				"@remcostoeten/analytics": "^1.4.0",
+				"@remcostoeten/analytics": "^1.5.0",
 				"@remcostoeten/ingestion": "^0.1.0",
 				"@neondatabase/serverless": "^0.10.0",
 				"drizzle-orm": "^0.36.0",
@@ -184,6 +203,9 @@ function colocatedPackageJson(projectName: string): string {
 
 function colocatedEnvExample(): string {
 	return `NEXT_PUBLIC_ANALYTICS_URL=http://localhost:3000
+ANALYTICS_URL=http://localhost:3000
+INGEST_SECRET=replace-with-a-long-random-secret
+ORIGIN_ALLOWLIST=http://localhost:3000
 DATABASE_URL=postgres://user:password@host/db
 IP_HASH_SECRET=replace-with-at-least-32-characters
 `;
@@ -221,6 +243,24 @@ npx drizzle-kit up:pg --config node_modules/@remcostoeten/ingestion/drizzle.conf
 
 Deploy \`apps/analytics-api\` to Vercel, then set \`NEXT_PUBLIC_ANALYTICS_URL\` in the web app to that URL.
 
+## Server-side tracking
+
+For events that happen on your backend (API routes, webhooks, cron jobs), use the server entry:
+
+\`\`\`typescript
+// apps/web/app/api/example/route.ts
+import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+export async function POST() {
+  await trackServerEvent("signup_completed", { projectId: "${projectId}", path: "/api/signup" });
+  return Response.json({ ok: true });
+}
+\`\`\`
+
+Set \`ANALYTICS_URL\` and \`INGEST_SECRET\` in \`apps/web/.env.local\` (server-only — never \`NEXT_PUBLIC_\`).
+
+On the ingestion side, set the same \`INGEST_SECRET\` so it can authenticate server requests.
+
 ## Project ID
 
 Events use \`projectId="${projectId}"\`. Change in \`apps/web/app/layout.tsx\` if needed.
@@ -254,6 +294,21 @@ npx drizzle-kit up:pg --config node_modules/@remcostoeten/ingestion/drizzle.conf
 \`\`\`bash
 npm run dev
 \`\`\`
+
+## Server-side tracking
+
+For events that happen in API routes or server actions, use the server entry. See \`app/api/example/route.ts\`:
+
+\`\`\`typescript
+import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+export async function POST() {
+  await trackServerEvent("signup_completed", { projectId: "${projectId}", path: "/api/signup" });
+  return Response.json({ ok: true });
+}
+\`\`\`
+
+\`ANALYTICS_URL\` and \`INGEST_SECRET\` are already in \`.env.example\`. Never use \`NEXT_PUBLIC_\` for these.
 
 ## Project ID
 
@@ -297,6 +352,7 @@ export function buildFiles(options: ScaffoldOptions): ScaffoldFile[] {
 			{ path: "apps/web/.env.example", content: webEnvExample(ingestPlaceholder) },
 			{ path: "apps/web/app/layout.tsx", content: webLayout(options.projectId) },
 			{ path: "apps/web/app/page.tsx", content: webPage() },
+			{ path: "apps/web/app/api/example/route.ts", content: serverTrackingExample(options.projectId) },
 			{ path: "apps/analytics-api/package.json", content: apiPackageJson() },
 			{ path: "apps/analytics-api/api/index.ts", content: apiHandler() },
 			{ path: "apps/analytics-api/vercel.json", content: apiVercelJson() },
@@ -315,6 +371,7 @@ export function buildFiles(options: ScaffoldOptions): ScaffoldFile[] {
 			{ path: "app/page.tsx", content: webPage() },
 			{ path: "app/e/route.ts", content: ingestRoute() },
 			{ path: "app/ingest/route.ts", content: ingestRoute() },
+			{ path: "app/api/example/route.ts", content: serverTrackingExample(options.projectId) },
 		];
 	}
 

@@ -3,6 +3,11 @@ import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
 import { canTrack } from "./consent";
 import { isRuntime, debugLog, collectEnrichment, noop } from "../utilities";
+import {
+	normalizeIngestUrl,
+	resolveBrowserIngestUrl,
+	validateIngestUrl,
+} from "../utilities/ingest-url";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
 const recentEvents = new Set<string>();
@@ -13,52 +18,7 @@ function resolveDefaultProjectId(): string {
 	return window.location?.hostname || "unknown";
 }
 
-type Env = Record<string, string | undefined>;
-type ImportMetaEnv = ImportMeta & {
-	env?: Env;
-};
-
-function getEnv(): Env {
-	if (typeof process !== "undefined" && process.env) return process.env;
-	const meta = import.meta as ImportMetaEnv;
-	if (meta.env) return meta.env;
-	return {};
-}
-
-export function validateIngestUrl(url: string): boolean {
-	try {
-		const normalized = url.replace(/\/+$/, "");
-		const parsed = new URL(normalized);
-		return parsed.protocol === "http:" || parsed.protocol === "https:";
-	} catch {
-		return false;
-	}
-}
-
-function normalizeIngestUrl(url: string): string {
-	return url.replace(/\/+$/, "");
-}
-
-export function resolveDefaultIngestUrl(): string {
-	const env = getEnv();
-	const url = env.NEXT_PUBLIC_ANALYTICS_URL || env.VITE_ANALYTICS_URL;
-
-	if (!url) {
-		if (typeof window !== "undefined") {
-			console.error("[Analytics] No ingest URL configured. Set NEXT_PUBLIC_ANALYTICS_URL or VITE_ANALYTICS_URL.");
-		}
-		return "";
-	}
-
-	if (typeof window !== "undefined" && !validateIngestUrl(url)) {
-		console.error(`[Analytics] Invalid ingestUrl: "${url}". Must be a valid http/https URL.`);
-		return "";
-	}
-
-	return url;
-}
-
-const DEFAULT_PROJECT_ID = resolveDefaultProjectId();
+export { validateIngestUrl } from "../utilities/ingest-url";
 
 function createEventKey(payload: EventPayload): string {
 	return `${payload.type}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
@@ -81,7 +41,7 @@ function buildPayload(
 
 	return {
 		type,
-		projectId: options.projectId || DEFAULT_PROJECT_ID,
+		projectId: options.projectId || resolveDefaultProjectId(),
 		path: window.location.pathname,
 		referrer: document.referrer || null,
 		origin: window.location.origin,
@@ -144,7 +104,7 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 		ingestUrl = undefined;
 	}
 
-	const baseUrl = ingestUrl || resolveDefaultIngestUrl();
+	const baseUrl = ingestUrl || resolveBrowserIngestUrl();
 	if (!baseUrl) {
 		debugLog(options.debug, "No ingest URL configured, event dropped.");
 		return;

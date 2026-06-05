@@ -67,3 +67,38 @@ export type EventPayload<Type extends EventType = EventType> = {
 	sessionId: string;
 	meta?: TrackMeta;
 };
+
+export type ServerAnalyticsOptions = {
+	projectId: string;
+	ingestUrl?: string;
+	secret?: string;
+	path?: string;
+	visitorId?: string;
+	sessionId?: string;
+	debug?: boolean;
+};
+
+export type TrackServerResult = {
+	ok: boolean;
+	status: number;
+	deduped?: boolean;
+	error?: string;
+};
+
+export type ServerTrackHelpers = {
+	track: (
+		type: EventType,
+		meta?: TrackMeta,
+		options?: Partial<ServerAnalyticsOptions>,
+	) => Promise<TrackServerResult>;
+	trackEvent: (
+		eventName: string,
+		meta?: TrackMeta,
+		options?: Partial<ServerAnalyticsOptions>,
+	) => Promise<TrackServerResult>;
+	trackError: (
+		error: Error,
+		meta?: TrackMeta,
+		options?: Partial<ServerAnalyticsOptions>,
+	) => Promise<TrackServerResult>;
+};

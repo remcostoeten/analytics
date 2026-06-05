@@ -11,6 +11,7 @@ import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
 import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../utilities/dedupe.js";
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
+import { authorizeIngestRequest } from "../utilities/ingest-auth.js";
 import { UAParser } from "ua-parser-js";
 import { sql as drizzleSql } from "drizzle-orm";
 
@@ -153,8 +154,13 @@ export async function handleIngest(c: Context) {
 		const ipHash = await hashIp(ip ?? null);
 
 		const origin = c.req.header("origin") ?? null;
-		if (!isOriginAllowed(origin)) {
-			return c.json({ ok: false, error: "Origin not allowed" }, 403);
+		const auth = authorizeIngestRequest(origin, c.req.header("authorization"), {
+			originAllowed: isOriginAllowed,
+			ingestSecret: process.env.INGEST_SECRET,
+		});
+
+		if (!auth.allowed) {
+			return c.json({ ok: false, error: auth.error }, auth.status);
 		}
 
 		const botResult = detectBot(req);

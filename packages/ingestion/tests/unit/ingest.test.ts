@@ -50,6 +50,63 @@ describe("POST /ingest", () => {
 		expect(data.ok).toBe(true);
 	});
 
+	test("accepts valid bearer token for server events", async () => {
+		const previous = process.env.INGEST_SECRET;
+		process.env.INGEST_SECRET = "server-secret-min-32-characters";
+
+		try {
+			const response = await app.request("/ingest", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: "Bearer server-secret-min-32-characters",
+				},
+				body: JSON.stringify({
+					projectId: "example.com",
+					type: "event",
+					path: "/api/webhook",
+					meta: { eventName: "user_created" },
+				}),
+			});
+
+			expect(response.status).toBe(200);
+		} finally {
+			if (previous) {
+				process.env.INGEST_SECRET = previous;
+			} else {
+				delete process.env.INGEST_SECRET;
+			}
+		}
+	});
+
+	test("rejects invalid bearer token", async () => {
+		const previous = process.env.INGEST_SECRET;
+		process.env.INGEST_SECRET = "server-secret-min-32-characters";
+
+		try {
+			const response = await app.request("/ingest", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: "Bearer wrong-secret",
+				},
+				body: JSON.stringify({
+					projectId: "example.com",
+					type: "event",
+					path: "/api/webhook",
+				}),
+			});
+
+			expect(response.status).toBe(401);
+		} finally {
+			if (previous) {
+				process.env.INGEST_SECRET = previous;
+			} else {
+				delete process.env.INGEST_SECRET;
+			}
+		}
+	});
+
 	test("rejects origins outside configured allowlist", async () => {
 		const previous = process.env.ORIGIN_ALLOWLIST;
 		process.env.ORIGIN_ALLOWLIST = "https://allowed.example";

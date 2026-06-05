@@ -35,6 +35,84 @@ export default function RootLayout({ children }) {
 }
 ```
 
+That is enough for automatic pageviews, web vitals, scroll depth, and time on page.
+
+For custom browser events, use `trackEvent()` in client components. For server-only events (API routes, webhooks, cron), use `@remcostoeten/analytics/server`.
+
+## Server tracking
+
+Use when an event happens on your backend and never in the browser.
+
+### Setup
+
+```bash
+# .env — server-only, never NEXT_PUBLIC_
+ANALYTICS_URL=https://analytics-api.yourdomain.com
+INGEST_SECRET=same-secret-as-on-ingestion
+```
+
+On ingestion, set the same `INGEST_SECRET` and your app origin in `ORIGIN_ALLOWLIST`.
+
+| Caller | Auth |
+| --- | --- |
+| Browser (`<Analytics />`, `trackEvent`) | Origin allowlist |
+| Server (`trackServerEvent`) | `Authorization: Bearer INGEST_SECRET` |
+
+### Track an event
+
+```typescript
+import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+await trackServerEvent("signup_completed", {
+  projectId: "my-app",
+  path: "/api/signup",
+});
+
+await trackServerEvent("signup_completed", { plan: "pro" }, {
+  projectId: "my-app",
+  path: "/api/signup",
+});
+```
+
+`projectId` should match `<Analytics projectId="..." />`. `path` is your API route.
+
+With env vars set, you can omit `ingestUrl` and `secret`:
+
+```typescript
+await trackServerEvent("job_finished", { projectId: "my-app" });
+```
+
+### API route example
+
+```typescript
+// app/api/signup/route.ts
+import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+export async function POST() {
+  await createUser();
+
+  await trackServerEvent("signup_completed", {
+    projectId: "my-app",
+    path: "/api/signup",
+  });
+
+  return Response.json({ ok: true });
+}
+```
+
+### Reuse config
+
+```typescript
+import { createServerTrack } from "@remcostoeten/analytics/server";
+
+const analytics = createServerTrack({ projectId: "my-app", path: "/api/jobs" });
+
+await analytics.trackEvent("started", { jobId: "1" });
+await analytics.trackEvent("finished", { jobId: "1" });
+```
+
+Returns `{ ok, status, deduped?, error? }` — logs failures without throwing.
+
 ## Provider and hooks
 
 Wrap your app to share config across components:
@@ -302,6 +380,7 @@ import type {
 
 | Export | Kind |
 | --- | --- |
+| `@remcostoeten/analytics/server` | Server-only tracking |
 | `Analytics` | Component |
 | `AnalyticsProvider` | Component |
 | `AnalyticsErrorBoundary` | Component |
@@ -310,6 +389,7 @@ import type {
 | `useAnalyticsOptions` | Hook |
 | `createTrackHelpers` | Function |
 | `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError` | Functions |
+| `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack` | Server (`/server` entry) |
 | `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment` | Functions |
 | `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions |
 | `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |

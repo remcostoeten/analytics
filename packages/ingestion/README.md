@@ -40,7 +40,26 @@ app.route("/", ingestion);
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Neon Postgres connection string |
 | `IP_HASH_SECRET` | Yes in production | Min 32 chars, IP hashing salt |
-| `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins |
+| `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins (empty = all origins allowed) |
+| `INGEST_SECRET` | For server tracking | Bearer token for server-to-server requests |
+| `INTERNAL_IP_HASHES` | No | Comma-separated IP hashes flagged as internal traffic |
+
+## Request authorization
+
+Ingestion accepts two request sources:
+
+| Source | How it authenticates |
+| --- | --- |
+| Browser (`<Analytics />`, `trackEvent`) | `Origin` header checked against `ORIGIN_ALLOWLIST` |
+| Server (`trackServerEvent`, `createServerTrack`) | `Authorization: Bearer <INGEST_SECRET>` header |
+
+Set the same `INGEST_SECRET` value on both the ingestion service and your app server (as `INGEST_SECRET`, never `NEXT_PUBLIC_INGEST_SECRET`). The `@remcostoeten/analytics/server` SDK reads it from env and attaches it automatically.
+
+In production, restrict browser origins:
+
+```bash
+ORIGIN_ALLOWLIST=https://your-app.vercel.app
+```
 
 ## Migrations
 

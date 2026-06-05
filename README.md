@@ -35,7 +35,8 @@ Creates `apps/web` (SDK only) + `apps/analytics-api` (ingestion). See generated 
 5. Set `NEXT_PUBLIC_ANALYTICS_URL` to your ingestion **base URL**
 6. Add `<Analytics projectId="your-project" />` to your root layout
 7. Call `trackEvent(...)` in client components where needed
-8. Optionally deploy `apps/example-dashboard` with the same `DATABASE_URL`
+8. Optionally call `trackServerEvent(...)` from API routes for server-only events
+9. Optionally deploy `apps/example-dashboard` with the same `DATABASE_URL`
 
 ```bash
 npm install @remcostoeten/analytics
@@ -100,6 +101,7 @@ You do **not** need the dashboard to collect data. Ingestion + SDK is enough. Th
 | `DATABASE_URL` | Yes | Neon Postgres connection string |
 | `IP_HASH_SECRET` | Yes in production (min 32 chars) | Daily-rotating salt for IP hashing |
 | `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins (empty = all) |
+| `INGEST_SECRET` | No | Bearer token for server-side events via `@remcostoeten/analytics/server` |
 | `INTERNAL_IP_HASHES` | No | IP hashes flagged as internal traffic |
 
 **SDK**
@@ -108,6 +110,8 @@ You do **not** need the dashboard to collect data. Ingestion + SDK is enough. Th
 | --- | --- | --- |
 | `NEXT_PUBLIC_ANALYTICS_URL` | Yes (Next.js) | Base URL of your ingestion service |
 | `VITE_ANALYTICS_URL` | Yes (Vite) | Same, for Vite apps |
+| `ANALYTICS_URL` | For server tracking | Same base URL, server-only (not `NEXT_PUBLIC_`) |
+| `INGEST_SECRET` | For server tracking | Same value as on ingestion; never expose to the browser |
 
 ```bash
 # Correct
@@ -239,6 +243,33 @@ Every track call sends:
 ```
 
 Auto-enrichment (screen, viewport, UTM, connection) is merged into your `meta` on every call. Delivery uses `navigator.sendBeacon` with `fetch` + `keepalive` fallback. Duplicate events within 5 seconds are dropped client-side.
+
+---
+
+## SDK: server tracking
+
+For events that only happen on your backend (API routes, webhooks, cron jobs). Import from `@remcostoeten/analytics/server` — not the main package.
+
+```typescript
+import { trackServerEvent } from "@remcostoeten/analytics/server";
+
+await trackServerEvent("signup_completed", {
+  projectId: "my-app",
+  path: "/api/signup",
+});
+```
+
+Set `ANALYTICS_URL` and `INGEST_SECRET` in server env (same secret on ingestion). Browser SDK stays unchanged — no secret in client code.
+
+| Function | Purpose |
+| --- | --- |
+| `trackServerEvent(name, options)` | Custom server event |
+| `trackServerEvent(name, meta, options)` | Custom server event with metadata |
+| `trackServer(type, options, meta?)` | Low-level |
+| `trackServerError(error, options)` | Server-side error |
+| `createServerTrack(defaults)` | Bind `projectId` once per file |
+
+See [packages/sdk/README.md](./packages/sdk/README.md) for full examples.
 
 ---
 
