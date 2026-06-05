@@ -12,6 +12,13 @@ export type AnalyticsOptions = {
 
 export type AnalyticsProps = AnalyticsOptions & {
 	disabled?: boolean;
+	trackClicks?: boolean;
+};
+
+export type TrackClickProps = AnalyticsOptions & {
+	name: string;
+	meta?: TrackMeta;
+	children: import("react").ReactElement<{ onClick?: (event: import("react").MouseEvent) => void }>;
 };
 
 export type AnalyticsProviderProps = AnalyticsOptions & {

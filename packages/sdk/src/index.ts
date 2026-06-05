@@ -1,5 +1,6 @@
 export { Analytics } from "./components/analytics";
 export { AnalyticsErrorBoundary } from "./components/error-boundary";
+export { TrackClick } from "./components/track-click";
 export { AnalyticsProvider, useTrack, useAnalyticsOptions } from "./components/provider";
 export { createTrackHelpers } from "./api/track-helpers";
 export { mergeAnalyticsOptions, resolveAnalyticsOptions } from "./utilities/options";
@@ -22,4 +23,5 @@ export { observePageViews } from "./observers/pageview";
 export { observePerformance } from "./observers/performance";
 export { observeScroll } from "./observers/scroll";
 export { observeTimeOnPage } from "./observers/heartbeat";
+export { observeClicks } from "./observers/click";
 export * from "./types";

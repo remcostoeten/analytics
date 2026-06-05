@@ -84,6 +84,39 @@ import { AnalyticsErrorBoundary } from "@remcostoeten/analytics";
 
 Caught React render errors are sent as `type: "error"` events. Respects opt-out and DNT.
 
+## Declarative click tracking
+
+Opt in to attribute-based clicks:
+
+```tsx
+<Analytics projectId="my-app" trackClicks />
+```
+
+```html
+<button data-analytics="signup" data-analytics-meta='{"plan":"pro"}'>
+  Sign up
+</button>
+```
+
+Or wrap a single element:
+
+```tsx
+import { TrackClick } from "@remcostoeten/analytics";
+
+<TrackClick name="signup" meta={{ plan: "pro" }}>
+  <button>Sign up</button>
+</TrackClick>
+```
+
+Standalone observer:
+
+```tsx
+import { observeClicks } from "@remcostoeten/analytics";
+
+const cleanup = observeClicks({ projectId: "my-app" });
+cleanup();
+```
+
 ---
 
 ## `<Analytics />`
@@ -96,6 +129,7 @@ Automatic tracking via four observers: pageviews, web vitals, scroll depth, time
 | `ingestUrl` | env var | Ingestion base URL |
 | `disabled` | `false` | Disable all observers |
 | `debug` | `false` | Console logging |
+| `trackClicks` | `false` | Track `[data-analytics]` clicks |
 
 ### Automatic events
 
@@ -249,12 +283,13 @@ import type {
 | `Analytics` | Component |
 | `AnalyticsProvider` | Component |
 | `AnalyticsErrorBoundary` | Component |
+| `TrackClick` | Component |
 | `useTrack` | Hook |
 | `useAnalyticsOptions` | Hook |
 | `createTrackHelpers` | Function |
 | `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError` | Functions |
 | `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment` | Functions |
-| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage` | Functions |
+| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions |
 | `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |
 | `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack` | Functions |
 | `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions` | Functions |

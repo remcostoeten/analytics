@@ -3,6 +3,7 @@ import { observePageViews } from "../observers/pageview";
 import { observePerformance } from "../observers/performance";
 import { observeScroll } from "../observers/scroll";
 import { observeTimeOnPage } from "../observers/heartbeat";
+import { observeClicks } from "../observers/click";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
 import { type AnalyticsProps } from "../types";
@@ -13,6 +14,7 @@ export function Analytics({
 	ingestUrl,
 	disabled = false,
 	debug = false,
+	trackClicks = false,
 }: AnalyticsProps) {
 	const contextOptions = useAnalyticsOptions();
 	const resolved = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
@@ -30,8 +32,12 @@ export function Analytics({
 			observeTimeOnPage(resolved),
 		];
 
+		if (trackClicks) {
+			cleanups.push(observeClicks(resolved));
+		}
+
 		return () => cleanups.forEach((c) => c());
-	}, [resolved.projectId, resolved.ingestUrl, resolved.debug, disabled]);
+	}, [resolved.projectId, resolved.ingestUrl, resolved.debug, disabled, trackClicks]);
 
 	return null;
 }
