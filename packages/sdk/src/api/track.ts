@@ -1,6 +1,7 @@
 import { getVisitorId } from "../identity/visitor";
 import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
+import { canTrack } from "./consent";
 import { isRuntime, debugLog, collectEnrichment, noop } from "../utilities";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
@@ -121,6 +122,11 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 
 	if (checkDoNotTrack()) {
 		debugLog(options.debug, "DNT enabled");
+		return;
+	}
+
+	if (!canTrack()) {
+		debugLog(options.debug, "Consent not granted");
 		return;
 	}
 

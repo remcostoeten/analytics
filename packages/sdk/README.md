@@ -129,9 +129,27 @@ Automatic tracking via four observers: pageviews, web vitals, scroll depth, time
 | `ingestUrl` | env var | Ingestion base URL |
 | `disabled` | `false` | Disable all observers |
 | `debug` | `false` | Console logging |
-| `trackClicks` | `false` | Track `[data-analytics]` clicks |
+| `consentRequired` | `false` | Gate tracking until `consentGranted` is true |
+| `consentGranted` | `false` | User consent state when `consentRequired` is true |
 
-### Automatic events
+### Consent mode (EU / GDPR)
+
+```tsx
+const [consent, setConsent] = useState(false);
+
+<Analytics consentRequired consentGranted={consent} />
+<button onClick={() => setConsent(true)}>Accept analytics</button>
+```
+
+When `consentRequired` is true and consent is not granted:
+
+- Observers stay idle (no pageviews, vitals, etc.)
+- `track()` no-ops
+- No new `localStorage` or `sessionStorage` writes
+
+Existing stored IDs are read but not extended until consent is granted. Works alongside `optOut()` / `optIn()`.
+
+---
 
 | Signal | `type` | `meta.eventName` |
 | --- | --- | --- |
@@ -257,9 +275,13 @@ import {
 
 No HTTP cookies.
 
----
+```tsx
+import { PRIVACY_DISCLOSURE, getStoredKeys } from "@remcostoeten/analytics";
+```
 
-## Utilities
+`PRIVACY_DISCLOSURE` is copy-ready text for your privacy policy. `getStoredKeys()` lists each key, storage type, and purpose.
+
+---
 
 ```tsx
 import { validateIngestUrl, mergeAnalyticsOptions } from "@remcostoeten/analytics";
@@ -292,6 +314,8 @@ import type {
 | `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions |
 | `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |
 | `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack` | Functions |
+| `PRIVACY_DISCLOSURE`, `getStoredKeys` | Privacy helpers |
+| `setConsentGranted`, `setConsentRequired`, `hasConsent` | Consent API |
 | `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions` | Functions |
 
 ---

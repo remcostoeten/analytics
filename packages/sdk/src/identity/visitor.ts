@@ -1,4 +1,5 @@
 import { uuid, isStorageAvailable } from "../utilities";
+import { canPersist } from "../api/consent";
 
 export const VISITOR_ID_KEY = "__analytics_visitor_id";
 
@@ -8,6 +9,7 @@ export function getVisitorId(): string {
 	try {
 		const existing = localStorage.getItem(VISITOR_ID_KEY);
 		if (existing) return existing;
+		if (!canPersist()) return uuid();
 
 		const id = uuid();
 		localStorage.setItem(VISITOR_ID_KEY, id);
@@ -19,6 +21,7 @@ export function getVisitorId(): string {
 
 export function resetVisitorId(): string {
 	if (!isStorageAvailable("local")) return uuid();
+	if (!canPersist()) return uuid();
 
 	try {
 		const id = uuid();

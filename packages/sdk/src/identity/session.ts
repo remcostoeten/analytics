@@ -1,7 +1,8 @@
 import { time, uuid, isStorageAvailable, noop } from "../utilities";
+import { canPersist } from "../api/consent";
 
-const SESSION_ID_KEY = "__analytics_session_id";
-const SESSION_TIMEOUT_KEY = "__analytics_session_timeout";
+export const SESSION_ID_KEY = "__analytics_session_id";
+export const SESSION_TIMEOUT_KEY = "__analytics_session_timeout";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 function isSessionExpired(): boolean {
@@ -19,7 +20,7 @@ function isSessionExpired(): boolean {
 }
 
 function updateSessionTimeout(): void {
-	if (!isStorageAvailable("session")) return;
+	if (!isStorageAvailable("session") || !canPersist()) return;
 
 	try {
 		const timeout = time() + SESSION_TIMEOUT_MS;
@@ -41,6 +42,8 @@ export function getSessionId(): string {
 			return existing;
 		}
 
+		if (!canPersist()) return uuid();
+
 		const id = uuid();
 		sessionStorage.setItem(SESSION_ID_KEY, id);
 		updateSessionTimeout();
@@ -52,6 +55,7 @@ export function getSessionId(): string {
 
 export function resetSessionId(): string {
 	if (!isStorageAvailable("session")) return uuid();
+	if (!canPersist()) return uuid();
 
 	try {
 		const id = uuid();

@@ -4,6 +4,7 @@ import { observePerformance } from "../observers/performance";
 import { observeScroll } from "../observers/scroll";
 import { observeTimeOnPage } from "../observers/heartbeat";
 import { observeClicks } from "../observers/click";
+import { setConsentGranted, setConsentRequired } from "../api/consent";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
 import { type AnalyticsProps } from "../types";
@@ -15,13 +16,25 @@ export function Analytics({
 	disabled = false,
 	debug = false,
 	trackClicks = false,
+	consentRequired = false,
+	consentGranted = false,
 }: AnalyticsProps) {
 	const contextOptions = useAnalyticsOptions();
 	const resolved = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
 
 	useEffect(() => {
+		setConsentRequired(consentRequired);
+		setConsentGranted(consentGranted);
+	}, [consentRequired, consentGranted]);
+
+	useEffect(() => {
 		if (disabled) {
 			debugLog(resolved.debug, "Tracking disabled");
+			return;
+		}
+
+		if (consentRequired && !consentGranted) {
+			debugLog(resolved.debug, "Consent required, tracking idle");
 			return;
 		}
 
@@ -37,7 +50,15 @@ export function Analytics({
 		}
 
 		return () => cleanups.forEach((c) => c());
-	}, [resolved.projectId, resolved.ingestUrl, resolved.debug, disabled, trackClicks]);
+	}, [
+		resolved.projectId,
+		resolved.ingestUrl,
+		resolved.debug,
+		disabled,
+		trackClicks,
+		consentRequired,
+		consentGranted,
+	]);
 
 	return null;
 }

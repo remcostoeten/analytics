@@ -18,7 +18,16 @@ export {
 } from "./api/track";
 export { getVisitorId, resetVisitorId } from "./identity/visitor";
 export { getSessionId, resetSessionId, extendSession } from "./identity/session";
-export { optOut, optIn, isOptedOut, checkDoNotTrack } from "./api/privacy";
+export { optOut, optIn, isOptedOut, checkDoNotTrack, PRIVACY_DISCLOSURE, getStoredKeys } from "./api/privacy";
+export type { StorageKeyInfo } from "./api/privacy";
+export {
+	setConsentGranted,
+	setConsentRequired,
+	hasConsent,
+	isConsentRequired,
+	canTrack,
+	canPersist,
+} from "./api/consent";
 export { observePageViews } from "./observers/pageview";
 export { observePerformance } from "./observers/performance";
 export { observeScroll } from "./observers/scroll";

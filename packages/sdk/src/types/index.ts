@@ -13,6 +13,8 @@ export type AnalyticsOptions = {
 export type AnalyticsProps = AnalyticsOptions & {
 	disabled?: boolean;
 	trackClicks?: boolean;
+	consentRequired?: boolean;
+	consentGranted?: boolean;
 };
 
 export type TrackClickProps = AnalyticsOptions & {

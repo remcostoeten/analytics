@@ -130,10 +130,10 @@ my-app/
 
 **Goal:** EU-ready consent before any persistent identifier is written.
 
-| # | Feature | Why | Done when |
-| --- | --- | --- | --- |
-| 4.1 | Consent-gated init | `getVisitorId()` writes localStorage on first track today | No storage writes before consent |
-| 4.2 | Privacy disclosure exports | Consumers need privacy policy copy | `PRIVACY_DISCLOSURE` + `getStoredKeys()` exported |
+| # | Feature | Status |
+| --- | --- | --- |
+| 4.1 | Consent-gated init | **Done** — `consentRequired` + `consentGranted` on `<Analytics />` |
+| 4.2 | Privacy disclosure exports | **Done** — `PRIVACY_DISCLOSURE` + `getStoredKeys()` |
 
 ```tsx
 <Analytics consentGranted={hasConsent} consentRequired />
@@ -190,7 +190,7 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 | 1 — SDK DX | High | Low | Done |
 | 2 — Declarative | High | Low | Done |
 | 3 — Deploy (tiered) | Very high | Medium | **Done** |
-| 4 — Privacy | High (EU) | Medium | Pending |
+| 4 — Privacy | High (EU) | Medium | **Done** |
 | 5 — Server | Medium | Medium | Pending |
 | 6 — Reliability | Medium | Medium | Pending |
 | 7 — Auto observers | Medium | Low | Pending |
@@ -223,4 +223,4 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 
 ## Start here
 
-**Sprint 4** is next: consent-gated init + privacy disclosure exports.
+**Sprint 5** is next: `@remcostoeten/analytics/server` + optional ingest auth.
