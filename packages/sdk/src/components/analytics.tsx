@@ -3,6 +3,8 @@ import { observePageViews } from "../observers/pageview";
 import { observePerformance } from "../observers/performance";
 import { observeScroll } from "../observers/scroll";
 import { observeTimeOnPage } from "../observers/heartbeat";
+import { useAnalyticsOptions } from "./provider";
+import { resolveAnalyticsOptions } from "../utilities/options";
 import { type AnalyticsProps } from "../types";
 import { debugLog } from "../utilities";
 
@@ -12,21 +14,24 @@ export function Analytics({
 	disabled = false,
 	debug = false,
 }: AnalyticsProps) {
+	const contextOptions = useAnalyticsOptions();
+	const resolved = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
+
 	useEffect(() => {
 		if (disabled) {
-			debugLog(debug, "Tracking disabled");
+			debugLog(resolved.debug, "Tracking disabled");
 			return;
 		}
 
 		const cleanups = [
-			observePageViews({ projectId, ingestUrl, debug }),
-			observePerformance({ projectId, ingestUrl, debug }),
-			observeScroll({ projectId, ingestUrl, debug }),
-			observeTimeOnPage({ projectId, ingestUrl, debug }),
+			observePageViews(resolved),
+			observePerformance(resolved),
+			observeScroll(resolved),
+			observeTimeOnPage(resolved),
 		];
 
 		return () => cleanups.forEach((c) => c());
-	}, [projectId, ingestUrl, disabled, debug]);
+	}, [resolved.projectId, resolved.ingestUrl, resolved.debug, disabled]);
 
 	return null;
 }

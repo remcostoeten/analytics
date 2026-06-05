@@ -1,374 +1,264 @@
 # @remcostoeten/analytics
 
-Privacy-focused analytics SDK designed for high-performance tracking of page views and custom events in React and Next.js applications. It prioritizes user privacy by operating without cookies and utilizing secure, server-side IP hashing.
+Privacy-focused analytics SDK for Next.js and React. Cookie-free, lightweight (~1.6 KB gzipped), sends events to your self-hosted ingestion service.
 
-## Features
-
-- **Privacy-First**: Operates without cookies or raw IP storage, ensuring GDPR and CCPA compliance.
-- **Lightweight**: Minimal footprint (approx 1.6 KB gzipped) to maintain optimal page load performance.
-- **Reliable Data Delivery**: Leverages the `sendBeacon` API for non-blocking background transmissions, with a robust `fetch` fallback.
-- **TypeScript First**: First-class support with exhaustive type definitions for a better developer experience.
-- **Framework Agnostic (React)**: Seamlessly integrates with Next.js (App and Pages Router) and standard React SPAs.
-- **Compliance Built-in**: Native respect for "Do Not Track" (DNT) headers and user opt-out mechanisms.
-- **Intelligent Deduplication**: Client-side logic prevents duplicate event firing during rapid interactions.
-
-## How it Works
-
-The SDK operates on a "thin client" philosophy. It captures minimal client-side signals (path, referrer, browser language) and combines them with a persistent `visitorId` (stored in `localStorage`) and a `sessionId` (stored in `sessionStorage`).
-
-### Event Lifecycle
-
-1. **Initialization**: The `<Analytics />` component initializes tracking and listens for route changes.
-2. **Capture**: When an event occurs (page view or custom event), the SDK gathers environmental metadata.
-3. **Dispatch**: Data is dispatched to the ingestion endpoint. The SDK uses `navigator.sendBeacon` to ensure the event is sent even if the user is navigating away from the page.
-4. **Ingestion**: The server validates the payload, extracts geographical data from headers, hashes the IP address, and persists the event to the database.
-
-## Installation
+## Install
 
 ```bash
 npm install @remcostoeten/analytics
-# or
-yarn add @remcostoeten/analytics
-# or
-pnpm add @remcostoeten/analytics
-# or
-bun add @remcostoeten/analytics
 ```
 
-## Quick Start
+Set your ingestion base URL (not a path suffix — the SDK posts to `{url}/e`):
 
-### Next.js App Router
+```bash
+# Next.js
+NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com
+
+# Vite
+VITE_ANALYTICS_URL=https://analytics-api.yourdomain.com
+```
+
+## Quick start
 
 ```tsx
 import { Analytics } from "@remcostoeten/analytics";
 
 export default function RootLayout({ children }) {
-	return (
-		<html lang="en">
-			<body>
-				{children}
-				<Analytics />
-			</body>
-		</html>
-	);
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Analytics projectId="my-app" />
+      </body>
+    </html>
+  );
 }
 ```
 
-### Next.js Pages Router
+## Provider and hooks
+
+Wrap your app to share config across components:
 
 ```tsx
-// pages/_app.tsx
-import { Analytics } from "@remcostoeten/analytics";
+import { AnalyticsProvider, Analytics, useTrack } from "@remcostoeten/analytics";
 
-export default function App({ Component, pageProps }) {
-	return (
-		<>
-			<Component {...pageProps} />
-			<Analytics />
-		</>
-	);
+export default function RootLayout({ children }) {
+  return (
+    <AnalyticsProvider projectId="my-app" ingestUrl="https://analytics-api.yourdomain.com">
+      <body>
+        {children}
+        <Analytics />
+      </body>
+    </AnalyticsProvider>
+  );
 }
 ```
 
-### React SPA
-
 ```tsx
-// App.tsx
-import { Analytics } from "@remcostoeten/analytics";
+"use client";
 
-function App() {
-	return (
-		<>
-			<Analytics />
-			{/* Your app content */}
-		</>
-	);
+import { useTrack } from "@remcostoeten/analytics";
+
+export function SignupButton() {
+  const { trackEvent } = useTrack();
+
+  return (
+    <button onClick={() => trackEvent("signup", { plan: "pro" })}>
+      Sign up
+    </button>
+  );
 }
 ```
 
-## Configuration
+`<Analytics />` reads provider defaults when props are omitted. Per-call options still override.
 
-### Environment Variables
-
-```bash
-# Next.js - .env.local
-NEXT_PUBLIC_ANALYTICS_URL=https://your-ingestion-url.com
-
-# Vite - .env
-VITE_ANALYTICS_URL=https://your-ingestion-url.com
-```
-
-### Component Props
+## Error boundary
 
 ```tsx
-<Analytics
-	projectId="my-project" // Optional: defaults to hostname
-	ingestUrl="https://example.com" // Optional: override ingestion URL
-	disabled={false} // Optional: disable tracking
-	debug={false} // Optional: enable debug logging
-/>
+import { AnalyticsErrorBoundary } from "@remcostoeten/analytics";
+
+<AnalyticsErrorBoundary fallback={<p>Something went wrong</p>}>
+  {children}
+</AnalyticsErrorBoundary>
 ```
 
-## API Reference
+Caught React render errors are sent as `type: "error"` events. Respects opt-out and DNT.
 
-### `<Analytics />`
+---
 
-React component that automatically tracks page views.
+## `<Analytics />`
 
-**Props:**
+Automatic tracking via four observers: pageviews, web vitals, scroll depth, time on page.
 
-- `projectId?: string` - Project identifier (defaults to `window.location.hostname`)
-- `ingestUrl?: string` - Ingestion endpoint URL (defaults to env var or `http://localhost:3001`)
-- `disabled?: boolean` - Disable all tracking (default: `false`)
-- `debug?: boolean` - Enable debug console logging (default: `false`)
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `projectId` | `window.location.hostname` | Project identifier in database |
+| `ingestUrl` | env var | Ingestion base URL |
+| `disabled` | `false` | Disable all observers |
+| `debug` | `false` | Console logging |
 
-### `track(type, meta?, options?)`
+### Automatic events
 
-Core tracking function for custom events.
+| Signal | `type` | `meta.eventName` |
+| --- | --- | --- |
+| Page views | `pageview` | — |
+| Web Vitals | `event` | `web-vitals` |
+| Scroll depth | `event` | `scroll` |
+| Time on page | `event` | `time-on-page` |
 
-```tsx
-import { track } from "@remcostoeten/analytics";
+---
 
-track("event", { action: "button_click", label: "signup" });
-```
+## Manual tracking
 
-**Parameters:**
-
-- `type: 'pageview' | 'event' | 'click' | 'error'` - Event type
-- `meta?: Record<string, unknown>` - Custom metadata
-- `options?: TrackOptions` - Configuration options
-
-### `trackPageView(meta?, options?)`
-
-Track a page view event.
-
-```tsx
-import { trackPageView } from "@remcostoeten/analytics";
-
-trackPageView({ source: "navigation" });
-```
-
-### `trackEvent(eventName, meta?, options?)`
-
-Track a custom event with a name.
-
-```tsx
-import { trackEvent } from "@remcostoeten/analytics";
-
-trackEvent("signup", { plan: "pro", trial: true });
-```
-
-### `trackClick(elementName, meta?, options?)`
-
-Track a click event.
-
-```tsx
-import { trackClick } from "@remcostoeten/analytics";
-
-trackClick("cta_button", { position: "hero" });
-```
-
-### `trackError(error, meta?, options?)`
-
-Track an error event.
-
-```tsx
-import { trackError } from "@remcostoeten/analytics";
-
-try {
-	// Some code
-} catch (error) {
-	trackError(error as Error, { context: "checkout" });
-}
-```
-
-### Identity Management
+Client-only. No-ops during SSR, opt-out, or DNT.
 
 ```tsx
 import {
-	getVisitorId,
-	resetVisitorId,
-	getSessionId,
-	resetSessionId,
+  track,
+  trackPageView,
+  trackEvent,
+  trackClick,
+  trackError,
+  trackTransaction,
+  trackSearch,
+  identifyUser,
+  setExperiment,
 } from "@remcostoeten/analytics";
-
-const visitorId = getVisitorId(); // Get current visitor ID
-resetVisitorId(); // Generate new visitor ID
-
-const sessionId = getSessionId(); // Get current session ID (30min timeout)
-resetSessionId(); // Generate new session ID
 ```
 
-### Privacy Controls
+| Function | `type` | Purpose |
+| --- | --- | --- |
+| `track(type, meta?, options?)` | any | Low-level |
+| `trackPageView(meta?, options?)` | `pageview` | Explicit pageview |
+| `trackEvent(name, meta?, options?)` | `event` | Custom event |
+| `trackClick(elementName, meta?, options?)` | `click` | Named click |
+| `trackError(error, meta?, options?)` | `error` | Error with stack |
+| `trackTransaction(revenue, currency?, orderId?, items?, options?)` | `event` | Revenue |
+| `trackSearch(query, resultCount, options?)` | `event` | Site search |
+| `identifyUser(properties, options?)` | `event` | User traits |
+| `setExperiment(experimentId, variantId, options?)` | `event` | A/B exposure |
 
-```tsx
-import { optOut, optIn, isOptedOut } from "@remcostoeten/analytics";
+Options: `{ projectId?, ingestUrl?, debug? }`.
 
-optOut(); // Disable tracking for this user
-optIn(); // Re-enable tracking
-isOptedOut(); // Check opt-out status (returns boolean)
-```
-
-## Examples
-
-### Track Custom Events
-
-```tsx
-"use client";
-
-import { trackEvent } from "@remcostoeten/analytics";
-
-export function SignupButton() {
-	function handleSignup() {
-		trackEvent("signup_initiated", {
-			plan: "premium",
-			source: "pricing_page",
-		});
-	}
-
-	return <button onClick={handleSignup}>Sign Up</button>;
-}
-```
-
-### Track Errors
-
-```tsx
-"use client";
-
-import { useEffect } from "react";
-import { trackError } from "@remcostoeten/analytics";
-
-export function ErrorBoundary({ children }) {
-	useEffect(() => {
-		function handleError(event: ErrorEvent) {
-			trackError(event.error, {
-				message: event.message,
-				filename: event.filename,
-				lineno: event.lineno,
-			});
-		}
-
-		window.addEventListener("error", handleError);
-		return () => window.removeEventListener("error", handleError);
-	}, []);
-
-	return <>{children}</>;
-}
-```
-
-### Privacy Controls UI
-
-```tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { optOut, optIn, isOptedOut } from "@remcostoeten/analytics";
-
-export function PrivacySettings() {
-	const [opted, setOpted] = useState(false);
-
-	useEffect(() => {
-		setOpted(isOptedOut());
-	}, []);
-
-	function handleToggle() {
-		if (opted) {
-			optIn();
-			setOpted(false);
-		} else {
-			optOut();
-			setOpted(true);
-		}
-	}
-
-	return (
-		<label>
-			<input type="checkbox" checked={opted} onChange={handleToggle} />
-			Opt out of analytics
-		</label>
-	);
-}
-```
-
-### Conditional Tracking
-
-```tsx
-<Analytics
-	projectId="my-app"
-	disabled={process.env.NODE_ENV === "development"}
-	debug={process.env.NODE_ENV === "development"}
-/>
-```
-
-## How It Works
-
-### Visitor Identification
-
-- **Visitor ID**: Generated on first visit, stored in `localStorage`
-- **Session ID**: Generated per session, stored in `sessionStorage` with 30-minute timeout
-- **Fallback**: If storage is blocked, ephemeral IDs are generated
-
-### Data Sent
-
-Each tracking call sends:
+### Payload shape
 
 ```typescript
 {
-  type: 'pageview' | 'event' | 'click' | 'error',
+  type: string,
   projectId: string,
   path: string,
   referrer: string | null,
   origin: string,
   host: string,
-  ua: string,          // User agent
-  lang: string,        // Browser language
-  visitorId: string,   // Persistent visitor ID
-  sessionId: string,   // Session ID
-  meta?: object        // Custom metadata
+  ua: string,
+  lang: string,
+  visitorId: string,
+  sessionId: string,
+  meta?: {
+    screenSize?: string,
+    viewport?: string,
+    pixelRatio?: number,
+    utmSource?: string,
+    utmMedium?: string,
+    utmCampaign?: string,
+    utmContent?: string,
+    utmTerm?: string,
+    connectionType?: string | null,
+    connectionDownlink?: number | null,
+    eventName?: string,
+    ...
+  }
 }
 ```
 
-### Privacy Features
+Auto-enrichment is merged into `meta` on every call. Uses `sendBeacon` with `fetch` fallback. Deduplicates identical events within 5 seconds.
 
-- **No HTTP cookies**: Uses localStorage/sessionStorage only.
-- **No raw IPs**: IPs are hashed server-side with daily salt rotation.
-- **Opt-out support**: Users can disable tracking permanently.
-- **DNT respect**: Honors Do Not Track browser setting.
-- **Client deduplication**: Prevents duplicate events within 5 seconds.
-- **SSR safe**: Automatically skips tracking on server.
+---
 
-## Browser Support
+## Standalone observers
 
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
-- Opera 76+
+Use without `<Analytics />`:
 
-Uses `navigator.sendBeacon` with automatic fallback to `fetch` with `keepalive`.
+```tsx
+import {
+  observePageViews,
+  observePerformance,
+  observeScroll,
+  observeTimeOnPage,
+} from "@remcostoeten/analytics";
 
-## TypeScript Support
-
-Full TypeScript support included. Types are automatically exported:
-
-```typescript
-import type { TrackOptions, EventPayload } from "@remcostoeten/analytics";
+const cleanup = observePageViews({ projectId: "my-app" });
+cleanup();
 ```
 
-## Performance
+---
 
-- **Bundle size**: 1.6 KB gzipped (ESM)
-- **Runtime overhead**: < 1ms per event
-- **Network**: Uses `sendBeacon` for non-blocking requests
-- **Tree-shakeable**: Only import what you need
+## Identity and privacy
 
-## License
+```tsx
+import {
+  getVisitorId,
+  resetVisitorId,
+  getSessionId,
+  resetSessionId,
+  extendSession,
+  optOut,
+  optIn,
+  isOptedOut,
+  checkDoNotTrack,
+} from "@remcostoeten/analytics";
+```
 
-MIT License - see [LICENSE](../../LICENSE) for details.
+| API | Storage | Behavior |
+| --- | --- | --- |
+| `getVisitorId()` | `localStorage` | Persistent visitor ID |
+| `resetVisitorId()` | `localStorage` | New UUID |
+| `getSessionId()` | `sessionStorage` | 30-minute session timeout |
+| `resetSessionId()` | `sessionStorage` | New session UUID |
+| `extendSession()` | `sessionStorage` | Refresh session timeout |
+| `optOut()` | `localStorage` | Disable tracking, remove visitor ID |
+| `optIn()` | `localStorage` | Re-enable tracking |
+| `isOptedOut()` | — | Check opt-out state |
+| `checkDoNotTrack()` | — | Browser DNT enabled |
 
-## Repository
+No HTTP cookies.
 
-[https://github.com/remcostoeten/analytics](https://github.com/remcostoeten/analytics)
+---
 
-## Support
+## Utilities
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/remcostoeten/analytics/issues).
+```tsx
+import { validateIngestUrl, mergeAnalyticsOptions } from "@remcostoeten/analytics";
+import type {
+  AnalyticsProps,
+  AnalyticsOptions,
+  AnalyticsProviderProps,
+  AnalyticsErrorBoundaryProps,
+  EventPayload,
+  TrackMeta,
+  TrackHelpers,
+} from "@remcostoeten/analytics";
+```
+
+---
+
+## Exports
+
+| Export | Kind |
+| --- | --- |
+| `Analytics` | Component |
+| `AnalyticsProvider` | Component |
+| `AnalyticsErrorBoundary` | Component |
+| `useTrack` | Hook |
+| `useAnalyticsOptions` | Hook |
+| `createTrackHelpers` | Function |
+| `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError` | Functions |
+| `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment` | Functions |
+| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage` | Functions |
+| `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |
+| `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack` | Functions |
+| `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions` | Functions |
+
+---
+
+MIT © Remco Stoeten

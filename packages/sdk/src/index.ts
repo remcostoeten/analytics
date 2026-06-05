@@ -1,4 +1,8 @@
 export { Analytics } from "./components/analytics";
+export { AnalyticsErrorBoundary } from "./components/error-boundary";
+export { AnalyticsProvider, useTrack, useAnalyticsOptions } from "./components/provider";
+export { createTrackHelpers } from "./api/track-helpers";
+export { mergeAnalyticsOptions, resolveAnalyticsOptions } from "./utilities/options";
 export {
 	track,
 	trackPageView,
