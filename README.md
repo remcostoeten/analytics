@@ -18,6 +18,16 @@ First-party analytics you self-host. Cookie-free, privacy-first, built for Next.
 
 ## Quick start
 
+### Option A — Scaffold (recommended)
+
+```bash
+npx create-analytics my-app --tier separate --yes
+```
+
+Creates `apps/web` (SDK only) + `apps/analytics-api` (ingestion). See generated `README.md`.
+
+### Option B — Manual
+
 1. Create a [Neon](https://neon.tech) Postgres database
 2. Deploy `apps/ingestion` with `DATABASE_URL` + `IP_HASH_SECRET`
 3. Run migrations: `cd packages/ingestion && bun run db:migrate`

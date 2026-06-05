@@ -44,8 +44,8 @@ Consumer app stays lean. Ingestion weight lives in a second project — same as 
 | --- | --- | --- | --- |
 | 3.1 | Publish `@remcostoeten/ingestion` | Replace monorepo clone for analytics-api project | **Done** — package extracted, apps/ingestion is thin deploy |
 | 3.2 | Package size discipline | Avoid shipping dev UI, optional peer deps | **Done** — peer deps + `/vercel` subpath |
-| 3.3 | `create-analytics` CLI | Manual wiring still error-prone | Pending |
-| 3.4 | README + docs update | Default path must be Tier 1 | README shows separate deploy as recommended |
+| 3.3 | `create-analytics` CLI | Manual wiring still error-prone | **Done** — Tier 1 default |
+| 3.4 | README + docs update | Default path must be Tier 1 | **Done** |
 
 ### 3.1 `@remcostoeten/ingestion` package
 
@@ -189,7 +189,7 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 | --- | --- | --- | --- |
 | 1 — SDK DX | High | Low | Done |
 | 2 — Declarative | High | Low | Done |
-| 3 — Deploy (tiered) | Very high | Medium | **Next** |
+| 3 — Deploy (tiered) | Very high | Medium | **Done** |
 | 4 — Privacy | High (EU) | Medium | Pending |
 | 5 — Server | Medium | Medium | Pending |
 | 6 — Reliability | Medium | Medium | Pending |
@@ -223,4 +223,4 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 
 ## Start here
 
-**Sprint 3** is next: extract `@remcostoeten/ingestion`, publish for separate analytics-api deploy, scaffold `create-analytics` with Tier 1 as default.
+**Sprint 4** is next: consent-gated init + privacy disclosure exports.

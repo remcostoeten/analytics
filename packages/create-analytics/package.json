@@ -1,0 +1,32 @@
+{
+	"name": "create-analytics",
+	"version": "0.1.0",
+	"description": "Scaffold Remco Analytics SDK and ingestion wiring",
+	"license": "MIT",
+	"author": "Remco Stoeten",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/remcostoeten/analytics",
+		"directory": "packages/create-analytics"
+	},
+	"type": "module",
+	"files": ["dist", "README.md"],
+	"bin": {
+		"create-analytics": "./dist/cli.js"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsup",
+		"typecheck": "tsc --noEmit",
+		"test": "bun test",
+		"prepublishOnly": "bun run build"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.0",
+		"bun-types": "^1.3.9",
+		"tsup": "^8.5.1",
+		"typescript": "5.6.3"
+	}
+}
