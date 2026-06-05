@@ -378,6 +378,7 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
 | `packages/ingestion` | `@remcostoeten/ingestion` npm package (publishable) |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
+| `apps/example` | Minimal Next.js consumer app (all three tracking patterns) |
 | `apps/example-dashboard` | Next.js analytics UI |
 
 **Stack:** TypeScript, Bun, Neon Postgres, Drizzle ORM, Hono, Next.js, React.
