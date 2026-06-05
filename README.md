@@ -10,7 +10,7 @@ First-party analytics you self-host. Cookie-free, privacy-first, built for Next.
 [![Self-hosted](https://img.shields.io/badge/Self--hosted-Neon_Postgres-blue.svg)](#deployment-model)
 [![Live Demo](https://img.shields.io/badge/Demo-Live-success.svg)](https://remcostoeten-analytics-demo.vercel.app)
 
-[Live Demo](https://remcostoeten-analytics-demo.vercel.app) · [NPM Package](https://www.npmjs.com/package/@remcostoeten/analytics) · [Roadmap](.internal/docs/consumer/roadmap.md)
+[Live Demo](https://remcostoeten-analytics-demo.vercel.app) · [NPM Package](https://www.npmjs.com/package/@remcostoeten/analytics) · [Roadmap](docs/consumer/roadmap.md)
 
 ![Dashboard Preview](./dashboard_preview.png)
 
