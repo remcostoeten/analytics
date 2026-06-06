@@ -2,20 +2,28 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import useSWR from "swr";
 import {
 	LayoutDashboard,
 	Activity,
 	Users,
-	Settings,
 	Zap,
 	Radio,
-	Server,
 	CalendarDays,
 	Settings2,
 	Search,
 	ChevronDown,
 } from "lucide-react";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import {
 	Sidebar,
@@ -37,8 +45,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 type ProjectOption = {
@@ -59,6 +65,14 @@ export function AppSidebar() {
 	const view = searchParams.get("view") || "overview";
 	const selectedProject = searchParams.get("projectId");
 	const timeRange = searchParams.get("timeRange") || "30d";
+	const fromParam = searchParams.get("from");
+	const toParam = searchParams.get("to");
+	const isCustomRange = !!(fromParam && toParam);
+
+	const [showCustomPicker, setShowCustomPicker] = useState(false);
+	const [customFromInput, setCustomFromInput] = useState(fromParam || "");
+	const [customToInput, setCustomToInput] = useState(toParam || "");
+
 	const { data: projects = [] } = useSWR("/api/analytics?metric=projects", fetchProjects, {
 		fallbackData: [],
 		refreshInterval: 60000,
@@ -89,7 +103,15 @@ export function AppSidebar() {
 	}
 
 	function setTimeRange(range: string) {
+		if (range === "custom") {
+			setCustomFromInput(fromParam || "");
+			setCustomToInput(toParam || "");
+			setShowCustomPicker(true);
+			return;
+		}
 		const params = new URLSearchParams(searchParams.toString());
+		params.delete("from");
+		params.delete("to");
 		if (range === "30d") {
 			params.delete("timeRange");
 		} else {
@@ -98,15 +120,20 @@ export function AppSidebar() {
 		router.push(buildHref(pathname || "/", params));
 	}
 
+	function applyCustomRange() {
+		if (!customFromInput || !customToInput) return;
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("from", customFromInput);
+		params.set("to", customToInput);
+		params.delete("timeRange");
+		router.push(buildHref(pathname || "/", params));
+		setShowCustomPicker(false);
+	}
+
 	function viewHref(id: string) {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("view", id);
 		return buildHref("/", params);
-	}
-
-	function pageHref(path: string) {
-		const params = new URLSearchParams(searchParams.toString());
-		return buildHref(path, params);
 	}
 
 	function openSearch() {
@@ -114,6 +141,7 @@ export function AppSidebar() {
 	}
 
 	return (
+		<>
 		<Sidebar collapsible="icon" className="border-r border-border">
 			<SidebarHeader className="border-b border-border">
 				<SidebarMenu>
@@ -125,7 +153,12 @@ export function AppSidebar() {
 						/>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
-						<TimeRangeSwitcher value={timeRange} onChange={setTimeRange} />
+						<TimeRangeSwitcher
+							value={isCustomRange ? "custom" : timeRange}
+							customFrom={fromParam || undefined}
+							customTo={toParam || undefined}
+							onChange={setTimeRange}
+						/>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<SidebarMenuButton
@@ -170,65 +203,67 @@ export function AppSidebar() {
 					</SidebarGroupContent>
 				</SidebarGroup>
 
-				<SidebarGroup className="py-2 mt-auto">
-					<SidebarGroupLabel className="text-[10px] px-2 uppercase tracking-wider font-semibold opacity-50">
-						System
-					</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							<SidebarMenuItem>
-								<SidebarMenuButton
-									asChild
-									tooltip="Service Health"
-									className="h-8 text-xs font-medium"
-								>
-									<Link href={pageHref("/health")}>
-										<Server className="size-3.5" />
-										<span>Health</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild tooltip="Settings" className="h-8 text-xs font-medium">
-									<Link href={pageHref("/settings")}>
-										<Settings className="size-3.5" />
-										<span>Settings</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
 			</SidebarContent>
-
-			<SidebarFooter className="border-t border-border p-2">
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" className="h-10 hover:bg-muted/50 transition-colors">
-							<Avatar className="size-6 border border-border">
-								<AvatarImage src="" />
-								<AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-medium leading-none">
-									JD
-								</AvatarFallback>
-							</Avatar>
-							<div className="flex flex-col leading-tight ml-1">
-								<span className="text-xs font-semibold">John Doe</span>
-								<span className="text-[10px] text-muted-foreground">Admin</span>
-							</div>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarFooter>
 		</Sidebar>
+
+		<Dialog open={showCustomPicker} onOpenChange={setShowCustomPicker}>
+			<DialogContent className="sm:max-w-xs">
+				<DialogHeader>
+					<DialogTitle className="text-sm">Custom Date Range</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-3 py-2">
+					<div className="space-y-1">
+						<label className="text-[11px] text-muted-foreground">From</label>
+						<Input
+							type="date"
+							value={customFromInput}
+							onChange={(e) => setCustomFromInput(e.target.value)}
+							className="h-8 text-xs"
+						/>
+					</div>
+					<div className="space-y-1">
+						<label className="text-[11px] text-muted-foreground">To</label>
+						<Input
+							type="date"
+							value={customToInput}
+							max={new Date().toISOString().split("T")[0]}
+							onChange={(e) => setCustomToInput(e.target.value)}
+							className="h-8 text-xs"
+						/>
+					</div>
+				</div>
+				<DialogFooter>
+					<Button
+						size="sm"
+						variant="outline"
+						className="text-xs h-7"
+						onClick={() => setShowCustomPicker(false)}
+					>
+						Cancel
+					</Button>
+					<Button
+						size="sm"
+						className="text-xs h-7"
+						disabled={!customFromInput || !customToInput || customFromInput >= customToInput}
+						onClick={applyCustomRange}
+					>
+						Apply
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	</>
 	);
 }
 
 type TimeRangeProps = {
 	value: string;
 	onChange: (range: string) => void;
+	customFrom?: string;
+	customTo?: string;
 };
 
-function TimeRangeSwitcher({ value, onChange }: TimeRangeProps) {
+function TimeRangeSwitcher({ value, customFrom, customTo, onChange }: TimeRangeProps) {
 	const ranges = [
 		{ value: "all", label: "All time" },
 		{ value: "30d", label: "Last 30 days" },
@@ -236,7 +271,11 @@ function TimeRangeSwitcher({ value, onChange }: TimeRangeProps) {
 		{ value: "90d", label: "Last 90 days" },
 		{ value: "180d", label: "Last 180 days" },
 	];
-	const currentRange = ranges.find((range) => range.value === value) || ranges[1];
+
+	const displayLabel =
+		value === "custom" && customFrom && customTo
+			? `${customFrom} → ${customTo}`
+			: (ranges.find((r) => r.value === value) || ranges[1]).label;
 
 	return (
 		<DropdownMenu>
@@ -249,7 +288,7 @@ function TimeRangeSwitcher({ value, onChange }: TimeRangeProps) {
 						<CalendarDays className="size-3.5 text-muted-foreground" />
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-						<div className="truncate text-xs font-medium leading-tight">{currentRange.label}</div>
+						<div className="truncate text-xs font-medium leading-tight">{displayLabel}</div>
 						<div className="text-[10px] text-muted-foreground leading-tight">Date range</div>
 					</div>
 					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
@@ -262,11 +301,18 @@ function TimeRangeSwitcher({ value, onChange }: TimeRangeProps) {
 					<DropdownMenuItem
 						key={range.value}
 						onClick={() => onChange(range.value)}
-						className={cn("text-[11px]", currentRange.value === range.value && "bg-muted")}
+						className={cn("text-[11px]", value === range.value && "bg-muted")}
 					>
 						{range.label}
 					</DropdownMenuItem>
 				))}
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					onClick={() => onChange("custom")}
+					className={cn("text-[11px]", value === "custom" && "bg-muted")}
+				>
+					Custom range…
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

@@ -4,22 +4,34 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
-	const rawTimeRange = searchParams.get("timeRange") || "30d";
 	const metric = searchParams.get("metric") || "overview";
 	const projectId = searchParams.get("projectId") || null;
 	const projectFilter = projectId || undefined;
 
-	const VALID_RANGES = new Set(["30d", "60d", "90d", "180d", "all"]);
-	if (!VALID_RANGES.has(rawTimeRange)) {
-		return NextResponse.json({ error: `Invalid timeRange: ${rawTimeRange}` }, { status: 400 });
+	let from: Date;
+	let to: Date;
+
+	const rawFrom = searchParams.get("from");
+	const rawTo = searchParams.get("to");
+
+	if (rawFrom && rawTo) {
+		from = new Date(rawFrom);
+		to = new Date(rawTo);
+		to.setHours(23, 59, 59, 999);
+		if (isNaN(from.getTime()) || isNaN(to.getTime()) || from >= to) {
+			return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
+		}
+	} else {
+		const rawTimeRange = searchParams.get("timeRange") || "30d";
+		const VALID_RANGES = new Set(["30d", "60d", "90d", "180d", "all"]);
+		if (!VALID_RANGES.has(rawTimeRange)) {
+			return NextResponse.json({ error: `Invalid timeRange: ${rawTimeRange}` }, { status: 400 });
+		}
+		const hours =
+			rawTimeRange === "60d" ? 1440 : rawTimeRange === "90d" ? 2160 : rawTimeRange === "180d" ? 4320 : 720;
+		to = new Date();
+		from = rawTimeRange === "all" ? new Date(0) : new Date(to.getTime() - hours * 60 * 60 * 1000);
 	}
-	const timeRange = rawTimeRange;
-
-	const hours =
-		timeRange === "60d" ? 1440 : timeRange === "90d" ? 2160 : timeRange === "180d" ? 4320 : 720;
-
-	const to = new Date();
-	const from = timeRange === "all" ? new Date(0) : new Date(to.getTime() - hours * 60 * 60 * 1000);
 
 	try {
 		if (!process.env.DATABASE_URL) {
@@ -51,8 +63,10 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(await query.getGeoDetail(from, to, projectId));
 			case "devices":
 				return NextResponse.json(await query.getDeviceBreakdown(projectFilter, from, to));
-			case "trend":
-				return NextResponse.json(await query.getPageviewsTrend(projectFilter, hours, from, to));
+			case "trend": {
+				const durationHours = Math.round((to.getTime() - from.getTime()) / (60 * 60 * 1000));
+				return NextResponse.json(await query.getPageviewsTrend(projectFilter, durationHours, from, to));
+			}
 			case "events":
 				return NextResponse.json(await query.getRecentEvents(projectFilter, 20, from, to));
 			case "visitors":
@@ -72,6 +86,8 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(await query.getSessionStats(from, to, projectId));
 			case "utm-campaigns":
 				return NextResponse.json(await query.getUTMCampaigns(from, to, projectId));
+			case "bot-breakdown":
+				return NextResponse.json(await query.getBotBreakdown(from, to, projectId));
 			case "engagement":
 				return NextResponse.json(await query.getEngagementMetrics(from, to, projectId));
 			case "hourly-heatmap":

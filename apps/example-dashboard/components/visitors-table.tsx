@@ -1,8 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Inbox, User, Monitor, Globe, Clock } from "lucide-react";
+import { Inbox, User, Monitor, Globe, Clock, Search } from "lucide-react";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 interface Visitor {
 	id: string;
@@ -56,6 +57,21 @@ const deviceIcons: Record<string, string> = {
 
 export function VisitorsTable({ data, className }: VisitorsTableProps) {
 	const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
+	const [search, setSearch] = useState("");
+
+	const filtered = search.trim()
+		? data.filter((v) => {
+				const q = search.toLowerCase();
+				return (
+					(v.country || "").toLowerCase().includes(q) ||
+					(v.city || "").toLowerCase().includes(q) ||
+					(v.browser || "").toLowerCase().includes(q) ||
+					(v.os || "").toLowerCase().includes(q) ||
+					(v.deviceType || "").toLowerCase().includes(q) ||
+					(v.language || "").toLowerCase().includes(q)
+				);
+			})
+		: data;
 
 	if (!data || data.length === 0) {
 		return (
@@ -73,9 +89,20 @@ export function VisitorsTable({ data, className }: VisitorsTableProps) {
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
-			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
-				<h3 className="text-xs font-medium text-foreground">Recent Visitors</h3>
-				<span className="text-[10px] text-muted-foreground">{data.length} visitors</span>
+			<div className="px-3 py-2 border-b border-border flex items-center gap-2">
+				<h3 className="text-xs font-medium text-foreground shrink-0">Recent Visitors</h3>
+				<div className="relative flex-1 max-w-[200px] ml-auto">
+					<Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+					<Input
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Filter by country, browser…"
+						className="h-6 pl-6 pr-2 text-[10px] bg-muted/50 border-border"
+					/>
+				</div>
+				<span className="text-[10px] text-muted-foreground shrink-0">
+					{filtered.length}/{data.length}
+				</span>
 			</div>
 			<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
 				<table className="w-full text-[11px]">
@@ -99,7 +126,14 @@ export function VisitorsTable({ data, className }: VisitorsTableProps) {
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border">
-						{data.slice(0, 20).map((visitor) => (
+						{filtered.length === 0 && (
+							<tr>
+								<td colSpan={5} className="px-3 py-6 text-center text-[11px] text-muted-foreground">
+									No visitors match &ldquo;{search}&rdquo;
+								</td>
+							</tr>
+						)}
+						{filtered.slice(0, 20).map((visitor) => (
 							<tr
 								key={visitor.id}
 								className={cn(

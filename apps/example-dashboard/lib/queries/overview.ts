@@ -55,27 +55,35 @@ export async function getProjects() {
 }
 
 export async function getOverviewExtended(from: Date, to: Date, projectId: string | null) {
-	const [stats] =
-		await sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE bot_detected = true OR meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
-	const s = stats || {
-		total_events: 0,
-		pageviews: 0,
-		unique_visitors: 0,
-		sessions: 0,
-		countries: 0,
-		errors: 0,
-		bot_hits: 0,
-		avg_time_on_page: 0,
-	};
+	const duration = to.getTime() - from.getTime();
+	const prevFrom = new Date(from.getTime() - duration);
+
+	const [curRows, prevRows] = await Promise.all([
+		sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE bot_detected = true OR meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
+		sql`SELECT COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${prevFrom} AND ts < ${from} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
+	]);
+
+	const s = curRows[0] || { total_events: 0, pageviews: 0, unique_visitors: 0, sessions: 0, countries: 0, errors: 0, bot_hits: 0, avg_time_on_page: 0 };
+	const p = prevRows[0] || { pageviews: 0, unique_visitors: 0, sessions: 0 };
+
+	const curPageviews = Number(s.pageviews || 0);
+	const curVisitors = Number(s.unique_visitors || 0);
+	const curSessions = Number(s.sessions || 0);
+
 	return {
 		totalEvents: Number(s.total_events || 0),
-		pageviews: Number(s.pageviews || 0),
-		uniqueVisitors: Number(s.unique_visitors || 0),
-		sessions: Number(s.sessions || 0),
+		pageviews: curPageviews,
+		uniqueVisitors: curVisitors,
+		sessions: curSessions,
 		countries: Number(s.countries || 0),
 		errors: Number(s.errors || 0),
 		botHits: Number(s.bot_hits || 0),
 		avgTimeOnPage: Math.round(Number(s.avg_time_on_page || 0)),
+		trends: {
+			pageviews: calculateTrend(curPageviews, Number(p.pageviews || 0)),
+			uniqueVisitors: calculateTrend(curVisitors, Number(p.unique_visitors || 0)),
+			sessions: calculateTrend(curSessions, Number(p.sessions || 0)),
+		},
 	};
 }
 

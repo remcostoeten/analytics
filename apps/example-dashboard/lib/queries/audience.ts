@@ -67,3 +67,15 @@ export async function getConnectionTypes(from: Date, to: Date, projectId: string
 		await sql`SELECT COALESCE(meta->>'connectionType', 'Unknown') as connection_type, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY connection_type ORDER BY count DESC`;
 	return results.map((r) => ({ type: r.connection_type, count: Number(r.count) }));
 }
+
+export async function getBotBreakdown(from: Date, to: Date, projectId: string | null) {
+	const [summary, topPagesRows] = await Promise.all([
+		sql`SELECT COUNT(*) as total_bots, COUNT(DISTINCT visitor_id) as unique_bots FROM events WHERE ${publicTraffic()} AND (bot_detected = true OR meta->>'botDetected' = 'true') AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
+		sql`SELECT COALESCE(path, '/') as path, COUNT(*) as hits FROM events WHERE ${publicTraffic()} AND (bot_detected = true OR meta->>'botDetected' = 'true') AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY hits DESC LIMIT 8`,
+	]);
+	return {
+		total: Number(summary[0]?.total_bots || 0),
+		uniqueVisitors: Number(summary[0]?.unique_bots || 0),
+		topPages: topPagesRows.map((r) => ({ path: r.path as string, hits: Number(r.hits) })),
+	};
+}

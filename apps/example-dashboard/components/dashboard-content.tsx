@@ -21,6 +21,8 @@ import { EntryExitPages } from "@/components/entry-exit-pages";
 import { LiveNowWidget } from "@/components/live-now-widget";
 import { RetentionHeatmap } from "@/components/retention-heatmap";
 import { SessionPaths } from "@/components/session-paths";
+import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
+import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -127,6 +129,9 @@ export function DashboardContent({
 	const activeView = (searchParams.get("view") as DashboardView) || "overview";
 	const selectedProject = searchParams.get("projectId");
 	const timeRange = searchParams.get("timeRange") || "30d";
+	const fromParam = searchParams.get("from");
+	const toParam = searchParams.get("to");
+	const isCustomRange = !!(fromParam && toParam);
 	const typeFilter = ((searchParams.get("status") as SignalEvent["type"] | null) || "all") as
 		| SignalEvent["type"]
 		| "all";
@@ -182,7 +187,12 @@ export function DashboardContent({
 	const buildQuery = (metric: string, extraParams: string = "") => {
 		const params = new URLSearchParams();
 		params.set("metric", metric);
-		params.set("timeRange", timeRange);
+		if (isCustomRange) {
+			params.set("from", fromParam!);
+			params.set("to", toParam!);
+		} else {
+			params.set("timeRange", timeRange);
+		}
 		if (selectedProject) params.set("projectId", selectedProject);
 		return `/api/analytics?${params.toString()}${extraParams ? "&" + extraParams : ""}`;
 	};
@@ -319,21 +329,41 @@ export function DashboardContent({
 		refreshInterval: 5000,
 	});
 
-	const { data: retention } = useSWR(canFetch ? buildQuery("retention") : null, fetcher, {
+	const { data: retention, isLoading: retentionLoading } = useSWR(
+		canFetch ? buildQuery("retention") : null,
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+		},
+	);
+
+	const { data: paths, isLoading: pathsLoading } = useSWR(
+		canFetch ? buildQuery("paths") : null,
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 30000,
+			revalidateOnFocus: false,
+		},
+	);
+
+	const { data: utmCampaigns } = useSWR(canFetch ? buildQuery("utm-campaigns") : null, fetcher, {
+		fallbackData: [],
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+	});
+
+	const { data: botBreakdown } = useSWR(canFetch ? buildQuery("bot-breakdown") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 		revalidateOnFocus: false,
 	});
 
-	const { data: paths } = useSWR(canFetch ? buildQuery("paths") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 30000,
-		revalidateOnFocus: false,
-	});
-
 	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR<CountryDetail>(
 		selectedCountry && canFetch
-			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}&timeRange=${timeRange}${selectedProject ? `&projectId=${selectedProject}` : ""}`
+			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}`
 			: null,
 		fetcher,
 	);
@@ -344,36 +374,42 @@ export function DashboardContent({
 	const kpiArray = useMemo((): KPIMetric[] => {
 		if (!overview) return Object.values(initialData.kpis);
 
+		const bounceRate = sessionStats?.bounceRate ?? 0;
+		const pagesPerSession = sessionStats?.avgPageviews ?? 0;
+
 		return [
 			{
 				id: "pageviews",
 				label: "Pageviews",
 				value: overview.pageviews || 0,
 				formattedValue: formatNumber(overview.pageviews || 0),
+				trend: overview.trends?.pageviews,
 			},
 			{
 				id: "unique-visitors",
 				label: "Visitors",
 				value: overview.uniqueVisitors || 0,
 				formattedValue: formatNumber(overview.uniqueVisitors || 0),
+				trend: overview.trends?.uniqueVisitors,
 			},
 			{
 				id: "sessions",
 				label: "Sessions",
 				value: overview.sessions || 0,
 				formattedValue: formatNumber(overview.sessions || 0),
+				trend: overview.trends?.sessions,
 			},
 			{
 				id: "bounce-rate",
 				label: "Bounce Rate",
-				value: overview.bounceRate || 0,
-				formattedValue: `${overview.bounceRate || 0}%`,
+				value: bounceRate,
+				formattedValue: `${bounceRate}%`,
 			},
 			{
 				id: "pages-per-session",
 				label: "Pages/Session",
-				value: overview.pagesPerSession || 0,
-				formattedValue: String(overview.pagesPerSession || 0),
+				value: pagesPerSession,
+				formattedValue: String(pagesPerSession),
 			},
 			{
 				id: "avg-time",
@@ -388,7 +424,7 @@ export function DashboardContent({
 				formattedValue: String(overview.countries || 0),
 			},
 		];
-	}, [overview, initialData.kpis]);
+	}, [overview, sessionStats, initialData.kpis]);
 
 	const trendData = useMemo(() => {
 		if (!trend || !Array.isArray(trend) || trend.length === 0) {
@@ -545,6 +581,7 @@ export function DashboardContent({
 										isLoading={referrersLoading}
 									/>
 								</div>
+								<UTMCampaignsTable data={utmCampaigns} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<SessionStatsCard data={sessionStats} />
 									<DonutChart
@@ -597,13 +634,13 @@ export function DashboardContent({
 					{activeView === "retention" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
-								<RetentionHeatmap data={retention} />
-								<TrendChart data={trendData} title="Visitor Trend" height={140} isLoading={trendLoading} />
+								<RetentionHeatmap data={retention} isLoading={retentionLoading} />
 								<HourlyHeatmap data={heatmap} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
+								<TrendChart data={trendData} title="Visitor Trend" height={120} isLoading={trendLoading} />
 							</div>
 						</div>
 					)}
@@ -611,18 +648,17 @@ export function DashboardContent({
 					{activeView === "behavior" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
-								<TrendChart data={trendData} title="Pageviews over time" height={140} isLoading={trendLoading} />
-								<SessionPaths data={paths} />
+								<SessionPaths data={paths} isLoading={pathsLoading} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
 									<EntryExitPages data={entryExitPages} />
+									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
 								</div>
 								<HourlyHeatmap data={heatmap} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
+								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
 								<WebVitalsCard data={webVitals} />
-								<SessionStatsCard data={sessionStats} />
 							</div>
 						</div>
 					)}
@@ -650,6 +686,10 @@ export function DashboardContent({
 										value: d.count,
 										percentage: d.percentage,
 									}))}
+								/>
+								<BotTrafficCard
+									data={botBreakdown}
+									totalEvents={overview?.totalEvents}
 								/>
 								<SignalStream
 									signals={recentSignals}

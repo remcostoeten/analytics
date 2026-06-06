@@ -399,9 +399,9 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 					</div>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					{data.slice(0, 6).map((d) => (
+					{data.slice(0, 6).map((d, i) => (
 						<button
-							key={d.countryCode || d.country}
+							key={`${d.countryCode || d.country}-${i}`}
 							onClick={() => onCountryClick?.(d)}
 							className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
 						>
