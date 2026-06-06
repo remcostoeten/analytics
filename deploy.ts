@@ -249,6 +249,63 @@ async function publishIngestion() {
     }
 }
 
+async function publishCreateAnalytics() {
+    header("Publishing create-analytics to npm")
+
+    const packagePath = "packages/create-analytics/package.json"
+    const currentVersion = getVersion(packagePath)
+
+    log(`Current version: ${currentVersion}`, "cyan")
+
+    const answer = await prompt(
+        `Increment version? (y/n) [auto: ${incrementVersion(currentVersion)}]: `
+    )
+
+    if (answer.toLowerCase() === "y") {
+        const newVersion = incrementVersion(currentVersion)
+        log(`Updating version to ${newVersion}...`, "blue")
+        updateVersion(packagePath, newVersion)
+
+        log("Committing version bump...", "blue")
+        await execCommand(`git add packages/create-analytics/package.json`)
+        await execCommand(
+            `git commit -m "chore(create-analytics): bump version to ${newVersion}"`
+        )
+        log("✓ Version updated and committed", "green")
+    }
+
+    log("Building create-analytics...", "blue")
+    const buildResult = await execCommand("bun run build", "packages/create-analytics")
+    if (buildResult.code !== 0) {
+        log("✗ Build failed", "red")
+        process.exit(1)
+    }
+    log("✓ Build successful", "green")
+
+    const dryRunAnswer = await prompt("Run dry-run first? (y/n): ")
+    if (dryRunAnswer.toLowerCase() === "y") {
+        log("Running npm publish --dry-run...", "blue")
+        await execCommand("npm publish --dry-run", "packages/create-analytics")
+    }
+
+    const publishAnswer = await prompt("Publish to npm now? (y/n): ")
+    if (publishAnswer.toLowerCase() === "y") {
+        log("Publishing to npm...", "blue")
+        const result = await execCommand(
+            "npm publish --access public",
+            "packages/create-analytics"
+        )
+        if (result.code === 0) {
+            log("✓ create-analytics published successfully!", "green")
+            log("View at: https://www.npmjs.com/package/create-analytics", "cyan")
+            log("Users can now run: npx create-analytics@latest", "cyan")
+        } else {
+            log("✗ Publish failed", "red")
+            process.exit(1)
+        }
+    }
+}
+
 async function runTests() {
     header("Running Tests")
     log("Running: bun test", "blue")
@@ -306,7 +363,8 @@ async function fullRelease() {
     log("  4. Deploy dashboard to Vercel", "yellow")
     log("  5. Publish SDK to npm", "yellow")
     log("  6. Publish Ingestion to npm", "yellow")
-    log("  7. Create and push git tag", "yellow")
+    log("  7. Publish create-analytics to npm", "yellow")
+    log("  8. Create and push git tag", "yellow")
 
     const answer = await prompt("\nContinue? (y/n): ")
     if (answer.toLowerCase() !== "y") {
@@ -320,6 +378,7 @@ async function fullRelease() {
     await deployDashboard()
     await publishSDK()
     await publishIngestion()
+    await publishCreateAnalytics()
     await createGitTag()
 
     header("Release Complete!")
@@ -337,10 +396,11 @@ async function showMenu() {
     log("5. Deploy Dashboard to Vercel", "cyan")
     log("6. Publish SDK to npm", "cyan")
     log("7. Publish Ingestion to npm", "cyan")
-    log("8. Run tests", "cyan")
-    log("9. Type check", "cyan")
-    log("10. Create git tag", "cyan")
-    log("11. Full release (all steps)", "cyan")
+    log("8. Publish create-analytics to npm", "cyan")
+    log("9. Run tests", "cyan")
+    log("10. Type check", "cyan")
+    log("11. Create git tag", "cyan")
+    log("12. Full release (all steps)", "cyan")
     log("0. Exit", "cyan")
 
     const choice = await prompt("\nSelect an option: ")
@@ -369,15 +429,18 @@ async function showMenu() {
             await publishIngestion()
             break
         case "8":
-            await runTests()
+            await publishCreateAnalytics()
             break
         case "9":
-            await typecheck()
+            await runTests()
             break
         case "10":
-            await createGitTag()
+            await typecheck()
             break
         case "11":
+            await createGitTag()
+            break
+        case "12":
             await fullRelease()
             break
         case "0":

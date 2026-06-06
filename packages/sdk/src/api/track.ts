@@ -2,12 +2,13 @@ import { getVisitorId } from "../identity/visitor";
 import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
 import { canTrack } from "./consent";
-import { isRuntime, debugLog, collectEnrichment, noop } from "../utilities";
+import { isRuntime, debugLog, collectEnrichment } from "../utilities";
 import {
 	normalizeIngestUrl,
 	resolveBrowserIngestUrl,
 	validateIngestUrl,
 } from "../utilities/ingest-url";
+import { enqueueOffline, initOfflineFlush } from "../utilities/offline-queue";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
 const recentEvents = new Set<string>();
@@ -64,14 +65,16 @@ function sendWithBeacon(url: string, payload: EventPayload): boolean {
 	}
 }
 
-function sendWithFetch(url: string, payload: EventPayload): void {
+function sendWithFetch(baseUrl: string, url: string, payload: EventPayload): void {
 	if (typeof fetch === "undefined") return;
 	fetch(url, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(payload),
 		keepalive: true,
-	}).catch(noop);
+	}).catch(() => {
+		enqueueOffline(baseUrl, payload);
+	});
 }
 
 export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptions = {}): void {
@@ -112,9 +115,16 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 
 	const endpoint = `${baseUrl}/e`;
 	extendSession();
+	initOfflineFlush();
+
+	if (typeof navigator !== "undefined" && !navigator.onLine) {
+		enqueueOffline(baseUrl, payload);
+		debugLog(options.debug, "Offline — event queued", payload);
+		return;
+	}
 
 	if (!sendWithBeacon(endpoint, payload)) {
-		sendWithFetch(endpoint, payload);
+		sendWithFetch(baseUrl, endpoint, payload);
 	}
 
 	debugLog(options.debug, "Event tracked", payload);

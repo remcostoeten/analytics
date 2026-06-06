@@ -1,18 +1,16 @@
-# Quick Start - Deploy v0.0.1
+# Quick Start — Publishing & Deployment
 
 ## Prerequisites
 
-Before running the deployment tool, make sure you have:
-
 ```bash
-# 1. Vercel CLI installed and authenticated
+# Vercel CLI installed and authenticated
 npm i -g vercel
 vercel login
 
-# 2. npm authenticated for publishing
+# npm authenticated for publishing
 npm login
 
-# 3. Verify authentication
+# Verify
 vercel whoami
 npm whoami
 ```
@@ -20,150 +18,93 @@ npm whoami
 ## Launch the Deployment Tool
 
 ```bash
-bun run deploy
+bun run deploy.ts
 ```
 
-## Recommended First Run
-
-For the **0.0.1 release**, follow this sequence:
-
-### Option 1: Test Everything First (Recommended)
-
-```bash
-# Start the deployment tool
-bun run deploy
-
-# Then select options in this order:
-7 → Run tests (verify 168/168 pass)
-8 → Type check (verify 0 errors)  
-1 → Build all (verify builds succeed)
-
-# If all pass, you're ready to deploy!
-```
-
-### Option 2: Full Release (One Command)
-
-```bash
-# Start the deployment tool
-bun run deploy
-
-# Select option 10: Full release
-# This will:
-# - Run tests
-# - Type check
-# - Build all
-# - Deploy dashboard
-# - Publish SDK
-# - Create git tag
-```
-
-## What Each Menu Option Does
+## Menu Options
 
 | # | Option | What It Does |
 |---|--------|--------------|
 | **1** | Build all | Compiles SDK, Dashboard, and Ingestion |
-| **2-4** | Build individual | Build only SDK, Dashboard, or Ingestion |
+| **2** | Build SDK only | `packages/sdk` |
+| **3** | Build Dashboard only | `apps/example-dashboard` |
+| **4** | Build Ingestion only | `packages/ingestion` + `apps/ingestion` |
 | **5** | Deploy Dashboard | Push to Vercel (asks preview vs production) |
-| **6** | Publish SDK | Bump version, update CHANGELOG, publish to npm |
-| **7** | Run tests | Execute 168 tests |
-| **8** | Type check | Validate TypeScript across project |
-| **9** | Git tag | Create version tag (e.g., v0.0.1) |
-| **10** | **Full release** | Do everything in order (recommended) |
+| **6** | Publish SDK | Bump version, update CHANGELOG, publish `@remcostoeten/analytics` |
+| **7** | Publish Ingestion | Bump version, publish `@remcostoeten/ingestion` |
+| **8** | Publish create-analytics | Bump version, publish `create-analytics` CLI |
+| **9** | Run tests | `bun test` across all packages |
+| **10** | Type check | `tsc --noEmit` across all packages |
+| **11** | Create git tag | Tag from SDK version, optionally push |
+| **12** | **Full release** | All steps in order (recommended) |
+| **0** | Exit | — |
 
-## Example Session
+## Recommended Release Sequence
+
+### Verify first, then release
 
 ```bash
-$ bun run deploy
+bun run deploy.ts
 
-╔════════════════════════════════════════════════════════════╗
-║  Remco Analytics Deployment Tool                          ║
-╚════════════════════════════════════════════════════════════╝
+# In order:
+9  → Run tests       (all pass)
+10 → Type check      (0 errors)
+1  → Build all       (all succeed)
 
-1. Build all packages
-2. Build SDK only
-3. Build Dashboard only
-4. Build Ingestion only
-5. Deploy Dashboard to Vercel
-6. Publish SDK to npm
-7. Run tests
-8. Type check
-9. Create git tag
-10. Full release (all steps)
-0. Exit
-
-Select an option: 10
-
-╔════════════════════════════════════════════════════════════╗
-║  Full Release Process                                     ║
-╚════════════════════════════════════════════════════════════╝
-
-This will:
-  1. Run tests
-  2. Type check
-  3. Build all packages
-  4. Deploy dashboard to Vercel
-  5. Publish SDK to npm
-  6. Create and push git tag
-
-Continue? (y/n): y
-
-[... process runs automatically ...]
-
-✓ All tests passed!
-✓ Type check passed!
-✓ All packages built successfully!
-✓ Dashboard deployed successfully!
-✓ SDK published successfully!
-✓ Tag pushed successfully!
-
-╔════════════════════════════════════════════════════════════╗
-║  Release Complete!                                         ║
-╚════════════════════════════════════════════════════════════╝
-
-Press Enter to continue...
+# Then publish:
+12 → Full release
 ```
+
+### Full release covers
+
+1. Run tests
+2. Type check
+3. Build all packages
+4. Deploy dashboard to Vercel
+5. Publish `@remcostoeten/analytics` (SDK)
+6. Publish `@remcostoeten/ingestion`
+7. Publish `create-analytics` CLI
+8. Create and push git tag
+
+Each publish step asks: bump version? → dry-run? → publish?
+
+## Published Packages
+
+| Package | npm | Install |
+|---------|-----|---------|
+| `@remcostoeten/analytics` | SDK (browser) | `npm install @remcostoeten/analytics` |
+| `@remcostoeten/ingestion` | Ingestion server | `npm install @remcostoeten/ingestion` |
+| `create-analytics` | Scaffolder CLI | `npx create-analytics` |
 
 ## After Publishing
 
-Once published, verify:
-
-1. **npm**: Visit https://www.npmjs.com/package/@remcostoeten/analytics
-2. **Vercel**: Check your dashboard deployment URL
-3. **GitHub**: Verify the tag appears in releases
+1. **npm SDK**: https://www.npmjs.com/package/@remcostoeten/analytics
+2. **npm Ingestion**: https://www.npmjs.com/package/@remcostoeten/ingestion
+3. **npm CLI**: https://www.npmjs.com/package/create-analytics
+4. **Vercel**: check dashboard deployment URL
+5. **GitHub**: verify tag appears in releases
 
 ## Troubleshooting
 
 ### "vercel: command not found"
 ```bash
-npm i -g vercel
-vercel login
+npm i -g vercel && vercel login
 ```
 
 ### "You must be logged in to publish packages"
 ```bash
 npm login
-# Follow the prompts
 ```
 
-### "Build failed"
+### Build failed
 ```bash
-# Run tests first to identify issues
 bun test
 bun run typecheck
 ```
 
-### "Permission denied"
-```bash
-chmod +x deploy.ts
-```
-
 ## Tips
 
-- **Always test first** (option 7) before doing full release
-- **Use dry-run** when publishing SDK (script will ask)
-- **Preview deploy first** before production (script will ask)
-- **Check git status** before starting to ensure clean working directory
-
----
-
-**Ready to deploy?** Run `bun run deploy` and let's ship v0.0.1!
+- Always run tests (option 9) and type check (option 10) before a full release
+- Use dry-run when publishing (each publish step will ask)
+- Preview deploy before production (deploy step will ask)
+- Ensure a clean `git status` before starting

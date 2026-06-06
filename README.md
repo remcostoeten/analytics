@@ -163,6 +163,10 @@ Drop `<Analytics />` in your root layout. It renders nothing and starts four obs
 | `ingestUrl` | env var | Override ingestion base URL |
 | `disabled` | `false` | When true, no observers start |
 | `debug` | `false` | Log tracking decisions to console |
+| `trackClicks` | `false` | Opt-in: track `data-analytics` attribute clicks |
+| `trackOutbound` | `false` | Opt-in: track clicks to external domains (`outbound_click`) |
+| `trackForms` | `false` | Opt-in: track form submissions (`form_submit`) |
+| `trackErrors` | `false` | Opt-in: track uncaught errors and unhandled rejections (`error`) |
 
 ### What gets tracked automatically
 
@@ -174,6 +178,23 @@ Drop `<Analytics />` in your root layout. It renders nothing and starts four obs
 | Time on page | `event` | `time-on-page` | beforeunload or cleanup (`timeOnPageMs`) |
 
 SPA navigation is handled by patching `history.pushState` / `replaceState` and listening to `popstate`.
+
+### Opt-in observers
+
+| Prop | Event `type` | `meta.eventName` | What it captures |
+| --- | --- | --- | --- |
+| `trackOutbound` | `event` | `outbound_click` | Clicks on `<a>` pointing to a different origin |
+| `trackForms` | `event` | `form_submit` | Any form submission (id, name, action, method) |
+| `trackErrors` | `error` | — | `window.onerror` + `unhandledrejection` (message, source, stack) |
+
+### Offline resilience
+
+When `navigator.onLine` is false or a fetch fails, events are queued in `localStorage` (up to 50). The queue is flushed automatically on the `online` event via `POST /e/batch`. You can also flush manually:
+
+```tsx
+import { flushOfflineQueue } from "@remcostoeten/analytics";
+flushOfflineQueue();
+```
 
 ---
 
@@ -283,6 +304,10 @@ import {
   observePerformance,
   observeScroll,
   observeTimeOnPage,
+  observeClicks,
+  observeOutboundLinks,
+  observeForms,
+  observeErrors,
 } from "@remcostoeten/analytics";
 
 const cleanup = observePageViews({ projectId: "my-app", ingestUrl: "..." });
@@ -290,6 +315,17 @@ cleanup();
 ```
 
 Each returns an unsubscribe function. Mix and match — pageviews only, skip web vitals, etc.
+
+| Observer | Tracks |
+| --- | --- |
+| `observePageViews` | Initial load + SPA navigation |
+| `observePerformance` | Web Vitals (TTFB, FCP, LCP, CLS, INP) |
+| `observeScroll` | Scroll depth (0–100) |
+| `observeTimeOnPage` | Time on page in ms |
+| `observeClicks` | Elements with `data-analytics` attribute |
+| `observeOutboundLinks` | Clicks on `<a>` to external origins |
+| `observeForms` | Form submissions |
+| `observeErrors` | Uncaught errors + unhandled rejections |
 
 ---
 
@@ -343,7 +379,9 @@ When the SDK POSTs to `/e` (or `/ingest`), ingestion:
 | --- | --- | --- |
 | GET | `/health` | Health check |
 | POST | `/e` | Ingest event (SDK default) |
+| POST | `/e/batch` | Batch ingest up to 100 events (offline queue flush) |
 | POST | `/ingest` | Ingest event (alias) |
+| POST | `/ingest/batch` | Batch ingest (alias) |
 | GET | `/metrics` | Request metrics |
 | GET | `/admin/stats` | Admin statistics |
 | POST | `/admin/cleanup` | Data retention cleanup |
@@ -376,7 +414,8 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | Path | Purpose |
 | --- | --- |
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
-| `packages/ingestion` | `@remcostoeten/ingestion` npm package (publishable) |
+| `packages/ingestion` | `@remcostoeten/ingestion` npm package |
+| `packages/create-analytics` | `create-analytics` scaffolder CLI (`npx create-analytics`) |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
 | `apps/example` | Minimal Next.js consumer app (all three tracking patterns) |
 | `apps/example-dashboard` | Next.js analytics UI |

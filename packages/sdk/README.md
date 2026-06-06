@@ -207,6 +207,10 @@ Automatic tracking via four observers: pageviews, web vitals, scroll depth, time
 | `ingestUrl` | env var | Ingestion base URL |
 | `disabled` | `false` | Disable all observers |
 | `debug` | `false` | Console logging |
+| `trackClicks` | `false` | Opt-in: `data-analytics` attribute clicks |
+| `trackOutbound` | `false` | Opt-in: clicks to external domains (`outbound_click`) |
+| `trackForms` | `false` | Opt-in: form submissions (`form_submit`) |
+| `trackErrors` | `false` | Opt-in: uncaught errors + unhandled rejections |
 | `consentRequired` | `false` | Gate tracking until `consentGranted` is true |
 | `consentGranted` | `false` | User consent state when `consentRequired` is true |
 
@@ -315,10 +319,33 @@ import {
   observePerformance,
   observeScroll,
   observeTimeOnPage,
+  observeOutboundLinks,
+  observeForms,
+  observeErrors,
 } from "@remcostoeten/analytics";
 
 const cleanup = observePageViews({ projectId: "my-app" });
 cleanup();
+```
+
+| Observer | Fires |
+| --- | --- |
+| `observePageViews` | `pageview` on load + SPA navigation |
+| `observePerformance` | `event` / `web-vitals` on page hide |
+| `observeScroll` | `event` / `scroll` on page hide |
+| `observeTimeOnPage` | `event` / `time-on-page` on page hide |
+| `observeClicks` | `click` on elements with `data-analytics` |
+| `observeOutboundLinks` | `event` / `outbound_click` on external links |
+| `observeForms` | `event` / `form_submit` on form submissions |
+| `observeErrors` | `error` on uncaught errors + unhandled rejections |
+
+## Offline resilience
+
+Events are queued in `localStorage` (up to 50) when `navigator.onLine` is false or a fetch fails. The queue flushes automatically on the `online` event via `POST /e/batch`. Manual flush:
+
+```tsx
+import { flushOfflineQueue } from "@remcostoeten/analytics";
+flushOfflineQueue();
 ```
 
 ---
@@ -392,6 +419,8 @@ import type {
 | `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack` | Server (`/server` entry) |
 | `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment` | Functions |
 | `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions |
+| `observeOutboundLinks`, `observeForms`, `observeErrors` | Functions |
+| `flushOfflineQueue` | Function |
 | `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |
 | `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack` | Functions |
 | `PRIVACY_DISCLOSURE`, `getStoredKeys` | Privacy helpers |

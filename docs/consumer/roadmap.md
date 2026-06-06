@@ -158,8 +158,8 @@ Separate export path — zero browser bundle impact.
 
 | # | Feature | Why | Done when |
 | --- | --- | --- | --- |
-| 6.1 | Offline queue | Flaky networks lose events silently | Events flush after reconnect |
-| 6.2 | Batch ingest API | One event per request is wasteful at scale | `POST /ingest/batch` accepts array |
+| 6.1 | Offline queue | Flaky networks lose events silently | **Done** — queued in localStorage, flushed on `online` event |
+| 6.2 | Batch ingest API | One event per request is wasteful at scale | **Done** — `POST /e/batch` + `/ingest/batch` accept up to 100 events |
 
 ---
 
@@ -167,9 +167,9 @@ Separate export path — zero browser bundle impact.
 
 | # | Feature | Default | Event |
 | --- | --- | --- | --- |
-| 7.1 | Outbound link tracking | `trackOutbound={false}` | `outbound_click` |
-| 7.2 | Form submission tracking | `trackForms={false}` | `form_submit` |
-| 7.3 | Global error observer | `trackErrors={false}` | uncaught errors |
+| 7.1 | Outbound link tracking | `trackOutbound={false}` | **Done** — `outbound_click` |
+| 7.2 | Form submission tracking | `trackForms={false}` | **Done** — `form_submit` |
+| 7.3 | Global error observer | `trackErrors={false}` | **Done** — uncaught errors + unhandled rejections |
 
 All opt-in. No surprise tracking.
 
@@ -192,8 +192,8 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 | 3 — Deploy (tiered) | Very high | Medium | **Done** |
 | 4 — Privacy | High (EU) | Medium | **Done** |
 | 5 — Server | Medium | Medium | **Done** |
-| 6 — Reliability | Medium | Medium | Pending |
-| 7 — Auto observers | Medium | Low | Pending |
+| 6 — Reliability | Medium | Medium | **Done** |
+| 7 — Auto observers | Medium | Low | **Done** |
 | 8 — Dashboard | Low | High | Pending |
 
 ---
@@ -223,4 +223,4 @@ Consider `create-analytics --dashboard` flag instead of a full npm package.
 
 ## Start here
 
-**Sprint 6** is next: offline queue + batch ingest API.
+**Sprint 8** is the only remaining sprint (dashboard scaffolding — low priority).

@@ -62,6 +62,14 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 	return false;
 }
 
+export type SharedIngestContext = {
+	ipHash: string | null;
+	geo: { country: string | null; region: string | null; city: string | null };
+	localhost: boolean;
+	preview: boolean;
+	internal: boolean;
+};
+
 type VisitorData = {
 	ipHash: string | null;
 	deviceType: string;
@@ -128,6 +136,98 @@ async function upsertVisitor(
 	}
 }
 
+export async function processSingleEvent(
+	payload: import("../utilities/validation.js").EventPayload,
+	ctx: SharedIngestContext,
+	botIsBot: boolean,
+	botReason: string | null,
+	botConfidence: "high" | "medium" | "low",
+): Promise<{ ok: boolean; deduped?: boolean }> {
+	const fingerprint = await generateFingerprint({
+		projectId: payload.projectId,
+		visitorId: payload.visitorId,
+		sessionId: payload.sessionId,
+		type: payload.type || "pageview",
+		path: payload.path,
+		timestamp: Date.now(),
+	});
+
+	if (dedupeCache.isDuplicate(fingerprint)) {
+		metrics.recordDuplicate();
+		return { ok: true, deduped: true };
+	}
+
+	dedupeCache.add(fingerprint, getDedupeWindow(payload.type || "pageview"));
+
+	const uaParser = new UAParser(payload.ua || "");
+	const browser = uaParser.getBrowser();
+	const os = uaParser.getOS();
+
+	const deviceType = classifyDevice(payload.ua, botIsBot);
+	const internal = isInternalTraffic(ctx.ipHash, ctx.localhost);
+
+	const screenResolution =
+		payload.meta && typeof payload.meta === "object"
+			? (((payload.meta as Record<string, unknown>).screenSize as string) ?? null)
+			: null;
+
+	const { db, events, visitors } = await getDb();
+
+	await db.insert(events).values({
+		projectId: payload.projectId,
+		type: payload.type || "pageview",
+		path: payload.path,
+		referrer: payload.referrer,
+		origin: payload.origin,
+		host: payload.host,
+		ua: payload.ua,
+		lang: payload.lang,
+		visitorId: payload.visitorId,
+		sessionId: payload.sessionId,
+
+		ipHash: ctx.ipHash,
+		country: ctx.geo.country,
+		region: ctx.geo.region,
+		city: ctx.geo.city,
+		isLocalhost: ctx.localhost,
+		isPreview: ctx.preview,
+		botDetected: botIsBot,
+		isInternal: internal,
+		deviceType,
+
+		meta: {
+			...payload.meta,
+			botReason,
+			botConfidence,
+			fingerprint,
+			browser: browser.name,
+			browserVersion: browser.version,
+			os: os.name,
+			osVersion: os.version,
+		},
+	});
+
+	if (payload.visitorId) {
+		await upsertVisitor(db, visitors, payload.visitorId, {
+			ipHash: ctx.ipHash,
+			deviceType,
+			browser: browser.name,
+			browserVersion: browser.version,
+			os: os.name,
+			osVersion: os.version,
+			language: payload.lang,
+			country: ctx.geo.country,
+			region: ctx.geo.region,
+			city: ctx.geo.city,
+			ua: payload.ua,
+			screenResolution,
+			isInternal: internal,
+		});
+	}
+
+	return { ok: true };
+}
+
 export async function handleIngest(c: Context) {
 	try {
 		metrics.recordRequest();
@@ -169,98 +269,25 @@ export async function handleIngest(c: Context) {
 		if (!limiter.isAllowed(ipHash ?? "")) {
 			const resetTime = limiter.getResetTime(ipHash ?? "");
 			const remaining = limiter.getRemainingRequests(ipHash ?? "");
-
 			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
 		const geo = extractGeoFromRequest(req);
-		const deviceType = classifyDevice(payload.ua, botResult.isBot);
 		const localhost = isLocalhost(payload.host);
 		const preview =
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
-		const fingerprint = await generateFingerprint({
-			projectId: payload.projectId,
-			visitorId: payload.visitorId,
-			sessionId: payload.sessionId,
-			type: payload.type || "pageview",
-			path: payload.path,
-			timestamp: Date.now(),
-		});
+		const ctx: SharedIngestContext = { ipHash, geo, localhost, preview, internal: isInternalTraffic(ipHash, localhost) };
 
-		if (dedupeCache.isDuplicate(fingerprint)) {
-			metrics.recordDuplicate();
-			return c.json({ ok: true, deduped: true });
-		}
+		const eventResult = await processSingleEvent(
+			payload,
+			ctx,
+			botResult.isBot,
+			botResult.reason,
+			botResult.confidence,
+		);
 
-		dedupeCache.add(fingerprint, getDedupeWindow(payload.type || "pageview"));
-
-		const uaParser = new UAParser(payload.ua || "");
-		const browser = uaParser.getBrowser();
-		const os = uaParser.getOS();
-
-		const internal = isInternalTraffic(ipHash, localhost);
-
-		const screenResolution =
-			payload.meta && typeof payload.meta === "object"
-				? (((payload.meta as Record<string, unknown>).screenSize as string) ?? null)
-				: null;
-
-		const { db, events, visitors } = await getDb();
-
-		await db.insert(events).values({
-			projectId: payload.projectId,
-			type: payload.type || "pageview",
-			path: payload.path,
-			referrer: payload.referrer,
-			origin: payload.origin,
-			host: payload.host,
-			ua: payload.ua,
-			lang: payload.lang,
-			visitorId: payload.visitorId,
-			sessionId: payload.sessionId,
-
-			ipHash,
-			country: geo.country,
-			region: geo.region,
-			city: geo.city,
-			isLocalhost: localhost,
-			isPreview: preview,
-			botDetected: botResult.isBot,
-			isInternal: internal,
-			deviceType,
-
-			meta: {
-				...payload.meta,
-				botReason: botResult.reason,
-				botConfidence: botResult.confidence,
-				fingerprint,
-				browser: browser.name,
-				browserVersion: browser.version,
-				os: os.name,
-				osVersion: os.version,
-			},
-		});
-
-		if (payload.visitorId) {
-			await upsertVisitor(db, visitors, payload.visitorId, {
-				ipHash,
-				deviceType,
-				browser: browser.name,
-				browserVersion: browser.version,
-				os: os.name,
-				osVersion: os.version,
-				language: payload.lang,
-				country: geo.country,
-				region: geo.region,
-				city: geo.city,
-				ua: payload.ua,
-				screenResolution,
-				isInternal: internal,
-			});
-		}
-
-		return c.json({ ok: true });
+		return c.json(eventResult);
 	} catch (error) {
 		console.error("Ingest error:", error);
 		return c.json({ ok: false, error: "Internal server error" }, 500);

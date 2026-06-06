@@ -4,6 +4,9 @@ import { observePerformance } from "../observers/performance";
 import { observeScroll } from "../observers/scroll";
 import { observeTimeOnPage } from "../observers/heartbeat";
 import { observeClicks } from "../observers/click";
+import { observeOutboundLinks } from "../observers/outbound";
+import { observeForms } from "../observers/forms";
+import { observeErrors } from "../observers/errors";
 import { setConsentGranted, setConsentRequired } from "../api/consent";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
@@ -16,6 +19,9 @@ export function Analytics({
 	disabled = false,
 	debug = false,
 	trackClicks = false,
+	trackOutbound = false,
+	trackForms = false,
+	trackErrors = false,
 	consentRequired = false,
 	consentGranted = false,
 }: AnalyticsProps) {
@@ -45,9 +51,10 @@ export function Analytics({
 			observeTimeOnPage(resolved),
 		];
 
-		if (trackClicks) {
-			cleanups.push(observeClicks(resolved));
-		}
+		if (trackClicks) cleanups.push(observeClicks(resolved));
+		if (trackOutbound) cleanups.push(observeOutboundLinks(resolved));
+		if (trackForms) cleanups.push(observeForms(resolved));
+		if (trackErrors) cleanups.push(observeErrors(resolved));
 
 		return () => cleanups.forEach((c) => c());
 	}, [
@@ -56,6 +63,9 @@ export function Analytics({
 		resolved.debug,
 		disabled,
 		trackClicks,
+		trackOutbound,
+		trackForms,
+		trackErrors,
 		consentRequired,
 		consentGranted,
 	]);

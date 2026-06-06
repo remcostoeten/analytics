@@ -79,7 +79,12 @@ cd packages/ingestion && bun run db:migrate
 | --- | --- | --- |
 | GET | `/health` | Health check |
 | POST | `/e` | Ingest event (SDK default) |
+| POST | `/e/batch` | Batch ingest up to 100 events (offline queue flush) |
 | POST | `/ingest` | Ingest event (alias) |
+| POST | `/ingest/batch` | Batch ingest (alias) |
+| GET | `/metrics` | Request metrics |
+| GET | `/admin/stats` | Admin statistics |
+| POST | `/admin/cleanup` | Data retention cleanup |
 
 Point the SDK at your deployment base URL:
 

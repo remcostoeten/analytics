@@ -33,4 +33,8 @@ export { observePerformance } from "./observers/performance";
 export { observeScroll } from "./observers/scroll";
 export { observeTimeOnPage } from "./observers/heartbeat";
 export { observeClicks } from "./observers/click";
+export { observeOutboundLinks } from "./observers/outbound";
+export { observeForms } from "./observers/forms";
+export { observeErrors } from "./observers/errors";
+export { flushOfflineQueue } from "./utilities/offline-queue";
 export * from "./types";

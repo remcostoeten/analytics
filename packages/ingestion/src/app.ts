@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { handleIngest } from "./handlers/ingest.js";
+import { handleBatch } from "./handlers/batch.js";
 import { handleMetrics } from "./handlers/metrics.js";
 import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
 import { execSync } from "child_process";
@@ -223,6 +224,14 @@ a:hover {
 
 	<div class="row">
 		<div class="left">
+			<div class="method post">POST</div>
+			<div class="path">/e/batch</div>
+		</div>
+		<div class="desc">Batch ingest (offline queue flush)</div>
+	</div>
+
+	<div class="row">
+		<div class="left">
 			<div class="method get">GET</div>
 			<div class="path">/metrics</div>
 		</div>
@@ -310,7 +319,9 @@ app.get("/health", (c) => {
 app.get("/metrics", handleMetrics);
 
 app.post("/e", handleIngest);
+app.post("/e/batch", handleBatch);
 app.post("/ingest", handleIngest);
+app.post("/ingest/batch", handleBatch);
 
 app.get("/admin/stats", handleAdminStats);
 app.post("/admin/cleanup", handleAdminCleanup);
