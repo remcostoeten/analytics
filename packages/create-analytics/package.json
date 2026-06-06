@@ -1,18 +1,21 @@
 {
-	"name": "create-analytics",
-	"version": "0.1.0",
+	"name": "@remcostoeten/create-analytics",
+	"version": "0.1.2",
 	"description": "Scaffold Remco Analytics SDK and ingestion wiring",
 	"license": "MIT",
 	"author": "Remco Stoeten",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/remcostoeten/analytics",
+		"url": "git+https://github.com/remcostoeten/analytics.git",
 		"directory": "packages/create-analytics"
 	},
 	"type": "module",
-	"files": ["dist", "README.md"],
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"bin": {
-		"create-analytics": "./dist/cli.js"
+		"create-analytics": "dist/cli.cjs"
 	},
 	"publishConfig": {
 		"access": "public"
