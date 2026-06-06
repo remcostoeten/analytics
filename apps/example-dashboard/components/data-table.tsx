@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 import type { ContentMetric, ReferrerMetric, GeoDistribution } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DataTableProps<T extends object> {
 	data: T[];
@@ -17,6 +18,7 @@ interface DataTableProps<T extends object> {
 	maxRows?: number;
 	className?: string;
 	onRowClick?: (row: T) => void;
+	isLoading?: boolean;
 }
 
 export function DataTable<T extends object>({
@@ -26,6 +28,7 @@ export function DataTable<T extends object>({
 	maxRows = 8,
 	className,
 	onRowClick,
+	isLoading = false,
 }: DataTableProps<T>) {
 	const displayData = data.slice(0, maxRows);
 	const hasData = data && data.length > 0;
@@ -38,10 +41,21 @@ export function DataTable<T extends object>({
 				</div>
 			)}
 			{!hasData ? (
+				isLoading ? (
+					<div className="divide-y divide-border">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} className="px-3 py-2 flex items-center justify-between gap-4">
+								<Skeleton className="h-3 w-40" />
+								<Skeleton className="h-3 w-12" />
+							</div>
+						))}
+					</div>
+				) : (
 				<div className="p-6 text-center">
 					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
 					<p className="text-[11px] text-muted-foreground">No data available</p>
 				</div>
+				)
 			) : (
 				<div className="overflow-x-auto">
 					<table className="w-full text-[11px]">
@@ -108,14 +122,16 @@ export function DataTable<T extends object>({
 interface TopPagesTableProps {
 	data: ContentMetric[];
 	className?: string;
+	isLoading?: boolean;
 }
 
-export function TopPagesTable({ data, className }: TopPagesTableProps) {
+export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps) {
 	return (
 		<DataTable
 			data={data}
 			title="Top Pages"
 			className={className}
+			isLoading={isLoading}
 			columns={[
 				{
 					key: "host",
@@ -163,14 +179,16 @@ interface ReferrersTableProps {
 	data: ReferrerMetric[];
 	className?: string;
 	onDomainClick?: (domain: string) => void;
+	isLoading?: boolean;
 }
 
-export function ReferrersTable({ data, className, onDomainClick }: ReferrersTableProps) {
+export function ReferrersTable({ data, className, onDomainClick, isLoading }: ReferrersTableProps) {
 	return (
 		<DataTable
 			data={data}
 			title="Top Referrers"
 			className={className}
+			isLoading={isLoading}
 			onRowClick={
 				onDomainClick ? (row) => onDomainClick((row as ReferrerMetric).domain) : undefined
 			}

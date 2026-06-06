@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Clock, Layers, ArrowLeftRight, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SessionStatsData = {
 	avgPageviews: number;
@@ -29,8 +30,18 @@ function formatDuration(seconds: number): string {
 export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm p-3", className)}>
-				<p className="text-[11px] text-muted-foreground text-center">Loading session stats...</p>
+			<div className={cn("bg-card border border-border rounded-sm", className)}>
+				<div className="px-3 py-2 border-b border-border">
+					<Skeleton className="h-3 w-28" />
+				</div>
+				<div className="grid grid-cols-2 gap-px bg-border">
+					{[0, 1, 2, 3].map((i) => (
+						<div key={i} className="bg-card p-3 space-y-2">
+							<Skeleton className="h-2.5 w-20" />
+							<Skeleton className="h-6 w-14" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}

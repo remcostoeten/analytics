@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Inbox, TrendingUp, Clock, MousePointerClick } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EngagementData {
 	scrollDepth: Array<{ bucket: string; count: number; percentage: number }>;
@@ -34,9 +35,22 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">Engagement</h3>
 				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No engagement data available</p>
+				<div className="p-3 space-y-3">
+					{[0, 1, 2].map((i) => (
+						<div key={i} className="space-y-1.5">
+							<Skeleton className="h-2.5 w-24" />
+							<Skeleton className="h-2 w-full rounded-full" />
+						</div>
+					))}
+					<div className="pt-1 space-y-1.5">
+						<Skeleton className="h-2.5 w-28 mb-2" />
+						{[0, 1, 2].map((i) => (
+							<div key={i} className="flex justify-between">
+								<Skeleton className="h-3 w-32" />
+								<Skeleton className="h-3 w-12" />
+							</div>
+						))}
+					</div>
 				</div>
 			</div>
 		);

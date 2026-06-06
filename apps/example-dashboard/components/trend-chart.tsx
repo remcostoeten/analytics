@@ -13,6 +13,7 @@ import {
 import { Inbox } from "lucide-react";
 import type { TimeSeries } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TrendChartProps = {
 	data: TimeSeries;
@@ -21,6 +22,7 @@ type TrendChartProps = {
 	height?: number;
 	showAxis?: boolean;
 	className?: string;
+	isLoading?: boolean;
 };
 
 export function TrendChart({
@@ -30,6 +32,7 @@ export function TrendChart({
 	height = 120,
 	showAxis = true,
 	className,
+	isLoading = false,
 }: TrendChartProps) {
 	const hasData = data && data.data && data.data.length > 0;
 	const chartData = hasData
@@ -53,10 +56,16 @@ export function TrendChart({
 				</div>
 			)}
 			{!hasData ? (
-				<div className="p-8 text-center" style={{ height }}>
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No data available</p>
-				</div>
+				isLoading ? (
+					<div className="p-3" style={{ height }}>
+						<Skeleton className="h-full w-full" />
+					</div>
+				) : (
+					<div className="p-8 text-center" style={{ height }}>
+						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+						<p className="text-[11px] text-muted-foreground">No data available</p>
+					</div>
+				)
 			) : isSparse && singlePoint ? (
 				<div className="px-5 py-4" style={{ height }}>
 					<div className="flex h-full flex-col justify-between rounded-sm border border-border/60 bg-muted/20 px-4 py-3">

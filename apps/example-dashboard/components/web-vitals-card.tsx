@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface VitalMetric {
 	avg: number;
@@ -122,7 +123,26 @@ function VitalItem({
 }
 
 export function WebVitalsCard({ data, className }: WebVitalsCardProps) {
-	if (!data || data.sampleCount === 0) {
+	if (!data) {
+		return (
+			<div className={cn("bg-card border border-border rounded-sm", className)}>
+				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
+					<h3 className="text-xs font-medium text-foreground">Core Web Vitals</h3>
+				</div>
+				<div className="p-3 space-y-2">
+					{[0, 1, 2, 3, 4].map((i) => (
+						<div key={i} className="flex items-center justify-between px-1">
+							<Skeleton className="h-3 w-10" />
+							<Skeleton className="h-3 w-16" />
+							<Skeleton className="h-5 w-14 rounded-full" />
+						</div>
+					))}
+				</div>
+			</div>
+		);
+	}
+
+	if (data.sampleCount === 0) {
 		return (
 			<div className={cn("bg-card border border-border rounded-sm", className)}>
 				<div className="px-3 py-2 border-b border-border flex items-center justify-between">

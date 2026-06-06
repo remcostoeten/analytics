@@ -121,7 +121,6 @@ export function DashboardContent({
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-	const [countryDetail, setCountryDetail] = useState<CountryDetail | null>(null);
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -197,7 +196,7 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: overview, error: overviewError } = useSWR(
+	const { data: overview, error: overviewError, isLoading: overviewLoading } = useSWR(
 		canFetch ? buildQuery("overview-extended") : null,
 		fetcher,
 		{
@@ -206,12 +205,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: pages } = useSWR(canFetch ? buildQuery("pages") : null, fetcher, {
+	const { data: pages, isLoading: pagesLoading } = useSWR(canFetch ? buildQuery("pages") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
 	});
 
-	const { data: referrers } = useSWR(canFetch ? buildQuery("referrers") : null, fetcher, {
+	const { data: referrers, isLoading: referrersLoading } = useSWR(canFetch ? buildQuery("referrers") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
 	});
@@ -219,19 +218,22 @@ export function DashboardContent({
 	const { data: geo } = useSWR(canFetch ? buildQuery("geo") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: geoDetail } = useSWR(canFetch ? buildQuery("geo-detail") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: devices } = useSWR(canFetch ? buildQuery("devices") : null, fetcher, {
 		fallbackData: [],
 		refreshInterval: 30000,
+		revalidateOnFocus: false,
 	});
 
-	const { data: trend } = useSWR(canFetch ? buildQuery("trend") : null, fetcher, {
+	const { data: trend, isLoading: trendLoading } = useSWR(canFetch ? buildQuery("trend") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 	});
@@ -244,16 +246,13 @@ export function DashboardContent({
 	const { data: webVitals } = useSWR(canFetch ? buildQuery("web-vitals") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: sessionStats } = useSWR(canFetch ? buildQuery("session-stats") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
-	});
-
-	useSWR(canFetch ? buildQuery("utm-campaigns") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: engagement } = useSWR(canFetch ? buildQuery("engagement") : null, fetcher, {
@@ -264,26 +263,31 @@ export function DashboardContent({
 	const { data: heatmap } = useSWR(canFetch ? buildQuery("hourly-heatmap") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: browsers } = useSWR(canFetch ? buildQuery("browsers-detailed") : null, fetcher, {
 		fallbackData: initialData.audience.browsers,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: operatingSystems } = useSWR(canFetch ? buildQuery("os-detailed") : null, fetcher, {
 		fallbackData: initialData.audience.os,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: languages } = useSWR(canFetch ? buildQuery("languages") : null, fetcher, {
 		fallbackData: initialData.audience.languages,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: screenSizes } = useSWR(canFetch ? buildQuery("screen-sizes") : null, fetcher, {
 		fallbackData: initialData.audience.screenResolutions,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: connectionTypes } = useSWR(
@@ -292,6 +296,7 @@ export function DashboardContent({
 		{
 			fallbackData: [],
 			refreshInterval: 60000,
+			revalidateOnFocus: false,
 		},
 	);
 
@@ -317,25 +322,21 @@ export function DashboardContent({
 	const { data: retention } = useSWR(canFetch ? buildQuery("retention") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
+		revalidateOnFocus: false,
 	});
 
 	const { data: paths } = useSWR(canFetch ? buildQuery("paths") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
+		revalidateOnFocus: false,
 	});
 
-	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR(
+	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR<CountryDetail>(
 		selectedCountry && canFetch
 			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}&timeRange=${timeRange}${selectedProject ? `&projectId=${selectedProject}` : ""}`
 			: null,
 		fetcher,
 	);
-
-	useEffect(() => {
-		if (countryDetailData) {
-			setCountryDetail(countryDetailData);
-		}
-	}, [countryDetailData]);
 
 	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
@@ -482,7 +483,7 @@ export function DashboardContent({
 				<div className="p-3 space-y-3">
 					<div className="flex items-center justify-between">
 						<div>
-							<nav className="flex items-center gap-1 text-[11px] text-muted-foreground">
+							<nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[11px] text-muted-foreground">
 								{breadcrumbs.map((item, i) => (
 									<span key={i} className="flex items-center gap-1">
 										{i > 0 && <ChevronRight className="h-3 w-3" />}
@@ -504,10 +505,12 @@ export function DashboardContent({
 					{!databaseReady && <DemoDataNotice />}
 
 					<div className="overflow-x-auto -mx-3 px-3">
-						<div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full">
+						<div role="tablist" aria-label="Dashboard views" className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full">
 							{viewTabs.map((tab) => (
 								<button
 									key={tab.id}
+									role="tab"
+									aria-selected={activeView === tab.id}
 									onClick={() => setActiveView(tab.id)}
 									className={cn(
 										"flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap",
@@ -523,22 +526,23 @@ export function DashboardContent({
 						</div>
 					</div>
 
-					<KPICardsGrid kpis={kpiArray} />
+					<KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />
 
 					{activeView === "overview" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
-								<TrendChart data={trendData} title="Pageviews over time" height={140} />
+								<TrendChart data={trendData} title="Pageviews over time" height={140} isLoading={trendLoading} />
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} />
+									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
 									<ReferrersTable
 										data={referrers || initialData.content.topReferrers}
 										onDomainClick={(domain) => setSelectedReferrer(domain)}
+										isLoading={referrersLoading}
 									/>
 								</div>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -574,7 +578,7 @@ export function DashboardContent({
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} />
+									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
 									<EntryExitPages data={entryExitPages} />
 								</div>
 							</div>
@@ -594,7 +598,7 @@ export function DashboardContent({
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
 								<RetentionHeatmap data={retention} />
-								<TrendChart data={trendData} title="Visitor Trend" height={140} />
+								<TrendChart data={trendData} title="Visitor Trend" height={140} isLoading={trendLoading} />
 								<HourlyHeatmap data={heatmap} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
@@ -607,10 +611,10 @@ export function DashboardContent({
 					{activeView === "behavior" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
-								<TrendChart data={trendData} title="Pageviews over time" height={140} />
+								<TrendChart data={trendData} title="Pageviews over time" height={140} isLoading={trendLoading} />
 								<SessionPaths data={paths} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} />
+									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
 									<EntryExitPages data={entryExitPages} />
 								</div>
 								<HourlyHeatmap data={heatmap} />
@@ -699,10 +703,13 @@ export function DashboardContent({
 					onClick={() => setSelectedCountry(null)}
 				>
 					<div
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="country-modal-title"
 						className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-xl w-[480px] max-h-[80vh] overflow-hidden z-50 flex flex-col"
 						onClick={(e) => e.stopPropagation()}
 					>
-						{countryDetailLoading || !countryDetail ? (
+						{countryDetailLoading || !countryDetailData ? (
 							<div className="flex items-center justify-center p-12">
 								<div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
 							</div>
@@ -714,7 +721,7 @@ export function DashboardContent({
 											<span className="text-3xl">{getFlagEmoji(selectedCountry.countryCode)}</span>
 										)}
 										<div>
-											<h3 className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
+											<h3 id="country-modal-title" className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
 											<p className="text-sm text-muted-foreground">Country details</p>
 										</div>
 									</div>
@@ -724,35 +731,35 @@ export function DashboardContent({
 									<div className="grid grid-cols-4 gap-3">
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
-												{countryDetail.totalEvents.toLocaleString()}
+												{countryDetailData.totalEvents.toLocaleString()}
 											</p>
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Events</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
-												{countryDetail.uniqueVisitors.toLocaleString()}
+												{countryDetailData.uniqueVisitors.toLocaleString()}
 											</p>
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Visitors</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
-												{countryDetail.sessions.toLocaleString()}
+												{countryDetailData.sessions.toLocaleString()}
 											</p>
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sessions</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
-												{countryDetail.topCities.length}
+												{countryDetailData.topCities.length}
 											</p>
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Cities</p>
 										</div>
 									</div>
 
-									{countryDetail.topCities.length > 0 && (
+									{countryDetailData.topCities.length > 0 && (
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Cities</h4>
 											<div className="flex flex-wrap gap-1.5">
-												{countryDetail.topCities.map((c) => (
+												{countryDetailData.topCities.map((c) => (
 													<span
 														key={c.city}
 														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
@@ -765,11 +772,11 @@ export function DashboardContent({
 										</div>
 									)}
 
-									{countryDetail.topRegions.length > 0 && (
+									{countryDetailData.topRegions.length > 0 && (
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Regions</h4>
 											<div className="flex flex-wrap gap-1.5">
-												{countryDetail.topRegions.map((r) => (
+												{countryDetailData.topRegions.map((r) => (
 													<span
 														key={r.region}
 														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
@@ -782,11 +789,11 @@ export function DashboardContent({
 										</div>
 									)}
 
-									{countryDetail.topPages.length > 0 && (
+									{countryDetailData.topPages.length > 0 && (
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Pages</h4>
 											<div className="space-y-1">
-												{countryDetail.topPages.slice(0, 5).map((p) => (
+												{countryDetailData.topPages.slice(0, 5).map((p) => (
 													<div
 														key={p.path}
 														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
@@ -801,11 +808,11 @@ export function DashboardContent({
 										</div>
 									)}
 
-									{countryDetail.topReferrers.length > 0 && (
+									{countryDetailData.topReferrers.length > 0 && (
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Sources</h4>
 											<div className="space-y-1">
-												{countryDetail.topReferrers.slice(0, 4).map((r) => (
+												{countryDetailData.topReferrers.slice(0, 4).map((r) => (
 													<div
 														key={r.referrer}
 														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
@@ -824,6 +831,7 @@ export function DashboardContent({
 								<div className="px-5 py-3 border-t border-border shrink-0">
 									<button
 										onClick={() => setSelectedCountry(null)}
+										aria-label="Close country details"
 										className="w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
 									>
 										Close
@@ -874,16 +882,16 @@ function DatabaseNotice({ issue }: { issue?: "missing_database_url" | "query_fai
 
 function DemoDataNotice() {
 	const [dismissed, setDismissed] = useState(false);
-	const isPersonalDashboard = typeof window !== "undefined" && 
-		window.location.hostname === process.env.NEXT_PUBLIC_PERSONAL_DASHBOARD_HOSTNAME;
+	const [isPersonal, setIsPersonal] = useState(false);
 
 	useEffect(() => {
-		if (sessionStorage.getItem("demo-notice-dismissed") === "true") {
-			setDismissed(true);
+		if (sessionStorage.getItem("demo-notice-dismissed") === "true") setDismissed(true);
+		if (window.location.hostname === process.env.NEXT_PUBLIC_PERSONAL_DASHBOARD_HOSTNAME) {
+			setIsPersonal(true);
 		}
 	}, []);
 
-	if (dismissed || isPersonalDashboard) return null;
+	if (dismissed || isPersonal) return null;
 
 	return (
 		<button

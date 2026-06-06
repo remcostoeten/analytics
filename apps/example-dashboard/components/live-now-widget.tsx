@@ -2,6 +2,7 @@
 
 import { Activity, Users, Globe, Zap, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LiveData {
 	activeVisitors: number;
@@ -26,10 +27,32 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 	if (!data) {
 		return (
 			<div className="bg-card border border-border rounded-sm">
-				<div className="p-6">
-					<div className="flex items-center justify-center h-20 text-muted-foreground text-sm">
-						<Activity className="h-5 w-5 animate-pulse mr-2" />
-						Connecting to live stream...
+				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
+					<Skeleton className="h-3 w-16" />
+					<Skeleton className="h-3 w-20" />
+				</div>
+				<div className="p-3 space-y-4">
+					<div className="grid grid-cols-3 gap-3">
+						{[0, 1, 2].map((i) => (
+							<div key={i} className="p-2 bg-muted/30 rounded space-y-1.5">
+								<Skeleton className="h-6 w-10 mx-auto" />
+								<Skeleton className="h-2 w-12 mx-auto" />
+							</div>
+						))}
+					</div>
+					<div className="space-y-1.5">
+						<Skeleton className="h-2 w-20 mb-2" />
+						{[0, 1, 2, 3, 4].map((i) => (
+							<Skeleton key={i} className="h-3 w-full" />
+						))}
+					</div>
+					<div className="space-y-1.5">
+						<Skeleton className="h-2 w-20 mb-2" />
+						<div className="flex flex-wrap gap-1">
+							{[0, 1, 2, 3].map((i) => (
+								<Skeleton key={i} className="h-5 w-16 rounded" />
+							))}
+						</div>
 					</div>
 				</div>
 			</div>

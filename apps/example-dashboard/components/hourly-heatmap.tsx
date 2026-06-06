@@ -37,9 +37,11 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 		);
 	}
 
+	const maxCount = data.maxCount;
+
 	function getIntensity(count: number): number {
 		if (count === 0) return 0;
-		return Math.max(0.22, count / data.maxCount);
+		return Math.max(0.22, count / maxCount);
 	}
 
 	function getCellColor(count: number): string {

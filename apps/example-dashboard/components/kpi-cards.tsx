@@ -3,13 +3,24 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { KPIMetric } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface KPICardProps {
 	metric: KPIMetric;
 	compact?: boolean;
+	isLoading?: boolean;
 }
 
-function KPICard({ metric, compact = false }: KPICardProps) {
+function KPICard({ metric, compact = false, isLoading = false }: KPICardProps) {
+	if (isLoading) {
+		return (
+			<div className={cn("bg-card border border-border px-3 py-2.5", compact ? "rounded" : "rounded-sm")}>
+				<Skeleton className="h-3 w-20 mb-2" />
+				<Skeleton className="h-6 w-16" />
+			</div>
+		);
+	}
+
 	const { label, formattedValue, trend, sparkline } = metric;
 
 	return (
@@ -106,13 +117,14 @@ function Sparkline({ data, className }: SparklineProps) {
 interface KPICardsGridProps {
 	kpis: KPIMetric[];
 	className?: string;
+	isLoading?: boolean;
 }
 
-export function KPICardsGrid({ kpis, className }: KPICardsGridProps) {
+export function KPICardsGrid({ kpis, className, isLoading }: KPICardsGridProps) {
 	return (
 		<div className={cn("grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2", className)}>
 			{kpis.map((metric) => (
-				<KPICard key={metric.id} metric={metric} />
+				<KPICard key={metric.id} metric={metric} isLoading={isLoading} />
 			))}
 		</div>
 	);
