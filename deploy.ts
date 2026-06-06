@@ -190,6 +190,65 @@ async function publishSDK() {
     }
 }
 
+async function publishIngestion() {
+    header("Publishing Ingestion to npm")
+
+    const packagePath = "packages/ingestion/package.json"
+    const currentVersion = getVersion(packagePath)
+
+    log(`Current version: ${currentVersion}`, "cyan")
+
+    const answer = await prompt(
+        `Increment version? (y/n) [auto: ${incrementVersion(currentVersion)}]: `
+    )
+
+    if (answer.toLowerCase() === "y") {
+        const newVersion = incrementVersion(currentVersion)
+        log(`Updating version to ${newVersion}...`, "blue")
+        updateVersion(packagePath, newVersion)
+
+        log("Committing version bump...", "blue")
+        await execCommand(`git add packages/ingestion/package.json`)
+        await execCommand(
+            `git commit -m "chore(ingestion): bump version to ${newVersion}"`
+        )
+        log("✓ Version updated and committed", "green")
+    }
+
+    log("Building ingestion package...", "blue")
+    const buildResult = await execCommand("bun run build", "packages/ingestion")
+    if (buildResult.code !== 0) {
+        log("✗ Build failed", "red")
+        process.exit(1)
+    }
+    log("✓ Build successful", "green")
+
+    const dryRunAnswer = await prompt("Run dry-run first? (y/n): ")
+    if (dryRunAnswer.toLowerCase() === "y") {
+        log("Running npm publish --dry-run...", "blue")
+        await execCommand("npm publish --dry-run", "packages/ingestion")
+    }
+
+    const publishAnswer = await prompt("Publish to npm now? (y/n): ")
+    if (publishAnswer.toLowerCase() === "y") {
+        log("Publishing to npm...", "blue")
+        const result = await execCommand(
+            "npm publish --access public",
+            "packages/ingestion"
+        )
+        if (result.code === 0) {
+            log("✓ Ingestion published successfully!", "green")
+            log(
+                "View at: https://www.npmjs.com/package/@remcostoeten/ingestion",
+                "cyan"
+            )
+        } else {
+            log("✗ Publish failed", "red")
+            process.exit(1)
+        }
+    }
+}
+
 async function runTests() {
     header("Running Tests")
     log("Running: bun test", "blue")
@@ -246,7 +305,8 @@ async function fullRelease() {
     log("  3. Build all packages", "yellow")
     log("  4. Deploy dashboard to Vercel", "yellow")
     log("  5. Publish SDK to npm", "yellow")
-    log("  6. Create and push git tag", "yellow")
+    log("  6. Publish Ingestion to npm", "yellow")
+    log("  7. Create and push git tag", "yellow")
 
     const answer = await prompt("\nContinue? (y/n): ")
     if (answer.toLowerCase() !== "y") {
@@ -259,6 +319,7 @@ async function fullRelease() {
     await buildAll()
     await deployDashboard()
     await publishSDK()
+    await publishIngestion()
     await createGitTag()
 
     header("Release Complete!")
@@ -275,10 +336,11 @@ async function showMenu() {
     log("4. Build Ingestion only", "cyan")
     log("5. Deploy Dashboard to Vercel", "cyan")
     log("6. Publish SDK to npm", "cyan")
-    log("7. Run tests", "cyan")
-    log("8. Type check", "cyan")
-    log("9. Create git tag", "cyan")
-    log("10. Full release (all steps)", "cyan")
+    log("7. Publish Ingestion to npm", "cyan")
+    log("8. Run tests", "cyan")
+    log("9. Type check", "cyan")
+    log("10. Create git tag", "cyan")
+    log("11. Full release (all steps)", "cyan")
     log("0. Exit", "cyan")
 
     const choice = await prompt("\nSelect an option: ")
@@ -304,15 +366,18 @@ async function showMenu() {
             await publishSDK()
             break
         case "7":
-            await runTests()
+            await publishIngestion()
             break
         case "8":
-            await typecheck()
+            await runTests()
             break
         case "9":
-            await createGitTag()
+            await typecheck()
             break
         case "10":
+            await createGitTag()
+            break
+        case "11":
             await fullRelease()
             break
         case "0":
