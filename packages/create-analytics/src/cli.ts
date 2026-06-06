@@ -13,10 +13,10 @@ type CliArgs = {
 
 function printUsage(): void {
 	console.log(`
-create-analytics — scaffold Remco Analytics
+@remcostoeten/create-analytics — scaffold Remco Analytics
 
 Usage:
-  npx create-analytics [project-name] [options]
+  npx @remcostoeten/create-analytics [project-name] [options]
 
 Options:
   --tier <separate|colocated|sdk-only>  Integration tier (default: separate)

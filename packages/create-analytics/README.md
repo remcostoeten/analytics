@@ -1,14 +1,14 @@
-# create-analytics
+# @remcostoeten/create-analytics
 
 Scaffold [Remco Analytics](https://github.com/remcostoeten/analytics) wiring for Next.js.
 
 ## Usage
 
 ```bash
-npx create-analytics my-app
-npx create-analytics my-app --tier separate --yes
-npx create-analytics my-app --tier colocated
-npx create-analytics my-app --tier sdk-only
+npx @remcostoeten/create-analytics my-app
+npx @remcostoeten/create-analytics my-app --tier separate --yes
+npx @remcostoeten/create-analytics my-app --tier colocated
+npx @remcostoeten/create-analytics my-app --tier sdk-only
 ```
 
 ## Tiers

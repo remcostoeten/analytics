@@ -44,7 +44,7 @@ Consumer app stays lean. Ingestion weight lives in a second project — same as 
 | --- | --- | --- | --- |
 | 3.1 | Publish `@remcostoeten/ingestion` | Replace monorepo clone for analytics-api project | **Done** — package extracted, apps/ingestion is thin deploy |
 | 3.2 | Package size discipline | Avoid shipping dev UI, optional peer deps | **Done** — peer deps + `/vercel` subpath |
-| 3.3 | `create-analytics` CLI | Manual wiring still error-prone | **Done** — Tier 1 default |
+| 3.3 | `@remcostoeten/create-analytics` CLI | Manual wiring still error-prone | **Done** — Tier 1 default |
 | 3.4 | README + docs update | Default path must be Tier 1 | **Done** |
 
 ### 3.1 `@remcostoeten/ingestion` package
@@ -78,10 +78,10 @@ npx @remcostoeten/ingestion migrate
 
 Document expected serverless bundle size (~500KB–2MB) for Tier 2 co-located installs.
 
-### 3.3 `create-analytics` CLI
+### 3.3 `@remcostoeten/create-analytics` CLI
 
 ```bash
-npx create-analytics
+npx @remcostoeten/create-analytics
 ```
 
 Prompts:

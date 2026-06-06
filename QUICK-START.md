@@ -32,7 +32,7 @@ bun run deploy.ts
 | **5** | Deploy Dashboard | Push to Vercel (asks preview vs production) |
 | **6** | Publish SDK | Bump version, update CHANGELOG, publish `@remcostoeten/analytics` |
 | **7** | Publish Ingestion | Bump version, publish `@remcostoeten/ingestion` |
-| **8** | Publish create-analytics | Bump version, publish `create-analytics` CLI |
+| **8** | Publish create-analytics | Bump version, publish `@remcostoeten/create-analytics` CLI |
 | **9** | Run tests | `bun test` across all packages |
 | **10** | Type check | `tsc --noEmit` across all packages |
 | **11** | Create git tag | Tag from SDK version, optionally push |
@@ -63,7 +63,7 @@ bun run deploy.ts
 4. Deploy dashboard to Vercel
 5. Publish `@remcostoeten/analytics` (SDK)
 6. Publish `@remcostoeten/ingestion`
-7. Publish `create-analytics` CLI
+7. Publish `@remcostoeten/create-analytics` CLI
 8. Create and push git tag
 
 Each publish step asks: bump version? → dry-run? → publish?
@@ -74,13 +74,13 @@ Each publish step asks: bump version? → dry-run? → publish?
 |---------|-----|---------|
 | `@remcostoeten/analytics` | SDK (browser) | `npm install @remcostoeten/analytics` |
 | `@remcostoeten/ingestion` | Ingestion server | `npm install @remcostoeten/ingestion` |
-| `create-analytics` | Scaffolder CLI | `npx create-analytics` |
+| `@remcostoeten/create-analytics` | Scaffolder CLI | `npx @remcostoeten/create-analytics` |
 
 ## After Publishing
 
 1. **npm SDK**: https://www.npmjs.com/package/@remcostoeten/analytics
 2. **npm Ingestion**: https://www.npmjs.com/package/@remcostoeten/ingestion
-3. **npm CLI**: https://www.npmjs.com/package/create-analytics
+3. **npm CLI**: https://www.npmjs.com/package/@remcostoeten/create-analytics
 4. **Vercel**: check dashboard deployment URL
 5. **GitHub**: verify tag appears in releases
 

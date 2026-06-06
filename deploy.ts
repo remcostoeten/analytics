@@ -250,7 +250,7 @@ async function publishIngestion() {
 }
 
 async function publishCreateAnalytics() {
-    header("Publishing create-analytics to npm")
+    header("Publishing @remcostoeten/create-analytics to npm")
 
     const packagePath = "packages/create-analytics/package.json"
     const currentVersion = getVersion(packagePath)
@@ -296,9 +296,12 @@ async function publishCreateAnalytics() {
             "packages/create-analytics"
         )
         if (result.code === 0) {
-            log("✓ create-analytics published successfully!", "green")
-            log("View at: https://www.npmjs.com/package/create-analytics", "cyan")
-            log("Users can now run: npx create-analytics@latest", "cyan")
+            log("✓ @remcostoeten/create-analytics published successfully!", "green")
+            log(
+                "View at: https://www.npmjs.com/package/@remcostoeten/create-analytics",
+                "cyan"
+            )
+            log("Users can now run: npx @remcostoeten/create-analytics@latest", "cyan")
         } else {
             log("✗ Publish failed", "red")
             process.exit(1)
@@ -363,7 +366,7 @@ async function fullRelease() {
     log("  4. Deploy dashboard to Vercel", "yellow")
     log("  5. Publish SDK to npm", "yellow")
     log("  6. Publish Ingestion to npm", "yellow")
-    log("  7. Publish create-analytics to npm", "yellow")
+    log("  7. Publish @remcostoeten/create-analytics to npm", "yellow")
     log("  8. Create and push git tag", "yellow")
 
     const answer = await prompt("\nContinue? (y/n): ")
@@ -396,7 +399,7 @@ async function showMenu() {
     log("5. Deploy Dashboard to Vercel", "cyan")
     log("6. Publish SDK to npm", "cyan")
     log("7. Publish Ingestion to npm", "cyan")
-    log("8. Publish create-analytics to npm", "cyan")
+    log("8. Publish @remcostoeten/create-analytics to npm", "cyan")
     log("9. Run tests", "cyan")
     log("10. Type check", "cyan")
     log("11. Create git tag", "cyan")
