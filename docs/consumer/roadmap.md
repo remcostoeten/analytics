@@ -81,7 +81,7 @@ Document expected serverless bundle size (~500KB–2MB) for Tier 2 co-located in
 ### 3.3 `@remcostoeten/create-analytics` CLI
 
 ```bash
-npx @remcostoeten/create-analytics
+npx @remcostoeten/create-analytics@latest
 ```
 
 Prompts:

@@ -5,10 +5,10 @@ Scaffold [Remco Analytics](https://github.com/remcostoeten/analytics) wiring for
 ## Usage
 
 ```bash
-npx @remcostoeten/create-analytics my-app
-npx @remcostoeten/create-analytics my-app --tier separate --yes
-npx @remcostoeten/create-analytics my-app --tier colocated
-npx @remcostoeten/create-analytics my-app --tier sdk-only
+npx @remcostoeten/create-analytics@latest my-app
+npx @remcostoeten/create-analytics@latest my-app --tier separate --yes
+npx @remcostoeten/create-analytics@latest my-app --tier colocated
+npx @remcostoeten/create-analytics@latest my-app --tier sdk-only
 ```
 
 ## Tiers

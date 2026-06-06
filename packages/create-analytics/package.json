@@ -1,6 +1,6 @@
 {
 	"name": "@remcostoeten/create-analytics",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"description": "Scaffold Remco Analytics SDK and ingestion wiring",
 	"license": "MIT",
 	"author": "Remco Stoeten",

@@ -16,7 +16,7 @@ function printUsage(): void {
 @remcostoeten/create-analytics — scaffold Remco Analytics
 
 Usage:
-  npx @remcostoeten/create-analytics [project-name] [options]
+  npx @remcostoeten/create-analytics@latest [project-name] [options]
 
 Options:
   --tier <separate|colocated|sdk-only>  Integration tier (default: separate)

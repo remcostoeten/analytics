@@ -74,7 +74,7 @@ Each publish step asks: bump version? → dry-run? → publish?
 |---------|-----|---------|
 | `@remcostoeten/analytics` | SDK (browser) | `npm install @remcostoeten/analytics` |
 | `@remcostoeten/ingestion` | Ingestion server | `npm install @remcostoeten/ingestion` |
-| `@remcostoeten/create-analytics` | Scaffolder CLI | `npx @remcostoeten/create-analytics` |
+| `@remcostoeten/create-analytics` | Scaffolder CLI | `npx @remcostoeten/create-analytics@latest` |
 
 ## After Publishing
 
@@ -108,3 +108,4 @@ bun run typecheck
 - Use dry-run when publishing (each publish step will ask)
 - Preview deploy before production (deploy step will ask)
 - Ensure a clean `git status` before starting
+- In this monorepo, run `bun install` so the CLI bin is linked locally, or use `@latest` to test the published package

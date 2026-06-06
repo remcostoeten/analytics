@@ -21,7 +21,7 @@ First-party analytics you self-host. Cookie-free, privacy-first, built for Next.
 ### Option A — Scaffold (recommended)
 
 ```bash
-npx @remcostoeten/create-analytics my-app --tier separate --yes
+npx @remcostoeten/create-analytics@latest my-app --tier separate --yes
 ```
 
 Creates `apps/web` (SDK only) + `apps/analytics-api` (ingestion). See generated `README.md`.
@@ -415,7 +415,7 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | --- | --- |
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
 | `packages/ingestion` | `@remcostoeten/ingestion` npm package |
-| `packages/create-analytics` | `@remcostoeten/create-analytics` scaffolder CLI (`npx @remcostoeten/create-analytics`) |
+| `packages/create-analytics` | `@remcostoeten/create-analytics` scaffolder CLI (`npx @remcostoeten/create-analytics@latest`) |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
 | `apps/example` | Minimal Next.js consumer app (all three tracking patterns) |
 | `apps/example-dashboard` | Next.js analytics UI |
