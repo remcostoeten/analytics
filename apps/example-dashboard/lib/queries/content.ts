@@ -7,10 +7,12 @@ export async function getTopPages(
 	limit: number = 10,
 	from?: Date,
 	to?: Date,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
 ): Promise<ContentMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT host, path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic()} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY host, path ORDER BY views DESC LIMIT ${limit}`;
+		await sql`SELECT host, path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY host, path ORDER BY views DESC LIMIT ${limit}`;
 	return results.map((r) => ({
 		host: r.host as string,
 		path: r.path as string,
@@ -24,19 +26,17 @@ export async function getTopReferrers(
 	limit: number = 10,
 	from?: Date,
 	to?: Date,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
 ): Promise<ReferrerMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT referrer, COUNT(*) as visits FROM events WHERE ${publicTraffic()} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY visits DESC LIMIT ${limit}`;
+		await sql`WITH ref AS (SELECT regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1') as domain FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT domain, COUNT(*) as visits FROM ref GROUP BY domain ORDER BY visits DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => {
-		const referrer = r.referrer as string;
-		let domain = referrer;
-		try {
-			domain = new URL(referrer).hostname;
-		} catch {}
+		const domain = r.domain as string;
 		return {
-			referrer,
+			referrer: domain,
 			domain,
 			visits: Number(r.visits),
 			percentage: total > 0 ? (Number(r.visits) / total) * 100 : 0,
@@ -44,12 +44,19 @@ export async function getTopReferrers(
 	});
 }
 
-export async function getReferrerDetail(from: Date, to: Date, domain: string, projectId: string | null) {
+export async function getReferrerDetail(
+	from: Date,
+	to: Date,
+	domain: string,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const [stats] =
-		await sql`SELECT COUNT(*) as total_visits, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as total_visits, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = stats || { total_visits: 0, unique_visitors: 0, sessions: 0 };
 	const landingPages =
-		await sql`SELECT path, COUNT(*) as visits FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visits DESC LIMIT 10`;
+		await sql`SELECT path, COUNT(*) as visits FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND referrer LIKE ${"%" + domain + "%"} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visits DESC LIMIT 10`;
 	return {
 		domain,
 		totalVisits: Number(s.total_visits || 0),
@@ -64,25 +71,34 @@ export async function getGeoDistribution(
 	limit: number = 100,
 	from?: Date,
 	to?: Date,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
 ): Promise<GeoDistribution[]> {
 	const range = from && to ? { from, to } : getTimeRangeFilter(24);
 	const results =
-		await sql`SELECT country, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${range.from} AND ts <= ${range.to} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT ${limit}`;
+		await sql`SELECT country, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => {
 		const name = r.country as string;
-		const country = COUNTRY_NAME_TO_ISO[name] || name;
 		return {
-			country,
+			country: name,
+			countryCode: COUNTRY_NAME_TO_ISO[name],
 			count: Number(r.count),
 			percentage: total > 0 ? (Number(r.count) / total) * 100 : 0,
 		};
 	});
 }
 
-export async function getGeoCities(from: Date, to: Date, country: string | null, projectId: string | null) {
+export async function getGeoCities(
+	from: Date,
+	to: Date,
+	country: string | null,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const results =
-		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${country ? sql`AND country = ${country}` : sql``} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 100`;
+		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${country ? sql`AND country = ${country}` : sql``} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 100`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		city: r.city,
@@ -94,36 +110,45 @@ export async function getGeoCities(from: Date, to: Date, country: string | null,
 	}));
 }
 
-export async function getGeoDetail(from: Date, to: Date, projectId: string | null) {
+export async function getGeoDetail(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const countries =
-		await sql`SELECT country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country IS NOT NULL AND country != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT 12`;
+		await sql`SELECT country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country IS NOT NULL AND country != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY count DESC LIMIT 12`;
 	const regions =
-		await sql`SELECT region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region, country ORDER BY count DESC LIMIT 12`;
+		await sql`SELECT region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region, country ORDER BY count DESC LIMIT 12`;
 	const cities =
-		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 16`;
+		await sql`SELECT city, region, country, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country ORDER BY count DESC LIMIT 16`;
 	const [quality] =
-		await sql`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE country IS NOT NULL AND country != '') as country_known, COUNT(*) FILTER (WHERE region IS NOT NULL AND region != '') as region_known, COUNT(*) FILTER (WHERE city IS NOT NULL AND city != '') as city_known FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE country IS NOT NULL AND country != '') as country_known, COUNT(*) FILTER (WHERE region IS NOT NULL AND region != '') as region_known, COUNT(*) FILTER (WHERE city IS NOT NULL AND city != '') as city_known FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const total = Number(quality?.total || 0);
 	function percent(value: number) {
 		return total > 0 ? Math.round((value / total) * 1000) / 10 : 0;
 	}
 	return {
 		countries: countries.map((r) => ({
-			country: COUNTRY_NAME_TO_ISO[r.country] || r.country,
+			country: r.country,
+			countryCode: COUNTRY_NAME_TO_ISO[r.country],
 			count: Number(r.count),
 			visitors: Number(r.visitors),
 			sessions: Number(r.sessions),
 		})),
 		regions: regions.map((r) => ({
 			region: r.region,
-			country: COUNTRY_NAME_TO_ISO[r.country] || r.country,
+			country: r.country,
+			countryCode: COUNTRY_NAME_TO_ISO[r.country],
 			count: Number(r.count),
 			visitors: Number(r.visitors),
 		})),
 		cities: cities.map((r) => ({
 			city: r.city,
 			region: r.region,
-			country: COUNTRY_NAME_TO_ISO[r.country] || r.country,
+			country: r.country,
+			countryCode: COUNTRY_NAME_TO_ISO[r.country],
 			count: Number(r.count),
 			visitors: Number(r.visitors),
 			sessions: Number(r.sessions),
@@ -137,20 +162,32 @@ export async function getGeoDetail(from: Date, to: Date, projectId: string | nul
 	};
 }
 
-export async function getEntryExitPages(from: Date, to: Date, projectId: string | null) {
+export async function getEntryExitPages(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const entryPages =
-		await sql`WITH first_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts ASC) SELECT path, COUNT(*) as count FROM first_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
+		await sql`WITH first_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts ASC) SELECT path, COUNT(*) as count FROM first_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
 	const exitPages =
-		await sql`WITH last_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts DESC) SELECT path, COUNT(*) as count FROM last_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
+		await sql`WITH last_pages AS (SELECT DISTINCT ON (session_id) session_id, path FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY session_id, ts DESC) SELECT path, COUNT(*) as count FROM last_pages GROUP BY path ORDER BY count DESC LIMIT 10`;
 	return {
 		entryPages: entryPages.map((r) => ({ path: r.path, count: Number(r.count) })),
 		exitPages: exitPages.map((r) => ({ path: r.path, count: Number(r.count) })),
 	};
 }
 
-export async function getTopPaths(from: Date, to: Date, projectId: string | null) {
+export async function getTopPaths(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const paths =
-		await sql`WITH session_paths AS (SELECT session_id, ARRAY_AGG(path ORDER BY ts) as path_sequence FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id HAVING COUNT(*) > 1), path_strings AS (SELECT array_to_string(path_sequence[1:5], ' → ') as path, COUNT(*) as count FROM session_paths GROUP BY path) SELECT * FROM path_strings ORDER BY count DESC LIMIT 15`;
+		await sql`WITH session_paths AS (SELECT session_id, ARRAY_AGG(path ORDER BY ts) as path_sequence FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND type = 'pageview' AND session_id IS NOT NULL AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id HAVING COUNT(*) > 1), path_strings AS (SELECT array_to_string(path_sequence[1:5], ' → ') as path, COUNT(*) as count FROM session_paths GROUP BY path) SELECT * FROM path_strings ORDER BY count DESC LIMIT 15`;
 	const total = paths.reduce((s, r) => s + Number(r.count), 0);
 	return paths.map((r) => ({
 		path: r.path,
@@ -159,22 +196,29 @@ export async function getTopPaths(from: Date, to: Date, projectId: string | null
 	}));
 }
 
-export async function getCountryDetail(from: Date, to: Date, country: string, projectId: string | null) {
+export async function getCountryDetail(
+	from: Date,
+	to: Date,
+	country: string,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const [stats] =
-		await sql`SELECT COUNT(*) as total_events, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(*) as total_events, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = stats || { total_events: 0, unique_visitors: 0, sessions: 0 };
 
 	const topCities =
-		await sql`SELECT city, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city ORDER BY count DESC LIMIT 8`;
+		await sql`SELECT city, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city ORDER BY count DESC LIMIT 8`;
 
 	const topRegions =
-		await sql`SELECT region, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region ORDER BY count DESC LIMIT 6`;
+		await sql`SELECT region, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region ORDER BY count DESC LIMIT 6`;
 
 	const topPages =
-		await sql`SELECT path, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'pageview' AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY count DESC LIMIT 8`;
+		await sql`SELECT path, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'pageview' AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY count DESC LIMIT 8`;
 
 	const topReferrers =
-		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic()} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
+		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
 
 	function extractDomain(ref: string): string {
 		try {
@@ -192,6 +236,9 @@ export async function getCountryDetail(from: Date, to: Date, country: string, pr
 		topCities: topCities.map((r) => ({ city: r.city, count: Number(r.count) })),
 		topRegions: topRegions.map((r) => ({ region: r.region, count: Number(r.count) })),
 		topPages: topPages.map((r) => ({ path: r.path, count: Number(r.count) })),
-		topReferrers: topReferrers.map((r) => ({ referrer: extractDomain(r.referrer), count: Number(r.count) })),
+		topReferrers: topReferrers.map((r) => ({
+			referrer: extractDomain(r.referrer),
+			count: Number(r.count),
+		})),
 	};
 }

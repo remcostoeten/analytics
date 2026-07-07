@@ -24,7 +24,8 @@ import { SessionPaths } from "@/components/session-paths";
 import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
 import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
-import { useRouter, useSearchParams } from "next/navigation";
+import { PostHogNotice, PostHogTrackedSites, PostHogSummaryCards, PostHogInsightsList, PostHogEventsTable } from "@/components/posthog-panel";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type {
 	DashboardData,
@@ -43,9 +44,11 @@ import {
 	CalendarDays,
 	Route,
 	Radio,
+	Zap,
 	X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatNumber, getFlagEmoji } from "@/lib/format";
 import Link from "next/link";
 
 type ApiError = Error & {
@@ -72,12 +75,6 @@ async function fetcher(url: string) {
 	return info;
 }
 
-function formatNumber(n: number): string {
-	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-	return n.toLocaleString();
-}
-
 function formatDuration(ms: number): string {
 	if (ms < 1000) return `${ms}ms`;
 	const seconds = Math.floor(ms / 1000);
@@ -85,6 +82,10 @@ function formatDuration(ms: number): string {
 	const minutes = Math.floor(seconds / 60);
 	const remainingSeconds = seconds % 60;
 	return `${minutes}m ${remainingSeconds}s`;
+}
+
+function formatDecimal(value: number): string {
+	return Number(value.toFixed(1)).toString();
 }
 
 type DashboardContentProps = {
@@ -95,7 +96,14 @@ type DashboardContentProps = {
 	description?: string;
 };
 
-type DashboardView = "overview" | "realtime" | "retention" | "behavior" | "technology" | "audience";
+type DashboardView =
+	| "overview"
+	| "realtime"
+	| "retention"
+	| "behavior"
+	| "technology"
+	| "audience"
+	| "posthog";
 
 type SelectedCountry = GeoDistribution & {
 	cities?: number;
@@ -114,20 +122,43 @@ type CountryDetail = {
 	topReferrers: { referrer: string; count: number }[];
 };
 
+const VISITOR_ID_KEY = "__analytics_visitor_id";
+const SELF_FILTER_KEY = "analytics-dashboard-exclude-visitor-id";
+
+function readStoredVisitorId(): string | null {
+	try {
+		return localStorage.getItem(VISITOR_ID_KEY);
+	} catch {
+		return null;
+	}
+}
+
+function readSelfFilterId(): string | null {
+	try {
+		return localStorage.getItem(SELF_FILTER_KEY);
+	} catch {
+		return null;
+	}
+}
+
 export function DashboardContent({
 	data: initialData,
 	databaseReady = true,
 	databaseIssue,
-	breadcrumbs = [{ label: "Analytics", href: "#" }, { label: "Dashboard" }],
+	breadcrumbs = [{ label: "Analytics", href: "/" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+	const [currentVisitorId, setCurrentVisitorId] = useState<string | null>(null);
+	const [excludedVisitorId, setExcludedVisitorId] = useState<string | null>(null);
 
 	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const activeView = (searchParams.get("view") as DashboardView) || "overview";
 	const selectedProject = searchParams.get("projectId");
+	const selectedOrigin = searchParams.get("origin");
 	const timeRange = searchParams.get("timeRange") || "30d";
 	const fromParam = searchParams.get("from");
 	const toParam = searchParams.get("to");
@@ -138,8 +169,12 @@ export function DashboardContent({
 
 	const setActiveView = (view: DashboardView) => {
 		const newParams = new URLSearchParams(searchParams.toString());
-		newParams.set("view", view);
-		router.push(`/?${newParams.toString()}`);
+		if (view === "overview") {
+			newParams.delete("view");
+		} else {
+			newParams.set("view", view);
+		}
+		router.push(buildHref(pathname || "/", newParams));
 	};
 
 	const setSelectedProject = (projectId: string | null) => {
@@ -149,7 +184,7 @@ export function DashboardContent({
 		} else {
 			newParams.delete("projectId");
 		}
-		router.push(`/?${newParams.toString()}`);
+		router.push(buildHref(pathname || "/", newParams));
 	};
 
 	const setTimeRange = (range: string) => {
@@ -159,7 +194,7 @@ export function DashboardContent({
 		} else {
 			newParams.set("timeRange", range);
 		}
-		router.push(`/?${newParams.toString()}`);
+		router.push(buildHref(pathname || "/", newParams));
 	};
 
 	const setTypeFilter = (type: SignalEvent["type"] | "all") => {
@@ -169,8 +204,25 @@ export function DashboardContent({
 		} else {
 			newParams.set("status", type);
 		}
-		router.push(`/?${newParams.toString()}`);
+		router.push(buildHref(pathname || "/", newParams));
 	};
+
+	function setSelfFilter(enabled: boolean) {
+		const visitorId = currentVisitorId || readStoredVisitorId();
+		if (!visitorId) return;
+
+		try {
+			if (enabled) {
+				localStorage.setItem(SELF_FILTER_KEY, visitorId);
+				setExcludedVisitorId(visitorId);
+			} else {
+				localStorage.removeItem(SELF_FILTER_KEY);
+				setExcludedVisitorId(null);
+			}
+		} catch {
+			setExcludedVisitorId(enabled ? visitorId : null);
+		}
+	}
 
 	const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 	const canFetch = databaseReady;
@@ -184,6 +236,11 @@ export function DashboardContent({
 		return () => window.removeEventListener("open-command-palette", openPalette);
 	}, [setPaletteOpen]);
 
+	useEffect(() => {
+		setCurrentVisitorId(readStoredVisitorId());
+		setExcludedVisitorId(readSelfFilterId());
+	}, []);
+
 	const buildQuery = (metric: string, extraParams: string = "") => {
 		const params = new URLSearchParams();
 		params.set("metric", metric);
@@ -194,11 +251,19 @@ export function DashboardContent({
 			params.set("timeRange", timeRange);
 		}
 		if (selectedProject) params.set("projectId", selectedProject);
+		if (selectedOrigin) params.set("origin", selectedOrigin);
+		if (excludedVisitorId) params.set("excludeVisitorId", excludedVisitorId);
 		return `/api/analytics?${params.toString()}${extraParams ? "&" + extraParams : ""}`;
 	};
 
+	function viewKey(views: DashboardView[], metric: string): string | null {
+		return canFetch && views.includes(activeView) ? buildQuery(metric) : null;
+	}
+
 	const { data: projects, error: projectsError } = useSWR(
-		canFetch ? `/api/analytics?metric=projects` : null,
+		canFetch
+			? `/api/analytics?metric=projects${excludedVisitorId ? `&excludeVisitorId=${encodeURIComponent(excludedVisitorId)}` : ""}`
+			: null,
 		fetcher,
 		{
 			fallbackData: [],
@@ -206,167 +271,262 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: overview, error: overviewError, isLoading: overviewLoading } = useSWR(
-		canFetch ? buildQuery("overview-extended") : null,
+	const {
+		data: overview,
+		error: overviewError,
+		isLoading: overviewLoading,
+	} = useSWR(canFetch ? buildQuery("overview-extended") : null, fetcher, {
+		fallbackData: null,
+		refreshInterval: 30000,
+		keepPreviousData: true,
+	});
+
+	const { data: pages, isLoading: pagesLoading } = useSWR(
+		viewKey(["overview", "realtime", "behavior"], "pages"),
+		fetcher,
+		{
+			refreshInterval: 30000,
+			keepPreviousData: true,
+		},
+	);
+
+	const { data: referrers, isLoading: referrersLoading } = useSWR(
+		viewKey(["overview"], "referrers"),
+		fetcher,
+		{
+			refreshInterval: 30000,
+			keepPreviousData: true,
+		},
+	);
+
+	const { data: geo } = useSWR(viewKey(["overview", "realtime", "audience"], "geo"), fetcher, {
+		refreshInterval: 30000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: geoDetail } = useSWR(
+		viewKey(["overview", "realtime", "audience"], "geo-detail"),
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
+
+	const { data: devices } = useSWR(
+		viewKey(["overview", "technology", "audience"], "devices"),
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 30000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
+
+	const { data: trend, isLoading: trendLoading } = useSWR(
+		viewKey(["overview", "retention"], "trend"),
 		fetcher,
 		{
 			fallbackData: null,
 			refreshInterval: 30000,
+			keepPreviousData: true,
 		},
 	);
 
-	const { data: pages, isLoading: pagesLoading } = useSWR(canFetch ? buildQuery("pages") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
+	const { data: events } = useSWR(
+		viewKey(["overview", "realtime", "technology"], "events"),
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 10000,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: referrers, isLoading: referrersLoading } = useSWR(canFetch ? buildQuery("referrers") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
-
-	const { data: geo } = useSWR(canFetch ? buildQuery("geo") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-		revalidateOnFocus: false,
-	});
-
-	const { data: geoDetail } = useSWR(canFetch ? buildQuery("geo-detail") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
-
-	const { data: devices } = useSWR(canFetch ? buildQuery("devices") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-		revalidateOnFocus: false,
-	});
-
-	const { data: trend, isLoading: trendLoading } = useSWR(canFetch ? buildQuery("trend") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 30000,
-	});
-
-	const { data: events } = useSWR(canFetch ? buildQuery("events") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 10000,
-	});
-
-	const { data: webVitals } = useSWR(canFetch ? buildQuery("web-vitals") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
+	const { data: webVitals } = useSWR(
+		viewKey(["behavior", "technology"], "web-vitals"),
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
 	const { data: sessionStats } = useSWR(canFetch ? buildQuery("session-stats") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 30000,
 		revalidateOnFocus: false,
+		keepPreviousData: true,
 	});
 
-	const { data: engagement } = useSWR(canFetch ? buildQuery("engagement") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 30000,
-	});
+	const { data: engagement } = useSWR(
+		viewKey(["retention", "behavior"], "engagement"),
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 30000,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: heatmap } = useSWR(canFetch ? buildQuery("hourly-heatmap") : null, fetcher, {
-		fallbackData: null,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
+	const { data: heatmap } = useSWR(
+		viewKey(["retention", "behavior"], "hourly-heatmap"),
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: browsers } = useSWR(canFetch ? buildQuery("browsers-detailed") : null, fetcher, {
-		fallbackData: initialData.audience.browsers,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
+	const { data: browsers } = useSWR(
+		viewKey(["technology", "audience"], "browsers-detailed"),
+		fetcher,
+		{
+			fallbackData: initialData.audience.browsers,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: operatingSystems } = useSWR(canFetch ? buildQuery("os-detailed") : null, fetcher, {
-		fallbackData: initialData.audience.os,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
+	const { data: operatingSystems } = useSWR(
+		viewKey(["technology", "audience"], "os-detailed"),
+		fetcher,
+		{
+			fallbackData: initialData.audience.os,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: languages } = useSWR(canFetch ? buildQuery("languages") : null, fetcher, {
-		fallbackData: initialData.audience.languages,
-		refreshInterval: 60000,
-		revalidateOnFocus: false,
-	});
+	const { data: languages } = useSWR(
+		viewKey(["technology", "audience"], "languages"),
+		fetcher,
+		{
+			fallbackData: initialData.audience.languages,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
-	const { data: screenSizes } = useSWR(canFetch ? buildQuery("screen-sizes") : null, fetcher, {
+	const { data: screenSizes } = useSWR(viewKey(["technology"], "screen-sizes"), fetcher, {
 		fallbackData: initialData.audience.screenResolutions,
 		refreshInterval: 60000,
 		revalidateOnFocus: false,
+		keepPreviousData: true,
 	});
 
 	const { data: connectionTypes } = useSWR(
-		canFetch ? buildQuery("connection-types") : null,
+		viewKey(["technology"], "connection-types"),
 		fetcher,
 		{
 			fallbackData: [],
 			refreshInterval: 60000,
 			revalidateOnFocus: false,
+			keepPreviousData: true,
 		},
 	);
 
-	const { data: visitors } = useSWR(canFetch ? buildQuery("visitors") : null, fetcher, {
-		fallbackData: [],
-		refreshInterval: 30000,
-	});
+	const { data: visitors } = useSWR(
+		viewKey(["technology", "audience"], "visitors"),
+		fetcher,
+		{
+			fallbackData: [],
+			refreshInterval: 30000,
+			keepPreviousData: true,
+		},
+	);
 
 	const { data: entryExitPages } = useSWR(
-		canFetch ? buildQuery("entry-exit-pages") : null,
+		viewKey(["realtime", "behavior"], "entry-exit-pages"),
 		fetcher,
 		{
 			fallbackData: null,
 			refreshInterval: 30000,
+			keepPreviousData: true,
 		},
 	);
 
-	const { data: liveNow } = useSWR(canFetch ? buildQuery("live-now") : null, fetcher, {
+	const { data: liveNow } = useSWR(viewKey(["overview", "realtime"], "live-now"), fetcher, {
 		fallbackData: null,
 		refreshInterval: 5000,
+		keepPreviousData: true,
 	});
 
 	const { data: retention, isLoading: retentionLoading } = useSWR(
-		canFetch ? buildQuery("retention") : null,
+		viewKey(["retention"], "retention"),
 		fetcher,
 		{
 			fallbackData: null,
 			refreshInterval: 60000,
 			revalidateOnFocus: false,
+			keepPreviousData: true,
 		},
 	);
 
 	const { data: paths, isLoading: pathsLoading } = useSWR(
-		canFetch ? buildQuery("paths") : null,
+		viewKey(["behavior"], "paths"),
 		fetcher,
 		{
 			fallbackData: null,
 			refreshInterval: 30000,
 			revalidateOnFocus: false,
+			keepPreviousData: true,
 		},
 	);
 
-	const { data: utmCampaigns } = useSWR(canFetch ? buildQuery("utm-campaigns") : null, fetcher, {
+	const { data: utmCampaigns } = useSWR(viewKey(["overview"], "utm-campaigns"), fetcher, {
 		fallbackData: [],
 		refreshInterval: 60000,
 		revalidateOnFocus: false,
+		keepPreviousData: true,
 	});
 
-	const { data: botBreakdown } = useSWR(canFetch ? buildQuery("bot-breakdown") : null, fetcher, {
+	const { data: botBreakdown } = useSWR(viewKey(["technology"], "bot-breakdown"), fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 		revalidateOnFocus: false,
+		keepPreviousData: true,
 	});
 
 	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR<CountryDetail>(
 		selectedCountry && canFetch
-			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}`
+			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}${selectedOrigin ? `&origin=${encodeURIComponent(selectedOrigin)}` : ""}${excludedVisitorId ? `&excludeVisitorId=${encodeURIComponent(excludedVisitorId)}` : ""}`
 			: null,
 		fetcher,
 	);
+
+	const {
+		data: posthogSummary,
+		error: posthogSummaryError,
+		isLoading: posthogSummaryLoading,
+	} = useSWR(activeView === "posthog" ? "/api/posthog?metric=summary" : null, fetcher, {
+		refreshInterval: 60000,
+	});
+
+	const { data: posthogInsights, isLoading: posthogInsightsLoading } = useSWR(
+		activeView === "posthog" ? "/api/posthog?metric=insights" : null,
+		fetcher,
+		{ refreshInterval: 60000 },
+	);
+
+	const { data: posthogEvents, isLoading: posthogEventsLoading } = useSWR(
+		activeView === "posthog" ? "/api/posthog?metric=events" : null,
+		fetcher,
+		{ refreshInterval: 15000 },
+	);
+
+	const posthogConfigMissing = isPostHogConfigError(posthogSummaryError);
 
 	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
@@ -403,13 +563,13 @@ export function DashboardContent({
 				id: "bounce-rate",
 				label: "Bounce Rate",
 				value: bounceRate,
-				formattedValue: `${bounceRate}%`,
+				formattedValue: sessionStats ? `${formatDecimal(bounceRate)}%` : "—",
 			},
 			{
 				id: "pages-per-session",
 				label: "Pages/Session",
 				value: pagesPerSession,
-				formattedValue: String(pagesPerSession),
+				formattedValue: sessionStats ? formatDecimal(pagesPerSession) : "—",
 			},
 			{
 				id: "avg-time",
@@ -488,6 +648,7 @@ export function DashboardContent({
 			visits: r.visits,
 		}));
 	}, [referrers]);
+	const hasCampaignData = Array.isArray(utmCampaigns) && utmCampaigns.length > 0;
 
 	const viewTabs = [
 		{ id: "overview" as DashboardView, label: "Overview", icon: BarChart3 },
@@ -496,11 +657,41 @@ export function DashboardContent({
 		{ id: "behavior" as DashboardView, label: "Behavior", icon: Route },
 		{ id: "technology" as DashboardView, label: "Tech", icon: Settings2 },
 		{ id: "audience" as DashboardView, label: "Audience", icon: Users },
+		{ id: "posthog" as DashboardView, label: "PostHog", icon: Zap },
 	];
+
+	function buildHref(path: string, params: URLSearchParams): string {
+		const query = params.toString();
+		return query ? `${path}?${query}` : path;
+	}
+
+	function viewHref(view: DashboardView): string {
+		const params = new URLSearchParams(searchParams.toString());
+		if (view === "overview") {
+			params.delete("view");
+		} else {
+			params.set("view", view);
+		}
+		return buildHref(pathname || "/", params);
+	}
+
+	function selectPalettePage() {
+		setActiveView("behavior");
+	}
+
+	function selectPaletteReferrer(domain: string) {
+		setSelectedReferrer(domain);
+	}
 
 	return (
 		<>
-			<DashboardHeader typeFilter={typeFilter} onTypeFilterChange={setTypeFilter} />
+			<DashboardHeader
+				typeFilter={typeFilter}
+				onTypeFilterChange={setTypeFilter}
+				selfFilterEnabled={!!excludedVisitorId}
+				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
+				onSelfFilterChange={setSelfFilter}
+			/>
 
 			<CommandPalette
 				open={paletteOpen}
@@ -508,6 +699,8 @@ export function DashboardContent({
 				onViewChange={(view) => setActiveView(view)}
 				onTimeRangeChange={setTimeRange}
 				onProjectChange={setSelectedProject}
+				onPageSelect={selectPalettePage}
+				onReferrerSelect={selectPaletteReferrer}
 				pages={palettePages}
 				referrers={paletteReferrers}
 				projects={projects}
@@ -519,14 +712,28 @@ export function DashboardContent({
 				<div className="p-3 space-y-3">
 					<div className="flex items-center justify-between">
 						<div>
-							<nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[11px] text-muted-foreground">
+							<nav
+								aria-label="Breadcrumb"
+								className="flex items-center gap-1 text-[11px] text-muted-foreground"
+							>
 								{breadcrumbs.map((item, i) => (
 									<span key={i} className="flex items-center gap-1">
 										{i > 0 && <ChevronRight className="h-3 w-3" />}
 										{item.href ? (
-											<a href={item.href} className="hover:text-foreground">
-												{item.label}
-											</a>
+											item.href.startsWith("http") ? (
+												<a
+													href={item.href}
+													target="_blank"
+													rel="noreferrer"
+													className="hover:text-foreground"
+												>
+													{item.label}
+												</a>
+											) : (
+												<Link href={item.href} className="hover:text-foreground">
+													{item.label}
+												</Link>
+											)
 										) : (
 											<span className="text-foreground">{item.label}</span>
 										)}
@@ -541,13 +748,17 @@ export function DashboardContent({
 					{!databaseReady && <DemoDataNotice />}
 
 					<div className="overflow-x-auto -mx-3 px-3">
-						<div role="tablist" aria-label="Dashboard views" className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full">
+						<div
+							role="tablist"
+							aria-label="Dashboard views"
+							className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full"
+						>
 							{viewTabs.map((tab) => (
-								<button
+								<Link
 									key={tab.id}
+									href={viewHref(tab.id)}
 									role="tab"
 									aria-selected={activeView === tab.id}
-									onClick={() => setActiveView(tab.id)}
 									className={cn(
 										"flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap",
 										activeView === tab.id
@@ -557,31 +768,41 @@ export function DashboardContent({
 								>
 									<tab.icon className="h-3.5 w-3.5" />
 									{tab.label}
-								</button>
+								</Link>
 							))}
 						</div>
 					</div>
 
-					<KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />
+					{activeView !== "posthog" && (
+						<KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />
+					)}
 
 					{activeView === "overview" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 							<div className="lg:col-span-8 space-y-3">
-								<TrendChart data={trendData} title="Pageviews over time" height={140} isLoading={trendLoading} />
+								<TrendChart
+									data={trendData}
+									title="Pageviews over time"
+									height={172}
+									isLoading={trendLoading}
+								/>
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
+									<TopPagesTable
+										data={pages || initialData.content.topPages}
+										isLoading={pagesLoading}
+									/>
 									<ReferrersTable
 										data={referrers || initialData.content.topReferrers}
 										onDomainClick={(domain) => setSelectedReferrer(domain)}
 										isLoading={referrersLoading}
 									/>
 								</div>
-								<UTMCampaignsTable data={utmCampaigns} />
+								{hasCampaignData && <UTMCampaignsTable data={utmCampaigns} />}
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<SessionStatsCard data={sessionStats} />
 									<DonutChart
@@ -615,7 +836,10 @@ export function DashboardContent({
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
+									<TopPagesTable
+										data={pages || initialData.content.topPages}
+										isLoading={pagesLoading}
+									/>
 									<EntryExitPages data={entryExitPages} />
 								</div>
 							</div>
@@ -640,7 +864,12 @@ export function DashboardContent({
 							<div className="lg:col-span-4 space-y-3">
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
-								<TrendChart data={trendData} title="Visitor Trend" height={120} isLoading={trendLoading} />
+								<TrendChart
+									data={trendData}
+									title="Visitor Trend"
+									height={120}
+									isLoading={trendLoading}
+								/>
 							</div>
 						</div>
 					)}
@@ -651,7 +880,10 @@ export function DashboardContent({
 								<SessionPaths data={paths} isLoading={pathsLoading} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<EntryExitPages data={entryExitPages} />
-									<TopPagesTable data={pages || initialData.content.topPages} isLoading={pagesLoading} />
+									<TopPagesTable
+										data={pages || initialData.content.topPages}
+										isLoading={pagesLoading}
+									/>
 								</div>
 								<HourlyHeatmap data={heatmap} />
 							</div>
@@ -687,10 +919,7 @@ export function DashboardContent({
 										percentage: d.percentage,
 									}))}
 								/>
-								<BotTrafficCard
-									data={botBreakdown}
-									totalEvents={overview?.totalEvents}
-								/>
+								<BotTrafficCard data={botBreakdown} totalEvents={overview?.totalEvents} />
 								<SignalStream
 									signals={recentSignals}
 									filter=""
@@ -728,6 +957,22 @@ export function DashboardContent({
 							</div>
 						</div>
 					)}
+
+					{activeView === "posthog" && (
+						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+							<div className="lg:col-span-8 space-y-3">
+								{posthogConfigMissing && (
+									<PostHogNotice message={(posthogSummaryError as ApiError)?.info?.message} />
+								)}
+								<PostHogTrackedSites data={posthogSummary} isLoading={posthogSummaryLoading} />
+								<PostHogSummaryCards data={posthogSummary} isLoading={posthogSummaryLoading} />
+								<PostHogEventsTable data={posthogEvents} isLoading={posthogEventsLoading} />
+							</div>
+							<div className="lg:col-span-4 space-y-3">
+								<PostHogInsightsList data={posthogInsights} isLoading={posthogInsightsLoading} />
+							</div>
+						</div>
+					)}
 				</div>
 			</main>
 
@@ -746,7 +991,7 @@ export function DashboardContent({
 						role="dialog"
 						aria-modal="true"
 						aria-labelledby="country-modal-title"
-						className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-xl w-[480px] max-h-[80vh] overflow-hidden z-50 flex flex-col"
+						className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{countryDetailLoading || !countryDetailData ? (
@@ -761,7 +1006,12 @@ export function DashboardContent({
 											<span className="text-3xl">{getFlagEmoji(selectedCountry.countryCode)}</span>
 										)}
 										<div>
-											<h3 id="country-modal-title" className="text-lg font-semibold text-foreground">{selectedCountry.country}</h3>
+											<h3
+												id="country-modal-title"
+												className="text-lg font-semibold text-foreground"
+											>
+												{selectedCountry.country}
+											</h3>
 											<p className="text-sm text-muted-foreground">Country details</p>
 										</div>
 									</div>
@@ -773,25 +1023,33 @@ export function DashboardContent({
 											<p className="text-xl font-bold text-foreground">
 												{countryDetailData.totalEvents.toLocaleString()}
 											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Events</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Events
+											</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
 												{countryDetailData.uniqueVisitors.toLocaleString()}
 											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Visitors</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Visitors
+											</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
 												{countryDetailData.sessions.toLocaleString()}
 											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sessions</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Sessions
+											</p>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
 												{countryDetailData.topCities.length}
 											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">Cities</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Cities
+											</p>
 										</div>
 									</div>
 
@@ -805,7 +1063,9 @@ export function DashboardContent({
 														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
 													>
 														<span className="text-foreground">{c.city}</span>
-														<span className="text-muted-foreground">{c.count.toLocaleString()}</span>
+														<span className="text-muted-foreground">
+															{c.count.toLocaleString()}
+														</span>
 													</span>
 												))}
 											</div>
@@ -822,7 +1082,9 @@ export function DashboardContent({
 														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
 													>
 														<span className="text-foreground">{r.region}</span>
-														<span className="text-muted-foreground">{r.count.toLocaleString()}</span>
+														<span className="text-muted-foreground">
+															{r.count.toLocaleString()}
+														</span>
 													</span>
 												))}
 											</div>
@@ -838,7 +1100,9 @@ export function DashboardContent({
 														key={p.path}
 														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
 													>
-														<span className="text-foreground truncate max-w-[300px]">{p.path || "/"}</span>
+														<span className="text-foreground truncate max-w-[300px]">
+															{p.path || "/"}
+														</span>
 														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
 															{p.count.toLocaleString()}
 														</span>
@@ -857,7 +1121,9 @@ export function DashboardContent({
 														key={r.referrer}
 														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
 													>
-														<span className="text-foreground truncate max-w-[300px]">{r.referrer}</span>
+														<span className="text-foreground truncate max-w-[300px]">
+															{r.referrer}
+														</span>
 														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
 															{r.count.toLocaleString()}
 														</span>
@@ -934,26 +1200,34 @@ function DemoDataNotice() {
 	if (dismissed || isPersonal) return null;
 
 	return (
-		<button
-			type="button"
-			onClick={() => {
-				sessionStorage.setItem("demo-notice-dismissed", "true");
-				setDismissed(true);
-			}}
-			className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
-		>
+		<div className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left">
 			<div className="flex items-center gap-2">
 				<BadgeInfo className="h-4 w-4 shrink-0 text-muted-foreground" />
 				<span className="text-xs text-muted-foreground">
 					All data is illustrative! Learn{" "}
-					<Link href="https://docs.analytics.remcostoeten.nl" className="underline">
+					<Link
+						href="https://docs.analytics.remcostoeten.nl"
+						target="_blank"
+						rel="noreferrer"
+						className="underline hover:text-foreground"
+					>
 						here
 					</Link>{" "}
 					on how to connect your database.
 				</span>
 			</div>
-			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-		</button>
+			<button
+				type="button"
+				onClick={() => {
+					sessionStorage.setItem("demo-notice-dismissed", "true");
+					setDismissed(true);
+				}}
+				aria-label="Dismiss demo data notice"
+				className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+			>
+				<X className="h-3.5 w-3.5" />
+			</button>
+		</div>
 	);
 }
 
@@ -962,10 +1236,7 @@ function isDatabaseError(error: unknown): boolean {
 	return apiError?.info?.code === "missing_database_url";
 }
 
-function getFlagEmoji(countryCode: string): string {
-	const codePoints = countryCode
-		.toUpperCase()
-		.split("")
-		.map((char) => 127397 + char.charCodeAt(0));
-	return String.fromCodePoint(...codePoints);
+function isPostHogConfigError(error: unknown): boolean {
+	const apiError = error as ApiError | undefined;
+	return apiError?.info?.code === "missing_posthog_config";
 }

@@ -7,10 +7,12 @@ export async function getRecentEvents(
 	limit: number = 20,
 	from?: Date,
 	to?: Date,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
 ): Promise<SignalEvent[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT id, type, path, ts, country, device_type, bot_detected, meta FROM events WHERE ${publicTraffic()} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
+		await sql`SELECT id, type, path, ts, country, device_type, bot_detected, meta FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
 	return results.map((r) => {
 		const meta = (r.meta as Record<string, unknown>) || {};
 		const isBot = (r as any).bot_detected === true || meta.botDetected === true;
@@ -26,17 +28,17 @@ export async function getRecentEvents(
 	});
 }
 
-export async function getLiveNow(projectId: string | null) {
+export async function getLiveNow(projectId: string | null, excludeVisitorId?: string | null, origin?: string | null) {
 	const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 	const [liveStats] =
-		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors, COUNT(DISTINCT session_id) as active_sessions, COUNT(*) as events_count FROM events WHERE ${publicTraffic()} AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors, COUNT(DISTINCT session_id) as active_sessions, COUNT(*) as events_count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
 	const s = liveStats || { active_visitors: 0, active_sessions: 0, events_count: 0 };
 	const activePages =
-		await sql`SELECT path, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic()} AND ts >= ${fiveMinutesAgo} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visitors DESC LIMIT 10`;
+		await sql`SELECT path, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY visitors DESC LIMIT 10`;
 	const recentActivity =
-		await sql`SELECT type, path, ts FROM events WHERE ${publicTraffic()} AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT 20`;
+		await sql`SELECT type, path, ts FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT 20`;
 	const liveGeo =
-		await sql`SELECT country, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic()} AND ts >= ${fiveMinutesAgo} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY visitors DESC LIMIT 20`;
+		await sql`SELECT country, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY country ORDER BY visitors DESC LIMIT 20`;
 	return {
 		activeVisitors: Number(s.active_visitors || 0),
 		activeSessions: Number(s.active_sessions || 0),
@@ -55,6 +57,8 @@ export async function getRecentVisitors(
 	limit: number = 50,
 	from?: Date,
 	to?: Date,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
 ) {
 	const range = getRange(from, to);
 	const results = await sql`
@@ -75,7 +79,7 @@ export async function getRecentVisitors(
       region,
       city
     FROM visitors
-    WHERE EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint AND ${publicTrafficEvents()} AND events.ts >= ${range.from} AND events.ts <= ${range.to} ${projectId ? sql`AND events.project_id = ${projectId}` : sql``})
+    WHERE EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint AND ${publicTrafficEvents(excludeVisitorId, origin)} AND events.ts >= ${range.from} AND events.ts <= ${range.to} ${projectId ? sql`AND events.project_id = ${projectId}` : sql``})
     ORDER BY last_seen DESC
     LIMIT ${limit}
   `;

@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
 	const metric = searchParams.get("metric") || "overview";
 	const projectId = searchParams.get("projectId") || null;
 	const projectFilter = projectId || undefined;
+	const rawOrigin = searchParams.get("origin") || null;
+	const origin = rawOrigin && rawOrigin.length <= 255 ? rawOrigin : null;
+	const rawExcludeVisitorId = searchParams.get("excludeVisitorId") || null;
+	const excludeVisitorId =
+		rawExcludeVisitorId && rawExcludeVisitorId.length <= 128 ? rawExcludeVisitorId : null;
 
 	let from: Date;
 	let to: Date;
@@ -23,12 +28,22 @@ export async function GET(request: NextRequest) {
 		}
 	} else {
 		const rawTimeRange = searchParams.get("timeRange") || "30d";
-		const VALID_RANGES = new Set(["30d", "60d", "90d", "180d", "all"]);
+		const VALID_RANGES = new Set(["24h", "7d", "30d", "60d", "90d", "180d", "all"]);
 		if (!VALID_RANGES.has(rawTimeRange)) {
 			return NextResponse.json({ error: `Invalid timeRange: ${rawTimeRange}` }, { status: 400 });
 		}
 		const hours =
-			rawTimeRange === "60d" ? 1440 : rawTimeRange === "90d" ? 2160 : rawTimeRange === "180d" ? 4320 : 720;
+			rawTimeRange === "24h"
+				? 24
+				: rawTimeRange === "7d"
+					? 168
+					: rawTimeRange === "60d"
+						? 1440
+						: rawTimeRange === "90d"
+							? 2160
+							: rawTimeRange === "180d"
+								? 4320
+								: 720;
 		to = new Date();
 		from = rawTimeRange === "all" ? new Date(0) : new Date(to.getTime() - hours * 60 * 60 * 1000);
 	}
@@ -50,90 +65,182 @@ export async function GET(request: NextRequest) {
 
 		switch (metric) {
 			case "projects":
-				return NextResponse.json(await query.getProjects());
+				return NextResponse.json(await query.getProjects(excludeVisitorId));
+			case "origins":
+				return NextResponse.json(await query.getOrigins(projectId, excludeVisitorId));
 			case "overview-extended":
-				return NextResponse.json(await query.getOverviewExtended(from, to, projectId));
+				return NextResponse.json(
+					await query.getOverviewExtended(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "pages":
-				return NextResponse.json(await query.getTopPages(projectFilter, 10, from, to));
+				return NextResponse.json(
+					await query.getTopPages(projectFilter, 10, from, to, excludeVisitorId, origin),
+				);
 			case "referrers":
-				return NextResponse.json(await query.getTopReferrers(projectFilter, 10, from, to));
+				return NextResponse.json(
+					await query.getTopReferrers(projectFilter, 10, from, to, excludeVisitorId, origin),
+				);
 			case "geo":
-				return NextResponse.json(await query.getGeoDistribution(projectFilter, 100, from, to));
+				return NextResponse.json(
+					await query.getGeoDistribution(projectFilter, 100, from, to, excludeVisitorId, origin),
+				);
 			case "geo-detail":
-				return NextResponse.json(await query.getGeoDetail(from, to, projectId));
+				return NextResponse.json(
+					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "devices":
-				return NextResponse.json(await query.getDeviceBreakdown(projectFilter, from, to));
+				return NextResponse.json(
+					await query.getDeviceBreakdown(projectFilter, from, to, excludeVisitorId, origin),
+				);
 			case "trend": {
 				const durationHours = Math.round((to.getTime() - from.getTime()) / (60 * 60 * 1000));
-				return NextResponse.json(await query.getPageviewsTrend(projectFilter, durationHours, from, to));
+				return NextResponse.json(
+					await query.getPageviewsTrend(
+						projectFilter,
+						durationHours,
+						from,
+						to,
+						excludeVisitorId,
+						origin,
+					),
+				);
 			}
 			case "events":
-				return NextResponse.json(await query.getRecentEvents(projectFilter, 20, from, to));
+				return NextResponse.json(
+					await query.getRecentEvents(projectFilter, 20, from, to, excludeVisitorId, origin),
+				);
 			case "visitors":
-				return NextResponse.json(await query.getRecentVisitors(projectId, 50, from, to));
+				return NextResponse.json(
+					await query.getRecentVisitors(projectId, 50, from, to, excludeVisitorId, origin),
+				);
 			case "geo-cities":
 				const country = searchParams.get("country");
-				return NextResponse.json(await query.getGeoCities(from, to, country, projectId));
+				return NextResponse.json(
+					await query.getGeoCities(from, to, country, projectId, excludeVisitorId, origin),
+				);
 			case "referrer-detail":
 				const domain = searchParams.get("domain");
 				if (!domain) {
 					return NextResponse.json({ error: "Domain required" }, { status: 400 });
 				}
-				return NextResponse.json(await query.getReferrerDetail(from, to, domain, projectId));
+				return NextResponse.json(
+					await query.getReferrerDetail(from, to, domain, projectId, excludeVisitorId, origin),
+				);
 			case "web-vitals":
-				return NextResponse.json(await query.getWebVitals(from, to, projectId));
+				return NextResponse.json(
+					await query.getWebVitals(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "session-stats":
-				return NextResponse.json(await query.getSessionStats(from, to, projectId));
+				return NextResponse.json(
+					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "utm-campaigns":
-				return NextResponse.json(await query.getUTMCampaigns(from, to, projectId));
+				return NextResponse.json(
+					await query.getUTMCampaigns(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "bot-breakdown":
-				return NextResponse.json(await query.getBotBreakdown(from, to, projectId));
+				return NextResponse.json(
+					await query.getBotBreakdown(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "engagement":
-				return NextResponse.json(await query.getEngagementMetrics(from, to, projectId));
+				return NextResponse.json(
+					await query.getEngagementMetrics(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "hourly-heatmap":
-				return NextResponse.json(await query.getHourlyHeatmap(from, to, projectId));
+				return NextResponse.json(
+					await query.getHourlyHeatmap(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "browsers-detailed":
-				return NextResponse.json(await query.getBrowsersDetailed(from, to, projectId));
+				return NextResponse.json(
+					await query.getBrowsersDetailed(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "os-detailed":
-				return NextResponse.json(await query.getOSDetailed(from, to, projectId));
+				return NextResponse.json(
+					await query.getOSDetailed(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "languages":
-				return NextResponse.json(await query.getLanguages(from, to, projectId));
+				return NextResponse.json(
+					await query.getLanguages(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "screen-sizes":
-				return NextResponse.json(await query.getScreenSizes(from, to, projectId));
+				return NextResponse.json(
+					await query.getScreenSizes(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "connection-types":
-				return NextResponse.json(await query.getConnectionTypes(from, to, projectId));
+				return NextResponse.json(
+					await query.getConnectionTypes(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "entry-exit-pages":
-				return NextResponse.json(await query.getEntryExitPages(from, to, projectId));
+				return NextResponse.json(
+					await query.getEntryExitPages(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "live-now":
-				return NextResponse.json(await query.getLiveNow(projectId));
+				return NextResponse.json(await query.getLiveNow(projectId, excludeVisitorId, origin));
 			case "retention":
-				return NextResponse.json(await query.getRetention(projectId));
+				return NextResponse.json(await query.getRetention(projectId, excludeVisitorId, origin));
 			case "paths":
-				return NextResponse.json(await query.getTopPaths(from, to, projectId));
+				return NextResponse.json(
+					await query.getTopPaths(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "country-detail":
 				const c = searchParams.get("country");
 				if (!c) {
 					return NextResponse.json({ error: "Country required" }, { status: 400 });
 				}
-				return NextResponse.json(await query.getCountryDetail(from, to, c, projectId));
+				return NextResponse.json(
+					await query.getCountryDetail(from, to, c, projectId, excludeVisitorId, origin),
+				);
 			case "segments":
 				const segmentId = searchParams.get("segment") || "all";
-				return NextResponse.json(await query.getSegmentedMetrics(from, to, segmentId, projectId));
+				return NextResponse.json(
+					await query.getSegmentedMetrics(from, to, segmentId, projectId, excludeVisitorId, origin),
+				);
 			case "skriuw-events":
-				return NextResponse.json(await query.getSkriuwEventCounts(projectFilter ?? "skriuw", from, to));
+				return NextResponse.json(
+					await query.getSkriuwEventCounts(projectFilter ?? "skriuw", from, to, excludeVisitorId),
+				);
 			case "skriuw-trend":
-				return NextResponse.json(await query.getSkriuwEventTrend(projectFilter ?? "skriuw", from, to));
+				return NextResponse.json(
+					await query.getSkriuwEventTrend(projectFilter ?? "skriuw", from, to, excludeVisitorId),
+				);
 			case "skriuw-notes":
-				return NextResponse.json(await query.getSkriuwNotesActivity(projectFilter ?? "skriuw", from, to));
+				return NextResponse.json(
+					await query.getSkriuwNotesActivity(projectFilter ?? "skriuw", from, to, excludeVisitorId),
+				);
 			case "skriuw-journal":
-				return NextResponse.json(await query.getSkriuwJournalActivity(projectFilter ?? "skriuw", from, to));
+				return NextResponse.json(
+					await query.getSkriuwJournalActivity(
+						projectFilter ?? "skriuw",
+						from,
+						to,
+						excludeVisitorId,
+					),
+				);
 			case "skriuw-auth":
-				return NextResponse.json(await query.getSkriuwAuthMetrics(projectFilter ?? "skriuw", from, to));
+				return NextResponse.json(
+					await query.getSkriuwAuthMetrics(projectFilter ?? "skriuw", from, to, excludeVisitorId),
+				);
 			case "skriuw-recent":
 				const skriuwLimit = parseInt(searchParams.get("limit") || "50");
-				return NextResponse.json(await query.getSkriuwRecentEvents(projectFilter ?? "skriuw", skriuwLimit, from, to));
+				return NextResponse.json(
+					await query.getSkriuwRecentEvents(
+						projectFilter ?? "skriuw",
+						skriuwLimit,
+						from,
+						to,
+						excludeVisitorId,
+					),
+				);
 			case "skriuw-searches":
-				return NextResponse.json(await query.getSkriuwTopSearches(projectFilter ?? "skriuw", 20, from, to));
+				return NextResponse.json(
+					await query.getSkriuwTopSearches(
+						projectFilter ?? "skriuw",
+						20,
+						from,
+						to,
+						excludeVisitorId,
+					),
+				);
 			default:
 				return NextResponse.json({ error: "Unknown metric" }, { status: 400 });
 		}

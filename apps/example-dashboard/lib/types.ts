@@ -99,7 +99,7 @@ export interface KPIMetric {
 	unit?: string;
 	trend?: {
 		value: number;
-		direction: "up" | "down" | "flat";
+		direction: "up" | "down" | "flat" | "new";
 		isPositive: boolean;
 	};
 	sparkline?: number[];
@@ -110,11 +110,14 @@ export interface TimeSeriesPoint {
 	value: number;
 }
 
+export type TimeSeriesGranularity = "hour" | "day";
+
 export interface TimeSeries {
 	id: string;
 	label: string;
 	data: TimeSeriesPoint[];
 	color?: string;
+	granularity?: TimeSeriesGranularity;
 }
 
 export interface GeoDistribution {
@@ -315,4 +318,44 @@ export interface SidebarSection {
 		badge?: string | number;
 		active?: boolean;
 	}[];
+}
+
+// =============================================================================
+// POSTHOG INTEGRATION TYPES
+// =============================================================================
+
+export interface PostHogInsight {
+	id: string;
+	shortId: string;
+	name: string;
+	description: string | null;
+	lastRefresh: string | null;
+	url: string;
+	value: number | null;
+	sparkline: number[] | null;
+}
+
+export interface PostHogSite {
+	host: string;
+	events: number;
+}
+
+export interface PostHogEvent {
+	id: string;
+	event: string;
+	timestamp: string;
+	distinctId: string;
+	currentUrl: string | null;
+}
+
+export interface PostHogSummary {
+	series: { day: string; events: number }[];
+	totalEvents: number;
+	uniquePersons: number;
+	pageviews: number;
+	sessions: number;
+	countries: number;
+	allTimeEvents: number;
+	allTimePersons: number;
+	sites: PostHogSite[];
 }
