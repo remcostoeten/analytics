@@ -8,6 +8,27 @@ function dispatchNavigationEvent(): void {
 	window.dispatchEvent(new Event(NAVIGATION_EVENT));
 }
 
+export function onRouteChange(handler: (path: string) => void): () => void {
+	if (isRuntime("server")) return () => {};
+
+	let currentPath = window.location.pathname;
+
+	function check(): void {
+		const nextPath = window.location.pathname;
+		if (nextPath === currentPath) return;
+		currentPath = nextPath;
+		handler(nextPath);
+	}
+
+	window.addEventListener(NAVIGATION_EVENT, check);
+	window.addEventListener("popstate", check);
+
+	return () => {
+		window.removeEventListener(NAVIGATION_EVENT, check);
+		window.removeEventListener("popstate", check);
+	};
+}
+
 function trackPathChange(currentPath: { value: string }, options: AnalyticsOptions): void {
 	const nextPath = window.location.pathname;
 	if (nextPath === currentPath.value) return;

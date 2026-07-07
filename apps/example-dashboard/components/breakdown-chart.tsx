@@ -3,28 +3,27 @@
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 
-interface BreakdownItem {
+type BreakdownItem = {
 	label: string;
 	value: number;
 	percentage: number;
 	color?: string;
-}
+};
 
-// Use CSS variables that work in both light and dark mode
 const chartColors = [
-	"hsl(var(--chart-1))",
-	"hsl(var(--chart-2))",
-	"hsl(var(--chart-3))",
-	"hsl(var(--chart-4))",
-	"hsl(var(--chart-5))",
+	"var(--chart-1)",
+	"var(--chart-2)",
+	"var(--chart-3)",
+	"var(--chart-4)",
+	"var(--chart-5)",
 ];
 
-interface BreakdownChartProps {
+type BreakdownChartProps = {
 	data: BreakdownItem[];
 	title?: string;
 	showBar?: boolean;
 	className?: string;
-}
+};
 
 export function BreakdownChart({ data, title, showBar = true, className }: BreakdownChartProps) {
 	const hasData = data && data.length > 0;
@@ -39,25 +38,25 @@ export function BreakdownChart({ data, title, showBar = true, className }: Break
 			{!hasData ? (
 				<div className="p-6 text-center">
 					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No data available</p>
+					<p className="text-xs text-muted-foreground">No data available</p>
 				</div>
 			) : (
-				<div className="p-3 space-y-2">
+				<div className="p-4 space-y-3">
 					{data.map((item, i) => (
 						<div key={item.label} className="space-y-1">
-							<div className="flex items-center justify-between text-[11px]">
-								<span className="text-foreground truncate max-w-[140px]">{item.label}</span>
-								<div className="flex items-center gap-2">
+							<div className="flex items-center justify-between gap-4 text-xs">
+								<span className="min-w-0 truncate font-medium text-foreground">{item.label}</span>
+								<div className="flex shrink-0 items-center gap-3">
 									<span className="text-muted-foreground tabular-nums">
 										{item.value.toLocaleString()}
 									</span>
-									<span className="text-muted-foreground tabular-nums w-10 text-right">
+									<span className="w-12 text-right font-medium text-foreground tabular-nums">
 										{item.percentage.toFixed(1)}%
 									</span>
 								</div>
 							</div>
 							{showBar && (
-								<div className="h-1 bg-muted rounded-full overflow-hidden">
+								<div className="h-1.5 overflow-hidden rounded-full bg-muted">
 									<div
 										className="h-full rounded-full"
 										style={{
@@ -75,13 +74,12 @@ export function BreakdownChart({ data, title, showBar = true, className }: Break
 	);
 }
 
-// Donut chart variant
-interface DonutChartProps {
+type DonutChartProps = {
 	data: BreakdownItem[];
 	title?: string;
 	size?: number;
 	className?: string;
-}
+};
 
 export function DonutChart({ data, title, size = 80, className }: DonutChartProps) {
 	const hasData = data && data.length > 0;
@@ -102,10 +100,10 @@ export function DonutChart({ data, title, size = 80, className }: DonutChartProp
 			{!hasData ? (
 				<div className="p-6 text-center">
 					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No data available</p>
+					<p className="text-xs text-muted-foreground">No data available</p>
 				</div>
 			) : (
-				<div className="p-3 flex items-center gap-4">
+				<div className="flex items-center gap-5 p-4">
 					<svg width={size} height={size} className="transform -rotate-90 flex-shrink-0">
 						{data.map((item, i) => {
 							const percentage = (item.value / total) * 100;
@@ -131,13 +129,15 @@ export function DonutChart({ data, title, size = 80, className }: DonutChartProp
 					</svg>
 					<div className="flex-1 space-y-1">
 						{data.map((item, i) => (
-							<div key={item.label} className="flex items-center gap-2 text-[11px]">
+							<div key={item.label} className="flex items-center gap-2.5 text-xs">
 								<span
 									className="w-2 h-2 rounded-full flex-shrink-0"
 									style={{ backgroundColor: item.color || chartColors[i % chartColors.length] }}
 								/>
-								<span className="text-foreground truncate flex-1">{item.label}</span>
-								<span className="text-muted-foreground tabular-nums">
+								<span className="min-w-0 flex-1 truncate font-medium text-foreground">
+									{item.label}
+								</span>
+								<span className="w-10 text-right font-medium text-foreground tabular-nums">
 									{item.percentage.toFixed(0)}%
 								</span>
 							</div>

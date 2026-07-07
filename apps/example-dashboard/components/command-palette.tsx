@@ -27,7 +27,14 @@ import {
 	CommandSeparator,
 } from "@/components/ui/command";
 
-type DashboardView = "overview" | "realtime" | "retention" | "behavior" | "technology" | "audience";
+type DashboardView =
+	| "overview"
+	| "realtime"
+	| "retention"
+	| "behavior"
+	| "technology"
+	| "audience"
+	| "posthog";
 
 type CommandPaletteProps = {
 	open: boolean;
@@ -35,6 +42,8 @@ type CommandPaletteProps = {
 	onViewChange: (view: DashboardView) => void;
 	onTimeRangeChange: (range: string) => void;
 	onProjectChange: (projectId: string | null) => void;
+	onPageSelect: (path: string) => void;
+	onReferrerSelect: (domain: string) => void;
 	pages?: { path: string; views: number }[];
 	referrers?: { domain: string; visits: number }[];
 	projects?: { id: string; eventCount: number }[];
@@ -48,6 +57,8 @@ export function CommandPalette({
 	onViewChange,
 	onTimeRangeChange,
 	onProjectChange,
+	onPageSelect,
+	onReferrerSelect,
 	pages = [],
 	referrers = [],
 	projects = [],
@@ -86,10 +97,13 @@ export function CommandPalette({
 			description: "Browsers, OS, screen sizes",
 		},
 		{ id: "audience", label: "Audience", icon: Users, description: "Geo and segmentation" },
+		{ id: "posthog", label: "PostHog", icon: Zap, description: "Insights and events from PostHog" },
 	];
 
 	const timeRanges = [
 		{ value: "all", label: "All time" },
+		{ value: "24h", label: "Last 24 hours" },
+		{ value: "7d", label: "Last 7 days" },
 		{ value: "30d", label: "Last 30 days" },
 		{ value: "60d", label: "Last 60 days" },
 		{ value: "90d", label: "Last 90 days" },
@@ -170,7 +184,7 @@ export function CommandPalette({
 								<CommandItem
 									key={page.path}
 									value={`page ${page.path}`}
-									onSelect={() => onOpenChange(false)}
+									onSelect={() => runAndClose(() => onPageSelect(page.path))}
 									className="gap-3"
 								>
 									<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
@@ -182,6 +196,7 @@ export function CommandPalette({
 									<span className="ml-auto text-[11px] text-muted-foreground shrink-0">
 										{page.views.toLocaleString()} views
 									</span>
+									<CommandShortcut>Behavior</CommandShortcut>
 								</CommandItem>
 							))}
 						</CommandGroup>
@@ -196,7 +211,7 @@ export function CommandPalette({
 								<CommandItem
 									key={ref.domain}
 									value={`referrer ${ref.domain}`}
-									onSelect={() => onOpenChange(false)}
+									onSelect={() => runAndClose(() => onReferrerSelect(ref.domain))}
 									className="gap-3"
 								>
 									<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
@@ -206,6 +221,7 @@ export function CommandPalette({
 									<span className="ml-auto text-[11px] text-muted-foreground">
 										{ref.visits.toLocaleString()} visits
 									</span>
+									<CommandShortcut>Details</CommandShortcut>
 								</CommandItem>
 							))}
 						</CommandGroup>

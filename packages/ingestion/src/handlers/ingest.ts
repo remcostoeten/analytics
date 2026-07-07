@@ -70,6 +70,8 @@ export type SharedIngestContext = {
 	internal: boolean;
 };
 
+type VisitorMetaMerge = { path: "identity" | "experiments"; value: Record<string, unknown> };
+
 type VisitorData = {
 	ipHash: string | null;
 	deviceType: string;
@@ -84,7 +86,27 @@ type VisitorData = {
 	ua: string | null;
 	screenResolution: string | null;
 	isInternal: boolean;
+	metaMerge?: VisitorMetaMerge;
 };
+
+function resolveVisitorMetaMerge(
+	payload: import("../utilities/validation.js").EventPayload,
+): VisitorMetaMerge | undefined {
+	if (!payload.meta || typeof payload.meta !== "object") return undefined;
+	const meta = payload.meta as Record<string, unknown>;
+	if (meta.eventName === "identify") {
+		const userProperties = meta.userProperties;
+		if (userProperties && typeof userProperties === "object") {
+			return { path: "identity", value: userProperties as Record<string, unknown> };
+		}
+	} else if (meta.eventName === "experiment_exposure") {
+		const experiments = meta.experiments;
+		if (experiments && typeof experiments === "object") {
+			return { path: "experiments", value: experiments as Record<string, unknown> };
+		}
+	}
+	return undefined;
+}
 
 async function upsertVisitor(
 	db: DbModule["db"],
@@ -93,6 +115,34 @@ async function upsertVisitor(
 	data: VisitorData,
 ): Promise<void> {
 	try {
+		const updateSet: Record<string, unknown> = {
+			lastSeen: drizzleSql`now()`,
+			visitCount: drizzleSql`${visitors.visitCount} + 1`,
+			ipHash: data.ipHash,
+			deviceType: data.deviceType,
+			browser: data.browser ?? null,
+			browserVersion: data.browserVersion ?? null,
+			os: data.os ?? null,
+			osVersion: data.osVersion ?? null,
+			language: data.language,
+			country: data.country,
+			region: data.region,
+			city: data.city,
+			ua: data.ua,
+			screenResolution: data.screenResolution,
+			isInternal: data.isInternal,
+		};
+
+		if (data.metaMerge) {
+			const { path, value } = data.metaMerge;
+			updateSet.meta = drizzleSql`jsonb_set(
+				COALESCE(${visitors.meta}, '{}'::jsonb),
+				ARRAY[${path}]::text[],
+				COALESCE(${visitors.meta}->${path}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb,
+				true
+			)`;
+		}
+
 		await db
 			.insert(visitors)
 			.values({
@@ -110,26 +160,11 @@ async function upsertVisitor(
 				ua: data.ua,
 				screenResolution: data.screenResolution,
 				isInternal: data.isInternal,
+				meta: data.metaMerge ? { [data.metaMerge.path]: data.metaMerge.value } : null,
 			})
 			.onConflictDoUpdate({
 				target: visitors.fingerprint,
-				set: {
-					lastSeen: drizzleSql`now()`,
-					visitCount: drizzleSql`${visitors.visitCount} + 1`,
-					ipHash: data.ipHash,
-					deviceType: data.deviceType,
-					browser: data.browser ?? null,
-					browserVersion: data.browserVersion ?? null,
-					os: data.os ?? null,
-					osVersion: data.osVersion ?? null,
-					language: data.language,
-					country: data.country,
-					region: data.region,
-					city: data.city,
-					ua: data.ua,
-					screenResolution: data.screenResolution,
-					isInternal: data.isInternal,
-				},
+				set: updateSet,
 			});
 	} catch (err) {
 		console.error("[Visitor upsert failed]", err);
@@ -222,6 +257,7 @@ export async function processSingleEvent(
 			ua: payload.ua,
 			screenResolution,
 			isInternal: internal,
+			metaMerge: resolveVisitorMetaMerge(payload),
 		});
 	}
 

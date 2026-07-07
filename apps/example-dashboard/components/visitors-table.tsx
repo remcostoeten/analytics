@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Inbox, User, Monitor, Globe, Clock, Search } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { getFlagEmoji } from "@/lib/format";
 
 interface Visitor {
 	id: string;
@@ -37,15 +38,6 @@ function formatTimeAgo(dateStr: string): string {
 	if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
 	if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
 	return `${Math.floor(seconds / 86400)}d ago`;
-}
-
-function getFlagEmoji(countryCode: string): string {
-	if (!countryCode || countryCode.length !== 2) return "";
-	const codePoints = countryCode
-		.toUpperCase()
-		.split("")
-		.map((char) => 127397 + char.charCodeAt(0));
-	return String.fromCodePoint(...codePoints);
 }
 
 const deviceIcons: Record<string, string> = {

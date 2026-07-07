@@ -68,6 +68,7 @@ export type EventPayload<Type extends EventType = EventType> = {
 	lang: string;
 	visitorId: string;
 	sessionId: string;
+	ts?: string;
 	meta?: TrackMeta;
 };
 

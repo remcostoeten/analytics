@@ -28,31 +28,46 @@ type TrendChartProps = {
 export function TrendChart({
 	data,
 	title,
-	color = "hsl(var(--chart-1))",
+	color = "var(--chart-1)",
 	height = 120,
 	showAxis = true,
 	className,
 	isLoading = false,
 }: TrendChartProps) {
 	const hasData = data && data.data && data.data.length > 0;
+	const formatLabel = (timestamp: Date | string) => {
+		const date = new Date(timestamp);
+		if (data.granularity === "day") {
+			return date.toLocaleDateString([], { month: "short", day: "numeric" });
+		}
+		return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+	};
 	const chartData = hasData
 		? data.data.map((point) => ({
 				timestamp: point.timestamp,
 				value: point.value,
-				formattedTime: new Date(point.timestamp).toLocaleTimeString([], {
-					hour: "2-digit",
-					minute: "2-digit",
-				}),
+				formattedTime: formatLabel(point.timestamp),
 			}))
 		: [];
 	const isSparse = chartData.length === 1;
 	const singlePoint = isSparse ? chartData[0] : null;
+	const values = chartData.map((point) => Number(point.value) || 0);
+	const total = values.reduce((sum, value) => sum + value, 0);
+	const peak = values.length ? Math.max(...values) : 0;
+	const average = values.length ? total / values.length : 0;
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
 			{title && (
-				<div className="px-3 py-2 border-b border-border">
+				<div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
+					{hasData && (
+						<div className="flex shrink-0 items-center gap-3 text-[10px] text-muted-foreground">
+							<span className="tabular-nums">total {formatCompact(total)}</span>
+							<span className="tabular-nums">peak {formatCompact(peak)}</span>
+							<span className="tabular-nums">avg {formatCompact(average)}</span>
+						</div>
+					)}
 				</div>
 			)}
 			{!hasData ? (
@@ -97,20 +112,20 @@ export function TrendChart({
 					</div>
 				</div>
 			) : (
-				<div className="p-2" style={{ height }}>
+				<div aria-label={title || data.label} className="p-2" style={{ height }}>
 					<ResponsiveContainer width="100%" height="100%">
-						<AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+						<AreaChart data={chartData} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}>
 							<defs>
 								<linearGradient id={`gradient-${data.id}`} x1="0" y1="0" x2="0" y2="1">
-									<stop offset="0%" stopColor={color} stopOpacity={0.35} />
-									<stop offset="100%" stopColor={color} stopOpacity={0.05} />
+									<stop offset="0%" stopColor={color} stopOpacity={0.5} />
+									<stop offset="100%" stopColor={color} stopOpacity={0.1} />
 								</linearGradient>
 							</defs>
 							<CartesianGrid
 								strokeDasharray="3 3"
 								vertical={false}
-								stroke="hsl(var(--border))"
-								strokeOpacity={0.3}
+								stroke="var(--border)"
+								strokeOpacity={0.5}
 							/>
 							{showAxis && (
 								<>
@@ -118,14 +133,15 @@ export function TrendChart({
 										dataKey="formattedTime"
 										axisLine={false}
 										tickLine={false}
-										tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
 										interval="preserveStartEnd"
 										minTickGap={40}
 									/>
 									<YAxis
 										axisLine={false}
+										domain={[0, (max: number) => Math.max(1, Math.ceil(max * 1.2))]}
 										tickLine={false}
-										tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
 										width={32}
 										tickFormatter={(v) => formatCompact(v)}
 									/>
@@ -145,22 +161,22 @@ export function TrendChart({
 									);
 								}}
 							/>
-							<ReferenceLine y={0} stroke="hsl(var(--border))" strokeOpacity={0.4} />
+							<ReferenceLine y={0} stroke="var(--border)" strokeOpacity={0.5} />
 							<Area
 								type="monotone"
 								dataKey="value"
 								stroke={color}
-								strokeWidth={2.25}
+								strokeWidth={3}
 								fill={`url(#gradient-${data.id})`}
 								dot={{
-									r: 2.5,
-									fill: "hsl(var(--background))",
+									r: 3,
+									fill: "var(--background)",
 									stroke: color,
-									strokeWidth: 1.5,
+									strokeWidth: 2,
 								}}
 								activeDot={{
-									r: 4,
-									fill: "hsl(var(--background))",
+									r: 4.5,
+									fill: "var(--background)",
 									stroke: color,
 									strokeWidth: 2,
 								}}
@@ -176,6 +192,7 @@ export function TrendChart({
 function formatCompact(value: number): string {
 	if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
 	if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+	if (value % 1 !== 0) return value.toFixed(1);
 	return value.toString();
 }
 

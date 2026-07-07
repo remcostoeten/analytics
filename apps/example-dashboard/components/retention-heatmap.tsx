@@ -229,8 +229,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 													className={cn(
 														"h-9 rounded flex flex-col items-center justify-center mx-auto transition-all cursor-default select-none",
 														rate === 0 && "bg-muted/20",
-														status === "in_progress" &&
-															"ring-1 ring-inset ring-amber-500/40",
+														status === "in_progress" && "ring-1 ring-inset ring-amber-500/40",
 													)}
 													style={{ width: 64, backgroundColor: bg }}
 													title={
@@ -244,9 +243,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 															<span
 																className={cn(
 																	"text-[10px] font-semibold leading-none",
-																	rate / maxRate > 0.5
-																		? "text-white"
-																		: "text-foreground",
+																	rate / maxRate > 0.5 ? "text-white" : "text-foreground",
 																)}
 															>
 																{rate}%

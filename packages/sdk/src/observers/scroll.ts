@@ -1,11 +1,13 @@
 import { track } from "../api/track";
 import { type AnalyticsOptions } from "../types";
-import { isRuntime } from "../utilities";
+import { isRuntime, onUnload } from "../utilities";
+import { onRouteChange } from "./pageview";
 
 export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) return () => {};
 
 	let maxScroll = 0;
+	let sent = false;
 
 	const handleScroll = () => {
 		const h = document.documentElement;
@@ -23,17 +25,25 @@ export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	};
 
 	const sendScroll = () => {
-		if (maxScroll > 0) {
-			track("event", { eventName: "scroll", depth: maxScroll }, options);
-		}
+		if (sent || maxScroll <= 0) return;
+		sent = true;
+		track("event", { eventName: "scroll", depth: maxScroll }, options);
+	};
+
+	const resetForRoute = () => {
+		sendScroll();
+		maxScroll = 0;
+		sent = false;
 	};
 
 	window.addEventListener("scroll", handleScroll, { passive: true });
-	window.addEventListener("beforeunload", sendScroll);
+	const removeUnload = onUnload(sendScroll);
+	const removeRouteChange = onRouteChange(resetForRoute);
 
 	return () => {
 		sendScroll();
 		window.removeEventListener("scroll", handleScroll);
-		window.removeEventListener("beforeunload", sendScroll);
+		removeUnload();
+		removeRouteChange();
 	};
 }

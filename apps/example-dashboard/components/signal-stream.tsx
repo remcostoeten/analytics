@@ -74,7 +74,15 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	const duration = numberMeta(metadata.duration);
 	const region = stringMeta(metadata.region);
 	const userAgent = stringMeta(metadata.userAgent);
-	const hasDetails = !!(endpoint || method || statusCode !== null || duration !== null || region || requestId || userAgent);
+	const hasDetails = !!(
+		endpoint ||
+		method ||
+		statusCode !== null ||
+		duration !== null ||
+		region ||
+		requestId ||
+		userAgent
+	);
 
 	return (
 		<div

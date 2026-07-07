@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 						data={data}
 						databaseReady={databaseReady}
 						databaseIssue={databaseIssue}
-						breadcrumbs={[{ label: "Analytics", href: "#" }, { label: "Live operations" }]}
+						breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
 						description="Real-time sessions, regional load, and ingest health across your edge network"
 					/>
 				</Suspense>

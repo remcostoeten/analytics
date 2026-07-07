@@ -25,7 +25,7 @@ function write(entries: QueueEntry[]): void {
 	try {
 		localStorage.setItem(QUEUE_KEY, JSON.stringify(entries));
 	} catch {
-		// quota exceeded — discard silently
+		noop();
 	}
 }
 
@@ -55,7 +55,9 @@ export function flushOfflineQueue(): void {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ events }),
 			keepalive: true,
-		}).catch(noop);
+		}).catch(() => {
+			for (const payload of events) enqueueOffline(baseUrl, payload);
+		});
 	}
 }
 

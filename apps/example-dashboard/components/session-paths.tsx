@@ -83,8 +83,7 @@ export function SessionPaths({ data, isLoading }: SessionPathsProps) {
 					const segments = rawSegments.map(abbreviate);
 
 					// Detect single-page visits (entry == exit, e.g. "/ → /")
-					const isSinglePage =
-						rawSegments.length === 2 && rawSegments[0] === rawSegments[1];
+					const isSinglePage = rawSegments.length === 2 && rawSegments[0] === rawSegments[1];
 
 					// Detect round-trips (start === end, length > 2)
 					const isRoundTrip =

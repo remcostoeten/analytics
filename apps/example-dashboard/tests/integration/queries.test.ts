@@ -58,7 +58,7 @@ mock.module("../../lib/db.ts", () => {
 });
 
 // Import queries after mocking
-const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages } =
+const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages, getUTMCampaigns } =
 	await import("../../lib/queries");
 
 describe("Dashboard Queries Integration", () => {
@@ -88,6 +88,19 @@ describe("Dashboard Queries Integration", () => {
 
 		const kpi = await getUniqueVisitorsKPI("test-project");
 		expect(kpi.value).toBe(2);
+	});
+
+	test("getPageviewsKPI excludes selected visitor", async () => {
+		await pg.exec("DELETE FROM events");
+		await pg.exec(`
+            INSERT INTO events (project_id, visitor_id, type, ts, is_localhost) 
+            VALUES ('test-project', 'me', 'pageview', NOW(), false);
+            INSERT INTO events (project_id, visitor_id, type, ts, is_localhost) 
+            VALUES ('test-project', 'someone-else', 'pageview', NOW(), false);
+        `);
+
+		const kpi = await getPageviewsKPI("test-project", undefined, undefined, "me");
+		expect(kpi.value).toBe(1);
 	});
 
 	test("getSessionsKPI counts unique sessions", async () => {
@@ -138,5 +151,33 @@ describe("Dashboard Queries Integration", () => {
 
 		const kpi = await getPageviewsKPI("test-project");
 		expect(kpi.value).toBe(2);
+	});
+
+	test("getUTMCampaigns counts campaign sessions", async () => {
+		await pg.exec("DELETE FROM events");
+		await pg.exec(`
+            INSERT INTO events (project_id, type, ts, is_localhost, visitor_id, session_id, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'v1', 's1', '{"utmSource":"twitter","utmMedium":"social","utmCampaign":"launch"}');
+            INSERT INTO events (project_id, type, ts, is_localhost, visitor_id, session_id, meta)
+            VALUES ('test-project', 'campaign_landing', NOW(), false, 'v1', 's1', '{"utmSource":"twitter","utmMedium":"social","utmCampaign":"launch"}');
+            INSERT INTO events (project_id, type, ts, is_localhost, visitor_id, session_id, meta)
+            VALUES ('test-project', 'pageview', NOW(), false, 'v2', 's2', '{"utmSource":"github","utmMedium":"readme","utmCampaign":"oss"}');
+        `);
+
+		const campaigns = await getUTMCampaigns(
+			new Date(Date.now() - 60 * 60 * 1000),
+			new Date(Date.now() + 60 * 60 * 1000),
+			"test-project",
+		);
+		const twitter = campaigns.find((campaign) => campaign.source === "twitter");
+
+		expect(campaigns).toHaveLength(2);
+		expect(twitter).toMatchObject({
+			source: "twitter",
+			medium: "social",
+			campaign: "launch",
+			visits: 1,
+			visitors: 1,
+		});
 	});
 });

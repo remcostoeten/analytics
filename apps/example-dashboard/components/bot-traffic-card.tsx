@@ -19,9 +19,7 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 	if (!data) return null;
 
 	const botRate =
-		totalEvents && totalEvents > 0
-			? ((data.total / totalEvents) * 100).toFixed(1)
-			: null;
+		totalEvents && totalEvents > 0 ? ((data.total / totalEvents) * 100).toFixed(1) : null;
 
 	const maxHits = Math.max(...(data.topPages?.map((p) => p.hits) || [1]), 1);
 
@@ -70,7 +68,9 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 								style={{ width: `${(page.hits / maxHits) * 100}%` }}
 							/>
 							<div className="relative flex items-center gap-2 px-3 py-1.5">
-								<span className="text-[9px] text-muted-foreground/40 tabular-nums w-3 shrink-0">{i + 1}</span>
+								<span className="text-[9px] text-muted-foreground/40 tabular-nums w-3 shrink-0">
+									{i + 1}
+								</span>
 								<span className="flex-1 text-[10px] text-foreground truncate font-mono">
 									{page.path}
 								</span>

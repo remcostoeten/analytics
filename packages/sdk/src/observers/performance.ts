@@ -1,6 +1,6 @@
 import { track } from "../api/track";
 import { type AnalyticsOptions } from "../types";
-import { isRuntime, noop } from "../utilities";
+import { isRuntime, noop, onUnload } from "../utilities";
 
 type WebVitals = {
 	ttfb?: number;
@@ -37,43 +37,52 @@ function getNavigationTiming(): WebVitals {
 	};
 }
 
-function observeLcp(callback: (value: number) => void): void {
-	if (typeof PerformanceObserver === "undefined") return;
+function observeLcp(callback: (value: number) => void): PerformanceObserver | null {
+	if (typeof PerformanceObserver === "undefined") return null;
 	try {
-		new PerformanceObserver((list) => {
+		const observer = new PerformanceObserver((list) => {
 			const last = list.getEntries().at(-1);
 			if (last) callback(Math.round(last.startTime));
-		}).observe({ type: "largest-contentful-paint", buffered: true });
+		});
+		observer.observe({ type: "largest-contentful-paint", buffered: true });
+		return observer;
 	} catch {
 		noop();
+		return null;
 	}
 }
 
-function observeCls(callback: (value: number) => void): void {
-	if (typeof PerformanceObserver === "undefined") return;
+function observeCls(callback: (value: number) => void): PerformanceObserver | null {
+	if (typeof PerformanceObserver === "undefined") return null;
 	let clsValue = 0;
 	try {
-		new PerformanceObserver((list) => {
+		const observer = new PerformanceObserver((list) => {
 			for (const entry of list.getEntries()) {
 				const shift = entry as LayoutShift;
 				if (!shift.hadRecentInput && shift.value) clsValue += shift.value;
 			}
 			callback(Math.round(clsValue * 1000) / 1000);
-		}).observe({ type: "layout-shift", buffered: true });
+		});
+		observer.observe({ type: "layout-shift", buffered: true });
+		return observer;
 	} catch {
 		noop();
+		return null;
 	}
 }
 
-function observeInp(callback: (value: number) => void): void {
-	if (typeof PerformanceObserver === "undefined") return;
+function observeInp(callback: (value: number) => void): PerformanceObserver | null {
+	if (typeof PerformanceObserver === "undefined") return null;
 	try {
-		new PerformanceObserver((list) => {
+		const observer = new PerformanceObserver((list) => {
 			const last = list.getEntries().at(-1) as InteractionEntry | undefined;
 			if (last?.duration) callback(Math.round(last.duration));
-		}).observe({ type: "event", buffered: true });
+		});
+		observer.observe({ type: "event", buffered: true });
+		return observer;
 	} catch {
 		noop();
+		return null;
 	}
 }
 
@@ -91,18 +100,16 @@ export function observePerformance(options: AnalyticsOptions = {}): () => void {
 		track("event", { eventName: "web-vitals", ...merged }, options);
 	};
 
-	observeLcp((v) => (vitals.lcp = v));
-	observeCls((v) => (vitals.cls = v));
-	observeInp((v) => (vitals.inp = v));
+	const observers = [
+		observeLcp((v) => (vitals.lcp = v)),
+		observeCls((v) => (vitals.cls = v)),
+		observeInp((v) => (vitals.inp = v)),
+	];
 
-	document.addEventListener(
-		"visibilitychange",
-		() => document.visibilityState === "hidden" && send(),
-	);
-	window.addEventListener("beforeunload", send);
+	const removeUnload = onUnload(send);
 
 	return () => {
-		document.removeEventListener("visibilitychange", send);
-		window.removeEventListener("beforeunload", send);
+		removeUnload();
+		for (const observer of observers) observer?.disconnect();
 	};
 }

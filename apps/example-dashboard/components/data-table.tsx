@@ -4,8 +4,9 @@ import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 import type { ContentMetric, ReferrerMetric, GeoDistribution } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getFlagEmoji } from "@/lib/format";
 
-interface DataTableProps<T extends object> {
+type DataTableProps<T extends object> = {
 	data: T[];
 	columns: {
 		key: keyof T | string;
@@ -19,7 +20,7 @@ interface DataTableProps<T extends object> {
 	className?: string;
 	onRowClick?: (row: T) => void;
 	isLoading?: boolean;
-}
+};
 
 export function DataTable<T extends object>({
 	data,
@@ -51,10 +52,10 @@ export function DataTable<T extends object>({
 						))}
 					</div>
 				) : (
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No data available</p>
-				</div>
+					<div className="p-6 text-center">
+						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+						<p className="text-[11px] text-muted-foreground">No data available</p>
+					</div>
 				)
 			) : (
 				<div className="overflow-x-auto">
@@ -92,17 +93,17 @@ export function DataTable<T extends object>({
 									{columns.map((col) => {
 										const value = row[col.key as keyof T];
 										return (
-<td
-											key={String(col.key)}
-											className={cn(
-												"px-3 py-1.5 text-foreground",
-												col.align === "right"
-													? "text-right tabular-nums font-medium"
-													: col.align === "center"
-														? "text-center"
-														: "text-left",
-											)}
-										>
+											<td
+												key={String(col.key)}
+												className={cn(
+													"px-3 py-1.5 text-foreground",
+													col.align === "right"
+														? "text-right tabular-nums font-medium"
+														: col.align === "center"
+															? "text-center"
+															: "text-left",
+												)}
+											>
 												{col.render ? col.render(value, row) : String(value ?? "")}
 											</td>
 										);
@@ -117,13 +118,11 @@ export function DataTable<T extends object>({
 	);
 }
 
-// Pre-configured tables for common use cases
-
-interface TopPagesTableProps {
+type TopPagesTableProps = {
 	data: ContentMetric[];
 	className?: string;
 	isLoading?: boolean;
-}
+};
 
 export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps) {
 	return (
@@ -164,23 +163,17 @@ export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps
 					align: "right",
 					render: (v) => Number(v).toLocaleString(),
 				},
-				{
-					key: "bounceRate",
-					label: "Bounce",
-					align: "right",
-					render: (v) => `${((Number(v) || 0) * 100).toFixed(0)}%`,
-				},
 			]}
 		/>
 	);
 }
 
-interface ReferrersTableProps {
+type ReferrersTableProps = {
 	data: ReferrerMetric[];
 	className?: string;
 	onDomainClick?: (domain: string) => void;
 	isLoading?: boolean;
-}
+};
 
 export function ReferrersTable({ data, className, onDomainClick, isLoading }: ReferrersTableProps) {
 	return (
@@ -238,10 +231,10 @@ export function ReferrersTable({ data, className, onDomainClick, isLoading }: Re
 	);
 }
 
-interface GeoTableProps {
+type GeoTableProps = {
 	data: GeoDistribution[];
 	className?: string;
-}
+};
 
 export function GeoTable({ data, className }: GeoTableProps) {
 	return (
@@ -281,12 +274,4 @@ export function GeoTable({ data, className }: GeoTableProps) {
 			]}
 		/>
 	);
-}
-
-function getFlagEmoji(countryCode: string): string {
-	const codePoints = countryCode
-		.toUpperCase()
-		.split("")
-		.map((char) => 127397 + char.charCodeAt(0));
-	return String.fromCodePoint(...codePoints);
 }

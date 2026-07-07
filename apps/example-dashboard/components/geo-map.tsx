@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { cn } from "@/lib/utils";
 import type { GeoDistribution } from "@/lib/types";
+import { getFlagEmoji } from "@/lib/format";
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -421,12 +422,4 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 			</div>
 		</div>
 	);
-}
-
-function getFlagEmoji(countryCode: string): string {
-	const codePoints = countryCode
-		.toUpperCase()
-		.split("")
-		.map((char) => 127397 + char.charCodeAt(0));
-	return String.fromCodePoint(...codePoints);
 }

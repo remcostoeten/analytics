@@ -22,7 +22,8 @@ function resolveDefaultProjectId(): string {
 export { validateIngestUrl } from "../utilities/ingest-url";
 
 function createEventKey(payload: EventPayload): string {
-	return `${payload.type}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
+	const eventName = typeof payload.meta?.eventName === "string" ? payload.meta.eventName : "";
+	return `${payload.type}-${eventName}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
 }
 
 function isDuplicate(payload: EventPayload): boolean {
@@ -51,6 +52,7 @@ function buildPayload(
 		lang: navigator.language,
 		visitorId: getVisitorId(),
 		sessionId: getSessionId(),
+		ts: new Date().toISOString(),
 		meta: { ...collectEnrichment(), ...meta },
 	};
 }

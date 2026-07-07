@@ -82,8 +82,22 @@ export const mockSignals: SignalEvent[] = [];
 
 // Top pages
 export const mockTopPages: ContentMetric[] = [
-	{ host: "example.com", path: "/", views: 45123, uniqueVisitors: 12453, avgDuration: 32, bounceRate: 0.42 },
-	{ host: "example.com", path: "/pricing", views: 12847, uniqueVisitors: 8234, avgDuration: 89, bounceRate: 0.28 },
+	{
+		host: "example.com",
+		path: "/",
+		views: 45123,
+		uniqueVisitors: 12453,
+		avgDuration: 32,
+		bounceRate: 0.42,
+	},
+	{
+		host: "example.com",
+		path: "/pricing",
+		views: 12847,
+		uniqueVisitors: 8234,
+		avgDuration: 89,
+		bounceRate: 0.28,
+	},
 	{
 		host: "example.com",
 		path: "/docs/getting-started",
@@ -100,7 +114,14 @@ export const mockTopPages: ContentMetric[] = [
 		avgDuration: 234,
 		bounceRate: 0.22,
 	},
-	{ host: "example.com", path: "/features", views: 5432, uniqueVisitors: 3876, avgDuration: 56, bounceRate: 0.35 },
+	{
+		host: "example.com",
+		path: "/features",
+		views: 5432,
+		uniqueVisitors: 3876,
+		avgDuration: 56,
+		bounceRate: 0.35,
+	},
 	{
 		host: "docs.example.com",
 		path: "/api-reference",
@@ -109,7 +130,14 @@ export const mockTopPages: ContentMetric[] = [
 		avgDuration: 312,
 		bounceRate: 0.12,
 	},
-	{ host: "example.com", path: "/contact", views: 2341, uniqueVisitors: 1876, avgDuration: 45, bounceRate: 0.65 },
+	{
+		host: "example.com",
+		path: "/contact",
+		views: 2341,
+		uniqueVisitors: 1876,
+		avgDuration: 45,
+		bounceRate: 0.65,
+	},
 	{ path: "/about", views: 1923, uniqueVisitors: 1654, avgDuration: 67, bounceRate: 0.48 },
 ];
 

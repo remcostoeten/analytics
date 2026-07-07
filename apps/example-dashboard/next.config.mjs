@@ -10,7 +10,7 @@ const nextConfig = {
 		unoptimized: true,
 	},
 	cache: {
-		directory: '.next/cache',
+		directory: ".next/cache",
 	},
 };
 
