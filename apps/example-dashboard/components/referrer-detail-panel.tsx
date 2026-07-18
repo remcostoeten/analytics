@@ -5,7 +5,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+async function fetcher(url: string) {
+	const response = await fetch(url);
+	const body = await response.json();
+	if (!response.ok) {
+		throw new Error(body?.message || body?.error || "Analytics request failed");
+	}
+	return body;
+}
 
 interface ReferrerDetailPanelProps {
 	domain: string | null;

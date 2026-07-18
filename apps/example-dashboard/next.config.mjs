@@ -6,9 +6,6 @@ const nextConfig = {
 	experimental: {
 		inlineCss: true,
 	},
-	typescript: {
-		ignoreBuildErrors: true,
-	},
 	images: {
 		unoptimized: true,
 	},

@@ -298,14 +298,14 @@ export interface DashboardData {
 export interface NavTab {
 	id: string;
 	label: string;
-	href?: string;
+	href?: import("next").Route;
 	count?: number;
 	active?: boolean;
 }
 
 export interface BreadcrumbItem {
 	label: string;
-	href?: string;
+	href?: import("next").Route;
 }
 
 export interface SidebarSection {

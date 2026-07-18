@@ -1,5 +1,7 @@
 "use client";
 
+import type { Route } from "next";
+
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -107,9 +109,9 @@ export function AppSidebar() {
 		{ id: "technology", label: "Technology", icon: Settings2 },
 	];
 
-	function buildHref(path: string, params: URLSearchParams): string {
+	function buildHref(path: string, params: URLSearchParams): Route {
 		const query = params.toString();
-		return query ? `${path}?${query}` : path;
+		return (query ? `${path}?${query}` : path) as Route;
 	}
 
 	function setSelectedProject(projectId: string | null) {
@@ -160,7 +162,7 @@ export function AppSidebar() {
 		setShowCustomPicker(false);
 	}
 
-	function viewHref(id: string) {
+	function viewHref(id: string): Route {
 		const params = new URLSearchParams(searchParams.toString());
 		if (id === "overview") {
 			params.delete("view");

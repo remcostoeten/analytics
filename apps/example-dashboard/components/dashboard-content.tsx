@@ -1,5 +1,7 @@
 "use client";
 
+import type { Route as AppRoute } from "next";
+
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { KPICardsGrid } from "@/components/kpi-cards";
@@ -660,12 +662,12 @@ export function DashboardContent({
 		{ id: "posthog" as DashboardView, label: "PostHog", icon: Zap },
 	];
 
-	function buildHref(path: string, params: URLSearchParams): string {
+	function buildHref(path: string, params: URLSearchParams): AppRoute {
 		const query = params.toString();
-		return query ? `${path}?${query}` : path;
+		return (query ? `${path}?${query}` : path) as AppRoute;
 	}
 
-	function viewHref(view: DashboardView): string {
+	function viewHref(view: DashboardView): AppRoute {
 		const params = new URLSearchParams(searchParams.toString());
 		if (view === "overview") {
 			params.delete("view");
