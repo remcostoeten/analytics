@@ -7,18 +7,27 @@ const dbModule = {
 	db: {
 		insert: () => ({
 			values: (value: Record<string, unknown>) => {
-				if ("projectId" in value) insertedEvents.push(value);
-				return {
-					onConflictDoUpdate: () => Promise.resolve(),
-					returning: () => Promise.resolve(),
+				if ("type" in value && "path" in value) insertedEvents.push(value);
+				const chain = {
+					onConflictDoUpdate: () => chain,
+					returning: () => Promise.resolve([]),
+					then: (resolve: (value: unknown) => unknown) => resolve(undefined),
 				};
+				return chain;
 			},
 		}),
 	},
 	events: {},
 	visitors: {
+		projectId: "project_id",
 		fingerprint: "fingerprint",
 		visitCount: "visit_count",
+	},
+	sessions: {
+		sessionId: "session_id",
+		events: "events",
+		pageviews: "pageviews",
+		startedAt: "started_at",
 	},
 };
 

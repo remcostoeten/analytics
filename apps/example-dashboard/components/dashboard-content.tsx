@@ -8,7 +8,7 @@ import { KPICardsGrid } from "@/components/kpi-cards";
 import { SignalStream } from "@/components/signal-stream";
 import { TopPagesTable, ReferrersTable } from "@/components/data-table";
 import { TrendChart } from "@/components/trend-chart";
-import { DonutChart } from "@/components/breakdown-chart";
+import { DonutChart, BreakdownChart } from "@/components/breakdown-chart";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { GeoMap } from "@/components/geo-map";
 import { GeoDetails } from "@/components/geo-details";
@@ -439,12 +439,13 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: visitors } = useSWR(
-		viewKey(["technology", "audience"], "visitors"),
+	const { data: recurrence } = useSWR(
+		viewKey(["technology", "audience"], "visitor-recurrence"),
 		fetcher,
 		{
-			fallbackData: [],
-			refreshInterval: 30000,
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
 			keepPreviousData: true,
 		},
 	);
@@ -910,7 +911,7 @@ export function DashboardContent({
 									/>
 									<WebVitalsCard data={webVitals} />
 								</div>
-								<VisitorsTable data={visitors || []} />
+								<VisitorsTable buildQuery={buildQuery} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -940,7 +941,7 @@ export function DashboardContent({
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
 								<GeoDetails data={geoDetail} />
-								<VisitorsTable data={visitors || []} />
+								<VisitorsTable buildQuery={buildQuery} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -955,6 +956,28 @@ export function DashboardContent({
 									browsers={browsers}
 									operatingSystems={operatingSystems}
 									languages={languages}
+								/>
+								<div className="bg-card border border-border rounded-sm px-3 py-2.5">
+									<p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+										Returning rate
+									</p>
+									<span className="mt-1 block text-xl font-semibold text-foreground tabular-nums tracking-tight">
+										{recurrence ? `${recurrence.returningRate.toFixed(1)}%` : "—"}
+									</span>
+								</div>
+								<BreakdownChart
+									title="Visit count distribution"
+									data={(recurrence?.distribution ?? []).map((d: { bucket: string; count: number }) => {
+										const total = (recurrence?.distribution ?? []).reduce(
+											(sum: number, x: { count: number }) => sum + x.count,
+											0,
+										);
+										return {
+											label: `${d.bucket} visits`,
+											value: d.count,
+											percentage: total > 0 ? (d.count / total) * 100 : 0,
+										};
+									})}
 								/>
 							</div>
 						</div>

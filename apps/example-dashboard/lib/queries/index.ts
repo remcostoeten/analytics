@@ -5,3 +5,4 @@ export * from "./sessions";
 export * from "./realtime";
 export * from "./overview";
 export * from "./skriuw";
+export * from "./visitors";

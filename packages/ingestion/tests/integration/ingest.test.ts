@@ -6,18 +6,19 @@ import { Hono } from "hono";
 describe("POST /ingest integration", async () => {
 	async function setup() {
 		const { db, cleanup } = await setupTestDb();
-		const { events, visitors } = await import("../../src/db/index.js");
+		const { events, visitors, sessions } = await import("../../src/db/index.js");
 
 		mock.module("../../src/db/index.js", () => ({
 			db,
 			events,
 			visitors,
+			sessions,
 		}));
 
 		const { handleIngest } = await import("../../src/handlers/ingest");
 
 		const { __setDbModule } = await import("../../src/handlers/ingest");
-		__setDbModule({ db, events, visitors } as any);
+		__setDbModule({ db, events, visitors, sessions } as any);
 
 		const { dedupeCache, metrics } = await import("../../src/utilities/dedupe");
 		dedupeCache.clear();

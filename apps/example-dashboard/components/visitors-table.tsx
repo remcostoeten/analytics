@@ -1,33 +1,45 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Inbox, User, Monitor, Globe, Clock, Search } from "lucide-react";
+import { Inbox, Monitor, Search, User } from "lucide-react";
 import { useState } from "react";
+import useSWR from "swr";
+import Link from "next/link";
+import type { Route } from "next";
 import { Input } from "@/components/ui/input";
 import { getFlagEmoji } from "@/lib/format";
 
-interface Visitor {
+type VisitorExplorerRow = {
 	id: string;
 	fingerprint: string;
 	firstSeen: string;
 	lastSeen: string;
 	visitCount: number;
 	deviceType: string | null;
-	os: string | null;
-	osVersion: string | null;
 	browser: string | null;
-	browserVersion: string | null;
-	screenResolution: string | null;
-	timezone: string | null;
-	language: string | null;
+	os: string | null;
 	country: string | null;
-	region: string | null;
 	city: string | null;
-}
+	isInternal: boolean;
+};
 
-interface VisitorsTableProps {
-	data: Visitor[];
+type VisitorExplorerResponse = {
+	rows: VisitorExplorerRow[];
+	total: number;
+};
+
+type Segment = "all" | "new" | "returning";
+type Sort = "last_seen" | "visit_count" | "first_seen";
+
+type Props = {
+	buildQuery: (metric: string, extraParams?: string) => string;
 	className?: string;
+};
+
+async function fetcher(url: string): Promise<VisitorExplorerResponse> {
+	const response = await fetch(url);
+	if (!response.ok) throw new Error("Failed to load visitors");
+	return response.json();
 }
 
 function formatTimeAgo(dateStr: string): string {
@@ -47,43 +59,67 @@ const deviceIcons: Record<string, string> = {
 	bot: "B",
 };
 
-export function VisitorsTable({ data, className }: VisitorsTableProps) {
-	const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
+const SEGMENTS: { id: Segment; label: string }[] = [
+	{ id: "all", label: "All" },
+	{ id: "new", label: "New" },
+	{ id: "returning", label: "Returning" },
+];
+
+export function VisitorsTable({ buildQuery, className }: Props) {
+	const [segment, setSegment] = useState<Segment>("all");
+	const [sort, setSort] = useState<Sort>("last_seen");
 	const [search, setSearch] = useState("");
 
+	const { data, isLoading } = useSWR(
+		buildQuery("visitors-explorer", `segment=${segment}&sort=${sort}&limit=25`),
+		fetcher,
+		{ fallbackData: { rows: [], total: 0 }, refreshInterval: 30000, keepPreviousData: true },
+	);
+
+	const rows = data?.rows ?? [];
 	const filtered = search.trim()
-		? data.filter((v) => {
+		? rows.filter((v) => {
 				const q = search.toLowerCase();
 				return (
 					(v.country || "").toLowerCase().includes(q) ||
 					(v.city || "").toLowerCase().includes(q) ||
 					(v.browser || "").toLowerCase().includes(q) ||
 					(v.os || "").toLowerCase().includes(q) ||
-					(v.deviceType || "").toLowerCase().includes(q) ||
-					(v.language || "").toLowerCase().includes(q)
+					(v.deviceType || "").toLowerCase().includes(q)
 				);
 			})
-		: data;
-
-	if (!data || data.length === 0) {
-		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
-				<div className="px-3 py-2 border-b border-border">
-					<h3 className="text-xs font-medium text-foreground">Recent Visitors</h3>
-				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No visitors yet</p>
-				</div>
-			</div>
-		);
-	}
+		: rows;
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
-			<div className="px-3 py-2 border-b border-border flex items-center gap-2">
-				<h3 className="text-xs font-medium text-foreground shrink-0">Recent Visitors</h3>
-				<div className="relative flex-1 max-w-[200px] ml-auto">
+			<div className="px-3 py-2 border-b border-border flex items-center gap-2 flex-wrap">
+				<h3 className="text-xs font-medium text-foreground shrink-0">Visitors</h3>
+				<div className="flex items-center gap-1 shrink-0">
+					{SEGMENTS.map((s) => (
+						<button
+							key={s.id}
+							onClick={() => setSegment(s.id)}
+							className={cn(
+								"px-2 py-0.5 rounded text-[10px] font-medium transition-colors",
+								segment === s.id
+									? "bg-foreground text-background"
+									: "text-muted-foreground hover:bg-muted",
+							)}
+						>
+							{s.label}
+						</button>
+					))}
+				</div>
+				<select
+					value={sort}
+					onChange={(e) => setSort(e.target.value as Sort)}
+					className="h-6 text-[10px] bg-muted/50 border border-border rounded px-1"
+				>
+					<option value="last_seen">Last seen</option>
+					<option value="visit_count">Visit count</option>
+					<option value="first_seen">First seen</option>
+				</select>
+				<div className="relative flex-1 min-w-[120px] max-w-[200px] ml-auto">
 					<Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
 					<Input
 						value={search}
@@ -93,161 +129,104 @@ export function VisitorsTable({ data, className }: VisitorsTableProps) {
 					/>
 				</div>
 				<span className="text-[10px] text-muted-foreground shrink-0">
-					{filtered.length}/{data.length}
+					{filtered.length}/{data?.total ?? 0}
 				</span>
 			</div>
-			<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-				<table className="w-full text-[11px]">
-					<thead className="sticky top-0 bg-card z-10">
-						<tr className="border-b border-border bg-muted/30">
-							<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-								Visitor
-							</th>
-							<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-								Location
-							</th>
-							<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-								Device
-							</th>
-							<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-								Visits
-							</th>
-							<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-								Last Seen
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border">
-						{filtered.length === 0 && (
-							<tr>
-								<td colSpan={5} className="px-3 py-6 text-center text-[11px] text-muted-foreground">
-									No visitors match &ldquo;{search}&rdquo;
-								</td>
+
+			{!isLoading && filtered.length === 0 ? (
+				<div className="p-6 text-center">
+					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+					<p className="text-[11px] text-muted-foreground">No visitors match this segment</p>
+				</div>
+			) : (
+				<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+					<table className="w-full text-[11px]">
+						<thead className="sticky top-0 bg-card z-10">
+							<tr className="border-b border-border bg-muted/30">
+								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+									Visitor
+								</th>
+								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+									Location
+								</th>
+								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+									Device
+								</th>
+								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+									Visits
+								</th>
+								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+									Last Seen
+								</th>
 							</tr>
-						)}
-						{filtered.slice(0, 20).map((visitor) => (
-							<tr
-								key={visitor.id}
-								className={cn(
-									"hover:bg-muted/50 transition-colors cursor-pointer",
-									selectedVisitor?.id === visitor.id && "bg-muted/70",
-								)}
-								onClick={() =>
-									setSelectedVisitor(selectedVisitor?.id === visitor.id ? null : visitor)
-								}
-							>
-								<td className="px-3 py-1.5">
-									<div className="flex items-center gap-2">
-										<div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-											<User className="h-3 w-3 text-muted-foreground" />
+						</thead>
+						<tbody className="divide-y divide-border">
+							{filtered.map((visitor) => (
+								<tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
+									<td className="px-3 py-1.5">
+										<Link
+											href={`/visitor/${visitor.fingerprint}` as Route}
+											className="flex items-center gap-2 group"
+										>
+											<div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+												<User className="h-3 w-3 text-muted-foreground" />
+											</div>
+											<span className="font-mono text-[9px] text-muted-foreground group-hover:text-foreground group-hover:underline">
+												{visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
+											</span>
+										</Link>
+									</td>
+									<td className="px-3 py-1.5">
+										<div className="flex items-center gap-1.5">
+											{visitor.country && (
+												<span className="text-sm">{getFlagEmoji(visitor.country)}</span>
+											)}
+											<span className="text-foreground truncate max-w-[100px]">
+												{visitor.city || visitor.country || "Unknown"}
+											</span>
 										</div>
-										<span className="font-mono text-[9px] text-muted-foreground">
-											{visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
-										</span>
-									</div>
-								</td>
-								<td className="px-3 py-1.5">
-									<div className="flex items-center gap-1.5">
-										{visitor.country && (
-											<span className="text-sm">{getFlagEmoji(visitor.country)}</span>
-										)}
-										<span className="text-foreground truncate max-w-[100px]">
-											{visitor.city || visitor.country || "Unknown"}
-										</span>
-									</div>
-								</td>
-								<td className="px-3 py-1.5">
-									<div className="flex items-center gap-1.5">
+									</td>
+									<td className="px-3 py-1.5">
+										<div className="flex items-center gap-1.5">
+											<span
+												className={cn(
+													"inline-flex items-center justify-center w-4 h-4 rounded text-[8px] font-bold",
+													visitor.deviceType === "desktop" &&
+														"bg-blue-500/15 text-blue-600 dark:text-blue-400",
+													visitor.deviceType === "mobile" &&
+														"bg-green-500/15 text-green-600 dark:text-green-400",
+													visitor.deviceType === "tablet" &&
+														"bg-purple-500/15 text-purple-600 dark:text-purple-400",
+													(!visitor.deviceType || visitor.deviceType === "unknown") &&
+														"bg-muted text-muted-foreground",
+												)}
+											>
+												{deviceIcons[visitor.deviceType || "unknown"] || "?"}
+											</span>
+											<span className="text-muted-foreground truncate max-w-[80px]">
+												{visitor.browser || "Unknown"}
+											</span>
+										</div>
+									</td>
+									<td className="px-3 py-1.5 text-right tabular-nums">
 										<span
 											className={cn(
-												"inline-flex items-center justify-center w-4 h-4 rounded text-[8px] font-bold",
-												visitor.deviceType === "desktop" &&
-													"bg-blue-500/15 text-blue-600 dark:text-blue-400",
-												visitor.deviceType === "mobile" &&
-													"bg-green-500/15 text-green-600 dark:text-green-400",
-												visitor.deviceType === "tablet" &&
-													"bg-purple-500/15 text-purple-600 dark:text-purple-400",
-												(!visitor.deviceType || visitor.deviceType === "unknown") &&
-													"bg-muted text-muted-foreground",
+												"font-medium",
+												visitor.visitCount > 5 && "text-emerald-600 dark:text-emerald-400",
+												visitor.visitCount <= 5 && visitor.visitCount > 1 && "text-foreground",
+												visitor.visitCount === 1 && "text-muted-foreground",
 											)}
 										>
-											{deviceIcons[visitor.deviceType || "unknown"] || "?"}
+											{visitor.visitCount}
 										</span>
-										<span className="text-muted-foreground truncate max-w-[80px]">
-											{visitor.browser || "Unknown"}
-										</span>
-									</div>
-								</td>
-								<td className="px-3 py-1.5 text-right tabular-nums">
-									<span
-										className={cn(
-											"font-medium",
-											visitor.visitCount > 5 && "text-emerald-600 dark:text-emerald-400",
-											visitor.visitCount <= 5 && visitor.visitCount > 1 && "text-foreground",
-											visitor.visitCount === 1 && "text-muted-foreground",
-										)}
-									>
-										{visitor.visitCount}
-									</span>
-								</td>
-								<td className="px-3 py-1.5 text-right text-muted-foreground">
-									{formatTimeAgo(visitor.lastSeen)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
-
-			{/* Visitor Detail Panel */}
-			{selectedVisitor && (
-				<div className="border-t border-border p-3 bg-muted/30">
-					<div className="flex items-center justify-between mb-2">
-						<h4 className="text-[10px] font-medium text-foreground uppercase tracking-wide">
-							Visitor Details
-						</h4>
-						<button
-							onClick={() => setSelectedVisitor(null)}
-							className="text-[10px] text-muted-foreground hover:text-foreground"
-						>
-							Close
-						</button>
-					</div>
-					<div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
-						<div className="flex items-center gap-1.5">
-							<Monitor className="h-3 w-3 text-muted-foreground" />
-							<span className="text-muted-foreground">Device:</span>
-							<span className="text-foreground">{selectedVisitor.deviceType || "Unknown"}</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<Globe className="h-3 w-3 text-muted-foreground" />
-							<span className="text-muted-foreground">Browser:</span>
-							<span className="text-foreground">
-								{selectedVisitor.browser} {selectedVisitor.browserVersion}
-							</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<span className="text-muted-foreground">OS:</span>
-							<span className="text-foreground">
-								{selectedVisitor.os} {selectedVisitor.osVersion}
-							</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<span className="text-muted-foreground">Screen:</span>
-							<span className="text-foreground">
-								{selectedVisitor.screenResolution || "Unknown"}
-							</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<span className="text-muted-foreground">Language:</span>
-							<span className="text-foreground">{selectedVisitor.language || "Unknown"}</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<Clock className="h-3 w-3 text-muted-foreground" />
-							<span className="text-muted-foreground">First seen:</span>
-							<span className="text-foreground">{formatTimeAgo(selectedVisitor.firstSeen)}</span>
-						</div>
-					</div>
+									</td>
+									<td className="px-3 py-1.5 text-right text-muted-foreground">
+										{formatTimeAgo(visitor.lastSeen)}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
 				</div>
 			)}
 		</div>

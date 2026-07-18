@@ -1,10 +1,10 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { events, visitors } from "./schema";
+import { events, visitors, sessions } from "./schema";
 
 function createDb(databaseUrl: string) {
 	const sql = neon(databaseUrl);
-	return drizzle(sql, { schema: { events, visitors } });
+	return drizzle(sql, { schema: { events, visitors, sessions } });
 }
 
 type DbClient = ReturnType<typeof createDb>;
