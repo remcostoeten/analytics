@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
 import type { TimeSeries, TimeSeriesGranularity, TimeSeriesPoint, DashboardData } from "../types";
 import { publicTraffic, getRange, getTimeRangeFilter, calculateTrend } from "./filters";
@@ -195,6 +196,9 @@ export async function getDashboardData(
 	excludeVisitorId?: string | null,
 	origin?: string | null,
 ): Promise<DashboardData> {
+	'use cache';
+	cacheTag('dashboard');
+	cacheLife('minutes');
 	const range = getRange(from, to);
 	const [
 		pageviewsKPI,

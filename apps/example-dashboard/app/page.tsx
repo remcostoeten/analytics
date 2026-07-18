@@ -39,9 +39,21 @@ async function fetchDashboardData(): Promise<DashboardResult> {
 	};
 }
 
-export default async function DashboardPage() {
+async function DashboardData() {
 	const { data, databaseReady, databaseIssue } = await fetchDashboardData();
 
+	return (
+		<DashboardContent
+			data={data}
+			databaseReady={databaseReady}
+			databaseIssue={databaseIssue}
+			breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
+			description="Real-time sessions, regional load, and ingest health across your edge network"
+		/>
+	);
+}
+
+export default function DashboardPage() {
 	return (
 		<SidebarProvider>
 			<Suspense fallback={<div className="w-64 border-r bg-muted/20" />}>
@@ -49,13 +61,7 @@ export default async function DashboardPage() {
 			</Suspense>
 			<SidebarInset>
 				<Suspense fallback={<div className="flex-1 p-4">Loading dashboard...</div>}>
-					<DashboardContent
-						data={data}
-						databaseReady={databaseReady}
-						databaseIssue={databaseIssue}
-						breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
-						description="Real-time sessions, regional load, and ingest health across your edge network"
-					/>
+					<DashboardData />
 				</Suspense>
 			</SidebarInset>
 		</SidebarProvider>

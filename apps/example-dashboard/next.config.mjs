@@ -1,16 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+	cacheComponents: true,
+	reactCompiler: true,
+	typedRoutes: true,
 	experimental: {
-		optimizePackageInputs: true,
+		inlineCss: true,
 	},
 	typescript: {
 		ignoreBuildErrors: true,
 	},
 	images: {
 		unoptimized: true,
-	},
-	cache: {
-		directory: ".next/cache",
 	},
 };
 
