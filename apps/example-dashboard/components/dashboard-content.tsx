@@ -24,6 +24,7 @@ import { LiveNowWidget } from "@/components/live-now-widget";
 import { RetentionHeatmap } from "@/components/retention-heatmap";
 import { SessionPaths } from "@/components/session-paths";
 import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
+import { ViewTabs } from "@/components/view-tabs";
 import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import {
@@ -46,15 +47,15 @@ import {
 	AlertTriangle,
 	BadgeInfo,
 	ChevronRight,
-	BarChart3,
-	Users,
-	Settings2,
-	CalendarDays,
-	Route,
-	Radio,
-	Zap,
 	X,
 } from "lucide-react";
+import { ChartColumnIncreasingIcon } from "@/components/ui/chart-column-increasing";
+import { RadioIcon } from "@/components/ui/radio";
+import { CalendarDaysIcon } from "@/components/ui/calendar-days";
+import { RouteIcon } from "@/components/ui/route";
+import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
+import { UsersIcon } from "@/components/ui/users";
+import { ZapIcon } from "@/components/ui/zap";
 import { cn } from "@/lib/utils";
 import { formatNumber, getFlagEmoji } from "@/lib/format";
 import Link from "next/link";
@@ -651,13 +652,13 @@ export function DashboardContent({
 	const hasCampaignData = Array.isArray(utmCampaigns) && utmCampaigns.length > 0;
 
 	const viewTabs = [
-		{ id: "overview" as DashboardView, label: "Overview", icon: BarChart3 },
-		{ id: "realtime" as DashboardView, label: "Live", icon: Radio },
-		{ id: "retention" as DashboardView, label: "Retention", icon: CalendarDays },
-		{ id: "behavior" as DashboardView, label: "Behavior", icon: Route },
-		{ id: "technology" as DashboardView, label: "Tech", icon: Settings2 },
-		{ id: "audience" as DashboardView, label: "Audience", icon: Users },
-		{ id: "posthog" as DashboardView, label: "PostHog", icon: Zap },
+		{ id: "overview" as DashboardView, label: "Overview", icon: ChartColumnIncreasingIcon },
+		{ id: "realtime" as DashboardView, label: "Live", icon: RadioIcon },
+		{ id: "retention" as DashboardView, label: "Retention", icon: CalendarDaysIcon },
+		{ id: "behavior" as DashboardView, label: "Behavior", icon: RouteIcon },
+		{ id: "technology" as DashboardView, label: "Tech", icon: SlidersHorizontalIcon },
+		{ id: "audience" as DashboardView, label: "Audience", icon: UsersIcon },
+		{ id: "posthog" as DashboardView, label: "PostHog", icon: ZapIcon },
 	];
 
 	function buildHref(path: string, params: URLSearchParams): AppRoute {
@@ -749,29 +750,12 @@ export function DashboardContent({
 					{!databaseReady && <DemoDataNotice />}
 
 					<div className="overflow-x-auto -mx-3 px-3">
-						<div
-							role="tablist"
-							aria-label="Dashboard views"
-							className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full"
-						>
-							{viewTabs.map((tab) => (
-								<Link
-									key={tab.id}
-									href={viewHref(tab.id)}
-									role="tab"
-									aria-selected={activeView === tab.id}
-									className={cn(
-										"flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap",
-										activeView === tab.id
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									<tab.icon className="h-3.5 w-3.5" />
-									{tab.label}
-								</Link>
-							))}
-						</div>
+						<ViewTabs
+							tabs={viewTabs}
+							activeId={activeView}
+							hrefFor={viewHref}
+							ariaLabel="Dashboard views"
+						/>
 					</div>
 
 					{activeView !== "posthog" && <KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />}

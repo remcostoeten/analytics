@@ -4,7 +4,8 @@ import type { Route } from "next";
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
 import useSWR from "swr";
 import {
 	LayoutDashboard,
@@ -226,36 +227,24 @@ export function AppSidebar() {
 							Insights
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
-							<SidebarMenu>
-								{dashboardItems.map((item) => (
-									<SidebarMenuItem key={item.id}>
-										<SidebarMenuButton
-											asChild
-											isActive={pathname === "/" && view === item.id}
-											tooltip={item.label}
-											className="h-8 text-xs font-medium"
-										>
-											<Link href={viewHref(item.id)}>
-												<item.icon className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-												<span className="text-foreground">{item.label}</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										asChild
-										isActive={pathname === "/geo"}
-										tooltip="Geo Explorer"
-										className="h-8 text-xs font-medium"
-									>
-										<Link href="/geo">
-											<Globe className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-											<span className="text-foreground">Geo Explorer</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							</SidebarMenu>
+							<MotionSidebarMenu
+								items={[
+									...dashboardItems.map((item) => ({
+										id: item.id,
+										label: item.label,
+										icon: item.icon,
+										href: viewHref(item.id),
+										isActive: pathname === "/" && view === item.id,
+									})),
+									{
+										id: "geo",
+										label: "Geo Explorer",
+										icon: Globe,
+										href: "/geo" as Route,
+										isActive: pathname === "/geo",
+									},
+								]}
+							/>
 						</SidebarGroupContent>
 					</SidebarGroup>
 
@@ -333,6 +322,126 @@ export function AppSidebar() {
 				</DialogContent>
 			</Dialog>
 		</>
+	);
+}
+
+type MotionMenuItem = {
+	id: string;
+	label: string;
+	icon: ComponentType<{ className?: string }>;
+	href: Route;
+	isActive: boolean;
+};
+
+type VerticalRect = {
+	top: number;
+	height: number;
+};
+
+function measureItem(container: HTMLElement, el: HTMLElement): VerticalRect {
+	const containerBox = container.getBoundingClientRect();
+	const box = el.getBoundingClientRect();
+	return { top: box.top - containerBox.top, height: box.height };
+}
+
+function MotionSidebarMenu({ items }: { items: MotionMenuItem[] }) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
+	const [activeRect, setActiveRect] = useState<VerticalRect | null>(null);
+	const [hoverRect, setHoverRect] = useState<VerticalRect | null>(null);
+	const [hoverSettled, setHoverSettled] = useState(false);
+
+	const activeId = items.find((item) => item.isActive)?.id ?? null;
+
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		const el = activeId ? itemRefs.current.get(activeId) : null;
+		if (!container || !el) {
+			setActiveRect(null);
+			return;
+		}
+
+		function sync() {
+			if (!container || !el) return;
+			setActiveRect(measureItem(container, el));
+		}
+
+		sync();
+		const observer = new ResizeObserver(() => sync());
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, [activeId]);
+
+	function handleItemHover(id: string) {
+		const container = containerRef.current;
+		const el = itemRefs.current.get(id);
+		if (!container || !el) return;
+		setHoverRect(measureItem(container, el));
+		requestAnimationFrame(() => setHoverSettled(true));
+	}
+
+	function handleMenuLeave() {
+		setHoverRect(null);
+		setHoverSettled(false);
+	}
+
+	function indicatorStyle(rect: VerticalRect) {
+		return {
+			transform: `translateY(${rect.top}px)`,
+			height: rect.height,
+		};
+	}
+
+	return (
+		<div ref={containerRef} className="relative" onMouseLeave={handleMenuLeave}>
+			{hoverRect && (
+				<div
+					aria-hidden
+					className={cn(
+						"absolute inset-x-0 top-0 rounded-md bg-sidebar-accent/60",
+						hoverSettled
+							? "transition-[transform,height,opacity] duration-200 ease-out"
+							: "opacity-0",
+					)}
+					style={indicatorStyle(hoverRect)}
+				/>
+			)}
+			{activeRect && (
+				<div
+					aria-hidden
+					className="absolute inset-x-0 top-0 rounded-md bg-sidebar-accent transition-[transform,height] duration-300 ease-[cubic-bezier(0.3,0.9,0.3,1)]"
+					style={indicatorStyle(activeRect)}
+				/>
+			)}
+			<SidebarMenu className="relative z-[1]">
+				{items.map((item) => (
+					<SidebarMenuItem key={item.id}>
+						<SidebarMenuButton
+							asChild
+							isActive={item.isActive}
+							tooltip={item.label}
+							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent"
+						>
+							<Link
+								href={item.href}
+								ref={(el) => {
+									if (el) {
+										itemRefs.current.set(item.id, el);
+									} else {
+										itemRefs.current.delete(item.id);
+									}
+								}}
+								onMouseEnter={() => handleItemHover(item.id)}
+								onFocus={() => handleItemHover(item.id)}
+							>
+								<item.icon className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+								<span className="text-foreground">{item.label}</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+				))}
+			</SidebarMenu>
+		</div>
 	);
 }
 
