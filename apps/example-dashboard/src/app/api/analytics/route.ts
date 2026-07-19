@@ -134,6 +134,10 @@ export async function GET(request: NextRequest) {
 					),
 				);
 			}
+			case "geo-signals":
+				return NextResponse.json(
+					await query.getGeoSignals(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "geo-detail":
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),

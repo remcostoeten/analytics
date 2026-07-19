@@ -16,7 +16,7 @@ type SqlQuery = {
 	): Promise<unknown>;
 };
 
-mock.module("../../lib/db.ts", function () {
+mock.module("@/lib/db", function () {
 	function sql(strings: TemplateStringsArray, ...values: unknown[]): SqlQuery {
 		const query = { strings, values } as SqlQuery;
 		const thenKey = ["t", "h", "e", "n"].join("");
@@ -70,7 +70,7 @@ function isSqlQuery(value: unknown): value is SqlQuery {
 }
 
 const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages, getUTMCampaigns } =
-	await import("../../lib/queries");
+	await import("@/lib/queries");
 
 describe("Dashboard Queries Integration", () => {
 	test("getPageviewsKPI returns correct count", async () => {

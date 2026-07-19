@@ -9,6 +9,7 @@ import { ArrowLeft, ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "
 import { cn } from "@/lib/utils";
 import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
 import { GeoDotMap } from "./geo-dot-map";
+import { SignalsPanel } from "./signals-panel";
 import { regionName } from "@/lib/geo-names";
 import type { GeoExplorerData, GeoVisitorRow } from "@/lib/queries/geo";
 
@@ -257,6 +258,8 @@ export function GeoExplorer() {
 					</div>
 				</div>
 			</section>
+
+			<SignalsPanel timeRange={timeRange} projectId={projectId} />
 
 			<section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 				<Panel

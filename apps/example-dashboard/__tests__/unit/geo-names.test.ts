@@ -5,7 +5,7 @@ import {
 	countryName,
 	regionName,
 	toCountryCode,
-} from "../../lib/geo-names";
+} from "@/lib/geo-names";
 
 describe("country names", function () {
 	test("normalizes codes and known names", function () {

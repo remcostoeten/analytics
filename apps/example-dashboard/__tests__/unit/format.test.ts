@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatNumber, getFlagEmoji } from "../../lib/format";
+import { formatNumber, getFlagEmoji } from "@/lib/format";
 
 describe("formatNumber", function () {
 	test("keeps values below one thousand readable", function () {
