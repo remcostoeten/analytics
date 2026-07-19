@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import useSWR from "swr";
 import { ExternalLink, AlertTriangle, Inbox, Globe, Ban, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,67 @@ import type {
 	PostHogSummary,
 	PostHogVisitorDetail,
 } from "@/lib/types";
+
+type HighlightRect = {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+};
+
+function useHoverHighlight() {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [rect, setRect] = useState<HighlightRect | null>(null);
+	const [settled, setSettled] = useState(false);
+
+	function onItemEnter(event: ReactMouseEvent<HTMLElement>) {
+		const container = containerRef.current;
+		if (!container) return;
+		const containerBox = container.getBoundingClientRect();
+		const box = event.currentTarget.getBoundingClientRect();
+		setRect({
+			left: box.left - containerBox.left,
+			top: box.top - containerBox.top,
+			width: box.width,
+			height: box.height,
+		});
+		requestAnimationFrame(() => setSettled(true));
+	}
+
+	function onContainerLeave() {
+		setRect(null);
+		setSettled(false);
+	}
+
+	return { containerRef, rect, settled, onItemEnter, onContainerLeave };
+}
+
+type HoverHighlightProps = {
+	rect: HighlightRect | null;
+	settled: boolean;
+	className?: string;
+};
+
+function HoverHighlight({ rect, settled, className }: HoverHighlightProps) {
+	if (!rect) return null;
+	return (
+		<div
+			aria-hidden
+			className={cn(
+				"pointer-events-none absolute left-0 top-0 rounded-sm bg-foreground/[0.06]",
+				settled
+					? "transition-[transform,width,height,opacity] duration-200 ease-out"
+					: "opacity-0",
+				className,
+			)}
+			style={{
+				transform: `translate(${rect.left}px, ${rect.top}px)`,
+				width: rect.width,
+				height: rect.height,
+			}}
+		/>
+	);
+}
 
 function jsonFetcher(url: string) {
 	return fetch(url).then((response) => {
@@ -137,6 +199,7 @@ type PostHogSummaryCardsProps = {
 };
 
 export function PostHogSummaryCards({ data, isLoading }: PostHogSummaryCardsProps) {
+	const { containerRef, rect, settled, onItemEnter, onContainerLeave } = useHoverHighlight();
 	const pagesPerSession = data && data.sessions > 0 ? data.pageviews / data.sessions : 0;
 
 	const cards = [
@@ -162,9 +225,18 @@ export function PostHogSummaryCards({ data, isLoading }: PostHogSummaryCardsProp
 	}
 
 	return (
-		<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+		<div
+			ref={containerRef}
+			onMouseLeave={onContainerLeave}
+			className="relative grid grid-cols-2 gap-2 sm:grid-cols-3"
+		>
+			<HoverHighlight rect={rect} settled={settled} className="z-[1]" />
 			{cards.map((card) => (
-				<div key={card.label} className="bg-card border border-border rounded-sm px-3 py-2.5">
+				<div
+					key={card.label}
+					onMouseEnter={onItemEnter}
+					className="relative bg-card border border-border rounded-sm px-3 py-2.5 transition-colors hover:border-foreground/20"
+				>
 					<p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
 						{card.label}
 					</p>
@@ -366,28 +438,10 @@ type VisitorDetailCardProps = {
 };
 
 function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
-	const { data, isLoading } = useSWR<PostHogVisitorDetail>(
+	const { data, error, isLoading, mutate } = useSWR<PostHogVisitorDetail>(
 		`/api/posthog?metric=visitor&distinctId=${encodeURIComponent(distinctId)}`,
 		jsonFetcher,
 	);
-
-	const stats = [
-		{ label: "Events", value: data ? formatNumber(data.totalEvents) : null },
-		{ label: "Pageviews", value: data ? formatNumber(data.pageviews) : null },
-		{ label: "Sessions", value: data ? formatNumber(data.sessions) : null },
-		{ label: "Days active", value: data ? formatNumber(data.daysActive) : null },
-		{ label: "First seen", value: data ? formatDate(data.firstSeen) : null },
-		{ label: "Last seen", value: data ? formatRelativeTime(data.lastSeen) : null },
-	];
-
-	const profile = data
-		? [
-				data.browser,
-				data.os,
-				data.deviceType,
-				[data.city, data.country].filter(Boolean).join(", ") || null,
-			].filter((entry): entry is string => Boolean(entry))
-		: [];
 
 	return (
 		<div className="border-b border-border bg-muted/20 px-3 py-2.5">
@@ -423,9 +477,62 @@ function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
 				</button>
 			</div>
 
-			<div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+			{error && !data ? (
+				<div className="mt-2 flex items-center gap-2">
+					<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+					<span className="text-[11px] text-muted-foreground">
+						Failed to load visitor details.
+					</span>
+					<button
+						type="button"
+						onClick={() => mutate()}
+						className="text-[11px] text-foreground underline underline-offset-2 hover:text-primary"
+					>
+						Retry
+					</button>
+				</div>
+			) : (
+				<VisitorDetailBody data={data ?? null} isLoading={isLoading} />
+			)}
+		</div>
+	);
+}
+
+type VisitorDetailBodyProps = {
+	data: PostHogVisitorDetail | null;
+	isLoading: boolean;
+};
+
+function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
+	const { containerRef, rect, settled, onItemEnter, onContainerLeave } = useHoverHighlight();
+	const stats = [
+		{ label: "Events", value: data ? formatNumber(data.totalEvents) : null },
+		{ label: "Pageviews", value: data ? formatNumber(data.pageviews) : null },
+		{ label: "Sessions", value: data ? formatNumber(data.sessions) : null },
+		{ label: "Days active", value: data ? formatNumber(data.daysActive) : null },
+		{ label: "First seen", value: data ? formatDate(data.firstSeen) : null },
+		{ label: "Last seen", value: data ? formatRelativeTime(data.lastSeen) : null },
+	];
+
+	const profile = data
+		? [
+				data.browser,
+				data.os,
+				data.deviceType,
+				[data.city, data.country].filter(Boolean).join(", ") || null,
+			].filter((entry): entry is string => Boolean(entry))
+		: [];
+
+	return (
+		<>
+			<div
+				ref={containerRef}
+				onMouseLeave={onContainerLeave}
+				className="relative mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6"
+			>
+				<HoverHighlight rect={rect} settled={settled} />
 				{stats.map((stat) => (
-					<div key={stat.label}>
+					<div key={stat.label} onMouseEnter={onItemEnter} className="relative rounded-sm p-1 -m-1">
 						<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
 							{stat.label}
 						</p>
@@ -527,7 +634,7 @@ function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
 					)}
 				</>
 			)}
-		</div>
+		</>
 	);
 }
 

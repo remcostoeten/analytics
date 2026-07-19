@@ -121,7 +121,7 @@ export async function getPostHogRecentEvents(limit: number = 25): Promise<PostHo
 
 export async function getPostHogVisitorDetail(distinctId: string): Promise<PostHogVisitorDetail> {
 	const config = getPostHogConfig();
-	const id = distinctId.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+	const values = { did: distinctId };
 
 	const [totalsRows, profileRows, firstEventRows, pageRows, breakdownRows, dailyRows] =
 		await Promise.all([
@@ -134,7 +134,8 @@ export async function getPostHogVisitorDetail(distinctId: string): Promise<PostH
 					min(timestamp) as first_seen,
 					max(timestamp) as last_seen,
 					count(distinct toDate(timestamp)) as days_active
-				FROM events WHERE distinct_id = '${id}'`,
+				FROM events WHERE distinct_id = {did}`,
+				values,
 			),
 			runHogQL(
 				config,
@@ -144,32 +145,37 @@ export async function getPostHogVisitorDetail(distinctId: string): Promise<PostH
 					properties.$device_type,
 					properties.$geoip_country_name,
 					properties.$geoip_city_name
-				FROM events WHERE distinct_id = '${id}'
+				FROM events WHERE distinct_id = {did}
 				ORDER BY timestamp DESC LIMIT 1`,
+				values,
 			),
 			runHogQL(
 				config,
 				`SELECT properties.$referrer
-				FROM events WHERE distinct_id = '${id}'
+				FROM events WHERE distinct_id = {did}
 				ORDER BY timestamp ASC LIMIT 1`,
+				values,
 			),
 			runHogQL(
 				config,
 				`SELECT properties.$pathname as path, count() as hits
-				FROM events WHERE distinct_id = '${id}' AND event = '$pageview' AND properties.$pathname != ''
+				FROM events WHERE distinct_id = {did} AND event = '$pageview' AND properties.$pathname != ''
 				GROUP BY path ORDER BY hits DESC LIMIT 6`,
+				values,
 			),
 			runHogQL(
 				config,
 				`SELECT event, count() as hits
-				FROM events WHERE distinct_id = '${id}'
+				FROM events WHERE distinct_id = {did}
 				GROUP BY event ORDER BY hits DESC LIMIT 8`,
+				values,
 			),
 			runHogQL(
 				config,
 				`SELECT toDate(timestamp) as day, count() as events
-				FROM events WHERE distinct_id = '${id}' AND timestamp >= now() - interval 30 day
+				FROM events WHERE distinct_id = {did} AND timestamp >= now() - interval 30 day
 				GROUP BY day ORDER BY day`,
+				values,
 			),
 		]);
 
@@ -218,10 +224,14 @@ export async function getPostHogVisitorDetail(distinctId: string): Promise<PostH
 	};
 }
 
-async function runHogQL(config: PostHogConfig, query: string): Promise<unknown[][]> {
+async function runHogQL(
+	config: PostHogConfig,
+	query: string,
+	values?: Record<string, unknown>,
+): Promise<unknown[][]> {
 	const data = await postHogFetch(config, `/api/projects/${config.projectId}/query/`, {
 		method: "POST",
-		body: JSON.stringify({ query: { kind: "HogQLQuery", query } }),
+		body: JSON.stringify({ query: { kind: "HogQLQuery", query, values } }),
 	});
 	return data.results ?? [];
 }
