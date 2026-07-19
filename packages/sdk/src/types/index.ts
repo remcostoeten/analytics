@@ -8,6 +8,7 @@ export type AnalyticsOptions = {
 	projectId?: string;
 	ingestUrl?: string;
 	debug?: boolean;
+	path?: string;
 };
 
 export type AnalyticsProps = AnalyticsOptions & {

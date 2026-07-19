@@ -9,25 +9,29 @@ export function observeTimeOnPage(options: AnalyticsOptions = {}): () => void {
 	let totalTimeMs = 0;
 	let lastStartTime = time();
 	let isPaused = false;
-	let sent = false;
+	let reportedMs = 0;
+	let pagePath = window.location.pathname;
 
 	function sendTimeOnPage(): void {
-		if (sent) return;
 		const currentSessionTime = isPaused ? 0 : time(lastStartTime);
-		const finalTimeMs = totalTimeMs + currentSessionTime;
+		const unreportedMs = totalTimeMs + currentSessionTime - reportedMs;
+		if (unreportedMs <= 0) return;
 
-		if (finalTimeMs > 0) {
-			sent = true;
-			track("event", { eventName: "time-on-page", timeOnPageMs: finalTimeMs }, options);
-		}
+		reportedMs += unreportedMs;
+		track(
+			"event",
+			{ eventName: "time-on-page", timeOnPageMs: unreportedMs },
+			{ ...options, path: pagePath },
+		);
 	}
 
-	function resetForRoute(): void {
+	function resetForRoute(nextPath: string): void {
 		sendTimeOnPage();
+		pagePath = nextPath;
 		totalTimeMs = 0;
 		lastStartTime = time();
 		isPaused = false;
-		sent = false;
+		reportedMs = 0;
 	}
 
 	function handleVisibilityChange(): void {

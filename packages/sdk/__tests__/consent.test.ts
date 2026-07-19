@@ -1,17 +1,13 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import {
-	setConsentGranted,
-	setConsentRequired,
-	hasConsent,
-	canPersist,
-} from "../src/api/consent";
+import { setConsentGranted, setConsentRequired, hasConsent, canPersist } from "../src/api/consent";
 import { getVisitorId, VISITOR_ID_KEY } from "../src/identity/visitor";
 import { getSessionId, SESSION_ID_KEY, SESSION_TIMEOUT_KEY } from "../src/identity/session";
-import { track, trackPageView } from "../src/api/track";
+import { track, trackPageView, resetDedupe } from "../src/api/track";
 import { getStoredKeys, PRIVACY_DISCLOSURE } from "../src/api/privacy";
 
 describe("consent", () => {
 	beforeEach(function () {
+		resetDedupe();
 		setConsentRequired(false);
 		setConsentGranted(false);
 	});
@@ -41,6 +37,7 @@ describe("consent storage", () => {
 	let sessionStore: Record<string, string>;
 
 	beforeEach(function () {
+		resetDedupe();
 		setConsentRequired(true);
 		setConsentGranted(false);
 
@@ -109,6 +106,7 @@ describe("consent tracking", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(function () {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		setConsentRequired(true);
 		setConsentGranted(false);

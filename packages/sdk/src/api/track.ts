@@ -9,6 +9,7 @@ import {
 	validateIngestUrl,
 } from "../utilities/ingest-url";
 import { enqueueOffline, initOfflineFlush } from "../utilities/offline-queue";
+import { getStoredTraits, persistExperiment, persistUserProperties } from "../identity/traits";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
 const recentEvents = new Set<string>();
@@ -24,6 +25,10 @@ export { validateIngestUrl } from "../utilities/ingest-url";
 function createEventKey(payload: EventPayload): string {
 	const eventName = typeof payload.meta?.eventName === "string" ? payload.meta.eventName : "";
 	return `${payload.type}-${eventName}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
+}
+
+export function resetDedupe(): void {
+	recentEvents.clear();
 }
 
 function isDuplicate(payload: EventPayload): boolean {
@@ -44,7 +49,7 @@ function buildPayload(
 	return {
 		type,
 		projectId: options.projectId || resolveDefaultProjectId(),
-		path: window.location.pathname,
+		path: options.path ?? window.location.pathname,
 		referrer: document.referrer || null,
 		origin: window.location.origin,
 		host: window.location.host,
@@ -53,7 +58,7 @@ function buildPayload(
 		visitorId: getVisitorId(),
 		sessionId: getSessionId(),
 		ts: new Date().toISOString(),
-		meta: { ...collectEnrichment(), ...meta },
+		meta: { ...collectEnrichment(), ...getStoredTraits(), ...meta },
 	};
 }
 
@@ -119,7 +124,7 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 	extendSession();
 	initOfflineFlush();
 
-	if (typeof navigator !== "undefined" && !navigator.onLine) {
+	if (typeof navigator !== "undefined" && navigator.onLine === false) {
 		enqueueOffline(baseUrl, payload);
 		debugLog(options.debug, "Offline — event queued", payload);
 		return;
@@ -170,6 +175,7 @@ export function identifyUser(
 	userProperties: Record<string, string | number | boolean>,
 	options?: AnalyticsOptions,
 ): void {
+	persistUserProperties(userProperties);
 	track("event", { eventName: "identify", userProperties }, options);
 }
 
@@ -178,6 +184,7 @@ export function setExperiment(
 	variantId: string,
 	options?: AnalyticsOptions,
 ): void {
+	persistExperiment(experimentId, variantId);
 	track(
 		"event",
 		{ eventName: "experiment_exposure", experiments: { [experimentId]: variantId } },

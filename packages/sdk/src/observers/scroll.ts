@@ -7,7 +7,8 @@ export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	if (isRuntime("server")) return () => {};
 
 	let maxScroll = 0;
-	let sent = false;
+	let reportedDepth = 0;
+	let pagePath = window.location.pathname;
 
 	const handleScroll = () => {
 		const h = document.documentElement;
@@ -25,15 +26,16 @@ export function observeScroll(options: AnalyticsOptions = {}): () => void {
 	};
 
 	const sendScroll = () => {
-		if (sent || maxScroll <= 0) return;
-		sent = true;
-		track("event", { eventName: "scroll", depth: maxScroll }, options);
+		if (maxScroll <= reportedDepth) return;
+		reportedDepth = maxScroll;
+		track("event", { eventName: "scroll", depth: maxScroll }, { ...options, path: pagePath });
 	};
 
-	const resetForRoute = () => {
+	const resetForRoute = (nextPath: string) => {
 		sendScroll();
+		pagePath = nextPath;
 		maxScroll = 0;
-		sent = false;
+		reportedDepth = 0;
 	};
 
 	window.addEventListener("scroll", handleScroll, { passive: true });

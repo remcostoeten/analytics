@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mergeAnalyticsOptions, resolveAnalyticsOptions } from "../src/utilities/options";
 import { createTrackHelpers } from "../src/api/track-helpers";
+import { resetDedupe } from "../src/api/track";
 
 describe("mergeAnalyticsOptions", () => {
 	test("override wins over base", () => {
@@ -41,6 +42,7 @@ describe("createTrackHelpers", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 
 		const localStore: Record<string, string> = {};

@@ -30,7 +30,9 @@ export function resolveBrowserIngestUrl(): string {
 
 	if (!url) {
 		if (typeof window !== "undefined") {
-			console.error("[Analytics] No ingest URL configured. Set NEXT_PUBLIC_ANALYTICS_URL or VITE_ANALYTICS_URL.");
+			console.error(
+				"[Analytics] No ingest URL configured. Set NEXT_PUBLIC_ANALYTICS_URL or VITE_ANALYTICS_URL.",
+			);
 		}
 		return "";
 	}

@@ -18,7 +18,14 @@ export {
 } from "./api/track";
 export { getVisitorId, resetVisitorId } from "./identity/visitor";
 export { getSessionId, resetSessionId, extendSession } from "./identity/session";
-export { optOut, optIn, isOptedOut, checkDoNotTrack, PRIVACY_DISCLOSURE, getStoredKeys } from "./api/privacy";
+export {
+	optOut,
+	optIn,
+	isOptedOut,
+	checkDoNotTrack,
+	PRIVACY_DISCLOSURE,
+	getStoredKeys,
+} from "./api/privacy";
 export type { StorageKeyInfo } from "./api/privacy";
 export {
 	setConsentGranted,

@@ -4,14 +4,7 @@ import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
 import { type TrackClickProps } from "../types";
 
-export function TrackClick({
-	name,
-	meta,
-	children,
-	projectId,
-	ingestUrl,
-	debug,
-}: TrackClickProps) {
+export function TrackClick({ name, meta, children, projectId, ingestUrl, debug }: TrackClickProps) {
 	const contextOptions = useAnalyticsOptions();
 	const options = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
 
