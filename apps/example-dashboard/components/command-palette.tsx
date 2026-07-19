@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSWRConfig } from "swr";
+import { notify } from "@remcostoeten/notifier";
+import { noop } from "@/lib/noop";
 import {
 	BarChart3,
 	Users,
@@ -23,6 +25,7 @@ import {
 	Eye,
 	RefreshCw,
 	Globe,
+	Link2,
 	ListFilter,
 	CircleCheck,
 	Info,
@@ -138,6 +141,27 @@ export function CommandPalette({
 		onOpenChange(false);
 	}
 
+	async function copyDashboardLink() {
+		try {
+			await navigator.clipboard.writeText(window.location.href);
+			notify.success("Link copied", { description: "Current view and filters included" });
+		} catch {
+			notify.error("Could not copy link");
+		}
+	}
+
+	async function refreshData() {
+		try {
+			await notify.promise(mutate(() => true), {
+				loading: "Refreshing data...",
+				success: "Data refreshed",
+				error: "Refresh failed",
+			});
+		} catch {
+			noop();
+		}
+	}
+
 	const views: {
 		id: DashboardView;
 		label: string;
@@ -242,7 +266,14 @@ export function CommandPalette({
 						icon={RefreshCw}
 						label="Refresh data"
 						hint="Refetch all dashboard metrics"
-						onSelect={() => runAndClose(() => mutate(() => true))}
+						onSelect={() => runAndClose(() => void refreshData())}
+					/>
+					<PaletteRow
+						value="action copy share dashboard link url"
+						icon={Link2}
+						label="Copy dashboard link"
+						hint="Share the current view and filters"
+						onSelect={() => runAndClose(() => void copyDashboardLink())}
 					/>
 					<PaletteRow
 						value="action geo map countries world"

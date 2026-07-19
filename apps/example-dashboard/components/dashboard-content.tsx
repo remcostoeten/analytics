@@ -43,6 +43,7 @@ import type {
 	SignalEvent,
 	KPIMetric,
 	GeoDistribution,
+	PostHogProject,
 } from "@/lib/types";
 import { AlertTriangle, BadgeInfo, ChevronRight, X } from "lucide-react";
 import { ChartColumnIncreasingIcon } from "@/components/ui/chart-column-increasing";
@@ -692,11 +693,16 @@ export function DashboardContent({
 				onProjectChange={setSelectedProject}
 				onPageSelect={selectPalettePage}
 				onReferrerSelect={selectPaletteReferrer}
+				onTypeFilterChange={setTypeFilter}
+				onSelfFilterChange={setSelfFilter}
+				selfFilterEnabled={!!excludedVisitorId}
+				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
 				pages={palettePages}
 				referrers={paletteReferrers}
 				projects={projects}
 				currentView={activeView}
 				currentTimeRange={timeRange}
+				currentTypeFilter={typeFilter}
 			/>
 
 			<main className="flex-1 overflow-auto bg-background">
