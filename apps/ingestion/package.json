@@ -16,8 +16,8 @@
 		"ops:build": "bun build --compile --outfile dist/analytics-ops scripts/ops.ts"
 	},
 	"dependencies": {
-		"@remcostoeten/ingestion": "workspace:*",
 		"@neondatabase/serverless": "^0.10.0",
+		"@remcostoeten/ingestion": "workspace:*",
 		"drizzle-orm": "^0.36.0",
 		"hono": "4.6.10",
 		"ua-parser-js": "^2.0.9",

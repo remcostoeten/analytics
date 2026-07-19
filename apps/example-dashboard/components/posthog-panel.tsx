@@ -66,7 +66,9 @@ export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProp
 				</div>
 			</div>
 			{sites.length === 0 ? (
-				<p className="mt-2 text-[11px] text-muted-foreground">No hosts detected in the last 30 days.</p>
+				<p className="mt-2 text-[11px] text-muted-foreground">
+					No hosts detected in the last 30 days.
+				</p>
 			) : (
 				<div className="mt-2 flex flex-wrap gap-1.5">
 					{sites.map((site) => (
@@ -86,7 +88,9 @@ export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProp
 									(e.target as HTMLImageElement).style.display = "none";
 								}}
 							/>
-							<span className="font-mono text-foreground group-hover:text-primary">{site.host}</span>
+							<span className="font-mono text-foreground group-hover:text-primary">
+								{site.host}
+							</span>
 							<span className="tabular-nums text-muted-foreground">
 								{formatNumber(site.events)}
 							</span>
@@ -159,7 +163,13 @@ function Sparkline({ points }: { points: number[] }) {
 
 	return (
 		<svg width={width} height={height} className="shrink-0 overflow-visible" aria-hidden>
-			<path d={path} fill="none" stroke="currentColor" strokeWidth={1.25} className="text-primary" />
+			<path
+				d={path}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth={1.25}
+				className="text-primary"
+			/>
 		</svg>
 	);
 }

@@ -24,14 +24,14 @@ VITE_ANALYTICS_URL=https://analytics-api.yourdomain.com
 import { Analytics } from "@remcostoeten/analytics";
 
 export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>
-        {children}
-        <Analytics projectId="my-app" />
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en">
+			<body>
+				{children}
+				<Analytics projectId="my-app" />
+			</body>
+		</html>
+	);
 }
 ```
 
@@ -53,10 +53,10 @@ INGEST_SECRET=same-secret-as-on-ingestion
 
 On ingestion, set the same `INGEST_SECRET` and your app origin in `ORIGIN_ALLOWLIST`.
 
-| Caller | Auth |
-| --- | --- |
-| Browser (`<Analytics />`, `trackEvent`) | Origin allowlist |
-| Server (`trackServerEvent`) | `Authorization: Bearer INGEST_SECRET` |
+| Caller                                  | Auth                                  |
+| --------------------------------------- | ------------------------------------- |
+| Browser (`<Analytics />`, `trackEvent`) | Origin allowlist                      |
+| Server (`trackServerEvent`)             | `Authorization: Bearer INGEST_SECRET` |
 
 ### Track an event
 
@@ -64,14 +64,18 @@ On ingestion, set the same `INGEST_SECRET` and your app origin in `ORIGIN_ALLOWL
 import { trackServerEvent } from "@remcostoeten/analytics/server";
 
 await trackServerEvent("signup_completed", {
-  projectId: "my-app",
-  path: "/api/signup",
+	projectId: "my-app",
+	path: "/api/signup",
 });
 
-await trackServerEvent("signup_completed", { plan: "pro" }, {
-  projectId: "my-app",
-  path: "/api/signup",
-});
+await trackServerEvent(
+	"signup_completed",
+	{ plan: "pro" },
+	{
+		projectId: "my-app",
+		path: "/api/signup",
+	},
+);
 ```
 
 `projectId` should match `<Analytics projectId="..." />`. `path` is your API route.
@@ -89,14 +93,14 @@ await trackServerEvent("job_finished", { projectId: "my-app" });
 import { trackServerEvent } from "@remcostoeten/analytics/server";
 
 export async function POST() {
-  await createUser();
+	await createUser();
 
-  await trackServerEvent("signup_completed", {
-    projectId: "my-app",
-    path: "/api/signup",
-  });
+	await trackServerEvent("signup_completed", {
+		projectId: "my-app",
+		path: "/api/signup",
+	});
 
-  return Response.json({ ok: true });
+	return Response.json({ ok: true });
 }
 ```
 
@@ -121,14 +125,14 @@ Wrap your app to share config across components:
 import { AnalyticsProvider, Analytics, useTrack } from "@remcostoeten/analytics";
 
 export default function RootLayout({ children }) {
-  return (
-    <AnalyticsProvider projectId="my-app" ingestUrl="https://analytics-api.yourdomain.com">
-      <body>
-        {children}
-        <Analytics />
-      </body>
-    </AnalyticsProvider>
-  );
+	return (
+		<AnalyticsProvider projectId="my-app" ingestUrl="https://analytics-api.yourdomain.com">
+			<body>
+				{children}
+				<Analytics />
+			</body>
+		</AnalyticsProvider>
+	);
 }
 ```
 
@@ -138,13 +142,9 @@ export default function RootLayout({ children }) {
 import { useTrack } from "@remcostoeten/analytics";
 
 export function SignupButton() {
-  const { trackEvent } = useTrack();
+	const { trackEvent } = useTrack();
 
-  return (
-    <button onClick={() => trackEvent("signup", { plan: "pro" })}>
-      Sign up
-    </button>
-  );
+	return <button onClick={() => trackEvent("signup", { plan: "pro" })}>Sign up</button>;
 }
 ```
 
@@ -155,9 +155,7 @@ export function SignupButton() {
 ```tsx
 import { AnalyticsErrorBoundary } from "@remcostoeten/analytics";
 
-<AnalyticsErrorBoundary fallback={<p>Something went wrong</p>}>
-  {children}
-</AnalyticsErrorBoundary>
+<AnalyticsErrorBoundary fallback={<p>Something went wrong</p>}>{children}</AnalyticsErrorBoundary>;
 ```
 
 Caught React render errors are sent as `type: "error"` events. Respects opt-out and DNT.
@@ -171,9 +169,7 @@ Opt in to attribute-based clicks:
 ```
 
 ```html
-<button data-analytics="signup" data-analytics-meta='{"plan":"pro"}'>
-  Sign up
-</button>
+<button data-analytics="signup" data-analytics-meta='{"plan":"pro"}'>Sign up</button>
 ```
 
 Or wrap a single element:
@@ -182,8 +178,8 @@ Or wrap a single element:
 import { TrackClick } from "@remcostoeten/analytics";
 
 <TrackClick name="signup" meta={{ plan: "pro" }}>
-  <button>Sign up</button>
-</TrackClick>
+	<button>Sign up</button>
+</TrackClick>;
 ```
 
 Standalone observer:
@@ -201,18 +197,18 @@ cleanup();
 
 Automatic tracking via four observers: pageviews, web vitals, scroll depth, time on page.
 
-| Prop | Default | Effect |
-| --- | --- | --- |
-| `projectId` | `window.location.hostname` | Project identifier in database |
-| `ingestUrl` | env var | Ingestion base URL |
-| `disabled` | `false` | Disable all observers |
-| `debug` | `false` | Console logging |
-| `trackClicks` | `false` | Opt-in: `data-analytics` attribute clicks |
-| `trackOutbound` | `false` | Opt-in: clicks to external domains (`outbound_click`) |
-| `trackForms` | `false` | Opt-in: form submissions (`form_submit`) |
-| `trackErrors` | `false` | Opt-in: uncaught errors + unhandled rejections |
-| `consentRequired` | `false` | Gate tracking until `consentGranted` is true |
-| `consentGranted` | `false` | User consent state when `consentRequired` is true |
+| Prop              | Default                    | Effect                                                |
+| ----------------- | -------------------------- | ----------------------------------------------------- |
+| `projectId`       | `window.location.hostname` | Project identifier in database                        |
+| `ingestUrl`       | env var                    | Ingestion base URL                                    |
+| `disabled`        | `false`                    | Disable all observers                                 |
+| `debug`           | `false`                    | Console logging                                       |
+| `trackClicks`     | `false`                    | Opt-in: `data-analytics` attribute clicks             |
+| `trackOutbound`   | `false`                    | Opt-in: clicks to external domains (`outbound_click`) |
+| `trackForms`      | `false`                    | Opt-in: form submissions (`form_submit`)              |
+| `trackErrors`     | `false`                    | Opt-in: uncaught errors + unhandled rejections        |
+| `consentRequired` | `false`                    | Gate tracking until `consentGranted` is true          |
+| `consentGranted`  | `false`                    | User consent state when `consentRequired` is true     |
 
 ### Consent mode (EU / GDPR)
 
@@ -233,12 +229,12 @@ Existing stored IDs are read but not extended until consent is granted. Works al
 
 ---
 
-| Signal | `type` | `meta.eventName` |
-| --- | --- | --- |
-| Page views | `pageview` | — |
-| Web Vitals | `event` | `web-vitals` |
-| Scroll depth | `event` | `scroll` |
-| Time on page | `event` | `time-on-page` |
+| Signal       | `type`     | `meta.eventName` |
+| ------------ | ---------- | ---------------- |
+| Page views   | `pageview` | —                |
+| Web Vitals   | `event`    | `web-vitals`     |
+| Scroll depth | `event`    | `scroll`         |
+| Time on page | `event`    | `time-on-page`   |
 
 ---
 
@@ -248,29 +244,29 @@ Client-only. No-ops during SSR, opt-out, or DNT.
 
 ```tsx
 import {
-  track,
-  trackPageView,
-  trackEvent,
-  trackClick,
-  trackError,
-  trackTransaction,
-  trackSearch,
-  identifyUser,
-  setExperiment,
+	track,
+	trackPageView,
+	trackEvent,
+	trackClick,
+	trackError,
+	trackTransaction,
+	trackSearch,
+	identifyUser,
+	setExperiment,
 } from "@remcostoeten/analytics";
 ```
 
-| Function | `type` | Purpose |
-| --- | --- | --- |
-| `track(type, meta?, options?)` | any | Low-level |
-| `trackPageView(meta?, options?)` | `pageview` | Explicit pageview |
-| `trackEvent(name, meta?, options?)` | `event` | Custom event |
-| `trackClick(elementName, meta?, options?)` | `click` | Named click |
-| `trackError(error, meta?, options?)` | `error` | Error with stack |
-| `trackTransaction(revenue, currency?, orderId?, items?, options?)` | `event` | Revenue |
-| `trackSearch(query, resultCount, options?)` | `event` | Site search |
-| `identifyUser(properties, options?)` | `event` | User traits |
-| `setExperiment(experimentId, variantId, options?)` | `event` | A/B exposure |
+| Function                                                           | `type`     | Purpose           |
+| ------------------------------------------------------------------ | ---------- | ----------------- |
+| `track(type, meta?, options?)`                                     | any        | Low-level         |
+| `trackPageView(meta?, options?)`                                   | `pageview` | Explicit pageview |
+| `trackEvent(name, meta?, options?)`                                | `event`    | Custom event      |
+| `trackClick(elementName, meta?, options?)`                         | `click`    | Named click       |
+| `trackError(error, meta?, options?)`                               | `error`    | Error with stack  |
+| `trackTransaction(revenue, currency?, orderId?, items?, options?)` | `event`    | Revenue           |
+| `trackSearch(query, resultCount, options?)`                        | `event`    | Site search       |
+| `identifyUser(properties, options?)`                               | `event`    | User traits       |
+| `setExperiment(experimentId, variantId, options?)`                 | `event`    | A/B exposure      |
 
 Options: `{ projectId?, ingestUrl?, debug? }`.
 
@@ -315,29 +311,29 @@ Use without `<Analytics />`:
 
 ```tsx
 import {
-  observePageViews,
-  observePerformance,
-  observeScroll,
-  observeTimeOnPage,
-  observeOutboundLinks,
-  observeForms,
-  observeErrors,
+	observePageViews,
+	observePerformance,
+	observeScroll,
+	observeTimeOnPage,
+	observeOutboundLinks,
+	observeForms,
+	observeErrors,
 } from "@remcostoeten/analytics";
 
 const cleanup = observePageViews({ projectId: "my-app" });
 cleanup();
 ```
 
-| Observer | Fires |
-| --- | --- |
-| `observePageViews` | `pageview` on load + SPA navigation |
-| `observePerformance` | `event` / `web-vitals` on page hide |
-| `observeScroll` | `event` / `scroll` on page hide |
-| `observeTimeOnPage` | `event` / `time-on-page` on page hide |
-| `observeClicks` | `click` on elements with `data-analytics` |
-| `observeOutboundLinks` | `event` / `outbound_click` on external links |
-| `observeForms` | `event` / `form_submit` on form submissions |
-| `observeErrors` | `error` on uncaught errors + unhandled rejections |
+| Observer               | Fires                                             |
+| ---------------------- | ------------------------------------------------- |
+| `observePageViews`     | `pageview` on load + SPA navigation               |
+| `observePerformance`   | `event` / `web-vitals` on page hide               |
+| `observeScroll`        | `event` / `scroll` on page hide                   |
+| `observeTimeOnPage`    | `event` / `time-on-page` on page hide             |
+| `observeClicks`        | `click` on elements with `data-analytics`         |
+| `observeOutboundLinks` | `event` / `outbound_click` on external links      |
+| `observeForms`         | `event` / `form_submit` on form submissions       |
+| `observeErrors`        | `error` on uncaught errors + unhandled rejections |
 
 ## Offline resilience
 
@@ -354,29 +350,29 @@ flushOfflineQueue();
 
 ```tsx
 import {
-  getVisitorId,
-  resetVisitorId,
-  getSessionId,
-  resetSessionId,
-  extendSession,
-  optOut,
-  optIn,
-  isOptedOut,
-  checkDoNotTrack,
+	getVisitorId,
+	resetVisitorId,
+	getSessionId,
+	resetSessionId,
+	extendSession,
+	optOut,
+	optIn,
+	isOptedOut,
+	checkDoNotTrack,
 } from "@remcostoeten/analytics";
 ```
 
-| API | Storage | Behavior |
-| --- | --- | --- |
-| `getVisitorId()` | `localStorage` | Persistent visitor ID |
-| `resetVisitorId()` | `localStorage` | New UUID |
-| `getSessionId()` | `sessionStorage` | 30-minute session timeout |
-| `resetSessionId()` | `sessionStorage` | New session UUID |
-| `extendSession()` | `sessionStorage` | Refresh session timeout |
-| `optOut()` | `localStorage` | Disable tracking, remove visitor ID |
-| `optIn()` | `localStorage` | Re-enable tracking |
-| `isOptedOut()` | — | Check opt-out state |
-| `checkDoNotTrack()` | — | Browser DNT enabled |
+| API                 | Storage          | Behavior                            |
+| ------------------- | ---------------- | ----------------------------------- |
+| `getVisitorId()`    | `localStorage`   | Persistent visitor ID               |
+| `resetVisitorId()`  | `localStorage`   | New UUID                            |
+| `getSessionId()`    | `sessionStorage` | 30-minute session timeout           |
+| `resetSessionId()`  | `sessionStorage` | New session UUID                    |
+| `extendSession()`   | `sessionStorage` | Refresh session timeout             |
+| `optOut()`          | `localStorage`   | Disable tracking, remove visitor ID |
+| `optIn()`           | `localStorage`   | Re-enable tracking                  |
+| `isOptedOut()`      | —                | Check opt-out state                 |
+| `checkDoNotTrack()` | —                | Browser DNT enabled                 |
 
 No HTTP cookies.
 
@@ -391,13 +387,13 @@ import { PRIVACY_DISCLOSURE, getStoredKeys } from "@remcostoeten/analytics";
 ```tsx
 import { validateIngestUrl, mergeAnalyticsOptions } from "@remcostoeten/analytics";
 import type {
-  AnalyticsProps,
-  AnalyticsOptions,
-  AnalyticsProviderProps,
-  AnalyticsErrorBoundaryProps,
-  EventPayload,
-  TrackMeta,
-  TrackHelpers,
+	AnalyticsProps,
+	AnalyticsOptions,
+	AnalyticsProviderProps,
+	AnalyticsErrorBoundaryProps,
+	EventPayload,
+	TrackMeta,
+	TrackHelpers,
 } from "@remcostoeten/analytics";
 ```
 
@@ -405,27 +401,27 @@ import type {
 
 ## Exports
 
-| Export | Kind |
-| --- | --- |
-| `@remcostoeten/analytics/server` | Server-only tracking |
-| `Analytics` | Component |
-| `AnalyticsProvider` | Component |
-| `AnalyticsErrorBoundary` | Component |
-| `TrackClick` | Component |
-| `useTrack` | Hook |
-| `useAnalyticsOptions` | Hook |
-| `createTrackHelpers` | Function |
-| `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError` | Functions |
-| `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack` | Server (`/server` entry) |
-| `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment` | Functions |
-| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions |
-| `observeOutboundLinks`, `observeForms`, `observeErrors` | Functions |
-| `flushOfflineQueue` | Function |
-| `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession` | Functions |
-| `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack` | Functions |
-| `PRIVACY_DISCLOSURE`, `getStoredKeys` | Privacy helpers |
-| `setConsentGranted`, `setConsentRequired`, `hasConsent` | Consent API |
-| `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions` | Functions |
+| Export                                                                                          | Kind                     |
+| ----------------------------------------------------------------------------------------------- | ------------------------ |
+| `@remcostoeten/analytics/server`                                                                | Server-only tracking     |
+| `Analytics`                                                                                     | Component                |
+| `AnalyticsProvider`                                                                             | Component                |
+| `AnalyticsErrorBoundary`                                                                        | Component                |
+| `TrackClick`                                                                                    | Component                |
+| `useTrack`                                                                                      | Hook                     |
+| `useAnalyticsOptions`                                                                           | Hook                     |
+| `createTrackHelpers`                                                                            | Function                 |
+| `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError`                              | Functions                |
+| `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack`                      | Server (`/server` entry) |
+| `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment`                              | Functions                |
+| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions                |
+| `observeOutboundLinks`, `observeForms`, `observeErrors`                                         | Functions                |
+| `flushOfflineQueue`                                                                             | Function                 |
+| `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession`             | Functions                |
+| `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack`                                              | Functions                |
+| `PRIVACY_DISCLOSURE`, `getStoredKeys`                                                           | Privacy helpers          |
+| `setConsentGranted`, `setConsentRequired`, `hasConsent`                                         | Consent API              |
+| `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions`                         | Functions                |
 
 ---
 

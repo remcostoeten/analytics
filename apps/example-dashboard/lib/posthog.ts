@@ -152,8 +152,13 @@ export async function getPostHogSummary(): Promise<PostHogSummary> {
 		day,
 		events: Number(events),
 	}));
-	const [totalEvents, uniquePersons, pageviews, sessions, countries] =
-		(totalsRows[0] as [number, number, number, number, number]) ?? [0, 0, 0, 0, 0];
+	const [totalEvents, uniquePersons, pageviews, sessions, countries] = (totalsRows[0] as [
+		number,
+		number,
+		number,
+		number,
+		number,
+	]) ?? [0, 0, 0, 0, 0];
 	const [allTimeEvents, allTimePersons] = (allTimeRows[0] as [number, number]) ?? [0, 0];
 	const sites: PostHogSite[] = (siteRows as Array<[string, number]>).map(([host, events]) => ({
 		host: String(host),

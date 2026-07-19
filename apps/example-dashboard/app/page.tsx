@@ -1,8 +1,10 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardContent } from "@/components/dashboard-content";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { mockDashboardData } from "@/lib/mock-data";
 import type { DashboardData } from "@/lib/types";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 type DashboardResult = {
@@ -41,6 +43,8 @@ async function fetchDashboardData(): Promise<DashboardResult> {
 
 async function DashboardData() {
 	const { data, databaseReady, databaseIssue } = await fetchDashboardData();
+	const cookieStore = await cookies();
+	const authUser = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 
 	return (
 		<DashboardContent
@@ -49,6 +53,7 @@ async function DashboardData() {
 			databaseIssue={databaseIssue}
 			breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
 			description="Real-time sessions, regional load, and ingest health across your edge network"
+			authUser={authUser}
 		/>
 	);
 }

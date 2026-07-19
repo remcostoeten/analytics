@@ -181,7 +181,10 @@ async function TopPagesAndReferrers({ params }: Props) {
 						<p className="p-3 text-[11px] text-muted-foreground">No pageviews yet.</p>
 					)}
 					{profile.topPages.map((page) => (
-						<div key={page.path} className="flex items-center justify-between px-3 py-1.5 text-[11px]">
+						<div
+							key={page.path}
+							className="flex items-center justify-between px-3 py-1.5 text-[11px]"
+						>
 							<span className="font-mono text-foreground truncate max-w-[220px]">{page.path}</span>
 							<span className="text-muted-foreground tabular-nums">{page.count}</span>
 						</div>

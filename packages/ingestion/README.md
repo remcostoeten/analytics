@@ -36,22 +36,22 @@ app.route("/", ingestion);
 
 ## Environment variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | Neon Postgres connection string |
-| `IP_HASH_SECRET` | Yes in production | Min 32 chars, IP hashing salt |
-| `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins (empty = all origins allowed) |
-| `INGEST_SECRET` | For server tracking | Bearer token for server-to-server requests |
-| `INTERNAL_IP_HASHES` | No | Comma-separated IP hashes flagged as internal traffic |
+| Variable             | Required            | Purpose                                                       |
+| -------------------- | ------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`       | Yes                 | Neon Postgres connection string                               |
+| `IP_HASH_SECRET`     | Yes in production   | Min 32 chars, IP hashing salt                                 |
+| `ORIGIN_ALLOWLIST`   | No                  | Comma-separated allowed origins (empty = all origins allowed) |
+| `INGEST_SECRET`      | For server tracking | Bearer token for server-to-server requests                    |
+| `INTERNAL_IP_HASHES` | No                  | Comma-separated IP hashes flagged as internal traffic         |
 
 ## Request authorization
 
 Ingestion accepts two request sources:
 
-| Source | How it authenticates |
-| --- | --- |
-| Browser (`<Analytics />`, `trackEvent`) | `Origin` header checked against `ORIGIN_ALLOWLIST` |
-| Server (`trackServerEvent`, `createServerTrack`) | `Authorization: Bearer <INGEST_SECRET>` header |
+| Source                                           | How it authenticates                               |
+| ------------------------------------------------ | -------------------------------------------------- |
+| Browser (`<Analytics />`, `trackEvent`)          | `Origin` header checked against `ORIGIN_ALLOWLIST` |
+| Server (`trackServerEvent`, `createServerTrack`) | `Authorization: Bearer <INGEST_SECRET>` header     |
 
 Set the same `INGEST_SECRET` value on both the ingestion service and your app server (as `INGEST_SECRET`, never `NEXT_PUBLIC_INGEST_SECRET`). The `@remcostoeten/analytics/server` SDK reads it from env and attaches it automatically.
 
@@ -75,16 +75,16 @@ cd packages/ingestion && bun run db:migrate
 
 ## Endpoints
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/health` | Health check |
-| POST | `/e` | Ingest event (SDK default) |
-| POST | `/e/batch` | Batch ingest up to 100 events (offline queue flush) |
-| POST | `/ingest` | Ingest event (alias) |
-| POST | `/ingest/batch` | Batch ingest (alias) |
-| GET | `/metrics` | Request metrics |
-| GET | `/admin/stats` | Admin statistics |
-| POST | `/admin/cleanup` | Data retention cleanup |
+| Method | Path             | Purpose                                             |
+| ------ | ---------------- | --------------------------------------------------- |
+| GET    | `/health`        | Health check                                        |
+| POST   | `/e`             | Ingest event (SDK default)                          |
+| POST   | `/e/batch`       | Batch ingest up to 100 events (offline queue flush) |
+| POST   | `/ingest`        | Ingest event (alias)                                |
+| POST   | `/ingest/batch`  | Batch ingest (alias)                                |
+| GET    | `/metrics`       | Request metrics                                     |
+| GET    | `/admin/stats`   | Admin statistics                                    |
+| POST   | `/admin/cleanup` | Data retention cleanup                              |
 
 Point the SDK at your deployment base URL:
 

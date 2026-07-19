@@ -26,7 +26,13 @@ import { SessionPaths } from "@/components/session-paths";
 import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
 import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
-import { PostHogNotice, PostHogTrackedSites, PostHogSummaryCards, PostHogInsightsList, PostHogEventsTable } from "@/components/posthog-panel";
+import {
+	PostHogNotice,
+	PostHogTrackedSites,
+	PostHogSummaryCards,
+	PostHogInsightsList,
+	PostHogEventsTable,
+} from "@/components/posthog-panel";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type {
@@ -96,6 +102,7 @@ type DashboardContentProps = {
 	databaseIssue?: "missing_database_url" | "query_failed";
 	breadcrumbs?: BreadcrumbItem[];
 	description?: string;
+	authUser?: string | null;
 };
 
 type DashboardView =
@@ -149,6 +156,7 @@ export function DashboardContent({
 	databaseIssue,
 	breadcrumbs = [{ label: "Analytics", href: "/" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
+	authUser,
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
@@ -239,8 +247,21 @@ export function DashboardContent({
 	}, [setPaletteOpen]);
 
 	useEffect(() => {
-		setCurrentVisitorId(readStoredVisitorId());
+		function syncVisitorId() {
+			const visitorId = readStoredVisitorId();
+			if (!visitorId) return;
+			setCurrentVisitorId(visitorId);
+		}
+
+		syncVisitorId();
 		setExcludedVisitorId(readSelfFilterId());
+		const interval = window.setInterval(syncVisitorId, 250);
+		const timeout = window.setTimeout(() => window.clearInterval(interval), 10_000);
+
+		return () => {
+			window.clearInterval(interval);
+			window.clearTimeout(timeout);
+		};
 	}, []);
 
 	const buildQuery = (metric: string, extraParams: string = "") => {
@@ -349,16 +370,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: webVitals } = useSWR(
-		viewKey(["behavior", "technology"], "web-vitals"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: webVitals } = useSWR(viewKey(["behavior", "technology"], "web-vitals"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: sessionStats } = useSWR(canFetch ? buildQuery("session-stats") : null, fetcher, {
 		fallbackData: null,
@@ -367,26 +384,18 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
-	const { data: engagement } = useSWR(
-		viewKey(["retention", "behavior"], "engagement"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 30000,
-			keepPreviousData: true,
-		},
-	);
+	const { data: engagement } = useSWR(viewKey(["retention", "behavior"], "engagement"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 30000,
+		keepPreviousData: true,
+	});
 
-	const { data: heatmap } = useSWR(
-		viewKey(["retention", "behavior"], "hourly-heatmap"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: heatmap } = useSWR(viewKey(["retention", "behavior"], "hourly-heatmap"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: browsers } = useSWR(
 		viewKey(["technology", "audience"], "browsers-detailed"),
@@ -410,16 +419,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: languages } = useSWR(
-		viewKey(["technology", "audience"], "languages"),
-		fetcher,
-		{
-			fallbackData: initialData.audience.languages,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: languages } = useSWR(viewKey(["technology", "audience"], "languages"), fetcher, {
+		fallbackData: initialData.audience.languages,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: screenSizes } = useSWR(viewKey(["technology"], "screen-sizes"), fetcher, {
 		fallbackData: initialData.audience.screenResolutions,
@@ -428,16 +433,12 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
-	const { data: connectionTypes } = useSWR(
-		viewKey(["technology"], "connection-types"),
-		fetcher,
-		{
-			fallbackData: [],
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: connectionTypes } = useSWR(viewKey(["technology"], "connection-types"), fetcher, {
+		fallbackData: [],
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: recurrence } = useSWR(
 		viewKey(["technology", "audience"], "visitor-recurrence"),
@@ -477,16 +478,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: paths, isLoading: pathsLoading } = useSWR(
-		viewKey(["behavior"], "paths"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 30000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: paths, isLoading: pathsLoading } = useSWR(viewKey(["behavior"], "paths"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 30000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: utmCampaigns } = useSWR(viewKey(["overview"], "utm-campaigns"), fetcher, {
 		fallbackData: [],
@@ -694,6 +691,7 @@ export function DashboardContent({
 				selfFilterEnabled={!!excludedVisitorId}
 				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
 				onSelfFilterChange={setSelfFilter}
+				authUser={authUser}
 			/>
 
 			<CommandPalette
@@ -776,9 +774,7 @@ export function DashboardContent({
 						</div>
 					</div>
 
-					{activeView !== "posthog" && (
-						<KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />
-					)}
+					{activeView !== "posthog" && <KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />}
 
 					{activeView === "overview" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
@@ -967,17 +963,19 @@ export function DashboardContent({
 								</div>
 								<BreakdownChart
 									title="Visit count distribution"
-									data={(recurrence?.distribution ?? []).map((d: { bucket: string; count: number }) => {
-										const total = (recurrence?.distribution ?? []).reduce(
-											(sum: number, x: { count: number }) => sum + x.count,
-											0,
-										);
-										return {
-											label: `${d.bucket} visits`,
-											value: d.count,
-											percentage: total > 0 ? (d.count / total) * 100 : 0,
-										};
-									})}
+									data={(recurrence?.distribution ?? []).map(
+										(d: { bucket: string; count: number }) => {
+											const total = (recurrence?.distribution ?? []).reduce(
+												(sum: number, x: { count: number }) => sum + x.count,
+												0,
+											);
+											return {
+												label: `${d.bucket} visits`,
+												value: d.count,
+												percentage: total > 0 ? (d.count / total) * 100 : 0,
+											};
+										},
+									)}
 								/>
 							</div>
 						</div>

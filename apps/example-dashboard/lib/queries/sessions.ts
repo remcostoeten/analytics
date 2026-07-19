@@ -66,7 +66,11 @@ export async function getHourlyHeatmap(
 	};
 }
 
-export async function getRetention(projectId: string | null, excludeVisitorId?: string | null, origin?: string | null) {
+export async function getRetention(
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000);
 	const cohortLookback = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 	const retention =

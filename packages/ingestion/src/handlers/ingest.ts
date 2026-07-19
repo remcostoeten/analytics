@@ -44,7 +44,12 @@ function getOriginAllowlist(): string[] {
 	if (current === cachedAllowlistEnv && cachedAllowlist !== null) return cachedAllowlist;
 	cachedAllowlistEnv = current;
 	cachedAllowlist = current
-		? current.split(",").map(function (o) { return o.trim(); }).filter(Boolean)
+		? current
+				.split(",")
+				.map(function (o) {
+					return o.trim();
+				})
+				.filter(Boolean)
 		: [];
 	return cachedAllowlist;
 }
@@ -376,7 +381,13 @@ export async function handleIngest(c: Context) {
 		const preview =
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
-		const ctx: SharedIngestContext = { ipHash, geo, localhost, preview, internal: isInternalTraffic(ipHash, localhost) };
+		const ctx: SharedIngestContext = {
+			ipHash,
+			geo,
+			localhost,
+			preview,
+			internal: isInternalTraffic(ipHash, localhost),
+		};
 
 		const eventResult = await processSingleEvent(
 			payload,

@@ -10,7 +10,10 @@ export function GET(request: NextRequest) {
 	const state = randomBytes(16).toString("hex");
 	const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
 	authorizeUrl.searchParams.set("client_id", process.env.GITHUB_CLIENT_ID!);
-	authorizeUrl.searchParams.set("redirect_uri", new URL("/api/auth/callback", request.url).toString());
+	authorizeUrl.searchParams.set(
+		"redirect_uri",
+		new URL("/api/auth/callback", request.url).toString(),
+	);
 	authorizeUrl.searchParams.set("state", state);
 
 	const response = NextResponse.redirect(authorizeUrl);

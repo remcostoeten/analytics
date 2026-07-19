@@ -28,7 +28,11 @@ export async function getRecentEvents(
 	});
 }
 
-export async function getLiveNow(projectId: string | null, excludeVisitorId?: string | null, origin?: string | null) {
+export async function getLiveNow(
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 	const [liveStats] =
 		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors, COUNT(DISTINCT session_id) as active_sessions, COUNT(*) as events_count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;

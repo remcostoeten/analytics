@@ -6,7 +6,6 @@ import {
 	getPostHogSummary,
 } from "@/lib/posthog";
 
-
 export async function GET(request: NextRequest) {
 	const metric = request.nextUrl.searchParams.get("metric") || "summary";
 

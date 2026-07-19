@@ -2,7 +2,13 @@
 	"name": "@remcostoeten/ingestion",
 	"version": "0.1.0",
 	"description": "Self-hosted analytics ingestion service for Remco Analytics",
-	"keywords": ["analytics", "ingestion", "hono", "postgres", "privacy"],
+	"keywords": [
+		"analytics",
+		"hono",
+		"ingestion",
+		"postgres",
+		"privacy"
+	],
 	"license": "MIT",
 	"author": "Remco Stoeten",
 	"repository": {
@@ -10,8 +16,13 @@
 		"url": "https://github.com/remcostoeten/analytics",
 		"directory": "packages/ingestion"
 	},
+	"files": [
+		"dist",
+		"src/db/migrations",
+		"drizzle.config.ts",
+		"README.md"
+	],
 	"type": "module",
-	"files": ["dist", "src/db/migrations", "drizzle.config.ts", "README.md"],
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -40,13 +51,6 @@
 		"db:migrate": "drizzle-kit up:pg",
 		"prepublishOnly": "bun run build"
 	},
-	"peerDependencies": {
-		"@neondatabase/serverless": "^0.10.0",
-		"drizzle-orm": "^0.36.0",
-		"hono": "^4.6.0",
-		"ua-parser-js": "^2.0.0",
-		"zod": "^3.22.0"
-	},
 	"devDependencies": {
 		"@electric-sql/pglite": "^0.4.4",
 		"@neondatabase/serverless": "^0.10.0",
@@ -60,5 +64,12 @@
 		"typescript": "5.6.3",
 		"ua-parser-js": "^2.0.9",
 		"zod": "^3.22.4"
+	},
+	"peerDependencies": {
+		"@neondatabase/serverless": "^0.10.0",
+		"drizzle-orm": "^0.36.0",
+		"hono": "^4.6.0",
+		"ua-parser-js": "^2.0.0",
+		"zod": "^3.22.0"
 	}
 }

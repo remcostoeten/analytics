@@ -352,7 +352,10 @@ export function buildFiles(options: ScaffoldOptions): ScaffoldFile[] {
 			{ path: "apps/web/.env.example", content: webEnvExample(ingestPlaceholder) },
 			{ path: "apps/web/app/layout.tsx", content: webLayout(options.projectId) },
 			{ path: "apps/web/app/page.tsx", content: webPage() },
-			{ path: "apps/web/app/api/example/route.ts", content: serverTrackingExample(options.projectId) },
+			{
+				path: "apps/web/app/api/example/route.ts",
+				content: serverTrackingExample(options.projectId),
+			},
 			{ path: "apps/analytics-api/package.json", content: apiPackageJson() },
 			{ path: "apps/analytics-api/api/index.ts", content: apiHandler() },
 			{ path: "apps/analytics-api/vercel.json", content: apiVercelJson() },
@@ -377,7 +380,10 @@ export function buildFiles(options: ScaffoldOptions): ScaffoldFile[] {
 
 	return [
 		{ path: "README.md", content: readmeSdkOnly(options.projectName, options.projectId) },
-		{ path: "package.json", content: webPackageJson().replace('"name": "web"', `"name": "${options.projectName}"`) },
+		{
+			path: "package.json",
+			content: webPackageJson().replace('"name": "web"', `"name": "${options.projectName}"`),
+		},
 		{ path: "tsconfig.json", content: webTsConfig() },
 		{ path: "next.config.mjs", content: "export default {};\n" },
 		{ path: ".env.example", content: webEnvExample(ingestPlaceholder) },

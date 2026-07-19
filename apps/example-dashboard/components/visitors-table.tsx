@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Inbox, Monitor, Search, User } from "lucide-react";
+import { Inbox, Search, User } from "lucide-react";
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";

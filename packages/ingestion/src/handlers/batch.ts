@@ -21,7 +21,9 @@ const batchSchema = z.object({
 
 function isOriginAllowed(origin: string | null): boolean {
 	const allowlist = process.env.ORIGIN_ALLOWLIST
-		? process.env.ORIGIN_ALLOWLIST.split(",").map((o) => o.trim()).filter(Boolean)
+		? process.env.ORIGIN_ALLOWLIST.split(",")
+				.map((o) => o.trim())
+				.filter(Boolean)
 		: [];
 	return allowlist.length === 0 || (origin !== null && allowlist.includes(origin));
 }
@@ -41,10 +43,7 @@ export async function handleBatch(c: Context) {
 
 		const result = batchSchema.safeParse(body);
 		if (!result.success) {
-			return c.json(
-				{ ok: false, error: "Invalid payload", details: result.error.issues },
-				400,
-			);
+			return c.json({ ok: false, error: "Invalid payload", details: result.error.issues }, 400);
 		}
 
 		const { events } = result.data;
