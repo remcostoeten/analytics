@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Inbox, TrendingUp, Clock, MousePointerClick, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EngagementData {
 	scrollDepth: Array<{ bucket: string; count: number; percentage: number }>;
@@ -78,18 +79,26 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 						</div>
 						<div className="space-y-1.5">
 							{data.scrollDepth.map((item) => (
-								<div key={item.bucket} className="flex items-center gap-2">
-									<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
-									<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-										<div
-											className="h-full bg-chart-1 rounded-full transition-all"
-											style={{ width: `${Math.min(100, item.percentage)}%` }}
-										/>
-									</div>
-									<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
-										{item.percentage.toFixed(1)}%
-									</span>
-								</div>
+								<Tooltip key={item.bucket}>
+									<TooltipTrigger asChild>
+										<div className="flex items-center gap-2 cursor-default">
+											<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
+											<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+												<div
+													className="h-full bg-chart-1 rounded-full transition-all"
+													style={{ width: `${Math.min(100, item.percentage)}%` }}
+												/>
+											</div>
+											<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
+												{item.percentage.toFixed(1)}%
+											</span>
+										</div>
+									</TooltipTrigger>
+									<TooltipContent side="left" className="text-[11px]">
+										{item.count.toLocaleString()} pageview{item.count === 1 ? "" : "s"} scrolled to{" "}
+										{item.bucket} of the page
+									</TooltipContent>
+								</Tooltip>
 							))}
 						</div>
 					</div>
@@ -106,18 +115,26 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 						</div>
 						<div className="space-y-1.5">
 							{data.timeOnPage.map((item) => (
-								<div key={item.bucket} className="flex items-center gap-2">
-									<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
-									<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-										<div
-											className="h-full bg-chart-2 rounded-full transition-all"
-											style={{ width: `${Math.min(100, item.percentage)}%` }}
-										/>
-									</div>
-									<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
-										{item.percentage.toFixed(1)}%
-									</span>
-								</div>
+								<Tooltip key={item.bucket}>
+									<TooltipTrigger asChild>
+										<div className="flex items-center gap-2 cursor-default">
+											<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
+											<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+												<div
+													className="h-full bg-chart-2 rounded-full transition-all"
+													style={{ width: `${Math.min(100, item.percentage)}%` }}
+												/>
+											</div>
+											<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
+												{item.percentage.toFixed(1)}%
+											</span>
+										</div>
+									</TooltipTrigger>
+									<TooltipContent side="left" className="text-[11px]">
+										{item.count.toLocaleString()} visit{item.count === 1 ? "" : "s"} stayed{" "}
+										{item.bucket}
+									</TooltipContent>
+								</Tooltip>
 							))}
 						</div>
 					</div>
@@ -156,12 +173,23 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 											{page.path}
 										</span>
 									)}
-									<div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-										<span className="tabular-nums">{formatTime(page.avgTimeMs)}</span>
-										{typeof page.avgScrollDepth === "number" && (
-											<span className="tabular-nums">{page.avgScrollDepth}%</span>
-										)}
-									</div>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center gap-3 text-[10px] text-muted-foreground cursor-default">
+												<span className="tabular-nums">{formatTime(page.avgTimeMs)}</span>
+												{typeof page.avgScrollDepth === "number" && (
+													<span className="tabular-nums">{page.avgScrollDepth}%</span>
+												)}
+											</div>
+										</TooltipTrigger>
+										<TooltipContent side="left" className="text-[11px]">
+											Average time on page over {page.samples.toLocaleString()} visit
+											{page.samples === 1 ? "" : "s"}
+											{typeof page.avgScrollDepth === "number"
+												? ` · avg scroll depth ${page.avgScrollDepth}%`
+												: ""}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 							))}
 						</div>

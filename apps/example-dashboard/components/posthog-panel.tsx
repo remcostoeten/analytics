@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type {
 	PostHogEvent,
 	PostHogInsight,
+	PostHogProject,
 	PostHogSummary,
 	PostHogVisitorDetail,
 } from "@/lib/types";
@@ -99,9 +100,47 @@ export function PostHogNotice({ message }: PostHogNoticeProps) {
 			<div className="flex items-center gap-2">
 				<AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />
 				<span className="text-xs text-muted-foreground">
-					{message || "Set POSTHOG_API_KEY and POSTHOG_PROJECT_ID to connect PostHog."}
+					{message || "Set POSTHOG_API_KEY and POSTHOG_PROJECTS to connect PostHog."}
 				</span>
 			</div>
+		</div>
+	);
+}
+
+type PostHogProjectSwitcherProps = {
+	projects: PostHogProject[] | null;
+	activeProject: string | null;
+	onSelect: (projectId: string) => void;
+};
+
+export function PostHogProjectSwitcher({
+	projects,
+	activeProject,
+	onSelect,
+}: PostHogProjectSwitcherProps) {
+	if (!projects || projects.length < 2) return null;
+
+	const activeId = activeProject ?? projects[0].id;
+
+	return (
+		<div className="flex flex-wrap items-center gap-1.5">
+			{projects.map((project) => (
+				<button
+					key={project.id}
+					type="button"
+					onClick={() => onSelect(project.id)}
+					title={`PostHog project ${project.id}`}
+					className={cn(
+						"inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[10px] transition-colors",
+						project.id === activeId
+							? "border-primary/40 bg-primary/5 text-primary"
+							: "border-border bg-muted/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+					)}
+				>
+					<span className="font-medium">{project.label}</span>
+					<span className="font-mono tabular-nums opacity-60">{project.id}</span>
+				</button>
+			))}
 		</div>
 	);
 }
@@ -432,12 +471,13 @@ function formatDate(iso: string | null): string {
 
 type VisitorDetailCardProps = {
 	distinctId: string;
+	projectId: string | null;
 	onClose: () => void;
 };
 
-function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
+function VisitorDetailCard({ distinctId, projectId, onClose }: VisitorDetailCardProps) {
 	const { data, error, isLoading, mutate } = useSWR<PostHogVisitorDetail>(
-		`/api/posthog?metric=visitor&distinctId=${encodeURIComponent(distinctId)}`,
+		`/api/posthog?metric=visitor&distinctId=${encodeURIComponent(distinctId)}${projectId ? `&project=${projectId}` : ""}`,
 		jsonFetcher,
 	);
 
@@ -636,9 +676,15 @@ type PostHogEventsTableProps = {
 	data: PostHogEvent[] | null;
 	isLoading?: boolean;
 	className?: string;
+	projectId?: string | null;
 };
 
-export function PostHogEventsTable({ data, isLoading, className }: PostHogEventsTableProps) {
+export function PostHogEventsTable({
+	data,
+	isLoading,
+	className,
+	projectId = null,
+}: PostHogEventsTableProps) {
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const [excludedIds, setExcludedIds] = useState<string[]>([]);
 
@@ -707,7 +753,13 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 					</button>
 				)}
 			</div>
-			{focusedId && <VisitorDetailCard distinctId={focusedId} onClose={() => setFocusedId(null)} />}
+			{focusedId && (
+				<VisitorDetailCard
+					distinctId={focusedId}
+					projectId={projectId}
+					onClose={() => setFocusedId(null)}
+				/>
+			)}
 			{!hasData ? (
 				isLoading ? (
 					<div className="overflow-x-auto">

@@ -324,6 +324,11 @@ export interface SidebarSection {
 // POSTHOG INTEGRATION TYPES
 // =============================================================================
 
+export interface PostHogProject {
+	id: string;
+	label: string;
+}
+
 export interface PostHogInsight {
 	id: string;
 	shortId: string;

@@ -29,6 +29,7 @@ import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import {
 	PostHogNotice,
+	PostHogProjectSwitcher,
 	PostHogTrackedSites,
 	PostHogSummaryCards,
 	PostHogInsightsList,
@@ -501,22 +502,33 @@ export function DashboardContent({
 		fetcher,
 	);
 
+	const [posthogProject, setPosthogProject] = useState<string | null>(null);
+
+	const { data: posthogProjects } = useSWR<PostHogProject[]>(
+		activeView === "posthog" ? "/api/posthog?metric=projects" : null,
+		fetcher,
+	);
+
+	const posthogProjectParam = posthogProject ? `&project=${posthogProject}` : "";
+
 	const {
 		data: posthogSummary,
 		error: posthogSummaryError,
 		isLoading: posthogSummaryLoading,
-	} = useSWR(activeView === "posthog" ? "/api/posthog?metric=summary" : null, fetcher, {
-		refreshInterval: 60000,
-	});
+	} = useSWR(
+		activeView === "posthog" ? `/api/posthog?metric=summary${posthogProjectParam}` : null,
+		fetcher,
+		{ refreshInterval: 60000 },
+	);
 
 	const { data: posthogInsights, isLoading: posthogInsightsLoading } = useSWR(
-		activeView === "posthog" ? "/api/posthog?metric=insights" : null,
+		activeView === "posthog" ? `/api/posthog?metric=insights${posthogProjectParam}` : null,
 		fetcher,
 		{ refreshInterval: 60000 },
 	);
 
 	const { data: posthogEvents, isLoading: posthogEventsLoading } = useSWR(
-		activeView === "posthog" ? "/api/posthog?metric=events" : null,
+		activeView === "posthog" ? `/api/posthog?metric=events${posthogProjectParam}` : null,
 		fetcher,
 		{ refreshInterval: 15000 },
 	);
@@ -948,9 +960,18 @@ export function DashboardContent({
 								{posthogConfigMissing && (
 									<PostHogNotice message={(posthogSummaryError as ApiError)?.info?.message} />
 								)}
+								<PostHogProjectSwitcher
+									projects={posthogProjects ?? null}
+									activeProject={posthogProject}
+									onSelect={setPosthogProject}
+								/>
 								<PostHogTrackedSites data={posthogSummary} isLoading={posthogSummaryLoading} />
 								<PostHogSummaryCards data={posthogSummary} isLoading={posthogSummaryLoading} />
-								<PostHogEventsTable data={posthogEvents} isLoading={posthogEventsLoading} />
+								<PostHogEventsTable
+									data={posthogEvents}
+									isLoading={posthogEventsLoading}
+									projectId={posthogProject}
+								/>
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<PostHogInsightsList data={posthogInsights} isLoading={posthogInsightsLoading} />

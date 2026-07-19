@@ -392,7 +392,13 @@ export function SignalStream({
 				const matchesPath = signal.metadata?.path?.toString().toLowerCase().includes(searchLower);
 				const matchesType = signal.type.toLowerCase().includes(searchLower);
 
-				if (!matchesCategory && !matchesMessage && !matchesEndpoint && !matchesPath && !matchesType) {
+				if (
+					!matchesCategory &&
+					!matchesMessage &&
+					!matchesEndpoint &&
+					!matchesPath &&
+					!matchesType
+				) {
 					return false;
 				}
 			}

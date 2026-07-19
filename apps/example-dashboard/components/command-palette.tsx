@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { useSWRConfig } from "swr";
 import {
 	BarChart3,
 	Users,
@@ -15,6 +18,16 @@ import {
 	Zap,
 	ArrowRight,
 	CornerDownLeft,
+	SunMoon,
+	EyeOff,
+	Eye,
+	RefreshCw,
+	Globe,
+	ListFilter,
+	CircleCheck,
+	Info,
+	TriangleAlert,
+	CircleAlert,
 } from "lucide-react";
 import {
 	CommandDialog,
@@ -34,6 +47,8 @@ type DashboardView =
 	| "audience"
 	| "posthog";
 
+type SignalType = "ok" | "info" | "warn" | "error";
+
 type CommandPaletteProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -42,11 +57,16 @@ type CommandPaletteProps = {
 	onProjectChange: (projectId: string | null) => void;
 	onPageSelect: (path: string) => void;
 	onReferrerSelect: (domain: string) => void;
+	onTypeFilterChange: (type: SignalType | "all") => void;
+	onSelfFilterChange: (enabled: boolean) => void;
+	selfFilterEnabled: boolean;
+	selfFilterAvailable: boolean;
 	pages?: { path: string; views: number }[];
 	referrers?: { domain: string; visits: number }[];
 	projects?: { id: string; eventCount: number }[];
 	currentView: DashboardView;
 	currentTimeRange: string;
+	currentTypeFilter: SignalType | "all";
 };
 
 type PaletteRowProps = {
@@ -98,12 +118,21 @@ export function CommandPalette({
 	onProjectChange,
 	onPageSelect,
 	onReferrerSelect,
+	onTypeFilterChange,
+	onSelfFilterChange,
+	selfFilterEnabled,
+	selfFilterAvailable,
 	pages = [],
 	referrers = [],
 	projects = [],
 	currentView,
 	currentTimeRange,
+	currentTypeFilter,
 }: CommandPaletteProps) {
+	const router = useRouter();
+	const { resolvedTheme, setTheme } = useTheme();
+	const { mutate } = useSWRConfig();
+
 	function runAndClose(fn: () => void) {
 		fn();
 		onOpenChange(false);
@@ -137,6 +166,14 @@ export function CommandPalette({
 		},
 		{ id: "audience", label: "Audience", icon: Users, description: "Geo and segmentation" },
 		{ id: "posthog", label: "PostHog", icon: Zap, description: "Insights and events from PostHog" },
+	];
+
+	const signalTypes: { value: SignalType | "all"; label: string; icon: React.ElementType }[] = [
+		{ value: "all", label: "All signals", icon: ListFilter },
+		{ value: "ok", label: "OK", icon: CircleCheck },
+		{ value: "info", label: "Info", icon: Info },
+		{ value: "warn", label: "Warnings", icon: TriangleAlert },
+		{ value: "error", label: "Errors", icon: CircleAlert },
 	];
 
 	const timeRanges = [
@@ -176,6 +213,55 @@ export function CommandPalette({
 							hint={view.description}
 							active={currentView === view.id}
 							onSelect={() => runAndClose(() => onViewChange(view.id))}
+						/>
+					))}
+				</CommandGroup>
+
+				<CommandGroup heading="Actions" className="px-1.5 pb-1">
+					<PaletteRow
+						value="action toggle theme dark light mode"
+						icon={SunMoon}
+						label="Toggle theme"
+						hint={resolvedTheme === "dark" ? "Switch to light" : "Switch to dark"}
+						onSelect={() =>
+							runAndClose(() => setTheme(resolvedTheme === "dark" ? "light" : "dark"))
+						}
+					/>
+					{selfFilterAvailable ? (
+						<PaletteRow
+							value="action exclude my visits self filter"
+							icon={selfFilterEnabled ? Eye : EyeOff}
+							label={selfFilterEnabled ? "Include my visits" : "Exclude my visits"}
+							hint="Filter your own traffic out of the data"
+							active={selfFilterEnabled}
+							onSelect={() => runAndClose(() => onSelfFilterChange(!selfFilterEnabled))}
+						/>
+					) : null}
+					<PaletteRow
+						value="action refresh reload data"
+						icon={RefreshCw}
+						label="Refresh data"
+						hint="Refetch all dashboard metrics"
+						onSelect={() => runAndClose(() => mutate(() => true))}
+					/>
+					<PaletteRow
+						value="action geo map countries world"
+						icon={Globe}
+						label="Open geo map"
+						hint="Full-screen world map"
+						onSelect={() => runAndClose(() => router.push("/geo"))}
+					/>
+				</CommandGroup>
+
+				<CommandGroup heading="Signals" className="px-1.5 pb-1">
+					{signalTypes.map((type) => (
+						<PaletteRow
+							key={type.value}
+							value={`signal filter ${type.label}`}
+							icon={type.icon}
+							label={type.label}
+							active={currentTypeFilter === type.value}
+							onSelect={() => runAndClose(() => onTypeFilterChange(type.value))}
 						/>
 					))}
 				</CommandGroup>
