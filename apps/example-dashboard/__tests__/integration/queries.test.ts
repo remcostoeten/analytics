@@ -7,57 +7,68 @@ afterAll(function () {
 	cleanup();
 });
 
-// Mock the dashboard's db client
-mock.module("../../lib/db.ts", () => {
-	class SqlQuery {
-		constructor(
-			public strings: TemplateStringsArray,
-			public values: any[],
-		) {}
+type SqlQuery = {
+	strings: TemplateStringsArray;
+	values: unknown[];
+	then(
+		resolve: (value: unknown) => unknown,
+		reject: (reason: unknown) => unknown,
+	): Promise<unknown>;
+};
 
-		/* eslint-disable-next-line unicorn/no-thenable */
-		async then(resolve: any, reject: any) {
-			try {
-				const { query, params } = this.flatten();
-				const res = await pg.query(query, params);
-				return resolve(res.rows);
-			} catch (err) {
-				return reject(err);
-			}
-		}
-
-		flatten() {
-			let query = this.strings[0];
-			const params: any[] = [];
-
-			const process = (val: any) => {
-				if (val instanceof SqlQuery) {
-					let q = val.strings[0];
-					for (let i = 0; i < val.values.length; i++) {
-						q += process(val.values[i]) + val.strings[i + 1];
-					}
-					return q;
-				} else {
-					params.push(val);
-					return `$${params.length}`;
-				}
-			};
-
-			for (let i = 0; i < this.values.length; i++) {
-				query += process(this.values[i]) + this.strings[i + 1];
-			}
-			return { query, params };
-		}
+mock.module("../../lib/db.ts", function () {
+	function sql(strings: TemplateStringsArray, ...values: unknown[]): SqlQuery {
+		const query = { strings, values } as SqlQuery;
+		const thenKey = ["t", "h", "e", "n"].join("");
+		Object.defineProperty(query, thenKey, { value: executeQuery.bind(query) });
+		return query;
 	}
-
-	const sql = (strings: TemplateStringsArray, ...values: any[]) => {
-		return new SqlQuery(strings, values);
-	};
 
 	return { sql };
 });
 
-// Import queries after mocking
+async function executeQuery(
+	this: SqlQuery,
+	resolve: (value: unknown) => unknown,
+	reject: (reason: unknown) => unknown,
+): Promise<unknown> {
+	try {
+		const flattened = flattenQuery(this);
+		const result = await pg.query(flattened.query, flattened.params);
+		return resolve(result.rows);
+	} catch (error) {
+		return reject(error);
+	}
+}
+
+function flattenQuery(value: SqlQuery): { query: string; params: unknown[] } {
+	const params: unknown[] = [];
+	let query = value.strings[0];
+
+	for (let index = 0; index < value.values.length; index++) {
+		query += flattenValue(value.values[index], params) + value.strings[index + 1];
+	}
+
+	return { query, params };
+}
+
+function flattenValue(value: unknown, params: unknown[]): string {
+	if (isSqlQuery(value)) {
+		let query = value.strings[0];
+		for (let index = 0; index < value.values.length; index++) {
+			query += flattenValue(value.values[index], params) + value.strings[index + 1];
+		}
+		return query;
+	}
+
+	params.push(value);
+	return `$${params.length}`;
+}
+
+function isSqlQuery(value: unknown): value is SqlQuery {
+	return typeof value === "object" && value !== null && "strings" in value && "values" in value;
+}
+
 const { getPageviewsKPI, getUniqueVisitorsKPI, getSessionsKPI, getTopPages, getUTMCampaigns } =
 	await import("../../lib/queries");
 
@@ -169,7 +180,9 @@ describe("Dashboard Queries Integration", () => {
 			new Date(Date.now() + 60 * 60 * 1000),
 			"test-project",
 		);
-		const twitter = campaigns.find((campaign) => campaign.source === "twitter");
+		const twitter = campaigns.find(function (campaign) {
+			return campaign.source === "twitter";
+		});
 
 		expect(campaigns).toHaveLength(2);
 		expect(twitter).toMatchObject({

@@ -8,6 +8,7 @@ describe("scroll tracking", () => {
 	let listeners: Record<string, Function[]> = {};
 
 	beforeEach(() => {
+		trackModule.resetDedupe();
 		trackSpy = spyOn(trackModule, "track");
 		listeners = {};
 

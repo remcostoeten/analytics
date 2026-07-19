@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+function isAuthorized(request: NextRequest): boolean {
+	if (!isAuthEnabled()) {
+		return true;
+	}
+	return verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value) !== null;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
 	try {
-		// Get visitor details
 		const [visitor] = await sql`
-      SELECT 
+      SELECT
         id,
         fingerprint,
         first_seen,
@@ -27,8 +32,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         region,
         city,
         ua,
-        meta
-      FROM visitors 
+        meta,
+        is_internal
+      FROM visitors
       WHERE id = ${id} OR fingerprint = ${id}
       LIMIT 1
     `;
@@ -37,9 +43,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 			return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
 		}
 
-		// Get visitor's recent events
 		const events = await sql`
-      SELECT 
+      SELECT
         id,
         type,
         path,
@@ -47,28 +52,86 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         referrer,
         session_id,
         meta
-      FROM events 
+      FROM events
       WHERE visitor_id = ${visitor.fingerprint}
       ORDER BY ts DESC
       LIMIT 50
     `;
 
-		// Get visitor's sessions
-		const sessions = await sql`
-      SELECT 
-        session_id,
-        MIN(ts) as started_at,
-        MAX(ts) as ended_at,
-        COUNT(*) as events,
-        COUNT(*) FILTER (WHERE type = 'pageview') as pageviews,
-        array_agg(DISTINCT path) FILTER (WHERE path IS NOT NULL) as paths
-      FROM events 
-      WHERE visitor_id = ${visitor.fingerprint}
-        AND session_id IS NOT NULL
-      GROUP BY session_id
-      ORDER BY started_at DESC
-      LIMIT 20
-    `;
+		let sessionsRows: readonly Record<string, unknown>[] = [];
+		try {
+			sessionsRows = await sql`
+        SELECT
+          session_id,
+          started_at,
+          last_event_at,
+          entry_path,
+          exit_path,
+          referrer,
+          pageviews,
+          events,
+          duration_ms,
+          country,
+          device_type
+        FROM sessions
+        WHERE visitor_id = ${visitor.fingerprint}
+        ORDER BY started_at DESC
+        LIMIT 30
+      `;
+		} catch {
+			sessionsRows = [];
+		}
+
+		const sessions =
+			sessionsRows.length > 0
+				? sessionsRows.map((s) => ({
+						sessionId: s.session_id,
+						startedAt: s.started_at,
+						endedAt: s.last_event_at,
+						durationMs: s.duration_ms !== null ? Number(s.duration_ms) : null,
+						entryPath: s.entry_path,
+						exitPath: s.exit_path,
+						referrer: s.referrer,
+						pageviews: Number(s.pageviews ?? 0),
+						events: Number(s.events ?? 0),
+						country: s.country,
+						deviceType: s.device_type,
+					}))
+				: await (async () => {
+						const grouped = await sql`
+              SELECT
+                session_id,
+                MIN(ts) as started_at,
+                MAX(ts) as ended_at,
+                COUNT(*) as events,
+                COUNT(*) FILTER (WHERE type = 'pageview') as pageviews,
+                array_agg(path ORDER BY ts) FILTER (WHERE path IS NOT NULL) as paths
+              FROM events
+              WHERE visitor_id = ${visitor.fingerprint}
+                AND session_id IS NOT NULL
+              GROUP BY session_id
+              ORDER BY started_at DESC
+              LIMIT 30
+            `;
+						return grouped.map((s) => {
+							const paths = (s.paths as string[] | null) || [];
+							const started = new Date(s.started_at as string);
+							const ended = new Date(s.ended_at as string);
+							return {
+								sessionId: s.session_id,
+								startedAt: s.started_at,
+								endedAt: s.ended_at,
+								durationMs: ended.getTime() - started.getTime(),
+								entryPath: paths[0] ?? null,
+								exitPath: paths[paths.length - 1] ?? null,
+								referrer: null,
+								pageviews: Number(s.pageviews),
+								events: Number(s.events),
+								country: null,
+								deviceType: null,
+							};
+						});
+					})();
 
 		return NextResponse.json({
 			visitor: {
@@ -90,6 +153,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 				city: visitor.city,
 				userAgent: visitor.ua,
 				meta: visitor.meta,
+				isInternal: Boolean(visitor.is_internal),
 			},
 			events: events.map((e) => ({
 				id: String(e.id),
@@ -100,17 +164,47 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 				sessionId: e.session_id,
 				meta: e.meta,
 			})),
-			sessions: sessions.map((s) => ({
-				sessionId: s.session_id,
-				startedAt: s.started_at,
-				endedAt: s.ended_at,
-				events: Number(s.events),
-				pageviews: Number(s.pageviews),
-				paths: s.paths,
-			})),
+			sessions,
 		});
 	} catch (error) {
 		console.error("[API] Visitor detail error:", error);
 		return NextResponse.json({ error: "Failed to fetch visitor" }, { status: 500 });
+	}
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+	const { id } = await params;
+
+	if (!isAuthorized(request)) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
+	try {
+		const body = await request.json().catch(() => ({}));
+		const isInternal = Boolean(body?.isInternal);
+
+		const [visitor] = await sql`
+      SELECT id, fingerprint FROM visitors WHERE id = ${id} OR fingerprint = ${id} LIMIT 1
+    `;
+
+		if (!visitor) {
+			return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
+		}
+
+		await sql`
+      UPDATE visitors SET is_internal = ${isInternal} WHERE fingerprint = ${visitor.fingerprint}
+    `;
+
+		await sql`
+      UPDATE events SET is_internal = ${isInternal} WHERE visitor_id = ${visitor.fingerprint}
+    `;
+
+		return NextResponse.json({
+			fingerprint: visitor.fingerprint,
+			isInternal,
+		});
+	} catch (error) {
+		console.error("[API] Visitor internal-toggle error:", error);
+		return NextResponse.json({ error: "Failed to update visitor" }, { status: 500 });
 	}
 }

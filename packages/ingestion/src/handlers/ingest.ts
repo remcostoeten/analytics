@@ -1,12 +1,14 @@
 import { Context } from "hono";
 import { validateEventPayload } from "../utilities/validation.js";
 import {
-	extractGeoFromRequest,
+	type GeoData,
 	extractIpAddress,
 	isLocalhost,
 	isPreviewEnvironment,
 	getHostFromOrigin,
 } from "../utilities/geo.js";
+import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
+import { lookupNetworkFromMmdb, type NetworkData } from "../utilities/geo-mmdb.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
 import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../utilities/dedupe.js";
@@ -44,7 +46,12 @@ function getOriginAllowlist(): string[] {
 	if (current === cachedAllowlistEnv && cachedAllowlist !== null) return cachedAllowlist;
 	cachedAllowlistEnv = current;
 	cachedAllowlist = current
-		? current.split(",").map(function (o) { return o.trim(); }).filter(Boolean)
+		? current
+				.split(",")
+				.map(function (o) {
+					return o.trim();
+				})
+				.filter(Boolean)
 		: [];
 	return cachedAllowlist;
 }
@@ -64,7 +71,8 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 
 export type SharedIngestContext = {
 	ipHash: string | null;
-	geo: { country: string | null; region: string | null; city: string | null };
+	geo: GeoData;
+	network: NetworkData;
 	localhost: boolean;
 	preview: boolean;
 	internal: boolean;
@@ -83,6 +91,7 @@ type VisitorData = {
 	country: string | null;
 	region: string | null;
 	city: string | null;
+	timezone: string | null;
 	ua: string | null;
 	screenResolution: string | null;
 	isInternal: boolean;
@@ -112,12 +121,14 @@ async function upsertVisitor(
 	db: DbModule["db"],
 	visitors: DbModule["visitors"],
 	visitorId: string,
+	projectId: string,
+	incrementVisit: boolean,
 	data: VisitorData,
 ): Promise<void> {
 	try {
 		const updateSet: Record<string, unknown> = {
 			lastSeen: drizzleSql`now()`,
-			visitCount: drizzleSql`${visitors.visitCount} + 1`,
+			visitCount: drizzleSql`${visitors.visitCount} + ${incrementVisit ? 1 : 0}`,
 			ipHash: data.ipHash,
 			deviceType: data.deviceType,
 			browser: data.browser ?? null,
@@ -128,6 +139,7 @@ async function upsertVisitor(
 			country: data.country,
 			region: data.region,
 			city: data.city,
+			timezone: data.timezone,
 			ua: data.ua,
 			screenResolution: data.screenResolution,
 			isInternal: data.isInternal,
@@ -147,6 +159,7 @@ async function upsertVisitor(
 			.insert(visitors)
 			.values({
 				fingerprint: visitorId,
+				projectId,
 				ipHash: data.ipHash,
 				deviceType: data.deviceType,
 				browser: data.browser ?? null,
@@ -157,17 +170,65 @@ async function upsertVisitor(
 				country: data.country,
 				region: data.region,
 				city: data.city,
+				timezone: data.timezone,
 				ua: data.ua,
 				screenResolution: data.screenResolution,
 				isInternal: data.isInternal,
 				meta: data.metaMerge ? { [data.metaMerge.path]: data.metaMerge.value } : null,
 			})
 			.onConflictDoUpdate({
-				target: visitors.fingerprint,
+				target: [visitors.projectId, visitors.fingerprint],
 				set: updateSet,
 			});
 	} catch (err) {
 		console.error("[Visitor upsert failed]", err);
+	}
+}
+
+async function upsertSession(
+	db: DbModule["db"],
+	sessions: DbModule["sessions"],
+	payload: import("../utilities/validation.js").EventPayload,
+	sessionId: string,
+	country: string | null,
+	deviceType: string,
+	internal: boolean,
+): Promise<boolean> {
+	const isPageview = (payload.type || "pageview") === "pageview";
+	try {
+		const rows = await db
+			.insert(sessions)
+			.values({
+				projectId: payload.projectId,
+				sessionId,
+				visitorId: payload.visitorId ?? null,
+				startedAt: drizzleSql`now()`,
+				lastEventAt: drizzleSql`now()`,
+				entryPath: payload.path,
+				exitPath: payload.path,
+				referrer: payload.referrer,
+				pageviews: isPageview ? 1 : 0,
+				events: 1,
+				durationMs: 0,
+				country,
+				deviceType,
+				isInternal: internal,
+			})
+			.onConflictDoUpdate({
+				target: sessions.sessionId,
+				set: {
+					lastEventAt: drizzleSql`now()`,
+					exitPath: payload.path,
+					events: drizzleSql`${sessions.events} + 1`,
+					pageviews: drizzleSql`${sessions.pageviews} + ${isPageview ? 1 : 0}`,
+					durationMs: drizzleSql`(EXTRACT(EPOCH FROM (now() - ${sessions.startedAt})) * 1000)::integer`,
+				},
+			})
+			.returning({ inserted: drizzleSql<boolean>`xmax = 0` });
+		return rows?.[0]?.inserted ?? false;
+	} catch (err) {
+		console.error("[Session upsert failed]", err);
+		return false;
 	}
 }
 
@@ -206,7 +267,7 @@ export async function processSingleEvent(
 			? (((payload.meta as Record<string, unknown>).screenSize as string) ?? null)
 			: null;
 
-	const { db, events, visitors } = await getDb();
+	const { db, events, visitors, sessions } = await getDb();
 
 	await db.insert(events).values({
 		projectId: payload.projectId,
@@ -224,6 +285,13 @@ export async function processSingleEvent(
 		country: ctx.geo.country,
 		region: ctx.geo.region,
 		city: ctx.geo.city,
+		latitude: ctx.geo.latitude,
+		longitude: ctx.geo.longitude,
+		timezone: ctx.geo.timezone,
+		postalCode: ctx.geo.postalCode,
+		continent: ctx.geo.continent,
+		asn: ctx.network.asn,
+		asOrg: ctx.network.asOrg,
 		isLocalhost: ctx.localhost,
 		isPreview: ctx.preview,
 		botDetected: botIsBot,
@@ -242,8 +310,21 @@ export async function processSingleEvent(
 		},
 	});
 
+	let sessionInserted = false;
+	if (payload.sessionId) {
+		sessionInserted = await upsertSession(
+			db,
+			sessions,
+			payload,
+			payload.sessionId,
+			ctx.geo.country,
+			deviceType,
+			internal,
+		);
+	}
+
 	if (payload.visitorId) {
-		await upsertVisitor(db, visitors, payload.visitorId, {
+		await upsertVisitor(db, visitors, payload.visitorId, payload.projectId, sessionInserted, {
 			ipHash: ctx.ipHash,
 			deviceType,
 			browser: browser.name,
@@ -254,6 +335,7 @@ export async function processSingleEvent(
 			country: ctx.geo.country,
 			region: ctx.geo.region,
 			city: ctx.geo.city,
+			timezone: ctx.geo.timezone,
 			ua: payload.ua,
 			screenResolution,
 			isInternal: internal,
@@ -308,12 +390,20 @@ export async function handleIngest(c: Context) {
 			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
-		const geo = extractGeoFromRequest(req);
+		const geo = await resolveGeo(req, ip, extractClientTimezone(payload.meta));
+		const network = await lookupNetworkFromMmdb(ip);
 		const localhost = isLocalhost(payload.host);
 		const preview =
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
-		const ctx: SharedIngestContext = { ipHash, geo, localhost, preview, internal: isInternalTraffic(ipHash, localhost) };
+		const ctx: SharedIngestContext = {
+			ipHash,
+			geo,
+			network,
+			localhost,
+			preview,
+			internal: isInternalTraffic(ipHash, localhost),
+		};
 
 		const eventResult = await processSingleEvent(
 			payload,

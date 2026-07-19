@@ -2,7 +2,25 @@ export type GeoData = {
 	country: string | null;
 	region: string | null;
 	city: string | null;
+	latitude: number | null;
+	longitude: number | null;
+	timezone: string | null;
+	postalCode: string | null;
+	continent: string | null;
 };
+
+export function emptyGeo(): GeoData {
+	return {
+		country: null,
+		region: null,
+		city: null,
+		latitude: null,
+		longitude: null,
+		timezone: null,
+		postalCode: null,
+		continent: null,
+	};
+}
 
 type HeaderBag = {
 	get(name: string): string | null;
@@ -26,24 +44,51 @@ function getHeaders(req: ReqData | null | undefined): HeaderBag {
 	return headers;
 }
 
+function decodeHeaderValue(value: string | null): string | null {
+	if (!value) return null;
+	try {
+		return decodeURIComponent(value);
+	} catch {
+		return value;
+	}
+}
+
+function parseCoordinate(value: string | null): number | null {
+	if (!value) return null;
+	const parsed = Number.parseFloat(value);
+	return Number.isFinite(parsed) ? parsed : null;
+}
+
 function extractGeoFromVercelHeaders(headers: HeaderBag): GeoData {
 	const country = headers.get("x-vercel-ip-country");
-	const region = headers.get("x-vercel-ip-country-region");
-	const city = headers.get("x-vercel-ip-city");
+	if (!country) return emptyGeo();
 
-	if (country) return { country, region, city };
-
-	return { country: null, region: null, city: null };
+	return {
+		country,
+		region: decodeHeaderValue(headers.get("x-vercel-ip-country-region")),
+		city: decodeHeaderValue(headers.get("x-vercel-ip-city")),
+		latitude: parseCoordinate(headers.get("x-vercel-ip-latitude")),
+		longitude: parseCoordinate(headers.get("x-vercel-ip-longitude")),
+		timezone: headers.get("x-vercel-ip-timezone"),
+		postalCode: headers.get("x-vercel-ip-postal-code"),
+		continent: headers.get("x-vercel-ip-continent"),
+	};
 }
 
 function extractGeoFromCloudflareHeaders(headers: HeaderBag): GeoData {
 	const country = headers.get("cf-ipcountry");
+	if (!country || country === "XX" || country === "T1") return emptyGeo();
 
-	if (country && country !== "XX") {
-		return { country, region: null, city: null };
-	}
-
-	return { country: null, region: null, city: null };
+	return {
+		country,
+		region: decodeHeaderValue(headers.get("cf-region-code") ?? headers.get("cf-region")),
+		city: decodeHeaderValue(headers.get("cf-ipcity")),
+		latitude: parseCoordinate(headers.get("cf-iplatitude")),
+		longitude: parseCoordinate(headers.get("cf-iplongitude")),
+		timezone: headers.get("cf-timezone"),
+		postalCode: headers.get("cf-postal-code"),
+		continent: headers.get("cf-ipcontinent"),
+	};
 }
 
 export function extractGeoFromRequest(req: ReqData | null | undefined): GeoData {
@@ -55,7 +100,7 @@ export function extractGeoFromRequest(req: ReqData | null | undefined): GeoData 
 	const cfGeo = extractGeoFromCloudflareHeaders(headers);
 	if (cfGeo.country) return cfGeo;
 
-	return { country: null, region: null, city: null };
+	return emptyGeo();
 }
 
 export function extractIpAddress(req: ReqData | null | undefined): string | null {

@@ -1,8 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CalendarDays, Users2, TrendingDown } from "lucide-react";
+import { CalendarDays, Users2, TrendingDown, HelpCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RetentionData {
 	cohorts: {
@@ -109,6 +110,17 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 		return `hsl(142 71% 45% / ${alpha}%)`;
 	}
 
+	function weekRange(cohortDateStr: string, week: number): string {
+		const start = new Date(
+			new Date(cohortDateStr + "T00:00:00Z").getTime() + week * 7 * 24 * 60 * 60 * 1000,
+		);
+		const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+		function fmt(d: Date): string {
+			return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+		}
+		return `${fmt(start)} – ${fmt(end)}`;
+	}
+
 	return (
 		<div className="bg-card border border-border rounded-sm">
 			{/* Header */}
@@ -116,6 +128,33 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 					<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
 					Retention Cohorts
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								type="button"
+								aria-label="How to read this chart"
+								className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+							>
+								<HelpCircle className="h-3 w-3" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom" align="start" className="max-w-[280px]">
+							<div className="space-y-1.5 text-[11px] leading-relaxed">
+								<p>
+									Each row is a cohort: visitors who showed up for the first time during that week.
+								</p>
+								<p>
+									The Week 1–4 cells show what percentage of that cohort came back 1, 2, 3, or 4
+									weeks after their first visit. Darker green means more of them returned.
+								</p>
+								<p>
+									An amber outline marked &quot;live&quot; means that week is still running, so its
+									number can still grow. A dash means the week hasn&apos;t started yet for that
+									cohort.
+								</p>
+							</div>
+						</TooltipContent>
+					</Tooltip>
 				</h3>
 				<span className="text-[10px] text-muted-foreground">
 					{data.cohorts.length} cohorts · {totalUsers.toLocaleString()} users
@@ -132,22 +171,38 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 						Total Users
 					</p>
 				</div>
-				<div className="flex-1 px-3 py-2.5 text-center">
-					<p className="text-sm font-semibold text-foreground tabular-nums">
-						{avgW1 !== null ? `${avgW1}%` : "—"}
-					</p>
-					<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
-						Avg W1 Return
-					</p>
-				</div>
-				<div className="flex-1 px-3 py-2.5 text-center">
-					<p className="text-sm font-semibold text-foreground tabular-nums">
-						{maxRate > 0 ? `${maxRate}%` : "—"}
-					</p>
-					<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
-						Peak Rate
-					</p>
-				</div>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div className="flex-1 px-3 py-2.5 text-center cursor-default">
+							<p className="text-sm font-semibold text-foreground tabular-nums">
+								{avgW1 !== null ? `${avgW1}%` : "—"}
+							</p>
+							<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+								Avg W1 Return
+							</p>
+						</div>
+					</TooltipTrigger>
+					<TooltipContent side="bottom" className="max-w-[240px] text-[11px] leading-relaxed">
+						Average share of each cohort that came back in the week after their first visit. Only
+						fully completed weeks count, so cohorts still in their first week are excluded.
+					</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div className="flex-1 px-3 py-2.5 text-center cursor-default">
+							<p className="text-sm font-semibold text-foreground tabular-nums">
+								{maxRate > 0 ? `${maxRate}%` : "—"}
+							</p>
+							<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+								Peak Rate
+							</p>
+						</div>
+					</TooltipTrigger>
+					<TooltipContent side="bottom" className="max-w-[240px] text-[11px] leading-relaxed">
+						The single best return rate in the table — the highest percentage of any cohort coming
+						back in any week.
+					</TooltipContent>
+				</Tooltip>
 			</div>
 
 			{/* Table — Week 0 is omitted (always 100%, adds no information) */}
@@ -225,41 +280,55 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 
 										return (
 											<td key={w} className="py-2.5 px-2">
-												<div
-													className={cn(
-														"h-9 rounded flex flex-col items-center justify-center mx-auto transition-all cursor-default select-none",
-														rate === 0 && "bg-muted/20",
-														status === "in_progress" && "ring-1 ring-inset ring-amber-500/40",
-													)}
-													style={{ width: 64, backgroundColor: bg }}
-													title={
-														status === "in_progress"
-															? `${visitors}/${cohort.size} returned (week still in progress)`
-															: `${visitors} of ${cohort.size} visitors returned`
-													}
-												>
-													{rate > 0 ? (
-														<>
-															<span
-																className={cn(
-																	"text-[10px] font-semibold leading-none",
-																	rate / maxRate > 0.5 ? "text-white" : "text-foreground",
-																)}
-															>
-																{rate}%
-															</span>
-															{status === "in_progress" && (
-																<span className="text-[7px] text-amber-400 mt-0.5 leading-none">
-																	live
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div
+															className={cn(
+																"h-9 rounded flex flex-col items-center justify-center mx-auto transition-all cursor-default select-none",
+																rate === 0 && "bg-muted/20",
+																status === "in_progress" && "ring-1 ring-inset ring-amber-500/40",
+															)}
+															style={{ width: 64, backgroundColor: bg }}
+														>
+															{rate > 0 ? (
+																<>
+																	<span
+																		className={cn(
+																			"text-[10px] font-semibold leading-none",
+																			rate / maxRate > 0.5 ? "text-white" : "text-foreground",
+																		)}
+																	>
+																		{rate}%
+																	</span>
+																	{status === "in_progress" && (
+																		<span className="text-[7px] text-amber-400 mt-0.5 leading-none">
+																			live
+																		</span>
+																	)}
+																</>
+															) : (
+																<span className="text-[9px] text-muted-foreground/35">
+																	{status === "in_progress" ? "···" : "0%"}
 																</span>
 															)}
-														</>
-													) : (
-														<span className="text-[9px] text-muted-foreground/35">
-															{status === "in_progress" ? "···" : "0%"}
-														</span>
-													)}
-												</div>
+														</div>
+													</TooltipTrigger>
+													<TooltipContent side="top" className="max-w-[240px]">
+														<div className="space-y-0.5 text-[11px] leading-relaxed">
+															<p className="font-medium">
+																{date} cohort · Week {w} ({weekRange(cohort.cohort, w)})
+															</p>
+															<p>
+																{visitors} of {cohort.size} visitors returned ({rate}%)
+															</p>
+															{status === "in_progress" && (
+																<p className="text-amber-400">
+																	Week still in progress — this number can still grow.
+																</p>
+															)}
+														</div>
+													</TooltipContent>
+												</Tooltip>
 											</td>
 										);
 									})}

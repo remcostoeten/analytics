@@ -13,8 +13,8 @@
         "test": "bun run --filter '*' test",
         "typecheck": "bun run --filter '*' typecheck",
         "lint": "oxlint apps packages --deny-warnings",
-        "fmt": "oxfmt apps packages '!**/dist/**'",
-        "fmt:check": "oxfmt --check apps packages '!**/dist/**'",
+        "fmt": "oxfmt apps packages '!**/dist/**' '!**/.next/**'",
+        "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
         "dev:ingestion": "bun run --cwd apps/ingestion dev",
         "ops": "bun run --cwd apps/ingestion ops",
         "ops:build": "bun run --cwd apps/ingestion ops:build",
@@ -25,6 +25,7 @@
         "bun-types": "^1.3.9",
         "oxfmt": "catalog:oxfmt",
         "oxlint": "catalog:oxlint",
+        "shadcn": "^4.13.1",
         "typescript": "catalog:ts"
     },
     "catalogs": {

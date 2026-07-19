@@ -7,6 +7,7 @@ describe("click tracking", () => {
 	let listeners: Record<string, Function[]> = {};
 
 	beforeEach(() => {
+		trackModule.resetDedupe();
 		trackClickSpy = spyOn(trackModule, "trackClick");
 		listeners = {};
 

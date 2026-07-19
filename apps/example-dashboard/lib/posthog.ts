@@ -1,4 +1,11 @@
-import type { PostHogEvent, PostHogInsight, PostHogSite, PostHogSummary } from "./types";
+import type {
+	PostHogEvent,
+	PostHogInsight,
+	PostHogProject,
+	PostHogSite,
+	PostHogSummary,
+	PostHogVisitorDetail,
+} from "./types";
 
 export class PostHogConfigError extends Error {}
 
@@ -8,18 +15,71 @@ type PostHogConfig = {
 	host: string;
 };
 
-export function getPostHogConfig(): PostHogConfig {
+type ConfiguredProject = {
+	id: string;
+	label: string | null;
+};
+
+function getConfiguredProjects(): ConfiguredProject[] {
+	const raw = process.env.POSTHOG_PROJECTS || process.env.POSTHOG_PROJECT_ID;
+	if (!raw) return [];
+
+	return raw
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+		.map((entry) => {
+			const [id, ...labelParts] = entry.split(":");
+			return { id: id.trim(), label: labelParts.join(":").trim() || null };
+		});
+}
+
+export function getPostHogConfig(projectId?: string): PostHogConfig {
 	const apiKey = process.env.POSTHOG_API_KEY;
-	const projectId = process.env.POSTHOG_PROJECT_ID;
+	const projects = getConfiguredProjects();
 	const host = process.env.POSTHOG_HOST || "https://us.posthog.com";
 
-	if (!apiKey || !projectId) {
+	if (!apiKey || projects.length === 0) {
 		throw new PostHogConfigError(
-			"Set POSTHOG_API_KEY and POSTHOG_PROJECT_ID to connect the PostHog tab.",
+			"Set POSTHOG_API_KEY and POSTHOG_PROJECTS to connect the PostHog tab.",
 		);
 	}
 
-	return { apiKey, projectId, host: host.replace(/\/$/, "") };
+	const resolved = projectId ? projects.find((project) => project.id === projectId) : projects[0];
+	if (!resolved) {
+		throw new PostHogConfigError(
+			`Project ${projectId} is not in POSTHOG_PROJECTS. Add it there to query it.`,
+		);
+	}
+
+	return { apiKey, projectId: resolved.id, host: host.replace(/\/$/, "") };
+}
+
+const projectNameCache = new Map<string, string>();
+
+export async function getPostHogProjects(): Promise<PostHogProject[]> {
+	const projects = getConfiguredProjects();
+	if (projects.length === 0) {
+		throw new PostHogConfigError(
+			"Set POSTHOG_API_KEY and POSTHOG_PROJECTS to connect the PostHog tab.",
+		);
+	}
+
+	return Promise.all(
+		projects.map(async ({ id, label }) => {
+			if (label) return { id, label };
+
+			const cached = projectNameCache.get(id);
+			if (cached) return { id, label: cached };
+
+			const config = getPostHogConfig(id);
+			const resolvedLabel = await postHogFetch(config, `/api/projects/${id}/`)
+				.then((data) => String(data.name || `Project ${id}`))
+				.catch(() => `Project ${id}`);
+			projectNameCache.set(id, resolvedLabel);
+			return { id, label: resolvedLabel };
+		}),
+	);
 }
 
 async function postHogFetch(config: PostHogConfig, path: string, init?: RequestInit) {
@@ -41,8 +101,11 @@ async function postHogFetch(config: PostHogConfig, path: string, init?: RequestI
 	return response.json();
 }
 
-export async function getPostHogInsights(limit: number = 10): Promise<PostHogInsight[]> {
-	const config = getPostHogConfig();
+export async function getPostHogInsights(
+	limit: number = 10,
+	projectId?: string,
+): Promise<PostHogInsight[]> {
+	const config = getPostHogConfig(projectId);
 	const data = await postHogFetch(
 		config,
 		`/api/projects/${config.projectId}/insights/?limit=${limit}&order=-last_modified_at`,
@@ -89,8 +152,11 @@ function extractInsightResult(result: unknown): {
 	return { value: null, sparkline: null };
 }
 
-export async function getPostHogRecentEvents(limit: number = 25): Promise<PostHogEvent[]> {
-	const config = getPostHogConfig();
+export async function getPostHogRecentEvents(
+	limit: number = 25,
+	projectId?: string,
+): Promise<PostHogEvent[]> {
+	const config = getPostHogConfig(projectId);
 	const data = await postHogFetch(
 		config,
 		`/api/projects/${config.projectId}/events/?limit=${limit}&orderBy=${encodeURIComponent('["-timestamp"]')}`,
@@ -99,26 +165,142 @@ export async function getPostHogRecentEvents(limit: number = 25): Promise<PostHo
 	const results: Array<Record<string, unknown>> = data.results ?? [];
 	return results.map((r) => {
 		const properties = (r.properties as Record<string, unknown>) || {};
+		const distinctId = String(r.distinct_id ?? "");
 		return {
 			id: String(r.id),
 			event: String(r.event),
 			timestamp: String(r.timestamp),
-			distinctId: String(r.distinct_id ?? ""),
+			distinctId,
 			currentUrl: (properties["$current_url"] as string) || null,
+			personUrl: distinctId
+				? `${config.host}/project/${config.projectId}/persons?distinct_id=${encodeURIComponent(distinctId)}`
+				: null,
 		};
 	});
 }
 
-async function runHogQL(config: PostHogConfig, query: string): Promise<unknown[][]> {
+export async function getPostHogVisitorDetail(
+	distinctId: string,
+	projectId?: string,
+): Promise<PostHogVisitorDetail> {
+	const config = getPostHogConfig(projectId);
+	const values = { did: distinctId };
+
+	const [totalsRows, profileRows, firstEventRows, pageRows, breakdownRows, dailyRows] =
+		await Promise.all([
+			runHogQL(
+				config,
+				`SELECT
+					count() as events,
+					countIf(event = '$pageview') as pageviews,
+					count(distinct properties.$session_id) as sessions,
+					min(timestamp) as first_seen,
+					max(timestamp) as last_seen,
+					count(distinct toDate(timestamp)) as days_active
+				FROM events WHERE distinct_id = {did}`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT
+					properties.$browser,
+					properties.$os,
+					properties.$device_type,
+					properties.$geoip_country_name,
+					properties.$geoip_city_name
+				FROM events WHERE distinct_id = {did}
+				ORDER BY timestamp DESC LIMIT 1`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT properties.$referrer
+				FROM events WHERE distinct_id = {did}
+				ORDER BY timestamp ASC LIMIT 1`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT properties.$pathname as path, count() as hits
+				FROM events WHERE distinct_id = {did} AND event = '$pageview' AND properties.$pathname != ''
+				GROUP BY path ORDER BY hits DESC LIMIT 6`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT event, count() as hits
+				FROM events WHERE distinct_id = {did}
+				GROUP BY event ORDER BY hits DESC LIMIT 8`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT toDate(timestamp) as day, count() as events
+				FROM events WHERE distinct_id = {did} AND timestamp >= now() - interval 30 day
+				GROUP BY day ORDER BY day`,
+				values,
+			),
+		]);
+
+	const [events, pageviews, sessions, firstSeen, lastSeen, daysActive] = (totalsRows[0] as [
+		number,
+		number,
+		number,
+		string,
+		string,
+		number,
+	]) ?? [0, 0, 0, null, null, 0];
+	const [browser, os, deviceType, country, city] = (profileRows[0] as Array<string | null>) ?? [];
+	const [initialReferrer] = (firstEventRows[0] as Array<string | null>) ?? [];
+
+	function asText(value: string | null | undefined): string | null {
+		return value && value !== "null" ? String(value) : null;
+	}
+
+	return {
+		distinctId,
+		personUrl: `${config.host}/project/${config.projectId}/persons?distinct_id=${encodeURIComponent(distinctId)}`,
+		totalEvents: Number(events),
+		pageviews: Number(pageviews),
+		sessions: Number(sessions),
+		firstSeen: firstSeen ? String(firstSeen) : null,
+		lastSeen: lastSeen ? String(lastSeen) : null,
+		daysActive: Number(daysActive),
+		browser: asText(browser),
+		os: asText(os),
+		deviceType: asText(deviceType),
+		country: asText(country),
+		city: asText(city),
+		initialReferrer: asText(initialReferrer),
+		topPages: (pageRows as Array<[string, number]>).map(([path, count]) => ({
+			path: String(path),
+			count: Number(count),
+		})),
+		eventBreakdown: (breakdownRows as Array<[string, number]>).map(([event, count]) => ({
+			event: String(event),
+			count: Number(count),
+		})),
+		dailyActivity: (dailyRows as Array<[string, number]>).map(([day, count]) => ({
+			day: String(day),
+			events: Number(count),
+		})),
+	};
+}
+
+async function runHogQL(
+	config: PostHogConfig,
+	query: string,
+	values?: Record<string, unknown>,
+): Promise<unknown[][]> {
 	const data = await postHogFetch(config, `/api/projects/${config.projectId}/query/`, {
 		method: "POST",
-		body: JSON.stringify({ query: { kind: "HogQLQuery", query } }),
+		body: JSON.stringify({ query: { kind: "HogQLQuery", query, values } }),
 	});
 	return data.results ?? [];
 }
 
-export async function getPostHogSummary(): Promise<PostHogSummary> {
-	const config = getPostHogConfig();
+export async function getPostHogSummary(projectId?: string): Promise<PostHogSummary> {
+	const config = getPostHogConfig(projectId);
 
 	const [seriesRows, totalsRows, allTimeRows, siteRows] = await Promise.all([
 		runHogQL(
@@ -152,8 +334,13 @@ export async function getPostHogSummary(): Promise<PostHogSummary> {
 		day,
 		events: Number(events),
 	}));
-	const [totalEvents, uniquePersons, pageviews, sessions, countries] =
-		(totalsRows[0] as [number, number, number, number, number]) ?? [0, 0, 0, 0, 0];
+	const [totalEvents, uniquePersons, pageviews, sessions, countries] = (totalsRows[0] as [
+		number,
+		number,
+		number,
+		number,
+		number,
+	]) ?? [0, 0, 0, 0, 0];
 	const [allTimeEvents, allTimePersons] = (allTimeRows[0] as [number, number]) ?? [0, 0];
 	const sites: PostHogSite[] = (siteRows as Array<[string, number]>).map(([host, events]) => ({
 		host: String(host),

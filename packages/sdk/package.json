@@ -1,6 +1,6 @@
 {
 	"name": "@remcostoeten/analytics",
-	"version": "1.5.0",
+	"version": "1.7.0",
 	"description": "Privacy-focused analytics SDK for tracking page views and custom events",
 	"keywords": [
 		"analytics",

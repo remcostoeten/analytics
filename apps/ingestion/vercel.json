@@ -1,6 +1,6 @@
 {
 	"rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-	"buildCommand": "bun run scripts/build.ts",
+	"buildCommand": "bun run --filter @remcostoeten/ingestion build && bun run scripts/build.ts",
 	"installCommand": "bun install",
 	"framework": null
 }

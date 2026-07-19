@@ -25,6 +25,7 @@ export type Range = { from: Date; to: Date };
 export function publicTraffic(excludeVisitorId?: string | null, origin?: string | null) {
 	return sql`(is_localhost = false OR is_localhost IS NULL)
 		AND (is_preview = false OR is_preview IS NULL)
+		AND (is_internal = false OR is_internal IS NULL)
 		${excludeVisitorId ? sql`AND visitor_id IS DISTINCT FROM ${excludeVisitorId}` : sql``}
 		${origin ? sql`AND host = ${origin}` : sql``}
 		AND NOT (
@@ -38,6 +39,7 @@ export function publicTraffic(excludeVisitorId?: string | null, origin?: string 
 export function publicTrafficEvents(excludeVisitorId?: string | null, origin?: string | null) {
 	return sql`(events.is_localhost = false OR events.is_localhost IS NULL)
 		AND (events.is_preview = false OR events.is_preview IS NULL)
+		AND (events.is_internal = false OR events.is_internal IS NULL)
 		${excludeVisitorId ? sql`AND events.visitor_id IS DISTINCT FROM ${excludeVisitorId}` : sql``}
 		${origin ? sql`AND events.host = ${origin}` : sql``}
 		AND NOT (

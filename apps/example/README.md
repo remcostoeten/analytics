@@ -4,10 +4,10 @@ Minimal Next.js app demonstrating all three `@remcostoeten/analytics` tracking p
 
 ## What's covered
 
-| File | Pattern |
-| --- | --- |
-| `app/layout.tsx` | Automatic: pageviews, web vitals, scroll depth, time on page |
-| `app/demo-buttons.tsx` | Manual client events: `trackEvent`, `trackError`, `TrackClick` |
+| File                        | Pattern                                                               |
+| --------------------------- | --------------------------------------------------------------------- |
+| `app/layout.tsx`            | Automatic: pageviews, web vitals, scroll depth, time on page          |
+| `app/demo-buttons.tsx`      | Manual client events: `trackEvent`, `trackError`, `TrackClick`        |
 | `app/api/purchase/route.ts` | Server-side: `trackServerEvent` from `@remcostoeten/analytics/server` |
 
 ## Setup

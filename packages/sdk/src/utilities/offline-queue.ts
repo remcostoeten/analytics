@@ -65,6 +65,7 @@ let registered = false;
 
 export function initOfflineFlush(): void {
 	if (registered || typeof window === "undefined") return;
+	if (typeof window.addEventListener !== "function") return;
 	registered = true;
 	window.addEventListener("online", flushOfflineQueue);
 }

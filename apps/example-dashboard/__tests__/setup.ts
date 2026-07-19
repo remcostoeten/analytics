@@ -6,7 +6,6 @@ import { PGlite } from "@electric-sql/pglite";
 export async function setupTestDb() {
 	const pg = new PGlite();
 
-	// Create necessary tables for dashboard queries
 	await pg.exec(`
         CREATE TABLE IF NOT EXISTS events (
             id BIGSERIAL PRIMARY KEY,
@@ -57,5 +56,9 @@ export async function setupTestDb() {
         );
     `);
 
-	return { pg, cleanup: () => pg.close() };
+	async function cleanup(): Promise<void> {
+		await pg.close();
+	}
+
+	return { pg, cleanup };
 }

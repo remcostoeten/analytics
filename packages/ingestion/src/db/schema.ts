@@ -5,8 +5,10 @@ import {
 	text,
 	timestamp,
 	boolean,
+	doublePrecision,
 	jsonb,
 	index,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const events = pgTable(
@@ -33,6 +35,13 @@ export const events = pgTable(
 		country: text("country"),
 		region: text("region"),
 		city: text("city"),
+		latitude: doublePrecision("latitude"),
+		longitude: doublePrecision("longitude"),
+		timezone: text("timezone"),
+		postalCode: text("postal_code"),
+		continent: text("continent"),
+		asn: integer("asn"),
+		asOrg: text("as_org"),
 		meta: jsonb("meta"),
 	},
 	(table) => ({
@@ -53,7 +62,8 @@ export const visitors = pgTable(
 	"visitors",
 	{
 		id: bigserial("id", { mode: "bigint" }).primaryKey(),
-		fingerprint: text("fingerprint").notNull().unique(),
+		projectId: text("project_id").notNull().default("default"),
+		fingerprint: text("fingerprint").notNull(),
 		firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
 		lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
 		visitCount: integer("visit_count").notNull().default(1),
@@ -76,6 +86,36 @@ export const visitors = pgTable(
 	(table) => ({
 		lastSeenIdx: index("idx_visitors_last_seen").on(table.lastSeen),
 		fingerprintIdx: index("idx_visitors_fingerprint").on(table.fingerprint),
+		projectFingerprintIdx: uniqueIndex("idx_visitors_project_fingerprint").on(
+			table.projectId,
+			table.fingerprint,
+		),
+	}),
+);
+
+export const sessions = pgTable(
+	"sessions",
+	{
+		id: bigserial("id", { mode: "bigint" }).primaryKey(),
+		projectId: text("project_id").notNull(),
+		sessionId: text("session_id").notNull(),
+		visitorId: text("visitor_id"),
+		startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+		lastEventAt: timestamp("last_event_at", { withTimezone: true }).notNull().defaultNow(),
+		entryPath: text("entry_path"),
+		exitPath: text("exit_path"),
+		referrer: text("referrer"),
+		pageviews: integer("pageviews").notNull().default(0),
+		events: integer("events").notNull().default(0),
+		durationMs: integer("duration_ms").notNull().default(0),
+		country: text("country"),
+		deviceType: text("device_type"),
+		isInternal: boolean("is_internal").notNull().default(false),
+	},
+	(table) => ({
+		projectStartedIdx: index("idx_sessions_project_started").on(table.projectId, table.startedAt),
+		visitorIdx: index("idx_sessions_visitor").on(table.visitorId),
+		sessionIdIdx: uniqueIndex("idx_sessions_session_id").on(table.sessionId),
 	}),
 );
 
@@ -83,3 +123,5 @@ export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Visitor = typeof visitors.$inferSelect;
 export type NewVisitor = typeof visitors.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;

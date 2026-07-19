@@ -18,7 +18,11 @@ export async function getSessionStats(
 		totalSessions: Number(s.total_sessions) || 0,
 		bounceRate:
 			s.total_sessions > 0
-				? Math.round((Number(s.single_page_sessions) / Number(s.total_sessions)) * 1000) / 10
+				? Math.round(
+						(Number(s.single_page_sessions) /
+							Number(s.total_sessions)) *
+							1000,
+					) / 10
 				: 0,
 	};
 }
@@ -30,12 +34,63 @@ export async function getEngagementMetrics(
 	excludeVisitorId?: string | null,
 	origin?: string | null,
 ) {
-	const topEngaged =
-		await sql`SELECT path, AVG(CAST(meta->>'timeOnPageMs' as float)) as avg_time, COUNT(*) as samples FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`;
+	// The SDK reports time-on-page as incremental heartbeat chunks and scroll as an
+	// increasing max depth, so a visit's true values are SUM(chunks) and MAX(depth)
+	// per (session, path) — not one row per visit.
+	const perVisit = sql`SELECT session_id, path, MODE() WITHIN GROUP (ORDER BY host) as host, SUM(CAST(meta->>'timeOnPageMs' as float)) as total_ms FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
+	const scrollPerVisit = sql`SELECT session_id, path, MAX(CAST(meta->>'depth' as float)) as max_depth FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'scroll' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
+
+	const [topEngaged, timeBuckets, scrollBuckets, scrollPerPath] = await Promise.all([
+		sql`WITH per_visit AS (${perVisit}) SELECT path, MODE() WITHIN GROUP (ORDER BY host) as host, AVG(total_ms) as avg_time, COUNT(*) as samples FROM per_visit GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`,
+		sql`WITH per_visit AS (${perVisit}) SELECT CASE WHEN total_ms < 10000 THEN 0 WHEN total_ms < 30000 THEN 1 WHEN total_ms < 60000 THEN 2 WHEN total_ms < 180000 THEN 3 ELSE 4 END as bucket_index, COUNT(*) as count FROM per_visit GROUP BY bucket_index ORDER BY bucket_index`,
+		sql`WITH scroll_visit AS (${scrollPerVisit}) SELECT CASE WHEN max_depth < 25 THEN 0 WHEN max_depth < 50 THEN 1 WHEN max_depth < 75 THEN 2 ELSE 3 END as bucket_index, COUNT(*) as count FROM scroll_visit GROUP BY bucket_index ORDER BY bucket_index`,
+		sql`WITH scroll_visit AS (${scrollPerVisit}) SELECT path, AVG(max_depth) as avg_depth FROM scroll_visit GROUP BY path`,
+	]);
+
+	const bucketLabels = ["<10s", "10–30s", "30s–1m", "1–3m", "3m+"];
+	const scrollBucketLabels = ["0–25%", "25–50%", "50–75%", "75–100%"];
+	const totalVisits = timeBuckets.reduce((s, r) => s + Number(r.count), 0);
+	const totalScrollVisits = scrollBuckets.reduce((s, r) => s + Number(r.count), 0);
+	const avgDepthByPath = new Map(
+		scrollPerPath.map((r) => [r.path, Math.round(Number(r.avg_depth))]),
+	);
+
 	return {
+		scrollDepth:
+			totalScrollVisits === 0
+				? []
+				: scrollBucketLabels.map((bucket, i) => {
+						const row = scrollBuckets.find((r) => Number(r.bucket_index) === i);
+						const count = row ? Number(row.count) : 0;
+						return {
+							bucket,
+							count,
+							percentage: Math.round((count / totalScrollVisits) * 1000) / 10,
+						};
+					}),
+		timeOnPage:
+			totalVisits === 0
+				? []
+				: bucketLabels.map((bucket, i) => {
+						const row = timeBuckets.find(
+							(r) => Number(r.bucket_index) === i,
+						);
+						const count = row ? Number(row.count) : 0;
+						return {
+							bucket,
+							count,
+							percentage:
+								totalVisits > 0
+									? Math.round((count / totalVisits) * 1000) /
+										10
+									: 0,
+						};
+					}),
 		topEngagedPages: topEngaged.map((r) => ({
 			path: r.path,
+			host: r.host || null,
 			avgTimeMs: Math.round(Number(r.avg_time) || 0),
+			avgScrollDepth: avgDepthByPath.get(r.path),
 			samples: Number(r.samples),
 		})),
 	};
@@ -66,7 +121,11 @@ export async function getHourlyHeatmap(
 	};
 }
 
-export async function getRetention(projectId: string | null, excludeVisitorId?: string | null, origin?: string | null) {
+export async function getRetention(
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
 	const fiveWeeksAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000);
 	const cohortLookback = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 	const retention =
@@ -89,7 +148,9 @@ export async function getRetention(projectId: string | null, excludeVisitorId?: 
 				retention: [0, 1, 2, 3, 4].map((w) => ({
 					week: w,
 					visitors: weeks.get(w) || 0,
-					rate: weeks.has(w) ? Math.round((weeks.get(w) / size) * 100) : 0,
+					rate: weeks.has(w)
+						? Math.round((weeks.get(w) / size) * 100)
+						: 0,
 				})),
 			};
 		})
@@ -133,6 +194,7 @@ export async function getUTMCampaigns(
 		campaign: r.utm_campaign || "none",
 		visits: Number(r.visits),
 		visitors: Number(r.visitors),
-		percentage: total > 0 ? Math.round((Number(r.visits) / total) * 1000) / 10 : 0,
+		percentage:
+			total > 0 ? Math.round((Number(r.visits) / total) * 1000) / 10 : 0,
 	}));
 }

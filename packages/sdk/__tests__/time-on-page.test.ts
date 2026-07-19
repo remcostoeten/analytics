@@ -7,6 +7,7 @@ describe("time-on-page tracking", () => {
 	let listeners: Record<string, Function[]> = {};
 
 	beforeEach(() => {
+		trackModule.resetDedupe();
 		setSystemTime(new Date("2024-01-01T12:00:00Z"));
 		trackSpy = spyOn(trackModule, "track");
 		listeners = {};
@@ -71,10 +72,10 @@ describe("time-on-page tracking", () => {
 		cleanup();
 
 		expect(trackSpy).toHaveBeenCalled();
-		const call = trackSpy.mock.calls[0];
-		expect(call[1].eventName).toBe("time-on-page");
-		// Total should be 10s (first visible) + 5s (second visible) = 15000ms
-		expect(call[1].timeOnPageMs).toBe(15000);
+		const calls = trackSpy.mock.calls as [string, { eventName: string; timeOnPageMs: number }][];
+		for (const call of calls) expect(call[1].eventName).toBe("time-on-page");
+		const totalReported = calls.reduce((sum, call) => sum + call[1].timeOnPageMs, 0);
+		expect(totalReported).toBe(15000);
 	});
 
 	it("sends data on cleanup for SPA navigations", () => {

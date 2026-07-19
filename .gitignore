@@ -12,3 +12,4 @@ coverage
 .npmrc
 .internal
 .env*.local
+*.tsbuildinfo

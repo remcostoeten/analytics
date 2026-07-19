@@ -1,12 +1,14 @@
 "use client";
 
+import type { Route as AppRoute } from "next";
+
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { KPICardsGrid } from "@/components/kpi-cards";
 import { SignalStream } from "@/components/signal-stream";
 import { TopPagesTable, ReferrersTable } from "@/components/data-table";
 import { TrendChart } from "@/components/trend-chart";
-import { DonutChart } from "@/components/breakdown-chart";
+import { DonutChart, BreakdownChart } from "@/components/breakdown-chart";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { GeoMap } from "@/components/geo-map";
 import { GeoDetails } from "@/components/geo-details";
@@ -22,9 +24,17 @@ import { LiveNowWidget } from "@/components/live-now-widget";
 import { RetentionHeatmap } from "@/components/retention-heatmap";
 import { SessionPaths } from "@/components/session-paths";
 import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
+import { ViewTabs } from "@/components/view-tabs";
 import { BotTrafficCard } from "@/components/bot-traffic-card";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
-import { PostHogNotice, PostHogTrackedSites, PostHogSummaryCards, PostHogInsightsList, PostHogEventsTable } from "@/components/posthog-panel";
+import {
+	PostHogNotice,
+	PostHogProjectSwitcher,
+	PostHogTrackedSites,
+	PostHogSummaryCards,
+	PostHogInsightsList,
+	PostHogEventsTable,
+} from "@/components/posthog-panel";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type {
@@ -33,21 +43,16 @@ import type {
 	SignalEvent,
 	KPIMetric,
 	GeoDistribution,
+	PostHogProject,
 } from "@/lib/types";
-import {
-	AlertTriangle,
-	BadgeInfo,
-	ChevronRight,
-	BarChart3,
-	Users,
-	Settings2,
-	CalendarDays,
-	Route,
-	Radio,
-	Zap,
-	X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AlertTriangle, BadgeInfo, ChevronRight, X } from "lucide-react";
+import { ChartColumnIncreasingIcon } from "@/components/ui/chart-column-increasing";
+import { RadioIcon } from "@/components/ui/radio";
+import { CalendarDaysIcon } from "@/components/ui/calendar-days";
+import { RouteIcon } from "@/components/ui/route";
+import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
+import { UsersIcon } from "@/components/ui/users";
+import { ZapIcon } from "@/components/ui/zap";
 import { formatNumber, getFlagEmoji } from "@/lib/format";
 import Link from "next/link";
 
@@ -94,6 +99,7 @@ type DashboardContentProps = {
 	databaseIssue?: "missing_database_url" | "query_failed";
 	breadcrumbs?: BreadcrumbItem[];
 	description?: string;
+	authUser?: string | null;
 };
 
 type DashboardView =
@@ -147,6 +153,7 @@ export function DashboardContent({
 	databaseIssue,
 	breadcrumbs = [{ label: "Analytics", href: "/" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
+	authUser,
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
@@ -237,8 +244,21 @@ export function DashboardContent({
 	}, [setPaletteOpen]);
 
 	useEffect(() => {
-		setCurrentVisitorId(readStoredVisitorId());
+		function syncVisitorId() {
+			const visitorId = readStoredVisitorId();
+			if (!visitorId) return;
+			setCurrentVisitorId(visitorId);
+		}
+
+		syncVisitorId();
 		setExcludedVisitorId(readSelfFilterId());
+		const interval = window.setInterval(syncVisitorId, 250);
+		const timeout = window.setTimeout(() => window.clearInterval(interval), 10_000);
+
+		return () => {
+			window.clearInterval(interval);
+			window.clearTimeout(timeout);
+		};
 	}, []);
 
 	const buildQuery = (metric: string, extraParams: string = "") => {
@@ -347,16 +367,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: webVitals } = useSWR(
-		viewKey(["behavior", "technology"], "web-vitals"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: webVitals } = useSWR(viewKey(["behavior", "technology"], "web-vitals"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: sessionStats } = useSWR(canFetch ? buildQuery("session-stats") : null, fetcher, {
 		fallbackData: null,
@@ -365,26 +381,18 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
-	const { data: engagement } = useSWR(
-		viewKey(["retention", "behavior"], "engagement"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 30000,
-			keepPreviousData: true,
-		},
-	);
+	const { data: engagement } = useSWR(viewKey(["retention", "behavior"], "engagement"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 30000,
+		keepPreviousData: true,
+	});
 
-	const { data: heatmap } = useSWR(
-		viewKey(["retention", "behavior"], "hourly-heatmap"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: heatmap } = useSWR(viewKey(["retention", "behavior"], "hourly-heatmap"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: browsers } = useSWR(
 		viewKey(["technology", "audience"], "browsers-detailed"),
@@ -408,16 +416,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: languages } = useSWR(
-		viewKey(["technology", "audience"], "languages"),
-		fetcher,
-		{
-			fallbackData: initialData.audience.languages,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: languages } = useSWR(viewKey(["technology", "audience"], "languages"), fetcher, {
+		fallbackData: initialData.audience.languages,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: screenSizes } = useSWR(viewKey(["technology"], "screen-sizes"), fetcher, {
 		fallbackData: initialData.audience.screenResolutions,
@@ -426,23 +430,20 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
-	const { data: connectionTypes } = useSWR(
-		viewKey(["technology"], "connection-types"),
+	const { data: connectionTypes } = useSWR(viewKey(["technology"], "connection-types"), fetcher, {
+		fallbackData: [],
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: recurrence } = useSWR(
+		viewKey(["technology", "audience"], "visitor-recurrence"),
 		fetcher,
 		{
-			fallbackData: [],
+			fallbackData: null,
 			refreshInterval: 60000,
 			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
-
-	const { data: visitors } = useSWR(
-		viewKey(["technology", "audience"], "visitors"),
-		fetcher,
-		{
-			fallbackData: [],
-			refreshInterval: 30000,
 			keepPreviousData: true,
 		},
 	);
@@ -474,16 +475,12 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: paths, isLoading: pathsLoading } = useSWR(
-		viewKey(["behavior"], "paths"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 30000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: paths, isLoading: pathsLoading } = useSWR(viewKey(["behavior"], "paths"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 30000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const { data: utmCampaigns } = useSWR(viewKey(["overview"], "utm-campaigns"), fetcher, {
 		fallbackData: [],
@@ -506,22 +503,33 @@ export function DashboardContent({
 		fetcher,
 	);
 
+	const [posthogProject, setPosthogProject] = useState<string | null>(null);
+
+	const { data: posthogProjects } = useSWR<PostHogProject[]>(
+		activeView === "posthog" ? "/api/posthog?metric=projects" : null,
+		fetcher,
+	);
+
+	const posthogProjectParam = posthogProject ? `&project=${posthogProject}` : "";
+
 	const {
 		data: posthogSummary,
 		error: posthogSummaryError,
 		isLoading: posthogSummaryLoading,
-	} = useSWR(activeView === "posthog" ? "/api/posthog?metric=summary" : null, fetcher, {
-		refreshInterval: 60000,
-	});
+	} = useSWR(
+		activeView === "posthog" ? `/api/posthog?metric=summary${posthogProjectParam}` : null,
+		fetcher,
+		{ refreshInterval: 60000 },
+	);
 
 	const { data: posthogInsights, isLoading: posthogInsightsLoading } = useSWR(
-		activeView === "posthog" ? "/api/posthog?metric=insights" : null,
+		activeView === "posthog" ? `/api/posthog?metric=insights${posthogProjectParam}` : null,
 		fetcher,
 		{ refreshInterval: 60000 },
 	);
 
 	const { data: posthogEvents, isLoading: posthogEventsLoading } = useSWR(
-		activeView === "posthog" ? "/api/posthog?metric=events" : null,
+		activeView === "posthog" ? `/api/posthog?metric=events${posthogProjectParam}` : null,
 		fetcher,
 		{ refreshInterval: 15000 },
 	);
@@ -604,27 +612,10 @@ export function DashboardContent({
 	const recentSignals = useMemo((): SignalEvent[] => {
 		if (!events || !Array.isArray(events)) return initialData.realtime.recentEvents;
 
-		return events.map(
-			(e: {
-				id: string;
-				type: string;
-				path: string;
-				timestamp: string;
-				country: string;
-				city: string;
-				deviceType: string;
-			}) => ({
-				id: e.id,
-				type: e.type === "error" ? "error" : ("ok" as SignalEvent["type"]),
-				category: e.type,
-				message: `${e.type} on ${e.path || "/"}${e.country ? ` from ${e.country}` : ""}`,
-				timestamp: new Date(e.timestamp),
-				metadata: {
-					deviceType: e.deviceType,
-					city: e.city,
-				},
-			}),
-		);
+		return events.map((e: Omit<SignalEvent, "timestamp"> & { timestamp: string }) => ({
+			...e,
+			timestamp: new Date(e.timestamp),
+		}));
 	}, [events, initialData.realtime.recentEvents]);
 
 	const deviceData = useMemo(() => {
@@ -651,21 +642,21 @@ export function DashboardContent({
 	const hasCampaignData = Array.isArray(utmCampaigns) && utmCampaigns.length > 0;
 
 	const viewTabs = [
-		{ id: "overview" as DashboardView, label: "Overview", icon: BarChart3 },
-		{ id: "realtime" as DashboardView, label: "Live", icon: Radio },
-		{ id: "retention" as DashboardView, label: "Retention", icon: CalendarDays },
-		{ id: "behavior" as DashboardView, label: "Behavior", icon: Route },
-		{ id: "technology" as DashboardView, label: "Tech", icon: Settings2 },
-		{ id: "audience" as DashboardView, label: "Audience", icon: Users },
-		{ id: "posthog" as DashboardView, label: "PostHog", icon: Zap },
+		{ id: "overview" as DashboardView, label: "Overview", icon: ChartColumnIncreasingIcon },
+		{ id: "realtime" as DashboardView, label: "Live", icon: RadioIcon },
+		{ id: "retention" as DashboardView, label: "Retention", icon: CalendarDaysIcon },
+		{ id: "behavior" as DashboardView, label: "Behavior", icon: RouteIcon },
+		{ id: "technology" as DashboardView, label: "Tech", icon: SlidersHorizontalIcon },
+		{ id: "audience" as DashboardView, label: "Audience", icon: UsersIcon },
+		{ id: "posthog" as DashboardView, label: "PostHog", icon: ZapIcon },
 	];
 
-	function buildHref(path: string, params: URLSearchParams): string {
+	function buildHref(path: string, params: URLSearchParams): AppRoute {
 		const query = params.toString();
-		return query ? `${path}?${query}` : path;
+		return (query ? `${path}?${query}` : path) as AppRoute;
 	}
 
-	function viewHref(view: DashboardView): string {
+	function viewHref(view: DashboardView): AppRoute {
 		const params = new URLSearchParams(searchParams.toString());
 		if (view === "overview") {
 			params.delete("view");
@@ -691,6 +682,7 @@ export function DashboardContent({
 				selfFilterEnabled={!!excludedVisitorId}
 				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
 				onSelfFilterChange={setSelfFilter}
+				authUser={authUser}
 			/>
 
 			<CommandPalette
@@ -701,11 +693,16 @@ export function DashboardContent({
 				onProjectChange={setSelectedProject}
 				onPageSelect={selectPalettePage}
 				onReferrerSelect={selectPaletteReferrer}
+				onTypeFilterChange={setTypeFilter}
+				onSelfFilterChange={setSelfFilter}
+				selfFilterEnabled={!!excludedVisitorId}
+				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
 				pages={palettePages}
 				referrers={paletteReferrers}
 				projects={projects}
 				currentView={activeView}
 				currentTimeRange={timeRange}
+				currentTypeFilter={typeFilter}
 			/>
 
 			<main className="flex-1 overflow-auto bg-background">
@@ -748,34 +745,15 @@ export function DashboardContent({
 					{!databaseReady && <DemoDataNotice />}
 
 					<div className="overflow-x-auto -mx-3 px-3">
-						<div
-							role="tablist"
-							aria-label="Dashboard views"
-							className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit min-w-full"
-						>
-							{viewTabs.map((tab) => (
-								<Link
-									key={tab.id}
-									href={viewHref(tab.id)}
-									role="tab"
-									aria-selected={activeView === tab.id}
-									className={cn(
-										"flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap",
-										activeView === tab.id
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									<tab.icon className="h-3.5 w-3.5" />
-									{tab.label}
-								</Link>
-							))}
-						</div>
+						<ViewTabs
+							tabs={viewTabs}
+							activeId={activeView}
+							hrefFor={viewHref}
+							ariaLabel="Dashboard views"
+						/>
 					</div>
 
-					{activeView !== "posthog" && (
-						<KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />
-					)}
+					{activeView !== "posthog" && <KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />}
 
 					{activeView === "overview" && (
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
@@ -908,7 +886,7 @@ export function DashboardContent({
 									/>
 									<WebVitalsCard data={webVitals} />
 								</div>
-								<VisitorsTable data={visitors || []} />
+								<VisitorsTable buildQuery={buildQuery} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -938,7 +916,7 @@ export function DashboardContent({
 									onCountryClick={(country) => setSelectedCountry(country)}
 								/>
 								<GeoDetails data={geoDetail} />
-								<VisitorsTable data={visitors || []} />
+								<VisitorsTable buildQuery={buildQuery} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -954,6 +932,30 @@ export function DashboardContent({
 									operatingSystems={operatingSystems}
 									languages={languages}
 								/>
+								<div className="bg-card border border-border rounded-sm px-3 py-2.5">
+									<p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+										Returning rate
+									</p>
+									<span className="mt-1 block text-xl font-semibold text-foreground tabular-nums tracking-tight">
+										{recurrence ? `${recurrence.returningRate.toFixed(1)}%` : "—"}
+									</span>
+								</div>
+								<BreakdownChart
+									title="Visit count distribution"
+									data={(recurrence?.distribution ?? []).map(
+										(d: { bucket: string; count: number }) => {
+											const total = (recurrence?.distribution ?? []).reduce(
+												(sum: number, x: { count: number }) => sum + x.count,
+												0,
+											);
+											return {
+												label: `${d.bucket} visits`,
+												value: d.count,
+												percentage: total > 0 ? (d.count / total) * 100 : 0,
+											};
+										},
+									)}
+								/>
 							</div>
 						</div>
 					)}
@@ -964,9 +966,18 @@ export function DashboardContent({
 								{posthogConfigMissing && (
 									<PostHogNotice message={(posthogSummaryError as ApiError)?.info?.message} />
 								)}
+								<PostHogProjectSwitcher
+									projects={posthogProjects ?? null}
+									activeProject={posthogProject}
+									onSelect={setPosthogProject}
+								/>
 								<PostHogTrackedSites data={posthogSummary} isLoading={posthogSummaryLoading} />
 								<PostHogSummaryCards data={posthogSummary} isLoading={posthogSummaryLoading} />
-								<PostHogEventsTable data={posthogEvents} isLoading={posthogEventsLoading} />
+								<PostHogEventsTable
+									data={posthogEvents}
+									isLoading={posthogEventsLoading}
+									projectId={posthogProject}
+								/>
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<PostHogInsightsList data={posthogInsights} isLoading={posthogInsightsLoading} />

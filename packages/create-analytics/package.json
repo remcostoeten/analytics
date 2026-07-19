@@ -9,14 +9,14 @@
 		"url": "git+https://github.com/remcostoeten/analytics.git",
 		"directory": "packages/create-analytics"
 	},
-	"type": "module",
+	"bin": {
+		"create-analytics": "dist/cli.cjs"
+	},
 	"files": [
 		"dist",
 		"README.md"
 	],
-	"bin": {
-		"create-analytics": "dist/cli.cjs"
-	},
+	"type": "module",
 	"publishConfig": {
 		"access": "public"
 	},

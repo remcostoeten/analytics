@@ -34,6 +34,15 @@ function getUtmParams(): EnrichmentData {
 	return utm;
 }
 
+function getTimezoneInfo(): EnrichmentData {
+	try {
+		const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		return timezone ? { timezone } : {};
+	} catch {
+		return {};
+	}
+}
+
 function getConnectionInfo(): EnrichmentData {
 	if (typeof navigator === "undefined") return {};
 	const conn = (navigator as NavigatorConnection).connection;
@@ -48,6 +57,7 @@ export function collectEnrichment(): EnrichmentData {
 	return {
 		...getScreenInfo(),
 		...getUtmParams(),
+		...getTimezoneInfo(),
 		...getConnectionInfo(),
 	};
 }

@@ -1,8 +1,10 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardContent } from "@/components/dashboard-content";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { mockDashboardData } from "@/lib/mock-data";
 import type { DashboardData } from "@/lib/types";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 type DashboardResult = {
@@ -39,9 +41,24 @@ async function fetchDashboardData(): Promise<DashboardResult> {
 	};
 }
 
-export default async function DashboardPage() {
+async function DashboardData() {
 	const { data, databaseReady, databaseIssue } = await fetchDashboardData();
+	const cookieStore = await cookies();
+	const authUser = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 
+	return (
+		<DashboardContent
+			data={data}
+			databaseReady={databaseReady}
+			databaseIssue={databaseIssue}
+			breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
+			description="Real-time sessions, regional load, and ingest health across your edge network"
+			authUser={authUser}
+		/>
+	);
+}
+
+export default function DashboardPage() {
 	return (
 		<SidebarProvider>
 			<Suspense fallback={<div className="w-64 border-r bg-muted/20" />}>
@@ -49,13 +66,7 @@ export default async function DashboardPage() {
 			</Suspense>
 			<SidebarInset>
 				<Suspense fallback={<div className="flex-1 p-4">Loading dashboard...</div>}>
-					<DashboardContent
-						data={data}
-						databaseReady={databaseReady}
-						databaseIssue={databaseIssue}
-						breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
-						description="Real-time sessions, regional load, and ingest health across your edge network"
-					/>
+					<DashboardData />
 				</Suspense>
 			</SidebarInset>
 		</SidebarProvider>

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Notifier } from "@remcostoeten/notifier";
 import { Analytics } from "@/components/analytics-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
+import "@remcostoeten/notifier/styles";
 import "./globals.css";
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -9,7 +11,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
 	title: "Analytics Dashboard",
-	description: "Real-time analytics dashboard with traffic, visitor, session, and event tracking",
+	description:
+		"Real-time analytics dashboard with traffic, visitor, session, and event tracking",
 
 	icons: {
 		icon: [
@@ -30,7 +33,9 @@ export const metadata: Metadata = {
 	},
 };
 
-const analyticsUrl = process.env.NEXT_PUBLIC_ANALYTICS_URL || "https://ingestion.remcostoeten.nl";
+const analyticsUrl =
+	process.env.NEXT_PUBLIC_ANALYTICS_URL ||
+	"https://ingestion.remcostoeten.nl";
 
 export default function RootLayout({
 	children,
@@ -47,6 +52,11 @@ export default function RootLayout({
 					disableTransitionOnChange
 				>
 					{children}
+					<Notifier
+						position="bottom-right"
+						colorMode="auto"
+						radius="rounded"
+					/>
 				</ThemeProvider>
 				<Analytics
 					projectId="analytics-dashboard"

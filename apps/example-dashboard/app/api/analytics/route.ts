@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
 	const metric = searchParams.get("metric") || "overview";
@@ -84,6 +82,24 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getGeoDistribution(projectFilter, 100, from, to, excludeVisitorId, origin),
 				);
+			case "geo-explorer": {
+				const rawCountry = searchParams.get("country");
+				const rawRegion = searchParams.get("region");
+				const scopeCountry =
+					rawCountry && /^[A-Za-z]{2}$/.test(rawCountry) ? rawCountry.toUpperCase() : null;
+				const scopeRegion = rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
+				return NextResponse.json(
+					await query.getGeoExplorer(
+						from,
+						to,
+						projectId,
+						scopeCountry,
+						scopeRegion,
+						excludeVisitorId,
+						origin,
+					),
+				);
+			}
 			case "geo-detail":
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),
@@ -189,6 +205,32 @@ export async function GET(request: NextRequest) {
 				}
 				return NextResponse.json(
 					await query.getCountryDetail(from, to, c, projectId, excludeVisitorId, origin),
+				);
+			case "visitors-explorer": {
+				const segment = (searchParams.get("segment") || "all") as "all" | "new" | "returning";
+				const sort = (searchParams.get("sort") || "last_seen") as
+					| "last_seen"
+					| "visit_count"
+					| "first_seen";
+				const limit = Math.min(parseInt(searchParams.get("limit") || "25", 10) || 25, 100);
+				const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0);
+				return NextResponse.json(
+					await query.getVisitorsExplorer(
+						from,
+						to,
+						projectId,
+						segment,
+						sort,
+						limit,
+						offset,
+						excludeVisitorId,
+						origin,
+					),
+				);
+			}
+			case "visitor-recurrence":
+				return NextResponse.json(
+					await query.getVisitorRecurrence(from, to, projectId, excludeVisitorId),
 				);
 			case "segments":
 				const segmentId = searchParams.get("segment") || "all";

@@ -298,14 +298,14 @@ export interface DashboardData {
 export interface NavTab {
 	id: string;
 	label: string;
-	href?: string;
+	href?: import("next").Route;
 	count?: number;
 	active?: boolean;
 }
 
 export interface BreadcrumbItem {
 	label: string;
-	href?: string;
+	href?: import("next").Route;
 }
 
 export interface SidebarSection {
@@ -323,6 +323,11 @@ export interface SidebarSection {
 // =============================================================================
 // POSTHOG INTEGRATION TYPES
 // =============================================================================
+
+export interface PostHogProject {
+	id: string;
+	label: string;
+}
 
 export interface PostHogInsight {
 	id: string;
@@ -346,6 +351,27 @@ export interface PostHogEvent {
 	timestamp: string;
 	distinctId: string;
 	currentUrl: string | null;
+	personUrl: string | null;
+}
+
+export interface PostHogVisitorDetail {
+	distinctId: string;
+	personUrl: string;
+	totalEvents: number;
+	pageviews: number;
+	sessions: number;
+	firstSeen: string | null;
+	lastSeen: string | null;
+	daysActive: number;
+	browser: string | null;
+	os: string | null;
+	deviceType: string | null;
+	country: string | null;
+	city: string | null;
+	initialReferrer: string | null;
+	topPages: Array<{ path: string; count: number }>;
+	eventBreakdown: Array<{ event: string; count: number }>;
+	dailyActivity: Array<{ day: string; events: number }>;
 }
 
 export interface PostHogSummary {

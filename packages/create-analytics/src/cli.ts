@@ -39,7 +39,10 @@ async function directoryEmpty(dir: string): Promise<boolean> {
 	}
 }
 
-async function resolveOptions(args: CliArgs, positionalName?: string): Promise<{
+async function resolveOptions(
+	args: CliArgs,
+	positionalName?: string,
+): Promise<{
 	projectName: string;
 	projectId: string;
 	tier: Tier;
@@ -62,7 +65,9 @@ async function resolveOptions(args: CliArgs, positionalName?: string): Promise<{
 	const targetDir = resolve(process.cwd(), projectName);
 
 	if (!(await directoryEmpty(targetDir))) {
-		console.error(`Error: "${projectName}" already exists. Choose a different name or empty the folder.`);
+		console.error(
+			`Error: "${projectName}" already exists. Choose a different name or empty the folder.`,
+		);
 		process.exit(1);
 	}
 
@@ -114,7 +119,9 @@ Done. Next steps:
 `);
 
 	if (options.tier === "separate") {
-		console.log(`  Tier 1: deploy apps/analytics-api separately, then set NEXT_PUBLIC_ANALYTICS_URL in apps/web`);
+		console.log(
+			`  Tier 1: deploy apps/analytics-api separately, then set NEXT_PUBLIC_ANALYTICS_URL in apps/web`,
+		);
 	}
 
 	if (options.tier === "colocated") {

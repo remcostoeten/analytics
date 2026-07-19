@@ -159,11 +159,11 @@ export async function trackServerError(
 	maybeOptions?: ServerAnalyticsOptions,
 ): Promise<TrackServerResult> {
 	if (maybeOptions) {
-		return trackServer(
-			"error",
-			maybeOptions,
-			{ message: error.message, stack: error.stack, ...(metaOrOptions as TrackMeta) },
-		);
+		return trackServer("error", maybeOptions, {
+			message: error.message,
+			stack: error.stack,
+			...(metaOrOptions as TrackMeta),
+		});
 	}
 
 	return trackServer("error", metaOrOptions as ServerAnalyticsOptions, {

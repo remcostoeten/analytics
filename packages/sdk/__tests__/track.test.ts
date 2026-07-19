@@ -1,5 +1,12 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { track, trackPageView, trackEvent, trackClick, trackError } from "../src/api/track";
+import {
+	track,
+	trackPageView,
+	trackEvent,
+	trackClick,
+	trackError,
+	resetDedupe,
+} from "../src/api/track";
 import { observePageViews } from "../src/observers/pageview";
 
 describe("track", () => {
@@ -11,6 +18,7 @@ describe("track", () => {
 	let fetchMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		originalLocalStorage = global.localStorage;
 		originalSessionStorage = global.sessionStorage;
@@ -157,7 +165,7 @@ describe("track", () => {
 		track("event", meta);
 		const blob = beaconMock.mock.calls[0][1];
 		const payload = JSON.parse(blob.content[0]);
-		expect(payload.meta).toEqual(meta);
+		expect(payload.meta).toMatchObject(meta);
 	});
 
 	test("blocks duplicate events within 5 seconds", () => {
@@ -205,6 +213,7 @@ describe("trackPageView", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
@@ -270,7 +279,7 @@ describe("trackPageView", () => {
 		trackPageView(meta);
 		const blob = beaconMock.mock.calls[0][1];
 		const payload = JSON.parse(blob.content[0]);
-		expect(payload.meta).toEqual(meta);
+		expect(payload.meta).toMatchObject(meta);
 	});
 });
 
@@ -281,6 +290,7 @@ describe("observePageViews", () => {
 	let listeners: Record<string, Array<EventListener>>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
@@ -402,6 +412,7 @@ describe("trackEvent", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
@@ -476,6 +487,7 @@ describe("trackClick", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {
@@ -542,6 +554,7 @@ describe("trackError", () => {
 	let beaconMock: ReturnType<typeof mock>;
 
 	beforeEach(() => {
+		resetDedupe();
 		process.env.NEXT_PUBLIC_ANALYTICS_URL = "https://test-ingest.example.com";
 		const localStore: Record<string, string> = {};
 		global.localStorage = {

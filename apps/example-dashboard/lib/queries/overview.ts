@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
 import type { TimeSeries, TimeSeriesGranularity, TimeSeriesPoint, DashboardData } from "../types";
 import { publicTraffic, getRange, getTimeRangeFilter, calculateTrend } from "./filters";
@@ -66,7 +67,12 @@ export async function getPageviewsTrend(
 		label: "Pageviews",
 		color: "hsl(var(--chart-1))",
 		granularity,
-		data: zeroFill(results as { bucket: unknown; count: unknown }[], range.from, range.to, granularity),
+		data: zeroFill(
+			results as { bucket: unknown; count: unknown }[],
+			range.from,
+			range.to,
+			granularity,
+		),
 	};
 }
 
@@ -87,7 +93,12 @@ export async function getVisitorsTrend(
 		label: "Visitors",
 		color: "hsl(var(--chart-2))",
 		granularity,
-		data: zeroFill(results as { bucket: unknown; count: unknown }[], range.from, range.to, granularity),
+		data: zeroFill(
+			results as { bucket: unknown; count: unknown }[],
+			range.from,
+			range.to,
+			granularity,
+		),
 	};
 }
 
@@ -195,6 +206,9 @@ export async function getDashboardData(
 	excludeVisitorId?: string | null,
 	origin?: string | null,
 ): Promise<DashboardData> {
+	"use cache";
+	cacheTag("dashboard");
+	cacheLife("minutes");
 	const range = getRange(from, to);
 	const [
 		pageviewsKPI,

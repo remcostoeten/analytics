@@ -153,11 +153,6 @@ function isNavigationRequest(headers: HeaderBag, method: string): boolean {
 	return accept?.includes("text/html") ?? false;
 }
 
-function hasBraveBrowser(ua: string | null): boolean {
-	if (!ua) return false;
-	return /brave/i.test(ua);
-}
-
 function hasPrivacyBrowser(ua: string | null): boolean {
 	if (!ua) return false;
 	return /brave\/|firefox\/|librewolf/i.test(ua);

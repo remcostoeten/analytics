@@ -126,6 +126,17 @@ NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com/ingest
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Same database as ingestion |
+| `GITHUB_CLIENT_ID` | Recommended for public deployments | GitHub OAuth app client ID — enables login-gated access |
+| `GITHUB_CLIENT_SECRET` | With `GITHUB_CLIENT_ID` | GitHub OAuth app client secret |
+| `AUTH_SECRET` | No | HMAC key for session cookies; defaults to `GITHUB_CLIENT_SECRET` |
+
+When both GitHub variables are set, the entire dashboard requires signing in with GitHub, and only users whose GitHub username exists in the `dashboard_users` table get in:
+
+```sql
+INSERT INTO dashboard_users (github_login) VALUES ('your-github-username');
+```
+
+Create the OAuth app at github.com → Settings → Developer settings → OAuth Apps, with the callback URL set to `https://your-dashboard.example.com/api/auth/callback`. When the variables are unset, the dashboard runs open (local development).
 
 ### Deploy ingestion and dashboard
 
@@ -393,7 +404,22 @@ On Vercel serverless, in-memory rate limiting and deduplication only apply withi
 
 ## Dashboard (optional)
 
-The example dashboard reads from the same `events` and `visitors` tables. Built-in support for these SDK event names:
+The example dashboard reads from the same `events`, `visitors`, and `sessions` tables.
+
+### Visitor profiles and recurrence
+
+- **Visitor explorer** — All / New / Returning tabs, sortable by last seen, visit count, or first seen. Rows link through to per-visitor profiles.
+- **`/visitor/[id]` profile page** — identity header (device, OS, browser, geo, timezone, first/last seen, visit count), a session-by-session timeline (entry → exit path, duration, pageviews), top pages, referrer history, and `meta.identity` / `meta.experiments` rendered as a key-value grid.
+- **Recurrence stats** in the Audience view — returning rate, visit-count distribution (1 / 2–4 / 5–9 / 10+), and a new-vs-returning trend.
+- **Internal traffic exclusion** — the "Mark as internal" button on a profile flags the visitor and retroactively flags their events; public-traffic queries exclude `is_internal`. Works across all your devices, unlike a localStorage-only filter. Protected by GitHub sign-in when auth is enabled.
+
+### Migration required
+
+Visitor profiles, sessions, and per-project visitor scoping depend on migration `packages/ingestion/src/db/migrations/0003_add_sessions_and_visitor_project.sql`. Apply it **before** deploying the new ingestion code — it's idempotent and backfills `visitors.project_id`, the `sessions` table, and honest `visit_count` values from existing events. GitHub-gated dashboard access additionally needs `0004_add_dashboard_users.sql` (the `dashboard_users` allowlist table).
+
+### Built-in event names
+
+The dashboard has built-in support for these SDK event names:
 
 | `meta.eventName` | Dashboard usage |
 | --- | --- |

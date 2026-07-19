@@ -115,11 +115,7 @@ describe("trackServerEvent", () => {
 	});
 
 	test("wraps event name in meta", async () => {
-		await trackServerEvent(
-			"signup_completed",
-			{ plan: "pro" },
-			{ projectId: "my-app" },
-		);
+		await trackServerEvent("signup_completed", { plan: "pro" }, { projectId: "my-app" });
 
 		const init = fetchMock.mock.calls[0][1] as RequestInit;
 		const payload = JSON.parse(init.body as string);

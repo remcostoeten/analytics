@@ -22,6 +22,7 @@ type DashboardHeaderProps = {
 	selfFilterEnabled?: boolean;
 	selfFilterAvailable?: boolean;
 	onSelfFilterChange?: (enabled: boolean) => void;
+	authUser?: string | null;
 };
 
 export function DashboardHeader({
@@ -31,6 +32,7 @@ export function DashboardHeader({
 	selfFilterEnabled = false,
 	selfFilterAvailable = false,
 	onSelfFilterChange,
+	authUser,
 }: DashboardHeaderProps) {
 	return (
 		<header
@@ -44,6 +46,7 @@ export function DashboardHeader({
 			</div>
 
 			<div className="flex items-center gap-1">
+				<AuthUser login={authUser} />
 				<SelfFilterSwitch
 					enabled={selfFilterEnabled}
 					available={selfFilterAvailable}
@@ -52,6 +55,32 @@ export function DashboardHeader({
 				<TypeFilterDropdown value={typeFilter} onChange={onTypeFilterChange} />
 			</div>
 		</header>
+	);
+}
+
+type AuthUserProps = {
+	login?: string | null;
+};
+
+function AuthUser({ login }: AuthUserProps) {
+	if (!login) return null;
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="outline" size="sm" className="h-7 px-2.5 text-[11px]">
+					{login}
+					<ChevronDown className="h-3 w-3" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-36">
+				<DropdownMenuLabel className="text-[10px]">Signed in as {login}</DropdownMenuLabel>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem asChild className="text-[11px]">
+					<a href="/api/auth/logout">Sign out</a>
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 

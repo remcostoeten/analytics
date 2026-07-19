@@ -3,12 +3,13 @@ import { z } from "zod";
 import { eventSchema } from "../utilities/validation.js";
 import { processSingleEvent, type SharedIngestContext } from "./ingest.js";
 import {
-	extractGeoFromRequest,
 	extractIpAddress,
 	isLocalhost,
 	isPreviewEnvironment,
 	getHostFromOrigin,
 } from "../utilities/geo.js";
+import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
+import { lookupNetworkFromMmdb } from "../utilities/geo-mmdb.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot } from "../utilities/bot-detection.js";
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
@@ -21,7 +22,9 @@ const batchSchema = z.object({
 
 function isOriginAllowed(origin: string | null): boolean {
 	const allowlist = process.env.ORIGIN_ALLOWLIST
-		? process.env.ORIGIN_ALLOWLIST.split(",").map((o) => o.trim()).filter(Boolean)
+		? process.env.ORIGIN_ALLOWLIST.split(",")
+				.map((o) => o.trim())
+				.filter(Boolean)
 		: [];
 	return allowlist.length === 0 || (origin !== null && allowlist.includes(origin));
 }
@@ -41,10 +44,7 @@ export async function handleBatch(c: Context) {
 
 		const result = batchSchema.safeParse(body);
 		if (!result.success) {
-			return c.json(
-				{ ok: false, error: "Invalid payload", details: result.error.issues },
-				400,
-			);
+			return c.json({ ok: false, error: "Invalid payload", details: result.error.issues }, 400);
 		}
 
 		const { events } = result.data;
@@ -71,7 +71,12 @@ export async function handleBatch(c: Context) {
 			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
-		const geo = extractGeoFromRequest(req);
+		const clientTimezone = events.reduce<string | null>(
+			(found, event) => found ?? extractClientTimezone(event.meta),
+			null,
+		);
+		const geo = await resolveGeo(req, ip, clientTimezone);
+		const network = await lookupNetworkFromMmdb(ip);
 
 		let processed = 0;
 		let failed = 0;
@@ -87,6 +92,7 @@ export async function handleBatch(c: Context) {
 			const ctx: SharedIngestContext = {
 				ipHash,
 				geo,
+				network,
 				localhost,
 				preview,
 				internal: isInternalTraffic(ipHash, localhost),
