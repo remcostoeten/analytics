@@ -346,6 +346,27 @@ export interface PostHogEvent {
 	timestamp: string;
 	distinctId: string;
 	currentUrl: string | null;
+	personUrl: string | null;
+}
+
+export interface PostHogVisitorDetail {
+	distinctId: string;
+	personUrl: string;
+	totalEvents: number;
+	pageviews: number;
+	sessions: number;
+	firstSeen: string | null;
+	lastSeen: string | null;
+	daysActive: number;
+	browser: string | null;
+	os: string | null;
+	deviceType: string | null;
+	country: string | null;
+	city: string | null;
+	initialReferrer: string | null;
+	topPages: Array<{ path: string; count: number }>;
+	eventBreakdown: Array<{ event: string; count: number }>;
+	dailyActivity: Array<{ day: string; events: number }>;
 }
 
 export interface PostHogSummary {

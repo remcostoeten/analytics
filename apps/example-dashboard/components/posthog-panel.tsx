@@ -1,10 +1,24 @@
 "use client";
 
-import { ExternalLink, AlertTriangle, Inbox, Globe } from "lucide-react";
+import { useMemo, useState } from "react";
+import useSWR from "swr";
+import { ExternalLink, AlertTriangle, Inbox, Globe, Ban, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { PostHogEvent, PostHogInsight, PostHogSummary } from "@/lib/types";
+import type {
+	PostHogEvent,
+	PostHogInsight,
+	PostHogSummary,
+	PostHogVisitorDetail,
+} from "@/lib/types";
+
+function jsonFetcher(url: string) {
+	return fetch(url).then((response) => {
+		if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+		return response.json();
+	});
+}
 
 function formatRelativeTime(iso: string | null): string {
 	if (!iso) return "—";
@@ -39,7 +53,22 @@ type PostHogTrackedSitesProps = {
 
 export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProps) {
 	if (isLoading && !data) {
-		return <Skeleton className="h-14 rounded-sm" />;
+		return (
+			<div className="bg-card border border-border rounded-sm px-3 py-2.5">
+				<div className="flex items-center justify-between gap-3">
+					<div className="flex items-center gap-2">
+						<Skeleton className="h-3.5 w-3.5 rounded-full" />
+						<Skeleton className="h-3 w-24" />
+					</div>
+					<Skeleton className="h-3 w-40" />
+				</div>
+				<div className="mt-2 flex flex-wrap gap-1.5">
+					{Array.from({ length: 3 }).map((_, i) => (
+						<Skeleton key={i} className="h-6 w-28 rounded" />
+					))}
+				</div>
+			</div>
+		);
 	}
 
 	const sites = data?.sites ?? [];
@@ -122,8 +151,11 @@ export function PostHogSummaryCards({ data, isLoading }: PostHogSummaryCardsProp
 	if (isLoading && !data) {
 		return (
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-				{cards.map((_, i) => (
-					<Skeleton key={i} className="h-16 rounded-sm" />
+				{cards.map((card) => (
+					<div key={card.label} className="bg-card border border-border rounded-sm px-3 py-2.5">
+						<Skeleton className="h-3 w-20" />
+						<Skeleton className="mt-1.5 h-6 w-14" />
+					</div>
 				))}
 			</div>
 		);
@@ -190,8 +222,12 @@ export function PostHogInsightsList({ data, isLoading }: PostHogInsightsListProp
 			{isLoading && insights.length === 0 ? (
 				<div className="divide-y divide-border">
 					{Array.from({ length: 4 }).map((_, i) => (
-						<div key={i} className="px-3 py-2">
-							<Skeleton className="h-3 w-48" />
+						<div key={i} className="flex items-center gap-3 px-3 py-2">
+							<div className="min-w-0 flex-1">
+								<Skeleton className="h-3 w-40" />
+								<Skeleton className="mt-1.5 h-2.5 w-24" />
+							</div>
+							<Skeleton className="h-4 w-14 shrink-0" />
 						</div>
 					))}
 				</div>
@@ -271,6 +307,230 @@ function prettyUrl(url: string): { host: string; path: string } {
 	}
 }
 
+const VISITOR_COLORS = [
+	"bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+	"bg-sky-500/10 text-sky-400 border-sky-500/20",
+	"bg-violet-500/10 text-violet-400 border-violet-500/20",
+	"bg-amber-500/10 text-amber-400 border-amber-500/20",
+	"bg-rose-500/10 text-rose-400 border-rose-500/20",
+	"bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20",
+	"bg-teal-500/10 text-teal-400 border-teal-500/20",
+	"bg-orange-500/10 text-orange-400 border-orange-500/20",
+	"bg-lime-500/10 text-lime-400 border-lime-500/20",
+	"bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+];
+
+function visitorColor(distinctId: string): string {
+	let hash = 0;
+	for (let i = 0; i < distinctId.length; i++) {
+		hash = (hash * 31 + distinctId.charCodeAt(i)) | 0;
+	}
+	return VISITOR_COLORS[Math.abs(hash) % VISITOR_COLORS.length];
+}
+
+type VisitorBadgeProps = {
+	distinctId: string;
+	active: boolean;
+	onToggle: () => void;
+};
+
+function VisitorBadge({ distinctId, active, onToggle }: VisitorBadgeProps) {
+	return (
+		<button
+			type="button"
+			onClick={onToggle}
+			title={active ? `Stop filtering on ${distinctId}` : `Show only events from ${distinctId}`}
+			className={cn(
+				"inline-flex max-w-[140px] items-center rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none transition-all",
+				visitorColor(distinctId),
+				active ? "ring-1 ring-current" : "hover:brightness-125",
+			)}
+		>
+			<span className="truncate">{distinctId}</span>
+		</button>
+	);
+}
+
+function formatDate(iso: string | null): string {
+	if (!iso) return "—";
+	return new Date(iso).toLocaleDateString(undefined, {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	});
+}
+
+type VisitorDetailCardProps = {
+	distinctId: string;
+	onClose: () => void;
+};
+
+function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
+	const { data, isLoading } = useSWR<PostHogVisitorDetail>(
+		`/api/posthog?metric=visitor&distinctId=${encodeURIComponent(distinctId)}`,
+		jsonFetcher,
+	);
+
+	const stats = [
+		{ label: "Events", value: data ? formatNumber(data.totalEvents) : null },
+		{ label: "Pageviews", value: data ? formatNumber(data.pageviews) : null },
+		{ label: "Sessions", value: data ? formatNumber(data.sessions) : null },
+		{ label: "Days active", value: data ? formatNumber(data.daysActive) : null },
+		{ label: "First seen", value: data ? formatDate(data.firstSeen) : null },
+		{ label: "Last seen", value: data ? formatRelativeTime(data.lastSeen) : null },
+	];
+
+	const profile = data
+		? [
+				data.browser,
+				data.os,
+				data.deviceType,
+				[data.city, data.country].filter(Boolean).join(", ") || null,
+			].filter((entry): entry is string => Boolean(entry))
+		: [];
+
+	return (
+		<div className="border-b border-border bg-muted/20 px-3 py-2.5">
+			<div className="flex items-center justify-between gap-2">
+				<div className="flex min-w-0 items-center gap-2">
+					<span
+						className={cn(
+							"inline-flex max-w-[220px] items-center rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none",
+							visitorColor(distinctId),
+						)}
+					>
+						<span className="truncate">{distinctId}</span>
+					</span>
+					{data && (
+						<a
+							href={data.personUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+						>
+							Open in PostHog
+							<ExternalLink className="h-2.5 w-2.5" />
+						</a>
+					)}
+				</div>
+				<button
+					type="button"
+					onClick={onClose}
+					title="Close visitor details"
+					className="text-muted-foreground hover:text-foreground"
+				>
+					<X className="h-3.5 w-3.5" />
+				</button>
+			</div>
+
+			<div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+				{stats.map((stat) => (
+					<div key={stat.label}>
+						<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+							{stat.label}
+						</p>
+						{stat.value === null ? (
+							<Skeleton className="mt-1 h-4 w-12" />
+						) : (
+							<p className="text-sm font-semibold tabular-nums text-foreground">{stat.value}</p>
+						)}
+					</div>
+				))}
+			</div>
+
+			{isLoading && !data ? (
+				<div className="mt-2 flex flex-wrap gap-1.5">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-5 w-20 rounded" />
+					))}
+				</div>
+			) : (
+				<>
+					{(profile.length > 0 || data?.initialReferrer) && (
+						<div className="mt-2 flex flex-wrap items-center gap-1.5">
+							{profile.map((entry) => (
+								<span
+									key={entry}
+									className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+								>
+									{entry}
+								</span>
+							))}
+							{data?.initialReferrer && (
+								<span
+									className="max-w-[220px] truncate rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+									title={`First referrer: ${data.initialReferrer}`}
+								>
+									via {prettyUrl(data.initialReferrer).host || data.initialReferrer}
+								</span>
+							)}
+						</div>
+					)}
+
+					{data && (
+						<div className="mt-3 grid gap-3 sm:grid-cols-3">
+							<div>
+								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+									Top pages
+								</p>
+								{data.topPages.length === 0 ? (
+									<p className="mt-1 text-[11px] text-muted-foreground">No pageviews</p>
+								) : (
+									<ul className="mt-1 space-y-0.5">
+										{data.topPages.map((page) => (
+											<li
+												key={page.path}
+												className="flex items-center justify-between gap-2 text-[11px]"
+											>
+												<span className="truncate font-mono text-[10px] text-foreground">
+													{page.path}
+												</span>
+												<span className="tabular-nums text-muted-foreground">
+													{formatNumber(page.count)}
+												</span>
+											</li>
+										))}
+									</ul>
+								)}
+							</div>
+							<div>
+								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+									Events
+								</p>
+								<div className="mt-1 flex flex-wrap gap-1">
+									{data.eventBreakdown.map((entry) => (
+										<span key={entry.event} className="inline-flex items-center gap-1">
+											<EventBadge event={entry.event} />
+											<span className="text-[10px] tabular-nums text-muted-foreground">
+												{formatNumber(entry.count)}
+											</span>
+										</span>
+									))}
+								</div>
+							</div>
+							<div>
+								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+									Activity (30d)
+								</p>
+								{data.dailyActivity.length > 1 ? (
+									<div className="mt-1.5 text-primary">
+										<Sparkline points={data.dailyActivity.map((entry) => entry.events)} />
+									</div>
+								) : (
+									<p className="mt-1 text-[11px] text-muted-foreground">
+										Active on {data.dailyActivity.length === 1 ? "one day" : "no days"} in
+										the last 30
+									</p>
+								)}
+							</div>
+						</div>
+					)}
+				</>
+			)}
+		</div>
+	);
+}
+
 type PostHogEventsTableProps = {
 	data: PostHogEvent[] | null;
 	isLoading?: boolean;
@@ -278,30 +538,139 @@ type PostHogEventsTableProps = {
 };
 
 export function PostHogEventsTable({ data, isLoading, className }: PostHogEventsTableProps) {
-	const rows = (data || []).slice(0, 25);
+	const [focusedId, setFocusedId] = useState<string | null>(null);
+	const [excludedIds, setExcludedIds] = useState<string[]>([]);
+
+	const allRows = useMemo(() => (data || []).slice(0, 25), [data]);
+	const rows = allRows.filter(
+		(row) =>
+			(!focusedId || row.distinctId === focusedId) && !excludedIds.includes(row.distinctId),
+	);
+	const hasFilters = focusedId !== null || excludedIds.length > 0;
 	const hasData = rows.length > 0;
+
+	function toggleFocus(distinctId: string) {
+		setFocusedId((current) => (current === distinctId ? null : distinctId));
+	}
+
+	function excludeVisitor(distinctId: string) {
+		setExcludedIds((current) =>
+			current.includes(distinctId) ? current : [...current, distinctId],
+		);
+		setFocusedId((current) => (current === distinctId ? null : current));
+	}
+
+	function clearFilters() {
+		setFocusedId(null);
+		setExcludedIds([]);
+	}
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
-			<div className="px-3 py-2 border-b border-border">
+			<div className="flex min-h-[33px] flex-wrap items-center gap-2 px-3 py-2 border-b border-border">
 				<h3 className="text-xs font-medium text-foreground">Recent Events</h3>
+				{focusedId && (
+					<span
+						className={cn(
+							"inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none",
+							visitorColor(focusedId),
+						)}
+					>
+						<span className="max-w-[120px] truncate">only {focusedId}</span>
+						<button
+							type="button"
+							onClick={() => setFocusedId(null)}
+							title="Clear visitor filter"
+						>
+							<X className="h-2.5 w-2.5" />
+						</button>
+					</span>
+				)}
+				{excludedIds.map((id) => (
+					<span
+						key={id}
+						className="inline-flex items-center gap-1 rounded border border-border bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted-foreground line-through"
+					>
+						<span className="max-w-[120px] truncate">{id}</span>
+						<button
+							type="button"
+							onClick={() =>
+								setExcludedIds((current) => current.filter((entry) => entry !== id))
+							}
+							title={`Stop excluding ${id}`}
+						>
+							<X className="h-2.5 w-2.5" />
+						</button>
+					</span>
+				))}
+				{hasFilters && (
+					<button
+						type="button"
+						onClick={clearFilters}
+						className="text-[10px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+					>
+						clear
+					</button>
+				)}
 			</div>
+			{focusedId && (
+				<VisitorDetailCard distinctId={focusedId} onClose={() => setFocusedId(null)} />
+			)}
 			{!hasData ? (
 				isLoading ? (
-					<div className="divide-y divide-border">
-						{Array.from({ length: 6 }).map((_, i) => (
-							<div key={i} className="px-3 py-2 flex items-center justify-between gap-4">
-								<Skeleton className="h-4 w-20" />
-								<Skeleton className="h-3 flex-1 max-w-[200px]" />
-								<Skeleton className="h-3 w-24" />
-								<Skeleton className="h-3 w-10" />
-							</div>
-						))}
+					<div className="overflow-x-auto">
+						<table className="w-full text-[11px]">
+							<thead>
+								<tr className="border-b border-border bg-muted/30">
+									<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+										Event
+									</th>
+									<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+										Page
+									</th>
+									<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+										Distinct ID
+									</th>
+									<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+										Time
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-border">
+								{Array.from({ length: 8 }).map((_, i) => (
+									<tr key={i}>
+										<td className="px-3 py-1.5">
+											<Skeleton className="h-4 w-16 rounded" />
+										</td>
+										<td className="px-3 py-1.5">
+											<Skeleton className="h-3 w-44" />
+										</td>
+										<td className="px-3 py-1.5">
+											<Skeleton className="h-3 w-24" />
+										</td>
+										<td className="px-3 py-1.5">
+											<Skeleton className="ml-auto h-3 w-10" />
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
 					</div>
 				) : (
 					<div className="p-6 text-center">
 						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-						<p className="text-[11px] text-muted-foreground">No events yet</p>
+						<p className="text-[11px] text-muted-foreground">
+							{hasFilters && allRows.length > 0 ? "No events match the current filters" : "No events yet"}
+						</p>
+						{hasFilters && allRows.length > 0 && (
+							<button
+								type="button"
+								onClick={clearFilters}
+								className="mt-1 text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+							>
+								clear filters
+							</button>
+						)}
 					</div>
 				)
 			) : (
@@ -354,12 +723,38 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 											)}
 										</td>
 										<td className="px-3 py-1.5 align-middle">
-											<span
-												className="block max-w-[120px] truncate font-mono text-[10px] text-muted-foreground"
-												title={row.distinctId}
-											>
-												{row.distinctId || "—"}
-											</span>
+											{row.distinctId ? (
+												<span className="group/visitor flex items-center gap-1">
+													<VisitorBadge
+														distinctId={row.distinctId}
+														active={focusedId === row.distinctId}
+														onToggle={() => toggleFocus(row.distinctId)}
+													/>
+													<span className="flex items-center gap-1 opacity-0 transition-opacity group-hover/visitor:opacity-100">
+														<button
+															type="button"
+															onClick={() => excludeVisitor(row.distinctId)}
+															title={`Exclude ${row.distinctId}`}
+															className="text-muted-foreground hover:text-foreground"
+														>
+															<Ban className="h-3 w-3" />
+														</button>
+														{row.personUrl && (
+															<a
+																href={row.personUrl}
+																target="_blank"
+																rel="noreferrer"
+																title={`Open ${row.distinctId} in PostHog`}
+																className="text-muted-foreground hover:text-foreground"
+															>
+																<ExternalLink className="h-3 w-3" />
+															</a>
+														)}
+													</span>
+												</span>
+											) : (
+												<span className="text-muted-foreground">—</span>
+											)}
 										</td>
 										<td className="px-3 py-1.5 text-right align-middle tabular-nums text-muted-foreground whitespace-nowrap">
 											{formatRelativeTime(row.timestamp)}
