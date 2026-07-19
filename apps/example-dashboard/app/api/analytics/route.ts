@@ -100,6 +100,28 @@ export async function GET(request: NextRequest) {
 					),
 				);
 			}
+			case "geo-visitors": {
+				const rawCountry = searchParams.get("country");
+				const rawRegion = searchParams.get("region");
+				const rawCity = searchParams.get("city");
+				const scopeCountry =
+					rawCountry && /^[A-Za-z]{2}$/.test(rawCountry) ? rawCountry.toUpperCase() : null;
+				const scopeRegion = rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
+				const scopeCity = rawCity && rawCity.length <= 64 && scopeRegion ? rawCity : null;
+				return NextResponse.json(
+					await query.getGeoVisitors(
+						from,
+						to,
+						projectId,
+						scopeCountry,
+						scopeRegion,
+						scopeCity,
+						20,
+						excludeVisitorId,
+						origin,
+					),
+				);
+			}
 			case "geo-detail":
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),

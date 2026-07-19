@@ -5,12 +5,12 @@ import useSWR from "swr";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
-import { ArrowLeft, ChevronRight, Globe, MapPin, Network, Clock } from "lucide-react";
+import { ArrowLeft, ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatNumber, getFlagEmoji } from "@/lib/format";
+import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
 import { GeoDotMap } from "./geo-dot-map";
 import { regionName } from "@/lib/geo-names";
-import type { GeoExplorerData } from "@/lib/queries/geo";
+import type { GeoExplorerData, GeoVisitorRow } from "@/lib/queries/geo";
 
 const TIME_RANGES = [
 	{ value: "24h", label: "24 hours" },
@@ -55,6 +55,20 @@ export function GeoExplorer() {
 		keepPreviousData: true,
 		revalidateOnFocus: false,
 	});
+
+	const visitorsQuery = useMemo(() => {
+		const params = new URLSearchParams({ metric: "geo-visitors", timeRange });
+		if (country) params.set("country", country);
+		if (region) params.set("region", region);
+		if (projectId) params.set("projectId", projectId);
+		return `/api/analytics?${params.toString()}`;
+	}, [country, region, timeRange, projectId]);
+
+	const { data: visitors, isLoading: visitorsLoading } = useSWR<GeoVisitorRow[]>(
+		visitorsQuery,
+		fetcher,
+		{ keepPreviousData: true, revalidateOnFocus: false },
+	);
 
 	const navigate = (next: { country?: string | null; region?: string | null }) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -287,6 +301,56 @@ export function GeoExplorer() {
 						mobile). Region and coordinates are the more reliable dimensions.
 					</p>
 				</Panel>
+			</section>
+
+			<section className="bg-card border border-border rounded-sm overflow-hidden">
+				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
+					<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
+						<Users2 className="h-3.5 w-3.5" />
+						Visitors in this area
+					</h2>
+					<span className="text-[10px] text-muted-foreground tabular-nums">
+						{visitors?.length ?? 0} most recent
+					</span>
+				</div>
+				<div className="divide-y divide-border/50">
+					{(visitors ?? []).map((v) => (
+						<Link
+							key={v.visitorId}
+							href={`/visitor/${v.visitorId}`}
+							className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted/50 transition-colors group"
+						>
+							<span className="flex items-center gap-2 min-w-0">
+								<span className="text-xs font-mono text-foreground truncate">
+									{v.visitorId.slice(0, 12)}
+								</span>
+								{v.city && (
+									<span className="text-[10px] text-muted-foreground truncate">{v.city}</span>
+								)}
+								{v.asOrg && (
+									<span className="text-[10px] text-muted-foreground/70 truncate hidden md:inline">
+										{v.asOrg}
+									</span>
+								)}
+							</span>
+							<span className="flex items-center gap-3 text-[10px] text-muted-foreground tabular-nums shrink-0">
+								<span>
+									{v.sessions} session{v.sessions === 1 ? "" : "s"}
+								</span>
+								<span>
+									{v.events} event{v.events === 1 ? "" : "s"}
+								</span>
+								<span>{formatTimeAgo(v.lastSeen)}</span>
+								<ChevronRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground/70 transition-colors" />
+							</span>
+						</Link>
+					))}
+					{!visitorsLoading && (visitors?.length ?? 0) === 0 && (
+						<p className="px-3 py-6 text-xs text-muted-foreground text-center">
+							No identified visitors in this area for the selected range
+						</p>
+					)}
+				</div>
 			</section>
 		</div>
 	);
