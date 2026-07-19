@@ -9,6 +9,7 @@ import {
 	getHostFromOrigin,
 } from "../utilities/geo.js";
 import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
+import { lookupNetworkFromMmdb } from "../utilities/geo-mmdb.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot } from "../utilities/bot-detection.js";
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
@@ -75,6 +76,7 @@ export async function handleBatch(c: Context) {
 			null,
 		);
 		const geo = await resolveGeo(req, ip, clientTimezone);
+		const network = await lookupNetworkFromMmdb(ip);
 
 		let processed = 0;
 		let failed = 0;
@@ -90,6 +92,7 @@ export async function handleBatch(c: Context) {
 			const ctx: SharedIngestContext = {
 				ipHash,
 				geo,
+				network,
 				localhost,
 				preview,
 				internal: isInternalTraffic(ipHash, localhost),

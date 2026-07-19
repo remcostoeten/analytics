@@ -130,7 +130,7 @@ const countryNameToNumericCode: Record<string, string> = {
 };
 
 // Also map ISO 2-letter codes to numeric for fallback
-const isoCodeToNumericCode: Record<string, string> = {
+export const isoCodeToNumericCode: Record<string, string> = {
 	AF: "004",
 	AL: "008",
 	DZ: "012",

@@ -40,6 +40,8 @@ export const events = pgTable(
 		timezone: text("timezone"),
 		postalCode: text("postal_code"),
 		continent: text("continent"),
+		asn: integer("asn"),
+		asOrg: text("as_org"),
 		meta: jsonb("meta"),
 	},
 	(table) => ({

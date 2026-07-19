@@ -82,6 +82,25 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getGeoDistribution(projectFilter, 100, from, to, excludeVisitorId, origin),
 				);
+			case "geo-explorer": {
+				const rawCountry = searchParams.get("country");
+				const rawRegion = searchParams.get("region");
+				const scopeCountry =
+					rawCountry && /^[A-Za-z]{2}$/.test(rawCountry) ? rawCountry.toUpperCase() : null;
+				const scopeRegion =
+					rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
+				return NextResponse.json(
+					await query.getGeoExplorer(
+						from,
+						to,
+						projectId,
+						scopeCountry,
+						scopeRegion,
+						excludeVisitorId,
+						origin,
+					),
+				);
+			}
 			case "geo-detail":
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),

@@ -8,6 +8,7 @@ import {
 	getHostFromOrigin,
 } from "../utilities/geo.js";
 import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
+import { lookupNetworkFromMmdb, type NetworkData } from "../utilities/geo-mmdb.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
 import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../utilities/dedupe.js";
@@ -71,6 +72,7 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 export type SharedIngestContext = {
 	ipHash: string | null;
 	geo: GeoData;
+	network: NetworkData;
 	localhost: boolean;
 	preview: boolean;
 	internal: boolean;
@@ -288,6 +290,8 @@ export async function processSingleEvent(
 		timezone: ctx.geo.timezone,
 		postalCode: ctx.geo.postalCode,
 		continent: ctx.geo.continent,
+		asn: ctx.network.asn,
+		asOrg: ctx.network.asOrg,
 		isLocalhost: ctx.localhost,
 		isPreview: ctx.preview,
 		botDetected: botIsBot,
@@ -387,6 +391,7 @@ export async function handleIngest(c: Context) {
 		}
 
 		const geo = await resolveGeo(req, ip, extractClientTimezone(payload.meta));
+		const network = await lookupNetworkFromMmdb(ip);
 		const localhost = isLocalhost(payload.host);
 		const preview =
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
@@ -394,6 +399,7 @@ export async function handleIngest(c: Context) {
 		const ctx: SharedIngestContext = {
 			ipHash,
 			geo,
+			network,
 			localhost,
 			preview,
 			internal: isInternalTraffic(ipHash, localhost),

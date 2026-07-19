@@ -242,6 +242,19 @@ export function AppSidebar() {
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								))}
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										isActive={pathname === "/geo"}
+										tooltip="Geo Explorer"
+										className="h-8 text-xs font-medium"
+									>
+										<Link href="/geo">
+											<Globe className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+											<span className="text-foreground">Geo Explorer</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>

@@ -45,6 +45,8 @@ export async function setupTestDb() {
             timezone TEXT,
             postal_code TEXT,
             continent TEXT,
+            asn INTEGER,
+            as_org TEXT,
             meta JSONB
         );
 
