@@ -1,9 +1,19 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Inbox, TrendingUp, Clock, MousePointerClick, ExternalLink } from "lucide-react";
+import {
+	Inbox,
+	TrendingUp,
+	Clock,
+	MousePointerClick,
+	ExternalLink,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface EngagementData {
 	scrollDepth: Array<{ bucket: string; count: number; percentage: number }>;
@@ -33,9 +43,16 @@ function formatTime(ms: number): string {
 export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div
+				className={cn(
+					"bg-card border border-border rounded-sm",
+					className,
+				)}
+			>
 				<div className="px-3 py-2 border-b border-border">
-					<h3 className="text-xs font-medium text-foreground">Engagement</h3>
+					<h3 className="text-xs font-medium text-foreground">
+						Engagement
+					</h3>
 				</div>
 				<div className="p-3 space-y-3">
 					{[0, 1, 2].map((i) => (
@@ -63,9 +80,13 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 	const hasTopPages = data.topEngagedPages && data.topEngagedPages.length > 0;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div
+			className={cn("bg-card border border-border rounded-sm", className)}
+		>
 			<div className="px-3 py-2 border-b border-border">
-				<h3 className="text-xs font-medium text-foreground">Engagement Metrics</h3>
+				<h3 className="text-xs font-medium text-foreground">
+					Engagement Metrics
+				</h3>
 			</div>
 			<div className="p-3 space-y-4">
 				{/* Scroll Depth Distribution */}
@@ -82,11 +103,15 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 								<Tooltip key={item.bucket}>
 									<TooltipTrigger asChild>
 										<div className="flex items-center gap-2 cursor-default">
-											<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
+											<span className="text-[10px] text-muted-foreground w-14">
+												{item.bucket}
+											</span>
 											<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
 												<div
 													className="h-full bg-chart-1 rounded-full transition-all"
-													style={{ width: `${Math.min(100, item.percentage)}%` }}
+													style={{
+														width: `${Math.min(100, item.percentage)}%`,
+													}}
 												/>
 											</div>
 											<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
@@ -94,9 +119,13 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 											</span>
 										</div>
 									</TooltipTrigger>
-									<TooltipContent side="left" className="text-[11px]">
-										{item.count.toLocaleString()} pageview{item.count === 1 ? "" : "s"} scrolled to{" "}
-										{item.bucket} of the page
+									<TooltipContent
+										side="left"
+										className="text-[11px]"
+									>
+										{item.count.toLocaleString()} pageview
+										{item.count === 1 ? "" : "s"} scrolled
+										to {item.bucket} of the page
 									</TooltipContent>
 								</Tooltip>
 							))}
@@ -118,11 +147,15 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 								<Tooltip key={item.bucket}>
 									<TooltipTrigger asChild>
 										<div className="flex items-center gap-2 cursor-default">
-											<span className="text-[10px] text-muted-foreground w-14">{item.bucket}</span>
+											<span className="text-[10px] text-muted-foreground w-14">
+												{item.bucket}
+											</span>
 											<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
 												<div
 													className="h-full bg-chart-2 rounded-full transition-all"
-													style={{ width: `${Math.min(100, item.percentage)}%` }}
+													style={{
+														width: `${Math.min(100, item.percentage)}%`,
+													}}
 												/>
 											</div>
 											<span className="text-[10px] text-foreground tabular-nums w-10 text-right">
@@ -130,8 +163,12 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 											</span>
 										</div>
 									</TooltipTrigger>
-									<TooltipContent side="left" className="text-[11px]">
-										{item.count.toLocaleString()} visit{item.count === 1 ? "" : "s"} stayed{" "}
+									<TooltipContent
+										side="left"
+										className="text-[11px]"
+									>
+										{item.count.toLocaleString()} visit
+										{item.count === 1 ? "" : "s"} stayed{" "}
 										{item.bucket}
 									</TooltipContent>
 								</Tooltip>
@@ -176,16 +213,27 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div className="flex items-center gap-3 text-[10px] text-muted-foreground cursor-default">
-												<span className="tabular-nums">{formatTime(page.avgTimeMs)}</span>
-												{typeof page.avgScrollDepth === "number" && (
-													<span className="tabular-nums">{page.avgScrollDepth}%</span>
+												<span className="tabular-nums">
+													{formatTime(page.avgTimeMs)}
+												</span>
+												{typeof page.avgScrollDepth ===
+													"number" && (
+													<span className="tabular-nums">
+														{page.avgScrollDepth}%
+													</span>
 												)}
 											</div>
 										</TooltipTrigger>
-										<TooltipContent side="left" className="text-[11px]">
-											Average time on page over {page.samples.toLocaleString()} visit
+										<TooltipContent
+											side="left"
+											className="text-[11px]"
+										>
+											Average time on page over{" "}
+											{page.samples.toLocaleString()}{" "}
+											visit
 											{page.samples === 1 ? "" : "s"}
-											{typeof page.avgScrollDepth === "number"
+											{typeof page.avgScrollDepth ===
+											"number"
 												? ` · avg scroll depth ${page.avgScrollDepth}%`
 												: ""}
 										</TooltipContent>
@@ -199,7 +247,9 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 				{!hasScrollData && !hasTimeData && !hasTopPages && (
 					<div className="text-center py-4">
 						<Inbox className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-						<p className="text-[10px] text-muted-foreground">No engagement data yet</p>
+						<p className="text-[10px] text-muted-foreground">
+							No engagement data yet
+						</p>
 					</div>
 				)}
 			</div>
