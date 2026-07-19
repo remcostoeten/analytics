@@ -1,4 +1,10 @@
-import type { PostHogEvent, PostHogInsight, PostHogSite, PostHogSummary } from "./types";
+import type {
+	PostHogEvent,
+	PostHogInsight,
+	PostHogSite,
+	PostHogSummary,
+	PostHogVisitorDetail,
+} from "./types";
 
 export class PostHogConfigError extends Error {}
 
@@ -99,20 +105,133 @@ export async function getPostHogRecentEvents(limit: number = 25): Promise<PostHo
 	const results: Array<Record<string, unknown>> = data.results ?? [];
 	return results.map((r) => {
 		const properties = (r.properties as Record<string, unknown>) || {};
+		const distinctId = String(r.distinct_id ?? "");
 		return {
 			id: String(r.id),
 			event: String(r.event),
 			timestamp: String(r.timestamp),
-			distinctId: String(r.distinct_id ?? ""),
+			distinctId,
 			currentUrl: (properties["$current_url"] as string) || null,
+			personUrl: distinctId
+				? `${config.host}/project/${config.projectId}/persons?distinct_id=${encodeURIComponent(distinctId)}`
+				: null,
 		};
 	});
 }
 
-async function runHogQL(config: PostHogConfig, query: string): Promise<unknown[][]> {
+export async function getPostHogVisitorDetail(distinctId: string): Promise<PostHogVisitorDetail> {
+	const config = getPostHogConfig();
+	const values = { did: distinctId };
+
+	const [totalsRows, profileRows, firstEventRows, pageRows, breakdownRows, dailyRows] =
+		await Promise.all([
+			runHogQL(
+				config,
+				`SELECT
+					count() as events,
+					countIf(event = '$pageview') as pageviews,
+					count(distinct properties.$session_id) as sessions,
+					min(timestamp) as first_seen,
+					max(timestamp) as last_seen,
+					count(distinct toDate(timestamp)) as days_active
+				FROM events WHERE distinct_id = {did}`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT
+					properties.$browser,
+					properties.$os,
+					properties.$device_type,
+					properties.$geoip_country_name,
+					properties.$geoip_city_name
+				FROM events WHERE distinct_id = {did}
+				ORDER BY timestamp DESC LIMIT 1`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT properties.$referrer
+				FROM events WHERE distinct_id = {did}
+				ORDER BY timestamp ASC LIMIT 1`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT properties.$pathname as path, count() as hits
+				FROM events WHERE distinct_id = {did} AND event = '$pageview' AND properties.$pathname != ''
+				GROUP BY path ORDER BY hits DESC LIMIT 6`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT event, count() as hits
+				FROM events WHERE distinct_id = {did}
+				GROUP BY event ORDER BY hits DESC LIMIT 8`,
+				values,
+			),
+			runHogQL(
+				config,
+				`SELECT toDate(timestamp) as day, count() as events
+				FROM events WHERE distinct_id = {did} AND timestamp >= now() - interval 30 day
+				GROUP BY day ORDER BY day`,
+				values,
+			),
+		]);
+
+	const [events, pageviews, sessions, firstSeen, lastSeen, daysActive] = (totalsRows[0] as [
+		number,
+		number,
+		number,
+		string,
+		string,
+		number,
+	]) ?? [0, 0, 0, null, null, 0];
+	const [browser, os, deviceType, country, city] = (profileRows[0] as Array<string | null>) ?? [];
+	const [initialReferrer] = (firstEventRows[0] as Array<string | null>) ?? [];
+
+	function asText(value: string | null | undefined): string | null {
+		return value && value !== "null" ? String(value) : null;
+	}
+
+	return {
+		distinctId,
+		personUrl: `${config.host}/project/${config.projectId}/persons?distinct_id=${encodeURIComponent(distinctId)}`,
+		totalEvents: Number(events),
+		pageviews: Number(pageviews),
+		sessions: Number(sessions),
+		firstSeen: firstSeen ? String(firstSeen) : null,
+		lastSeen: lastSeen ? String(lastSeen) : null,
+		daysActive: Number(daysActive),
+		browser: asText(browser),
+		os: asText(os),
+		deviceType: asText(deviceType),
+		country: asText(country),
+		city: asText(city),
+		initialReferrer: asText(initialReferrer),
+		topPages: (pageRows as Array<[string, number]>).map(([path, count]) => ({
+			path: String(path),
+			count: Number(count),
+		})),
+		eventBreakdown: (breakdownRows as Array<[string, number]>).map(([event, count]) => ({
+			event: String(event),
+			count: Number(count),
+		})),
+		dailyActivity: (dailyRows as Array<[string, number]>).map(([day, count]) => ({
+			day: String(day),
+			events: Number(count),
+		})),
+	};
+}
+
+async function runHogQL(
+	config: PostHogConfig,
+	query: string,
+	values?: Record<string, unknown>,
+): Promise<unknown[][]> {
 	const data = await postHogFetch(config, `/api/projects/${config.projectId}/query/`, {
 		method: "POST",
-		body: JSON.stringify({ query: { kind: "HogQLQuery", query } }),
+		body: JSON.stringify({ query: { kind: "HogQLQuery", query, values } }),
 	});
 	return data.results ?? [];
 }

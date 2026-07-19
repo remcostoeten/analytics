@@ -4,6 +4,7 @@ import {
 	getPostHogInsights,
 	getPostHogRecentEvents,
 	getPostHogSummary,
+	getPostHogVisitorDetail,
 } from "@/lib/posthog";
 
 export async function GET(request: NextRequest) {
@@ -17,6 +18,13 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(await getPostHogInsights(10));
 			case "events":
 				return NextResponse.json(await getPostHogRecentEvents(25));
+			case "visitor": {
+				const distinctId = request.nextUrl.searchParams.get("distinctId");
+				if (!distinctId) {
+					return NextResponse.json({ error: "Missing distinctId" }, { status: 400 });
+				}
+				return NextResponse.json(await getPostHogVisitorDetail(distinctId));
+			}
 			default:
 				return NextResponse.json({ error: "Unknown metric" }, { status: 400 });
 		}
