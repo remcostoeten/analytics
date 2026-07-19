@@ -126,6 +126,7 @@ NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com/ingest
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Same database as ingestion |
+| `DASHBOARD_ADMIN_SECRET` | Recommended for public deployments | Bearer token required for mutating endpoints (e.g. marking a visitor as internal). Unset = mutations are open — fine locally, not on a public URL |
 
 ### Deploy ingestion and dashboard
 
@@ -393,7 +394,22 @@ On Vercel serverless, in-memory rate limiting and deduplication only apply withi
 
 ## Dashboard (optional)
 
-The example dashboard reads from the same `events` and `visitors` tables. Built-in support for these SDK event names:
+The example dashboard reads from the same `events`, `visitors`, and `sessions` tables.
+
+### Visitor profiles and recurrence
+
+- **Visitor explorer** — All / New / Returning tabs, sortable by last seen, visit count, or first seen. Rows link through to per-visitor profiles.
+- **`/visitor/[id]` profile page** — identity header (device, OS, browser, geo, timezone, first/last seen, visit count), a session-by-session timeline (entry → exit path, duration, pageviews), top pages, referrer history, and `meta.identity` / `meta.experiments` rendered as a key-value grid.
+- **Recurrence stats** in the Audience view — returning rate, visit-count distribution (1 / 2–4 / 5–9 / 10+), and a new-vs-returning trend.
+- **Internal traffic exclusion** — the "Mark as internal" button on a profile flags the visitor and retroactively flags their events; public-traffic queries exclude `is_internal`. Works across all your devices, unlike a localStorage-only filter. When `DASHBOARD_ADMIN_SECRET` is set, the dashboard prompts for it once and sends it as a Bearer token.
+
+### Migration required
+
+Visitor profiles, sessions, and per-project visitor scoping depend on migration `packages/ingestion/src/db/migrations/0003_add_sessions_and_visitor_project.sql`. Apply it **before** deploying the new ingestion code — it's idempotent and backfills `visitors.project_id`, the `sessions` table, and honest `visit_count` values from existing events.
+
+### Built-in event names
+
+The dashboard has built-in support for these SDK event names:
 
 | `meta.eventName` | Dashboard usage |
 | --- | --- |
