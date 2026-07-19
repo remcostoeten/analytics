@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
-import { COUNTRY_NAME_TO_ISO } from "./filters";
+import { COUNTRY_NAME_TO_ISO, geoScopeFilter, type GeoScope } from "./filters";
 
 export type VisitorSegment = "all" | "new" | "returning";
 export type VisitorSort = "last_seen" | "visit_count" | "first_seen";
@@ -35,6 +35,7 @@ export async function getVisitorsExplorer(
 	offset: number = 0,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<{ rows: VisitorExplorerRow[]; total: number }> {
 	const segmentFilter =
 		segment === "new"
@@ -49,6 +50,9 @@ export async function getVisitorsExplorer(
 		: sql``;
 	const originFilter = origin
 		? sql`AND EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint AND events.host = ${origin})`
+		: sql``;
+	const geoFilter = geo?.country
+		? sql`AND EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint ${geoScopeFilter(geo.country, geo.region)})`
 		: sql``;
 
 	const rows = await sql`
@@ -72,6 +76,7 @@ export async function getVisitorsExplorer(
       ${projectFilter}
       ${excludeFilter}
       ${originFilter}
+      ${geoFilter}
     ORDER BY ${sortColumn(sort)} DESC
     LIMIT ${limit} OFFSET ${offset}
   `;
@@ -86,6 +91,7 @@ export async function getVisitorsExplorer(
       ${projectFilter}
       ${excludeFilter}
       ${originFilter}
+      ${geoFilter}
   `;
 
 	return {

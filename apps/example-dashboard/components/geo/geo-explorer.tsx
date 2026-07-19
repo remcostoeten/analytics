@@ -144,18 +144,28 @@ export function GeoExplorer() {
 						)}
 					</nav>
 				</div>
-				<select
-					value={timeRange}
-					onChange={(e) => setTimeRange(e.target.value)}
-					className="text-xs bg-card border border-border rounded-sm px-2 py-1.5 text-foreground"
-					aria-label="Time range"
-				>
+				<div className="flex items-center gap-2">
+					{country && (
+						<Link
+							href={`/?country=${country}${region ? `&region=${encodeURIComponent(region)}` : ""}`}
+							className="text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
+						>
+							View filtered dashboard
+						</Link>
+					)}
+					<select
+						value={timeRange}
+						onChange={(e) => setTimeRange(e.target.value)}
+						className="text-xs bg-card border border-border rounded-sm px-2 py-1.5 text-foreground"
+						aria-label="Time range"
+					>
 					{TIME_RANGES.map((r) => (
-						<option key={r.value} value={r.value}>
-							{r.label}
-						</option>
-					))}
-				</select>
+							<option key={r.value} value={r.value}>
+								{r.label}
+							</option>
+						))}
+					</select>
+				</div>
 			</header>
 
 			{error && (

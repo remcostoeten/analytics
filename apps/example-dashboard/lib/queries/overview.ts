@@ -1,7 +1,14 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
 import type { TimeSeries, TimeSeriesGranularity, TimeSeriesPoint, DashboardData } from "../types";
-import { publicTraffic, getRange, getTimeRangeFilter, calculateTrend } from "./filters";
+import {
+	publicTraffic,
+	getRange,
+	getTimeRangeFilter,
+	calculateTrend,
+	geoScopeFilter,
+	type GeoScope,
+} from "./filters";
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -57,11 +64,12 @@ export async function getPageviewsTrend(
 	to?: Date,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<TimeSeries> {
 	const range = from && to ? { from, to } : getTimeRangeFilter(hours);
 	const granularity = pickGranularity(range.from, range.to);
 	const results =
-		await sql`SELECT date_trunc(${granularity}, ts) as bucket, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
+		await sql`SELECT date_trunc(${granularity}, ts) as bucket, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
 	return {
 		id: "pageviews-trend",
 		label: "Pageviews",
@@ -83,11 +91,12 @@ export async function getVisitorsTrend(
 	to?: Date,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<TimeSeries> {
 	const range = from && to ? { from, to } : getTimeRangeFilter(hours);
 	const granularity = pickGranularity(range.from, range.to);
 	const results =
-		await sql`SELECT date_trunc(${granularity}, ts) as bucket, COUNT(DISTINCT visitor_id) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
+		await sql`SELECT date_trunc(${granularity}, ts) as bucket, COUNT(DISTINCT visitor_id) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${range.from} AND ts <= ${range.to} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY bucket ORDER BY bucket ASC`;
 	return {
 		id: "visitors-trend",
 		label: "Visitors",
@@ -120,13 +129,15 @@ export async function getOverviewExtended(
 	projectId: string | null,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ) {
 	const duration = to.getTime() - from.getTime();
 	const prevFrom = new Date(from.getTime() - duration);
+	const geoFrag = geoScopeFilter(geo?.country, geo?.region);
 
 	const [curRows, prevRows] = await Promise.all([
-		sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE bot_detected = true OR meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
-		sql`SELECT COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${prevFrom} AND ts < ${from} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
+		sql`SELECT COUNT(*) as total_events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions, COUNT(DISTINCT country) as countries, COUNT(*) FILTER (WHERE type = 'error') as errors, COUNT(*) FILTER (WHERE bot_detected = true OR meta->>'botDetected' = 'true') as bot_hits, AVG(CAST(meta->>'timeOnPageMs' as float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time_on_page FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoFrag} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
+		sql`SELECT COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoFrag} AND ts >= ${prevFrom} AND ts < ${from} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`,
 	]);
 
 	const s = curRows[0] || {

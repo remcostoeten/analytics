@@ -1,5 +1,5 @@
 import { sql } from "../db";
-import { publicTraffic } from "./filters";
+import { publicTraffic, geoScopeFilter, type GeoScope } from "./filters";
 
 export async function getSessionStats(
 	from: Date,
@@ -7,9 +7,10 @@ export async function getSessionStats(
 	projectId: string | null,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ) {
 	const sessionData =
-		await sql`WITH session_stats AS (SELECT session_id, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, MAX(ts) - MIN(ts) as duration, COUNT(DISTINCT path) as unique_pages FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id) SELECT AVG(pageviews) as avg_pageviews, AVG(EXTRACT(EPOCH FROM duration)) as avg_duration_seconds, AVG(unique_pages) as avg_unique_pages, COUNT(*) as total_sessions, COUNT(*) FILTER (WHERE pageviews = 1) as single_page_sessions FROM session_stats`;
+		await sql`WITH session_stats AS (SELECT session_id, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, MAX(ts) - MIN(ts) as duration, COUNT(DISTINCT path) as unique_pages FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${from} AND ts <= ${to} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id) SELECT AVG(pageviews) as avg_pageviews, AVG(EXTRACT(EPOCH FROM duration)) as avg_duration_seconds, AVG(unique_pages) as avg_unique_pages, COUNT(*) as total_sessions, COUNT(*) FILTER (WHERE pageviews = 1) as single_page_sessions FROM session_stats`;
 	const s = sessionData[0] || {};
 	return {
 		avgPageviews: Math.round((Number(s.avg_pageviews) || 0) * 10) / 10,
@@ -33,12 +34,14 @@ export async function getEngagementMetrics(
 	projectId: string | null,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ) {
+	const geoFrag = geoScopeFilter(geo?.country, geo?.region);
 	// The SDK reports time-on-page as incremental heartbeat chunks and scroll as an
 	// increasing max depth, so a visit's true values are SUM(chunks) and MAX(depth)
 	// per (session, path) — not one row per visit.
-	const perVisit = sql`SELECT session_id, path, MODE() WITHIN GROUP (ORDER BY host) as host, SUM(CAST(meta->>'timeOnPageMs' as float)) as total_ms FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
-	const scrollPerVisit = sql`SELECT session_id, path, MAX(CAST(meta->>'depth' as float)) as max_depth FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'scroll' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
+	const perVisit = sql`SELECT session_id, path, MODE() WITHIN GROUP (ORDER BY host) as host, SUM(CAST(meta->>'timeOnPageMs' as float)) as total_ms FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoFrag} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
+	const scrollPerVisit = sql`SELECT session_id, path, MAX(CAST(meta->>'depth' as float)) as max_depth FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoFrag} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND session_id IS NOT NULL AND meta->>'eventName' = 'scroll' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id, path`;
 
 	const [topEngaged, timeBuckets, scrollBuckets, scrollPerPath] = await Promise.all([
 		sql`WITH per_visit AS (${perVisit}) SELECT path, MODE() WITHIN GROUP (ORDER BY host) as host, AVG(total_ms) as avg_time, COUNT(*) as samples FROM per_visit GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`,

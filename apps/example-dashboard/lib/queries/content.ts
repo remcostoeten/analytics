@@ -1,6 +1,13 @@
 import { sql } from "../db";
 import type { ContentMetric, ReferrerMetric, GeoDistribution } from "../types";
-import { publicTraffic, getRange, getTimeRangeFilter, COUNTRY_NAME_TO_ISO } from "./filters";
+import {
+	publicTraffic,
+	getRange,
+	getTimeRangeFilter,
+	COUNTRY_NAME_TO_ISO,
+	geoScopeFilter,
+	type GeoScope,
+} from "./filters";
 
 export async function getTopPages(
 	projectId?: string,
@@ -9,10 +16,11 @@ export async function getTopPages(
 	to?: Date,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<ContentMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT host, path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY host, path ORDER BY views DESC LIMIT ${limit}`;
+		await sql`SELECT host, path, COUNT(*) as views, COUNT(DISTINCT visitor_id) as unique_visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND type = 'pageview' AND ts >= ${range.from} AND ts <= ${range.to} AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY host, path ORDER BY views DESC LIMIT ${limit}`;
 	return results.map((r) => ({
 		host: r.host as string,
 		path: r.path as string,
@@ -28,10 +36,11 @@ export async function getTopReferrers(
 	to?: Date,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<ReferrerMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`WITH ref AS (SELECT regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1') as domain FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT domain, COUNT(*) as visits FROM ref GROUP BY domain ORDER BY visits DESC LIMIT ${limit}`;
+		await sql`WITH ref AS (SELECT regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1') as domain FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT domain, COUNT(*) as visits FROM ref GROUP BY domain ORDER BY visits DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => {
 		const domain = r.domain as string;
