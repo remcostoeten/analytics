@@ -9,23 +9,6 @@ type Props = {
 	initialIsInternal: boolean;
 };
 
-const SECRET_STORAGE_KEY = "analytics-admin-secret";
-
-function getStoredSecret(): string | null {
-	return localStorage.getItem(SECRET_STORAGE_KEY);
-}
-
-function patchVisitor(fingerprint: string, isInternal: boolean, secret: string | null): Promise<Response> {
-	return fetch(`/api/analytics/visitor/${fingerprint}`, {
-		method: "PATCH",
-		headers: {
-			"Content-Type": "application/json",
-			...(secret ? { Authorization: `Bearer ${secret}` } : {}),
-		},
-		body: JSON.stringify({ isInternal }),
-	});
-}
-
 export function VisitorInternalToggle({ fingerprint, initialIsInternal }: Props) {
 	const [isInternal, setIsInternal] = useState(initialIsInternal);
 	const [isPending, setIsPending] = useState(false);
@@ -34,18 +17,11 @@ export function VisitorInternalToggle({ fingerprint, initialIsInternal }: Props)
 		const next = !isInternal;
 		setIsPending(true);
 		try {
-			let response = await patchVisitor(fingerprint, next, getStoredSecret());
-			if (response.status === 401) {
-				const entered = window.prompt("This dashboard requires the admin secret (DASHBOARD_ADMIN_SECRET):");
-				if (!entered) {
-					return;
-				}
-				localStorage.setItem(SECRET_STORAGE_KEY, entered);
-				response = await patchVisitor(fingerprint, next, entered);
-				if (response.status === 401) {
-					localStorage.removeItem(SECRET_STORAGE_KEY);
-				}
-			}
+			const response = await fetch(`/api/analytics/visitor/${fingerprint}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ isInternal: next }),
+			});
 			if (response.ok) {
 				setIsInternal(next);
 			}

@@ -1,17 +1,12 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 function isAuthorized(request: NextRequest): boolean {
-	const secret = process.env.DASHBOARD_ADMIN_SECRET;
-	if (!secret) {
+	if (!isAuthEnabled()) {
 		return true;
 	}
-	const header = request.headers.get("authorization") ?? "";
-	const provided = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
-	const expected = Buffer.from(secret);
-	const actual = Buffer.from(provided);
-	return expected.length === actual.length && timingSafeEqual(expected, actual);
+	return verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
