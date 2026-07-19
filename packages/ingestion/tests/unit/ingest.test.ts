@@ -11,6 +11,7 @@ const dbModule = {
 				const chain = {
 					onConflictDoUpdate: () => chain,
 					returning: () => Promise.resolve([]),
+					// oxlint-disable-next-line unicorn/no-thenable -- mocks drizzle's awaitable query chain
 					then: (resolve: (value: unknown) => unknown) => resolve(undefined),
 				};
 				return chain;

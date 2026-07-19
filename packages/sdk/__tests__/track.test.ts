@@ -1,5 +1,12 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { track, trackPageView, trackEvent, trackClick, trackError, resetDedupe } from "../src/api/track";
+import {
+	track,
+	trackPageView,
+	trackEvent,
+	trackClick,
+	trackError,
+	resetDedupe,
+} from "../src/api/track";
 import { observePageViews } from "../src/observers/pageview";
 
 describe("track", () => {

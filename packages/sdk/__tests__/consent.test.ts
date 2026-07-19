@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { setConsentGranted, setConsentRequired, hasConsent, canPersist } from "../src/api/consent";
 import { getVisitorId, VISITOR_ID_KEY } from "../src/identity/visitor";
 import { getSessionId, SESSION_ID_KEY, SESSION_TIMEOUT_KEY } from "../src/identity/session";
-import { track, trackPageView, resetDedupe } from "../src/api/track";
+import { trackPageView, resetDedupe } from "../src/api/track";
 import { getStoredKeys, PRIVACY_DISCLOSURE } from "../src/api/privacy";
 
 describe("consent", () => {

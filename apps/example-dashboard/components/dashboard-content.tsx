@@ -43,12 +43,7 @@ import type {
 	KPIMetric,
 	GeoDistribution,
 } from "@/lib/types";
-import {
-	AlertTriangle,
-	BadgeInfo,
-	ChevronRight,
-	X,
-} from "lucide-react";
+import { AlertTriangle, BadgeInfo, ChevronRight, X } from "lucide-react";
 import { ChartColumnIncreasingIcon } from "@/components/ui/chart-column-increasing";
 import { RadioIcon } from "@/components/ui/radio";
 import { CalendarDaysIcon } from "@/components/ui/calendar-days";
@@ -56,7 +51,6 @@ import { RouteIcon } from "@/components/ui/route";
 import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
 import { UsersIcon } from "@/components/ui/users";
 import { ZapIcon } from "@/components/ui/zap";
-import { cn } from "@/lib/utils";
 import { formatNumber, getFlagEmoji } from "@/lib/format";
 import Link from "next/link";
 

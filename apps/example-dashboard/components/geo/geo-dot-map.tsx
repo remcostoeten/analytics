@@ -67,11 +67,12 @@ export function GeoDotMap({ points, breakdown, scopedCountry, onCountryClick, cl
 			className={cn("relative bg-muted/30 overflow-hidden", className)}
 			onMouseLeave={() => setHovered(null)}
 		>
-			<ComposableMap
-				projectionConfig={{ scale: 147 }}
-				style={{ width: "100%", height: "100%" }}
-			>
-				<ZoomableGroup center={viewport.center} zoom={viewport.zoom} key={`${scopedCountry}-${viewport.zoom}`}>
+			<ComposableMap projectionConfig={{ scale: 147 }} style={{ width: "100%", height: "100%" }}>
+				<ZoomableGroup
+					center={viewport.center}
+					zoom={viewport.zoom}
+					key={`${scopedCountry}-${viewport.zoom}`}
+				>
 					<Geographies geography={geoUrl}>
 						{({ geographies }) =>
 							geographies.map((geo) => {

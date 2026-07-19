@@ -87,8 +87,7 @@ export async function GET(request: NextRequest) {
 				const rawRegion = searchParams.get("region");
 				const scopeCountry =
 					rawCountry && /^[A-Za-z]{2}$/.test(rawCountry) ? rawCountry.toUpperCase() : null;
-				const scopeRegion =
-					rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
+				const scopeRegion = rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
 				return NextResponse.json(
 					await query.getGeoExplorer(
 						from,

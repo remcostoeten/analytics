@@ -36,15 +36,15 @@ app.route("/", ingestion);
 
 ## Environment variables
 
-| Variable             | Required            | Purpose                                                       |
-| -------------------- | ------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`       | Yes                 | Neon Postgres connection string                               |
-| `IP_HASH_SECRET`     | Yes in production   | Min 32 chars, IP hashing salt                                 |
-| `ORIGIN_ALLOWLIST`   | No                  | Comma-separated allowed origins (empty = all origins allowed) |
-| `INGEST_SECRET`      | For server tracking | Bearer token for server-to-server requests                    |
-| `INTERNAL_IP_HASHES` | No                  | Comma-separated IP hashes flagged as internal traffic         |
-| `GEOIP_MMDB_PATH`    | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file, used as geo fallback when not behind Vercel/Cloudflare (requires optional `mmdb-lib` dependency) |
-| `GEOIP_ASN_MMDB_PATH` | No                 | Path to a MaxMind GeoLite2 ASN `.mmdb` file; adds network/ISP (`asn`, `as_org`) to events for carrier and datacenter insights |
+| Variable              | Required            | Purpose                                                                                                                                               |
+| --------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | Yes                 | Neon Postgres connection string                                                                                                                       |
+| `IP_HASH_SECRET`      | Yes in production   | Min 32 chars, IP hashing salt                                                                                                                         |
+| `ORIGIN_ALLOWLIST`    | No                  | Comma-separated allowed origins (empty = all origins allowed)                                                                                         |
+| `INGEST_SECRET`       | For server tracking | Bearer token for server-to-server requests                                                                                                            |
+| `INTERNAL_IP_HASHES`  | No                  | Comma-separated IP hashes flagged as internal traffic                                                                                                 |
+| `GEOIP_MMDB_PATH`     | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file, used as geo fallback when not behind Vercel/Cloudflare (requires optional `mmdb-lib` dependency) |
+| `GEOIP_ASN_MMDB_PATH` | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; adds network/ISP (`asn`, `as_org`) to events for carrier and datacenter insights                         |
 
 ## Geolocation
 

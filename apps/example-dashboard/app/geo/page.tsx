@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 export default function GeoPage() {
 	return (
 		<main className="min-h-screen bg-background">
-			<Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading geo explorer…</div>}>
+			<Suspense
+				fallback={<div className="p-4 text-sm text-muted-foreground">Loading geo explorer…</div>}
+			>
 				<GeoExplorer />
 			</Suspense>
 		</main>

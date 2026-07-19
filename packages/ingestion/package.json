@@ -51,12 +51,8 @@
 		"db:migrate": "drizzle-kit up:pg",
 		"prepublishOnly": "bun run build"
 	},
-	"optionalDependencies": {
-		"mmdb-lib": "^2.1.0"
-	},
 	"devDependencies": {
 		"@electric-sql/pglite": "^0.4.4",
-		"mmdb-lib": "^2.1.0",
 		"@neondatabase/serverless": "^0.10.0",
 		"@types/node": "^20.10.0",
 		"@types/ua-parser-js": "^0.7.39",
@@ -64,6 +60,7 @@
 		"drizzle-kit": "^0.31.9",
 		"drizzle-orm": "^0.36.0",
 		"hono": "4.6.10",
+		"mmdb-lib": "^2.1.0",
 		"tsup": "^8.5.1",
 		"typescript": "5.6.3",
 		"ua-parser-js": "^2.0.9",
@@ -75,5 +72,8 @@
 		"hono": "^4.6.0",
 		"ua-parser-js": "^2.0.0",
 		"zod": "^3.22.0"
+	},
+	"optionalDependencies": {
+		"mmdb-lib": "^2.1.0"
 	}
 }

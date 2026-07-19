@@ -184,7 +184,9 @@ export function GeoExplorer() {
 
 				<div className="bg-card border border-border rounded-sm overflow-hidden flex flex-col">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
-						<h2 className="text-xs font-medium text-foreground">{levelLabel(data?.level ?? "world")}</h2>
+						<h2 className="text-xs font-medium text-foreground">
+							{levelLabel(data?.level ?? "world")}
+						</h2>
 						<span className="text-[10px] text-muted-foreground tabular-nums">
 							{data?.breakdown.length ?? 0}
 						</span>
@@ -236,9 +238,7 @@ export function GeoExplorer() {
 				<Panel
 					icon={<Clock className="h-3.5 w-3.5" />}
 					title="Timezones"
-					badge={
-						data && data.mismatchShare > 0 ? `${data.mismatchShare}% mismatch` : undefined
-					}
+					badge={data && data.mismatchShare > 0 ? `${data.mismatchShare}% mismatch` : undefined}
 				>
 					{(data?.timezones ?? []).map((tz) => (
 						<Row
@@ -254,12 +254,13 @@ export function GeoExplorer() {
 					</EmptyHint>
 				</Panel>
 
-				<Panel
-					icon={<Network className="h-3.5 w-3.5" />}
-					title="Networks / ISPs"
-				>
+				<Panel icon={<Network className="h-3.5 w-3.5" />} title="Networks / ISPs">
 					{(data?.networks ?? []).map((n) => (
-						<Row key={n.org} label={n.org} value={`${formatNumber(n.visitors)} · ${n.percentage}%`} />
+						<Row
+							key={n.org}
+							label={n.org}
+							value={`${formatNumber(n.visitors)} · ${n.percentage}%`}
+						/>
 					))}
 					<EmptyHint show={!isLoading && (data?.networks.length ?? 0) === 0}>
 						Requires the optional GeoLite2 ASN database (GEOIP_ASN_MMDB_PATH)
@@ -270,7 +271,9 @@ export function GeoExplorer() {
 					{(data?.topPages ?? []).map((p) => (
 						<Row key={p.path} label={p.path} value={formatNumber(p.count)} mono />
 					))}
-					<EmptyHint show={!isLoading && (data?.topPages.length ?? 0) === 0}>No pageviews</EmptyHint>
+					<EmptyHint show={!isLoading && (data?.topPages.length ?? 0) === 0}>
+						No pageviews
+					</EmptyHint>
 				</Panel>
 
 				<Panel title="Data quality">

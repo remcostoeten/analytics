@@ -61,9 +61,7 @@ function HoverHighlight({ rect, settled, className }: HoverHighlightProps) {
 			aria-hidden
 			className={cn(
 				"pointer-events-none absolute left-0 top-0 rounded-sm bg-foreground/[0.06]",
-				settled
-					? "transition-[transform,width,height,opacity] duration-200 ease-out"
-					: "opacity-0",
+				settled ? "transition-[transform,width,height,opacity] duration-200 ease-out" : "opacity-0",
 				className,
 			)}
 			style={{
@@ -480,9 +478,7 @@ function VisitorDetailCard({ distinctId, onClose }: VisitorDetailCardProps) {
 			{error && !data ? (
 				<div className="mt-2 flex items-center gap-2">
 					<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-					<span className="text-[11px] text-muted-foreground">
-						Failed to load visitor details.
-					</span>
+					<span className="text-[11px] text-muted-foreground">Failed to load visitor details.</span>
 					<button
 						type="button"
 						onClick={() => mutate()}
@@ -601,9 +597,7 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 								)}
 							</div>
 							<div>
-								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-									Events
-								</p>
+								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">Events</p>
 								<div className="mt-1 flex flex-wrap gap-1">
 									{data.eventBreakdown.map((entry) => (
 										<span key={entry.event} className="inline-flex items-center gap-1">
@@ -625,8 +619,8 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 									</div>
 								) : (
 									<p className="mt-1 text-[11px] text-muted-foreground">
-										Active on {data.dailyActivity.length === 1 ? "one day" : "no days"} in
-										the last 30
+										Active on {data.dailyActivity.length === 1 ? "one day" : "no days"} in the last
+										30
 									</p>
 								)}
 							</div>
@@ -650,8 +644,7 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 
 	const allRows = useMemo(() => (data || []).slice(0, 25), [data]);
 	const rows = allRows.filter(
-		(row) =>
-			(!focusedId || row.distinctId === focusedId) && !excludedIds.includes(row.distinctId),
+		(row) => (!focusedId || row.distinctId === focusedId) && !excludedIds.includes(row.distinctId),
 	);
 	const hasFilters = focusedId !== null || excludedIds.length > 0;
 	const hasData = rows.length > 0;
@@ -684,11 +677,7 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 						)}
 					>
 						<span className="max-w-[120px] truncate">only {focusedId}</span>
-						<button
-							type="button"
-							onClick={() => setFocusedId(null)}
-							title="Clear visitor filter"
-						>
+						<button type="button" onClick={() => setFocusedId(null)} title="Clear visitor filter">
 							<X className="h-2.5 w-2.5" />
 						</button>
 					</span>
@@ -701,9 +690,7 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 						<span className="max-w-[120px] truncate">{id}</span>
 						<button
 							type="button"
-							onClick={() =>
-								setExcludedIds((current) => current.filter((entry) => entry !== id))
-							}
+							onClick={() => setExcludedIds((current) => current.filter((entry) => entry !== id))}
 							title={`Stop excluding ${id}`}
 						>
 							<X className="h-2.5 w-2.5" />
@@ -720,9 +707,7 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 					</button>
 				)}
 			</div>
-			{focusedId && (
-				<VisitorDetailCard distinctId={focusedId} onClose={() => setFocusedId(null)} />
-			)}
+			{focusedId && <VisitorDetailCard distinctId={focusedId} onClose={() => setFocusedId(null)} />}
 			{!hasData ? (
 				isLoading ? (
 					<div className="overflow-x-auto">
@@ -767,7 +752,9 @@ export function PostHogEventsTable({ data, isLoading, className }: PostHogEvents
 					<div className="p-6 text-center">
 						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
 						<p className="text-[11px] text-muted-foreground">
-							{hasFilters && allRows.length > 0 ? "No events match the current filters" : "No events yet"}
+							{hasFilters && allRows.length > 0
+								? "No events match the current filters"
+								: "No events yet"}
 						</p>
 						{hasFilters && allRows.length > 0 && (
 							<button
