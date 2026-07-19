@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation" (Removed)
 import {
 	BarChart3,
 	Users,
@@ -13,8 +12,9 @@ import {
 	FileText,
 	ExternalLink,
 	Clock,
-	Search,
 	Zap,
+	ArrowRight,
+	CornerDownLeft,
 } from "lucide-react";
 import {
 	CommandDialog,
@@ -23,8 +23,6 @@ import {
 	CommandEmpty,
 	CommandGroup,
 	CommandItem,
-	CommandShortcut,
-	CommandSeparator,
 } from "@/components/ui/command";
 
 type DashboardView =
@@ -50,6 +48,47 @@ type CommandPaletteProps = {
 	currentView: DashboardView;
 	currentTimeRange: string;
 };
+
+type PaletteRowProps = {
+	value: string;
+	icon: React.ElementType;
+	label: string;
+	hint?: string;
+	meta?: string;
+	active?: boolean;
+	onSelect: () => void;
+};
+
+function PaletteRow({ value, icon: Icon, label, hint, meta, active, onSelect }: PaletteRowProps) {
+	return (
+		<CommandItem
+			value={value}
+			onSelect={onSelect}
+			className="group gap-2.5 rounded-md px-2.5 py-2 text-[13px] data-[selected=true]:bg-sidebar-accent data-[selected=true]:text-sidebar-accent-foreground"
+		>
+			<Icon
+				className="h-4 w-4 shrink-0 text-muted-foreground group-data-[selected=true]:text-foreground"
+				strokeWidth={1.7}
+			/>
+			<span className="truncate">{label}</span>
+			{hint ? (
+				<span className="min-w-0 truncate text-[11px] text-muted-foreground">{hint}</span>
+			) : null}
+			<span className="ml-auto flex shrink-0 items-center gap-1.5">
+				{active ? (
+					<span className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+						active
+					</span>
+				) : null}
+				{meta ? <span className="text-[11px] text-muted-foreground">{meta}</span> : null}
+				<CornerDownLeft className="hidden h-3.5 w-3.5 text-muted-foreground group-data-[selected=true]:block" />
+			</span>
+		</CommandItem>
+	);
+}
+
+const GROUP_HEADING =
+	"[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground/70";
 
 export function CommandPalette({
 	open,
@@ -117,170 +156,109 @@ export function CommandPalette({
 			title="Command Palette"
 			description="Search pages, referrers, switch views or change time range"
 			showCloseButton={false}
-			className="max-w-xl top-[30%]"
+			className="sm:max-w-xl top-[12vh] translate-y-0 gap-0 rounded-xl shadow-2xl shadow-black/40"
 		>
-			<CommandInput placeholder="Search pages, views, actions..." />
-			<CommandList className="max-h-[420px]">
+			<div className="[&_[data-slot=command-input-wrapper]]:h-auto [&_[data-slot=command-input-wrapper]]:px-3.5 [&_[data-slot=command-input-wrapper]]:py-1 [&_[data-slot=command-input-wrapper]_svg]:h-4 [&_[data-slot=command-input-wrapper]_svg]:w-4">
+				<CommandInput placeholder="Search pages, views, actions..." className="h-10 text-[14px]" />
+			</div>
+			<CommandList className={`max-h-[52vh] py-1.5 ${GROUP_HEADING}`}>
 				<CommandEmpty>
-					<div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
-						<Search className="h-8 w-8 opacity-30" />
-						<span className="text-sm">No results found</span>
-					</div>
+					<span className="text-[13px] text-muted-foreground">No results found</span>
 				</CommandEmpty>
 
-				<CommandGroup heading="Views">
+				<CommandGroup heading="Views" className="px-1.5 pb-1">
 					{views.map((view) => (
-						<CommandItem
+						<PaletteRow
 							key={view.id}
 							value={`view ${view.label} ${view.description}`}
+							icon={view.icon}
+							label={view.label}
+							hint={view.description}
+							active={currentView === view.id}
 							onSelect={() => runAndClose(() => onViewChange(view.id))}
-							className="gap-3"
-						>
-							<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-								<view.icon className="h-3.5 w-3.5" />
-							</div>
-							<div className="flex flex-col">
-								<span className="text-sm font-medium">{view.label}</span>
-								<span className="text-[11px] text-muted-foreground">{view.description}</span>
-							</div>
-							{currentView === view.id && (
-								<span className="ml-auto text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-									active
-								</span>
-							)}
-						</CommandItem>
+						/>
 					))}
 				</CommandGroup>
 
-				<CommandSeparator />
-
-				<CommandGroup heading="Time Range">
+				<CommandGroup heading="Time Range" className="px-1.5 pb-1">
 					{timeRanges.map((range) => (
-						<CommandItem
+						<PaletteRow
 							key={range.value}
 							value={`time ${range.label} ${range.value}`}
+							icon={Clock}
+							label={range.label}
+							meta={range.value}
+							active={currentTimeRange === range.value}
 							onSelect={() => runAndClose(() => onTimeRangeChange(range.value))}
-							className="gap-3"
-						>
-							<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-								<Clock className="h-3.5 w-3.5" />
-							</div>
-							<span className="text-sm">{range.label}</span>
-							{currentTimeRange === range.value && (
-								<span className="ml-auto text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-									active
-								</span>
-							)}
-							<CommandShortcut>{range.value}</CommandShortcut>
-						</CommandItem>
+						/>
 					))}
 				</CommandGroup>
 
 				{pages.length > 0 && (
-					<>
-						<CommandSeparator />
-						<CommandGroup heading="Top Pages">
-							{pages.slice(0, 6).map((page) => (
-								<CommandItem
-									key={page.path}
-									value={`page ${page.path}`}
-									onSelect={() => runAndClose(() => onPageSelect(page.path))}
-									className="gap-3"
-								>
-									<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-										<FileText className="h-3.5 w-3.5" />
-									</div>
-									<div className="flex flex-col min-w-0">
-										<span className="text-sm font-mono truncate">{page.path}</span>
-									</div>
-									<span className="ml-auto text-[11px] text-muted-foreground shrink-0">
-										{page.views.toLocaleString()} views
-									</span>
-									<CommandShortcut>Behavior</CommandShortcut>
-								</CommandItem>
-							))}
-						</CommandGroup>
-					</>
+					<CommandGroup heading="Top Pages" className="px-1.5 pb-1">
+						{pages.slice(0, 6).map((page) => (
+							<PaletteRow
+								key={page.path}
+								value={`page ${page.path}`}
+								icon={FileText}
+								label={page.path}
+								meta={`${page.views.toLocaleString()} views`}
+								onSelect={() => runAndClose(() => onPageSelect(page.path))}
+							/>
+						))}
+					</CommandGroup>
 				)}
 
 				{referrers.length > 0 && (
-					<>
-						<CommandSeparator />
-						<CommandGroup heading="Top Referrers">
-							{referrers.slice(0, 5).map((ref) => (
-								<CommandItem
-									key={ref.domain}
-									value={`referrer ${ref.domain}`}
-									onSelect={() => runAndClose(() => onReferrerSelect(ref.domain))}
-									className="gap-3"
-								>
-									<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-										<ExternalLink className="h-3.5 w-3.5" />
-									</div>
-									<span className="text-sm">{ref.domain}</span>
-									<span className="ml-auto text-[11px] text-muted-foreground">
-										{ref.visits.toLocaleString()} visits
-									</span>
-									<CommandShortcut>Details</CommandShortcut>
-								</CommandItem>
-							))}
-						</CommandGroup>
-					</>
+					<CommandGroup heading="Top Referrers" className="px-1.5 pb-1">
+						{referrers.slice(0, 5).map((ref) => (
+							<PaletteRow
+								key={ref.domain}
+								value={`referrer ${ref.domain}`}
+								icon={ExternalLink}
+								label={ref.domain}
+								meta={`${ref.visits.toLocaleString()} visits`}
+								onSelect={() => runAndClose(() => onReferrerSelect(ref.domain))}
+							/>
+						))}
+					</CommandGroup>
 				)}
 
 				{projects.length > 0 && (
-					<>
-						<CommandSeparator />
-						<CommandGroup heading="Projects">
-							<CommandItem
-								value="project all projects"
-								onSelect={() => runAndClose(() => onProjectChange(null))}
-								className="gap-3"
-							>
-								<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-									<Zap className="h-3.5 w-3.5" />
-								</div>
-								<span className="text-sm">All Projects</span>
-							</CommandItem>
-							{projects.map((project) => (
-								<CommandItem
-									key={project.id}
-									value={`project ${project.id}`}
-									onSelect={() => runAndClose(() => onProjectChange(project.id))}
-									className="gap-3"
-								>
-									<div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-muted/50">
-										<Activity className="h-3.5 w-3.5" />
-									</div>
-									<span className="text-sm">{project.id}</span>
-									<span className="ml-auto text-[11px] text-muted-foreground">
-										{project.eventCount.toLocaleString()} events
-									</span>
-								</CommandItem>
-							))}
-						</CommandGroup>
-					</>
+					<CommandGroup heading="Projects" className="px-1.5 pb-1">
+						<PaletteRow
+							value="project all projects"
+							icon={Zap}
+							label="All Projects"
+							onSelect={() => runAndClose(() => onProjectChange(null))}
+						/>
+						{projects.map((project) => (
+							<PaletteRow
+								key={project.id}
+								value={`project ${project.id}`}
+								icon={Activity}
+								label={project.id}
+								meta={`${project.eventCount.toLocaleString()} events`}
+								onSelect={() => runAndClose(() => onProjectChange(project.id))}
+							/>
+						))}
+					</CommandGroup>
 				)}
 			</CommandList>
 
-			<div className="border-t border-border px-3 py-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+			<div className="flex items-center gap-4 border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground">
 				<span className="flex items-center gap-1">
-					<kbd className="px-1 py-0.5 rounded border border-border bg-muted font-mono text-[10px]">
-						↑↓
-					</kbd>
+					<ArrowRight className="h-3 w-3 rotate-90" />
+					<ArrowRight className="h-3 w-3 -rotate-90" />
 					navigate
 				</span>
 				<span className="flex items-center gap-1">
-					<kbd className="px-1 py-0.5 rounded border border-border bg-muted font-mono text-[10px]">
-						↵
-					</kbd>
+					<CornerDownLeft className="h-3 w-3" />
 					select
 				</span>
-				<span className="flex items-center gap-1">
-					<kbd className="px-1 py-0.5 rounded border border-border bg-muted font-mono text-[10px]">
-						esc
-					</kbd>
-					close
+				<span className="ml-auto flex items-center gap-1">
+					<kbd className="rounded border border-border bg-muted px-1 text-[10px]">⌘K</kbd>
+					command palette
 				</span>
 			</div>
 		</CommandDialog>

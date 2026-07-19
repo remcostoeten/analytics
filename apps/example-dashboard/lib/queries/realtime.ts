@@ -12,18 +12,32 @@ export async function getRecentEvents(
 ): Promise<SignalEvent[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT id, type, path, ts, country, device_type, bot_detected, meta FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
+		await sql`SELECT id, type, path, ts, country, city, device_type, bot_detected, session_id, visitor_id, referrer, meta FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
 	return results.map((r) => {
 		const meta = (r.meta as Record<string, unknown>) || {};
 		const isBot = (r as any).bot_detected === true || meta.botDetected === true;
 		const isError = r.type === "error";
+		const eventName = typeof meta.eventName === "string" ? meta.eventName : null;
+		const category = r.type === "event" && eventName ? eventName : (r.type as string);
+		const location = [r.city, COUNTRY_NAME_TO_ISO[r.country] || r.country]
+			.filter(Boolean)
+			.join(", ");
 		return {
 			id: String(r.id),
-			type: isError ? "error" : isBot ? "warn" : "ok",
-			category: r.type as string,
-			message: `${r.type} on ${r.path || "/"}${r.country ? ` from ${r.country}` : ""}`,
+			type: isError ? "error" : isBot ? "warn" : r.type === "event" ? "info" : "ok",
+			category,
+			message: `${category} on ${r.path || "/"}${location ? ` from ${location}` : ""}`,
 			timestamp: new Date(r.ts as string),
-			metadata: { deviceType: r.device_type, ...meta },
+			metadata: {
+				...meta,
+				path: r.path,
+				country: COUNTRY_NAME_TO_ISO[r.country] || r.country,
+				city: r.city,
+				deviceType: r.device_type,
+				visitorId: r.visitor_id,
+				sessionId: r.session_id,
+				referrer: r.referrer,
+			},
 		};
 	});
 }

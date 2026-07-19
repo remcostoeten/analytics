@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import {
 	Radio,
 	Globe,
@@ -11,9 +13,14 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Inbox,
+	MapPin,
+	Monitor,
+	Link2,
+	User,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SignalEvent } from "@/lib/types";
+import { getFlagEmoji } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function formatTimeAgo(timestamp: Date | string): string {
@@ -74,6 +81,19 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	const duration = numberMeta(metadata.duration);
 	const region = stringMeta(metadata.region);
 	const userAgent = stringMeta(metadata.userAgent);
+	const path = stringMeta(metadata.path);
+	const country = stringMeta(metadata.country);
+	const city = stringMeta(metadata.city);
+	const browser = stringMeta(metadata.browser);
+	const browserVersion = stringMeta(metadata.browserVersion);
+	const os = stringMeta(metadata.os);
+	const osVersion = stringMeta(metadata.osVersion);
+	const deviceType = stringMeta(metadata.deviceType);
+	const viewport = stringMeta(metadata.viewport);
+	const referrer = stringMeta(metadata.referrer);
+	const visitorId = stringMeta(metadata.visitorId);
+	const sessionId = stringMeta(metadata.sessionId);
+	const timeOnPageMs = numberMeta(metadata.timeOnPageMs);
 	const hasDetails = !!(
 		endpoint ||
 		method ||
@@ -81,7 +101,15 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 		duration !== null ||
 		region ||
 		requestId ||
-		userAgent
+		userAgent ||
+		path ||
+		country ||
+		browser ||
+		os ||
+		referrer ||
+		visitorId ||
+		sessionId ||
+		timeOnPageMs !== null
 	);
 
 	return (
@@ -109,13 +137,37 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 						<p className="text-[11px] font-medium text-foreground leading-tight">
 							{signal.category}
 						</p>
-						{endpoint && (
-							<code className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono">
-								{endpoint}
+						{(endpoint || path) && (
+							<code className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono truncate max-w-[140px]">
+								{endpoint || path}
 							</code>
 						)}
+						{country && <span className="text-[11px] leading-none">{getFlagEmoji(country)}</span>}
 					</div>
-					<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{signal.message}</p>
+					<p className="text-[11px] text-muted-foreground leading-tight mt-0.5 flex items-center gap-1.5 flex-wrap">
+						{[city || country, browser, deviceType].filter(Boolean).length > 0 ? (
+							<>
+								{(city || country) && <span>{city || country}</span>}
+								{browser && (
+									<>
+										<span className="text-muted-foreground/40">·</span>
+										<span>
+											{browser}
+											{os ? ` / ${os}` : ""}
+										</span>
+									</>
+								)}
+								{deviceType && (
+									<>
+										<span className="text-muted-foreground/40">·</span>
+										<span className="capitalize">{deviceType}</span>
+									</>
+								)}
+							</>
+						) : (
+							signal.message
+						)}
+					</p>
 					{requestId && (
 						<div className="flex items-center gap-1 mt-1">
 							<Hash className="h-2.5 w-2.5 text-muted-foreground/70" />
@@ -214,6 +266,88 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 								</span>
 							</div>
 						)}
+						{path && (
+							<div className="flex items-center gap-2">
+								<Server className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Page:</span>
+								<code className="text-foreground font-mono bg-background/50 px-1 rounded break-all">
+									{path}
+								</code>
+							</div>
+						)}
+						{(city || country) && (
+							<div className="flex items-center gap-2">
+								<MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Location:</span>
+								<span className="text-foreground">
+									{country && `${getFlagEmoji(country)} `}
+									{[city, country].filter(Boolean).join(", ")}
+								</span>
+							</div>
+						)}
+						{(browser || os) && (
+							<div className="flex items-center gap-2">
+								<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Client:</span>
+								<span className="text-foreground">
+									{[
+										browser && `${browser}${browserVersion ? ` ${browserVersion}` : ""}`,
+										os && `${os}${osVersion ? ` ${osVersion}` : ""}`,
+									]
+										.filter(Boolean)
+										.join(" on ")}
+									{deviceType && (
+										<span className="text-muted-foreground capitalize"> · {deviceType}</span>
+									)}
+								</span>
+							</div>
+						)}
+						{viewport && (
+							<div className="flex items-center gap-2">
+								<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Viewport:</span>
+								<span className="text-foreground font-mono">{viewport}</span>
+							</div>
+						)}
+						{timeOnPageMs !== null && (
+							<div className="flex items-center gap-2">
+								<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Time on page:</span>
+								<span className="text-foreground font-mono">
+									{(timeOnPageMs / 1000).toFixed(1)}s
+								</span>
+							</div>
+						)}
+						{referrer && (
+							<div className="flex items-center gap-2">
+								<Link2 className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Referrer:</span>
+								<span className="text-foreground break-all">{referrer}</span>
+							</div>
+						)}
+						{sessionId && (
+							<div className="flex items-center gap-2">
+								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Session:</span>
+								<code className="text-foreground font-mono text-[9px] bg-background/50 px-1 rounded">
+									{sessionId.slice(0, 8)}
+								</code>
+							</div>
+						)}
+						{visitorId && (
+							<div className="flex items-center gap-2">
+								<User className="h-3 w-3 text-muted-foreground shrink-0" />
+								<span className="text-muted-foreground">Visitor:</span>
+								<Link
+									href={`/visitor/${visitorId}` as Route}
+									onClick={(e) => e.stopPropagation()}
+									className="inline-flex items-center gap-1 text-foreground font-mono text-[9px] bg-background/50 px-1 rounded hover:bg-background hover:underline"
+								>
+									{visitorId.slice(0, 8)}
+									<ExternalLink className="h-2.5 w-2.5" />
+								</Link>
+							</div>
+						)}
 					</div>
 				</div>
 			)}
@@ -255,9 +389,10 @@ export function SignalStream({
 					?.toString()
 					.toLowerCase()
 					.includes(searchLower);
+				const matchesPath = signal.metadata?.path?.toString().toLowerCase().includes(searchLower);
 				const matchesType = signal.type.toLowerCase().includes(searchLower);
 
-				if (!matchesCategory && !matchesMessage && !matchesEndpoint && !matchesType) {
+				if (!matchesCategory && !matchesMessage && !matchesEndpoint && !matchesPath && !matchesType) {
 					return false;
 				}
 			}

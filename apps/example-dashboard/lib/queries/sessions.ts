@@ -31,10 +31,11 @@ export async function getEngagementMetrics(
 	origin?: string | null,
 ) {
 	const topEngaged =
-		await sql`SELECT path, AVG(CAST(meta->>'timeOnPageMs' as float)) as avg_time, COUNT(*) as samples FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`;
+		await sql`SELECT path, MODE() WITHIN GROUP (ORDER BY host) as host, AVG(CAST(meta->>'timeOnPageMs' as float)) as avg_time, COUNT(*) as samples FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND path IS NOT NULL AND meta->>'eventName' = 'time-on-page' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path HAVING COUNT(*) >= 3 ORDER BY avg_time DESC LIMIT 10`;
 	return {
 		topEngagedPages: topEngaged.map((r) => ({
 			path: r.path,
+			host: r.host || null,
 			avgTimeMs: Math.round(Number(r.avg_time) || 0),
 			samples: Number(r.samples),
 		})),

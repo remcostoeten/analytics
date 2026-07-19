@@ -1,8 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CalendarDays, Users2, TrendingDown } from "lucide-react";
+import { CalendarDays, Users2, TrendingDown, HelpCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RetentionData {
 	cohorts: {
@@ -116,6 +117,34 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 					<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
 					Retention Cohorts
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								type="button"
+								aria-label="How to read this chart"
+								className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+							>
+								<HelpCircle className="h-3 w-3" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom" align="start" className="max-w-[280px]">
+							<div className="space-y-1.5 text-[11px] leading-relaxed">
+								<p>
+									Each row is a cohort: visitors who showed up for the first time during that
+									week.
+								</p>
+								<p>
+									The Week 1–4 cells show what percentage of that cohort came back 1, 2, 3, or 4
+									weeks after their first visit. Darker green means more of them returned.
+								</p>
+								<p>
+									An amber outline marked &quot;live&quot; means that week is still running, so
+									its number can still grow. A dash means the week hasn&apos;t started yet for
+									that cohort.
+								</p>
+							</div>
+						</TooltipContent>
+					</Tooltip>
 				</h3>
 				<span className="text-[10px] text-muted-foreground">
 					{data.cohorts.length} cohorts · {totalUsers.toLocaleString()} users

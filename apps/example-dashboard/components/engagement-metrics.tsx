@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Inbox, TrendingUp, Clock, MousePointerClick } from "lucide-react";
+import { Inbox, TrendingUp, Clock, MousePointerClick, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface EngagementData {
@@ -9,8 +9,9 @@ interface EngagementData {
 	timeOnPage: Array<{ bucket: string; count: number; percentage: number }>;
 	topEngagedPages: Array<{
 		path: string;
+		host?: string | null;
 		avgTimeMs: number;
-		avgScrollDepth: number;
+		avgScrollDepth?: number;
 		samples: number;
 	}>;
 }
@@ -137,12 +138,29 @@ export function EngagementMetrics({ data, className }: EngagementMetricsProps) {
 									key={page.path}
 									className="flex items-center justify-between py-1 border-b border-border/50 last:border-0"
 								>
-									<span className="text-[10px] text-foreground font-mono truncate max-w-[140px]">
-										{page.path}
-									</span>
+									{page.host ? (
+										<a
+											href={`https://${page.host}${page.path}`}
+											target="_blank"
+											rel="noreferrer"
+											title={`https://${page.host}${page.path}`}
+											className="group inline-flex min-w-0 items-center gap-1 text-foreground hover:text-primary"
+										>
+											<span className="text-[10px] font-mono truncate max-w-[140px]">
+												{page.path}
+											</span>
+											<ExternalLink className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+										</a>
+									) : (
+										<span className="text-[10px] text-foreground font-mono truncate max-w-[140px]">
+											{page.path}
+										</span>
+									)}
 									<div className="flex items-center gap-3 text-[10px] text-muted-foreground">
 										<span className="tabular-nums">{formatTime(page.avgTimeMs)}</span>
-										<span className="tabular-nums">{page.avgScrollDepth}%</span>
+										{typeof page.avgScrollDepth === "number" && (
+											<span className="tabular-nums">{page.avgScrollDepth}%</span>
+										)}
 									</div>
 								</div>
 							))}

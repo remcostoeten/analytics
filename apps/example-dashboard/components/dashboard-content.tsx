@@ -599,27 +599,10 @@ export function DashboardContent({
 	const recentSignals = useMemo((): SignalEvent[] => {
 		if (!events || !Array.isArray(events)) return initialData.realtime.recentEvents;
 
-		return events.map(
-			(e: {
-				id: string;
-				type: string;
-				path: string;
-				timestamp: string;
-				country: string;
-				city: string;
-				deviceType: string;
-			}) => ({
-				id: e.id,
-				type: e.type === "error" ? "error" : ("ok" as SignalEvent["type"]),
-				category: e.type,
-				message: `${e.type} on ${e.path || "/"}${e.country ? ` from ${e.country}` : ""}`,
-				timestamp: new Date(e.timestamp),
-				metadata: {
-					deviceType: e.deviceType,
-					city: e.city,
-				},
-			}),
-		);
+		return events.map((e: Omit<SignalEvent, "timestamp"> & { timestamp: string }) => ({
+			...e,
+			timestamp: new Date(e.timestamp),
+		}));
 	}, [events, initialData.realtime.recentEvents]);
 
 	const deviceData = useMemo(() => {
