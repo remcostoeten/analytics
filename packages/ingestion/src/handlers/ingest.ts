@@ -1,12 +1,13 @@
 import { Context } from "hono";
 import { validateEventPayload } from "../utilities/validation.js";
 import {
-	extractGeoFromRequest,
+	type GeoData,
 	extractIpAddress,
 	isLocalhost,
 	isPreviewEnvironment,
 	getHostFromOrigin,
 } from "../utilities/geo.js";
+import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot, classifyDevice } from "../utilities/bot-detection.js";
 import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../utilities/dedupe.js";
@@ -69,7 +70,7 @@ function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 
 export type SharedIngestContext = {
 	ipHash: string | null;
-	geo: { country: string | null; region: string | null; city: string | null };
+	geo: GeoData;
 	localhost: boolean;
 	preview: boolean;
 	internal: boolean;
@@ -88,6 +89,7 @@ type VisitorData = {
 	country: string | null;
 	region: string | null;
 	city: string | null;
+	timezone: string | null;
 	ua: string | null;
 	screenResolution: string | null;
 	isInternal: boolean;
@@ -135,6 +137,7 @@ async function upsertVisitor(
 			country: data.country,
 			region: data.region,
 			city: data.city,
+			timezone: data.timezone,
 			ua: data.ua,
 			screenResolution: data.screenResolution,
 			isInternal: data.isInternal,
@@ -165,6 +168,7 @@ async function upsertVisitor(
 				country: data.country,
 				region: data.region,
 				city: data.city,
+				timezone: data.timezone,
 				ua: data.ua,
 				screenResolution: data.screenResolution,
 				isInternal: data.isInternal,
@@ -279,6 +283,11 @@ export async function processSingleEvent(
 		country: ctx.geo.country,
 		region: ctx.geo.region,
 		city: ctx.geo.city,
+		latitude: ctx.geo.latitude,
+		longitude: ctx.geo.longitude,
+		timezone: ctx.geo.timezone,
+		postalCode: ctx.geo.postalCode,
+		continent: ctx.geo.continent,
 		isLocalhost: ctx.localhost,
 		isPreview: ctx.preview,
 		botDetected: botIsBot,
@@ -322,6 +331,7 @@ export async function processSingleEvent(
 			country: ctx.geo.country,
 			region: ctx.geo.region,
 			city: ctx.geo.city,
+			timezone: ctx.geo.timezone,
 			ua: payload.ua,
 			screenResolution,
 			isInternal: internal,
@@ -376,7 +386,7 @@ export async function handleIngest(c: Context) {
 			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
-		const geo = extractGeoFromRequest(req);
+		const geo = await resolveGeo(req, ip, extractClientTimezone(payload.meta));
 		const localhost = isLocalhost(payload.host);
 		const preview =
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));

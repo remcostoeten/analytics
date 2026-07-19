@@ -158,7 +158,7 @@ describe("track", () => {
 		track("event", meta);
 		const blob = beaconMock.mock.calls[0][1];
 		const payload = JSON.parse(blob.content[0]);
-		expect(payload.meta).toEqual(meta);
+		expect(payload.meta).toMatchObject(meta);
 	});
 
 	test("blocks duplicate events within 5 seconds", () => {
@@ -272,7 +272,7 @@ describe("trackPageView", () => {
 		trackPageView(meta);
 		const blob = beaconMock.mock.calls[0][1];
 		const payload = JSON.parse(blob.content[0]);
-		expect(payload.meta).toEqual(meta);
+		expect(payload.meta).toMatchObject(meta);
 	});
 });
 

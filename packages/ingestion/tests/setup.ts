@@ -40,6 +40,11 @@ export async function setupTestDb() {
             country TEXT,
             region TEXT,
             city TEXT,
+            latitude DOUBLE PRECISION,
+            longitude DOUBLE PRECISION,
+            timezone TEXT,
+            postal_code TEXT,
+            continent TEXT,
             meta JSONB
         );
 

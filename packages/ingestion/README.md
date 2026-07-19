@@ -43,6 +43,18 @@ app.route("/", ingestion);
 | `ORIGIN_ALLOWLIST`   | No                  | Comma-separated allowed origins (empty = all origins allowed) |
 | `INGEST_SECRET`      | For server tracking | Bearer token for server-to-server requests                    |
 | `INTERNAL_IP_HASHES` | No                  | Comma-separated IP hashes flagged as internal traffic         |
+| `GEOIP_MMDB_PATH`    | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file, used as geo fallback when not behind Vercel/Cloudflare (requires optional `mmdb-lib` dependency) |
+
+## Geolocation
+
+Geo is resolved per event from free sources, richest first:
+
+1. **Vercel edge headers** — country, region, city, latitude/longitude, timezone, postal code, continent (`x-vercel-ip-*`).
+2. **Cloudflare headers** — same fields when [visitor location managed transforms](https://developers.cloudflare.com/rules/transform/managed-transforms/) are enabled; country-only otherwise.
+3. **Self-hosted MaxMind database** — set `GEOIP_MMDB_PATH` to a GeoLite2 City `.mmdb` (free with a MaxMind account) for deployments not behind Vercel or Cloudflare, and to fill fields the headers left empty.
+4. **Client timezone** — the SDK sends the browser's IANA timezone; it is stored per event/visitor and used as a country-level fallback when IP-based geo is unavailable.
+
+Note that IP-based city accuracy is inherently limited: ISPs register address blocks at central locations, so e.g. many Dutch visitors resolve to Amsterdam regardless of their actual city. Latitude/longitude and region are more reliable dimensions than city.
 
 ## Request authorization
 

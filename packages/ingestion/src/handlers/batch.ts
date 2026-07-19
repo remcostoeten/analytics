@@ -3,12 +3,12 @@ import { z } from "zod";
 import { eventSchema } from "../utilities/validation.js";
 import { processSingleEvent, type SharedIngestContext } from "./ingest.js";
 import {
-	extractGeoFromRequest,
 	extractIpAddress,
 	isLocalhost,
 	isPreviewEnvironment,
 	getHostFromOrigin,
 } from "../utilities/geo.js";
+import { resolveGeo, extractClientTimezone } from "../utilities/resolve-geo.js";
 import { hashIp } from "../utilities/ip-hash.js";
 import { detectBot } from "../utilities/bot-detection.js";
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
@@ -70,7 +70,11 @@ export async function handleBatch(c: Context) {
 			return c.json({ ok: false, error: "Rate limit exceeded", resetTime, remaining }, 429);
 		}
 
-		const geo = extractGeoFromRequest(req);
+		const clientTimezone = events.reduce<string | null>(
+			(found, event) => found ?? extractClientTimezone(event.meta),
+			null,
+		);
+		const geo = await resolveGeo(req, ip, clientTimezone);
 
 		let processed = 0;
 		let failed = 0;

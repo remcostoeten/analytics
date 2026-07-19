@@ -51,8 +51,12 @@
 		"db:migrate": "drizzle-kit up:pg",
 		"prepublishOnly": "bun run build"
 	},
+	"optionalDependencies": {
+		"mmdb-lib": "^2.1.0"
+	},
 	"devDependencies": {
 		"@electric-sql/pglite": "^0.4.4",
+		"mmdb-lib": "^2.1.0",
 		"@neondatabase/serverless": "^0.10.0",
 		"@types/node": "^20.10.0",
 		"@types/ua-parser-js": "^0.7.39",
