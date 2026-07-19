@@ -1,6 +1,6 @@
 # Plan: Geo → people filtering + remarkable-behaviour signals
 
-Status: **not started**. Written 2026-07-19 on branch `feat/blazing-fast-example-dashboard` (PR #14 open to master).
+Status: **implemented 2026-07-20** on branch `feat/geo-filtering-and-signals` (all three workstreams; migrations 0005+0006 applied to Neon). Written 2026-07-19 on branch `feat/blazing-fast-example-dashboard` (PR #14 open to master).
 Prerequisite context: Geo Explorer already shipped in `1ff1959`; geo capture pipeline in `7e8e68b`; ASN columns in migration `0006`.
 
 ## Why
