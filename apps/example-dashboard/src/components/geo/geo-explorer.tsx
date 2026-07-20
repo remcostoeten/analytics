@@ -160,7 +160,7 @@ export function GeoExplorer() {
 						className="text-xs bg-card border border-border rounded-sm px-2 py-1.5 text-foreground"
 						aria-label="Time range"
 					>
-					{TIME_RANGES.map((r) => (
+						{TIME_RANGES.map((r) => (
 							<option key={r.value} value={r.value}>
 								{r.label}
 							</option>

@@ -19,11 +19,7 @@ export async function getSessionStats(
 		totalSessions: Number(s.total_sessions) || 0,
 		bounceRate:
 			s.total_sessions > 0
-				? Math.round(
-						(Number(s.single_page_sessions) /
-							Number(s.total_sessions)) *
-							1000,
-					) / 10
+				? Math.round((Number(s.single_page_sessions) / Number(s.total_sessions)) * 1000) / 10
 				: 0,
 	};
 }
@@ -75,18 +71,12 @@ export async function getEngagementMetrics(
 			totalVisits === 0
 				? []
 				: bucketLabels.map((bucket, i) => {
-						const row = timeBuckets.find(
-							(r) => Number(r.bucket_index) === i,
-						);
+						const row = timeBuckets.find((r) => Number(r.bucket_index) === i);
 						const count = row ? Number(row.count) : 0;
 						return {
 							bucket,
 							count,
-							percentage:
-								totalVisits > 0
-									? Math.round((count / totalVisits) * 1000) /
-										10
-									: 0,
+							percentage: totalVisits > 0 ? Math.round((count / totalVisits) * 1000) / 10 : 0,
 						};
 					}),
 		topEngagedPages: topEngaged.map((r) => ({
@@ -151,9 +141,7 @@ export async function getRetention(
 				retention: [0, 1, 2, 3, 4].map((w) => ({
 					week: w,
 					visitors: weeks.get(w) || 0,
-					rate: weeks.has(w)
-						? Math.round((weeks.get(w) / size) * 100)
-						: 0,
+					rate: weeks.has(w) ? Math.round((weeks.get(w) / size) * 100) : 0,
 				})),
 			};
 		})
@@ -197,7 +185,6 @@ export async function getUTMCampaigns(
 		campaign: r.utm_campaign || "none",
 		visits: Number(r.visits),
 		visitors: Number(r.visitors),
-		percentage:
-			total > 0 ? Math.round((Number(r.visits) / total) * 1000) / 10 : 0,
+		percentage: total > 0 ? Math.round((Number(r.visits) / total) * 1000) / 10 : 0,
 	}));
 }

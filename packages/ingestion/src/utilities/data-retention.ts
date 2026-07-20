@@ -71,9 +71,7 @@ export function createRetainer(overrides?: Partial<RetentionPolicy>) {
 				.delete(events)
 				.where(and(eq(events.isLocalhost, true), lt(events.ts, localhostCutoff)));
 
-			await db
-				.delete(events)
-				.where(and(eq(events.botDetected, true), lt(events.ts, botCutoff)));
+			await db.delete(events).where(and(eq(events.botDetected, true), lt(events.ts, botCutoff)));
 
 			console.log("Data retention cleanup completed", {
 				pageviewCutoff,

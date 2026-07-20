@@ -88,7 +88,15 @@ export async function GET(request: NextRequest) {
 				);
 			case "referrers":
 				return NextResponse.json(
-					await query.getTopReferrers(projectFilter, 10, from, to, excludeVisitorId, origin, geoScope),
+					await query.getTopReferrers(
+						projectFilter,
+						10,
+						from,
+						to,
+						excludeVisitorId,
+						origin,
+						geoScope,
+					),
 				);
 			case "geo":
 				return NextResponse.json(
@@ -144,7 +152,14 @@ export async function GET(request: NextRequest) {
 				);
 			case "devices":
 				return NextResponse.json(
-					await query.getDeviceBreakdown(projectFilter, from, to, excludeVisitorId, origin, geoScope),
+					await query.getDeviceBreakdown(
+						projectFilter,
+						from,
+						to,
+						excludeVisitorId,
+						origin,
+						geoScope,
+					),
 				);
 			case "trend": {
 				const durationHours = Math.round((to.getTime() - from.getTime()) / (60 * 60 * 1000));

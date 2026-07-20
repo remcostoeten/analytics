@@ -16,7 +16,8 @@ export function requireAdminAuth(c: Context): Response | null {
 	if (!provided) {
 		return c.json({ ok: false, error: "Unauthorized" }, 401);
 	}
-	const allowed = (adminSecret && provided === adminSecret) || (cronSecret && provided === cronSecret);
+	const allowed =
+		(adminSecret && provided === adminSecret) || (cronSecret && provided === cronSecret);
 	if (!allowed) {
 		return c.json({ ok: false, error: "Unauthorized" }, 401);
 	}

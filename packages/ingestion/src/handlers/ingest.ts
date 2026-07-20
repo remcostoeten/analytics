@@ -201,9 +201,7 @@ async function upsertSession(
 	clientTs: Date | null,
 ): Promise<boolean> {
 	const isPageview = (payload.type || "pageview") === "pageview";
-	const eventTs = clientTs
-		? drizzleSql`${clientTs.toISOString()}::timestamptz`
-		: drizzleSql`now()`;
+	const eventTs = clientTs ? drizzleSql`${clientTs.toISOString()}::timestamptz` : drizzleSql`now()`;
 	try {
 		const rows = await db
 			.insert(sessions)
