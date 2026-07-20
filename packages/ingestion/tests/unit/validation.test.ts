@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { validateEventPayload } from "../../src/utilities/validation";
+import { validateEventPayload, resolveClientTimestamp } from "../../src/utilities/validation";
 
 describe("validateEventPayload", () => {
 	test("accepts valid minimal payload", () => {
@@ -58,5 +58,65 @@ describe("validateEventPayload", () => {
 		if (result.success) {
 			expect(result.data.type).toBe("pageview");
 		}
+	});
+
+	test("accepts and preserves client ts", () => {
+		const payload = {
+			projectId: "example.com",
+			ts: "2026-07-20T12:00:00.000Z",
+		};
+
+		const result = validateEventPayload(payload);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.ts).toBe("2026-07-20T12:00:00.000Z");
+		}
+	});
+
+	test("defaults ts to null when absent", () => {
+		const result = validateEventPayload({ projectId: "example.com" });
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.ts).toBe(null);
+		}
+	});
+});
+
+describe("resolveClientTimestamp", () => {
+	test("returns null for null or undefined", () => {
+		expect(resolveClientTimestamp(null)).toBe(null);
+		expect(resolveClientTimestamp(undefined)).toBe(null);
+	});
+
+	test("returns null for unparseable strings", () => {
+		expect(resolveClientTimestamp("not-a-date")).toBe(null);
+	});
+
+	test("parses a recent ISO timestamp", () => {
+		const ts = new Date(Date.now() - 5000).toISOString();
+		const resolved = resolveClientTimestamp(ts);
+
+		expect(resolved).not.toBe(null);
+		expect(resolved?.toISOString()).toBe(ts);
+	});
+
+	test("accepts offline-queued timestamps hours old", () => {
+		const ts = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+		expect(resolveClientTimestamp(ts)).not.toBe(null);
+	});
+
+	test("rejects timestamps beyond future clock skew", () => {
+		const ts = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+		expect(resolveClientTimestamp(ts)).toBe(null);
+	});
+
+	test("rejects timestamps older than seven days", () => {
+		const ts = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+
+		expect(resolveClientTimestamp(ts)).toBe(null);
 	});
 });

@@ -52,7 +52,7 @@ export function createRetainer(overrides?: Partial<RetentionPolicy>) {
 						eq(events.type, "pageview"),
 						lt(events.ts, pageviewCutoff),
 						eq(events.isLocalhost, false),
-						sql`NOT (${events.meta}->>'botDetected') = 'true'`,
+						sql`COALESCE(${events.botDetected}, false) = false`,
 					),
 				);
 
@@ -63,7 +63,7 @@ export function createRetainer(overrides?: Partial<RetentionPolicy>) {
 						ne(events.type, "pageview"),
 						lt(events.ts, eventCutoff),
 						eq(events.isLocalhost, false),
-						sql`NOT (${events.meta}->>'botDetected') = 'true'`,
+						sql`COALESCE(${events.botDetected}, false) = false`,
 					),
 				);
 
@@ -73,7 +73,7 @@ export function createRetainer(overrides?: Partial<RetentionPolicy>) {
 
 			await db
 				.delete(events)
-				.where(and(sql`(${events.meta}->>'botDetected') = 'true'`, lt(events.ts, botCutoff)));
+				.where(and(eq(events.botDetected, true), lt(events.ts, botCutoff)));
 
 			console.log("Data retention cleanup completed", {
 				pageviewCutoff,

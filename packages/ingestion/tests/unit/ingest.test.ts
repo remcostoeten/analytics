@@ -10,7 +10,8 @@ const dbModule = {
 				if ("type" in value && "path" in value) insertedEvents.push(value);
 				const chain = {
 					onConflictDoUpdate: () => chain,
-					returning: () => Promise.resolve([]),
+					onConflictDoNothing: () => chain,
+					returning: () => Promise.resolve([{ id: 1, inserted: false }]),
 					// oxlint-disable-next-line unicorn/no-thenable -- mocks drizzle's awaitable query chain
 					then: (resolve: (value: unknown) => unknown) => resolve(undefined),
 				};

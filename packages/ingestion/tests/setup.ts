@@ -47,8 +47,26 @@ export async function setupTestDb() {
             continent TEXT,
             asn INTEGER,
             as_org TEXT,
+            fingerprint TEXT,
             meta JSONB
         );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS events_fingerprint_uidx ON events (fingerprint);
+
+        CREATE TABLE IF NOT EXISTS rollup_daily (
+            id BIGSERIAL PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            day DATE NOT NULL,
+            dimension TEXT NOT NULL,
+            dim_value TEXT NOT NULL DEFAULT '',
+            pageviews INTEGER NOT NULL DEFAULT 0,
+            events INTEGER NOT NULL DEFAULT 0,
+            visitors INTEGER NOT NULL DEFAULT 0,
+            sessions INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS rollup_daily_uidx ON rollup_daily (project_id, day, dimension, dim_value);
 
         CREATE TABLE IF NOT EXISTS visitors (
             id BIGSERIAL PRIMARY KEY,

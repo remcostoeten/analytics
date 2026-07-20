@@ -4,6 +4,7 @@ import {
 	integer,
 	text,
 	timestamp,
+	date,
 	boolean,
 	doublePrecision,
 	jsonb,
@@ -42,9 +43,11 @@ export const events = pgTable(
 		continent: text("continent"),
 		asn: integer("asn"),
 		asOrg: text("as_org"),
+		fingerprint: text("fingerprint"),
 		meta: jsonb("meta"),
 	},
 	(table) => ({
+		fingerprintUidx: uniqueIndex("events_fingerprint_uidx").on(table.fingerprint),
 		projectTsIdx: index("events_project_ts_idx").on(table.projectId, table.ts),
 		projectTypeIdx: index("events_project_type_idx").on(table.projectId, table.type),
 		visitorIdx: index("events_visitor_idx").on(table.visitorId),
@@ -116,6 +119,31 @@ export const sessions = pgTable(
 		projectStartedIdx: index("idx_sessions_project_started").on(table.projectId, table.startedAt),
 		visitorIdx: index("idx_sessions_visitor").on(table.visitorId),
 		sessionIdIdx: uniqueIndex("idx_sessions_session_id").on(table.sessionId),
+	}),
+);
+
+export const rollupDaily = pgTable(
+	"rollup_daily",
+	{
+		id: bigserial("id", { mode: "bigint" }).primaryKey(),
+		projectId: text("project_id").notNull(),
+		day: date("day").notNull(),
+		dimension: text("dimension").notNull(),
+		dimValue: text("dim_value").notNull().default(""),
+		pageviews: integer("pageviews").notNull().default(0),
+		events: integer("events").notNull().default(0),
+		visitors: integer("visitors").notNull().default(0),
+		sessions: integer("sessions").notNull().default(0),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => ({
+		rollupUidx: uniqueIndex("rollup_daily_uidx").on(
+			table.projectId,
+			table.day,
+			table.dimension,
+			table.dimValue,
+		),
+		projectDayIdx: index("rollup_daily_project_day_idx").on(table.projectId, table.day),
 	}),
 );
 

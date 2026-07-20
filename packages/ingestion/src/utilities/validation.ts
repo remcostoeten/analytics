@@ -19,6 +19,7 @@ export const eventSchema = z.object({
 	lang: nullableString,
 	visitorId: nullableString,
 	sessionId: nullableString,
+	ts: nullableString,
 	meta: z
 		.record(z.unknown())
 		.optional()
@@ -32,4 +33,24 @@ export type EventPayload = z.infer<typeof eventSchema>;
 
 export function validateEventPayload(data: unknown) {
 	return eventSchema.safeParse(data);
+}
+
+const MAX_CLOCK_SKEW_MS = 2 * 60 * 1000;
+const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Parses a client-supplied event timestamp, rejecting values that are
+ * invalid, in the future beyond clock skew, or older than the retention
+ * window for offline-queued events. Returns null when the server clock
+ * should be used instead.
+ */
+export function resolveClientTimestamp(ts: string | null | undefined): Date | null {
+	if (!ts) return null;
+	const parsed = new Date(ts);
+	const ms = parsed.getTime();
+	if (Number.isNaN(ms)) return null;
+	const now = Date.now();
+	if (ms > now + MAX_CLOCK_SKEW_MS) return null;
+	if (ms < now - MAX_EVENT_AGE_MS) return null;
+	return parsed;
 }
