@@ -1,26 +1,33 @@
 import { sql } from "../db";
+import { countryFilterValues, regionName } from "../geo-names";
 export { formatNumber } from "../format";
-
-export const COUNTRY_NAME_TO_ISO: Record<string, string> = {
-	"United States": "US",
-	Netherlands: "NL",
-	"United Kingdom": "GB",
-	Germany: "DE",
-	France: "FR",
-	Canada: "CA",
-	Australia: "AU",
-	Japan: "JP",
-	Brazil: "BR",
-	India: "IN",
-	China: "CN",
-	Spain: "ES",
-	Italy: "IT",
-};
+export { COUNTRY_NAME_TO_ISO } from "../geo-names";
 
 const PREVIEW_PATTERN =
 	"(-git-|-[a-z0-9]{8,}-)[^.]*[.]vercel[.]app|(^|[.-])preview[.-]|[.-]preview([.-]|$)|(^|[.-])staging[.-]";
 
 export type Range = { from: Date; to: Date };
+
+export type GeoScope = { country: string; region?: string | null };
+
+/**
+ * SQL fragment scoping events to a country/region/city. Matches both ISO codes
+ * and legacy full names because events.country stores a mix of the two.
+ */
+export function geoScopeFilter(
+	country: string | null | undefined,
+	region?: string | null,
+	city?: string | null,
+) {
+	if (!country) return sql``;
+	const values = countryFilterValues(country);
+	const countryFrag = sql`AND country = ANY(${values})`;
+	if (!region) return countryFrag;
+	const regionValues = [region.toUpperCase(), regionName(country, region)];
+	const regionFrag = sql`${countryFrag} AND upper(region) = ANY(${regionValues.map((r) => r.toUpperCase())})`;
+	if (!city) return regionFrag;
+	return sql`${regionFrag} AND upper(city) = ${city.toUpperCase()}`;
+}
 
 export function publicTraffic(excludeVisitorId?: string | null, origin?: string | null) {
 	return sql`(is_localhost = false OR is_localhost IS NULL)

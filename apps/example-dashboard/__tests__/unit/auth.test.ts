@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createHmac } from "node:crypto";
-import { createSessionToken, isAuthEnabled, verifySessionToken } from "../../lib/auth";
+import { createSessionToken, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 
 const originalSecret = process.env.AUTH_SECRET;
 const originalClientId = process.env.GITHUB_CLIENT_ID;

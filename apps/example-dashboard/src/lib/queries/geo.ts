@@ -1,12 +1,6 @@
 import { sql } from "../db";
-import { publicTraffic } from "./filters";
-import {
-	toCountryCode,
-	countryName,
-	countryFilterValues,
-	regionName,
-	countryFromTimezone,
-} from "../geo-names";
+import { publicTraffic, geoScopeFilter } from "./filters";
+import { toCountryCode, countryName, regionName, countryFromTimezone } from "../geo-names";
 
 export type GeoBreakdownRow = {
 	key: string;
@@ -52,17 +46,41 @@ export type GeoExplorerData = {
 	};
 };
 
-function scopeFilter(country: string | null, region: string | null) {
-	if (!country) return sql``;
-	const values = countryFilterValues(country);
-	const countryFrag = sql`AND country = ANY(${values})`;
-	if (!region) return countryFrag;
-	const regionValues = [region.toUpperCase(), regionName(country, region)];
-	return sql`${countryFrag} AND upper(region) = ANY(${regionValues.map((r) => r.toUpperCase())})`;
-}
-
 function percent(part: number, total: number): number {
 	return total > 0 ? Math.round((part / total) * 1000) / 10 : 0;
+}
+
+export type GeoVisitorRow = {
+	visitorId: string;
+	lastSeen: string;
+	events: number;
+	sessions: number;
+	city: string | null;
+	asOrg: string | null;
+};
+
+export async function getGeoVisitors(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	country: string | null,
+	region: string | null,
+	city?: string | null,
+	limit = 20,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+): Promise<GeoVisitorRow[]> {
+	const base = sql`${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${geoScopeFilter(country, region, city)}`;
+	const rows =
+		await sql`SELECT visitor_id, MAX(ts) as last_seen, COUNT(*) as events, COUNT(DISTINCT session_id) as sessions, mode() WITHIN GROUP (ORDER BY city) as city, mode() WITHIN GROUP (ORDER BY as_org) as as_org FROM events WHERE ${base} AND visitor_id IS NOT NULL GROUP BY visitor_id ORDER BY last_seen DESC LIMIT ${limit}`;
+	return rows.map((row) => ({
+		visitorId: row.visitor_id as string,
+		lastSeen: new Date(row.last_seen as string).toISOString(),
+		events: Number(row.events),
+		sessions: Number(row.sessions),
+		city: (row.city as string) || null,
+		asOrg: (row.as_org as string) || null,
+	}));
 }
 
 export async function getGeoExplorer(
@@ -75,7 +93,7 @@ export async function getGeoExplorer(
 	origin?: string | null,
 ): Promise<GeoExplorerData> {
 	const level = country ? (region ? "region" : "country") : "world";
-	const base = sql`${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${scopeFilter(country, region)}`;
+	const base = sql`${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${geoScopeFilter(country, region)}`;
 
 	const groupExpr =
 		level === "world" ? sql`country` : level === "country" ? sql`region` : sql`city`;

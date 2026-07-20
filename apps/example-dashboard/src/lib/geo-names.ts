@@ -1,4 +1,18 @@
-import { COUNTRY_NAME_TO_ISO } from "./queries/filters";
+export const COUNTRY_NAME_TO_ISO: Record<string, string> = {
+	"United States": "US",
+	Netherlands: "NL",
+	"United Kingdom": "GB",
+	Germany: "DE",
+	France: "FR",
+	Canada: "CA",
+	Australia: "AU",
+	Japan: "JP",
+	Brazil: "BR",
+	India: "IN",
+	China: "CN",
+	Spain: "ES",
+	Italy: "IT",
+};
 
 const countryDisplay = new Intl.DisplayNames(["en"], { type: "region" });
 

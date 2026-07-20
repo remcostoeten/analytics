@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { calculateTrend, getPreviousRange, getRange } from "../../lib/queries/filters";
+import { calculateTrend, getPreviousRange, getRange } from "@/lib/queries/filters";
 
 describe("query ranges", function () {
 	test("preserves explicit ranges", function () {

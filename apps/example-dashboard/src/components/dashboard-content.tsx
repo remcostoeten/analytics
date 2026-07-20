@@ -54,6 +54,7 @@ import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
 import { UsersIcon } from "@/components/ui/users";
 import { ZapIcon } from "@/components/ui/zap";
 import { formatNumber, getFlagEmoji } from "@/lib/format";
+import { countryName, regionName } from "@/lib/geo-names";
 import Link from "next/link";
 
 type ApiError = Error & {
@@ -173,6 +174,10 @@ export function DashboardContent({
 	const typeFilter = ((searchParams.get("status") as SignalEvent["type"] | null) || "all") as
 		| SignalEvent["type"]
 		| "all";
+	const rawGeoCountry = searchParams.get("country");
+	const geoCountry =
+		rawGeoCountry && /^[A-Za-z]{2}$/.test(rawGeoCountry) ? rawGeoCountry.toUpperCase() : null;
+	const geoRegion = geoCountry ? searchParams.get("region") : null;
 
 	const setActiveView = (view: DashboardView) => {
 		const newParams = new URLSearchParams(searchParams.toString());
@@ -273,8 +278,19 @@ export function DashboardContent({
 		if (selectedProject) params.set("projectId", selectedProject);
 		if (selectedOrigin) params.set("origin", selectedOrigin);
 		if (excludedVisitorId) params.set("excludeVisitorId", excludedVisitorId);
+		if (geoCountry) {
+			params.set("country", geoCountry);
+			if (geoRegion) params.set("region", geoRegion);
+		}
 		return `/api/analytics?${params.toString()}${extraParams ? "&" + extraParams : ""}`;
 	};
+
+	function clearGeoFilter() {
+		const newParams = new URLSearchParams(searchParams.toString());
+		newParams.delete("country");
+		newParams.delete("region");
+		router.push(buildHref(pathname || "/", newParams));
+	}
 
 	function viewKey(views: DashboardView[], metric: string): string | null {
 		return canFetch && views.includes(activeView) ? buildQuery(metric) : null;
@@ -744,6 +760,32 @@ export function DashboardContent({
 					{!databaseReady && <DatabaseNotice issue={setupIssue} />}
 					{!databaseReady && <DemoDataNotice />}
 
+					{geoCountry && (
+						<div className="flex items-center gap-2">
+							<span className="inline-flex items-center gap-1.5 text-[11px] bg-card border border-border rounded-full pl-2.5 pr-1 py-1">
+								<span>{getFlagEmoji(geoCountry)}</span>
+								<span className="text-foreground">
+									{countryName(geoCountry)}
+									{geoRegion ? ` · ${regionName(geoCountry, geoRegion)}` : ""}
+								</span>
+								<button
+									type="button"
+									onClick={clearGeoFilter}
+									aria-label="Clear geo filter"
+									className="rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+								>
+									<X className="h-3 w-3" />
+								</button>
+							</span>
+							<Link
+								href={`/geo?country=${geoCountry}${geoRegion ? `&region=${encodeURIComponent(geoRegion)}` : ""}`}
+								className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+							>
+								Open in Geo Explorer
+							</Link>
+						</div>
+					)}
+
 					<div className="overflow-x-auto -mx-3 px-3">
 						<ViewTabs
 							tabs={viewTabs}
@@ -1025,6 +1067,21 @@ export function DashboardContent({
 											</h3>
 											<p className="text-sm text-muted-foreground">Country details</p>
 										</div>
+										{selectedCountry.countryCode && (
+											<button
+												type="button"
+												onClick={() => {
+													const newParams = new URLSearchParams(searchParams.toString());
+													newParams.set("country", selectedCountry.countryCode!);
+													newParams.delete("region");
+													setSelectedCountry(null);
+													router.push(buildHref(pathname || "/", newParams));
+												}}
+												className="ml-auto text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
+											>
+												Filter dashboard
+											</button>
+										)}
 									</div>
 								</div>
 

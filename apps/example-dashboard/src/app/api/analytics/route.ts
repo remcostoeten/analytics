@@ -11,6 +11,18 @@ export async function GET(request: NextRequest) {
 	const excludeVisitorId =
 		rawExcludeVisitorId && rawExcludeVisitorId.length <= 128 ? rawExcludeVisitorId : null;
 
+	// Global geo filter (country/region) — applied to the high-value metrics below;
+	// geo-* cases re-read the same params as their drill scope.
+	const rawGeoCountry = searchParams.get("country");
+	const rawGeoRegion = searchParams.get("region");
+	const geoScope =
+		rawGeoCountry && /^[A-Za-z]{2}$/.test(rawGeoCountry)
+			? {
+					country: rawGeoCountry.toUpperCase(),
+					region: rawGeoRegion && rawGeoRegion.length <= 64 ? rawGeoRegion : null,
+				}
+			: null;
+
 	let from: Date;
 	let to: Date;
 
@@ -68,15 +80,15 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(await query.getOrigins(projectId, excludeVisitorId));
 			case "overview-extended":
 				return NextResponse.json(
-					await query.getOverviewExtended(from, to, projectId, excludeVisitorId, origin),
+					await query.getOverviewExtended(from, to, projectId, excludeVisitorId, origin, geoScope),
 				);
 			case "pages":
 				return NextResponse.json(
-					await query.getTopPages(projectFilter, 10, from, to, excludeVisitorId, origin),
+					await query.getTopPages(projectFilter, 10, from, to, excludeVisitorId, origin, geoScope),
 				);
 			case "referrers":
 				return NextResponse.json(
-					await query.getTopReferrers(projectFilter, 10, from, to, excludeVisitorId, origin),
+					await query.getTopReferrers(projectFilter, 10, from, to, excludeVisitorId, origin, geoScope),
 				);
 			case "geo":
 				return NextResponse.json(
@@ -100,13 +112,39 @@ export async function GET(request: NextRequest) {
 					),
 				);
 			}
+			case "geo-visitors": {
+				const rawCountry = searchParams.get("country");
+				const rawRegion = searchParams.get("region");
+				const rawCity = searchParams.get("city");
+				const scopeCountry =
+					rawCountry && /^[A-Za-z]{2}$/.test(rawCountry) ? rawCountry.toUpperCase() : null;
+				const scopeRegion = rawRegion && rawRegion.length <= 64 && scopeCountry ? rawRegion : null;
+				const scopeCity = rawCity && rawCity.length <= 64 && scopeRegion ? rawCity : null;
+				return NextResponse.json(
+					await query.getGeoVisitors(
+						from,
+						to,
+						projectId,
+						scopeCountry,
+						scopeRegion,
+						scopeCity,
+						20,
+						excludeVisitorId,
+						origin,
+					),
+				);
+			}
+			case "geo-signals":
+				return NextResponse.json(
+					await query.getGeoSignals(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "geo-detail":
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),
 				);
 			case "devices":
 				return NextResponse.json(
-					await query.getDeviceBreakdown(projectFilter, from, to, excludeVisitorId, origin),
+					await query.getDeviceBreakdown(projectFilter, from, to, excludeVisitorId, origin, geoScope),
 				);
 			case "trend": {
 				const durationHours = Math.round((to.getTime() - from.getTime()) / (60 * 60 * 1000));
@@ -118,6 +156,7 @@ export async function GET(request: NextRequest) {
 						to,
 						excludeVisitorId,
 						origin,
+						geoScope,
 					),
 				);
 			}
@@ -148,7 +187,7 @@ export async function GET(request: NextRequest) {
 				);
 			case "session-stats":
 				return NextResponse.json(
-					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin),
+					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin, geoScope),
 				);
 			case "utm-campaigns":
 				return NextResponse.json(
@@ -160,7 +199,7 @@ export async function GET(request: NextRequest) {
 				);
 			case "engagement":
 				return NextResponse.json(
-					await query.getEngagementMetrics(from, to, projectId, excludeVisitorId, origin),
+					await query.getEngagementMetrics(from, to, projectId, excludeVisitorId, origin, geoScope),
 				);
 			case "hourly-heatmap":
 				return NextResponse.json(
@@ -225,6 +264,7 @@ export async function GET(request: NextRequest) {
 						offset,
 						excludeVisitorId,
 						origin,
+						geoScope,
 					),
 				);
 			}

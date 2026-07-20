@@ -1,6 +1,6 @@
 import { sql } from "../db";
 import type { DeviceBreakdown } from "../types";
-import { publicTraffic, getRange } from "./filters";
+import { publicTraffic, getRange, geoScopeFilter, type GeoScope } from "./filters";
 
 export async function getDeviceBreakdown(
 	projectId?: string,
@@ -8,10 +8,11 @@ export async function getDeviceBreakdown(
 	to?: Date,
 	excludeVisitorId?: string | null,
 	origin?: string | null,
+	geo?: GeoScope | null,
 ): Promise<DeviceBreakdown[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT COALESCE(device_type, 'Unknown') as device_type, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY device_type ORDER BY count DESC`;
+		await sql`SELECT COALESCE(device_type, 'Unknown') as device_type, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY device_type ORDER BY count DESC`;
 	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
 	return results.map((r) => ({
 		type: r.device_type as string,
