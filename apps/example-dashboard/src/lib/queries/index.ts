@@ -8,3 +8,4 @@ export * from "./skriuw";
 export * from "./visitors";
 export * from "./geo";
 export * from "./signals";
+export * from "./errors";

@@ -185,6 +185,10 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getWebVitals(from, to, projectId, excludeVisitorId, origin),
 				);
+			case "errors":
+				return NextResponse.json(
+					await query.getErrorStats(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "session-stats":
 				return NextResponse.json(
 					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin, geoScope),

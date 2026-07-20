@@ -14,6 +14,7 @@ import { GeoMap } from "@/components/geo-map";
 import { GeoDetails } from "@/components/geo-details";
 import { ReferrerDetailPanel } from "@/components/referrer-detail-panel";
 import { WebVitalsCard } from "@/components/web-vitals-card";
+import { ErrorTrackingCard } from "@/components/error-tracking-card";
 import { HourlyHeatmap } from "@/components/hourly-heatmap";
 import { SessionStatsCard } from "@/components/session-stats-card";
 import { EngagementMetrics } from "@/components/engagement-metrics";
@@ -384,6 +385,13 @@ export function DashboardContent({
 	);
 
 	const { data: webVitals } = useSWR(viewKey(["behavior", "technology"], "web-vitals"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: errorStats } = useSWR(viewKey(["behavior", "technology"], "errors"), fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
 		revalidateOnFocus: false,
@@ -911,6 +919,7 @@ export function DashboardContent({
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
 								<WebVitalsCard data={webVitals} />
+								<ErrorTrackingCard data={errorStats} />
 							</div>
 						</div>
 					)}
@@ -939,6 +948,7 @@ export function DashboardContent({
 										percentage: d.percentage,
 									}))}
 								/>
+								<ErrorTrackingCard data={errorStats} />
 								<BotTrafficCard data={botBreakdown} totalEvents={overview?.totalEvents} />
 								<SignalStream
 									signals={recentSignals}
