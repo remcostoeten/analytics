@@ -29,6 +29,7 @@ function createFallbackDb(): DbClient {
 		returning() {
 			return Promise.resolve([]);
 		},
+		// eslint-disable-next-line unicorn/no-thenable -- mimics Drizzle's thenable query builder so awaited queries resolve to []
 		then(resolve: (value: unknown[]) => unknown) {
 			return resolve([]);
 		},
