@@ -152,11 +152,14 @@ export function CommandPalette({
 
 	async function refreshData() {
 		try {
-			await notify.promise(mutate(() => true), {
-				loading: "Refreshing data...",
-				success: "Data refreshed",
-				error: "Refresh failed",
-			});
+			await notify.promise(
+				mutate(() => true),
+				{
+					loading: "Refreshing data...",
+					success: "Data refreshed",
+					error: "Refresh failed",
+				},
+			);
 		} catch {
 			noop();
 		}

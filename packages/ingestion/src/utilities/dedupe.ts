@@ -4,6 +4,7 @@ export type EventFingerprint = {
 	sessionId: string | null;
 	type: string;
 	path: string | null;
+	eventName?: string | null;
 	timestamp: number;
 };
 
@@ -16,6 +17,7 @@ export async function generateFingerprint(event: EventFingerprint): Promise<stri
 		event.sessionId || "no-session",
 		event.type,
 		event.path || "no-path",
+		event.eventName || "no-event-name",
 		roundedTimestamp.toString(),
 	];
 

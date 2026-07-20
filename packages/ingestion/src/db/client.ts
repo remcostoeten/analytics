@@ -10,27 +10,38 @@ function createDb(databaseUrl: string) {
 type DbClient = ReturnType<typeof createDb>;
 
 function createFallbackDb(): DbClient {
+	const chain: Record<string, unknown> = {};
+
+	function chainMethod() {
+		return chain;
+	}
+
+	Object.assign(chain, {
+		from: chainMethod,
+		where: chainMethod,
+		values: chainMethod,
+		set: chainMethod,
+		groupBy: chainMethod,
+		orderBy: chainMethod,
+		limit: chainMethod,
+		onConflictDoUpdate: chainMethod,
+		onConflictDoNothing: chainMethod,
+		returning() {
+			return Promise.resolve([]);
+		},
+		// eslint-disable-next-line unicorn/no-thenable -- mimics Drizzle's thenable query builder so awaited queries resolve to []
+		then(resolve: (value: unknown[]) => unknown) {
+			return resolve([]);
+		},
+	});
+
 	return {
-		select() {
-			return {
-				from() {
-					return [];
-				},
-			};
-		},
-		insert() {
-			return {
-				values() {
-					return {
-						returning() {
-							return [];
-						},
-					};
-				},
-			};
-		},
+		select: chainMethod,
+		insert: chainMethod,
+		update: chainMethod,
+		delete: chainMethod,
 		async execute() {
-			return { rows: [] };
+			return { rows: [], rowCount: 0 };
 		},
 	} as unknown as DbClient;
 }

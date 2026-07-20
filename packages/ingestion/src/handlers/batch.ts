@@ -1,7 +1,12 @@
 import { Context } from "hono";
 import { z } from "zod";
 import { eventSchema } from "../utilities/validation.js";
-import { processSingleEvent, type SharedIngestContext } from "./ingest.js";
+import {
+	processSingleEvent,
+	isOriginAllowed,
+	isInternalTraffic,
+	type SharedIngestContext,
+} from "./ingest.js";
 import {
 	extractIpAddress,
 	isLocalhost,
@@ -19,23 +24,6 @@ import { metrics } from "../utilities/dedupe.js";
 const batchSchema = z.object({
 	events: z.array(eventSchema).min(1).max(100),
 });
-
-function isOriginAllowed(origin: string | null): boolean {
-	const allowlist = process.env.ORIGIN_ALLOWLIST
-		? process.env.ORIGIN_ALLOWLIST.split(",")
-				.map((o) => o.trim())
-				.filter(Boolean)
-		: [];
-	return allowlist.length === 0 || (origin !== null && allowlist.includes(origin));
-}
-
-function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
-	if (localhost) return true;
-	const internal = process.env.INTERNAL_IP_HASHES
-		? process.env.INTERNAL_IP_HASHES.split(",").map((h) => h.trim())
-		: [];
-	return ipHash ? internal.includes(ipHash) : false;
-}
 
 export async function handleBatch(c: Context) {
 	try {

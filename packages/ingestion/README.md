@@ -97,10 +97,31 @@ cd packages/ingestion && bun run db:migrate
 | POST   | `/ingest/batch`  | Batch ingest (alias)                                |
 | GET    | `/metrics`       | Request metrics                                     |
 | GET    | `/admin/stats`   | Admin statistics                                    |
-| POST   | `/admin/cleanup` | Data retention cleanup                              |
+| POST   | `/admin/cleanup` | Data retention cleanup (also GET, for cron)         |
+| POST   | `/admin/rollup`  | Rebuild daily rollups, `?days=N` (also GET)         |
+
+Admin endpoints accept `ADMIN_SECRET` or `CRON_SECRET` as a bearer token, so Vercel crons can call the GET variants directly:
+
+```json
+"crons": [
+	{ "path": "/admin/cleanup", "schedule": "0 3 * * *" },
+	{ "path": "/admin/rollup", "schedule": "30 2 * * *" }
+]
+```
 
 Point the SDK at your deployment base URL:
 
 ```bash
 NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com
 ```
+
+## Changelog
+
+### 0.2.0
+
+- **Requires migrations `0007_add_event_fingerprint.sql` and `0008_add_rollup_daily.sql`.**
+- Durable dedupe: events carry a `fingerprint` column with a unique index; duplicate inserts are dropped at the database, not just per-instance memory.
+- Client `ts` from the SDK (v1.6.0+) is validated (max 2 min future skew, max 7 days old) and used for the event timestamp, dedupe fingerprint, and session timing, so offline-queued events land on the right day.
+- Dedupe fingerprint includes `meta.eventName`, so distinct custom events flushed together (scroll, time-on-page, web-vitals) no longer collapse into one.
+- Daily rollups: `rollup_daily` table with total/path/country dimensions per project per UTC day, rebuilt idempotently via `/admin/rollup`.
+- Retention cleanup fixed (previously matched zero rows due to a `meta->>'botDetected'` filter on a key that was never written) and schedulable via cron.

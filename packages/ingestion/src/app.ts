@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { handleIngest } from "./handlers/ingest.js";
 import { handleBatch } from "./handlers/batch.js";
 import { handleMetrics } from "./handlers/metrics.js";
-import { handleAdminCleanup, handleAdminStats } from "./handlers/admin.js";
+import { handleAdminCleanup, handleAdminStats, handleAdminRollup } from "./handlers/admin.js";
 import { execSync } from "child_process";
 
 const app = new Hono();
@@ -325,6 +325,9 @@ app.post("/ingest/batch", handleBatch);
 
 app.get("/admin/stats", handleAdminStats);
 app.post("/admin/cleanup", handleAdminCleanup);
+app.get("/admin/cleanup", handleAdminCleanup);
+app.post("/admin/rollup", handleAdminRollup);
+app.get("/admin/rollup", handleAdminRollup);
 
 app.get("/events", (c) => {
 	return new Response(

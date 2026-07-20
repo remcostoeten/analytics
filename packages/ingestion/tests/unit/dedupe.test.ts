@@ -155,6 +155,47 @@ describe("generateFingerprint", () => {
 		expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
 	});
 
+	test("generates different fingerprints for different event names", async () => {
+		const event1 = {
+			projectId: "example.com",
+			visitorId: "visitor-123",
+			sessionId: "session-456",
+			type: "event",
+			path: "/home",
+			eventName: "scroll",
+			timestamp: 1000000000000,
+		};
+
+		const event2 = { ...event1, eventName: "time-on-page" };
+		const event3 = { ...event1, eventName: "web-vitals" };
+
+		const fp1 = await generateFingerprint(event1);
+		const fp2 = await generateFingerprint(event2);
+		const fp3 = await generateFingerprint(event3);
+
+		expect(fp1).not.toBe(fp2);
+		expect(fp1).not.toBe(fp3);
+		expect(fp2).not.toBe(fp3);
+	});
+
+	test("treats missing and null eventName the same", async () => {
+		const event1 = {
+			projectId: "example.com",
+			visitorId: "visitor-123",
+			sessionId: "session-456",
+			type: "pageview",
+			path: "/home",
+			timestamp: 1000000000000,
+		};
+
+		const event2 = { ...event1, eventName: null };
+
+		const fp1 = await generateFingerprint(event1);
+		const fp2 = await generateFingerprint(event2);
+
+		expect(fp1).toBe(fp2);
+	});
+
 	test("generates same fingerprint for events with all nulls", async () => {
 		const event1 = {
 			projectId: "example.com",

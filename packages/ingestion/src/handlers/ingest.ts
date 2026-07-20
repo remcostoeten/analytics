@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { validateEventPayload } from "../utilities/validation.js";
+import { validateEventPayload, resolveClientTimestamp } from "../utilities/validation.js";
 import {
 	type GeoData,
 	extractIpAddress,
@@ -32,40 +32,39 @@ export function __setDbModule(mock: DbModule) {
 	dbModule = mock;
 }
 
-const INTERNAL_IPS: string[] = process.env.INTERNAL_IP_HASHES
-	? process.env.INTERNAL_IP_HASHES.split(",").map(function (h) {
-			return h.trim();
-		})
-	: [];
+function createCachedEnvList(envKey: string) {
+	let cached: string[] | null = null;
+	let cachedEnv: string | undefined = undefined;
 
-let cachedAllowlist: string[] | null = null;
-let cachedAllowlistEnv: string | undefined = undefined;
-
-function getOriginAllowlist(): string[] {
-	const current = process.env.ORIGIN_ALLOWLIST;
-	if (current === cachedAllowlistEnv && cachedAllowlist !== null) return cachedAllowlist;
-	cachedAllowlistEnv = current;
-	cachedAllowlist = current
-		? current
-				.split(",")
-				.map(function (o) {
-					return o.trim();
-				})
-				.filter(Boolean)
-		: [];
-	return cachedAllowlist;
+	return function (): string[] {
+		const current = process.env[envKey];
+		if (current === cachedEnv && cached !== null) return cached;
+		cachedEnv = current;
+		cached = current
+			? current
+					.split(",")
+					.map(function (v) {
+						return v.trim();
+					})
+					.filter(Boolean)
+			: [];
+		return cached;
+	};
 }
 
-function isOriginAllowed(origin: string | null): boolean {
+const getOriginAllowlist = createCachedEnvList("ORIGIN_ALLOWLIST");
+const getInternalIpHashes = createCachedEnvList("INTERNAL_IP_HASHES");
+
+export function isOriginAllowed(origin: string | null): boolean {
 	const allowlist = getOriginAllowlist();
 	if (allowlist.length === 0) return true;
 	if (origin && allowlist.includes(origin)) return true;
 	return false;
 }
 
-function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
+export function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
 	if (localhost) return true;
-	if (ipHash && INTERNAL_IPS.includes(ipHash)) return true;
+	if (ipHash && getInternalIpHashes().includes(ipHash)) return true;
 	return false;
 }
 
@@ -97,6 +96,12 @@ type VisitorData = {
 	isInternal: boolean;
 	metaMerge?: VisitorMetaMerge;
 };
+
+function extractEventName(meta: Record<string, unknown> | null): string | null {
+	if (!meta || typeof meta !== "object") return null;
+	const name = meta.eventName;
+	return typeof name === "string" ? name : null;
+}
 
 function resolveVisitorMetaMerge(
 	payload: import("../utilities/validation.js").EventPayload,
@@ -193,8 +198,10 @@ async function upsertSession(
 	country: string | null,
 	deviceType: string,
 	internal: boolean,
+	clientTs: Date | null,
 ): Promise<boolean> {
 	const isPageview = (payload.type || "pageview") === "pageview";
+	const eventTs = clientTs ? drizzleSql`${clientTs.toISOString()}::timestamptz` : drizzleSql`now()`;
 	try {
 		const rows = await db
 			.insert(sessions)
@@ -202,8 +209,8 @@ async function upsertSession(
 				projectId: payload.projectId,
 				sessionId,
 				visitorId: payload.visitorId ?? null,
-				startedAt: drizzleSql`now()`,
-				lastEventAt: drizzleSql`now()`,
+				startedAt: eventTs,
+				lastEventAt: eventTs,
 				entryPath: payload.path,
 				exitPath: payload.path,
 				referrer: payload.referrer,
@@ -217,11 +224,11 @@ async function upsertSession(
 			.onConflictDoUpdate({
 				target: sessions.sessionId,
 				set: {
-					lastEventAt: drizzleSql`now()`,
+					lastEventAt: drizzleSql`GREATEST(${sessions.lastEventAt}, ${eventTs})`,
 					exitPath: payload.path,
 					events: drizzleSql`${sessions.events} + 1`,
 					pageviews: drizzleSql`${sessions.pageviews} + ${isPageview ? 1 : 0}`,
-					durationMs: drizzleSql`(EXTRACT(EPOCH FROM (now() - ${sessions.startedAt})) * 1000)::integer`,
+					durationMs: drizzleSql`(EXTRACT(EPOCH FROM (GREATEST(${sessions.lastEventAt}, ${eventTs}) - ${sessions.startedAt})) * 1000)::integer`,
 				},
 			})
 			.returning({ inserted: drizzleSql<boolean>`xmax = 0` });
@@ -239,13 +246,17 @@ export async function processSingleEvent(
 	botReason: string | null,
 	botConfidence: "high" | "medium" | "low",
 ): Promise<{ ok: boolean; deduped?: boolean }> {
+	const clientTs = resolveClientTimestamp(payload.ts);
+	const eventName = extractEventName(payload.meta);
+
 	const fingerprint = await generateFingerprint({
 		projectId: payload.projectId,
 		visitorId: payload.visitorId,
 		sessionId: payload.sessionId,
 		type: payload.type || "pageview",
 		path: payload.path,
-		timestamp: Date.now(),
+		eventName,
+		timestamp: clientTs?.getTime() ?? Date.now(),
 	});
 
 	if (dedupeCache.isDuplicate(fingerprint)) {
@@ -269,46 +280,57 @@ export async function processSingleEvent(
 
 	const { db, events, visitors, sessions } = await getDb();
 
-	await db.insert(events).values({
-		projectId: payload.projectId,
-		type: payload.type || "pageview",
-		path: payload.path,
-		referrer: payload.referrer,
-		origin: payload.origin,
-		host: payload.host,
-		ua: payload.ua,
-		lang: payload.lang,
-		visitorId: payload.visitorId,
-		sessionId: payload.sessionId,
+	const insertedRows = await db
+		.insert(events)
+		.values({
+			...(clientTs ? { ts: clientTs } : {}),
+			projectId: payload.projectId,
+			type: payload.type || "pageview",
+			path: payload.path,
+			referrer: payload.referrer,
+			origin: payload.origin,
+			host: payload.host,
+			ua: payload.ua,
+			lang: payload.lang,
+			visitorId: payload.visitorId,
+			sessionId: payload.sessionId,
 
-		ipHash: ctx.ipHash,
-		country: ctx.geo.country,
-		region: ctx.geo.region,
-		city: ctx.geo.city,
-		latitude: ctx.geo.latitude,
-		longitude: ctx.geo.longitude,
-		timezone: ctx.geo.timezone,
-		postalCode: ctx.geo.postalCode,
-		continent: ctx.geo.continent,
-		asn: ctx.network.asn,
-		asOrg: ctx.network.asOrg,
-		isLocalhost: ctx.localhost,
-		isPreview: ctx.preview,
-		botDetected: botIsBot,
-		isInternal: internal,
-		deviceType,
+			ipHash: ctx.ipHash,
+			country: ctx.geo.country,
+			region: ctx.geo.region,
+			city: ctx.geo.city,
+			latitude: ctx.geo.latitude,
+			longitude: ctx.geo.longitude,
+			timezone: ctx.geo.timezone,
+			postalCode: ctx.geo.postalCode,
+			continent: ctx.geo.continent,
+			asn: ctx.network.asn,
+			asOrg: ctx.network.asOrg,
+			isLocalhost: ctx.localhost,
+			isPreview: ctx.preview,
+			botDetected: botIsBot,
+			isInternal: internal,
+			deviceType,
 
-		meta: {
-			...payload.meta,
-			botReason,
-			botConfidence,
 			fingerprint,
-			browser: browser.name,
-			browserVersion: browser.version,
-			os: os.name,
-			osVersion: os.version,
-		},
-	});
+
+			meta: {
+				...payload.meta,
+				botReason,
+				botConfidence,
+				browser: browser.name,
+				browserVersion: browser.version,
+				os: os.name,
+				osVersion: os.version,
+			},
+		})
+		.onConflictDoNothing({ target: events.fingerprint })
+		.returning({ id: events.id });
+
+	if (insertedRows.length === 0) {
+		metrics.recordDuplicate();
+		return { ok: true, deduped: true };
+	}
 
 	let sessionInserted = false;
 	if (payload.sessionId) {
@@ -320,6 +342,7 @@ export async function processSingleEvent(
 			ctx.geo.country,
 			deviceType,
 			internal,
+			clientTs,
 		);
 	}
 
