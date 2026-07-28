@@ -3,7 +3,6 @@
 import { ChevronDown, CircleDot } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -19,9 +18,6 @@ type DashboardHeaderProps = {
 	className?: string;
 	typeFilter?: SignalEvent["type"] | "all";
 	onTypeFilterChange?: (type: SignalEvent["type"] | "all") => void;
-	selfFilterEnabled?: boolean;
-	selfFilterAvailable?: boolean;
-	onSelfFilterChange?: (enabled: boolean) => void;
 	authUser?: string | null;
 };
 
@@ -29,9 +25,6 @@ export function DashboardHeader({
 	className,
 	typeFilter = "all",
 	onTypeFilterChange,
-	selfFilterEnabled = false,
-	selfFilterAvailable = false,
-	onSelfFilterChange,
 	authUser,
 }: DashboardHeaderProps) {
 	return (
@@ -47,11 +40,6 @@ export function DashboardHeader({
 
 			<div className="flex items-center gap-1">
 				<AuthUser login={authUser} />
-				<SelfFilterSwitch
-					enabled={selfFilterEnabled}
-					available={selfFilterAvailable}
-					onChange={onSelfFilterChange}
-				/>
 				<TypeFilterDropdown value={typeFilter} onChange={onTypeFilterChange} />
 			</div>
 		</header>
@@ -81,27 +69,6 @@ function AuthUser({ login }: AuthUserProps) {
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
-	);
-}
-
-type SelfFilterSwitchProps = {
-	enabled: boolean;
-	available: boolean;
-	onChange?: (enabled: boolean) => void;
-};
-
-function SelfFilterSwitch({ enabled, available, onChange }: SelfFilterSwitchProps) {
-	return (
-		<label className="flex h-7 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-[11px] text-muted-foreground">
-			<span>Hide me</span>
-			<Switch
-				checked={enabled}
-				disabled={!available}
-				onCheckedChange={onChange}
-				aria-label="Hide my traffic"
-				className="scale-75"
-			/>
-		</label>
 	);
 }
 

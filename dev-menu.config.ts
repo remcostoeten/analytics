@@ -1,10 +1,10 @@
-import { defineConfig } from '../dev-menu/scripts/dev-menu.config'
+import { defineConfig } from '@remcostoeten/dev-menu'
 
 export default defineConfig({
 	processes: [
-		{ tag: 'example-dashboard', color: '33', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/example-dashboard', port: 3000, url: 'http://localhost:3000', openKey: 'e' },
-		{ tag: 'ingestion', color: '36', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/ingestion', openKey: 'n' },
-		{ tag: 'example', color: '35', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/example', port: 3001, url: 'http://localhost:3001', openKey: 'x' },
+		{ tag: 'example', color: '33', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/example', port: 3001, url: 'http://localhost:3001', openKey: 'e' },
+		{ tag: 'example-dashboard', color: '36', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/example-dashboard', port: 3000, url: 'http://localhost:3000', openKey: 'a' },
+		{ tag: 'ingestion', color: '35', cmd: 'bun', args: ['run', 'dev'], cwd: 'apps/ingestion', openKey: 'n' },
 	],
-	guardedPaths: ['packages/sdk/src/', 'packages/ingestion/src/', 'packages/create-analytics/src/'],
+	guardedPaths: ['apps/example-dashboard/src/', 'packages/create-analytics/src/', 'packages/ingestion/src/', 'packages/sdk/src/'],
 })

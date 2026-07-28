@@ -6,6 +6,14 @@ export { COUNTRY_NAME_TO_ISO } from "../geo-names";
 const PREVIEW_PATTERN =
 	"(-git-|-[a-z0-9]{8,}-)[^.]*[.]vercel[.]app|(^|[.-])preview[.-]|[.-]preview([.-]|$)|(^|[.-])staging[.-]";
 
+const LOCALHOST_REFERRER_PATTERN =
+	"^(https?://)?(localhost|127[.]0[.]0[.]1|\\[?::1\\]?|[a-z0-9.-]+[.]local(host)?)([:/]|$)";
+
+/** SQL condition excluding referrers that point at localhost / local dev hosts. */
+export function externalReferrer() {
+	return sql`referrer !~* ${LOCALHOST_REFERRER_PATTERN}`;
+}
+
 export type Range = { from: Date; to: Date };
 
 export type GeoScope = { country: string; region?: string | null };

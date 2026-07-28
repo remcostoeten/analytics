@@ -21,8 +21,6 @@ import {
 	ArrowRight,
 	CornerDownLeft,
 	SunMoon,
-	EyeOff,
-	Eye,
 	RefreshCw,
 	Globe,
 	Link2,
@@ -61,9 +59,6 @@ type CommandPaletteProps = {
 	onPageSelect: (path: string) => void;
 	onReferrerSelect: (domain: string) => void;
 	onTypeFilterChange: (type: SignalType | "all") => void;
-	onSelfFilterChange: (enabled: boolean) => void;
-	selfFilterEnabled: boolean;
-	selfFilterAvailable: boolean;
 	pages?: { path: string; views: number }[];
 	referrers?: { domain: string; visits: number }[];
 	projects?: { id: string; eventCount: number }[];
@@ -122,9 +117,6 @@ export function CommandPalette({
 	onPageSelect,
 	onReferrerSelect,
 	onTypeFilterChange,
-	onSelfFilterChange,
-	selfFilterEnabled,
-	selfFilterAvailable,
 	pages = [],
 	referrers = [],
 	projects = [],
@@ -254,16 +246,6 @@ export function CommandPalette({
 							runAndClose(() => setTheme(resolvedTheme === "dark" ? "light" : "dark"))
 						}
 					/>
-					{selfFilterAvailable ? (
-						<PaletteRow
-							value="action exclude my visits self filter"
-							icon={selfFilterEnabled ? Eye : EyeOff}
-							label={selfFilterEnabled ? "Include my visits" : "Exclude my visits"}
-							hint="Filter your own traffic out of the data"
-							active={selfFilterEnabled}
-							onSelect={() => runAndClose(() => onSelfFilterChange(!selfFilterEnabled))}
-						/>
-					) : null}
 					<PaletteRow
 						value="action refresh reload data"
 						icon={RefreshCw}

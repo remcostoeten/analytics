@@ -15,7 +15,9 @@
         "lint": "oxlint apps packages --deny-warnings",
         "fmt": "oxfmt apps packages '!**/dist/**' '!**/.next/**'",
         "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
+        "dev": "bun run --cwd apps/example-dashboard dev",
         "dev:ingestion": "bun run --cwd apps/ingestion dev",
+        "demo:db": "bun run scripts/demo-db/setup.ts",
         "ops": "bun run --cwd apps/ingestion ops",
         "ops:build": "bun run --cwd apps/ingestion ops:build",
         "deploy": "bun run deploy.ts"

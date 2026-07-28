@@ -36,26 +36,24 @@ app.route("/", ingestion);
 
 ## Environment variables
 
-| Variable              | Required            | Purpose                                                                                                                                               |
-| --------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`        | Yes                 | Neon Postgres connection string                                                                                                                       |
-| `IP_HASH_SECRET`      | Yes in production   | Min 32 chars, IP hashing salt                                                                                                                         |
-| `ORIGIN_ALLOWLIST`    | No                  | Comma-separated allowed origins (empty = all origins allowed)                                                                                         |
-| `INGEST_SECRET`       | For server tracking | Bearer token for server-to-server requests                                                                                                            |
-| `INTERNAL_IP_HASHES`  | No                  | Comma-separated IP hashes flagged as internal traffic                                                                                                 |
-| `GEOIP_MMDB_PATH`     | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file, used as geo fallback when not behind Vercel/Cloudflare (requires optional `mmdb-lib` dependency) |
-| `GEOIP_ASN_MMDB_PATH` | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; adds network/ISP (`asn`, `as_org`) to events for carrier and datacenter insights                         |
+| Variable              | Required            | Purpose                                                                                                                                 |
+| --------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | Yes                 | Neon Postgres connection string                                                                                                         |
+| `IP_HASH_SECRET`      | Yes in production   | Min 32 chars, IP hashing salt                                                                                                           |
+| `ORIGIN_ALLOWLIST`    | No                  | Comma-separated allowed origins (empty = all origins allowed)                                                                           |
+| `INGEST_SECRET`       | For server tracking | Bearer token for server-to-server requests                                                                                              |
+| `INTERNAL_IP_HASHES`  | No                  | Comma-separated IP hashes flagged as internal traffic                                                                                   |
+| `GEOIP_MMDB_PATH`     | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file; defaults to the `GeoLite2-City.mmdb` the Vercel build bundles next to the function |
+| `GEOIP_ASN_MMDB_PATH` | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; defaults to the bundled `GeoLite2-ASN.mmdb`. Adds network/ISP (`asn`, `as_org`) to events  |
 
 ## Geolocation
 
-Geo is resolved per event from free sources, richest first:
+Geo is resolved per event from free sources:
 
-1. **Vercel edge headers** — country, region, city, latitude/longitude, timezone, postal code, continent (`x-vercel-ip-*`).
-2. **Cloudflare headers** — same fields when [visitor location managed transforms](https://developers.cloudflare.com/rules/transform/managed-transforms/) are enabled; country-only otherwise.
-3. **Self-hosted MaxMind database** — set `GEOIP_MMDB_PATH` to a GeoLite2 City `.mmdb` (free with a MaxMind account) for deployments not behind Vercel or Cloudflare, and to fill fields the headers left empty.
+1. **MaxMind City database** — the Vercel build bundles a GeoLite2 City `.mmdb` (P3TERX mirror) into the function; `GEOIP_MMDB_PATH` overrides it. When the database resolves a city it takes precedence, because edge headers collapse many ISP ranges onto a single hub city (e.g. most of the Netherlands onto Amsterdam) while GeoLite2 resolves the actual municipality, typically within ~25–50 km.
+2. **Vercel edge headers** — country, region, city, latitude/longitude, timezone, postal code, continent (`x-vercel-ip-*`); fills whatever the database left empty, and is the primary source when no database is available.
+3. **Cloudflare headers** — same fields when [visitor location managed transforms](https://developers.cloudflare.com/rules/transform/managed-transforms/) are enabled; country-only otherwise.
 4. **Client timezone** — the SDK sends the browser's IANA timezone; it is stored per event/visitor and used as a country-level fallback when IP-based geo is unavailable.
-
-Note that IP-based city accuracy is inherently limited: ISPs register address blocks at central locations, so e.g. many Dutch visitors resolve to Amsterdam regardless of their actual city. Latitude/longitude and region are more reliable dimensions than city.
 
 ## Request authorization
 

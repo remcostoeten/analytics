@@ -2,6 +2,7 @@ import { sql } from "../db";
 import type { ContentMetric, ReferrerMetric, GeoDistribution } from "../types";
 import {
 	publicTraffic,
+	externalReferrer,
 	getRange,
 	getTimeRangeFilter,
 	COUNTRY_NAME_TO_ISO,
@@ -40,7 +41,7 @@ export async function getTopReferrers(
 ): Promise<ReferrerMetric[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`WITH ref AS (SELECT regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1') as domain FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT domain, COUNT(*) as visits FROM ref GROUP BY domain ORDER BY visits DESC LIMIT ${limit}`;
+		await sql`WITH ref AS (SELECT regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1') as domain FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} ${geoScopeFilter(geo?.country, geo?.region)} AND ts >= ${range.from} AND ts <= ${range.to} AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()} ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT domain, COUNT(*) as visits FROM ref GROUP BY domain ORDER BY visits DESC LIMIT ${limit}`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => {
 		const domain = r.domain as string;
@@ -227,7 +228,7 @@ export async function getCountryDetail(
 		await sql`SELECT path, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'pageview' AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY path ORDER BY count DESC LIMIT 8`;
 
 	const topReferrers =
-		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
+		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
 
 	function extractDomain(ref: string): string {
 		try {

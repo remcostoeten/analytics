@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
-import { COUNTRY_NAME_TO_ISO, geoScopeFilter, type GeoScope } from "./filters";
+import { COUNTRY_NAME_TO_ISO, externalReferrer, geoScopeFilter, type GeoScope } from "./filters";
 
 export type VisitorSegment = "all" | "new" | "returning";
 export type VisitorSort = "last_seen" | "visit_count" | "first_seen";
@@ -309,7 +309,7 @@ export async function getVisitorProfile(fingerprint: string) {
 	const referrers = await sql`
     SELECT referrer, COUNT(*) as count, MAX(ts) as last_seen
     FROM events
-    WHERE visitor_id = ${fingerprint} AND referrer IS NOT NULL AND referrer != ''
+    WHERE visitor_id = ${fingerprint} AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()}
     GROUP BY referrer
     ORDER BY last_seen DESC
     LIMIT 10
