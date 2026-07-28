@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: analytics-demo-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: analytics
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d analytics"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    volumes:
+      - analytics-demo-data:/var/lib/postgresql/data
+
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    container_name: analytics-demo-neon-proxy
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/analytics
+    ports:
+      - "4444:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  analytics-demo-data:
