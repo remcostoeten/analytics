@@ -19,15 +19,26 @@ export type NetworkData = {
 let reader: MmdbReader | null | undefined;
 let asnReader: AsnReader | null | undefined;
 
+async function resolveDatabasePath(envVar: string, fileName: string): Promise<string | null> {
+	const { existsSync } = await import("node:fs");
+	const { join } = await import("node:path");
+
+	const fromEnv = process.env[envVar];
+	if (fromEnv) return fromEnv;
+
+	const bundled = join(process.cwd(), fileName);
+	return existsSync(bundled) ? bundled : null;
+}
+
 /**
- * Loads a MaxMind GeoLite2/GeoIP2 City database from GEOIP_MMDB_PATH.
- * Requires the optional `mmdb-lib` dependency; silently disabled when the
- * env var is unset or the module/database is unavailable.
+ * Loads a MaxMind GeoLite2/GeoIP2 City database from GEOIP_MMDB_PATH, or the
+ * copy the build ships next to the function bundle. Requires the optional
+ * `mmdb-lib` dependency; silently disabled when neither is available.
  */
 async function getReader(): Promise<MmdbReader | null> {
 	if (reader !== undefined) return reader;
 
-	const path = process.env.GEOIP_MMDB_PATH;
+	const path = await resolveDatabasePath("GEOIP_MMDB_PATH", "GeoLite2-City.mmdb");
 	if (!path) {
 		reader = null;
 		return reader;
@@ -48,13 +59,14 @@ async function getReader(): Promise<MmdbReader | null> {
 }
 
 /**
- * Loads a MaxMind GeoLite2 ASN database from GEOIP_ASN_MMDB_PATH for
- * network/carrier insights. Same optional semantics as the City database.
+ * Loads a MaxMind GeoLite2 ASN database from GEOIP_ASN_MMDB_PATH, or the copy
+ * the build ships next to the function bundle, for network/carrier insights.
+ * Same optional semantics as the City database.
  */
 async function getAsnReader(): Promise<AsnReader | null> {
 	if (asnReader !== undefined) return asnReader;
 
-	const path = process.env.GEOIP_ASN_MMDB_PATH;
+	const path = await resolveDatabasePath("GEOIP_ASN_MMDB_PATH", "GeoLite2-ASN.mmdb");
 	if (!path) {
 		asnReader = null;
 		return asnReader;

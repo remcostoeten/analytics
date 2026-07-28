@@ -18,21 +18,22 @@ function mergeGeo(base: GeoData, fallback: GeoData): GeoData {
 }
 
 /**
- * Resolves the richest geo picture available from free sources, in order:
- * edge headers (Vercel/Cloudflare), an optional self-hosted MaxMind MMDB,
- * and finally the client's IANA timezone as a country-level signal.
+ * Resolves the richest geo picture available from free sources. The MaxMind
+ * City MMDB takes precedence when it resolves a city: edge headers (Vercel/
+ * Cloudflare) collapse many ISP ranges onto a single hub city (e.g. all of
+ * NL onto Amsterdam), while the MMDB resolves the actual municipality. Edge
+ * headers fill whatever the MMDB left empty, and the client's IANA timezone
+ * remains the last-resort country-level signal.
  */
 export async function resolveGeo(
 	req: ReqLike,
 	ip: string | null,
 	clientTimezone: string | null,
 ): Promise<GeoData> {
-	let geo = extractGeoFromRequest(req);
+	const headerGeo = extractGeoFromRequest(req);
+	const mmdbGeo = await lookupGeoFromMmdb(ip);
 
-	const incomplete = !geo.country || !geo.city || geo.latitude === null;
-	if (incomplete) {
-		geo = mergeGeo(geo, await lookupGeoFromMmdb(ip));
-	}
+	let geo = mmdbGeo.city ? mergeGeo(mmdbGeo, headerGeo) : mergeGeo(headerGeo, mmdbGeo);
 
 	if (!geo.timezone && clientTimezone) geo = { ...geo, timezone: clientTimezone };
 
