@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { spawn } from "child_process";
 
@@ -76,14 +76,13 @@ writeFileSync(
 	}),
 );
 
-const { crons } = JSON.parse(readFileSync("vercel.json", "utf8"));
-
+// Crons are declared in vercel.json only; also emitting them here makes
+// Vercel register duplicates and fail the deploy with duplicated_cron_job.
 writeFileSync(
 	join(outputDir, "config.json"),
 	JSON.stringify({
 		version: 3,
 		routes: [{ src: "/(.*)", dest: "/index" }],
-		crons,
 	}),
 );
 
