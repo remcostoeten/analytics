@@ -130,25 +130,6 @@ type CountryDetail = {
 	topReferrers: { referrer: string; count: number }[];
 };
 
-const VISITOR_ID_KEY = "__analytics_visitor_id";
-const SELF_FILTER_KEY = "analytics-dashboard-exclude-visitor-id";
-
-function readStoredVisitorId(): string | null {
-	try {
-		return localStorage.getItem(VISITOR_ID_KEY);
-	} catch {
-		return null;
-	}
-}
-
-function readSelfFilterId(): string | null {
-	try {
-		return localStorage.getItem(SELF_FILTER_KEY);
-	} catch {
-		return null;
-	}
-}
-
 export function DashboardContent({
 	data: initialData,
 	databaseReady = true,
@@ -159,8 +140,6 @@ export function DashboardContent({
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
 	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-	const [currentVisitorId, setCurrentVisitorId] = useState<string | null>(null);
-	const [excludedVisitorId, setExcludedVisitorId] = useState<string | null>(null);
 
 	const router = useRouter();
 	const pathname = usePathname();
@@ -220,23 +199,6 @@ export function DashboardContent({
 		router.push(buildHref(pathname || "/", newParams));
 	};
 
-	function setSelfFilter(enabled: boolean) {
-		const visitorId = currentVisitorId || readStoredVisitorId();
-		if (!visitorId) return;
-
-		try {
-			if (enabled) {
-				localStorage.setItem(SELF_FILTER_KEY, visitorId);
-				setExcludedVisitorId(visitorId);
-			} else {
-				localStorage.removeItem(SELF_FILTER_KEY);
-				setExcludedVisitorId(null);
-			}
-		} catch {
-			setExcludedVisitorId(enabled ? visitorId : null);
-		}
-	}
-
 	const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 	const canFetch = databaseReady;
 
@@ -249,24 +211,6 @@ export function DashboardContent({
 		return () => window.removeEventListener("open-command-palette", openPalette);
 	}, [setPaletteOpen]);
 
-	useEffect(() => {
-		function syncVisitorId() {
-			const visitorId = readStoredVisitorId();
-			if (!visitorId) return;
-			setCurrentVisitorId(visitorId);
-		}
-
-		syncVisitorId();
-		setExcludedVisitorId(readSelfFilterId());
-		const interval = window.setInterval(syncVisitorId, 250);
-		const timeout = window.setTimeout(() => window.clearInterval(interval), 10_000);
-
-		return () => {
-			window.clearInterval(interval);
-			window.clearTimeout(timeout);
-		};
-	}, []);
-
 	const buildQuery = (metric: string, extraParams: string = "") => {
 		const params = new URLSearchParams();
 		params.set("metric", metric);
@@ -278,7 +222,6 @@ export function DashboardContent({
 		}
 		if (selectedProject) params.set("projectId", selectedProject);
 		if (selectedOrigin) params.set("origin", selectedOrigin);
-		if (excludedVisitorId) params.set("excludeVisitorId", excludedVisitorId);
 		if (geoCountry) {
 			params.set("country", geoCountry);
 			if (geoRegion) params.set("region", geoRegion);
@@ -298,9 +241,7 @@ export function DashboardContent({
 	}
 
 	const { data: projects, error: projectsError } = useSWR(
-		canFetch
-			? `/api/analytics?metric=projects${excludedVisitorId ? `&excludeVisitorId=${encodeURIComponent(excludedVisitorId)}` : ""}`
-			: null,
+		canFetch ? "/api/analytics?metric=projects" : null,
 		fetcher,
 		{
 			fallbackData: [],
@@ -522,7 +463,7 @@ export function DashboardContent({
 
 	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR<CountryDetail>(
 		selectedCountry && canFetch
-			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}${selectedOrigin ? `&origin=${encodeURIComponent(selectedOrigin)}` : ""}${excludedVisitorId ? `&excludeVisitorId=${encodeURIComponent(excludedVisitorId)}` : ""}`
+			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}${selectedOrigin ? `&origin=${encodeURIComponent(selectedOrigin)}` : ""}`
 			: null,
 		fetcher,
 	);
@@ -703,9 +644,6 @@ export function DashboardContent({
 			<DashboardHeader
 				typeFilter={typeFilter}
 				onTypeFilterChange={setTypeFilter}
-				selfFilterEnabled={!!excludedVisitorId}
-				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
-				onSelfFilterChange={setSelfFilter}
 				authUser={authUser}
 			/>
 
@@ -718,9 +656,6 @@ export function DashboardContent({
 				onPageSelect={selectPalettePage}
 				onReferrerSelect={selectPaletteReferrer}
 				onTypeFilterChange={setTypeFilter}
-				onSelfFilterChange={setSelfFilter}
-				selfFilterEnabled={!!excludedVisitorId}
-				selfFilterAvailable={!!(currentVisitorId || excludedVisitorId)}
 				pages={palettePages}
 				referrers={paletteReferrers}
 				projects={projects}
