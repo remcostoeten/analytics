@@ -106,11 +106,14 @@ export function extractGeoFromRequest(req: ReqData | null | undefined): GeoData 
 export function extractIpAddress(req: ReqData | null | undefined): string | null {
 	const headers = getHeaders(req);
 
-	const vercelIp = headers.get("x-real-ip");
-	if (vercelIp) return vercelIp;
-
+	// When Cloudflare proxies to Vercel, x-real-ip holds the Cloudflare edge
+	// node (geolocating every visitor to the edge city, e.g. Amsterdam); only
+	// cf-connecting-ip carries the actual client.
 	const cfIp = headers.get("cf-connecting-ip");
 	if (cfIp) return cfIp;
+
+	const vercelIp = headers.get("x-real-ip");
+	if (vercelIp) return vercelIp;
 
 	const forwarded = headers.get("x-forwarded-for");
 	if (forwarded) return forwarded.split(",")[0].trim();
