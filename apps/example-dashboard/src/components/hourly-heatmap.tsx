@@ -13,9 +13,16 @@ type HourlyHeatmapData = {
 type HourlyHeatmapProps = {
 	data: HourlyHeatmapData | null;
 	className?: string;
+	title?: string;
+	emptyLabel?: string;
 };
 
-export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
+export function HourlyHeatmap({
+	data,
+	className,
+	title = "Traffic by Hour",
+	emptyLabel = "No traffic data available",
+}: HourlyHeatmapProps) {
 	const [hoveredCell, setHoveredCell] = useState<{ day: number; hour: number } | null>(null);
 
 	const hours = useMemo(
@@ -27,11 +34,11 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 		return (
 			<div className={cn("bg-card border border-border rounded-sm", className)}>
 				<div className="px-3 py-2 border-b border-border">
-					<h3 className="text-xs font-medium text-foreground">Traffic by Hour</h3>
+					<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				</div>
 				<div className="p-6 text-center">
 					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No traffic data available</p>
+					<p className="text-[11px] text-muted-foreground">{emptyLabel}</p>
 				</div>
 			</div>
 		);
@@ -61,7 +68,7 @@ export function HourlyHeatmap({ data, className }: HourlyHeatmapProps) {
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
-				<h3 className="text-xs font-medium text-foreground">Traffic by Hour</h3>
+				<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				{hoveredInfo && (
 					<span className="text-[10px] text-muted-foreground">
 						{hoveredInfo.day} {hoveredInfo.hour}:00 - {hoveredInfo.count.toLocaleString()} views

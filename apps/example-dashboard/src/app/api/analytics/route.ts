@@ -269,9 +269,12 @@ export async function GET(request: NextRequest) {
 				const sort = (searchParams.get("sort") || "last_seen") as
 					| "last_seen"
 					| "visit_count"
-					| "first_seen";
+					| "first_seen"
+					| "total_time";
 				const limit = Math.min(parseInt(searchParams.get("limit") || "25", 10) || 25, 100);
 				const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0);
+				const rawSearch = searchParams.get("q");
+				const search = rawSearch && rawSearch.length <= 64 ? rawSearch : null;
 				return NextResponse.json(
 					await query.getVisitorsExplorer(
 						from,
@@ -284,8 +287,20 @@ export async function GET(request: NextRequest) {
 						excludeVisitorId,
 						origin,
 						geoScope,
+						search,
 					),
 				);
+			}
+			case "visitor-session-trail": {
+				const fingerprint = searchParams.get("fingerprint");
+				const sessionId = searchParams.get("sessionId");
+				if (!fingerprint || fingerprint.length > 128 || !sessionId || sessionId.length > 128) {
+					return NextResponse.json(
+						{ error: "fingerprint and sessionId required" },
+						{ status: 400 },
+					);
+				}
+				return NextResponse.json(await query.getVisitorSessionTrail(fingerprint, sessionId));
 			}
 			case "visitor-recurrence":
 				return NextResponse.json(

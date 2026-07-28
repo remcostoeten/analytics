@@ -155,7 +155,7 @@ function makeVisitor(index: number, firstSeen: Date): Visitor {
 	const browser = os.name === "iOS" ? "Safari" : pickWeighted(BROWSERS).name;
 	return {
 		visitorId: `vis_demo_${index.toString(36)}`,
-		fingerprint: `fp_demo_${index.toString(36)}`,
+		fingerprint: `vis_demo_${index.toString(36)}`,
 		city,
 		browser,
 		os: os.name,

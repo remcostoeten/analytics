@@ -2,12 +2,12 @@
 
 import { cn } from "@/lib/utils";
 import { Inbox, Search, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import type { Route } from "next";
 import { Input } from "@/components/ui/input";
-import { getFlagEmoji } from "@/lib/format";
+import { formatDuration, getFlagEmoji } from "@/lib/format";
 
 type VisitorExplorerRow = {
 	id: string;
@@ -21,6 +21,9 @@ type VisitorExplorerRow = {
 	country: string | null;
 	city: string | null;
 	isInternal: boolean;
+	totalDurationMs: number;
+	pageviews: number;
+	lastEntryPath: string | null;
 };
 
 type VisitorExplorerResponse = {
@@ -29,7 +32,7 @@ type VisitorExplorerResponse = {
 };
 
 type Segment = "all" | "new" | "returning";
-type Sort = "last_seen" | "visit_count" | "first_seen";
+type Sort = "last_seen" | "visit_count" | "first_seen" | "total_time";
 
 type Props = {
 	buildQuery: (metric: string, extraParams?: string) => string;
@@ -69,26 +72,21 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 	const [segment, setSegment] = useState<Segment>("all");
 	const [sort, setSort] = useState<Sort>("last_seen");
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 
+	useEffect(() => {
+		const handle = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+		return () => clearTimeout(handle);
+	}, [search]);
+
+	const searchParam = debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : "";
 	const { data, isLoading } = useSWR(
-		buildQuery("visitors-explorer", `segment=${segment}&sort=${sort}&limit=25`),
+		buildQuery("visitors-explorer", `segment=${segment}&sort=${sort}&limit=25${searchParam}`),
 		fetcher,
 		{ fallbackData: { rows: [], total: 0 }, refreshInterval: 30000, keepPreviousData: true },
 	);
 
 	const rows = data?.rows ?? [];
-	const filtered = search.trim()
-		? rows.filter((v) => {
-				const q = search.toLowerCase();
-				return (
-					(v.country || "").toLowerCase().includes(q) ||
-					(v.city || "").toLowerCase().includes(q) ||
-					(v.browser || "").toLowerCase().includes(q) ||
-					(v.os || "").toLowerCase().includes(q) ||
-					(v.deviceType || "").toLowerCase().includes(q)
-				);
-			})
-		: rows;
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
@@ -118,25 +116,26 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 					<option value="last_seen">Last seen</option>
 					<option value="visit_count">Visit count</option>
 					<option value="first_seen">First seen</option>
+					<option value="total_time">Time spent</option>
 				</select>
 				<div className="relative flex-1 min-w-[120px] max-w-[200px] ml-auto">
 					<Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
 					<Input
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Filter by country, browser…"
+						placeholder="Search country, city, browser, ID…"
 						className="h-6 pl-6 pr-2 text-[10px] bg-muted/50 border-border"
 					/>
 				</div>
 				<span className="text-[10px] text-muted-foreground shrink-0">
-					{filtered.length}/{data?.total ?? 0}
+					{rows.length}/{data?.total ?? 0}
 				</span>
 			</div>
 
-			{!isLoading && filtered.length === 0 ? (
+			{!isLoading && rows.length === 0 ? (
 				<div className="p-6 text-center">
 					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No visitors match this segment</p>
+					<p className="text-[11px] text-muted-foreground">No visitors match this filter</p>
 				</div>
 			) : (
 				<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
@@ -152,8 +151,17 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
 									Device
 								</th>
+								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+									Entry Page
+								</th>
 								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
 									Visits
+								</th>
+								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+									Views
+								</th>
+								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+									Time Spent
 								</th>
 								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
 									Last Seen
@@ -161,7 +169,7 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">
-							{filtered.map((visitor) => (
+							{rows.map((visitor) => (
 								<tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
 									<td className="px-3 py-1.5">
 										<Link
@@ -174,6 +182,11 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 											<span className="font-mono text-[9px] text-muted-foreground group-hover:text-foreground group-hover:underline">
 												{visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
 											</span>
+											{visitor.visitCount > 1 && (
+												<span className="px-1 py-px rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[8px] font-medium uppercase">
+													Returning
+												</span>
+											)}
 										</Link>
 									</td>
 									<td className="px-3 py-1.5">
@@ -208,6 +221,11 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 											</span>
 										</div>
 									</td>
+									<td className="px-3 py-1.5">
+										<span className="font-mono text-[10px] text-muted-foreground truncate max-w-[140px] inline-block align-middle">
+											{visitor.lastEntryPath || "—"}
+										</span>
+									</td>
 									<td className="px-3 py-1.5 text-right tabular-nums">
 										<span
 											className={cn(
@@ -219,6 +237,12 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 										>
 											{visitor.visitCount}
 										</span>
+									</td>
+									<td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+										{visitor.pageviews}
+									</td>
+									<td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+										{visitor.totalDurationMs > 0 ? formatDuration(visitor.totalDurationMs) : "—"}
 									</td>
 									<td className="px-3 py-1.5 text-right text-muted-foreground">
 										{formatTimeAgo(visitor.lastSeen)}
