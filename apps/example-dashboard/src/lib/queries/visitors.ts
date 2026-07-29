@@ -1,8 +1,14 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "../db";
-import { COUNTRY_NAME_TO_ISO, externalReferrer, geoScopeFilter, type GeoScope } from "./filters";
+import {
+	COUNTRY_NAME_TO_ISO,
+	externalReferrer,
+	geoScopeFilter,
+	publicTrafficEvents,
+	type GeoScope,
+} from "./filters";
 
-export type VisitorSegment = "all" | "new" | "returning";
+export type VisitorSegment = "all" | "new" | "returning" | "engaged" | "converted";
 export type VisitorSort = "last_seen" | "visit_count" | "first_seen" | "total_time";
 
 export type VisitorExplorerRow = {
@@ -26,7 +32,32 @@ function sortColumn(sort: VisitorSort) {
 	if (sort === "visit_count") return sql`visit_count`;
 	if (sort === "first_seen") return sql`first_seen`;
 	if (sort === "total_time") return sql`total_duration_ms`;
-	return sql`last_seen`;
+	return sql`activity.last_seen`;
+}
+
+async function getRelatedIds(fingerprint: string, projectId?: string | null): Promise<string[]> {
+	const [visitor] = await sql`
+		SELECT meta FROM visitors
+		WHERE fingerprint = ${fingerprint} ${projectId ? sql`AND project_id = ${projectId}` : sql``}
+		LIMIT 1
+	`;
+	const identity = (visitor?.meta as Record<string, unknown> | null)?.identity as
+		| Record<string, unknown>
+		| null
+		| undefined;
+	const userId =
+		identity && typeof identity.userId === "string"
+			? identity.userId
+			: null;
+	if (!userId) return [fingerprint];
+	const rows = await sql`
+		SELECT fingerprint FROM visitors
+		WHERE meta->'identity'->>'userId' = ${userId}
+		${projectId ? sql`AND project_id = ${projectId}` : sql``}
+	`;
+	return rows.map(function (row) {
+		return row.fingerprint as string;
+	});
 }
 
 export async function getVisitorsExplorer(
@@ -47,18 +78,14 @@ export async function getVisitorsExplorer(
 			? sql`AND visitors.visit_count <= 1`
 			: segment === "returning"
 				? sql`AND visitors.visit_count > 1`
+				: segment === "engaged"
+					? sql`AND activity.pageviews >= 2`
+					: segment === "converted"
+						? sql`AND activity.conversions > 0`
 				: sql``;
 
 	const projectFilter = projectId ? sql`AND visitors.project_id = ${projectId}` : sql``;
-	const excludeFilter = excludeVisitorId
-		? sql`AND visitors.fingerprint IS DISTINCT FROM ${excludeVisitorId}`
-		: sql``;
-	const originFilter = origin
-		? sql`AND EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint AND events.host = ${origin})`
-		: sql``;
-	const geoFilter = geo?.country
-		? sql`AND EXISTS (SELECT 1 FROM events WHERE events.visitor_id = visitors.fingerprint ${geoScopeFilter(geo.country, geo.region)})`
-		: sql``;
+	const eventsProjectFilter = projectId ? sql`AND events.project_id = ${projectId}` : sql``;
 	const searchTerm = search?.trim() ? `%${search.trim()}%` : null;
 	const searchFilter = searchTerm
 		? sql`AND (
@@ -71,65 +98,67 @@ export async function getVisitorsExplorer(
 		)`
 		: sql``;
 
+	const scope = sql`${publicTrafficEvents(excludeVisitorId, origin)}
+		AND events.ts >= ${from}
+		AND events.ts <= ${to}
+		${eventsProjectFilter}
+		${geoScopeFilter(geo?.country, geo?.region)}`;
+	const activity = sql`
+		WITH scoped_events AS (
+			SELECT events.visitor_id, events.session_id, events.ts, events.type, events.path, events.meta
+			FROM events
+			WHERE ${scope} AND events.visitor_id IS NOT NULL
+		), session_rollups AS (
+			SELECT
+				visitor_id,
+				session_id,
+				MIN(ts) as started_at,
+				MAX(ts) as last_seen,
+				EXTRACT(EPOCH FROM MAX(ts) - MIN(ts)) * 1000 as duration_ms,
+				COUNT(*) FILTER (WHERE type = 'pageview') as pageviews,
+				COUNT(*) FILTER (WHERE meta->>'eventName' IN ('transaction', 'purchase', 'conversion') OR meta->>'conversion' = 'true') as conversions,
+				(array_agg(path ORDER BY ts DESC) FILTER (WHERE path IS NOT NULL))[1] as last_entry_path
+			FROM scoped_events
+			GROUP BY visitor_id, session_id
+		), activity AS (
+			SELECT
+				visitor_id,
+				MAX(last_seen) as last_seen,
+				SUM(duration_ms) as total_duration_ms,
+				SUM(pageviews) as pageviews,
+				SUM(conversions) as conversions,
+				(array_agg(last_entry_path ORDER BY last_seen DESC) FILTER (WHERE last_entry_path IS NOT NULL))[1] as last_entry_path
+			FROM session_rollups
+			GROUP BY visitor_id
+		)`;
 	const rows = await sql`
-    SELECT
-      visitors.id,
-      visitors.fingerprint,
-      visitors.first_seen,
-      visitors.last_seen,
-      visitors.visit_count,
-      visitors.device_type,
-      visitors.browser,
-      visitors.os,
-      visitors.country,
-      visitors.city,
-      COALESCE(visitors.is_internal, false) as is_internal,
-      COALESCE(activity.total_duration_ms, 0) as total_duration_ms,
-      COALESCE(activity.pageviews, 0) as pageviews,
-      activity.last_entry_path
-    FROM visitors
-    LEFT JOIN LATERAL (
-      SELECT
-        SUM(session_duration.duration_ms) as total_duration_ms,
-        SUM(session_duration.pageviews) as pageviews,
-        (array_agg(session_duration.entry_path ORDER BY session_duration.started_at DESC))[1] as last_entry_path
-      FROM (
-        SELECT
-          MIN(events.ts) as started_at,
-          EXTRACT(EPOCH FROM MAX(events.ts) - MIN(events.ts)) * 1000 as duration_ms,
-          COUNT(*) FILTER (WHERE events.type = 'pageview') as pageviews,
-          (array_agg(events.path ORDER BY events.ts) FILTER (WHERE events.path IS NOT NULL))[1] as entry_path
-        FROM events
-        WHERE events.visitor_id = visitors.fingerprint AND events.session_id IS NOT NULL
-        GROUP BY events.session_id
-      ) session_duration
-    ) activity ON true
-    WHERE (visitors.is_internal = false OR visitors.is_internal IS NULL)
-      AND visitors.last_seen >= ${from}
-      AND visitors.last_seen <= ${to}
-      ${segmentFilter}
-      ${projectFilter}
-      ${excludeFilter}
-      ${originFilter}
-      ${geoFilter}
-      ${searchFilter}
-    ORDER BY ${sortColumn(sort)} DESC NULLS LAST
-    LIMIT ${limit} OFFSET ${offset}
-  `;
+		${activity}
+		SELECT
+			visitors.id, visitors.fingerprint, visitors.first_seen, activity.last_seen,
+			visitors.visit_count, visitors.device_type, visitors.browser, visitors.os,
+			visitors.country, visitors.city, COALESCE(visitors.is_internal, false) as is_internal,
+			COALESCE(activity.total_duration_ms, 0) as total_duration_ms,
+			COALESCE(activity.pageviews, 0) as pageviews, activity.last_entry_path
+		FROM activity
+		JOIN visitors ON visitors.fingerprint = activity.visitor_id
+		WHERE (visitors.is_internal = false OR visitors.is_internal IS NULL)
+			${segmentFilter}
+			${projectFilter}
+			${searchFilter}
+		ORDER BY ${sortColumn(sort)} DESC NULLS LAST
+		LIMIT ${limit} OFFSET ${offset}
+	`;
 
 	const [{ count }] = await sql`
-    SELECT COUNT(*) as count
-    FROM visitors
-    WHERE (visitors.is_internal = false OR visitors.is_internal IS NULL)
-      AND visitors.last_seen >= ${from}
-      AND visitors.last_seen <= ${to}
-      ${segmentFilter}
-      ${projectFilter}
-      ${excludeFilter}
-      ${originFilter}
-      ${geoFilter}
-      ${searchFilter}
-  `;
+		${activity}
+		SELECT COUNT(*) as count
+		FROM activity
+		JOIN visitors ON visitors.fingerprint = activity.visitor_id
+		WHERE (visitors.is_internal = false OR visitors.is_internal IS NULL)
+			${segmentFilter}
+			${projectFilter}
+			${searchFilter}
+	`;
 
 	return {
 		rows: rows.map((r) => ({
@@ -165,25 +194,29 @@ export async function getVisitorRecurrence(
 	to: Date,
 	projectId: string | null,
 	excludeVisitorId?: string | null,
+	origin?: string | null,
 ): Promise<VisitorRecurrence> {
-	const projectFilter = projectId ? sql`AND project_id = ${projectId}` : sql``;
-	const excludeFilter = excludeVisitorId
-		? sql`AND fingerprint IS DISTINCT FROM ${excludeVisitorId}`
-		: sql``;
+	const visitorProjectFilter = projectId ? sql`AND visitors.project_id = ${projectId}` : sql``;
+	const eventProjectFilter = projectId ? sql`AND events.project_id = ${projectId}` : sql``;
+	const scope = sql`${publicTrafficEvents(excludeVisitorId, origin)}
+		AND events.ts >= ${from} AND events.ts <= ${to}
+		${eventProjectFilter} AND events.visitor_id IS NOT NULL`;
+	const audience = sql`WITH audience AS (
+		SELECT DISTINCT events.visitor_id FROM events WHERE ${scope}
+	)`;
 
 	const [totals] = await sql`
-    SELECT
+		${audience}
+	    SELECT
       COUNT(*) as total_visitors,
       COUNT(*) FILTER (WHERE visit_count > 1) as returning_visitors
-    FROM visitors
-    WHERE (is_internal = false OR is_internal IS NULL)
-      AND last_seen >= ${from}
-      AND last_seen <= ${to}
-      ${projectFilter}
-      ${excludeFilter}
+	    FROM visitors JOIN audience ON audience.visitor_id = visitors.fingerprint
+	    WHERE (is_internal = false OR is_internal IS NULL)
+	      ${visitorProjectFilter}
   `;
 
 	const distributionRows = await sql`
+		${audience}
     SELECT
       CASE
         WHEN visit_count <= 1 THEN '1'
@@ -192,30 +225,33 @@ export async function getVisitorRecurrence(
         ELSE '10+'
       END as bucket,
       COUNT(*) as count
-    FROM visitors
-    WHERE (is_internal = false OR is_internal IS NULL)
-      AND last_seen >= ${from}
-      AND last_seen <= ${to}
-      ${projectFilter}
-      ${excludeFilter}
+	    FROM visitors JOIN audience ON audience.visitor_id = visitors.fingerprint
+	    WHERE (is_internal = false OR is_internal IS NULL)
+	      ${visitorProjectFilter}
     GROUP BY bucket
   `;
 
 	const granularity = to.getTime() - from.getTime() > 3 * 86_400_000 ? "day" : "hour";
 	const trendRows = await sql`
-    SELECT
-      date_trunc(${granularity}, first_seen) as bucket,
-      COUNT(*) FILTER (WHERE visit_count <= 1) as new_visitors,
-      COUNT(*) FILTER (WHERE visit_count > 1) as returning_visitors
-    FROM visitors
-    WHERE (is_internal = false OR is_internal IS NULL)
-      AND first_seen >= ${from}
-      AND first_seen <= ${to}
-      ${projectFilter}
-      ${excludeFilter}
-    GROUP BY bucket
-    ORDER BY bucket ASC
-  `;
+		WITH scoped_events AS (
+			SELECT events.visitor_id, events.ts FROM events
+			WHERE ${scope}
+		), first_seen AS (
+			SELECT events.visitor_id, MIN(events.ts) as first_seen
+			FROM events
+			JOIN (SELECT DISTINCT visitor_id FROM scoped_events) scoped
+				ON scoped.visitor_id = events.visitor_id
+			WHERE ${publicTrafficEvents(excludeVisitorId)} ${eventProjectFilter}
+			GROUP BY events.visitor_id
+		)
+		SELECT date_trunc(${granularity}, scoped_events.ts) as bucket,
+			COUNT(DISTINCT scoped_events.visitor_id) FILTER (WHERE first_seen.first_seen >= ${from}) as new_visitors,
+			COUNT(DISTINCT scoped_events.visitor_id) FILTER (WHERE first_seen.first_seen < ${from}) as returning_visitors
+		FROM scoped_events
+		JOIN first_seen ON first_seen.visitor_id = scoped_events.visitor_id
+		GROUP BY bucket
+		ORDER BY bucket ASC
+	`;
 
 	const bucketOrder: Record<string, number> = { "1": 0, "2-4": 1, "5-9": 2, "10+": 3 };
 	const distribution = (["1", "2-4", "5-9", "10+"] as const).map((bucket) => {
@@ -254,18 +290,22 @@ export type VisitorSession = {
 	deviceType: string | null;
 };
 
-export async function getVisitorSessions(fingerprint: string): Promise<VisitorSession[]> {
+export async function getVisitorSessions(
+	fingerprint: string,
+	projectId?: string | null,
+): Promise<VisitorSession[]> {
 	"use cache";
 	cacheTag(`visitor:${fingerprint}`);
 	cacheLife("minutes");
+	const visitorIds = await getRelatedIds(fingerprint, projectId);
 
 	let rows: readonly Record<string, unknown>[] = [];
 	try {
 		rows = await sql`
       SELECT session_id, started_at, last_event_at, entry_path, exit_path, referrer,
         pageviews, events, duration_ms, country, device_type
-      FROM sessions
-      WHERE visitor_id = ${fingerprint}
+		FROM sessions
+		WHERE visitor_id = ANY(${visitorIds}) ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       ORDER BY started_at DESC
       LIMIT 30
     `;
@@ -294,7 +334,7 @@ export async function getVisitorSessions(fingerprint: string): Promise<VisitorSe
       COUNT(*) FILTER (WHERE type = 'pageview') as pageviews,
       array_agg(path ORDER BY ts) FILTER (WHERE path IS NOT NULL) as paths
     FROM events
-    WHERE visitor_id = ${fingerprint} AND session_id IS NOT NULL
+    WHERE visitor_id = ANY(${visitorIds}) AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     GROUP BY session_id
     ORDER BY started_at DESC
     LIMIT 30
@@ -320,9 +360,9 @@ export async function getVisitorSessions(fingerprint: string): Promise<VisitorSe
 	});
 }
 
-export async function getVisitorProfile(fingerprint: string) {
+export async function getVisitorProfile(fingerprint: string, projectId?: string | null) {
 	"use cache";
-	cacheTag(`visitor:${fingerprint}`);
+	cacheTag(`visitor:${projectId || "all"}:${fingerprint}`);
 	cacheLife("minutes");
 
 	const [visitor] = await sql`
@@ -331,16 +371,17 @@ export async function getVisitorProfile(fingerprint: string) {
       browser, browser_version, screen_resolution, timezone, language, country, region,
       city, ua, meta, COALESCE(is_internal, false) as is_internal
     FROM visitors
-    WHERE fingerprint = ${fingerprint}
+    WHERE fingerprint = ${fingerprint} ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     LIMIT 1
   `;
 
 	if (!visitor) return null;
+	const visitorIds = await getRelatedIds(fingerprint, projectId);
 
 	const topPages = await sql`
     SELECT path, COUNT(*) as count
     FROM events
-    WHERE visitor_id = ${fingerprint} AND type = 'pageview' AND path IS NOT NULL
+    WHERE visitor_id = ANY(${visitorIds}) AND type = 'pageview' AND path IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     GROUP BY path
     ORDER BY count DESC
     LIMIT 10
@@ -349,7 +390,7 @@ export async function getVisitorProfile(fingerprint: string) {
 	const referrers = await sql`
     SELECT referrer, COUNT(*) as count, MAX(ts) as last_seen
     FROM events
-    WHERE visitor_id = ${fingerprint} AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()}
+    WHERE visitor_id = ANY(${visitorIds}) AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()} ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     GROUP BY referrer
     ORDER BY last_seen DESC
     LIMIT 10
@@ -377,6 +418,7 @@ export async function getVisitorProfile(fingerprint: string) {
 			meta: visitor.meta as Record<string, unknown> | null,
 			isInternal: Boolean(visitor.is_internal),
 		},
+		relatedVisitors: visitorIds.length,
 		topPages: topPages.map((r) => ({ path: r.path as string, count: Number(r.count) })),
 		referrers: referrers.map((r) => ({
 			referrer: r.referrer as string,
@@ -426,16 +468,25 @@ export type VisitorInsights = {
 		visits: number;
 		lastSeen: string;
 	}[];
+	acquisition: {
+		firstTouch: { source: string | null; medium: string | null; campaign: string | null; seenAt: string } | null;
+		lastTouch: { source: string | null; medium: string | null; campaign: string | null; seenAt: string } | null;
+	};
+	conversions: { count: number; lastSeen: string | null; names: string[] };
 	hosts: { host: string; count: number }[];
 	customEvents: { name: string; count: number; lastSeen: string }[];
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export async function getVisitorInsights(fingerprint: string): Promise<VisitorInsights> {
+export async function getVisitorInsights(
+	fingerprint: string,
+	projectId?: string | null,
+): Promise<VisitorInsights> {
 	"use cache";
-	cacheTag(`visitor:${fingerprint}`);
+	cacheTag(`visitor:${projectId || "all"}:${fingerprint}`);
 	cacheLife("minutes");
+	const visitorIds = await getRelatedIds(fingerprint, projectId);
 
 	const sessionRollup = sql`
     SELECT
@@ -445,7 +496,7 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
       COUNT(*) as events,
       COUNT(*) FILTER (WHERE type = 'pageview') as pageviews
     FROM events
-    WHERE visitor_id = ${fingerprint} AND session_id IS NOT NULL
+	    WHERE visitor_id = ANY(${visitorIds}) AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     GROUP BY session_id
   `;
 
@@ -457,6 +508,8 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
 		dailyRows,
 		geoRows,
 		utmRows,
+		acquisitionRows,
+		conversionRows,
 		hostRows,
 		eventRows,
 	] = await Promise.all([
@@ -485,18 +538,18 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
       FROM gaps
       WHERE gap_ms IS NOT NULL
     `,
-		sql`
-      SELECT
+			sql`
+	      SELECT
         COUNT(DISTINCT ts::date) as active_days,
         MIN(ts) as first_ts,
         MAX(ts) as last_ts
       FROM events
-      WHERE visitor_id = ${fingerprint}
+	      WHERE visitor_id = ANY(${visitorIds}) ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     `,
 		sql`
       SELECT EXTRACT(DOW FROM ts) as day_of_week, EXTRACT(HOUR FROM ts) as hour, COUNT(*) as count
       FROM events
-      WHERE visitor_id = ${fingerprint} AND type = 'pageview'
+	      WHERE visitor_id = ANY(${visitorIds}) AND type = 'pageview' ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       GROUP BY day_of_week, hour
     `,
 		sql`
@@ -505,14 +558,14 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
         COUNT(DISTINCT session_id) as sessions,
         COUNT(*) FILTER (WHERE type = 'pageview') as pageviews
       FROM events
-      WHERE visitor_id = ${fingerprint}
+	      WHERE visitor_id = ANY(${visitorIds}) ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       GROUP BY day
       ORDER BY day ASC
     `,
 		sql`
       SELECT country, region, city, COUNT(*) as events, MIN(ts) as first_seen, MAX(ts) as last_seen
       FROM events
-      WHERE visitor_id = ${fingerprint} AND country IS NOT NULL
+	      WHERE visitor_id = ANY(${visitorIds}) AND country IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       GROUP BY country, region, city
       ORDER BY last_seen DESC
       LIMIT 15
@@ -525,15 +578,36 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
         COUNT(DISTINCT session_id) as visits,
         MAX(ts) as last_seen
       FROM events
-      WHERE visitor_id = ${fingerprint} AND NULLIF(meta->>'utmSource', '') IS NOT NULL
+	      WHERE visitor_id = ANY(${visitorIds}) AND NULLIF(meta->>'utmSource', '') IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       GROUP BY source, medium, campaign
       ORDER BY last_seen DESC
-      LIMIT 10
+	      LIMIT 10
     `,
-		sql`
+			sql`
+				WITH touches AS (
+					SELECT COALESCE(NULLIF(meta->>'utmSource', ''), regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1')) as source, meta->>'utmMedium' as medium,
+						meta->>'utmCampaign' as campaign, ts
+					FROM events
+					WHERE visitor_id = ANY(${visitorIds})
+						${projectId ? sql`AND project_id = ${projectId}` : sql``}
+						AND (NULLIF(meta->>'utmSource', '') IS NOT NULL OR (referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()}))
+				)
+				(SELECT source, medium, campaign, ts FROM touches ORDER BY ts ASC LIMIT 1)
+				UNION ALL
+				(SELECT source, medium, campaign, ts FROM touches ORDER BY ts DESC LIMIT 1)
+			`,
+			sql`
+				SELECT COUNT(*) as count, MAX(ts) as last_seen,
+					array_agg(DISTINCT meta->>'eventName') FILTER (WHERE meta->>'eventName' IS NOT NULL) as names
+				FROM events
+				WHERE visitor_id = ANY(${visitorIds})
+					${projectId ? sql`AND project_id = ${projectId}` : sql``}
+					AND (meta->>'eventName' IN ('transaction', 'purchase', 'conversion') OR meta->>'conversion' = 'true')
+			`,
+			sql`
       SELECT host, COUNT(*) as count
       FROM events
-      WHERE visitor_id = ${fingerprint} AND host IS NOT NULL
+	      WHERE visitor_id = ANY(${visitorIds}) AND host IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
       GROUP BY host
       ORDER BY count DESC
       LIMIT 10
@@ -541,7 +615,7 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
 		sql`
       SELECT meta->>'eventName' as name, COUNT(*) as count, MAX(ts) as last_seen
       FROM events
-      WHERE visitor_id = ${fingerprint}
+	      WHERE visitor_id = ANY(${visitorIds}) ${projectId ? sql`AND project_id = ${projectId}` : sql``}
         AND NULLIF(meta->>'eventName', '') IS NOT NULL
         AND meta->>'eventName' != ALL(${NOISE_EVENT_NAMES})
       GROUP BY name
@@ -627,6 +701,29 @@ export async function getVisitorInsights(fingerprint: string): Promise<VisitorIn
 			visits: Number(r.visits),
 			lastSeen: r.last_seen as string,
 		})),
+		acquisition: {
+			firstTouch: acquisitionRows[0]
+				? {
+					source: (acquisitionRows[0].source as string | null) ?? null,
+					medium: (acquisitionRows[0].medium as string | null) ?? null,
+					campaign: (acquisitionRows[0].campaign as string | null) ?? null,
+					seenAt: acquisitionRows[0].ts as string,
+				}
+				: null,
+			lastTouch: acquisitionRows[1]
+				? {
+					source: (acquisitionRows[1].source as string | null) ?? null,
+					medium: (acquisitionRows[1].medium as string | null) ?? null,
+					campaign: (acquisitionRows[1].campaign as string | null) ?? null,
+					seenAt: acquisitionRows[1].ts as string,
+				}
+				: null,
+		},
+		conversions: {
+			count: Number(conversionRows[0]?.count ?? 0),
+			lastSeen: (conversionRows[0]?.last_seen as string | null) ?? null,
+			names: ((conversionRows[0]?.names as string[] | null) ?? []).filter(Boolean),
+		},
 		hosts: hostRows.map((r) => ({ host: r.host as string, count: Number(r.count) })),
 		customEvents: eventRows.map((r) => ({
 			name: r.name as string,
@@ -649,7 +746,9 @@ export type SessionTrailStep = {
 export async function getVisitorSessionTrail(
 	fingerprint: string,
 	sessionId: string,
+	projectId?: string | null,
 ): Promise<{ steps: SessionTrailStep[] }> {
+	const visitorIds = await getRelatedIds(fingerprint, projectId);
 	const rows = await sql`
     SELECT
       ts, type, path, referrer,
@@ -657,7 +756,7 @@ export async function getVisitorSessionTrail(
       meta->>'timeOnPageMs' as time_on_page_ms,
       meta->>'depth' as scroll_depth
     FROM events
-    WHERE visitor_id = ${fingerprint} AND session_id = ${sessionId}
+    WHERE visitor_id = ANY(${visitorIds}) AND session_id = ${sessionId} ${projectId ? sql`AND project_id = ${projectId}` : sql``}
     ORDER BY ts ASC
     LIMIT 500
   `;

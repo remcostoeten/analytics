@@ -7,6 +7,7 @@ import {
 	trackTransaction,
 	trackSearch,
 	identifyUser,
+	identify,
 	setExperiment,
 } from "./track";
 import { mergeAnalyticsOptions } from "../utilities/options";
@@ -41,6 +42,9 @@ export function createTrackHelpers(defaultOptions: AnalyticsOptions): TrackHelpe
 		},
 		identifyUser(userProperties, options) {
 			identifyUser(userProperties, withOptions(options));
+		},
+		identify(userId, userProperties, options) {
+			identify(userId, userProperties, withOptions(options));
 		},
 		setExperiment(experimentId, variantId, options) {
 			setExperiment(experimentId, variantId, withOptions(options));

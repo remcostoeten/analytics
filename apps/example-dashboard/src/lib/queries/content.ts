@@ -120,6 +120,32 @@ export async function getGeoCities(
 	}));
 }
 
+export async function getCityPoints(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	country?: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
+	const results =
+		await sql`SELECT city, region, country, AVG(latitude)::numeric as latitude, AVG(longitude)::numeric as longitude, COUNT(*) as events, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND city IS NOT NULL AND city != '' AND latitude IS NOT NULL AND longitude IS NOT NULL ${country ? sql`AND country = ${country}` : sql``} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city, region, country HAVING COUNT(DISTINCT visitor_id) >= 3 ORDER BY events DESC LIMIT 500`;
+	return results.map((r) => {
+		const name = r.country as string;
+		return {
+			city: r.city as string,
+			region: (r.region as string) || null,
+			country: name,
+			countryCode:
+				COUNTRY_NAME_TO_ISO[name] || (/^[A-Za-z]{2}$/.test(name) ? name.toUpperCase() : null),
+			latitude: Number(r.latitude),
+			longitude: Number(r.longitude),
+			events: Number(r.events),
+			visitors: Number(r.visitors),
+		};
+	});
+}
+
 export async function getGeoDetail(
 	from: Date,
 	to: Date,
@@ -220,6 +246,7 @@ export async function getCountryDetail(
 
 	const topCities =
 		await sql`SELECT city, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND city IS NOT NULL AND city != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY city ORDER BY count DESC LIMIT 8`;
+	const cityPoints = await getCityPoints(from, to, projectId, country, excludeVisitorId, origin);
 
 	const topRegions =
 		await sql`SELECT region, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND region IS NOT NULL AND region != '' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY region ORDER BY count DESC LIMIT 6`;
@@ -229,6 +256,61 @@ export async function getCountryDetail(
 
 	const topReferrers =
 		await sql`SELECT referrer, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND referrer IS NOT NULL AND referrer != '' AND ${externalReferrer()} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY referrer ORDER BY count DESC LIMIT 6`;
+
+	const recentVisitors =
+		await sql`WITH recent AS (SELECT visitor_id, MAX(ts) as last_seen, MIN(ts) as first_seen, COUNT(*) as events, COUNT(DISTINCT session_id) as sessions, (ARRAY_AGG(city ORDER BY ts DESC) FILTER (WHERE city IS NOT NULL AND city != ''))[1] as city, (ARRAY_AGG(region ORDER BY ts DESC) FILTER (WHERE region IS NOT NULL AND region != ''))[1] as region FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY visitor_id ORDER BY last_seen DESC LIMIT 15) SELECT r.*, v.device_type, v.browser, v.os FROM recent r LEFT JOIN LATERAL (SELECT device_type, browser, os FROM visitors WHERE fingerprint = r.visitor_id LIMIT 1) v ON true ORDER BY r.last_seen DESC`;
+
+	const recentEvents =
+		await sql`SELECT visitor_id, type, path, ts, city, meta->>'eventName' as event_name FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT 25`;
+
+	const spanMs = to.getTime() - from.getTime();
+	const prevFrom = new Date(from.getTime() - spanMs);
+	const [prevStats] =
+		await sql`SELECT COUNT(*) as total_events, COUNT(DISTINCT visitor_id) as unique_visitors, COUNT(DISTINCT session_id) as sessions FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${prevFrom} AND ts < ${from} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+
+	const trend =
+		await sql`SELECT DATE_TRUNC('day', ts) as day, COUNT(*) as events, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY day ORDER BY day`;
+
+	const [audience] =
+		await sql`WITH in_range AS (SELECT DISTINCT visitor_id FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}), firsts AS (SELECT e.visitor_id, MIN(e.ts) as first_ever FROM events e JOIN in_range r ON r.visitor_id = e.visitor_id GROUP BY e.visitor_id) SELECT COUNT(*) FILTER (WHERE first_ever >= ${from}) as new_visitors, COUNT(*) FILTER (WHERE first_ever < ${from}) as returning_visitors FROM firsts`;
+
+	const [sessionStats] =
+		await sql`WITH session_stats AS (SELECT session_id, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, MAX(ts) - MIN(ts) as duration FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND session_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY session_id) SELECT AVG(pageviews) as avg_pageviews, AVG(EXTRACT(EPOCH FROM duration)) as avg_duration_seconds, COUNT(*) as total_sessions, COUNT(*) FILTER (WHERE pageviews <= 1) as single_page_sessions FROM session_stats`;
+
+	const topEvents =
+		await sql`SELECT COALESCE(meta->>'eventName', 'unnamed') as name, COUNT(*) as count, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'event' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY name ORDER BY count DESC LIMIT 8`;
+
+	const techRows =
+		await sql`WITH vis AS (SELECT DISTINCT visitor_id FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND visitor_id IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}) SELECT v.device_type, v.browser, v.os, COUNT(*) as count FROM vis LEFT JOIN LATERAL (SELECT device_type, browser, os FROM visitors WHERE fingerprint = vis.visitor_id LIMIT 1) v ON true GROUP BY v.device_type, v.browser, v.os ORDER BY count DESC`;
+
+	const heatmapRows =
+		await sql`SELECT EXTRACT(DOW FROM ts) as day_of_week, EXTRACT(HOUR FROM ts) as hour, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND country = ${country} AND type = 'pageview' ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY day_of_week, hour ORDER BY day_of_week, hour`;
+
+	const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+	const [liveNow] =
+		await sql`SELECT COUNT(DISTINCT visitor_id) as active_visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${fiveMinutesAgo} AND country = ${country} ${projectId ? sql`AND project_id = ${projectId}` : sql``}`;
+
+	const heatmapGrid = Array(7)
+		.fill(null)
+		.map(() => Array(24).fill(0));
+	let heatmapMax = 0;
+	heatmapRows.forEach((r) => {
+		const val = Number(r.count);
+		heatmapGrid[Number(r.day_of_week)][Number(r.hour)] = val;
+		if (val > heatmapMax) heatmapMax = val;
+	});
+
+	function aggregateTech(key: "device_type" | "browser" | "os") {
+		const counts = new Map<string, number>();
+		techRows.forEach((r) => {
+			const label = (r[key] as string) || "Unknown";
+			counts.set(label, (counts.get(label) ?? 0) + Number(r.count));
+		});
+		return [...counts.entries()]
+			.map(([label, count]) => ({ label, count }))
+			.sort((a, b) => b.count - a.count)
+			.slice(0, 5);
+	}
 
 	function extractDomain(ref: string): string {
 		try {
@@ -244,11 +326,74 @@ export async function getCountryDetail(
 		uniqueVisitors: Number(s.unique_visitors || 0),
 		sessions: Number(s.sessions || 0),
 		topCities: topCities.map((r) => ({ city: r.city, count: Number(r.count) })),
+		cityPoints,
 		topRegions: topRegions.map((r) => ({ region: r.region, count: Number(r.count) })),
 		topPages: topPages.map((r) => ({ path: r.path, count: Number(r.count) })),
 		topReferrers: topReferrers.map((r) => ({
 			referrer: extractDomain(r.referrer),
 			count: Number(r.count),
 		})),
+		recentVisitors: recentVisitors.map((r) => ({
+			fingerprint: r.visitor_id as string,
+			lastSeen: r.last_seen as string,
+			firstSeen: r.first_seen as string,
+			events: Number(r.events),
+			sessions: Number(r.sessions),
+			city: (r.city as string) || null,
+			region: (r.region as string) || null,
+			deviceType: (r.device_type as string) || null,
+			browser: (r.browser as string) || null,
+			os: (r.os as string) || null,
+		})),
+		recentEvents: recentEvents.map((r) => ({
+			fingerprint: r.visitor_id as string,
+			type: r.type as string,
+			path: (r.path as string) || null,
+			timestamp: r.ts as string,
+			city: (r.city as string) || null,
+			eventName: (r.event_name as string) || null,
+		})),
+		previous: {
+			totalEvents: Number(prevStats?.total_events || 0),
+			uniqueVisitors: Number(prevStats?.unique_visitors || 0),
+			sessions: Number(prevStats?.sessions || 0),
+		},
+		trend: trend.map((r) => ({
+			day: r.day as string,
+			events: Number(r.events),
+			visitors: Number(r.visitors),
+		})),
+		audience: {
+			newVisitors: Number(audience?.new_visitors || 0),
+			returningVisitors: Number(audience?.returning_visitors || 0),
+		},
+		engagement: {
+			avgPageviews: Math.round(Number(sessionStats?.avg_pageviews || 0) * 10) / 10,
+			avgDurationSeconds: Math.round(Number(sessionStats?.avg_duration_seconds || 0)),
+			bounceRate:
+				Number(sessionStats?.total_sessions || 0) > 0
+					? Math.round(
+							(Number(sessionStats?.single_page_sessions || 0) /
+								Number(sessionStats?.total_sessions)) *
+								1000,
+						) / 10
+					: 0,
+		},
+		topEvents: topEvents.map((r) => ({
+			name: r.name as string,
+			count: Number(r.count),
+			visitors: Number(r.visitors),
+		})),
+		technology: {
+			devices: aggregateTech("device_type"),
+			browsers: aggregateTech("browser"),
+			os: aggregateTech("os"),
+		},
+		heatmap: {
+			data: heatmapGrid,
+			maxCount: heatmapMax,
+			days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+		},
+		liveVisitors: Number(liveNow?.active_visitors || 0),
 	};
 }

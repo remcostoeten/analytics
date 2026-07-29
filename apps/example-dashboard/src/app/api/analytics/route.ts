@@ -150,6 +150,17 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getGeoDetail(from, to, projectId, excludeVisitorId, origin),
 				);
+			case "city-points":
+				return NextResponse.json(
+					await query.getCityPoints(
+						from,
+						to,
+						projectId,
+						searchParams.get("country"),
+						excludeVisitorId,
+						origin,
+					),
+				);
 			case "devices":
 				return NextResponse.json(
 					await query.getDeviceBreakdown(
@@ -265,7 +276,12 @@ export async function GET(request: NextRequest) {
 					await query.getCountryDetail(from, to, c, projectId, excludeVisitorId, origin),
 				);
 			case "visitors-explorer": {
-				const segment = (searchParams.get("segment") || "all") as "all" | "new" | "returning";
+				const segment = (searchParams.get("segment") || "all") as
+					| "all"
+					| "new"
+					| "returning"
+					| "engaged"
+					| "converted";
 				const sort = (searchParams.get("sort") || "last_seen") as
 					| "last_seen"
 					| "visit_count"
@@ -300,11 +316,13 @@ export async function GET(request: NextRequest) {
 						{ status: 400 },
 					);
 				}
-				return NextResponse.json(await query.getVisitorSessionTrail(fingerprint, sessionId));
+				return NextResponse.json(
+					await query.getVisitorSessionTrail(fingerprint, sessionId, projectId),
+				);
 			}
 			case "visitor-recurrence":
 				return NextResponse.json(
-					await query.getVisitorRecurrence(from, to, projectId, excludeVisitorId),
+					await query.getVisitorRecurrence(from, to, projectId, excludeVisitorId, origin),
 				);
 			case "segments":
 				const segmentId = searchParams.get("segment") || "all";

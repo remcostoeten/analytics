@@ -2,18 +2,20 @@ import { getVisitorId } from "../identity/visitor";
 import { getSessionId, extendSession } from "../identity/session";
 import { isOptedOut, checkDoNotTrack } from "./privacy";
 import { canTrack } from "./consent";
-import { isRuntime, debugLog, collectEnrichment } from "../utilities";
+import { isRuntime, debugLog, collectEnrichment, uuid } from "../utilities";
 import {
 	normalizeIngestUrl,
 	resolveBrowserIngestUrl,
 	validateIngestUrl,
 } from "../utilities/ingest-url";
 import { enqueueOffline, initOfflineFlush } from "../utilities/offline-queue";
-import { getStoredTraits, persistExperiment, persistUserProperties } from "../identity/traits";
+import {
+	getStoredTraits,
+	persistExperiment,
+	persistIdentity,
+	persistUserProperties,
+} from "../identity/traits";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
-
-const recentEvents = new Set<string>();
-const DEDUPE_WINDOW_MS = 5000;
 
 function resolveDefaultProjectId(): string {
 	if (isRuntime("server") || typeof window === "undefined") return "unknown";
@@ -22,21 +24,7 @@ function resolveDefaultProjectId(): string {
 
 export { validateIngestUrl } from "../utilities/ingest-url";
 
-function createEventKey(payload: EventPayload): string {
-	const eventName = typeof payload.meta?.eventName === "string" ? payload.meta.eventName : "";
-	return `${payload.type}-${eventName}-${payload.path}-${payload.visitorId}-${payload.sessionId}`;
-}
-
 export function resetDedupe(): void {
-	recentEvents.clear();
-}
-
-function isDuplicate(payload: EventPayload): boolean {
-	const key = createEventKey(payload);
-	if (recentEvents.has(key)) return true;
-	recentEvents.add(key);
-	setTimeout(() => recentEvents.delete(key), DEDUPE_WINDOW_MS);
-	return false;
 }
 
 function buildPayload(
@@ -57,6 +45,7 @@ function buildPayload(
 		lang: navigator.language,
 		visitorId: getVisitorId(),
 		sessionId: getSessionId(),
+		eventId: uuid(),
 		ts: new Date().toISOString(),
 		meta: { ...collectEnrichment(), ...getStoredTraits(), ...meta },
 	};
@@ -102,11 +91,6 @@ export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptio
 
 	const payload = buildPayload(type, meta, options);
 	if (!payload) return;
-
-	if (isDuplicate(payload)) {
-		debugLog(options.debug, "Duplicate blocked", payload);
-		return;
-	}
 
 	let ingestUrl = options.ingestUrl ? normalizeIngestUrl(options.ingestUrl) : undefined;
 	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
@@ -177,6 +161,17 @@ export function identifyUser(
 ): void {
 	persistUserProperties(userProperties);
 	track("event", { eventName: "identify", userProperties }, options);
+}
+
+export function identify(
+	userId: string,
+	userProperties: Record<string, string | number | boolean> = {},
+	options?: AnalyticsOptions,
+): void {
+	if (!userId.trim()) return;
+	persistIdentity(userId);
+	persistUserProperties(userProperties);
+	track("event", { eventName: "identify", userId, userProperties }, options);
 }
 
 export function setExperiment(

@@ -110,8 +110,15 @@ function resolveVisitorMetaMerge(
 	const meta = payload.meta as Record<string, unknown>;
 	if (meta.eventName === "identify") {
 		const userProperties = meta.userProperties;
-		if (userProperties && typeof userProperties === "object") {
-			return { path: "identity", value: userProperties as Record<string, unknown> };
+		const userId = typeof meta.userId === "string" ? meta.userId : null;
+		if (userId || (userProperties && typeof userProperties === "object")) {
+			return {
+				path: "identity",
+				value: {
+					...(userProperties && typeof userProperties === "object" ? userProperties : {}),
+					...(userId ? { userId } : {}),
+				},
+			};
 		}
 	} else if (meta.eventName === "experiment_exposure") {
 		const experiments = meta.experiments;
@@ -256,6 +263,7 @@ export async function processSingleEvent(
 		type: payload.type || "pageview",
 		path: payload.path,
 		eventName,
+		eventId: payload.eventId,
 		timestamp: clientTs?.getTime() ?? Date.now(),
 	});
 

@@ -13,6 +13,7 @@ export {
 	trackTransaction,
 	trackSearch,
 	identifyUser,
+	identify,
 	setExperiment,
 	validateIngestUrl,
 } from "./api/track";
@@ -43,5 +44,5 @@ export { observeClicks } from "./observers/click";
 export { observeOutboundLinks } from "./observers/outbound";
 export { observeForms } from "./observers/forms";
 export { observeErrors } from "./observers/errors";
-export { flushOfflineQueue } from "./utilities/offline-queue";
+export { flushOfflineQueue, clearOfflineQueue } from "./utilities/offline-queue";
 export * from "./types";

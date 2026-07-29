@@ -1,7 +1,9 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowLeft, Globe, MapPin, Megaphone, Zap } from "lucide-react";
+import { Globe, MapPin, Megaphone, Zap } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HourlyHeatmap } from "@/components/hourly-heatmap";
 import { VisitorInternalToggle } from "@/components/visitor-internal-toggle";
@@ -9,12 +11,19 @@ import {
 	VisitorSessionsExplorer,
 	type ExplorerSession,
 } from "@/components/visitor-sessions-explorer";
+import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 import { formatDuration, getFlagEmoji } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Props = {
 	params: Promise<{ id: string }>;
+	searchParams?: Promise<{ projectId?: string }>;
 };
+
+async function getProjectId(searchParams?: Props["searchParams"]): Promise<string | null> {
+	const value = (await searchParams)?.projectId;
+	return value && value.length <= 128 ? value : null;
+}
 
 function formatDateTime(value: string | Date | null | undefined): string {
 	if (!value) return "Unknown";
@@ -38,10 +47,19 @@ function flattenMetaSection(value: unknown): { key: string; value: string }[] {
 	}));
 }
 
-async function IdentityHeader({ params }: Props) {
+async function isAdmin(): Promise<boolean> {
+	if (!isAuthEnabled()) {
+		return true;
+	}
+	const cookieStore = await cookies();
+	return verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value) !== null;
+}
+
+async function IdentityHeader({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorProfile } = await import("@/lib/queries");
-	const profile = await getVisitorProfile(fingerprint);
+	const profile = await getVisitorProfile(fingerprint, await getProjectId(searchParams));
+	const canManage = await isAdmin();
 
 	if (!profile) {
 		return (
@@ -70,13 +88,18 @@ async function IdentityHeader({ params }: Props) {
 							{visitor.visitCount > 1
 								? ` · returning visitor (${visitor.visitCount} visits)`
 								: " · first-time visitor"}
+							{profile.relatedVisitors > 1
+								? ` · ${profile.relatedVisitors} linked devices`
+								: ""}
 						</p>
 					</div>
 				</div>
-				<VisitorInternalToggle
-					fingerprint={visitor.fingerprint}
-					initialIsInternal={visitor.isInternal}
-				/>
+				{canManage && (
+					<VisitorInternalToggle
+						fingerprint={visitor.fingerprint}
+						initialIsInternal={visitor.isInternal}
+					/>
+				)}
 			</div>
 
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-[11px]">
@@ -134,10 +157,10 @@ function StatTile({ label, value, hint }: { label: string; value: string; hint?:
 	);
 }
 
-async function EngagementOverview({ params }: Props) {
+async function EngagementOverview({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorInsights } = await import("@/lib/queries");
-	const insights = await getVisitorInsights(fingerprint);
+	const insights = await getVisitorInsights(fingerprint, await getProjectId(searchParams));
 	const { engagement: e, returnPattern: r } = insights;
 
 	return (
@@ -148,6 +171,11 @@ async function EngagementOverview({ params }: Props) {
 			<StatTile label="Pages / session" value={String(e.avgPageviews)} />
 			<StatTile label="Bounce rate" value={`${e.bounceRate}%`} />
 			<StatTile label="Pageviews" value={String(e.totalPageviews)} />
+			<StatTile
+				label="Conversions"
+				value={String(insights.conversions.count)}
+				hint={insights.conversions.lastSeen ? `last ${formatDate(insights.conversions.lastSeen)}` : undefined}
+			/>
 			<StatTile
 				label="Active days"
 				value={String(e.activeDays)}
@@ -164,10 +192,10 @@ async function EngagementOverview({ params }: Props) {
 	);
 }
 
-async function VisitPatterns({ params }: Props) {
+async function VisitPatterns({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorInsights } = await import("@/lib/queries");
-	const insights = await getVisitorInsights(fingerprint);
+	const insights = await getVisitorInsights(fingerprint, await getProjectId(searchParams));
 	const { returnPattern: r, heatmap, dailyActivity } = insights;
 
 	const recentDays = dailyActivity.slice(-60);
@@ -252,11 +280,11 @@ async function VisitPatterns({ params }: Props) {
 	);
 }
 
-async function GeoAndAcquisition({ params }: Props) {
+async function GeoAndAcquisition({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorInsights } = await import("@/lib/queries");
-	const insights = await getVisitorInsights(fingerprint);
-	const { geoHistory, utmHistory, hosts, customEvents } = insights;
+	const insights = await getVisitorInsights(fingerprint, await getProjectId(searchParams));
+	const { geoHistory, utmHistory, acquisition, conversions, hosts, customEvents } = insights;
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -303,8 +331,32 @@ async function GeoAndAcquisition({ params }: Props) {
 						<h3 className="text-xs font-medium text-foreground">Campaigns & sites</h3>
 					</div>
 					<div className="divide-y divide-border">
-						{utmHistory.length === 0 && hosts.length === 0 && (
+						{!acquisition.firstTouch && utmHistory.length === 0 && hosts.length === 0 && (
 							<p className="p-3 text-[11px] text-muted-foreground">No campaign data recorded.</p>
+						)}
+						{acquisition.firstTouch && (
+							<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
+								<span className="text-foreground truncate">
+									First touch · {acquisition.firstTouch.source || "Referral"}
+									{acquisition.firstTouch.medium ? ` / ${acquisition.firstTouch.medium}` : ""}
+									{acquisition.firstTouch.campaign ? ` · ${acquisition.firstTouch.campaign}` : ""}
+								</span>
+								<span className="text-muted-foreground shrink-0">
+									{formatDate(acquisition.firstTouch.seenAt)}
+								</span>
+							</div>
+						)}
+						{acquisition.lastTouch && acquisition.lastTouch.seenAt !== acquisition.firstTouch?.seenAt && (
+							<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
+								<span className="text-foreground truncate">
+									Last touch · {acquisition.lastTouch.source || "Referral"}
+									{acquisition.lastTouch.medium ? ` / ${acquisition.lastTouch.medium}` : ""}
+									{acquisition.lastTouch.campaign ? ` · ${acquisition.lastTouch.campaign}` : ""}
+								</span>
+								<span className="text-muted-foreground shrink-0">
+									{formatDate(acquisition.lastTouch.seenAt)}
+								</span>
+							</div>
 						)}
 						{utmHistory.map((utm, i) => (
 							<div
@@ -336,13 +388,23 @@ async function GeoAndAcquisition({ params }: Props) {
 					</div>
 				</div>
 
-				{customEvents.length > 0 && (
+				{(customEvents.length > 0 || conversions.count > 0) && (
 					<div className="bg-card border border-border rounded-sm">
 						<div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
 							<Zap className="h-3 w-3 text-muted-foreground" />
 							<h3 className="text-xs font-medium text-foreground">Custom events</h3>
 						</div>
 						<div className="divide-y divide-border">
+							{conversions.count > 0 && (
+								<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
+									<span className="text-foreground truncate">
+										Conversions{conversions.names.length > 0 ? ` · ${conversions.names.join(", ")}` : ""}
+									</span>
+									<span className="text-muted-foreground tabular-nums shrink-0">
+										{conversions.count}
+									</span>
+								</div>
+							)}
 							{customEvents.map((event) => (
 								<div
 									key={event.name}
@@ -362,10 +424,11 @@ async function GeoAndAcquisition({ params }: Props) {
 	);
 }
 
-async function SessionTimeline({ params }: Props) {
+async function SessionTimeline({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
+	const projectId = await getProjectId(searchParams);
 	const { getVisitorSessions } = await import("@/lib/queries");
-	const sessions = await getVisitorSessions(fingerprint);
+	const sessions = await getVisitorSessions(fingerprint, projectId);
 
 	const serialized: ExplorerSession[] = sessions.map((s) => ({
 		sessionId: s.sessionId,
@@ -381,13 +444,13 @@ async function SessionTimeline({ params }: Props) {
 		deviceType: s.deviceType,
 	}));
 
-	return <VisitorSessionsExplorer fingerprint={fingerprint} sessions={serialized} />;
+	return <VisitorSessionsExplorer fingerprint={fingerprint} sessions={serialized} projectId={projectId} />;
 }
 
-async function TopPagesAndReferrers({ params }: Props) {
+async function TopPagesAndReferrers({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorProfile } = await import("@/lib/queries");
-	const profile = await getVisitorProfile(fingerprint);
+	const profile = await getVisitorProfile(fingerprint, await getProjectId(searchParams));
 	if (!profile) return null;
 
 	return (
@@ -437,10 +500,10 @@ async function TopPagesAndReferrers({ params }: Props) {
 	);
 }
 
-async function IdentityAndExperiments({ params }: Props) {
+async function IdentityAndExperiments({ params, searchParams }: Props) {
 	const { id: fingerprint } = await params;
 	const { getVisitorProfile } = await import("@/lib/queries");
-	const profile = await getVisitorProfile(fingerprint);
+	const profile = await getVisitorProfile(fingerprint, await getProjectId(searchParams));
 	if (!profile) return null;
 
 	const meta = (profile.visitor.meta ?? {}) as Record<string, unknown>;
@@ -537,43 +600,37 @@ function TwoPanelSkeleton() {
 	);
 }
 
-export default function VisitorProfilePage({ params }: Props) {
+export default function VisitorProfilePage({ params, searchParams }: Props) {
 	return (
 		<div className="max-w-5xl mx-auto p-4 space-y-3">
-			<Link
-				href="/"
-				className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
-			>
-				<ArrowLeft className="h-3 w-3" />
-				Back to dashboard
-			</Link>
+			<BackLink label="Back to dashboard" />
 
 			<Suspense fallback={<HeaderSkeleton />}>
-				<IdentityHeader params={params} />
+				<IdentityHeader params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={<StatRowSkeleton />}>
-				<EngagementOverview params={params} />
+				<EngagementOverview params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={<TwoPanelSkeleton />}>
-				<VisitPatterns params={params} />
+				<VisitPatterns params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={<PanelSkeleton />}>
-				<SessionTimeline params={params} />
+				<SessionTimeline params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={<TwoPanelSkeleton />}>
-				<GeoAndAcquisition params={params} />
+				<GeoAndAcquisition params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={<TwoPanelSkeleton />}>
-				<TopPagesAndReferrers params={params} />
+				<TopPagesAndReferrers params={params} searchParams={searchParams} />
 			</Suspense>
 
 			<Suspense fallback={null}>
-				<IdentityAndExperiments params={params} />
+				<IdentityAndExperiments params={params} searchParams={searchParams} />
 			</Suspense>
 		</div>
 	);

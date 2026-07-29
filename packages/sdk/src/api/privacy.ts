@@ -1,7 +1,13 @@
 import { isRuntime, isStorageAvailable, noop } from "../utilities";
 import { VISITOR_ID_KEY } from "../identity/visitor";
 import { SESSION_ID_KEY, SESSION_TIMEOUT_KEY } from "../identity/session";
-import { USER_PROPERTIES_KEY, EXPERIMENTS_KEY, clearStoredTraits } from "../identity/traits";
+import {
+	USER_PROPERTIES_KEY,
+	EXPERIMENTS_KEY,
+	IDENTITY_KEY,
+	clearStoredTraits,
+} from "../identity/traits";
+import { clearOfflineQueue, OFFLINE_QUEUE_KEY } from "../utilities/offline-queue";
 
 const OPT_OUT_KEY = "__analytics_opt_out";
 
@@ -15,7 +21,7 @@ export const PRIVACY_DISCLOSURE =
 	"The @remcostoeten/analytics SDK uses localStorage and sessionStorage only. No HTTP cookies. " +
 	"Stored keys: visitor ID (localStorage, persistent identifier), session ID and session timeout " +
 	"(sessionStorage, 30-minute session), opt-out flag (localStorage), and optional user properties " +
-	"and experiment assignments set via identifyUser/setExperiment (localStorage). " +
+	"and experiment assignments set via identifyUser/identify/setExperiment (localStorage). " +
 	"Events are sent to your configured ingestion URL. IP addresses are hashed server-side; raw IPs are not stored by the SDK.";
 
 export function getStoredKeys(): StorageKeyInfo[] {
@@ -46,23 +52,51 @@ export function getStoredKeys(): StorageKeyInfo[] {
 			purpose: "User properties set via identifyUser, attached to subsequent events",
 		},
 		{
+			key: IDENTITY_KEY,
+			storage: "localStorage",
+			purpose: "Known product-user identifier set via identify",
+		},
+		{
 			key: EXPERIMENTS_KEY,
 			storage: "localStorage",
 			purpose: "Experiment variant assignments set via setExperiment",
+		},
+		{
+			key: OFFLINE_QUEUE_KEY,
+			storage: "localStorage",
+			purpose: "Temporarily queued unsent analytics events",
 		},
 	];
 }
 
 export function optOut(): void {
+	clearAnalyticsStorage();
 	if (!isStorageAvailable("local")) return;
-
 	try {
 		localStorage.setItem(OPT_OUT_KEY, "true");
-		localStorage.removeItem(VISITOR_ID_KEY);
-		clearStoredTraits();
 	} catch {
 		noop();
 	}
+}
+
+export function clearAnalyticsStorage(): void {
+	if (isStorageAvailable("local")) {
+		try {
+			localStorage.removeItem(VISITOR_ID_KEY);
+		} catch {
+			noop();
+		}
+	}
+	if (isStorageAvailable("session")) {
+		try {
+			sessionStorage.removeItem(SESSION_ID_KEY);
+			sessionStorage.removeItem(SESSION_TIMEOUT_KEY);
+		} catch {
+			noop();
+		}
+	}
+	clearStoredTraits();
+	clearOfflineQueue();
 }
 
 export function optIn(): void {

@@ -100,7 +100,7 @@ export function GeoExplorer() {
 	const regionDisplay = region ? regionName(country, region) : null;
 
 	return (
-		<div className="flex flex-col gap-3 p-3 md:p-4 max-w-[1400px] mx-auto w-full">
+		<div className="mx-auto flex min-h-[2539px] w-full max-w-[1400px] flex-col gap-3 p-3 md:min-h-[1708px] md:p-4">
 			<header className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="flex items-center gap-2 min-w-0">
 					<Link

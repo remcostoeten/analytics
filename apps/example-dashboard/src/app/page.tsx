@@ -1,7 +1,8 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardContent } from "@/components/dashboard-content";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
+import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 import { mockDashboardData } from "@/lib/mock-data";
 import type { DashboardData } from "@/lib/types";
 import { cookies } from "next/headers";
@@ -54,6 +55,7 @@ async function DashboardData() {
 			breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
 			description="Real-time sessions, regional load, and ingest health across your edge network"
 			authUser={authUser}
+			authEnabled={isAuthEnabled()}
 		/>
 	);
 }
@@ -65,7 +67,7 @@ export default function DashboardPage() {
 				<AppSidebar />
 			</Suspense>
 			<SidebarInset>
-				<Suspense fallback={<div className="flex-1 p-4">Loading dashboard...</div>}>
+				<Suspense fallback={<DashboardSkeleton />}>
 					<DashboardData />
 				</Suspense>
 			</SidebarInset>

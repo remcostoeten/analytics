@@ -4,6 +4,7 @@ import { type TrackMeta } from "../types";
 
 export const USER_PROPERTIES_KEY = "__analytics_user_props";
 export const EXPERIMENTS_KEY = "__analytics_experiments";
+export const IDENTITY_KEY = "__analytics_identity";
 
 type StoredRecord = Record<string, string | number | boolean>;
 
@@ -38,6 +39,26 @@ export function persistExperiment(experimentId: string, variantId: string): void
 	mergeRecord(EXPERIMENTS_KEY, { [experimentId]: variantId });
 }
 
+export function persistIdentity(userId: string): void {
+	if (!isStorageAvailable("local") || !canPersist()) return;
+
+	try {
+		localStorage.setItem(IDENTITY_KEY, userId);
+	} catch {
+		noop();
+	}
+}
+
+export function getIdentity(): string | null {
+	if (!isStorageAvailable("local")) return null;
+
+	try {
+		return localStorage.getItem(IDENTITY_KEY);
+	} catch {
+		return null;
+	}
+}
+
 export function getStoredTraits(): TrackMeta {
 	const traits: TrackMeta = {};
 	const userProperties = readRecord(USER_PROPERTIES_KEY);
@@ -45,6 +66,8 @@ export function getStoredTraits(): TrackMeta {
 
 	if (Object.keys(userProperties).length > 0) traits.userProperties = userProperties;
 	if (Object.keys(experiments).length > 0) traits.experiments = experiments;
+	const userId = getIdentity();
+	if (userId) traits.userId = userId;
 
 	return traits;
 }
@@ -55,6 +78,7 @@ export function clearStoredTraits(): void {
 	try {
 		localStorage.removeItem(USER_PROPERTIES_KEY);
 		localStorage.removeItem(EXPERIMENTS_KEY);
+		localStorage.removeItem(IDENTITY_KEY);
 	} catch {
 		noop();
 	}

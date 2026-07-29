@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { GeoExplorer } from "@/components/geo/geo-explorer";
+import { GeoSkeleton } from "@/components/dashboard-skeleton";
 
 export const metadata: Metadata = {
 	title: "Geo Explorer",
@@ -10,9 +11,7 @@ export const metadata: Metadata = {
 export default function GeoPage() {
 	return (
 		<main className="min-h-screen bg-background">
-			<Suspense
-				fallback={<div className="p-4 text-sm text-muted-foreground">Loading geo explorer…</div>}
-			>
+			<Suspense fallback={<GeoSkeleton />}>
 				<GeoExplorer />
 			</Suspense>
 		</main>

@@ -19,6 +19,7 @@ type DashboardHeaderProps = {
 	typeFilter?: SignalEvent["type"] | "all";
 	onTypeFilterChange?: (type: SignalEvent["type"] | "all") => void;
 	authUser?: string | null;
+	authEnabled?: boolean;
 };
 
 export function DashboardHeader({
@@ -26,6 +27,7 @@ export function DashboardHeader({
 	typeFilter = "all",
 	onTypeFilterChange,
 	authUser,
+	authEnabled = false,
 }: DashboardHeaderProps) {
 	return (
 		<header
@@ -39,7 +41,7 @@ export function DashboardHeader({
 			</div>
 
 			<div className="flex items-center gap-1">
-				<AuthUser login={authUser} />
+				<AuthUser login={authUser} authEnabled={authEnabled} />
 				<TypeFilterDropdown value={typeFilter} onChange={onTypeFilterChange} />
 			</div>
 		</header>
@@ -48,10 +50,19 @@ export function DashboardHeader({
 
 type AuthUserProps = {
 	login?: string | null;
+	authEnabled?: boolean;
 };
 
-function AuthUser({ login }: AuthUserProps) {
-	if (!login) return null;
+function AuthUser({ login, authEnabled }: AuthUserProps) {
+	if (!login) {
+		if (!authEnabled) return null;
+
+		return (
+			<Button variant="outline" size="sm" asChild className="h-7 px-2.5 text-[11px]">
+				<a href="/api/auth/login">Admin sign in</a>
+			</Button>
+		);
+	}
 
 	return (
 		<DropdownMenu>

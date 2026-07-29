@@ -6,6 +6,10 @@ export function proxy(request: NextRequest) {
 		return NextResponse.next();
 	}
 
+	if (request.method === "GET" || request.method === "HEAD") {
+		return NextResponse.next();
+	}
+
 	const login = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
 	if (login) {
 		return NextResponse.next();

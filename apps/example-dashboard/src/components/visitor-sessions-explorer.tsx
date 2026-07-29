@@ -33,6 +33,7 @@ type TrailStep = {
 type Props = {
 	fingerprint: string;
 	sessions: ExplorerSession[];
+	projectId?: string | null;
 };
 
 async function fetcher(url: string): Promise<{ steps: TrailStep[] }> {
@@ -64,9 +65,18 @@ function gapLabel(prevEndedAt: string, startedAt: string): string | null {
 	return `${formatDuration(gap)} earlier`;
 }
 
-function SessionTrail({ fingerprint, sessionId }: { fingerprint: string; sessionId: string }) {
+function SessionTrail({
+	fingerprint,
+	sessionId,
+	projectId,
+}: {
+	fingerprint: string;
+	sessionId: string;
+	projectId?: string | null;
+}) {
+	const projectQuery = projectId ? `&projectId=${encodeURIComponent(projectId)}` : "";
 	const { data, isLoading, error } = useSWR(
-		`/api/analytics?metric=visitor-session-trail&fingerprint=${encodeURIComponent(fingerprint)}&sessionId=${encodeURIComponent(sessionId)}`,
+		`/api/analytics?metric=visitor-session-trail&fingerprint=${encodeURIComponent(fingerprint)}&sessionId=${encodeURIComponent(sessionId)}${projectQuery}`,
 		fetcher,
 	);
 
@@ -117,7 +127,7 @@ function SessionTrail({ fingerprint, sessionId }: { fingerprint: string; session
 	);
 }
 
-export function VisitorSessionsExplorer({ fingerprint, sessions }: Props) {
+export function VisitorSessionsExplorer({ fingerprint, sessions, projectId }: Props) {
 	const [expanded, setExpanded] = useState<string | null>(null);
 
 	if (sessions.length === 0) {
@@ -208,7 +218,11 @@ export function VisitorSessionsExplorer({ fingerprint, sessions }: Props) {
 								</div>
 							</button>
 							{isOpen && session.sessionId && (
-								<SessionTrail fingerprint={fingerprint} sessionId={session.sessionId} />
+								<SessionTrail
+									fingerprint={fingerprint}
+									sessionId={session.sessionId}
+									projectId={projectId}
+								/>
 							)}
 						</div>
 					);

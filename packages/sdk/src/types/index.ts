@@ -55,6 +55,11 @@ export type TrackHelpers = {
 		userProperties: Record<string, string | number | boolean>,
 		options?: AnalyticsOptions,
 	) => void;
+	identify: (
+		userId: string,
+		userProperties?: Record<string, string | number | boolean>,
+		options?: AnalyticsOptions,
+	) => void;
 	setExperiment: (experimentId: string, variantId: string, options?: AnalyticsOptions) => void;
 };
 
@@ -69,6 +74,7 @@ export type EventPayload<Type extends EventType = EventType> = {
 	lang: string;
 	visitorId: string;
 	sessionId: string;
+	eventId: string;
 	ts?: string;
 	meta?: TrackMeta;
 };

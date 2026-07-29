@@ -54,6 +54,7 @@ function buildServerPayload(
 		lang: "en",
 		visitorId: options.visitorId ?? uuid(),
 		sessionId: options.sessionId ?? uuid(),
+		eventId: uuid(),
 		meta: { source: "server", ...meta },
 	};
 }

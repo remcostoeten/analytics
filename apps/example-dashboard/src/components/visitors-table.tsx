@@ -31,12 +31,13 @@ type VisitorExplorerResponse = {
 	total: number;
 };
 
-type Segment = "all" | "new" | "returning";
+type Segment = "all" | "new" | "returning" | "engaged" | "converted";
 type Sort = "last_seen" | "visit_count" | "first_seen" | "total_time";
 
 type Props = {
 	buildQuery: (metric: string, extraParams?: string) => string;
 	className?: string;
+	projectId?: string | null;
 };
 
 async function fetcher(url: string): Promise<VisitorExplorerResponse> {
@@ -66,9 +67,11 @@ const SEGMENTS: { id: Segment; label: string }[] = [
 	{ id: "all", label: "All" },
 	{ id: "new", label: "New" },
 	{ id: "returning", label: "Returning" },
+	{ id: "engaged", label: "Engaged" },
+	{ id: "converted", label: "Converted" },
 ];
 
-export function VisitorsTable({ buildQuery, className }: Props) {
+export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 	const [segment, setSegment] = useState<Segment>("all");
 	const [sort, setSort] = useState<Sort>("last_seen");
 	const [search, setSearch] = useState("");
@@ -87,6 +90,7 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 	);
 
 	const rows = data?.rows ?? [];
+	const projectQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm", className)}>
@@ -173,7 +177,7 @@ export function VisitorsTable({ buildQuery, className }: Props) {
 								<tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
 									<td className="px-3 py-1.5">
 										<Link
-											href={`/visitor/${visitor.fingerprint}` as Route}
+									href={`/visitor/${visitor.fingerprint}${projectQuery}` as Route}
 											className="flex items-center gap-2 group"
 										>
 											<div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">

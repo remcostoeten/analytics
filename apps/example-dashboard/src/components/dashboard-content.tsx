@@ -4,30 +4,18 @@ import type { Route as AppRoute } from "next";
 
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
+import dynamic from "next/dynamic";
 import { KPICardsGrid } from "@/components/kpi-cards";
 import { SignalStream } from "@/components/signal-stream";
 import { TopPagesTable, ReferrersTable } from "@/components/data-table";
-import { TrendChart } from "@/components/trend-chart";
-import { DonutChart, BreakdownChart } from "@/components/breakdown-chart";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { GeoMap } from "@/components/geo-map";
+import type { CityPoint } from "@/components/geo-map";
 import { GeoDetails } from "@/components/geo-details";
 import { ReferrerDetailPanel } from "@/components/referrer-detail-panel";
-import { WebVitalsCard } from "@/components/web-vitals-card";
-import { ErrorTrackingCard } from "@/components/error-tracking-card";
-import { HourlyHeatmap } from "@/components/hourly-heatmap";
 import { SessionStatsCard } from "@/components/session-stats-card";
-import { EngagementMetrics } from "@/components/engagement-metrics";
-import { TechnologyBreakdown } from "@/components/technology-breakdown";
-import { VisitorsTable } from "@/components/visitors-table";
-import { EntryExitPages } from "@/components/entry-exit-pages";
 import { LiveNowWidget } from "@/components/live-now-widget";
-import { RetentionHeatmap } from "@/components/retention-heatmap";
-import { SessionPaths } from "@/components/session-paths";
-import { UTMCampaignsTable } from "@/components/utm-campaigns-table";
 import { ViewTabs } from "@/components/view-tabs";
-import { BotTrafficCard } from "@/components/bot-traffic-card";
-import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { useCommandPalette } from "@/hooks/use-command-palette";
 import {
 	PostHogNotice,
 	PostHogProjectSwitcher,
@@ -54,9 +42,58 @@ import { RouteIcon } from "@/components/ui/route";
 import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
 import { UsersIcon } from "@/components/ui/users";
 import { ZapIcon } from "@/components/ui/zap";
-import { formatNumber, getFlagEmoji } from "@/lib/format";
-import { countryName, regionName } from "@/lib/geo-names";
+import { cn } from "@/lib/utils";
+import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
+import { countryName, regionName, toCountryCode } from "@/lib/geo-names";
 import Link from "next/link";
+
+const TrendChart = dynamic(() => import("@/components/trend-chart").then((module) => module.TrendChart));
+const GeoMap = dynamic(() => import("@/components/geo-map").then((module) => module.GeoMap));
+const DonutChart = dynamic(() =>
+	import("@/components/breakdown-chart").then((module) => module.DonutChart),
+);
+const BreakdownChart = dynamic(() =>
+	import("@/components/breakdown-chart").then((module) => module.BreakdownChart),
+);
+const WebVitalsCard = dynamic(() =>
+	import("@/components/web-vitals-card").then((module) => module.WebVitalsCard),
+);
+const ErrorTrackingCard = dynamic(() =>
+	import("@/components/error-tracking-card").then((module) => module.ErrorTrackingCard),
+);
+const HourlyHeatmap = dynamic(() =>
+	import("@/components/hourly-heatmap").then((module) => module.HourlyHeatmap),
+);
+const EngagementMetrics = dynamic(() =>
+	import("@/components/engagement-metrics").then((module) => module.EngagementMetrics),
+);
+const TechnologyBreakdown = dynamic(() =>
+	import("@/components/technology-breakdown").then((module) => module.TechnologyBreakdown),
+);
+const VisitorsTable = dynamic(() =>
+	import("@/components/visitors-table").then((module) => module.VisitorsTable),
+);
+const EntryExitPages = dynamic(() =>
+	import("@/components/entry-exit-pages").then((module) => module.EntryExitPages),
+);
+const RetentionHeatmap = dynamic(() =>
+	import("@/components/retention-heatmap").then((module) => module.RetentionHeatmap),
+);
+const SessionPaths = dynamic(() =>
+	import("@/components/session-paths").then((module) => module.SessionPaths),
+);
+const UTMCampaignsTable = dynamic(() =>
+	import("@/components/utm-campaigns-table").then((module) => module.UTMCampaignsTable),
+);
+const BotTrafficCard = dynamic(() =>
+	import("@/components/bot-traffic-card").then((module) => module.BotTrafficCard),
+);
+const CommandPalette = dynamic(() =>
+	import("@/components/command-palette").then((module) => module.CommandPalette),
+);
+const CountryMiniMap = dynamic(() =>
+	import("@/components/country-mini-map").then((module) => module.CountryMiniMap),
+);
 
 type ApiError = Error & {
 	status?: number;
@@ -91,6 +128,26 @@ function formatDuration(ms: number): string {
 	return `${minutes}m ${remainingSeconds}s`;
 }
 
+function DeltaBadge({ current, previous }: { current: number; previous: number }) {
+	if (previous === 0) return null;
+	const delta = Math.round(((current - previous) / previous) * 100);
+	if (!Number.isFinite(delta)) return null;
+	return (
+		<p
+			className={cn(
+				"text-[10px] tabular-nums",
+				delta >= 0
+					? "text-emerald-600 dark:text-emerald-400"
+					: "text-red-600 dark:text-red-400",
+			)}
+			title="Compared to the previous period of the same length"
+		>
+			{delta >= 0 ? "+" : ""}
+			{delta}%
+		</p>
+	);
+}
+
 function formatDecimal(value: number): string {
 	return Number(value.toFixed(1)).toString();
 }
@@ -102,6 +159,7 @@ type DashboardContentProps = {
 	breadcrumbs?: BreadcrumbItem[];
 	description?: string;
 	authUser?: string | null;
+	authEnabled?: boolean;
 };
 
 type DashboardView =
@@ -125,9 +183,50 @@ type CountryDetail = {
 	uniqueVisitors: number;
 	sessions: number;
 	topCities: { city: string; count: number }[];
+	cityPoints: CityPoint[];
 	topRegions: { region: string; count: number }[];
 	topPages: { path: string; count: number }[];
 	topReferrers: { referrer: string; count: number }[];
+	recentVisitors: {
+		fingerprint: string;
+		lastSeen: string;
+		firstSeen: string;
+		events: number;
+		sessions: number;
+		city: string | null;
+		region: string | null;
+		deviceType: string | null;
+		browser: string | null;
+		os: string | null;
+	}[];
+	recentEvents: {
+		fingerprint: string;
+		type: string;
+		path: string | null;
+		timestamp: string;
+		city: string | null;
+		eventName: string | null;
+	}[];
+	previous: {
+		totalEvents: number;
+		uniqueVisitors: number;
+		sessions: number;
+	};
+	trend: { day: string; events: number; visitors: number }[];
+	audience: { newVisitors: number; returningVisitors: number };
+	engagement: {
+		avgPageviews: number;
+		avgDurationSeconds: number;
+		bounceRate: number;
+	};
+	topEvents: { name: string; count: number; visitors: number }[];
+	technology: {
+		devices: { label: string; count: number }[];
+		browsers: { label: string; count: number }[];
+		os: { label: string; count: number }[];
+	};
+	heatmap: { data: number[][]; maxCount: number; days: string[] };
+	liveVisitors: number;
 };
 
 export function DashboardContent({
@@ -137,13 +236,27 @@ export function DashboardContent({
 	breadcrumbs = [{ label: "Analytics", href: "/" }, { label: "Dashboard" }],
 	description = "Simple, user-focused analytics for your personal projects",
 	authUser,
+	authEnabled = false,
 }: DashboardContentProps) {
 	const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
-	const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
 
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+
+	const countryDetailParam = searchParams.get("countryDetail");
+	const selectedCountry = useMemo<SelectedCountry | null>(() => {
+		if (!countryDetailParam) return null;
+		const code =
+			toCountryCode(countryDetailParam) ||
+			(countryDetailParam.length === 2 ? countryDetailParam.toUpperCase() : null);
+		return {
+			country: countryDetailParam,
+			countryCode: code ?? undefined,
+			count: 0,
+			percentage: 0,
+		};
+	}, [countryDetailParam]);
 	const activeView = (searchParams.get("view") as DashboardView) || "overview";
 	const selectedProject = searchParams.get("projectId");
 	const selectedOrigin = searchParams.get("origin");
@@ -158,6 +271,18 @@ export function DashboardContent({
 	const geoCountry =
 		rawGeoCountry && /^[A-Za-z]{2}$/.test(rawGeoCountry) ? rawGeoCountry.toUpperCase() : null;
 	const geoRegion = geoCountry ? searchParams.get("region") : null;
+
+	const openCountryDetail = (country: SelectedCountry) => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		newParams.set("countryDetail", country.country);
+		router.push(buildHref(pathname || "/", newParams), { scroll: false });
+	};
+
+	const closeCountryDetail = () => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		newParams.delete("countryDetail");
+		router.replace(buildHref(pathname || "/", newParams), { scroll: false });
+	};
 
 	const setActiveView = (view: DashboardView) => {
 		const newParams = new URLSearchParams(searchParams.toString());
@@ -282,6 +407,16 @@ export function DashboardContent({
 		revalidateOnFocus: false,
 		keepPreviousData: true,
 	});
+
+	const { data: cityPoints } = useSWR<CityPoint[]>(
+		viewKey(["overview", "realtime", "audience"], "city-points"),
+		fetcher,
+		{
+			refreshInterval: 30000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
 
 	const { data: geoDetail } = useSWR(
 		viewKey(["overview", "realtime", "audience"], "geo-detail"),
@@ -645,6 +780,7 @@ export function DashboardContent({
 				typeFilter={typeFilter}
 				onTypeFilterChange={setTypeFilter}
 				authUser={authUser}
+				authEnabled={authEnabled}
 			/>
 
 			<CommandPalette
@@ -751,7 +887,8 @@ export function DashboardContent({
 								/>
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
-									onCountryClick={(country) => setSelectedCountry(country)}
+									cityPoints={cityPoints}
+									onCountryClick={openCountryDetail}
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -795,7 +932,8 @@ export function DashboardContent({
 							<div className="lg:col-span-8 space-y-3">
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
-									onCountryClick={(country) => setSelectedCountry(country)}
+									cityPoints={cityPoints}
+									onCountryClick={openCountryDetail}
 								/>
 								<GeoDetails data={geoDetail} />
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -872,7 +1010,7 @@ export function DashboardContent({
 									/>
 									<WebVitalsCard data={webVitals} />
 								</div>
-								<VisitorsTable buildQuery={buildQuery} />
+								<VisitorsTable buildQuery={buildQuery} projectId={selectedProject} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -900,10 +1038,11 @@ export function DashboardContent({
 							<div className="lg:col-span-8 space-y-3">
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
-									onCountryClick={(country) => setSelectedCountry(country)}
+									cityPoints={cityPoints}
+									onCountryClick={openCountryDetail}
 								/>
 								<GeoDetails data={geoDetail} />
-								<VisitorsTable buildQuery={buildQuery} />
+								<VisitorsTable buildQuery={buildQuery} projectId={selectedProject} />
 							</div>
 							<div className="lg:col-span-4 space-y-3">
 								<DonutChart
@@ -983,13 +1122,13 @@ export function DashboardContent({
 			{selectedCountry && (
 				<div
 					className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-					onClick={() => setSelectedCountry(null)}
+					onClick={closeCountryDetail}
 				>
 					<div
 						role="dialog"
 						aria-modal="true"
 						aria-labelledby="country-modal-title"
-						className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+						className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[640px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{countryDetailLoading || !countryDetailData ? (
@@ -1008,9 +1147,21 @@ export function DashboardContent({
 												id="country-modal-title"
 												className="text-lg font-semibold text-foreground"
 											>
-												{selectedCountry.country}
+												{countryName(selectedCountry.country)}
 											</h3>
-											<p className="text-sm text-muted-foreground">Country details</p>
+											<p className="text-sm text-muted-foreground">
+												{countryDetailData.uniqueVisitors.toLocaleString()} unique visitors ·{" "}
+												{countryDetailData.sessions.toLocaleString()} sessions
+												{countryDetailData.liveVisitors > 0 && (
+													<span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+														<span className="relative flex h-1.5 w-1.5">
+															<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+															<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+														</span>
+														{countryDetailData.liveVisitors} live now
+													</span>
+												)}
+											</p>
 										</div>
 										{selectedCountry.countryCode && (
 											<button
@@ -1019,7 +1170,7 @@ export function DashboardContent({
 													const newParams = new URLSearchParams(searchParams.toString());
 													newParams.set("country", selectedCountry.countryCode!);
 													newParams.delete("region");
-													setSelectedCountry(null);
+													newParams.delete("countryDetail");
 													router.push(buildHref(pathname || "/", newParams));
 												}}
 												className="ml-auto text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
@@ -1031,6 +1182,13 @@ export function DashboardContent({
 								</div>
 
 								<div className="overflow-y-auto flex-1 p-5 space-y-5">
+									{(selectedCountry.countryCode || selectedCountry.country.length === 2) && (
+										<CountryMiniMap
+											countryCode={selectedCountry.countryCode || selectedCountry.country}
+											points={countryDetailData.cityPoints}
+										/>
+									)}
+
 									<div className="grid grid-cols-4 gap-3">
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
@@ -1039,6 +1197,10 @@ export function DashboardContent({
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
 												Events
 											</p>
+											<DeltaBadge
+												current={countryDetailData.totalEvents}
+												previous={countryDetailData.previous.totalEvents}
+											/>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
@@ -1047,6 +1209,10 @@ export function DashboardContent({
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
 												Visitors
 											</p>
+											<DeltaBadge
+												current={countryDetailData.uniqueVisitors}
+												previous={countryDetailData.previous.uniqueVisitors}
+											/>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
@@ -1055,6 +1221,10 @@ export function DashboardContent({
 											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
 												Sessions
 											</p>
+											<DeltaBadge
+												current={countryDetailData.sessions}
+												previous={countryDetailData.previous.sessions}
+											/>
 										</div>
 										<div className="bg-muted/50 rounded-lg p-3 text-center">
 											<p className="text-xl font-bold text-foreground">
@@ -1066,21 +1236,264 @@ export function DashboardContent({
 										</div>
 									</div>
 
+									{countryDetailData.trend.length > 1 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">
+												Daily trend
+												<span className="ml-1.5 font-normal text-muted-foreground">
+													events per day
+												</span>
+											</h4>
+											<div className="flex items-end gap-px h-14 bg-muted/20 rounded p-1.5">
+												{countryDetailData.trend.map((d) => {
+													const max = Math.max(
+														1,
+														...countryDetailData.trend.map((t) => t.events),
+													);
+													return (
+														<div
+															key={d.day}
+															className="flex-1 bg-foreground/60 hover:bg-foreground rounded-t-[1px] transition-colors min-w-[2px]"
+															style={{
+																height: `${Math.max(6, (d.events / max) * 100)}%`,
+															}}
+															title={`${new Date(d.day).toLocaleDateString()}: ${d.events} events, ${d.visitors} visitors`}
+														/>
+													);
+												})}
+											</div>
+										</div>
+									)}
+
+									<div className="grid grid-cols-4 gap-3">
+										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+											<p className="text-sm font-semibold text-foreground tabular-nums">
+												{formatDuration(countryDetailData.engagement.avgDurationSeconds * 1000)}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Avg session
+											</p>
+										</div>
+										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+											<p className="text-sm font-semibold text-foreground tabular-nums">
+												{countryDetailData.engagement.avgPageviews}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Pages / session
+											</p>
+										</div>
+										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+											<p className="text-sm font-semibold text-foreground tabular-nums">
+												{countryDetailData.engagement.bounceRate}%
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												Bounce rate
+											</p>
+										</div>
+										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+											<p className="text-sm font-semibold text-foreground tabular-nums">
+												{countryDetailData.audience.newVisitors} /{" "}
+												{countryDetailData.audience.returningVisitors}
+											</p>
+											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+												New / returning
+											</p>
+										</div>
+									</div>
+
+									{countryDetailData.recentVisitors.length > 0 && (
+										<div>
+											<div className="flex items-center justify-between mb-2">
+												<h4 className="text-xs font-semibold text-foreground">
+													Recent visitors
+													<span className="ml-1.5 font-normal text-muted-foreground">
+														deduplicated · {countryDetailData.recentVisitors.length} shown
+													</span>
+												</h4>
+												{selectedCountry.countryCode && (
+													<button
+														type="button"
+														onClick={() => {
+															const newParams = new URLSearchParams(searchParams.toString());
+															newParams.set("view", "audience");
+															newParams.set("country", selectedCountry.countryCode!);
+															newParams.delete("region");
+															newParams.delete("countryDetail");
+															router.push(buildHref(pathname || "/", newParams));
+														}}
+														className="text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+													>
+														View all visitors →
+													</button>
+												)}
+											</div>
+											<div className="space-y-1">
+												{countryDetailData.recentVisitors.map((v) => (
+													<Link
+														key={v.fingerprint}
+														href={`/visitor/${v.fingerprint}` as AppRoute}
+														className="flex items-center justify-between gap-2 px-2 py-1.5 bg-muted/30 hover:bg-muted/60 rounded text-[11px] transition-colors group"
+													>
+														<span className="flex items-center gap-2 min-w-0">
+															<span className="font-mono text-foreground group-hover:underline shrink-0">
+																{v.fingerprint.slice(0, 10)}
+															</span>
+															<span className="text-muted-foreground truncate">
+																{[v.city, v.region].filter(Boolean).join(", ") || "Unknown city"}
+																{v.deviceType || v.browser
+																	? ` · ${[v.deviceType, v.browser].filter(Boolean).join(" / ")}`
+																	: ""}
+															</span>
+														</span>
+														<span className="text-muted-foreground tabular-nums shrink-0">
+															{v.events} ev · {v.sessions} sess ·{" "}
+															<span
+																className="text-foreground"
+																title={new Date(v.lastSeen).toLocaleString()}
+															>
+																{formatTimeAgo(v.lastSeen)}
+															</span>
+														</span>
+													</Link>
+												))}
+											</div>
+										</div>
+									)}
+
+									{countryDetailData.recentEvents.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">
+												Recent activity
+											</h4>
+											<div className="space-y-px max-h-56 overflow-y-auto rounded">
+												{countryDetailData.recentEvents.map((e, i) => (
+													<div
+														key={`${e.fingerprint}-${e.timestamp}-${i}`}
+														className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/20 text-[11px]"
+													>
+														<span className="flex items-center gap-2 min-w-0">
+															<span
+																className="text-muted-foreground tabular-nums shrink-0 w-16"
+																title={new Date(e.timestamp).toLocaleString()}
+															>
+																{formatTimeAgo(e.timestamp)}
+															</span>
+															<span
+																className={
+																	e.type === "pageview"
+																		? "text-foreground truncate"
+																		: "text-amber-600 dark:text-amber-400 truncate"
+																}
+															>
+																{e.type === "pageview"
+																	? e.path || "/"
+																	: e.eventName || e.type}
+															</span>
+														</span>
+														<Link
+															href={`/visitor/${e.fingerprint}` as AppRoute}
+															className="font-mono text-muted-foreground hover:text-foreground hover:underline shrink-0"
+														>
+															{e.fingerprint.slice(0, 8)}
+														</Link>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+									{countryDetailData.topEvents.length > 0 && (
+										<div>
+											<h4 className="text-xs font-semibold text-foreground mb-2">
+												Custom events
+											</h4>
+											<div className="space-y-1">
+												{countryDetailData.topEvents.map((e) => (
+													<div
+														key={e.name}
+														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
+													>
+														<span className="text-amber-600 dark:text-amber-400 truncate max-w-[300px]">
+															{e.name}
+														</span>
+														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+															{e.count.toLocaleString()} · {e.visitors} visitor
+															{e.visitors === 1 ? "" : "s"}
+														</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+									<div className="grid grid-cols-3 gap-3">
+										{(
+											[
+												["Devices", countryDetailData.technology.devices],
+												["Browsers", countryDetailData.technology.browsers],
+												["OS", countryDetailData.technology.os],
+											] as const
+										).map(([title, entries]) => (
+											<div key={title}>
+												<h4 className="text-xs font-semibold text-foreground mb-2">{title}</h4>
+												<div className="space-y-1">
+													{entries.length === 0 && (
+														<p className="text-[11px] text-muted-foreground">No data</p>
+													)}
+													{entries.map((entry) => (
+														<div
+															key={entry.label}
+															className="flex items-center justify-between text-[11px] px-2 py-1 bg-muted/30 rounded"
+														>
+															<span className="text-foreground truncate">{entry.label}</span>
+															<span className="text-muted-foreground tabular-nums shrink-0 ml-1">
+																{entry.count}
+															</span>
+														</div>
+													))}
+												</div>
+											</div>
+										))}
+									</div>
+
+									{countryDetailData.heatmap.maxCount > 0 && (
+										<HourlyHeatmap
+											data={countryDetailData.heatmap}
+											title={`When ${countryName(selectedCountry.country)} is active`}
+											emptyLabel="Not enough traffic yet"
+										/>
+									)}
+
 									{countryDetailData.topCities.length > 0 && (
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Cities</h4>
 											<div className="flex flex-wrap gap-1.5">
-												{countryDetailData.topCities.map((c) => (
-													<span
-														key={c.city}
-														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
-													>
-														<span className="text-foreground">{c.city}</span>
-														<span className="text-muted-foreground">
-															{c.count.toLocaleString()}
+												{countryDetailData.topCities.map((c) =>
+													selectedCountry.countryCode ? (
+														<Link
+															key={c.city}
+															href={
+																`/geo?country=${encodeURIComponent(selectedCountry.countryCode)}` as AppRoute
+															}
+															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-[11px] transition-colors"
+														>
+															<span className="text-foreground">{c.city}</span>
+															<span className="text-muted-foreground">
+																{c.count.toLocaleString()}
+															</span>
+														</Link>
+													) : (
+														<span
+															key={c.city}
+															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
+														>
+															<span className="text-foreground">{c.city}</span>
+															<span className="text-muted-foreground">
+																{c.count.toLocaleString()}
+															</span>
 														</span>
-													</span>
-												))}
+													),
+												)}
 											</div>
 										</div>
 									)}
@@ -1089,17 +1502,32 @@ export function DashboardContent({
 										<div>
 											<h4 className="text-xs font-semibold text-foreground mb-2">Top Regions</h4>
 											<div className="flex flex-wrap gap-1.5">
-												{countryDetailData.topRegions.map((r) => (
-													<span
-														key={r.region}
-														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
-													>
-														<span className="text-foreground">{r.region}</span>
-														<span className="text-muted-foreground">
-															{r.count.toLocaleString()}
+												{countryDetailData.topRegions.map((r) =>
+													selectedCountry.countryCode ? (
+														<Link
+															key={r.region}
+															href={
+																`/geo?country=${encodeURIComponent(selectedCountry.countryCode)}&region=${encodeURIComponent(r.region)}` as AppRoute
+															}
+															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-[11px] transition-colors"
+														>
+															<span className="text-foreground">{r.region}</span>
+															<span className="text-muted-foreground">
+																{r.count.toLocaleString()}
+															</span>
+														</Link>
+													) : (
+														<span
+															key={r.region}
+															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
+														>
+															<span className="text-foreground">{r.region}</span>
+															<span className="text-muted-foreground">
+																{r.count.toLocaleString()}
+															</span>
 														</span>
-													</span>
-												))}
+													),
+												)}
 											</div>
 										</div>
 									)}
@@ -1149,7 +1577,7 @@ export function DashboardContent({
 
 								<div className="px-5 py-3 border-t border-border shrink-0">
 									<button
-										onClick={() => setSelectedCountry(null)}
+										onClick={closeCountryDetail}
 										aria-label="Close country details"
 										className="w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
 									>

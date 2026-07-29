@@ -5,10 +5,12 @@ export type EventFingerprint = {
 	type: string;
 	path: string | null;
 	eventName?: string | null;
+	eventId?: string | null;
 	timestamp: number;
 };
 
 export async function generateFingerprint(event: EventFingerprint): Promise<string> {
+	if (event.eventId) return event.eventId;
 	const roundedTimestamp = Math.floor(event.timestamp / 10000) * 10000;
 
 	const parts = [

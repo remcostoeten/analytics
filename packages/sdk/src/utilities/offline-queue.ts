@@ -2,7 +2,7 @@ import { isStorageAvailable } from "./storage";
 import { noop } from "./noop";
 import { type EventPayload } from "../types";
 
-const QUEUE_KEY = "__analytics_queue__";
+export const OFFLINE_QUEUE_KEY = "__analytics_queue__";
 const MAX_SIZE = 50;
 
 type QueueEntry = {
@@ -13,7 +13,7 @@ type QueueEntry = {
 function read(): QueueEntry[] {
 	if (!isStorageAvailable("local")) return [];
 	try {
-		const raw = localStorage.getItem(QUEUE_KEY);
+		const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
 		return raw ? (JSON.parse(raw) as QueueEntry[]) : [];
 	} catch {
 		return [];
@@ -23,7 +23,7 @@ function read(): QueueEntry[] {
 function write(entries: QueueEntry[]): void {
 	if (!isStorageAvailable("local")) return;
 	try {
-		localStorage.setItem(QUEUE_KEY, JSON.stringify(entries));
+		localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(entries));
 	} catch {
 		noop();
 	}
@@ -58,6 +58,15 @@ export function flushOfflineQueue(): void {
 		}).catch(() => {
 			for (const payload of events) enqueueOffline(baseUrl, payload);
 		});
+	}
+}
+
+export function clearOfflineQueue(): void {
+	if (!isStorageAvailable("local")) return;
+	try {
+		localStorage.removeItem(OFFLINE_QUEUE_KEY);
+	} catch {
+		noop();
 	}
 }
 

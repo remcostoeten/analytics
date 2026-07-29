@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSWRConfig } from "swr";
@@ -365,21 +364,4 @@ export function CommandPalette({
 			</div>
 		</CommandDialog>
 	);
-}
-
-export function useCommandPalette() {
-	const [open, setOpen] = useState(false);
-
-	useEffect(() => {
-		function handler(e: KeyboardEvent) {
-			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-				e.preventDefault();
-				setOpen((prev) => !prev);
-			}
-		}
-		document.addEventListener("keydown", handler);
-		return () => document.removeEventListener("keydown", handler);
-	}, []);
-
-	return { open, setOpen };
 }

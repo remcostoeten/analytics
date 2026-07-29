@@ -168,11 +168,14 @@ describe("track", () => {
 		expect(payload.meta).toMatchObject(meta);
 	});
 
-	test("blocks duplicate events within 5 seconds", () => {
-		track("pageview");
-		track("pageview");
-		track("pageview");
-		expect(beaconMock).toHaveBeenCalledTimes(1);
+	test("assigns a unique id to repeated events", () => {
+		track("event", { eventName: "save" });
+		track("event", { eventName: "save" });
+		expect(beaconMock).toHaveBeenCalledTimes(2);
+		const first = JSON.parse(beaconMock.mock.calls[0][1].content[0]);
+		const second = JSON.parse(beaconMock.mock.calls[1][1].content[0]);
+		expect(first.eventId).toMatch(/^[0-9a-f-]{36}$/);
+		expect(first.eventId).not.toBe(second.eventId);
 	});
 
 	test("respects opt-out flag", () => {

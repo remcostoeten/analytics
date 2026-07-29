@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import { cn } from "@/lib/utils";
 import type { GeoDistribution } from "@/lib/types";
 import { getFlagEmoji } from "@/lib/format";
@@ -248,15 +248,30 @@ export const isoCodeToNumericCode: Record<string, string> = {
 	ZW: "716",
 };
 
-interface GeoMapProps {
+export type CityPoint = {
+	city: string;
+	region: string | null;
+	country: string;
+	countryCode: string | null;
+	latitude: number;
+	longitude: number;
+	events: number;
+	visitors: number;
+};
+
+type Props = {
 	data: GeoDistribution[];
+	cityPoints?: CityPoint[];
 	className?: string;
 	onCountryClick?: (country: GeoDistribution) => void;
-}
+};
 
-export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
-	const [tooltipContent, setTooltipContent] = useState<GeoDistribution | null>(null);
+export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
+	const [tooltipContent, setTooltipContent] = useState<
+		{ kind: "country"; data: GeoDistribution } | { kind: "city"; data: CityPoint } | null
+	>(null);
 	const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+	const [showCities, setShowCities] = useState(false);
 
 	// Create a lookup map from numeric code to data
 	const dataByNumericCode = useMemo(() => {
@@ -281,14 +296,43 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 
 	// Calculate color intensity based on percentage
 	const maxPercentage = useMemo(() => Math.max(...data.map((d) => d.percentage), 1), [data]);
+	const maxCityEvents = useMemo(
+		() => Math.max(...(cityPoints || []).map((point) => point.events), 1),
+		[cityPoints],
+	);
 
 	return (
 		<div className={cn("bg-card border border-border rounded-sm overflow-hidden", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">Geographic Distribution</h3>
-				<span className="text-[10px] text-muted-foreground tabular-nums">
-					{data.length} countries
-				</span>
+				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={showCities}
+						disabled={!cityPoints}
+						onClick={() => setShowCities((value) => !value)}
+						className="flex items-center gap-1.5 text-[10px] text-muted-foreground disabled:opacity-50"
+					>
+						<span
+							className={cn(
+								"relative h-3 w-5 rounded-full bg-muted transition-colors",
+								showCities && cityPoints && "bg-primary",
+							)}
+						>
+							<span
+								className={cn(
+									"absolute top-0.5 h-2 w-2 rounded-full bg-background transition-transform",
+									showCities && cityPoints ? "translate-x-2.5" : "translate-x-0.5",
+								)}
+							/>
+						</span>
+						Cities
+					</button>
+					<span className="text-[10px] text-muted-foreground tabular-nums">
+						{data.length} countries
+					</span>
+				</div>
 			</div>
 			<div
 				className="relative aspect-[2/1] bg-muted/30"
@@ -317,7 +361,7 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 										strokeWidth={0.5}
 										onMouseEnter={(e) => {
 											if (countryData) {
-												setTooltipContent(countryData);
+												setTooltipContent({ kind: "country", data: countryData });
 												setTooltipPos({ x: e.clientX, y: e.clientY });
 											}
 										}}
@@ -354,6 +398,39 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 							});
 						}}
 					</Geographies>
+					{showCities &&
+						cityPoints?.map((point) => {
+							const radius = 2 + Math.sqrt(point.events / maxCityEvents) * 8;
+							return (
+								<Marker
+									key={`${point.country}-${point.region}-${point.city}`}
+									coordinates={[point.longitude, point.latitude]}
+								>
+									<circle
+										r={radius}
+										fill="hsl(var(--foreground))"
+										fillOpacity={0.8}
+										stroke="hsl(var(--background))"
+										strokeWidth={0.75}
+										className="cursor-pointer"
+										onMouseEnter={(event) => {
+											setTooltipContent({ kind: "city", data: point });
+											setTooltipPos({ x: event.clientX, y: event.clientY });
+										}}
+										onMouseMove={(event) => setTooltipPos({ x: event.clientX, y: event.clientY })}
+										onMouseLeave={() => setTooltipContent(null)}
+										onClick={() =>
+											onCountryClick?.({
+												country: point.country,
+												countryCode: point.countryCode || undefined,
+												count: point.events,
+												percentage: 0,
+											})
+										}
+									/>
+								</Marker>
+							);
+						})}
 				</ComposableMap>
 
 				{/* Tooltip */}
@@ -366,15 +443,26 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 						}}
 					>
 						<div className="flex items-center gap-2">
-							{tooltipContent.countryCode && (
-								<span className="text-sm">{getFlagEmoji(tooltipContent.countryCode)}</span>
+							{tooltipContent.data.countryCode && (
+								<span className="text-sm">{getFlagEmoji(tooltipContent.data.countryCode)}</span>
 							)}
 							<div>
-								<p className="text-xs font-medium text-foreground">{tooltipContent.country}</p>
-								<p className="text-[10px] text-muted-foreground">
-									{tooltipContent.count.toLocaleString()} visits (
-									{tooltipContent.percentage.toFixed(1)}%)
+								<p className="text-xs font-medium text-foreground">
+									{tooltipContent.kind === "city"
+										? tooltipContent.data.city
+										: tooltipContent.data.country}
 								</p>
+								{tooltipContent.kind === "city" ? (
+									<p className="text-[10px] text-muted-foreground">
+										{tooltipContent.data.events.toLocaleString()} events ·{" "}
+										{tooltipContent.data.visitors.toLocaleString()} visitors
+									</p>
+								) : (
+									<p className="text-[10px] text-muted-foreground">
+										{tooltipContent.data.count.toLocaleString()} visits (
+										{tooltipContent.data.percentage.toFixed(1)}%)
+									</p>
+								)}
 							</div>
 						</div>
 					</div>
@@ -398,6 +486,9 @@ export function GeoMap({ data, className, onCountryClick }: GeoMapProps) {
 						/>
 						<span className="text-[10px] text-muted-foreground">Traffic</span>
 					</div>
+					{showCities && cityPoints && (
+						<span className="text-[10px] text-muted-foreground">Cities with location data</span>
+					)}
 				</div>
 				<div className="flex flex-wrap gap-2">
 					{data.slice(0, 6).map((d, i) => (

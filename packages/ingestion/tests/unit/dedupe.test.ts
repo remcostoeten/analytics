@@ -38,6 +38,20 @@ describe("generateFingerprint", () => {
 		expect(fp1).not.toBe(fp2);
 	});
 
+	test("uses an event id as the idempotency fingerprint", async () => {
+		const event = {
+			projectId: "example.com",
+			visitorId: "visitor-123",
+			sessionId: "session-456",
+			type: "event",
+			path: "/home",
+			timestamp: 1000000000000,
+			eventId: "3da6fbd5-a6ef-4d2f-bf5c-f8fed7454ba4",
+		};
+
+		expect(await generateFingerprint(event)).toBe(event.eventId);
+	});
+
 	test("generates different fingerprints for different projects", async () => {
 		const event1 = {
 			projectId: "example.com",
