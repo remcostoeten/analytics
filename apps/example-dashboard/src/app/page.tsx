@@ -63,7 +63,7 @@ async function DashboardData() {
 export default function DashboardPage() {
 	return (
 		<SidebarProvider>
-			<Suspense fallback={<div className="w-64 border-r bg-muted/20" />}>
+			<Suspense fallback={<div className="w-(--sidebar-width) shrink-0 border-r border-border bg-sidebar" />}>
 				<AppSidebar />
 			</Suspense>
 			<SidebarInset>

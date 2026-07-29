@@ -16,7 +16,7 @@ export function DashboardSkeleton() {
 				<Skeleton className="size-6" />
 				<Skeleton className="h-7 w-40" />
 			</header>
-			<div className="min-h-[4239px] flex-1 bg-background p-3 md:min-h-[2361px]">
+			<div className="min-h-[calc(100svh-2.5rem)] flex-1 bg-background p-3">
 				<div className="space-y-3">
 					<div className="space-y-2">
 						<Skeleton className="h-3 w-28" />
@@ -51,7 +51,7 @@ export function DashboardSkeleton() {
 
 export function GeoSkeleton() {
 	return (
-		<div className="mx-auto flex min-h-[2539px] w-full max-w-[1400px] flex-col gap-3 p-3 md:min-h-[1708px] md:p-4">
+		<div className="mx-auto flex min-h-svh w-full max-w-[1400px] flex-col gap-3 p-3 md:p-4">
 			<header className="flex items-center justify-between gap-3">
 				<Skeleton className="h-5 w-52" />
 				<Skeleton className="h-7 w-20" />
