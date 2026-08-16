@@ -1,2 +1,9 @@
 [features]
 codex_hooks = true
+
+[mcp_servers.shadcn]
+command = "npx"
+args = [
+    "shadcn@latest",
+    "mcp",
+]

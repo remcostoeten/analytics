@@ -4,7 +4,7 @@ const BLOCK_START = "# >>> demo-db (managed by `bun run demo:db`) >>>";
 const BLOCK_END = "# <<< demo-db <<<";
 const SAVED_PREFIX = "# demo-db saved: ";
 export const DEMO_DATABASE_URL =
-	"postgres://postgres:postgres@db.localtest.me:5433/analytics";
+	"postgres://postgres:postgres@db.localtest.me:5434/analytics";
 
 export type EnvState = "demo" | "own" | "missing";
 
