@@ -8,7 +8,7 @@
 		"start": "next start",
 		"test": "bun test __tests__",
 		"test:skeleton": "playwright test",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsgo --noEmit",
 		"lint": "oxlint . --deny-warnings",
 		"fmt": "oxfmt .",
 		"fmt:check": "oxfmt --check ."

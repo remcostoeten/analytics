@@ -45,7 +45,7 @@
 	"scripts": {
 		"build": "tsup",
 		"dev": "bun run --cwd ../../apps/ingestion dev",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsgo --noEmit",
 		"test": "bun test",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit up:pg",

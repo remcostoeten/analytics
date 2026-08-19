@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "bun run dev.ts",
 		"build": "bun run scripts/build.ts",
-		"typecheck": "tsc -p tsconfig.json",
+		"typecheck": "tsgo -p tsconfig.json",
 		"test": "bun run --cwd ../../packages/ingestion test",
 		"db:generate": "bun run --cwd ../../packages/ingestion db:generate",
 		"db:migrate": "bun run --cwd ../../packages/ingestion db:migrate",
