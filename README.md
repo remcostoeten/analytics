@@ -442,6 +442,7 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
 | `packages/ingestion` | `@remcostoeten/ingestion` npm package |
 | `packages/create-analytics` | `@remcostoeten/create-analytics` scaffolder CLI (`npx @remcostoeten/create-analytics@latest`) |
+| `packages/analytics-manager` | `@remcostoeten/analytics-manager` npm package — fluent orchestration across analytics providers |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
 | `apps/example` | Minimal Next.js consumer app (all three tracking patterns) |
 | `apps/example-dashboard` | Next.js analytics UI |

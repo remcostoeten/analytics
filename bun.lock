@@ -129,6 +129,26 @@
         "typescript": "5.6.3",
       },
     },
+    "packages/analytics-manager": {
+      "name": "@remcostoeten/analytics-manager",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/node": "^25.2.3",
+        "bun-types": "^1.3.9",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@remcostoeten/analytics": "^1.7.0",
+        "@vercel/analytics": "^1.0.0",
+        "posthog-js": "^1.0.0",
+      },
+      "optionalPeers": [
+        "@remcostoeten/analytics",
+        "@vercel/analytics",
+        "posthog-js",
+      ],
+    },
     "packages/create-analytics": {
       "name": "@remcostoeten/create-analytics",
       "version": "0.1.4",
@@ -610,6 +630,8 @@
     "@radix-ui/rect": ["@radix-ui/rect@1.1.1", "", {}, "sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw=="],
 
     "@remcostoeten/analytics": ["@remcostoeten/analytics@workspace:packages/sdk"],
+
+    "@remcostoeten/analytics-manager": ["@remcostoeten/analytics-manager@workspace:packages/analytics-manager"],
 
     "@remcostoeten/create-analytics": ["@remcostoeten/create-analytics@workspace:packages/create-analytics"],
 
@@ -1600,6 +1622,8 @@
     "@radix-ui/react-tooltip/@radix-ui/react-slot": ["@radix-ui/react-slot@1.2.3", "", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-aeNmHnBxbi2St0au6VBVC7JXFlhLlOnvIIlePNniyUNAClzmtAUEY8/pBiK3iHjufOlwA+c20/8jngo7xcrg8A=="],
 
     "@remcostoeten/analytics/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@remcostoeten/analytics-manager/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@remcostoeten/create-analytics/@types/node": ["@types/node@20.19.33", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-Rs1bVAIdBs5gbTIKza/tgpMuG1k3U/UMJLWecIMxNdJFDMzcM5LOiLVRYh3PilWEYDIeUDv7bpiHPLPsbydGcw=="],
 
