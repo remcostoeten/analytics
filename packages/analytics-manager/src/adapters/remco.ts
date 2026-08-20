@@ -100,6 +100,9 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 				teardown.push(observer(options));
 			}
 		},
+		active: function active() {
+			return client !== null;
+		},
 		track: function track(event) {
 			client?.trackEvent(event.name, toMeta(event), state.options);
 		},

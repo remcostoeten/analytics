@@ -211,6 +211,39 @@ describe("posthog adapter", () => {
 	});
 });
 
+describe("inactive adapters", () => {
+	test("reports skipped rather than ok when the provider sdk is unavailable", async () => {
+		const analytics = createAnalytics()
+			.environment("production")
+			.use(remco().project("demo"))
+			.build();
+
+		const results = await analytics.track("note.created", { noteId: "n1" });
+
+		expect(results).toEqual([{ adapter: "remco", ok: true, skipped: true }]);
+	});
+
+	test("reports skipped when posthog has a client but no token", async () => {
+		const { calls, record } = recorder();
+		const client = {
+			init: record("init"),
+			capture: record("capture"),
+			identify: record("identify"),
+			reset: record("reset"),
+		} as unknown as PosthogClient;
+
+		const analytics = createAnalytics()
+			.environment("production")
+			.use(posthog().client(client))
+			.build();
+
+		const results = await analytics.track("note.created");
+
+		expect(results).toEqual([{ adapter: "posthog", ok: true, skipped: true }]);
+		expect(calls).toEqual([]);
+	});
+});
+
 describe("vercel adapter", () => {
 	test("flattens non primitive properties", async () => {
 		const { calls, record } = recorder();

@@ -34,6 +34,7 @@ export type RuntimeConfig = {
 export type Adapter<TId extends string = string, TProvider = unknown> = {
 	id: TId;
 	init?: (config: RuntimeConfig) => void | Promise<void>;
+	active?: () => boolean;
 	track?: (event: AnalyticsEvent) => void | Promise<void>;
 	page?: (event: AnalyticsEvent) => void | Promise<void>;
 	identify?: (event: AnalyticsEvent) => void | Promise<void>;

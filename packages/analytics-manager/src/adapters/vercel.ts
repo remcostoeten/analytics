@@ -55,6 +55,9 @@ function buildAdapter(state: VercelState): Adapter<"vercel", VercelClient> {
 				);
 			}
 		},
+		active: function active() {
+			return client !== null;
+		},
 		track: function track(event: AnalyticsEvent) {
 			const properties = toProperties({ ...event.context, ...event.properties });
 			if (state.debug && typeof console !== "undefined") {

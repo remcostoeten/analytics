@@ -50,6 +50,9 @@ function resolveHandler(adapter: Adapter, kind: EventKind) {
 async function deliver(core: Core, adapter: Adapter, event: AnalyticsEvent): Promise<SendResult> {
 	const handler = resolveHandler(adapter, event.kind);
 	if (!handler) return { adapter: adapter.id, ok: true, skipped: true };
+	if (adapter.active && !adapter.active()) {
+		return { adapter: adapter.id, ok: true, skipped: true };
+	}
 
 	try {
 		await handler.call(adapter, event);

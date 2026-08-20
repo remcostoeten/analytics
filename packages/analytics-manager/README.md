@@ -14,7 +14,7 @@ Application -> Analytics Manager -> Middleware -> Adapters
 bun add @remcostoeten/analytics-manager
 ```
 
-Then install whichever providers you use: `@remcostoeten/analytics`, `posthog-js`, `@vercel/analytics`.
+Then install the SDK for each adapter you register — `@remcostoeten/analytics` for `remco()`, `posthog-js` for `posthog()`, `@vercel/analytics` for `vercel()`. They are optional peers so that registering one does not pull in the others, but an adapter whose SDK is missing cannot send anything: it logs once at startup, stays inactive, and reports `{ ok: true, skipped: true }` for every event rather than claiming success.
 
 ## Quick start
 

@@ -121,6 +121,9 @@ function buildAdapter(state: PosthogState): Adapter<"posthog", PosthogProvider> 
 			if (config.environment) superProperties.environment = config.environment;
 			if (Object.keys(superProperties).length > 0) client.register?.(superProperties);
 		},
+		active: function active() {
+			return client !== null && Boolean(state.token);
+		},
 		track: function track(event) {
 			client?.capture(event.name, toProperties(event));
 		},
