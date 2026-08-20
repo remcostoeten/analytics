@@ -5,19 +5,25 @@ export type Context = Record<string, Value | undefined>;
 export type Traits = Record<string, Value | undefined>;
 
 export type EventMap = Record<string, Properties>;
+export type AdapterMap = Record<string, unknown>;
+export type Empty = Record<never, never>;
 
 export type EventKind = "track" | "page" | "identify";
 
-export type AnalyticsEvent = {
+export type EventName<TEvents extends EventMap> = (keyof TEvents & string) | "page" | "identify";
+
+export type AnalyticsEvent<TName extends string = string> = {
 	kind: EventKind;
-	name: string;
+	name: TName;
 	properties: Properties;
 	context: Context;
 	userId?: string;
 	timestamp: number;
 };
 
-export type Middleware = (event: AnalyticsEvent) => AnalyticsEvent | null;
+export type Middleware<TEvents extends EventMap = EventMap> = (
+	event: AnalyticsEvent<EventName<TEvents>>,
+) => AnalyticsEvent | null;
 
 export type RuntimeConfig = {
 	app?: string;
@@ -25,8 +31,8 @@ export type RuntimeConfig = {
 	context: Context;
 };
 
-export type Adapter = {
-	id: string;
+export type Adapter<TId extends string = string, TProvider = unknown> = {
+	id: TId;
 	init?: (config: RuntimeConfig) => void | Promise<void>;
 	track?: (event: AnalyticsEvent) => void | Promise<void>;
 	page?: (event: AnalyticsEvent) => void | Promise<void>;
@@ -34,14 +40,16 @@ export type Adapter = {
 	reset?: () => void | Promise<void>;
 	flush?: () => void | Promise<void>;
 	destroy?: () => void | Promise<void>;
-	expose?: () => unknown;
+	expose?: () => TProvider | undefined;
 };
 
-export type AdapterBuilder = {
-	build: () => Adapter;
+export type AdapterBuilder<TId extends string = string, TProvider = unknown> = {
+	build: () => Adapter<TId, TProvider>;
 };
 
-export type AdapterSource = Adapter | AdapterBuilder;
+export type AdapterSource<TId extends string = string, TProvider = unknown> =
+	| Adapter<TId, TProvider>
+	| AdapterBuilder<TId, TProvider>;
 
 export type SendResult = {
 	adapter: string;
@@ -57,6 +65,12 @@ export type Targets = {
 
 export type ContextInput = Context | (() => Context);
 
+export type AdapterId<TAdapters extends AdapterMap> = keyof TAdapters & string;
+
+export type PropertyArgs<TProperties extends Properties> = Empty extends TProperties
+	? [properties?: TProperties]
+	: [properties: TProperties];
+
 export type ScopedEvents<
 	TEvents extends EventMap,
 	TScope extends string,
@@ -66,40 +80,55 @@ export type ScopedEvents<
 			[Key in keyof TEvents as Key extends `${TScope}.${infer Rest}` ? Rest : never]: TEvents[Key];
 		};
 
-export type EventDraft<TProperties extends Properties> = {
+export type EventDraft<
+	TProperties extends Properties,
+	TAdapters extends AdapterMap = AdapterMap,
+> = {
 	property: <TKey extends keyof TProperties & string>(
 		key: TKey,
 		value: TProperties[TKey],
-	) => EventDraft<TProperties>;
-	properties: (values: Partial<TProperties>) => EventDraft<TProperties>;
-	context: (values: Context) => EventDraft<TProperties>;
-	to: (...adapters: string[]) => EventDraft<TProperties>;
-	except: (...adapters: string[]) => EventDraft<TProperties>;
+	) => EventDraft<TProperties, TAdapters>;
+	properties: (values: Partial<TProperties>) => EventDraft<TProperties, TAdapters>;
+	context: (values: Context) => EventDraft<TProperties, TAdapters>;
+	to: (...adapters: AdapterId<TAdapters>[]) => EventDraft<TProperties, TAdapters>;
+	except: (...adapters: AdapterId<TAdapters>[]) => EventDraft<TProperties, TAdapters>;
 	send: () => Promise<SendResult[]>;
 };
 
-export type Analytics<TEvents extends EventMap = EventMap> = {
+export type Analytics<
+	TEvents extends EventMap = EventMap,
+	TAdapters extends AdapterMap = AdapterMap,
+> = {
 	track: <TName extends keyof TEvents & string>(
 		name: TName,
-		properties?: TEvents[TName],
+		...args: PropertyArgs<TEvents[TName]>
 	) => Promise<SendResult[]>;
-	event: <TName extends keyof TEvents & string>(name: TName) => EventDraft<TEvents[TName]>;
+	event: <TName extends keyof TEvents & string>(
+		name: TName,
+	) => EventDraft<TEvents[TName], TAdapters>;
 	page: (properties?: Properties) => Promise<SendResult[]>;
 	identify: (userId: string, traits?: Traits) => Promise<SendResult[]>;
 	reset: () => Promise<void>;
-	with: (context: Context) => Analytics<TEvents>;
-	scope: <TScope extends string>(name: TScope) => Analytics<ScopedEvents<TEvents, TScope>>;
-	provider: <TProvider = unknown>(id: string) => TProvider | undefined;
+	with: (context: Context) => Analytics<TEvents, TAdapters>;
+	scope: <TScope extends string>(
+		name: TScope,
+	) => Analytics<ScopedEvents<TEvents, TScope>, TAdapters>;
+	provider: <TId extends AdapterId<TAdapters>>(id: TId) => TAdapters[TId] | undefined;
 	flush: () => Promise<void>;
 	destroy: () => Promise<void>;
 };
 
-export type Builder<TEvents extends EventMap = EventMap> = {
-	app: (name: string) => Builder<TEvents>;
-	environment: (name: string) => Builder<TEvents>;
-	context: (value: ContextInput) => Builder<TEvents>;
-	use: (adapter: AdapterSource) => Builder<TEvents>;
-	when: (condition: boolean | (() => boolean), adapter: AdapterSource) => Builder<TEvents>;
-	pipe: (middleware: Middleware) => Builder<TEvents>;
-	build: () => Analytics<TEvents>;
+export type Builder<TEvents extends EventMap = EventMap, TAdapters extends AdapterMap = Empty> = {
+	app: (name: string) => Builder<TEvents, TAdapters>;
+	environment: (name: string) => Builder<TEvents, TAdapters>;
+	context: (value: ContextInput) => Builder<TEvents, TAdapters>;
+	use: <TId extends string, TProvider>(
+		adapter: AdapterSource<TId, TProvider>,
+	) => Builder<TEvents, TAdapters & Record<TId, TProvider>>;
+	when: <TId extends string, TProvider>(
+		condition: boolean | (() => boolean),
+		adapter: AdapterSource<TId, TProvider>,
+	) => Builder<TEvents, TAdapters & Record<TId, TProvider>>;
+	pipe: (middleware: Middleware<TEvents>) => Builder<TEvents, TAdapters>;
+	build: () => Analytics<TEvents, TAdapters>;
 };

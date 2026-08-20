@@ -33,7 +33,7 @@ type RemcoState = {
 	observers: ("errors" | "clicks" | "forms" | "outboundLinks")[];
 };
 
-export type RemcoBuilder = AdapterBuilder & {
+export type RemcoBuilder = AdapterBuilder<"remco", RemcoClient> & {
 	project: (projectId: string) => RemcoBuilder;
 	ingest: (url: string) => RemcoBuilder;
 	debug: (enabled?: boolean) => RemcoBuilder;
@@ -61,7 +61,7 @@ function toMeta(event: AnalyticsEvent): Properties {
 	return { ...event.context, ...event.properties };
 }
 
-function buildAdapter(state: RemcoState): Adapter {
+function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 	let client: RemcoClient | null = state.client ?? null;
 	const teardown: (() => void)[] = [];
 

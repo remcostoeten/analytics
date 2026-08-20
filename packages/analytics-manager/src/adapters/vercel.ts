@@ -12,7 +12,7 @@ type VercelState = {
 	client?: VercelClient;
 };
 
-export type VercelBuilder = AdapterBuilder & {
+export type VercelBuilder = AdapterBuilder<"vercel", VercelClient> & {
 	debug: (enabled?: boolean) => VercelBuilder;
 	client: (client: VercelClient) => VercelBuilder;
 };
@@ -38,7 +38,7 @@ function toProperties(properties: Properties): VercelProperties {
 	return result;
 }
 
-function buildAdapter(state: VercelState): Adapter {
+function buildAdapter(state: VercelState): Adapter<"vercel", VercelClient> {
 	let client: VercelClient | null = state.client ?? null;
 
 	return {

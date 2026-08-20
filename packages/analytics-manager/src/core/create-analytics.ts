@@ -1,11 +1,13 @@
 import type {
 	Adapter,
-	AdapterSource,
 	AdapterBuilder,
+	AdapterMap,
+	AdapterSource,
 	Analytics,
 	Builder,
 	Context,
 	ContextInput,
+	Empty,
 	EventMap,
 	Middleware,
 	RuntimeConfig,
@@ -78,29 +80,43 @@ function initAdapters(config: RuntimeConfig, adapters: Adapter[]): Promise<void>
 	});
 }
 
-function fromState<TEvents extends EventMap>(state: BuilderState): Builder<TEvents> {
+function fromState<TEvents extends EventMap, TAdapters extends AdapterMap>(
+	state: BuilderState,
+): Builder<TEvents, TAdapters> {
 	return {
 		app: function app(name) {
-			return fromState<TEvents>({ ...state, app: name });
+			return fromState<TEvents, TAdapters>({ ...state, app: name });
 		},
 		environment: function environment(name) {
-			return fromState<TEvents>({ ...state, environment: name });
+			return fromState<TEvents, TAdapters>({ ...state, environment: name });
 		},
 		context: function context(value) {
-			return fromState<TEvents>({ ...state, context: [...state.context, value] });
+			return fromState<TEvents, TAdapters>({ ...state, context: [...state.context, value] });
 		},
-		use: function use(adapter) {
-			return fromState<TEvents>({ ...state, adapters: [...state.adapters, adapter] });
+		use: function use<TId extends string, TProvider>(adapter: AdapterSource<TId, TProvider>) {
+			return fromState<TEvents, TAdapters & Record<TId, TProvider>>({
+				...state,
+				adapters: [...state.adapters, adapter as AdapterSource],
+			});
 		},
-		when: function when(condition, adapter) {
+		when: function when<TId extends string, TProvider>(
+			condition: boolean | (() => boolean),
+			adapter: AdapterSource<TId, TProvider>,
+		) {
 			const enabled = typeof condition === "function" ? condition() : condition;
-			if (!enabled) return fromState<TEvents>(state);
-			return fromState<TEvents>({ ...state, adapters: [...state.adapters, adapter] });
+			if (!enabled) return fromState<TEvents, TAdapters & Record<TId, TProvider>>(state);
+			return fromState<TEvents, TAdapters & Record<TId, TProvider>>({
+				...state,
+				adapters: [...state.adapters, adapter as AdapterSource],
+			});
 		},
-		pipe: function pipe(middleware) {
-			return fromState<TEvents>({ ...state, middleware: [...state.middleware, middleware] });
+		pipe: function pipe(middleware: Middleware<TEvents>) {
+			return fromState<TEvents, TAdapters>({
+				...state,
+				middleware: [...state.middleware, middleware as Middleware],
+			});
 		},
-		build: function build(): Analytics<TEvents> {
+		build: function build(): Analytics<TEvents, TAdapters> {
 			const config = resolveConfig(state);
 			const adapters = resolveAdapters(state.adapters);
 
@@ -112,11 +128,11 @@ function fromState<TEvents extends EventMap>(state: BuilderState): Builder<TEven
 				disposed: false,
 			};
 
-			return createRuntime<TEvents>({ core, context: config.context, prefix: "" });
+			return createRuntime<TEvents, TAdapters>({ core, context: config.context, prefix: "" });
 		},
 	};
 }
 
-export function createAnalytics<TEvents extends EventMap = EventMap>(): Builder<TEvents> {
-	return fromState<TEvents>({ context: [], adapters: [], middleware: [] });
+export function createAnalytics<TEvents extends EventMap = EventMap>(): Builder<TEvents, Empty> {
+	return fromState<TEvents, Empty>({ context: [], adapters: [], middleware: [] });
 }

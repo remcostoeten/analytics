@@ -1,4 +1,4 @@
-import type { AnalyticsEvent, Middleware, Value } from "../types";
+import type { EventMap, Middleware, Value } from "../types";
 
 type Source = Record<string, Value | undefined>;
 
@@ -28,8 +28,10 @@ function strip(source: Source, keys: string[]): Source {
 	return result;
 }
 
-export function redact(...keys: string[]): Middleware {
-	return function apply(event: AnalyticsEvent): AnalyticsEvent {
+export function redact<TEvents extends EventMap = EventMap>(
+	...keys: string[]
+): Middleware<TEvents> {
+	return function apply(event) {
 		return {
 			...event,
 			properties: strip(event.properties, keys),

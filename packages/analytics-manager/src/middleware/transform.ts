@@ -1,7 +1,9 @@
-import type { AnalyticsEvent, Middleware } from "../types";
+import type { AnalyticsEvent, EventMap, EventName, Middleware } from "../types";
 
-export function transform(mapper: (event: AnalyticsEvent) => AnalyticsEvent): Middleware {
-	return function apply(event: AnalyticsEvent): AnalyticsEvent {
+export function transform<TEvents extends EventMap = EventMap>(
+	mapper: (event: AnalyticsEvent<EventName<TEvents>>) => AnalyticsEvent,
+): Middleware<TEvents> {
+	return function apply(event) {
 		return mapper(event);
 	};
 }

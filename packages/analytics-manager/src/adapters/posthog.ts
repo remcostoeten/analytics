@@ -49,7 +49,7 @@ type PosthogState = {
 	client?: PosthogClient;
 };
 
-export type PosthogBuilder = AdapterBuilder & {
+export type PosthogBuilder = AdapterBuilder<"posthog", PosthogProvider> & {
 	token: (token: string) => PosthogBuilder;
 	host: (url: string) => PosthogBuilder;
 	pageviews: (enabled?: boolean) => PosthogBuilder;
@@ -87,7 +87,7 @@ function toProvider(client: PosthogClient): PosthogProvider {
 	};
 }
 
-function buildAdapter(state: PosthogState): Adapter {
+function buildAdapter(state: PosthogState): Adapter<"posthog", PosthogProvider> {
 	let client: PosthogClient | null = state.client ?? null;
 
 	return {

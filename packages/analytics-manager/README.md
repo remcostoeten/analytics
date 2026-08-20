@@ -62,18 +62,18 @@ Duplicate adapter ids throw at `build()`, because ids address adapters in `.to()
 
 ## Runtime
 
-| Method                      | Purpose                                                   |
-| --------------------------- | --------------------------------------------------------- |
-| `track(name, properties?)`  | Primary typed event API.                                  |
-| `event(name)`               | Starts the fluent event builder.                          |
-| `page(properties?)`         | Page or screen view.                                      |
-| `identify(userId, traits?)` | Associates future events with a known user.               |
-| `reset()`                   | Clears identity on adapters that support it.              |
-| `with(context)`             | New instance with extra context.                          |
-| `scope(name)`               | New instance whose event names are prefixed with `name.`. |
-| `provider(id)`              | Provider-specific escape hatch.                           |
-| `flush()`                   | Flushes adapters that expose a flush capability.          |
-| `destroy()`                 | Tears down adapters and disposes the runtime.             |
+| Method                      | Purpose                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
+| `track(name, properties)`   | Primary typed event API. Properties are required only when the event declares required keys. |
+| `event(name)`               | Starts the fluent event builder.                                                             |
+| `page(properties?)`         | Page or screen view.                                                                         |
+| `identify(userId, traits?)` | Associates future events with a known user.                                                  |
+| `reset()`                   | Clears identity on adapters that support it.                                                 |
+| `with(context)`             | New instance with extra context.                                                             |
+| `scope(name)`               | New instance whose event names are prefixed with `name.`.                                    |
+| `provider(id)`              | Provider-specific escape hatch, typed per registered adapter.                                |
+| `flush()`                   | Flushes adapters that expose a flush capability.                                             |
+| `destroy()`                 | Tears down adapters and disposes the runtime.                                                |
 
 `track`, `page`, `identify` and `send` never throw. They return a per-adapter result:
 
@@ -84,14 +84,47 @@ const results = await analytics.track("note.created", { noteId: note.id });
 
 Events sent before adapter initialization finishes are queued, not dropped. Events sent after `destroy()` return an empty result.
 
-### Scopes are typed
+### What the types actually guarantee
 
-`scope()` narrows the event map by prefix, so a scoped instance only accepts the events that belong to it:
+Pass an event map and the whole chain is checked, not just event names:
 
 ```ts
+analytics.track("note.created", { noteId: note.id });
+
+analytics.track("nope", {}); // unknown event
+analytics.track("note.created"); // noteId is required, not optional
+analytics.track("note.created", { noteId: 1 }); // wrong property type
+analytics.event("note.created").property("notId", "n"); // unknown property
+
 analytics.scope("editor").track("opened", { source: "sidebar" });
-analytics.scope("editor").track("note.created");
-//                              ^ type error, not an editor event
+analytics.scope("editor").track("note.created"); // not an editor event
+```
+
+Properties are required exactly when the event declares required keys, and optional when every key is optional. Autocomplete offers event names at `track()`, and that event's property keys at `.property()`.
+
+Adapter ids are inferred from the adapters you registered, so routing is checked too:
+
+```ts
+const analytics = createAnalytics<AppEvents>().use(remco()).use(posthog()).build();
+
+analytics.event("checkout.completed").to("remco", "posthog");
+analytics.event("checkout.completed").to("psthog"); // typo caught
+analytics.event("checkout.completed").to("vercel"); // never registered
+```
+
+`provider()` infers its return type from the registered adapter, so no manual annotation:
+
+```ts
+const flags = analytics.provider("posthog"); // PosthogProvider | undefined
+flags?.featureFlags.isEnabled("new-editor");
+```
+
+Middleware sees the same union — `event.name` is your event names plus `"page"` and `"identify"`, inferred without annotating the helper:
+
+```ts
+.pipe(filter(function drop(event) {
+	return event.name !== "debug.render";  // event.name is the typed union
+}))
 ```
 
 ## Fluent event builder
@@ -108,7 +141,7 @@ await analytics
 	.send();
 ```
 
-`.to(...ids)` restricts dispatch, `.except(...ids)` excludes. `.context()` stays out of event properties.
+`.to(...ids)` restricts dispatch, `.except(...ids)` excludes. Both accept only the ids of adapters you registered. `.context()` stays out of event properties.
 
 ## Middleware
 

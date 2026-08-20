@@ -1,4 +1,6 @@
 import type {
+	AdapterId,
+	AdapterMap,
 	Analytics,
 	Context,
 	EventMap,
@@ -12,10 +14,13 @@ import { dispatch, runLifecycle } from "./dispatch";
 import { createDraft } from "./event-builder";
 import { buildEvent, scopedName, type RuntimeState } from "./event";
 
-export function createRuntime<TEvents extends EventMap>(state: RuntimeState): Analytics<TEvents> {
+export function createRuntime<TEvents extends EventMap, TAdapters extends AdapterMap>(
+	state: RuntimeState,
+): Analytics<TEvents, TAdapters> {
 	return {
-		track: function track(name, properties): Promise<SendResult[]> {
-			const event = buildEvent(state, "track", name, (properties ?? {}) as Properties, {});
+		track: function track(name, ...args): Promise<SendResult[]> {
+			const properties = (args[0] ?? {}) as Properties;
+			const event = buildEvent(state, "track", name, properties, {});
 			return dispatch(state.core, event);
 		},
 		event: function event(name) {
@@ -32,21 +37,24 @@ export function createRuntime<TEvents extends EventMap>(state: RuntimeState): An
 		reset: function reset(): Promise<void> {
 			return runLifecycle(state.core, "reset");
 		},
-		with: function withContext(context: Context): Analytics<TEvents> {
-			return createRuntime<TEvents>({ ...state, context: merge(state.context, context) });
+		with: function withContext(context: Context): Analytics<TEvents, TAdapters> {
+			return createRuntime<TEvents, TAdapters>({
+				...state,
+				context: merge(state.context, context),
+			});
 		},
 		scope: function scope(name) {
-			return createRuntime<ScopedEvents<TEvents, typeof name>>({
+			return createRuntime<ScopedEvents<TEvents, typeof name>, TAdapters>({
 				...state,
 				prefix: scopedName(state.prefix, name),
 			});
 		},
-		provider: function provider<TProvider>(id: string): TProvider | undefined {
+		provider: function provider<TId extends AdapterId<TAdapters>>(id: TId) {
 			const adapter = state.core.adapters.find(function byId(candidate) {
 				return candidate.id === id;
 			});
 			if (!adapter || !adapter.expose) return undefined;
-			return adapter.expose() as TProvider;
+			return adapter.expose() as TAdapters[TId] | undefined;
 		},
 		flush: function flush(): Promise<void> {
 			return runLifecycle(state.core, "flush");
