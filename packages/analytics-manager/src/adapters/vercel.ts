@@ -1,5 +1,5 @@
 import type { Adapter, AdapterBuilder, AnalyticsEvent, Properties } from "../types";
-import { loadModule } from "../utilities";
+import { hasMethods, loadModule, notifyError } from "../utilities";
 
 type VercelProperties = Record<string, string | number | boolean | null>;
 
@@ -43,9 +43,17 @@ function buildAdapter(state: VercelState): Adapter {
 
 	return {
 		id: "vercel",
-		init: async function init() {
+		init: async function init(config) {
 			if (client) return;
-			client = await loadModule<VercelClient>("@vercel/analytics");
+			const loaded = await loadModule<VercelClient>("@vercel/analytics");
+			client = hasMethods(loaded, ["track"]) ? loaded : null;
+			if (!client) {
+				notifyError(
+					config.environment,
+					"vercel",
+					new Error("@vercel/analytics is unavailable or exports an unexpected shape"),
+				);
+			}
 		},
 		track: function track(event: AnalyticsEvent) {
 			const properties = toProperties({ ...event.context, ...event.properties });

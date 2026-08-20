@@ -1,5 +1,5 @@
 import type { Adapter, AdapterBuilder, AnalyticsEvent, Properties, RuntimeConfig } from "../types";
-import { loadModule } from "../utilities";
+import { hasMethods, loadModule, notifyError } from "../utilities";
 
 type RemcoOptions = {
 	projectId?: string;
@@ -77,7 +77,15 @@ function buildAdapter(state: RemcoState): Adapter {
 		id: "remco",
 		init: async function init(config: RuntimeConfig) {
 			if (!client) {
-				client = await loadModule<RemcoClient>("@remcostoeten/analytics");
+				const loaded = await loadModule<RemcoClient>("@remcostoeten/analytics");
+				client = hasMethods(loaded, ["trackEvent", "trackPageView", "identify"]) ? loaded : null;
+				if (!client) {
+					notifyError(
+						config.environment,
+						"remco",
+						new Error("@remcostoeten/analytics is unavailable or exports an unexpected shape"),
+					);
+				}
 			}
 			if (!client) return;
 

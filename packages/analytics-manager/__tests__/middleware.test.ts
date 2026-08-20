@@ -50,6 +50,31 @@ describe("middleware", () => {
 		expect(adapter.events[0].context).toEqual({ region: "eu" });
 	});
 
+	test("redact traverses objects nested inside arrays", async () => {
+		const adapter = fakeAdapter("one");
+		const analytics = createAnalytics().pipe(redact("email")).use(adapter).build();
+
+		await analytics
+			.event("team.synced")
+			.properties({
+				users: [
+					{ email: "a@b.c", id: "u1" },
+					{ email: "d@e.f", id: "u2" },
+				],
+				groups: [[{ email: "g@h.i", id: "u3" }]],
+				tags: ["a", "b"],
+				total: 3,
+			})
+			.send();
+
+		expect(adapter.events[0].properties).toEqual({
+			users: [{ id: "u1" }, { id: "u2" }],
+			groups: [[{ id: "u3" }]],
+			tags: ["a", "b"],
+			total: 3,
+		});
+	});
+
 	test("filter drops events and reports them as skipped", async () => {
 		const adapter = fakeAdapter("one");
 		const analytics = createAnalytics()

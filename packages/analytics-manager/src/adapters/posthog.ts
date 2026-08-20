@@ -1,5 +1,5 @@
 import type { Adapter, AdapterBuilder, AnalyticsEvent, Properties, RuntimeConfig } from "../types";
-import { loadModule } from "../utilities";
+import { hasMethods, loadModule, notifyError } from "../utilities";
 
 type PosthogConfig = {
 	api_host?: string;
@@ -95,7 +95,17 @@ function buildAdapter(state: PosthogState): Adapter {
 		init: async function init(config: RuntimeConfig) {
 			if (!client) {
 				const loaded = await loadModule<PosthogModule>("posthog-js");
-				client = loaded?.default ?? loaded?.posthog ?? null;
+				const candidate = loaded?.default ?? loaded?.posthog ?? loaded ?? null;
+				client = hasMethods(candidate, ["init", "capture", "identify"])
+					? (candidate as PosthogClient)
+					: null;
+				if (!client) {
+					notifyError(
+						config.environment,
+						"posthog",
+						new Error("posthog-js is unavailable or exports an unexpected shape"),
+					);
+				}
 			}
 			if (!client || !state.token) return;
 

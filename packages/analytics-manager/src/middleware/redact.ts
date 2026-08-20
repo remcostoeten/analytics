@@ -1,19 +1,28 @@
 import type { AnalyticsEvent, Middleware, Value } from "../types";
 
-function strip(
-	source: Record<string, Value | undefined>,
-	keys: string[],
-): Record<string, Value | undefined> {
-	const result: Record<string, Value | undefined> = {};
+type Source = Record<string, Value | undefined>;
+
+function stripValue(value: Value, keys: string[]): Value {
+	if (Array.isArray(value)) {
+		return value.map(function item(entry) {
+			return stripValue(entry, keys);
+		});
+	}
+
+	if (value !== null && typeof value === "object") {
+		return strip(value, keys) as Value;
+	}
+
+	return value;
+}
+
+function strip(source: Source, keys: string[]): Source {
+	const result: Source = {};
 
 	for (const key of Object.keys(source)) {
 		if (keys.includes(key)) continue;
 		const value = source[key];
-		if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-			result[key] = strip(value, keys) as Value;
-			continue;
-		}
-		result[key] = value;
+		result[key] = value === undefined ? undefined : stripValue(value, keys);
 	}
 
 	return result;

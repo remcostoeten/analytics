@@ -131,12 +131,12 @@ createAnalytics()
 	.build();
 ```
 
-| Helper                      | Behavior                                                            |
-| --------------------------- | ------------------------------------------------------------------- |
-| `enrich(value \| resolver)` | Merges context. Resolvers run per event.                            |
-| `redact(...keys)`           | Removes keys from properties and context, including nested objects. |
-| `filter(predicate)`         | Drops events when the predicate is false.                           |
-| `transform(mapper)`         | Maps one event to another.                                          |
+| Helper                      | Behavior                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `enrich(value \| resolver)` | Merges context. Resolvers run per event.                                               |
+| `redact(...keys)`           | Removes keys from properties and context, recursing through nested objects and arrays. |
+| `filter(predicate)`         | Drops events when the predicate is false.                                              |
+| `transform(mapper)`         | Maps one event to another.                                                             |
 
 Middleware applies to `track`, `page` and `identify` alike.
 
