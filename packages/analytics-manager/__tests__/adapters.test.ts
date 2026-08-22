@@ -72,6 +72,25 @@ describe("remco adapter", () => {
 		expect(calls[2].args[2]).toEqual({ projectId: "skriuw" });
 	});
 
+	test("identifies through track for sdk 1.7 clients", async () => {
+		const { calls, client } = remcoClient();
+		delete client.identify;
+		const analytics = createAnalytics().app("skriuw").use(remco().client(client)).build();
+
+		await analytics.identify("user-1", { plan: "pro" });
+
+		expect(calls).toEqual([
+			{
+				method: "track",
+				args: [
+					"event",
+					{ eventName: "identify", userId: "user-1", userProperties: { plan: "pro" } },
+					{ projectId: "skriuw" },
+				],
+			},
+		]);
+	});
+
 	test("starts requested observers in the browser and stops them on destroy", async () => {
 		const { calls, client } = remcoClient();
 		const analytics = createAnalytics()

@@ -13,7 +13,7 @@ export type RemcoClient = {
 	track: (type: string, meta?: Properties, options?: RemcoOptions) => void;
 	trackEvent: (name: string, meta?: Properties, options?: RemcoOptions) => void;
 	trackPageView: (meta?: Properties, options?: RemcoOptions) => void;
-	identify: (
+	identify?: (
 		userId: string,
 		properties?: Record<string, string | number | boolean>,
 		options?: RemcoOptions,
@@ -80,7 +80,7 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 			if (!client && !isBrowser()) return;
 			if (!client) {
 				const loaded = await loadModule(() => import("@remcostoeten/analytics"));
-				client = hasMethods(loaded, ["trackEvent", "trackPageView", "identify"]) ? loaded : null;
+				client = hasMethods(loaded, ["track", "trackEvent", "trackPageView"]) ? loaded : null;
 				if (!client) {
 					config.report(
 						new Error("@remcostoeten/analytics is unavailable or exports an unexpected shape"),
@@ -112,7 +112,12 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 		},
 		identify: function identify(event) {
 			if (!event.userId) return;
-			client?.identify(event.userId, toTraits(event.properties), options);
+			const traits = toTraits(event.properties);
+			if (client?.identify) {
+				client.identify(event.userId, traits, options);
+				return;
+			}
+			client?.track("event", { eventName: "identify", userId: event.userId, userProperties: traits }, options);
 		},
 		reset: function reset() {
 			client?.resetVisitorId?.();
