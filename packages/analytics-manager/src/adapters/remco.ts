@@ -117,7 +117,11 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 				client.identify(event.userId, traits, options);
 				return;
 			}
-			client?.track("event", { eventName: "identify", userId: event.userId, userProperties: traits }, options);
+			client?.track(
+				"event",
+				{ eventName: "identify", userId: event.userId, userProperties: traits },
+				options,
+			);
 		},
 		reset: function reset() {
 			client?.resetVisitorId?.();
