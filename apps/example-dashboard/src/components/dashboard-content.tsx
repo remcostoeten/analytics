@@ -2,7 +2,7 @@
 
 import type { Route as AppRoute } from "next";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { KPICardsGrid } from "@/components/kpi-cards";
@@ -12,9 +12,9 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import type { CityPoint } from "@/components/geo-map";
 import { GeoDetails } from "@/components/geo-details";
 import { ReferrerDetailPanel } from "@/components/referrer-detail-panel";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SessionStatsCard } from "@/components/session-stats-card";
 import { LiveNowWidget } from "@/components/live-now-widget";
-import { ViewTabs } from "@/components/view-tabs";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import {
 	PostHogNotice,
@@ -34,20 +34,15 @@ import type {
 	GeoDistribution,
 	PostHogProject,
 } from "@/lib/types";
-import { AlertTriangle, BadgeInfo, ChevronRight, X } from "lucide-react";
-import { ChartColumnIncreasingIcon } from "@/components/ui/chart-column-increasing";
-import { RadioIcon } from "@/components/ui/radio";
-import { CalendarDaysIcon } from "@/components/ui/calendar-days";
-import { RouteIcon } from "@/components/ui/route";
-import { SlidersHorizontalIcon } from "@/components/ui/sliders-horizontal";
-import { UsersIcon } from "@/components/ui/users";
-import { ZapIcon } from "@/components/ui/zap";
+import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
 import { countryName, regionName, toCountryCode } from "@/lib/geo-names";
 import Link from "next/link";
 
-const TrendChart = dynamic(() => import("@/components/trend-chart").then((module) => module.TrendChart));
+const TrendChart = dynamic(() =>
+	import("@/components/trend-chart").then((module) => module.TrendChart),
+);
 const GeoMap = dynamic(() => import("@/components/geo-map").then((module) => module.GeoMap));
 const DonutChart = dynamic(() =>
 	import("@/components/breakdown-chart").then((module) => module.DonutChart),
@@ -135,10 +130,8 @@ function DeltaBadge({ current, previous }: { current: number; previous: number }
 	return (
 		<p
 			className={cn(
-				"text-[10px] tabular-nums",
-				delta >= 0
-					? "text-emerald-600 dark:text-emerald-400"
-					: "text-red-600 dark:text-red-400",
+				"text-[11px] tabular-nums",
+				delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
 			)}
 			title="Compared to the previous period of the same length"
 		>
@@ -170,6 +163,21 @@ type DashboardView =
 	| "technology"
 	| "audience"
 	| "posthog";
+
+const VIEW_TITLES: Record<DashboardView, string> = {
+	overview: "Overview",
+	realtime: "Live",
+	retention: "Retention",
+	behavior: "Behavior",
+	technology: "Technology",
+	audience: "Audience",
+	posthog: "PostHog",
+};
+
+function buildHref(path: string, params: URLSearchParams): AppRoute {
+	const query = params.toString();
+	return (query ? `${path}?${query}` : path) as AppRoute;
+}
 
 type SelectedCountry = GeoDistribution & {
 	cities?: number;
@@ -233,8 +241,7 @@ export function DashboardContent({
 	data: initialData,
 	databaseReady = true,
 	databaseIssue,
-	breadcrumbs = [{ label: "Analytics", href: "/" }, { label: "Dashboard" }],
-	description = "Simple, user-focused analytics for your personal projects",
+	breadcrumbs = [{ label: "Analytics", href: "/" }],
 	authUser,
 	authEnabled = false,
 }: DashboardContentProps) {
@@ -281,7 +288,9 @@ export function DashboardContent({
 	const closeCountryDetail = () => {
 		const newParams = new URLSearchParams(searchParams.toString());
 		newParams.delete("countryDetail");
-		router.replace(buildHref(pathname || "/", newParams), { scroll: false });
+		router.replace(buildHref(pathname || "/", newParams), {
+			scroll: false,
+		});
 	};
 
 	const setActiveView = (view: DashboardView) => {
@@ -558,7 +567,7 @@ export function DashboardContent({
 		},
 	);
 
-	const { data: liveNow } = useSWR(viewKey(["overview", "realtime"], "live-now"), fetcher, {
+	const { data: liveNow } = useSWR(canFetch ? buildQuery("live-now") : null, fetcher, {
 		fallbackData: null,
 		refreshInterval: 5000,
 		keepPreviousData: true,
@@ -596,11 +605,17 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
+	const [dialogCountry, setDialogCountry] = useState<SelectedCountry | null>(null);
+	if (selectedCountry && selectedCountry !== dialogCountry) {
+		setDialogCountry(selectedCountry);
+	}
+
 	const { data: countryDetailData, isLoading: countryDetailLoading } = useSWR<CountryDetail>(
 		selectedCountry && canFetch
 			? `/api/analytics?metric=country-detail&country=${encodeURIComponent(selectedCountry.country)}${isCustomRange ? `&from=${fromParam}&to=${toParam}` : `&timeRange=${timeRange}`}${selectedProject ? `&projectId=${selectedProject}` : ""}${selectedOrigin ? `&origin=${encodeURIComponent(selectedOrigin)}` : ""}`
 			: null,
 		fetcher,
+		{ keepPreviousData: true },
 	);
 
 	const [posthogProject, setPosthogProject] = useState<string | null>(null);
@@ -639,6 +654,11 @@ export function DashboardContent({
 	const setupError = isDatabaseError(projectsError) || isDatabaseError(overviewError);
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
 
+	const pageviewSparkline = useMemo((): number[] | undefined => {
+		if (!trend || !Array.isArray(trend) || trend.length === 0) return undefined;
+		return trend.map((t: { pageviews: number }) => t.pageviews || 0);
+	}, [trend]);
+
 	const kpiArray = useMemo((): KPIMetric[] => {
 		if (!overview) return Object.values(initialData.kpis);
 
@@ -652,6 +672,7 @@ export function DashboardContent({
 				value: overview.pageviews || 0,
 				formattedValue: formatNumber(overview.pageviews || 0),
 				trend: overview.trends?.pageviews,
+				sparkline: pageviewSparkline,
 			},
 			{
 				id: "unique-visitors",
@@ -669,7 +690,7 @@ export function DashboardContent({
 			},
 			{
 				id: "bounce-rate",
-				label: "Bounce Rate",
+				label: "Bounce rate",
 				value: bounceRate,
 				formattedValue: sessionStats ? `${formatDecimal(bounceRate)}%` : "—",
 			},
@@ -692,7 +713,7 @@ export function DashboardContent({
 				formattedValue: String(overview.countries || 0),
 			},
 		];
-	}, [overview, sessionStats, initialData.kpis]);
+	}, [overview, sessionStats, initialData.kpis, pageviewSparkline]);
 
 	const trendData = useMemo(() => {
 		if (!trend || !Array.isArray(trend) || trend.length === 0) {
@@ -729,7 +750,10 @@ export function DashboardContent({
 
 	const palettePages = useMemo(() => {
 		if (!pages || !Array.isArray(pages)) return [];
-		return pages.map((p: { path: string; views: number }) => ({ path: p.path, views: p.views }));
+		return pages.map((p: { path: string; views: number }) => ({
+			path: p.path,
+			views: p.views,
+		}));
 	}, [pages]);
 
 	const paletteReferrers = useMemo(() => {
@@ -741,30 +765,7 @@ export function DashboardContent({
 	}, [referrers]);
 	const hasCampaignData = Array.isArray(utmCampaigns) && utmCampaigns.length > 0;
 
-	const viewTabs = [
-		{ id: "overview" as DashboardView, label: "Overview", icon: ChartColumnIncreasingIcon },
-		{ id: "realtime" as DashboardView, label: "Live", icon: RadioIcon },
-		{ id: "retention" as DashboardView, label: "Retention", icon: CalendarDaysIcon },
-		{ id: "behavior" as DashboardView, label: "Behavior", icon: RouteIcon },
-		{ id: "technology" as DashboardView, label: "Tech", icon: SlidersHorizontalIcon },
-		{ id: "audience" as DashboardView, label: "Audience", icon: UsersIcon },
-		{ id: "posthog" as DashboardView, label: "PostHog", icon: ZapIcon },
-	];
-
-	function buildHref(path: string, params: URLSearchParams): AppRoute {
-		const query = params.toString();
-		return (query ? `${path}?${query}` : path) as AppRoute;
-	}
-
-	function viewHref(view: DashboardView): AppRoute {
-		const params = new URLSearchParams(searchParams.toString());
-		if (view === "overview") {
-			params.delete("view");
-		} else {
-			params.set("view", view);
-		}
-		return buildHref(pathname || "/", params);
-	}
+	const viewTitle = VIEW_TITLES[activeView];
 
 	function selectPalettePage() {
 		setActiveView("behavior");
@@ -777,6 +778,9 @@ export function DashboardContent({
 	return (
 		<>
 			<DashboardHeader
+				title={viewTitle}
+				breadcrumbs={breadcrumbs}
+				liveVisitors={liveNow?.activeVisitors ?? null}
 				typeFilter={typeFilter}
 				onTypeFilterChange={setTypeFilter}
 				authUser={authUser}
@@ -801,47 +805,12 @@ export function DashboardContent({
 			/>
 
 			<main className="flex-1 overflow-auto bg-background">
-				<div className="p-3 space-y-3">
-					<div className="flex items-center justify-between">
-						<div>
-							<nav
-								aria-label="Breadcrumb"
-								className="flex items-center gap-1 text-[11px] text-muted-foreground"
-							>
-								{breadcrumbs.map((item, i) => (
-									<span key={i} className="flex items-center gap-1">
-										{i > 0 && <ChevronRight className="h-3 w-3" />}
-										{item.href ? (
-											item.href.startsWith("http") ? (
-												<a
-													href={item.href}
-													target="_blank"
-													rel="noreferrer"
-													className="hover:text-foreground"
-												>
-													{item.label}
-												</a>
-											) : (
-												<Link href={item.href} className="hover:text-foreground">
-													{item.label}
-												</Link>
-											)
-										) : (
-											<span className="text-foreground">{item.label}</span>
-										)}
-									</span>
-								))}
-							</nav>
-							<p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>
-						</div>
-					</div>
-
-					{!databaseReady && <DatabaseNotice issue={setupIssue} />}
-					{!databaseReady && <DemoDataNotice />}
+				<div className="mx-auto w-full max-w-[1600px] space-y-4 p-4">
+					{!databaseReady && <SetupNotice issue={setupIssue} />}
 
 					{geoCountry && (
-						<div className="flex items-center gap-2">
-							<span className="inline-flex items-center gap-1.5 text-[11px] bg-card border border-border rounded-full pl-2.5 pr-1 py-1">
+						<div className="flex items-center gap-2 transition-[opacity,transform] duration-150 ease-out starting:-translate-y-0.5 starting:opacity-0 motion-reduce:starting:translate-y-0">
+							<span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 pl-2.5 pr-1 text-xs">
 								<span>{getFlagEmoji(geoCountry)}</span>
 								<span className="text-foreground">
 									{countryName(geoCountry)}
@@ -851,34 +820,25 @@ export function DashboardContent({
 									type="button"
 									onClick={clearGeoFilter}
 									aria-label="Clear geo filter"
-									className="rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+									className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 								>
 									<X className="h-3 w-3" />
 								</button>
 							</span>
 							<Link
 								href={`/geo?country=${geoCountry}${geoRegion ? `&region=${encodeURIComponent(geoRegion)}` : ""}`}
-								className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+								className="text-xs text-muted-foreground transition-colors hover:text-foreground"
 							>
 								Open in Geo Explorer
 							</Link>
 						</div>
 					)}
 
-					<div className="overflow-x-auto -mx-3 px-3">
-						<ViewTabs
-							tabs={viewTabs}
-							activeId={activeView}
-							hrefFor={viewHref}
-							ariaLabel="Dashboard views"
-						/>
-					</div>
-
 					{activeView !== "posthog" && <KPICardsGrid kpis={kpiArray} isLoading={overviewLoading} />}
 
 					{activeView === "overview" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								<TrendChart
 									data={trendData}
 									title="Pageviews over time"
@@ -890,8 +850,17 @@ export function DashboardContent({
 									cityPoints={cityPoints}
 									onCountryClick={openCountryDetail}
 								/>
-								<GeoDetails data={geoDetail} />
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<GeoDetails
+									data={geoDetail}
+									onCountrySelect={(country) =>
+										openCountryDetail({
+											country,
+											count: 0,
+											percentage: 0,
+										})
+									}
+								/>
+								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<TopPagesTable
 										data={pages || initialData.content.topPages}
 										isLoading={pagesLoading}
@@ -903,7 +872,7 @@ export function DashboardContent({
 									/>
 								</div>
 								{hasCampaignData && <UTMCampaignsTable data={utmCampaigns} />}
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<SessionStatsCard data={sessionStats} />
 									<DonutChart
 										title="Devices"
@@ -915,28 +884,37 @@ export function DashboardContent({
 									/>
 								</div>
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<LiveNowWidget data={liveNow} />
 								<SignalStream
 									signals={recentSignals}
 									filter=""
 									typeFilter={typeFilter}
-									className="h-[400px]"
+									className="max-h-[480px] min-h-[200px]"
 								/>
 							</div>
 						</div>
 					)}
 
 					{activeView === "realtime" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
 									cityPoints={cityPoints}
 									onCountryClick={openCountryDetail}
 								/>
-								<GeoDetails data={geoDetail} />
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<GeoDetails
+									data={geoDetail}
+									onCountrySelect={(country) =>
+										openCountryDetail({
+											country,
+											count: 0,
+											percentage: 0,
+										})
+									}
+								/>
+								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<TopPagesTable
 										data={pages || initialData.content.topPages}
 										isLoading={pagesLoading}
@@ -944,25 +922,25 @@ export function DashboardContent({
 									<EntryExitPages data={entryExitPages} />
 								</div>
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<LiveNowWidget data={liveNow} />
 								<SignalStream
 									signals={recentSignals}
 									filter=""
 									typeFilter={typeFilter}
-									className="h-[500px]"
+									className="max-h-[600px] min-h-[200px]"
 								/>
 							</div>
 						</div>
 					)}
 
 					{activeView === "retention" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								<RetentionHeatmap data={retention} isLoading={retentionLoading} />
 								<HourlyHeatmap data={heatmap} />
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
 								<TrendChart
@@ -976,10 +954,10 @@ export function DashboardContent({
 					)}
 
 					{activeView === "behavior" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								<SessionPaths data={paths} isLoading={pathsLoading} />
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<EntryExitPages data={entryExitPages} />
 									<TopPagesTable
 										data={pages || initialData.content.topPages}
@@ -988,7 +966,7 @@ export function DashboardContent({
 								</div>
 								<HourlyHeatmap data={heatmap} />
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
 								<WebVitalsCard data={webVitals} />
@@ -998,9 +976,9 @@ export function DashboardContent({
 					)}
 
 					{activeView === "technology" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
+								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<TechnologyBreakdown
 										browsers={browsers}
 										operatingSystems={operatingSystems}
@@ -1012,7 +990,7 @@ export function DashboardContent({
 								</div>
 								<VisitorsTable buildQuery={buildQuery} projectId={selectedProject} />
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<DonutChart
 									title="Devices"
 									data={deviceData.map((d) => ({
@@ -1027,24 +1005,33 @@ export function DashboardContent({
 									signals={recentSignals}
 									filter=""
 									typeFilter={typeFilter}
-									className="h-[400px]"
+									className="max-h-[480px] min-h-[200px]"
 								/>
 							</div>
 						</div>
 					)}
 
 					{activeView === "audience" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								<GeoMap
 									data={geo || initialData.audience.geoByCountry}
 									cityPoints={cityPoints}
 									onCountryClick={openCountryDetail}
 								/>
-								<GeoDetails data={geoDetail} />
+								<GeoDetails
+									data={geoDetail}
+									onCountrySelect={(country) =>
+										openCountryDetail({
+											country,
+											count: 0,
+											percentage: 0,
+										})
+									}
+								/>
 								<VisitorsTable buildQuery={buildQuery} projectId={selectedProject} />
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<DonutChart
 									title="Devices"
 									data={deviceData.map((d) => ({
@@ -1058,8 +1045,8 @@ export function DashboardContent({
 									operatingSystems={operatingSystems}
 									languages={languages}
 								/>
-								<div className="bg-card border border-border rounded-sm px-3 py-2.5">
-									<p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+								<div className="rounded-lg border border-border bg-card px-3 py-2.5">
+									<p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
 										Returning rate
 									</p>
 									<span className="mt-1 block text-xl font-semibold text-foreground tabular-nums tracking-tight">
@@ -1087,8 +1074,8 @@ export function DashboardContent({
 					)}
 
 					{activeView === "posthog" && (
-						<div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-							<div className="lg:col-span-8 space-y-3">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+							<div className="space-y-4 lg:col-span-8">
 								{posthogConfigMissing && (
 									<PostHogNotice message={(posthogSummaryError as ApiError)?.info?.message} />
 								)}
@@ -1105,7 +1092,7 @@ export function DashboardContent({
 									projectId={posthogProject}
 								/>
 							</div>
-							<div className="lg:col-span-4 space-y-3">
+							<div className="space-y-4 lg:col-span-4">
 								<PostHogInsightsList data={posthogInsights} isLoading={posthogInsightsLoading} />
 							</div>
 						</div>
@@ -1119,556 +1106,554 @@ export function DashboardContent({
 				onClose={() => setSelectedReferrer(null)}
 			/>
 
-			{selectedCountry && (
-				<div
-					className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-					onClick={closeCountryDetail}
+			<Dialog
+				open={Boolean(selectedCountry)}
+				onOpenChange={(open) => {
+					if (!open) closeCountryDetail();
+				}}
+			>
+				<DialogContent
+					showCloseButton={false}
+					aria-describedby={undefined}
+					overlayClassName="bg-background/80 backdrop-blur-sm"
+					className="flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[640px] flex-col gap-0 overflow-hidden rounded-lg border-border bg-card p-0 shadow-xl sm:max-w-[640px]"
 				>
-					<div
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="country-modal-title"
-						className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[640px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl"
-						onClick={(e) => e.stopPropagation()}
-					>
-						{countryDetailLoading || !countryDetailData ? (
-							<div className="flex items-center justify-center p-12">
-								<div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-							</div>
-						) : (
-							<>
-								<div className="px-5 py-4 border-b border-border shrink-0">
-									<div className="flex items-center gap-3">
-										{selectedCountry.countryCode && (
-											<span className="text-3xl">{getFlagEmoji(selectedCountry.countryCode)}</span>
-										)}
-										<div>
-											<h3
-												id="country-modal-title"
-												className="text-lg font-semibold text-foreground"
-											>
-												{countryName(selectedCountry.country)}
-											</h3>
-											<p className="text-sm text-muted-foreground">
-												{countryDetailData.uniqueVisitors.toLocaleString()} unique visitors ·{" "}
-												{countryDetailData.sessions.toLocaleString()} sessions
-												{countryDetailData.liveVisitors > 0 && (
-													<span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-														<span className="relative flex h-1.5 w-1.5">
-															<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-															<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-														</span>
-														{countryDetailData.liveVisitors} live now
+					{!dialogCountry || countryDetailLoading || !countryDetailData ? (
+						<div className="flex items-center justify-center p-12">
+							<DialogTitle className="sr-only">Country details</DialogTitle>
+							<div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+						</div>
+					) : (
+						<>
+							<div className="px-5 py-4 border-b border-border shrink-0">
+								<div className="flex items-center gap-3">
+									{dialogCountry.countryCode && (
+										<span className="text-3xl">{getFlagEmoji(dialogCountry.countryCode)}</span>
+									)}
+									<div>
+										<DialogTitle className="text-lg font-semibold leading-normal text-foreground">
+											{countryName(dialogCountry.country)}
+										</DialogTitle>
+										<p className="text-sm text-muted-foreground">
+											{countryDetailData.uniqueVisitors.toLocaleString()} unique visitors ·{" "}
+											{countryDetailData.sessions.toLocaleString()} sessions
+											{countryDetailData.liveVisitors > 0 && (
+												<span className="ml-2 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+													<span className="relative flex h-1.5 w-1.5">
+														<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+														<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
 													</span>
-												)}
-											</p>
-										</div>
-										{selectedCountry.countryCode && (
-											<button
-												type="button"
-												onClick={() => {
-													const newParams = new URLSearchParams(searchParams.toString());
-													newParams.set("country", selectedCountry.countryCode!);
-													newParams.delete("region");
-													newParams.delete("countryDetail");
-													router.push(buildHref(pathname || "/", newParams));
-												}}
-												className="ml-auto text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
-											>
-												Filter dashboard
-											</button>
-										)}
+													{countryDetailData.liveVisitors} live now
+												</span>
+											)}
+										</p>
+									</div>
+									{dialogCountry.countryCode && (
+										<button
+											type="button"
+											onClick={() => {
+												const newParams = new URLSearchParams(searchParams.toString());
+												newParams.set("country", dialogCountry.countryCode!);
+												newParams.delete("region");
+												newParams.delete("countryDetail");
+												router.push(buildHref(pathname || "/", newParams));
+											}}
+											className="ml-auto text-xs px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors"
+										>
+											Filter dashboard
+										</button>
+									)}
+								</div>
+							</div>
+
+							<div className="overflow-y-auto flex-1 p-5 space-y-5">
+								{(dialogCountry.countryCode || dialogCountry.country.length === 2) && (
+									<CountryMiniMap
+										countryCode={dialogCountry.countryCode || dialogCountry.country}
+										points={countryDetailData.cityPoints}
+									/>
+								)}
+
+								<div className="grid grid-cols-4 gap-3">
+									<div className="bg-muted/50 rounded-lg p-3 text-center">
+										<p className="text-xl font-bold text-foreground">
+											{countryDetailData.totalEvents.toLocaleString()}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Events
+										</p>
+										<DeltaBadge
+											current={countryDetailData.totalEvents}
+											previous={countryDetailData.previous.totalEvents}
+										/>
+									</div>
+									<div className="bg-muted/50 rounded-lg p-3 text-center">
+										<p className="text-xl font-bold text-foreground">
+											{countryDetailData.uniqueVisitors.toLocaleString()}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Visitors
+										</p>
+										<DeltaBadge
+											current={countryDetailData.uniqueVisitors}
+											previous={countryDetailData.previous.uniqueVisitors}
+										/>
+									</div>
+									<div className="bg-muted/50 rounded-lg p-3 text-center">
+										<p className="text-xl font-bold text-foreground">
+											{countryDetailData.sessions.toLocaleString()}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Sessions
+										</p>
+										<DeltaBadge
+											current={countryDetailData.sessions}
+											previous={countryDetailData.previous.sessions}
+										/>
+									</div>
+									<div className="bg-muted/50 rounded-lg p-3 text-center">
+										<p className="text-xl font-bold text-foreground">
+											{countryDetailData.topCities.length}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Cities
+										</p>
 									</div>
 								</div>
 
-								<div className="overflow-y-auto flex-1 p-5 space-y-5">
-									{(selectedCountry.countryCode || selectedCountry.country.length === 2) && (
-										<CountryMiniMap
-											countryCode={selectedCountry.countryCode || selectedCountry.country}
-											points={countryDetailData.cityPoints}
-										/>
-									)}
-
-									<div className="grid grid-cols-4 gap-3">
-										<div className="bg-muted/50 rounded-lg p-3 text-center">
-											<p className="text-xl font-bold text-foreground">
-												{countryDetailData.totalEvents.toLocaleString()}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Events
-											</p>
-											<DeltaBadge
-												current={countryDetailData.totalEvents}
-												previous={countryDetailData.previous.totalEvents}
-											/>
-										</div>
-										<div className="bg-muted/50 rounded-lg p-3 text-center">
-											<p className="text-xl font-bold text-foreground">
-												{countryDetailData.uniqueVisitors.toLocaleString()}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Visitors
-											</p>
-											<DeltaBadge
-												current={countryDetailData.uniqueVisitors}
-												previous={countryDetailData.previous.uniqueVisitors}
-											/>
-										</div>
-										<div className="bg-muted/50 rounded-lg p-3 text-center">
-											<p className="text-xl font-bold text-foreground">
-												{countryDetailData.sessions.toLocaleString()}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Sessions
-											</p>
-											<DeltaBadge
-												current={countryDetailData.sessions}
-												previous={countryDetailData.previous.sessions}
-											/>
-										</div>
-										<div className="bg-muted/50 rounded-lg p-3 text-center">
-											<p className="text-xl font-bold text-foreground">
-												{countryDetailData.topCities.length}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Cities
-											</p>
+								{countryDetailData.trend.length > 1 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">
+											Daily trend
+											<span className="ml-1.5 font-normal text-muted-foreground">
+												events per day
+											</span>
+										</h4>
+										<div className="flex items-end gap-px h-14 bg-muted/20 rounded p-1.5">
+											{countryDetailData.trend.map((d) => {
+												const max = Math.max(1, ...countryDetailData.trend.map((t) => t.events));
+												return (
+													<div
+														key={d.day}
+														className="flex-1 bg-foreground/60 hover:bg-foreground rounded-t-[1px] transition-colors min-w-[2px]"
+														style={{
+															height: `${Math.max(6, (d.events / max) * 100)}%`,
+														}}
+														title={`${new Date(d.day).toLocaleDateString()}: ${d.events} events, ${d.visitors} visitors`}
+													/>
+												);
+											})}
 										</div>
 									</div>
+								)}
 
-									{countryDetailData.trend.length > 1 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">
-												Daily trend
+								<div className="grid grid-cols-4 gap-3">
+									<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+										<p className="text-sm font-semibold text-foreground tabular-nums">
+											{formatDuration(countryDetailData.engagement.avgDurationSeconds * 1000)}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Avg session
+										</p>
+									</div>
+									<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+										<p className="text-sm font-semibold text-foreground tabular-nums">
+											{countryDetailData.engagement.avgPageviews}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Pages / session
+										</p>
+									</div>
+									<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+										<p className="text-sm font-semibold text-foreground tabular-nums">
+											{countryDetailData.engagement.bounceRate}%
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											Bounce rate
+										</p>
+									</div>
+									<div className="bg-muted/30 rounded-lg p-2.5 text-center">
+										<p className="text-sm font-semibold text-foreground tabular-nums">
+											{countryDetailData.audience.newVisitors} /{" "}
+											{countryDetailData.audience.returningVisitors}
+										</p>
+										<p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+											New / returning
+										</p>
+									</div>
+								</div>
+
+								{countryDetailData.recentVisitors.length > 0 && (
+									<div>
+										<div className="flex items-center justify-between mb-2">
+											<h4 className="text-xs font-semibold text-foreground">
+												Recent visitors
 												<span className="ml-1.5 font-normal text-muted-foreground">
-													events per day
+													deduplicated · {countryDetailData.recentVisitors.length} shown
 												</span>
 											</h4>
-											<div className="flex items-end gap-px h-14 bg-muted/20 rounded p-1.5">
-												{countryDetailData.trend.map((d) => {
-													const max = Math.max(
-														1,
-														...countryDetailData.trend.map((t) => t.events),
-													);
-													return (
-														<div
-															key={d.day}
-															className="flex-1 bg-foreground/60 hover:bg-foreground rounded-t-[1px] transition-colors min-w-[2px]"
-															style={{
-																height: `${Math.max(6, (d.events / max) * 100)}%`,
-															}}
-															title={`${new Date(d.day).toLocaleDateString()}: ${d.events} events, ${d.visitors} visitors`}
-														/>
-													);
-												})}
-											</div>
+											{dialogCountry.countryCode && (
+												<button
+													type="button"
+													onClick={() => {
+														const newParams = new URLSearchParams(searchParams.toString());
+														newParams.set("view", "audience");
+														newParams.set("country", dialogCountry.countryCode!);
+														newParams.delete("region");
+														newParams.delete("countryDetail");
+														router.push(buildHref(pathname || "/", newParams));
+													}}
+													className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+												>
+													View all visitors →
+												</button>
+											)}
 										</div>
-									)}
-
-									<div className="grid grid-cols-4 gap-3">
-										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
-											<p className="text-sm font-semibold text-foreground tabular-nums">
-												{formatDuration(countryDetailData.engagement.avgDurationSeconds * 1000)}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Avg session
-											</p>
-										</div>
-										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
-											<p className="text-sm font-semibold text-foreground tabular-nums">
-												{countryDetailData.engagement.avgPageviews}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Pages / session
-											</p>
-										</div>
-										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
-											<p className="text-sm font-semibold text-foreground tabular-nums">
-												{countryDetailData.engagement.bounceRate}%
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												Bounce rate
-											</p>
-										</div>
-										<div className="bg-muted/30 rounded-lg p-2.5 text-center">
-											<p className="text-sm font-semibold text-foreground tabular-nums">
-												{countryDetailData.audience.newVisitors} /{" "}
-												{countryDetailData.audience.returningVisitors}
-											</p>
-											<p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-												New / returning
-											</p>
+										<div className="space-y-1">
+											{countryDetailData.recentVisitors.map((v) => (
+												<Link
+													key={v.fingerprint}
+													href={`/visitor/${v.fingerprint}` as AppRoute}
+													className="flex items-center justify-between gap-2 px-2 py-1.5 bg-muted/30 hover:bg-muted/60 rounded text-xs transition-colors group"
+												>
+													<span className="flex items-center gap-2 min-w-0">
+														<span className="font-mono text-foreground group-hover:underline shrink-0">
+															{v.fingerprint.slice(0, 10)}
+														</span>
+														<span className="text-muted-foreground truncate">
+															{[v.city, v.region].filter(Boolean).join(", ") || "Unknown city"}
+															{v.deviceType || v.browser
+																? ` · ${[v.deviceType, v.browser].filter(Boolean).join(" / ")}`
+																: ""}
+														</span>
+													</span>
+													<span className="text-muted-foreground tabular-nums shrink-0">
+														{v.events} ev · {v.sessions} sess ·{" "}
+														<span
+															className="text-foreground"
+															title={new Date(v.lastSeen).toLocaleString()}
+														>
+															{formatTimeAgo(v.lastSeen)}
+														</span>
+													</span>
+												</Link>
+											))}
 										</div>
 									</div>
+								)}
 
-									{countryDetailData.recentVisitors.length > 0 && (
-										<div>
-											<div className="flex items-center justify-between mb-2">
-												<h4 className="text-xs font-semibold text-foreground">
-													Recent visitors
-													<span className="ml-1.5 font-normal text-muted-foreground">
-														deduplicated · {countryDetailData.recentVisitors.length} shown
-													</span>
-												</h4>
-												{selectedCountry.countryCode && (
-													<button
-														type="button"
-														onClick={() => {
-															const newParams = new URLSearchParams(searchParams.toString());
-															newParams.set("view", "audience");
-															newParams.set("country", selectedCountry.countryCode!);
-															newParams.delete("region");
-															newParams.delete("countryDetail");
-															router.push(buildHref(pathname || "/", newParams));
-														}}
-														className="text-[11px] text-muted-foreground hover:text-foreground hover:underline"
-													>
-														View all visitors →
-													</button>
-												)}
-											</div>
-											<div className="space-y-1">
-												{countryDetailData.recentVisitors.map((v) => (
-													<Link
-														key={v.fingerprint}
-														href={`/visitor/${v.fingerprint}` as AppRoute}
-														className="flex items-center justify-between gap-2 px-2 py-1.5 bg-muted/30 hover:bg-muted/60 rounded text-[11px] transition-colors group"
-													>
-														<span className="flex items-center gap-2 min-w-0">
-															<span className="font-mono text-foreground group-hover:underline shrink-0">
-																{v.fingerprint.slice(0, 10)}
-															</span>
-															<span className="text-muted-foreground truncate">
-																{[v.city, v.region].filter(Boolean).join(", ") || "Unknown city"}
-																{v.deviceType || v.browser
-																	? ` · ${[v.deviceType, v.browser].filter(Boolean).join(" / ")}`
-																	: ""}
-															</span>
+								{countryDetailData.recentEvents.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Recent activity</h4>
+										<div className="space-y-px max-h-56 overflow-y-auto rounded">
+											{countryDetailData.recentEvents.map((e, i) => (
+												<div
+													key={`${e.fingerprint}-${e.timestamp}-${i}`}
+													className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/20 text-xs"
+												>
+													<span className="flex items-center gap-2 min-w-0">
+														<span
+															className="text-muted-foreground tabular-nums shrink-0 w-16"
+															title={new Date(e.timestamp).toLocaleString()}
+														>
+															{formatTimeAgo(e.timestamp)}
 														</span>
-														<span className="text-muted-foreground tabular-nums shrink-0">
-															{v.events} ev · {v.sessions} sess ·{" "}
-															<span
-																className="text-foreground"
-																title={new Date(v.lastSeen).toLocaleString()}
-															>
-																{formatTimeAgo(v.lastSeen)}
-															</span>
+														<span
+															className={
+																e.type === "pageview"
+																	? "text-foreground truncate"
+																	: "text-amber-600 dark:text-amber-400 truncate"
+															}
+														>
+															{e.type === "pageview" ? e.path || "/" : e.eventName || e.type}
+														</span>
+													</span>
+													<Link
+														href={`/visitor/${e.fingerprint}` as AppRoute}
+														className="font-mono text-muted-foreground hover:text-foreground hover:underline shrink-0"
+													>
+														{e.fingerprint.slice(0, 8)}
+													</Link>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								{countryDetailData.topEvents.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Custom events</h4>
+										<div className="space-y-1">
+											{countryDetailData.topEvents.map((e) => (
+												<div
+													key={e.name}
+													className="flex items-center justify-between text-xs px-2 py-1.5 bg-muted/30 rounded"
+												>
+													<span className="text-amber-600 dark:text-amber-400 truncate max-w-[300px]">
+														{e.name}
+													</span>
+													<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+														{e.count.toLocaleString()} · {e.visitors} visitor
+														{e.visitors === 1 ? "" : "s"}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								<div className="grid grid-cols-3 gap-3">
+									{(
+										[
+											["Devices", countryDetailData.technology.devices],
+											["Browsers", countryDetailData.technology.browsers],
+											["OS", countryDetailData.technology.os],
+										] as const
+									).map(([title, entries]) => (
+										<div key={title}>
+											<h4 className="text-xs font-semibold text-foreground mb-2">{title}</h4>
+											<div className="space-y-1">
+												{entries.length === 0 && (
+													<p className="text-xs text-muted-foreground">No data</p>
+												)}
+												{entries.map((entry) => (
+													<div
+														key={entry.label}
+														className="flex items-center justify-between text-xs px-2 py-1 bg-muted/30 rounded"
+													>
+														<span className="text-foreground truncate">{entry.label}</span>
+														<span className="text-muted-foreground tabular-nums shrink-0 ml-1">
+															{entry.count}
+														</span>
+													</div>
+												))}
+											</div>
+										</div>
+									))}
+								</div>
+
+								{countryDetailData.heatmap.maxCount > 0 && (
+									<HourlyHeatmap
+										data={countryDetailData.heatmap}
+										title={`When ${countryName(dialogCountry.country)} is active`}
+										emptyLabel="Not enough traffic yet"
+									/>
+								)}
+
+								{countryDetailData.topCities.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Top Cities</h4>
+										<div className="flex flex-wrap gap-1.5">
+											{countryDetailData.topCities.map((c) =>
+												dialogCountry.countryCode ? (
+													<Link
+														key={c.city}
+														href={
+															`/geo?country=${encodeURIComponent(dialogCountry.countryCode)}` as AppRoute
+														}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-xs transition-colors"
+													>
+														<span className="text-foreground">{c.city}</span>
+														<span className="text-muted-foreground">
+															{c.count.toLocaleString()}
 														</span>
 													</Link>
-												))}
-											</div>
-										</div>
-									)}
-
-									{countryDetailData.recentEvents.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">
-												Recent activity
-											</h4>
-											<div className="space-y-px max-h-56 overflow-y-auto rounded">
-												{countryDetailData.recentEvents.map((e, i) => (
-													<div
-														key={`${e.fingerprint}-${e.timestamp}-${i}`}
-														className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/20 text-[11px]"
+												) : (
+													<span
+														key={c.city}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-xs"
 													>
-														<span className="flex items-center gap-2 min-w-0">
-															<span
-																className="text-muted-foreground tabular-nums shrink-0 w-16"
-																title={new Date(e.timestamp).toLocaleString()}
-															>
-																{formatTimeAgo(e.timestamp)}
-															</span>
-															<span
-																className={
-																	e.type === "pageview"
-																		? "text-foreground truncate"
-																		: "text-amber-600 dark:text-amber-400 truncate"
-																}
-															>
-																{e.type === "pageview"
-																	? e.path || "/"
-																	: e.eventName || e.type}
-															</span>
+														<span className="text-foreground">{c.city}</span>
+														<span className="text-muted-foreground">
+															{c.count.toLocaleString()}
 														</span>
-														<Link
-															href={`/visitor/${e.fingerprint}` as AppRoute}
-															className="font-mono text-muted-foreground hover:text-foreground hover:underline shrink-0"
-														>
-															{e.fingerprint.slice(0, 8)}
-														</Link>
-													</div>
-												))}
-											</div>
+													</span>
+												),
+											)}
 										</div>
-									)}
-
-									{countryDetailData.topEvents.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">
-												Custom events
-											</h4>
-											<div className="space-y-1">
-												{countryDetailData.topEvents.map((e) => (
-													<div
-														key={e.name}
-														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
-													>
-														<span className="text-amber-600 dark:text-amber-400 truncate max-w-[300px]">
-															{e.name}
-														</span>
-														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
-															{e.count.toLocaleString()} · {e.visitors} visitor
-															{e.visitors === 1 ? "" : "s"}
-														</span>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
-
-									<div className="grid grid-cols-3 gap-3">
-										{(
-											[
-												["Devices", countryDetailData.technology.devices],
-												["Browsers", countryDetailData.technology.browsers],
-												["OS", countryDetailData.technology.os],
-											] as const
-										).map(([title, entries]) => (
-											<div key={title}>
-												<h4 className="text-xs font-semibold text-foreground mb-2">{title}</h4>
-												<div className="space-y-1">
-													{entries.length === 0 && (
-														<p className="text-[11px] text-muted-foreground">No data</p>
-													)}
-													{entries.map((entry) => (
-														<div
-															key={entry.label}
-															className="flex items-center justify-between text-[11px] px-2 py-1 bg-muted/30 rounded"
-														>
-															<span className="text-foreground truncate">{entry.label}</span>
-															<span className="text-muted-foreground tabular-nums shrink-0 ml-1">
-																{entry.count}
-															</span>
-														</div>
-													))}
-												</div>
-											</div>
-										))}
 									</div>
+								)}
 
-									{countryDetailData.heatmap.maxCount > 0 && (
-										<HourlyHeatmap
-											data={countryDetailData.heatmap}
-											title={`When ${countryName(selectedCountry.country)} is active`}
-											emptyLabel="Not enough traffic yet"
-										/>
-									)}
-
-									{countryDetailData.topCities.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">Top Cities</h4>
-											<div className="flex flex-wrap gap-1.5">
-												{countryDetailData.topCities.map((c) =>
-													selectedCountry.countryCode ? (
-														<Link
-															key={c.city}
-															href={
-																`/geo?country=${encodeURIComponent(selectedCountry.countryCode)}` as AppRoute
-															}
-															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-[11px] transition-colors"
-														>
-															<span className="text-foreground">{c.city}</span>
-															<span className="text-muted-foreground">
-																{c.count.toLocaleString()}
-															</span>
-														</Link>
-													) : (
-														<span
-															key={c.city}
-															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
-														>
-															<span className="text-foreground">{c.city}</span>
-															<span className="text-muted-foreground">
-																{c.count.toLocaleString()}
-															</span>
-														</span>
-													),
-												)}
-											</div>
-										</div>
-									)}
-
-									{countryDetailData.topRegions.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">Top Regions</h4>
-											<div className="flex flex-wrap gap-1.5">
-												{countryDetailData.topRegions.map((r) =>
-													selectedCountry.countryCode ? (
-														<Link
-															key={r.region}
-															href={
-																`/geo?country=${encodeURIComponent(selectedCountry.countryCode)}&region=${encodeURIComponent(r.region)}` as AppRoute
-															}
-															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-[11px] transition-colors"
-														>
-															<span className="text-foreground">{r.region}</span>
-															<span className="text-muted-foreground">
-																{r.count.toLocaleString()}
-															</span>
-														</Link>
-													) : (
-														<span
-															key={r.region}
-															className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-[11px]"
-														>
-															<span className="text-foreground">{r.region}</span>
-															<span className="text-muted-foreground">
-																{r.count.toLocaleString()}
-															</span>
-														</span>
-													),
-												)}
-											</div>
-										</div>
-									)}
-
-									{countryDetailData.topPages.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">Top Pages</h4>
-											<div className="space-y-1">
-												{countryDetailData.topPages.slice(0, 5).map((p) => (
-													<div
-														key={p.path}
-														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
+								{countryDetailData.topRegions.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Top Regions</h4>
+										<div className="flex flex-wrap gap-1.5">
+											{countryDetailData.topRegions.map((r) =>
+												dialogCountry.countryCode ? (
+													<Link
+														key={r.region}
+														href={
+															`/geo?country=${encodeURIComponent(dialogCountry.countryCode)}&region=${encodeURIComponent(r.region)}` as AppRoute
+														}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 hover:bg-muted rounded text-xs transition-colors"
 													>
-														<span className="text-foreground truncate max-w-[300px]">
-															{p.path || "/"}
-														</span>
-														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
-															{p.count.toLocaleString()}
-														</span>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
-
-									{countryDetailData.topReferrers.length > 0 && (
-										<div>
-											<h4 className="text-xs font-semibold text-foreground mb-2">Top Sources</h4>
-											<div className="space-y-1">
-												{countryDetailData.topReferrers.slice(0, 4).map((r) => (
-													<div
-														key={r.referrer}
-														className="flex items-center justify-between text-[11px] px-2 py-1.5 bg-muted/30 rounded"
-													>
-														<span className="text-foreground truncate max-w-[300px]">
-															{r.referrer}
-														</span>
-														<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+														<span className="text-foreground">{r.region}</span>
+														<span className="text-muted-foreground">
 															{r.count.toLocaleString()}
 														</span>
-													</div>
-												))}
-											</div>
+													</Link>
+												) : (
+													<span
+														key={r.region}
+														className="inline-flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded text-xs"
+													>
+														<span className="text-foreground">{r.region}</span>
+														<span className="text-muted-foreground">
+															{r.count.toLocaleString()}
+														</span>
+													</span>
+												),
+											)}
 										</div>
-									)}
-								</div>
+									</div>
+								)}
 
-								<div className="px-5 py-3 border-t border-border shrink-0">
-									<button
-										onClick={closeCountryDetail}
-										aria-label="Close country details"
-										className="w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
-									>
-										Close
-									</button>
-								</div>
-							</>
-						)}
-					</div>
-				</div>
-			)}
+								{countryDetailData.topPages.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Top Pages</h4>
+										<div className="space-y-1">
+											{countryDetailData.topPages.slice(0, 5).map((p) => (
+												<div
+													key={p.path}
+													className="flex items-center justify-between text-xs px-2 py-1.5 bg-muted/30 rounded"
+												>
+													<span className="text-foreground truncate max-w-[300px]">
+														{p.path || "/"}
+													</span>
+													<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+														{p.count.toLocaleString()}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								{countryDetailData.topReferrers.length > 0 && (
+									<div>
+										<h4 className="text-xs font-semibold text-foreground mb-2">Top Sources</h4>
+										<div className="space-y-1">
+											{countryDetailData.topReferrers.slice(0, 4).map((r) => (
+												<div
+													key={r.referrer}
+													className="flex items-center justify-between text-xs px-2 py-1.5 bg-muted/30 rounded"
+												>
+													<span className="text-foreground truncate max-w-[300px]">
+														{r.referrer}
+													</span>
+													<span className="text-muted-foreground tabular-nums shrink-0 ml-2">
+														{r.count.toLocaleString()}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
+
+							<div className="px-5 py-3 border-t border-border shrink-0">
+								<button
+									onClick={closeCountryDetail}
+									aria-label="Close country details"
+									className="w-full py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
+								>
+									Close
+								</button>
+							</div>
+						</>
+					)}
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }
 
-function DatabaseNotice({ issue }: { issue?: "missing_database_url" | "query_failed" }) {
+function useDismissible(storageKey: string) {
 	const [dismissed, setDismissed] = useState(false);
+	const [closing, setClosing] = useState(false);
 
 	useEffect(() => {
-		if (sessionStorage.getItem("db-notice-dismissed") === "true") {
-			setDismissed(true);
-		}
-	}, []);
+		if (sessionStorage.getItem(storageKey) === "true") setDismissed(true);
+	}, [storageKey]);
 
-	if (dismissed) return null;
+	function dismiss() {
+		sessionStorage.setItem(storageKey, "true");
+		setClosing(true);
+	}
 
-	const detail =
-		issue === "query_failed"
-			? "Database unavailable. Check Neon connection and server logs."
-			: "Add DATABASE_URL to connect your database.";
+	function onClosed() {
+		setDismissed(true);
+	}
 
+	return { dismissed, closing, dismiss, onClosed };
+}
+
+function CollapseOut({
+	closing,
+	onClosed,
+	children,
+}: {
+	closing: boolean;
+	onClosed: () => void;
+	children: ReactNode;
+}) {
 	return (
-		<button
-			type="button"
-			onClick={() => {
-				sessionStorage.setItem("db-notice-dismissed", "true");
-				setDismissed(true);
+		<div
+			data-state={closing ? "closed" : "open"}
+			onTransitionEnd={(event) => {
+				if (event.target === event.currentTarget && closing) onClosed();
 			}}
-			className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+			className="grid grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-200 ease-out data-[state=closed]:grid-rows-[0fr] data-[state=closed]:opacity-0 motion-reduce:transition-opacity"
 		>
-			<div className="flex items-center gap-2">
-				<AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />
-				<span className="text-xs text-muted-foreground">{detail}</span>
-			</div>
-			<X className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-		</button>
+			<div className="min-h-0 overflow-hidden">{children}</div>
+		</div>
 	);
 }
 
-function DemoDataNotice() {
-	const [dismissed, setDismissed] = useState(false);
+function SetupNotice({ issue }: { issue?: "missing_database_url" | "query_failed" }) {
+	const storageKey =
+		issue === "query_failed" ? "database-notice-dismissed" : "setup-notice-dismissed";
+	const { dismissed, closing, dismiss, onClosed } = useDismissible(storageKey);
 	const [isPersonal, setIsPersonal] = useState(false);
 
 	useEffect(() => {
-		if (sessionStorage.getItem("demo-notice-dismissed") === "true") setDismissed(true);
 		if (window.location.hostname === process.env.NEXT_PUBLIC_PERSONAL_DASHBOARD_HOSTNAME) {
 			setIsPersonal(true);
 		}
 	}, []);
 
-	if (dismissed || isPersonal) return null;
+	if (dismissed || (isPersonal && issue !== "query_failed")) return null;
+
+	const detail =
+		issue === "query_failed"
+			? "Database unavailable — showing sample data. Check your Neon connection and server logs."
+			: "Showing sample data. Add DATABASE_URL to connect your own database.";
 
 	return (
-		<div className="group relative w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-left">
-			<div className="flex items-center gap-2">
-				<BadgeInfo className="h-4 w-4 shrink-0 text-muted-foreground" />
-				<span className="text-xs text-muted-foreground">
-					All data is illustrative! Learn{" "}
+		<CollapseOut closing={closing} onClosed={onClosed}>
+			<div className="group relative flex w-full items-center gap-2.5 rounded-lg border border-warning/30 bg-warning/5 py-2 pl-3 pr-9 text-xs text-foreground/80">
+				<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
+				<span>
+					{detail}{" "}
 					<Link
 						href="https://docs.analytics.remcostoeten.nl"
 						target="_blank"
 						rel="noreferrer"
-						className="underline hover:text-foreground"
+						className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
 					>
-						here
-					</Link>{" "}
-					on how to connect your database.
+						Setup guide
+					</Link>
 				</span>
+				<button
+					type="button"
+					onClick={dismiss}
+					aria-label="Dismiss setup notice"
+					className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				>
+					<X className="h-3.5 w-3.5" />
+				</button>
 			</div>
-			<button
-				type="button"
-				onClick={() => {
-					sessionStorage.setItem("demo-notice-dismissed", "true");
-					setDismissed(true);
-				}}
-				aria-label="Dismiss demo data notice"
-				className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-			>
-				<X className="h-3.5 w-3.5" />
-			</button>
-		</div>
+		</CollapseOut>
 	);
 }
 

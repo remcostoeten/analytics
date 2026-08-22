@@ -146,10 +146,10 @@ export function GeoDotMap({ points, breakdown, scopedCountry, onCountryClick, cl
 					style={{ left: tooltipPos.x + 10, top: tooltipPos.y - 40 }}
 				>
 					<p className="text-xs font-medium text-foreground">{hovered.city ?? "Unknown area"}</p>
-					<p className="text-[10px] text-muted-foreground tabular-nums">
+					<p className="text-[11px] text-muted-foreground tabular-nums">
 						{hovered.count.toLocaleString()} events · {hovered.visitors.toLocaleString()} visitors
 					</p>
-					<p className="text-[10px] text-muted-foreground tabular-nums">
+					<p className="text-[11px] text-muted-foreground tabular-nums">
 						{hovered.latitude.toFixed(1)}, {hovered.longitude.toFixed(1)}
 					</p>
 				</div>

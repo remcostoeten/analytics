@@ -52,7 +52,7 @@ describe("event builder", () => {
 		const results = await analytics.event("checkout.completed").to("one", "two").send();
 
 		expect(
-			results.map(function id(result) {
+			results.map((result) => {
 				return result.adapter;
 			}),
 		).toEqual(["one", "two"]);

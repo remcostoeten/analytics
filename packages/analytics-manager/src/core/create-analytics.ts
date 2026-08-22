@@ -8,13 +8,26 @@ import type {
 	Context,
 	ContextInput,
 	Empty,
+	ErrorHandler,
 	EventMap,
 	Middleware,
 	RuntimeConfig,
+	Stage,
 } from "../types";
-import { merge, notifyError, resolveContext, toError } from "../utilities";
+import {
+	createReporter,
+	merge,
+	resolveContext,
+	TimeoutError,
+	toError,
+	withTimeout,
+	type Reporter,
+} from "../utilities";
 import type { Core } from "./dispatch";
+import { destroyAdapter } from "./dispatch";
 import { createRuntime } from "./runtime";
+
+const DEFAULT_TIMEOUT = 10_000;
 
 type BuilderState = {
 	app?: string;
@@ -22,6 +35,8 @@ type BuilderState = {
 	context: ContextInput[];
 	adapters: AdapterSource[];
 	middleware: Middleware[];
+	onError?: ErrorHandler;
+	timeout: number;
 };
 
 function isBuilder(source: AdapterSource): source is AdapterBuilder {
@@ -49,7 +64,7 @@ function resolveAdapters(sources: AdapterSource[]): Adapter[] {
 	return adapters;
 }
 
-function resolveConfig(state: BuilderState): RuntimeConfig {
+function resolveContextValue(state: BuilderState): Context {
 	let context: Context = {};
 
 	for (const input of state.context) {
@@ -61,23 +76,64 @@ function resolveConfig(state: BuilderState): RuntimeConfig {
 		context = merge(context, { environment: state.environment });
 	}
 
-	return { app: state.app, environment: state.environment, context };
+	return context;
 }
 
-function initAdapters(config: RuntimeConfig, adapters: Adapter[]): Promise<void> {
-	const started = adapters.map(async function start(adapter) {
+function configFor(
+	state: BuilderState,
+	context: Context,
+	report: Reporter,
+	adapterId: string,
+): RuntimeConfig {
+	const config: RuntimeConfig = {
+		app: state.app,
+		environment: state.environment,
+		context,
+		report: (error: Error, stage: Stage) => {
+			report(adapterId, stage, error);
+		},
+	};
+	return config;
+}
+
+function initAdapters(state: BuilderState, context: Context, core: Core): Promise<void> {
+	const started = core.adapters.map(async (adapter) => {
 		if (!adapter.init) return;
 
+		const config = configFor(state, context, core.report, adapter.id);
+		const pending = new Promise<void>((resolve) => {
+			resolve(adapter.init?.(config));
+		});
+
 		try {
-			await adapter.init(config);
+			await withTimeout(
+				pending,
+				state.timeout,
+				`[analytics-manager] adapter "${adapter.id}" did not initialize within ${state.timeout}ms`,
+			);
 		} catch (thrown) {
-			notifyError(config.environment, adapter.id, toError(thrown));
+			core.failed.add(adapter.id);
+			core.report(adapter.id, "init", toError(thrown));
+			if (!(thrown instanceof TimeoutError)) return;
+			core.late.add(adapter.id);
+			pending.then(
+				() => {
+					core.late.delete(adapter.id);
+					if (core.disposed) {
+						void destroyAdapter(core, adapter);
+						return;
+					}
+					core.failed.delete(adapter.id);
+				},
+				(reason: unknown) => {
+					core.late.delete(adapter.id);
+					core.report(adapter.id, "init", toError(reason));
+				},
+			);
 		}
 	});
 
-	return Promise.all(started).then(function done() {
-		return undefined;
-	});
+	return Promise.all(started).then(() => undefined);
 }
 
 function fromState<TEvents extends EventMap, TAdapters extends AdapterMap>(
@@ -116,23 +172,40 @@ function fromState<TEvents extends EventMap, TAdapters extends AdapterMap>(
 				middleware: [...state.middleware, middleware as Middleware],
 			});
 		},
+		onError: function onError(handler) {
+			return fromState<TEvents, TAdapters>({ ...state, onError: handler });
+		},
+		timeout: function timeout(milliseconds) {
+			return fromState<TEvents, TAdapters>({ ...state, timeout: milliseconds });
+		},
 		build: function build(): Analytics<TEvents, TAdapters> {
-			const config = resolveConfig(state);
+			const context = resolveContextValue(state);
 			const adapters = resolveAdapters(state.adapters);
+			const report = createReporter(state.environment, state.onError);
+			const failed = new Set<string>();
 
 			const core: Core = {
-				config,
 				adapters,
 				middleware: state.middleware,
-				ready: initAdapters(config, adapters),
+				report,
+				failed,
+				late: new Set<string>(),
+				destroyed: new Set<string>(),
+				ready: Promise.resolve(),
 				disposed: false,
 			};
+			core.ready = initAdapters(state, context, core);
 
-			return createRuntime<TEvents, TAdapters>({ core, context: config.context, prefix: "" });
+			return createRuntime<TEvents, TAdapters>({ core, context, prefix: "" });
 		},
 	};
 }
 
 export function createAnalytics<TEvents extends EventMap = EventMap>(): Builder<TEvents, Empty> {
-	return fromState<TEvents, Empty>({ context: [], adapters: [], middleware: [] });
+	return fromState<TEvents, Empty>({
+		context: [],
+		adapters: [],
+		middleware: [],
+		timeout: DEFAULT_TIMEOUT,
+	});
 }

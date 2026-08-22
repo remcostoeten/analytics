@@ -4,7 +4,7 @@ type Source = Record<string, Value | undefined>;
 
 function stripValue(value: Value, keys: string[]): Value {
 	if (Array.isArray(value)) {
-		return value.map(function item(entry) {
+		return value.map((entry) => {
 			return stripValue(entry, keys);
 		});
 	}

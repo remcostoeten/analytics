@@ -21,7 +21,7 @@ describe("middleware", () => {
 		let counter = 0;
 		const analytics = createAnalytics()
 			.pipe(
-				enrich(function resolver() {
+				enrich(() => {
 					counter += 1;
 					return { sequence: counter };
 				}),
@@ -79,7 +79,7 @@ describe("middleware", () => {
 		const adapter = fakeAdapter("one");
 		const analytics = createAnalytics()
 			.pipe(
-				filter(function predicate(event) {
+				filter((event) => {
 					return !event.name.startsWith("debug.");
 				}),
 			)
@@ -98,7 +98,7 @@ describe("middleware", () => {
 		const adapter = fakeAdapter("one");
 		const analytics = createAnalytics()
 			.pipe(
-				transform(function mapper(event) {
+				transform((event) => {
 					return { ...event, name: event.name.toLowerCase() };
 				}),
 			)

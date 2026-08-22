@@ -29,15 +29,15 @@ export function BreakdownChart({ data, title, showBar = true, className }: Break
 	const hasData = data && data.length > 0;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			{title && (
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				</div>
 			)}
 			{!hasData ? (
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
 					<p className="text-xs text-muted-foreground">No data available</p>
 				</div>
 			) : (
@@ -91,15 +91,15 @@ export function DonutChart({ data, title, size = 80, className }: DonutChartProp
 	let cumulativePercentage = 0;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			{title && (
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				</div>
 			)}
 			{!hasData ? (
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
 					<p className="text-xs text-muted-foreground">No data available</p>
 				</div>
 			) : (

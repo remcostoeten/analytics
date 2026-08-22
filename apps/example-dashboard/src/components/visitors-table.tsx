@@ -93,7 +93,7 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 	const projectQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center gap-2 flex-wrap">
 				<h3 className="text-xs font-medium text-foreground shrink-0">Visitors</h3>
 				<div className="flex items-center gap-1 shrink-0">
@@ -102,7 +102,7 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 							key={s.id}
 							onClick={() => setSegment(s.id)}
 							className={cn(
-								"px-2 py-0.5 rounded text-[10px] font-medium transition-colors",
+								"px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
 								segment === s.id
 									? "bg-foreground text-background"
 									: "text-muted-foreground hover:bg-muted",
@@ -115,7 +115,7 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 				<select
 					value={sort}
 					onChange={(e) => setSort(e.target.value as Sort)}
-					className="h-6 text-[10px] bg-muted/50 border border-border rounded px-1"
+					className="h-6 text-[11px] bg-muted/50 border border-border rounded px-1"
 				>
 					<option value="last_seen">Last seen</option>
 					<option value="visit_count">Visit count</option>
@@ -128,22 +128,22 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search country, city, browser, ID…"
-						className="h-6 pl-6 pr-2 text-[10px] bg-muted/50 border-border"
+						className="h-6 pl-6 pr-2 text-[11px] bg-muted/50 border-border"
 					/>
 				</div>
-				<span className="text-[10px] text-muted-foreground shrink-0">
+				<span className="text-[11px] text-muted-foreground shrink-0">
 					{rows.length}/{data?.total ?? 0}
 				</span>
 			</div>
 
 			{!isLoading && rows.length === 0 ? (
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No visitors match this filter</p>
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+					<p className="text-xs text-muted-foreground">No visitors match this filter</p>
 				</div>
 			) : (
 				<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-					<table className="w-full text-[11px]">
+					<table className="w-full text-xs">
 						<thead className="sticky top-0 bg-card z-10">
 							<tr className="border-b border-border bg-muted/30">
 								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
@@ -177,13 +177,13 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 								<tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
 									<td className="px-3 py-1.5">
 										<Link
-									href={`/visitor/${visitor.fingerprint}${projectQuery}` as Route}
+											href={`/visitor/${visitor.fingerprint}${projectQuery}` as Route}
 											className="flex items-center gap-2 group"
 										>
 											<div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
 												<User className="h-3 w-3 text-muted-foreground" />
 											</div>
-											<span className="font-mono text-[9px] text-muted-foreground group-hover:text-foreground group-hover:underline">
+											<span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground group-hover:underline">
 												{visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
 											</span>
 											{visitor.visitCount > 1 && (
@@ -226,7 +226,7 @@ export function VisitorsTable({ buildQuery, className, projectId }: Props) {
 										</div>
 									</td>
 									<td className="px-3 py-1.5">
-										<span className="font-mono text-[10px] text-muted-foreground truncate max-w-[140px] inline-block align-middle">
+										<span className="font-mono text-[11px] text-muted-foreground truncate max-w-[140px] inline-block align-middle">
 											{visitor.lastEntryPath || "—"}
 										</span>
 									</td>

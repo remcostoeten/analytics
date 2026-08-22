@@ -123,7 +123,7 @@ export function TechnologyBreakdown({
 	const activeData = tabs.find((t) => t.id === activeTab)?.data || [];
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border">
 				<h3 className="text-xs font-medium text-foreground">Technology</h3>
 			</div>
@@ -137,7 +137,7 @@ export function TechnologyBreakdown({
 							key={tab.id}
 							onClick={() => setActiveTab(tab.id)}
 							className={cn(
-								"flex items-center gap-1 px-3 py-1.5 text-[10px] font-medium transition-colors whitespace-nowrap",
+								"flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium transition-colors whitespace-nowrap",
 								activeTab === tab.id
 									? "text-foreground border-b-2 border-primary -mb-px"
 									: "text-muted-foreground hover:text-foreground",
@@ -147,7 +147,7 @@ export function TechnologyBreakdown({
 							<tab.icon className="h-3 w-3" />
 							{tab.label}
 							{hasData && (
-								<span className="text-[9px] text-muted-foreground">({tab.data.length})</span>
+								<span className="text-[10px] text-muted-foreground">({tab.data.length})</span>
 							)}
 						</button>
 					);
@@ -159,7 +159,7 @@ export function TechnologyBreakdown({
 				{activeData.length === 0 ? (
 					<div className="py-6 text-center">
 						<Inbox className="h-5 w-5 text-muted-foreground/50 mx-auto mb-1" />
-						<p className="text-[10px] text-muted-foreground">No data available</p>
+						<p className="text-[11px] text-muted-foreground">No data available</p>
 					</div>
 				) : (
 					<div className="space-y-2">
@@ -177,17 +177,17 @@ export function TechnologyBreakdown({
 										<div className="flex items-center gap-2">
 											<span
 												className={cn(
-													"inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium",
+													"inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
 													colorClass,
 												)}
 											>
 												{item.name}
 											</span>
 											{item.version && (
-												<span className="text-[9px] text-muted-foreground">v{item.version}</span>
+												<span className="text-[10px] text-muted-foreground">v{item.version}</span>
 											)}
 										</div>
-										<div className="flex items-center gap-2 text-[10px]">
+										<div className="flex items-center gap-2 text-[11px]">
 											<span className="text-muted-foreground tabular-nums">
 												{item.count.toLocaleString()}
 											</span>

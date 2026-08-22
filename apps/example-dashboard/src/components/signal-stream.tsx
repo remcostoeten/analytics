@@ -19,6 +19,7 @@ import {
 	User,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import type { SignalEvent } from "@/lib/types";
 import { getFlagEmoji } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -113,245 +114,248 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	);
 
 	return (
-		<div
-			className={cn(
-				"transition-colors hover:bg-muted/50",
-				isNew && "bg-muted/30",
-				isExpanded && "bg-muted/40",
-			)}
-		>
+		<Collapsible open={isExpanded && hasDetails} asChild>
 			<div
-				className={cn("flex items-start gap-2 px-3 py-2", hasDetails && "cursor-pointer")}
-				onClick={onToggle}
+				className={cn(
+					"transition-colors hover:bg-muted/50",
+					isNew && "bg-muted/30",
+					isExpanded && "bg-muted/40",
+				)}
 			>
-				<span
-					className={cn(
-						"inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-semibold rounded border shrink-0 mt-0.5",
-						badgeStyles[signal.type],
-					)}
+				<div
+					className={cn("flex items-start gap-2 px-3 py-2", hasDetails && "cursor-pointer")}
+					onClick={onToggle}
 				>
-					{badgeLabels[signal.type]}
-				</span>
-				<div className="flex-1 min-w-0">
-					<div className="flex items-center gap-1.5">
-						<p className="text-[11px] font-medium text-foreground leading-tight">
-							{signal.category}
-						</p>
-						{(endpoint || path) && (
-							<code className="text-[9px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono truncate max-w-[140px]">
-								{endpoint || path}
-							</code>
+					<span
+						className={cn(
+							"inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold rounded border shrink-0 mt-0.5",
+							badgeStyles[signal.type],
 						)}
-						{country && <span className="text-[11px] leading-none">{getFlagEmoji(country)}</span>}
-					</div>
-					<p className="text-[11px] text-muted-foreground leading-tight mt-0.5 flex items-center gap-1.5 flex-wrap">
-						{[city || country, browser, deviceType].filter(Boolean).length > 0 ? (
-							<>
-								{(city || country) && <span>{city || country}</span>}
-								{browser && (
-									<>
-										<span className="text-muted-foreground/40">·</span>
-										<span>
-											{browser}
-											{os ? ` / ${os}` : ""}
-										</span>
-									</>
-								)}
-								{deviceType && (
-									<>
-										<span className="text-muted-foreground/40">·</span>
-										<span className="capitalize">{deviceType}</span>
-									</>
-								)}
-							</>
-						) : (
-							signal.message
-						)}
-					</p>
-					{requestId && (
-						<div className="flex items-center gap-1 mt-1">
-							<Hash className="h-2.5 w-2.5 text-muted-foreground/70" />
-							<span className="text-[9px] text-muted-foreground/70 font-mono">
-								{requestId.slice(0, 12)}...
-							</span>
+					>
+						{badgeLabels[signal.type]}
+					</span>
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-1.5">
+							<p className="text-xs font-medium text-foreground leading-tight">{signal.category}</p>
+							{(endpoint || path) && (
+								<code className="text-[10px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono truncate max-w-[140px]">
+									{endpoint || path}
+								</code>
+							)}
+							{country && <span className="text-xs leading-none">{getFlagEmoji(country)}</span>}
 						</div>
-					)}
-				</div>
-				<div className="flex items-center gap-1 shrink-0">
-					<span className="text-[10px] text-muted-foreground">{timeAgo}</span>
-					{hasDetails &&
-						(isExpanded ? (
-							<ChevronUp className="h-3 w-3 text-muted-foreground" />
-						) : (
-							<ChevronDown className="h-3 w-3 text-muted-foreground" />
-						))}
-				</div>
-			</div>
-
-			{/* Expanded details panel */}
-			{isExpanded && hasDetails && (
-				<div className="px-3 pb-2 pt-0 ml-7">
-					<div className="bg-muted/50 rounded-sm p-2 space-y-1.5 text-[10px]">
-						{endpoint && (
-							<div className="flex items-center gap-2">
-								<Server className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Endpoint:</span>
-								<code className="text-foreground font-mono bg-background/50 px-1 rounded">
-									{endpoint}
-								</code>
-							</div>
-						)}
-						{method && (
-							<div className="flex items-center gap-2">
-								<ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Method:</span>
-								<span
-									className={cn(
-										"font-mono font-medium",
-										method === "GET" && "text-emerald-600 dark:text-emerald-400",
-										method === "POST" && "text-blue-600 dark:text-blue-400",
-										method === "PUT" && "text-amber-600 dark:text-amber-400",
-										method === "DELETE" && "text-red-600 dark:text-red-400",
+						<p className="text-xs text-muted-foreground leading-tight mt-0.5 flex items-center gap-1.5 flex-wrap">
+							{[city || country, browser, deviceType].filter(Boolean).length > 0 ? (
+								<>
+									{(city || country) && <span>{city || country}</span>}
+									{browser && (
+										<>
+											<span className="text-muted-foreground/40">·</span>
+											<span>
+												{browser}
+												{os ? ` / ${os}` : ""}
+											</span>
+										</>
 									)}
-								>
-									{method}
-								</span>
-							</div>
-						)}
-						{statusCode !== null && (
-							<div className="flex items-center gap-2">
-								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Status:</span>
-								<span
-									className={cn(
-										"font-mono font-medium",
-										statusCode < 300 && "text-emerald-600 dark:text-emerald-400",
-										statusCode >= 300 && statusCode < 400 && "text-blue-600 dark:text-blue-400",
-										statusCode >= 400 && statusCode < 500 && "text-amber-600 dark:text-amber-400",
-										statusCode >= 500 && "text-red-600 dark:text-red-400",
-									)}
-								>
-									{statusCode}
-								</span>
-							</div>
-						)}
-						{duration !== null && (
-							<div className="flex items-center gap-2">
-								<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Duration:</span>
-								<span className="text-foreground font-mono">{duration}ms</span>
-							</div>
-						)}
-						{region && (
-							<div className="flex items-center gap-2">
-								<Globe className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Region:</span>
-								<span className="text-foreground">{region}</span>
-							</div>
-						)}
-						{requestId && (
-							<div className="flex items-center gap-2">
-								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Request ID:</span>
-								<code className="text-foreground font-mono text-[9px] bg-background/50 px-1 rounded">
-									{requestId}
-								</code>
-							</div>
-						)}
-						{userAgent && (
-							<div className="flex items-start gap-2">
-								<span className="text-muted-foreground shrink-0">UA:</span>
-								<span className="text-foreground/70 text-[9px] break-all">
-									{userAgent.slice(0, 80)}...
-								</span>
-							</div>
-						)}
-						{path && (
-							<div className="flex items-center gap-2">
-								<Server className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Page:</span>
-								<code className="text-foreground font-mono bg-background/50 px-1 rounded break-all">
-									{path}
-								</code>
-							</div>
-						)}
-						{(city || country) && (
-							<div className="flex items-center gap-2">
-								<MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Location:</span>
-								<span className="text-foreground">
-									{country && `${getFlagEmoji(country)} `}
-									{[city, country].filter(Boolean).join(", ")}
-								</span>
-							</div>
-						)}
-						{(browser || os) && (
-							<div className="flex items-center gap-2">
-								<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Client:</span>
-								<span className="text-foreground">
-									{[
-										browser && `${browser}${browserVersion ? ` ${browserVersion}` : ""}`,
-										os && `${os}${osVersion ? ` ${osVersion}` : ""}`,
-									]
-										.filter(Boolean)
-										.join(" on ")}
 									{deviceType && (
-										<span className="text-muted-foreground capitalize"> · {deviceType}</span>
+										<>
+											<span className="text-muted-foreground/40">·</span>
+											<span className="capitalize">{deviceType}</span>
+										</>
 									)}
+								</>
+							) : (
+								signal.message
+							)}
+						</p>
+						{requestId && (
+							<div className="flex items-center gap-1 mt-1">
+								<Hash className="h-2.5 w-2.5 text-muted-foreground/70" />
+								<span className="text-[10px] text-muted-foreground/70 font-mono">
+									{requestId.slice(0, 12)}...
 								</span>
-							</div>
-						)}
-						{viewport && (
-							<div className="flex items-center gap-2">
-								<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Viewport:</span>
-								<span className="text-foreground font-mono">{viewport}</span>
-							</div>
-						)}
-						{timeOnPageMs !== null && (
-							<div className="flex items-center gap-2">
-								<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Time on page:</span>
-								<span className="text-foreground font-mono">
-									{(timeOnPageMs / 1000).toFixed(1)}s
-								</span>
-							</div>
-						)}
-						{referrer && (
-							<div className="flex items-center gap-2">
-								<Link2 className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Referrer:</span>
-								<span className="text-foreground break-all">{referrer}</span>
-							</div>
-						)}
-						{sessionId && (
-							<div className="flex items-center gap-2">
-								<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Session:</span>
-								<code className="text-foreground font-mono text-[9px] bg-background/50 px-1 rounded">
-									{sessionId.slice(0, 8)}
-								</code>
-							</div>
-						)}
-						{visitorId && (
-							<div className="flex items-center gap-2">
-								<User className="h-3 w-3 text-muted-foreground shrink-0" />
-								<span className="text-muted-foreground">Visitor:</span>
-								<Link
-									href={`/visitor/${visitorId}` as Route}
-									onClick={(e) => e.stopPropagation()}
-									className="inline-flex items-center gap-1 text-foreground font-mono text-[9px] bg-background/50 px-1 rounded hover:bg-background hover:underline"
-								>
-									{visitorId.slice(0, 8)}
-									<ExternalLink className="h-2.5 w-2.5" />
-								</Link>
 							</div>
 						)}
 					</div>
+					<div className="flex items-center gap-1 shrink-0">
+						<span className="text-[11px] text-muted-foreground">{timeAgo}</span>
+						{hasDetails &&
+							(isExpanded ? (
+								<ChevronUp className="h-3 w-3 text-muted-foreground" />
+							) : (
+								<ChevronDown className="h-3 w-3 text-muted-foreground" />
+							))}
+					</div>
 				</div>
-			)}
-		</div>
+
+				{hasDetails && (
+					<CollapsibleContent className="overflow-hidden duration-150 data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up motion-reduce:animate-none">
+						<div className="px-3 pb-2 pt-0 ml-7">
+							<div className="bg-muted/50 rounded-sm p-2 space-y-1.5 text-[11px]">
+								{endpoint && (
+									<div className="flex items-center gap-2">
+										<Server className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Endpoint:</span>
+										<code className="text-foreground font-mono bg-background/50 px-1 rounded">
+											{endpoint}
+										</code>
+									</div>
+								)}
+								{method && (
+									<div className="flex items-center gap-2">
+										<ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Method:</span>
+										<span
+											className={cn(
+												"font-mono font-medium",
+												method === "GET" && "text-emerald-600 dark:text-emerald-400",
+												method === "POST" && "text-blue-600 dark:text-blue-400",
+												method === "PUT" && "text-amber-600 dark:text-amber-400",
+												method === "DELETE" && "text-red-600 dark:text-red-400",
+											)}
+										>
+											{method}
+										</span>
+									</div>
+								)}
+								{statusCode !== null && (
+									<div className="flex items-center gap-2">
+										<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Status:</span>
+										<span
+											className={cn(
+												"font-mono font-medium",
+												statusCode < 300 && "text-emerald-600 dark:text-emerald-400",
+												statusCode >= 300 && statusCode < 400 && "text-blue-600 dark:text-blue-400",
+												statusCode >= 400 &&
+													statusCode < 500 &&
+													"text-amber-600 dark:text-amber-400",
+												statusCode >= 500 && "text-red-600 dark:text-red-400",
+											)}
+										>
+											{statusCode}
+										</span>
+									</div>
+								)}
+								{duration !== null && (
+									<div className="flex items-center gap-2">
+										<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Duration:</span>
+										<span className="text-foreground font-mono">{duration}ms</span>
+									</div>
+								)}
+								{region && (
+									<div className="flex items-center gap-2">
+										<Globe className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Region:</span>
+										<span className="text-foreground">{region}</span>
+									</div>
+								)}
+								{requestId && (
+									<div className="flex items-center gap-2">
+										<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Request ID:</span>
+										<code className="text-foreground font-mono text-[10px] bg-background/50 px-1 rounded">
+											{requestId}
+										</code>
+									</div>
+								)}
+								{userAgent && (
+									<div className="flex items-start gap-2">
+										<span className="text-muted-foreground shrink-0">UA:</span>
+										<span className="text-foreground/70 text-[10px] break-all">
+											{userAgent.slice(0, 80)}...
+										</span>
+									</div>
+								)}
+								{path && (
+									<div className="flex items-center gap-2">
+										<Server className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Page:</span>
+										<code className="text-foreground font-mono bg-background/50 px-1 rounded break-all">
+											{path}
+										</code>
+									</div>
+								)}
+								{(city || country) && (
+									<div className="flex items-center gap-2">
+										<MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Location:</span>
+										<span className="text-foreground">
+											{country && `${getFlagEmoji(country)} `}
+											{[city, country].filter(Boolean).join(", ")}
+										</span>
+									</div>
+								)}
+								{(browser || os) && (
+									<div className="flex items-center gap-2">
+										<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Client:</span>
+										<span className="text-foreground">
+											{[
+												browser && `${browser}${browserVersion ? ` ${browserVersion}` : ""}`,
+												os && `${os}${osVersion ? ` ${osVersion}` : ""}`,
+											]
+												.filter(Boolean)
+												.join(" on ")}
+											{deviceType && (
+												<span className="text-muted-foreground capitalize"> · {deviceType}</span>
+											)}
+										</span>
+									</div>
+								)}
+								{viewport && (
+									<div className="flex items-center gap-2">
+										<Monitor className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Viewport:</span>
+										<span className="text-foreground font-mono">{viewport}</span>
+									</div>
+								)}
+								{timeOnPageMs !== null && (
+									<div className="flex items-center gap-2">
+										<Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Time on page:</span>
+										<span className="text-foreground font-mono">
+											{(timeOnPageMs / 1000).toFixed(1)}s
+										</span>
+									</div>
+								)}
+								{referrer && (
+									<div className="flex items-center gap-2">
+										<Link2 className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Referrer:</span>
+										<span className="text-foreground break-all">{referrer}</span>
+									</div>
+								)}
+								{sessionId && (
+									<div className="flex items-center gap-2">
+										<Hash className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Session:</span>
+										<code className="text-foreground font-mono text-[10px] bg-background/50 px-1 rounded">
+											{sessionId.slice(0, 8)}
+										</code>
+									</div>
+								)}
+								{visitorId && (
+									<div className="flex items-center gap-2">
+										<User className="h-3 w-3 text-muted-foreground shrink-0" />
+										<span className="text-muted-foreground">Visitor:</span>
+										<Link
+											href={`/visitor/${visitorId}` as Route}
+											onClick={(e) => e.stopPropagation()}
+											className="inline-flex items-center gap-1 text-foreground font-mono text-[10px] bg-background/50 px-1 rounded hover:bg-background hover:underline"
+										>
+											{visitorId.slice(0, 8)}
+											<ExternalLink className="h-2.5 w-2.5" />
+										</Link>
+									</div>
+								)}
+							</div>
+						</div>
+					</CollapsibleContent>
+				)}
+			</div>
+		</Collapsible>
 	);
 }
 
@@ -408,34 +412,36 @@ export function SignalStream({
 	}, [signals, filter, typeFilter]);
 
 	return (
-		<div className={cn("flex flex-col h-full bg-card border border-border rounded-sm", className)}>
+		<div className={cn("flex flex-col rounded-lg border border-border bg-card", className)}>
 			<div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
 				<div className="flex items-center gap-2">
 					<h3 className="text-xs font-medium text-foreground">Live signal stream</h3>
-					<span className="text-[10px] text-muted-foreground tabular-nums">
+					<span className="text-[11px] text-muted-foreground tabular-nums">
 						({filteredSignals.length})
 					</span>
 				</div>
 				{isStreaming && (
 					<div className="flex items-center gap-1">
 						<Radio className="h-3 w-3 text-emerald-500 dark:text-emerald-400 animate-pulse" />
-						<span className="text-[10px] text-muted-foreground">Streaming</span>
+						<span className="text-[11px] text-muted-foreground">Streaming</span>
 					</div>
 				)}
 			</div>
 			<ScrollArea className="flex-1 min-h-0">
 				<div className="divide-y divide-border">
 					{signals.length === 0 ? (
-						<div className="px-3 py-12 text-center">
-							<Inbox className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-							<p className="text-[11px] font-medium text-muted-foreground">No signals yet</p>
-							<p className="text-[10px] text-muted-foreground/70 mt-1">
-								Signals will appear here when your endpoints receive traffic
-							</p>
+						<div className="flex items-center gap-3 px-3 py-5">
+							<Inbox className="h-5 w-5 shrink-0 text-muted-foreground/50" />
+							<div>
+								<p className="text-xs font-medium text-muted-foreground">No signals yet</p>
+								<p className="text-[11px] text-muted-foreground/70">
+									Signals appear here once your endpoints receive traffic
+								</p>
+							</div>
 						</div>
 					) : filteredSignals.length === 0 ? (
 						<div className="px-3 py-8 text-center">
-							<p className="text-[11px] text-muted-foreground">No signals match your filter</p>
+							<p className="text-xs text-muted-foreground">No signals match your filter</p>
 						</div>
 					) : (
 						filteredSignals.map((signal, index) => (

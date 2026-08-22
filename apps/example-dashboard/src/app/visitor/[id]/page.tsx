@@ -63,7 +63,7 @@ async function IdentityHeader({ params, searchParams }: Props) {
 
 	if (!profile) {
 		return (
-			<div className="bg-card border border-border rounded-sm p-6 text-center text-sm text-muted-foreground">
+			<div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
 				Visitor not found.
 			</div>
 		);
@@ -72,7 +72,7 @@ async function IdentityHeader({ params, searchParams }: Props) {
 	const { visitor } = profile;
 
 	return (
-		<div className="bg-card border border-border rounded-sm p-4 space-y-4">
+		<div className="rounded-lg border border-border bg-card p-4 space-y-4">
 			<div className="flex items-start justify-between gap-3 flex-wrap">
 				<div className="flex items-center gap-3">
 					<div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -82,15 +82,13 @@ async function IdentityHeader({ params, searchParams }: Props) {
 						<h1 className="font-mono text-sm font-medium text-foreground">
 							{visitor.fingerprint.slice(0, 12)}
 						</h1>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-xs text-muted-foreground">
 							{[visitor.city, visitor.region, visitor.country].filter(Boolean).join(", ") ||
 								"Unknown location"}
 							{visitor.visitCount > 1
 								? ` · returning visitor (${visitor.visitCount} visits)`
 								: " · first-time visitor"}
-							{profile.relatedVisitors > 1
-								? ` · ${profile.relatedVisitors} linked devices`
-								: ""}
+							{profile.relatedVisitors > 1 ? ` · ${profile.relatedVisitors} linked devices` : ""}
 						</p>
 					</div>
 				</div>
@@ -102,44 +100,44 @@ async function IdentityHeader({ params, searchParams }: Props) {
 				)}
 			</div>
 
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-[11px]">
+			<div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-xs">
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">First seen</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">First seen</p>
 					<p className="text-foreground">{formatDateTime(visitor.firstSeen)}</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Last seen</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Last seen</p>
 					<p className="text-foreground">{formatDateTime(visitor.lastSeen)}</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Visit count</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Visit count</p>
 					<p className="text-foreground tabular-nums">{visitor.visitCount}</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Timezone</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Timezone</p>
 					<p className="text-foreground">{visitor.timezone || "Unknown"}</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Device</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Device</p>
 					<p className="text-foreground">
 						{visitor.deviceType || "Unknown"}
 						{visitor.screenResolution ? ` · ${visitor.screenResolution}` : ""}
 					</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">OS</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">OS</p>
 					<p className="text-foreground">
 						{visitor.os} {visitor.osVersion}
 					</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Browser</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Browser</p>
 					<p className="text-foreground">
 						{visitor.browser} {visitor.browserVersion}
 					</p>
 				</div>
 				<div className="space-y-0.5">
-					<p className="text-muted-foreground uppercase tracking-wide text-[10px]">Language</p>
+					<p className="text-muted-foreground uppercase tracking-wide text-[11px]">Language</p>
 					<p className="text-foreground">{visitor.language || "Unknown"}</p>
 				</div>
 			</div>
@@ -149,10 +147,10 @@ async function IdentityHeader({ params, searchParams }: Props) {
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
 	return (
-		<div className="bg-card border border-border rounded-sm p-3 space-y-0.5">
-			<p className="text-muted-foreground uppercase tracking-wide text-[10px]">{label}</p>
+		<div className="rounded-lg border border-border bg-card p-3 space-y-0.5">
+			<p className="text-muted-foreground uppercase tracking-wide text-[11px]">{label}</p>
 			<p className="text-foreground text-sm font-medium tabular-nums">{value}</p>
-			{hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
+			{hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
 		</div>
 	);
 }
@@ -174,7 +172,11 @@ async function EngagementOverview({ params, searchParams }: Props) {
 			<StatTile
 				label="Conversions"
 				value={String(insights.conversions.count)}
-				hint={insights.conversions.lastSeen ? `last ${formatDate(insights.conversions.lastSeen)}` : undefined}
+				hint={
+					insights.conversions.lastSeen
+						? `last ${formatDate(insights.conversions.lastSeen)}`
+						: undefined
+				}
 			/>
 			<StatTile
 				label="Active days"
@@ -209,11 +211,11 @@ async function VisitPatterns({ params, searchParams }: Props) {
 				emptyLabel="Not enough activity yet"
 			/>
 			<div className="space-y-3">
-				<div className="bg-card border border-border rounded-sm">
+				<div className="rounded-lg border border-border bg-card">
 					<div className="px-3 py-2 border-b border-border">
 						<h3 className="text-xs font-medium text-foreground">Return pattern</h3>
 					</div>
-					<div className="p-3 space-y-2 text-[11px]">
+					<div className="p-3 space-y-2 text-xs">
 						{r.medianGapMs === null ? (
 							<p className="text-muted-foreground">
 								Only one session so far — no return pattern yet.
@@ -233,7 +235,7 @@ async function VisitPatterns({ params, searchParams }: Props) {
 									)}
 									.
 								</p>
-								<div className="grid grid-cols-3 gap-2 text-[10px]">
+								<div className="grid grid-cols-3 gap-2 text-[11px]">
 									<div>
 										<p className="text-muted-foreground uppercase tracking-wide">Avg gap</p>
 										<p className="text-foreground tabular-nums">{formatDuration(r.avgGapMs)}</p>
@@ -253,14 +255,14 @@ async function VisitPatterns({ params, searchParams }: Props) {
 						)}
 					</div>
 				</div>
-				<div className="bg-card border border-border rounded-sm">
+				<div className="rounded-lg border border-border bg-card">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 						<h3 className="text-xs font-medium text-foreground">Activity history</h3>
-						<span className="text-[10px] text-muted-foreground">pageviews per day</span>
+						<span className="text-[11px] text-muted-foreground">pageviews per day</span>
 					</div>
 					<div className="p-3">
 						{recentDays.length === 0 ? (
-							<p className="text-[11px] text-muted-foreground">No activity recorded.</p>
+							<p className="text-xs text-muted-foreground">No activity recorded.</p>
 						) : (
 							<div className="flex items-end gap-px h-16">
 								{recentDays.map((d) => (
@@ -288,19 +290,19 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-			<div className="bg-card border border-border rounded-sm">
+			<div className="rounded-lg border border-border bg-card">
 				<div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
 					<MapPin className="h-3 w-3 text-muted-foreground" />
 					<h3 className="text-xs font-medium text-foreground">Locations seen</h3>
 				</div>
 				<div className="divide-y divide-border">
 					{geoHistory.length === 0 && (
-						<p className="p-3 text-[11px] text-muted-foreground">No geo data recorded.</p>
+						<p className="p-3 text-xs text-muted-foreground">No geo data recorded.</p>
 					)}
 					{geoHistory.map((geo, i) => (
 						<div
 							key={`${geo.country}-${geo.region}-${geo.city}-${i}`}
-							className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2"
+							className="flex items-center justify-between px-3 py-1.5 text-xs gap-2"
 						>
 							<Link
 								href={
@@ -325,17 +327,17 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 			</div>
 
 			<div className="space-y-3">
-				<div className="bg-card border border-border rounded-sm">
+				<div className="rounded-lg border border-border bg-card">
 					<div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
 						<Megaphone className="h-3 w-3 text-muted-foreground" />
 						<h3 className="text-xs font-medium text-foreground">Campaigns & sites</h3>
 					</div>
 					<div className="divide-y divide-border">
 						{!acquisition.firstTouch && utmHistory.length === 0 && hosts.length === 0 && (
-							<p className="p-3 text-[11px] text-muted-foreground">No campaign data recorded.</p>
+							<p className="p-3 text-xs text-muted-foreground">No campaign data recorded.</p>
 						)}
 						{acquisition.firstTouch && (
-							<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
+							<div className="flex items-center justify-between px-3 py-1.5 text-xs gap-2">
 								<span className="text-foreground truncate">
 									First touch · {acquisition.firstTouch.source || "Referral"}
 									{acquisition.firstTouch.medium ? ` / ${acquisition.firstTouch.medium}` : ""}
@@ -346,22 +348,23 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 								</span>
 							</div>
 						)}
-						{acquisition.lastTouch && acquisition.lastTouch.seenAt !== acquisition.firstTouch?.seenAt && (
-							<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
-								<span className="text-foreground truncate">
-									Last touch · {acquisition.lastTouch.source || "Referral"}
-									{acquisition.lastTouch.medium ? ` / ${acquisition.lastTouch.medium}` : ""}
-									{acquisition.lastTouch.campaign ? ` · ${acquisition.lastTouch.campaign}` : ""}
-								</span>
-								<span className="text-muted-foreground shrink-0">
-									{formatDate(acquisition.lastTouch.seenAt)}
-								</span>
-							</div>
-						)}
+						{acquisition.lastTouch &&
+							acquisition.lastTouch.seenAt !== acquisition.firstTouch?.seenAt && (
+								<div className="flex items-center justify-between px-3 py-1.5 text-xs gap-2">
+									<span className="text-foreground truncate">
+										Last touch · {acquisition.lastTouch.source || "Referral"}
+										{acquisition.lastTouch.medium ? ` / ${acquisition.lastTouch.medium}` : ""}
+										{acquisition.lastTouch.campaign ? ` · ${acquisition.lastTouch.campaign}` : ""}
+									</span>
+									<span className="text-muted-foreground shrink-0">
+										{formatDate(acquisition.lastTouch.seenAt)}
+									</span>
+								</div>
+							)}
 						{utmHistory.map((utm, i) => (
 							<div
 								key={`${utm.source}-${utm.campaign}-${i}`}
-								className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2"
+								className="flex items-center justify-between px-3 py-1.5 text-xs gap-2"
 							>
 								<span className="text-foreground truncate">
 									{utm.source}
@@ -376,7 +379,7 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 						{hosts.map((host) => (
 							<div
 								key={host.host}
-								className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2"
+								className="flex items-center justify-between px-3 py-1.5 text-xs gap-2"
 							>
 								<span className="flex items-center gap-1.5 text-foreground truncate">
 									<Globe className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -389,16 +392,17 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 				</div>
 
 				{(customEvents.length > 0 || conversions.count > 0) && (
-					<div className="bg-card border border-border rounded-sm">
+					<div className="rounded-lg border border-border bg-card">
 						<div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
 							<Zap className="h-3 w-3 text-muted-foreground" />
 							<h3 className="text-xs font-medium text-foreground">Custom events</h3>
 						</div>
 						<div className="divide-y divide-border">
 							{conversions.count > 0 && (
-								<div className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2">
+								<div className="flex items-center justify-between px-3 py-1.5 text-xs gap-2">
 									<span className="text-foreground truncate">
-										Conversions{conversions.names.length > 0 ? ` · ${conversions.names.join(", ")}` : ""}
+										Conversions
+										{conversions.names.length > 0 ? ` · ${conversions.names.join(", ")}` : ""}
 									</span>
 									<span className="text-muted-foreground tabular-nums shrink-0">
 										{conversions.count}
@@ -408,7 +412,7 @@ async function GeoAndAcquisition({ params, searchParams }: Props) {
 							{customEvents.map((event) => (
 								<div
 									key={event.name}
-									className="flex items-center justify-between px-3 py-1.5 text-[11px] gap-2"
+									className="flex items-center justify-between px-3 py-1.5 text-xs gap-2"
 								>
 									<span className="text-foreground truncate">{event.name}</span>
 									<span className="text-muted-foreground tabular-nums shrink-0">
@@ -444,7 +448,13 @@ async function SessionTimeline({ params, searchParams }: Props) {
 		deviceType: s.deviceType,
 	}));
 
-	return <VisitorSessionsExplorer fingerprint={fingerprint} sessions={serialized} projectId={projectId} />;
+	return (
+		<VisitorSessionsExplorer
+			fingerprint={fingerprint}
+			sessions={serialized}
+			projectId={projectId}
+		/>
+	);
 }
 
 async function TopPagesAndReferrers({ params, searchParams }: Props) {
@@ -455,37 +465,34 @@ async function TopPagesAndReferrers({ params, searchParams }: Props) {
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-			<div className="bg-card border border-border rounded-sm">
+			<div className="rounded-lg border border-border bg-card">
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">Top pages</h3>
 				</div>
 				<div className="divide-y divide-border">
 					{profile.topPages.length === 0 && (
-						<p className="p-3 text-[11px] text-muted-foreground">No pageviews yet.</p>
+						<p className="p-3 text-xs text-muted-foreground">No pageviews yet.</p>
 					)}
 					{profile.topPages.map((page) => (
-						<div
-							key={page.path}
-							className="flex items-center justify-between px-3 py-1.5 text-[11px]"
-						>
+						<div key={page.path} className="flex items-center justify-between px-3 py-1.5 text-xs">
 							<span className="font-mono text-foreground truncate max-w-[220px]">{page.path}</span>
 							<span className="text-muted-foreground tabular-nums">{page.count}</span>
 						</div>
 					))}
 				</div>
 			</div>
-			<div className="bg-card border border-border rounded-sm">
+			<div className="rounded-lg border border-border bg-card">
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">Referrer history</h3>
 				</div>
 				<div className="divide-y divide-border">
 					{profile.referrers.length === 0 && (
-						<p className="p-3 text-[11px] text-muted-foreground">No referrers recorded.</p>
+						<p className="p-3 text-xs text-muted-foreground">No referrers recorded.</p>
 					)}
 					{profile.referrers.map((ref) => (
 						<div
 							key={ref.referrer}
-							className="flex items-center justify-between px-3 py-1.5 text-[11px]"
+							className="flex items-center justify-between px-3 py-1.5 text-xs"
 						>
 							<span className="flex items-center gap-1.5 text-foreground truncate max-w-[220px]">
 								<Globe className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -515,14 +522,14 @@ async function IdentityAndExperiments({ params, searchParams }: Props) {
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 			{identity.length > 0 && (
-				<div className="bg-card border border-border rounded-sm">
+				<div className="rounded-lg border border-border bg-card">
 					<div className="px-3 py-2 border-b border-border">
 						<h3 className="text-xs font-medium text-foreground">Identity</h3>
 					</div>
-					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 p-3 text-[11px]">
+					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 p-3 text-xs">
 						{identity.map((entry) => (
 							<div key={entry.key} className="space-y-0.5 min-w-0">
-								<p className="text-muted-foreground uppercase tracking-wide text-[10px] truncate">
+								<p className="text-muted-foreground uppercase tracking-wide text-[11px] truncate">
 									{entry.key}
 								</p>
 								<p className="text-foreground truncate">{entry.value}</p>
@@ -532,14 +539,14 @@ async function IdentityAndExperiments({ params, searchParams }: Props) {
 				</div>
 			)}
 			{experiments.length > 0 && (
-				<div className="bg-card border border-border rounded-sm">
+				<div className="rounded-lg border border-border bg-card">
 					<div className="px-3 py-2 border-b border-border">
 						<h3 className="text-xs font-medium text-foreground">Experiments</h3>
 					</div>
-					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 p-3 text-[11px]">
+					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 p-3 text-xs">
 						{experiments.map((entry) => (
 							<div key={entry.key} className="space-y-0.5 min-w-0">
-								<p className="text-muted-foreground uppercase tracking-wide text-[10px] truncate">
+								<p className="text-muted-foreground uppercase tracking-wide text-[11px] truncate">
 									{entry.key}
 								</p>
 								<p className="text-foreground truncate">{entry.value}</p>
@@ -554,7 +561,7 @@ async function IdentityAndExperiments({ params, searchParams }: Props) {
 
 function HeaderSkeleton() {
 	return (
-		<div className="bg-card border border-border rounded-sm p-4 space-y-4">
+		<div className="rounded-lg border border-border bg-card p-4 space-y-4">
 			<div className="flex items-center gap-3">
 				<Skeleton className="h-10 w-10 rounded-full" />
 				<div className="space-y-2">
@@ -583,7 +590,7 @@ function StatRowSkeleton() {
 
 function PanelSkeleton({ className }: { className?: string }) {
 	return (
-		<div className={cn("bg-card border border-border rounded-sm p-4 space-y-2", className)}>
+		<div className={cn("rounded-lg border border-border bg-card p-4 space-y-2", className)}>
 			<Skeleton className="h-4 w-32" />
 			<Skeleton className="h-16 w-full" />
 			<Skeleton className="h-16 w-full" />

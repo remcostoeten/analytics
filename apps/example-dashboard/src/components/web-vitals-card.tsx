@@ -80,13 +80,13 @@ function VitalItem({
 				<div className="flex items-center gap-1.5">
 					<span
 						className={cn(
-							"inline-flex items-center justify-center w-8 h-4 text-[9px] font-bold rounded border",
+							"inline-flex items-center justify-center w-8 h-4 text-[10px] font-bold rounded border",
 							statusColors[status],
 						)}
 					>
 						{shortLabel}
 					</span>
-					<span className="text-[10px] text-muted-foreground hidden sm:inline">{label}</span>
+					<span className="text-[11px] text-muted-foreground hidden sm:inline">{label}</span>
 				</div>
 				<div className="flex items-center gap-2">
 					<span className="text-xs font-semibold text-foreground tabular-nums">
@@ -94,7 +94,7 @@ function VitalItem({
 						{unit}
 					</span>
 					{p75 !== undefined && (
-						<span className="text-[10px] text-muted-foreground tabular-nums">
+						<span className="text-[11px] text-muted-foreground tabular-nums">
 							p75: {metric === "cls" ? p75.toFixed(3) : Math.round(p75)}
 							{unit}
 						</span>
@@ -109,7 +109,7 @@ function VitalItem({
 					/>
 				</div>
 			</div>
-			<div className="flex justify-between text-[9px] text-muted-foreground">
+			<div className="flex justify-between text-[10px] text-muted-foreground">
 				<span>0</span>
 				<span className="text-emerald-600 dark:text-emerald-400">
 					{metric === "cls" ? t.good : t.good + "ms"}
@@ -125,7 +125,7 @@ function VitalItem({
 export function WebVitalsCard({ data, className }: WebVitalsCardProps) {
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 					<h3 className="text-xs font-medium text-foreground">Core Web Vitals</h3>
 				</div>
@@ -144,23 +144,23 @@ export function WebVitalsCard({ data, className }: WebVitalsCardProps) {
 
 	if (data.sampleCount === 0) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 					<h3 className="text-xs font-medium text-foreground">Core Web Vitals</h3>
 				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No performance data available</p>
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+					<p className="text-xs text-muted-foreground">No performance data available</p>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">Core Web Vitals</h3>
-				<span className="text-[10px] text-muted-foreground tabular-nums">
+				<span className="text-[11px] text-muted-foreground tabular-nums">
 					{data.sampleCount.toLocaleString()} samples
 				</span>
 			</div>

@@ -38,7 +38,7 @@ function weekStatus(
 export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 	if (isLoading) {
 		return (
-			<div className="bg-card border border-border rounded-sm">
+			<div className="rounded-lg border border-border bg-card">
 				<div className="px-3 py-2 border-b border-border">
 					<Skeleton className="h-3 w-36" />
 				</div>
@@ -61,7 +61,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 
 	if (!data || !data.cohorts || data.cohorts.length === 0) {
 		return (
-			<div className="bg-card border border-border rounded-sm">
+			<div className="rounded-lg border border-border bg-card">
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 						<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
@@ -70,9 +70,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 				</div>
 				<div className="p-8 text-center">
 					<CalendarDays className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">
-						Insufficient data for retention analysis
-					</p>
+					<p className="text-xs text-muted-foreground">Insufficient data for retention analysis</p>
 				</div>
 			</div>
 		);
@@ -122,7 +120,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 	}
 
 	return (
-		<div className="bg-card border border-border rounded-sm">
+		<div className="rounded-lg border border-border bg-card">
 			{/* Header */}
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
@@ -139,7 +137,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 							</button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom" align="start" className="max-w-[280px]">
-							<div className="space-y-1.5 text-[11px] leading-relaxed">
+							<div className="space-y-1.5 text-xs leading-relaxed">
 								<p>
 									Each row is a cohort: visitors who showed up for the first time during that week.
 								</p>
@@ -156,7 +154,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 						</TooltipContent>
 					</Tooltip>
 				</h3>
-				<span className="text-[10px] text-muted-foreground">
+				<span className="text-[11px] text-muted-foreground">
 					{data.cohorts.length} cohorts · {totalUsers.toLocaleString()} users
 				</span>
 			</div>
@@ -167,7 +165,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 					<p className="text-sm font-semibold text-foreground tabular-nums">
 						{totalUsers.toLocaleString()}
 					</p>
-					<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+					<p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
 						Total Users
 					</p>
 				</div>
@@ -177,12 +175,12 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 							<p className="text-sm font-semibold text-foreground tabular-nums">
 								{avgW1 !== null ? `${avgW1}%` : "—"}
 							</p>
-							<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+							<p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
 								Avg W1 Return
 							</p>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent side="bottom" className="max-w-[240px] text-[11px] leading-relaxed">
+					<TooltipContent side="bottom" className="max-w-[240px] text-xs leading-relaxed">
 						Average share of each cohort that came back in the week after their first visit. Only
 						fully completed weeks count, so cohorts still in their first week are excluded.
 					</TooltipContent>
@@ -193,12 +191,12 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 							<p className="text-sm font-semibold text-foreground tabular-nums">
 								{maxRate > 0 ? `${maxRate}%` : "—"}
 							</p>
-							<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+							<p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
 								Peak Rate
 							</p>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent side="bottom" className="max-w-[240px] text-[11px] leading-relaxed">
+					<TooltipContent side="bottom" className="max-w-[240px] text-xs leading-relaxed">
 						The single best return rate in the table — the highest percentage of any cohort coming
 						back in any week.
 					</TooltipContent>
@@ -210,10 +208,10 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 				<table className="w-full text-xs border-collapse">
 					<thead>
 						<tr className="border-b border-border/50 bg-muted/20">
-							<th className="text-left py-2 px-3 text-[10px] text-muted-foreground font-medium">
+							<th className="text-left py-2 px-3 text-[11px] text-muted-foreground font-medium">
 								Cohort
 							</th>
-							<th className="py-2 px-3 text-[10px] text-muted-foreground font-medium">
+							<th className="py-2 px-3 text-[11px] text-muted-foreground font-medium">
 								<div className="flex items-center gap-1">
 									<Users2 className="h-3 w-3" />
 									Size
@@ -222,7 +220,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 							{weekColumns.map((w) => (
 								<th
 									key={w}
-									className="text-center py-2 px-2 text-[10px] text-muted-foreground font-medium whitespace-nowrap"
+									className="text-center py-2 px-2 text-[11px] text-muted-foreground font-medium whitespace-nowrap"
 									style={{ minWidth: 72 }}
 								>
 									Week {w}
@@ -253,7 +251,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 													style={{ width: `${(cohort.size / maxCohortSize) * 100}%` }}
 												/>
 											</div>
-											<span className="text-muted-foreground tabular-nums text-[10px]">
+											<span className="text-muted-foreground tabular-nums text-[11px]">
 												{cohort.size}
 											</span>
 										</div>
@@ -272,7 +270,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 														className="h-9 rounded flex items-center justify-center mx-auto"
 														style={{ width: 64 }}
 													>
-														<span className="text-[9px] text-muted-foreground/25">—</span>
+														<span className="text-[10px] text-muted-foreground/25">—</span>
 													</div>
 												</td>
 											);
@@ -294,7 +292,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 																<>
 																	<span
 																		className={cn(
-																			"text-[10px] font-semibold leading-none",
+																			"text-[11px] font-semibold leading-none",
 																			rate / maxRate > 0.5 ? "text-white" : "text-foreground",
 																		)}
 																	>
@@ -307,14 +305,14 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 																	)}
 																</>
 															) : (
-																<span className="text-[9px] text-muted-foreground/35">
+																<span className="text-[10px] text-muted-foreground/35">
 																	{status === "in_progress" ? "···" : "0%"}
 																</span>
 															)}
 														</div>
 													</TooltipTrigger>
 													<TooltipContent side="top" className="max-w-[240px]">
-														<div className="space-y-0.5 text-[11px] leading-relaxed">
+														<div className="space-y-0.5 text-xs leading-relaxed">
 															<p className="font-medium">
 																{date} cohort · Week {w} ({weekRange(cohort.cohort, w)})
 															</p>
@@ -341,7 +339,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 
 			{/* Footer: legend + benchmark note */}
 			<div className="px-3 py-2 border-t border-border/50 flex flex-wrap items-center gap-x-4 gap-y-1">
-				<div className="flex items-center gap-3 text-[9px] text-muted-foreground">
+				<div className="flex items-center gap-3 text-[10px] text-muted-foreground">
 					<span className="flex items-center gap-1">
 						<span className="inline-block w-3 h-3 rounded-sm bg-muted/20 border border-border/40" />
 						0%
@@ -366,7 +364,7 @@ export function RetentionHeatmap({ data, isLoading }: RetentionHeatmapProps) {
 					</span>
 				</div>
 				{avgW1 !== null && avgW1 < 10 && (
-					<span className="flex items-center gap-1 ml-auto text-[9px] text-muted-foreground">
+					<span className="flex items-center gap-1 ml-auto text-[10px] text-muted-foreground">
 						<TrendingDown className="h-3 w-3 shrink-0" />
 						Typical for content sites: 3–8% W1 return
 					</span>

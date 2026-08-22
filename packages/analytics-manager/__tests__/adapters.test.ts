@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { createAnalytics } from "../src/core/create-analytics";
 import { posthog, remco, vercel } from "../src/adapters";
-import type { PosthogClient, PosthogProvider, RemcoClient, VercelClient } from "../src/adapters";
+import type { PosthogClient, RemcoClient, VercelClient } from "../src/adapters";
 
 type Call = { method: string; args: unknown[] };
 
@@ -52,40 +52,40 @@ function remcoClient(): { calls: Call[]; client: RemcoClient } {
 describe("remco adapter", () => {
 	test("maps events onto the sdk surface", async () => {
 		const { calls, client } = remcoClient();
-		const analytics = createAnalytics()
-			.app("skriuw")
-			.use(remco().project("skriuw").client(client))
-			.build();
+		const analytics = createAnalytics().app("skriuw").use(remco().client(client)).build();
 
 		await analytics.track("note.created", { noteId: "n1" });
 		await analytics.page({ section: "settings" });
 		await analytics.identify("user-1", { plan: "pro", nested: { skip: true } });
 
-		const names = calls.map(function method(call) {
+		const names = calls.map((call) => {
 			return call.method;
 		});
 
 		expect(names).toEqual(["trackEvent", "trackPageView", "identify"]);
 		expect(calls[0].args[0]).toBe("note.created");
 		expect(calls[0].args[1]).toEqual({ app: "skriuw", noteId: "n1" });
+		expect(calls[0].args[2]).toEqual({ projectId: "skriuw" });
+		expect(calls[1].args[1]).toEqual({ projectId: "skriuw" });
 		expect(calls[2].args[0]).toBe("user-1");
 		expect(calls[2].args[1]).toEqual({ plan: "pro" });
+		expect(calls[2].args[2]).toEqual({ projectId: "skriuw" });
 	});
 
-	test("starts requested observers and stops them on destroy", async () => {
+	test("starts requested observers in the browser and stops them on destroy", async () => {
 		const { calls, client } = remcoClient();
 		const analytics = createAnalytics()
 			.app("skriuw")
 			.use(remco().client(client).errors().clicks().errors())
 			.build();
 
-		await analytics.flush();
-		const started = calls.filter(function observers(call) {
+		await analytics.ready();
+		const started = calls.filter((call) => {
 			return call.method.startsWith("observe");
 		});
 
 		expect(
-			started.map(function method(call) {
+			started.map((call) => {
 				return call.method;
 			}),
 		).toEqual(["observeErrors", "observeClicks"]);
@@ -94,10 +94,19 @@ describe("remco adapter", () => {
 		await analytics.destroy();
 
 		expect(
-			calls.filter(function stopped(call) {
+			calls.filter((call) => {
 				return call.method === "stop";
 			}).length,
 		).toBe(2);
+	});
+
+	test("stays inactive outside the browser without an injected client", async () => {
+		const analytics = createAnalytics().use(remco().errors()).build();
+
+		const results = await analytics.track("note.created");
+
+		expect(results).toEqual([{ adapter: "remco", ok: true, skipped: true }]);
+		expect(analytics.provider("remco")).toBeUndefined();
 	});
 
 	test("resets visitor and session identity", async () => {
@@ -107,7 +116,7 @@ describe("remco adapter", () => {
 		await analytics.reset();
 
 		expect(
-			calls.map(function method(call) {
+			calls.map((call) => {
 				return call.method;
 			}),
 		).toEqual(["resetVisitorId", "resetSessionId"]);
@@ -126,6 +135,8 @@ describe("posthog adapter", () => {
 				identify: record("identify") as PosthogClient["identify"],
 				reset: record("reset") as PosthogClient["reset"],
 				register: record("register") as PosthogClient["register"],
+				group: record("group") as PosthogClient["group"],
+				alias: record("alias") as PosthogClient["alias"],
 				isFeatureEnabled: function isFeatureEnabled(flag) {
 					return flag === "new-editor";
 				},
@@ -134,7 +145,7 @@ describe("posthog adapter", () => {
 		};
 	}
 
-	test("initializes with the configured options", async () => {
+	test("leaves configured injected clients unchanged", async () => {
 		const { calls, client } = posthogClient();
 		const analytics = createAnalytics()
 			.app("skriuw")
@@ -151,22 +162,7 @@ describe("posthog adapter", () => {
 
 		await analytics.flush();
 
-		expect(calls[0]).toEqual({
-			method: "init",
-			args: [
-				"phc_x",
-				{
-					api_host: "https://eu.i.posthog.com",
-					capture_pageview: false,
-					autocapture: true,
-					disable_session_recording: false,
-				},
-			],
-		});
-		expect(calls[1]).toEqual({
-			method: "register",
-			args: [{ app: "skriuw", environment: "production" }],
-		});
+		expect(calls).toEqual([]);
 	});
 
 	test("captures events and pageviews", async () => {
@@ -176,7 +172,7 @@ describe("posthog adapter", () => {
 		await analytics.track("note.created", { noteId: "n1" });
 		await analytics.page({ section: "settings" });
 
-		const captures = calls.filter(function captured(call) {
+		const captures = calls.filter((call) => {
 			return call.method === "capture";
 		});
 
@@ -184,10 +180,64 @@ describe("posthog adapter", () => {
 		expect(captures[1].args).toEqual(["$pageview", { section: "settings" }]);
 	});
 
+	test("sends context and traits on identify and supports group and alias", async () => {
+		const { calls, client } = posthogClient();
+		const analytics = createAnalytics()
+			.app("skriuw")
+			.use(posthog().token("phc_x").client(client))
+			.build();
+
+		await analytics.identify("user-1", { plan: "pro" });
+		await analytics.group("company", "acme", { seats: 5 });
+		await analytics.alias("user-1", "anon-9");
+
+		const relevant = calls.filter((call) => {
+			return ["identify", "group", "alias"].includes(call.method);
+		});
+
+		expect(relevant).toEqual([
+			{ method: "identify", args: ["user-1", { app: "skriuw", plan: "pro" }] },
+			{ method: "group", args: ["company", "acme", { seats: 5 }] },
+			{ method: "alias", args: ["user-1", "anon-9"] },
+		]);
+	});
+
+	test("reports group and alias as skipped when the client lacks them", async () => {
+		const client = {
+			init() {},
+			capture() {},
+			identify() {},
+			reset() {},
+		} as unknown as PosthogClient;
+		const analytics = createAnalytics().use(posthog().token("phc_x").client(client)).build();
+
+		expect(await analytics.group("company", "acme")).toEqual([
+			{ adapter: "posthog", ok: true, skipped: true },
+		]);
+		expect(await analytics.alias("user-1", "anon-9")).toEqual([
+			{ adapter: "posthog", ok: true, skipped: true },
+		]);
+	});
+
+	test("uses an injected client without requiring a token", async () => {
+		const { calls, client } = posthogClient();
+		const analytics = createAnalytics()
+			.environment("production")
+			.use(posthog().token(undefined).client(client))
+			.build();
+
+		const results = await analytics.track("note.created");
+
+		expect(results).toEqual([{ adapter: "posthog", ok: true }]);
+		expect(calls).toEqual([
+			{ method: "capture", args: ["note.created", { environment: "production" }] },
+		]);
+	});
+
 	test("exposes feature flags and replay controls", async () => {
 		const { calls, client } = posthogClient();
 		const analytics = createAnalytics().use(posthog().token("phc_x").client(client)).build();
-		const provider = analytics.provider<PosthogProvider>("posthog");
+		const provider = analytics.provider("posthog");
 
 		expect(provider?.featureFlags.isEnabled("new-editor")).toBe(true);
 		expect(provider?.featureFlags.isEnabled("old-editor")).toBe(false);
@@ -195,19 +245,19 @@ describe("posthog adapter", () => {
 		provider?.replay.start();
 
 		expect(
-			calls.some(function started(call) {
+			calls.some((call) => {
 				return call.method === "startSessionRecording";
 			}),
 		).toBe(true);
 	});
 
-	test("skips initialization without a token", async () => {
+	test("does not reinitialize an injected client", async () => {
 		const { calls, client } = posthogClient();
-		const analytics = createAnalytics().use(posthog().client(client)).build();
+		const analytics = createAnalytics().use(posthog().token("phc_x").client(client)).build();
 
-		await analytics.flush();
+		await analytics.track("note.created");
 
-		expect(calls).toEqual([]);
+		expect(calls).toEqual([{ method: "capture", args: ["note.created", {}] }]);
 	});
 });
 
@@ -223,24 +273,15 @@ describe("inactive adapters", () => {
 		expect(results).toEqual([{ adapter: "remco", ok: true, skipped: true }]);
 	});
 
-	test("reports skipped when posthog has a client but no token", async () => {
-		const { calls, record } = recorder();
-		const client = {
-			init: record("init"),
-			capture: record("capture"),
-			identify: record("identify"),
-			reset: record("reset"),
-		} as unknown as PosthogClient;
-
+	test("reports skipped when posthog has no client or token", async () => {
 		const analytics = createAnalytics()
 			.environment("production")
-			.use(posthog().client(client))
+			.use(posthog().token(undefined))
 			.build();
 
 		const results = await analytics.track("note.created");
 
 		expect(results).toEqual([{ adapter: "posthog", ok: true, skipped: true }]);
-		expect(calls).toEqual([]);
 	});
 });
 
@@ -261,6 +302,17 @@ describe("vercel adapter", () => {
 		const analytics = createAnalytics().use(vercel().client(client)).build();
 
 		const results = await analytics.identify("user-1");
+
+		expect(results).toEqual([{ adapter: "vercel", ok: true, skipped: true }]);
+		expect(calls).toEqual([]);
+	});
+
+	test("skips pageviews because vercel tracks them through its injected script", async () => {
+		const { calls, record } = recorder();
+		const client: VercelClient = { track: record("track") as VercelClient["track"] };
+		const analytics = createAnalytics().use(vercel().client(client)).build();
+
+		const results = await analytics.page({ path: "/settings" });
 
 		expect(results).toEqual([{ adapter: "vercel", ok: true, skipped: true }]);
 		expect(calls).toEqual([]);

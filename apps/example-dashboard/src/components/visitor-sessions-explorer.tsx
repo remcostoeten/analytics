@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { formatDuration, getFlagEmoji } from "@/lib/format";
 import { ChevronRight, Clock, CornerDownRight, Globe, MousePointerClick, Zap } from "lucide-react";
 import { useState } from "react";
@@ -81,21 +82,21 @@ function SessionTrail({
 	);
 
 	if (isLoading) {
-		return <p className="px-8 pb-3 text-[10px] text-muted-foreground">Loading trail…</p>;
+		return <p className="px-8 pb-3 text-[11px] text-muted-foreground">Loading trail…</p>;
 	}
 	if (error || !data) {
-		return <p className="px-8 pb-3 text-[10px] text-muted-foreground">Could not load trail.</p>;
+		return <p className="px-8 pb-3 text-[11px] text-muted-foreground">Could not load trail.</p>;
 	}
 	if (data.steps.length === 0) {
 		return (
-			<p className="px-8 pb-3 text-[10px] text-muted-foreground">No events in this session.</p>
+			<p className="px-8 pb-3 text-[11px] text-muted-foreground">No events in this session.</p>
 		);
 	}
 
 	return (
 		<div className="px-8 pb-3 space-y-0.5">
 			{data.steps.map((step, i) => (
-				<div key={`${step.ts}-${i}`} className="flex items-center gap-2 text-[10px] leading-5">
+				<div key={`${step.ts}-${i}`} className="flex items-center gap-2 text-[11px] leading-5">
 					<span className="text-muted-foreground tabular-nums w-14 shrink-0">
 						{formatClock(step.ts)}
 					</span>
@@ -132,17 +133,17 @@ export function VisitorSessionsExplorer({ fingerprint, sessions, projectId }: Pr
 
 	if (sessions.length === 0) {
 		return (
-			<div className="bg-card border border-border rounded-sm p-6 text-center text-sm text-muted-foreground">
+			<div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
 				No sessions recorded yet.
 			</div>
 		);
 	}
 
 	return (
-		<div className="bg-card border border-border rounded-sm">
+		<div className="rounded-lg border border-border bg-card">
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">Session timeline</h3>
-				<span className="text-[10px] text-muted-foreground">
+				<span className="text-[11px] text-muted-foreground">
 					{sessions.length} session{sessions.length === 1 ? "" : "s"} · click to expand
 				</span>
 			</div>
@@ -154,77 +155,81 @@ export function VisitorSessionsExplorer({ fingerprint, sessions, projectId }: Pr
 					const gap = previous ? gapLabel(session.startedAt, previous.endedAt) : null;
 
 					return (
-						<div key={key}>
-							<button
-								onClick={() => setExpanded(isOpen ? null : key)}
-								disabled={!session.sessionId}
-								className={cn(
-									"w-full text-left p-3 space-y-1.5 text-[11px] transition-colors",
-									session.sessionId && "hover:bg-muted/40 cursor-pointer",
-									isOpen && "bg-muted/30",
-								)}
-							>
-								<div className="flex items-center justify-between gap-2">
-									<span className="flex items-center gap-1.5 text-foreground font-medium">
-										<ChevronRight
-											className={cn(
-												"h-3 w-3 text-muted-foreground transition-transform",
-												isOpen && "rotate-90",
+						<Collapsible key={key} open={isOpen} asChild>
+							<div>
+								<button
+									onClick={() => setExpanded(isOpen ? null : key)}
+									disabled={!session.sessionId}
+									className={cn(
+										"w-full text-left p-3 space-y-1.5 text-xs transition-colors",
+										session.sessionId && "hover:bg-muted/40 cursor-pointer",
+										isOpen && "bg-muted/30",
+									)}
+								>
+									<div className="flex items-center justify-between gap-2">
+										<span className="flex items-center gap-1.5 text-foreground font-medium">
+											<ChevronRight
+												className={cn(
+													"h-3 w-3 text-muted-foreground transition-transform duration-200 ease-out",
+													isOpen && "rotate-90",
+												)}
+											/>
+											<Clock className="h-3 w-3 text-muted-foreground" />
+											{formatDateTime(session.startedAt)}
+											{gap && (
+												<span className="text-muted-foreground font-normal">
+													· {gap} after previous
+												</span>
 											)}
-										/>
-										<Clock className="h-3 w-3 text-muted-foreground" />
-										{formatDateTime(session.startedAt)}
-										{gap && (
-											<span className="text-muted-foreground font-normal">
-												· {gap} after previous
+										</span>
+										<span className="text-muted-foreground tabular-nums">
+											{formatDuration(session.durationMs)}
+										</span>
+									</div>
+									<div className="flex items-center gap-1.5 text-muted-foreground pl-[18px]">
+										<span className="font-mono text-foreground truncate max-w-[160px]">
+											{session.entryPath || "/"}
+										</span>
+										{session.exitPath && session.exitPath !== session.entryPath && (
+											<>
+												<ChevronRight className="h-3 w-3 shrink-0" />
+												<span className="font-mono text-foreground truncate max-w-[160px]">
+													{session.exitPath}
+												</span>
+											</>
+										)}
+									</div>
+									<div className="flex items-center gap-3 text-muted-foreground pl-[18px]">
+										<span className="flex items-center gap-1">
+											<MousePointerClick className="h-3 w-3" />
+											{session.pageviews} pageviews
+										</span>
+										<span>{session.events} events</span>
+										{session.deviceType && <span>{session.deviceType}</span>}
+										{session.country && (
+											<span className="flex items-center gap-1">
+												{getFlagEmoji(session.country) || <Globe className="h-3 w-3" />}
+												{session.country}
 											</span>
 										)}
-									</span>
-									<span className="text-muted-foreground tabular-nums">
-										{formatDuration(session.durationMs)}
-									</span>
-								</div>
-								<div className="flex items-center gap-1.5 text-muted-foreground pl-[18px]">
-									<span className="font-mono text-foreground truncate max-w-[160px]">
-										{session.entryPath || "/"}
-									</span>
-									{session.exitPath && session.exitPath !== session.entryPath && (
-										<>
-											<ChevronRight className="h-3 w-3 shrink-0" />
-											<span className="font-mono text-foreground truncate max-w-[160px]">
-												{session.exitPath}
+										{session.referrer && (
+											<span className="truncate max-w-[180px]" title={session.referrer}>
+												via {session.referrer}
 											</span>
-										</>
-									)}
-								</div>
-								<div className="flex items-center gap-3 text-muted-foreground pl-[18px]">
-									<span className="flex items-center gap-1">
-										<MousePointerClick className="h-3 w-3" />
-										{session.pageviews} pageviews
-									</span>
-									<span>{session.events} events</span>
-									{session.deviceType && <span>{session.deviceType}</span>}
-									{session.country && (
-										<span className="flex items-center gap-1">
-											{getFlagEmoji(session.country) || <Globe className="h-3 w-3" />}
-											{session.country}
-										</span>
-									)}
-									{session.referrer && (
-										<span className="truncate max-w-[180px]" title={session.referrer}>
-											via {session.referrer}
-										</span>
-									)}
-								</div>
-							</button>
-							{isOpen && session.sessionId && (
-								<SessionTrail
-									fingerprint={fingerprint}
-									sessionId={session.sessionId}
-									projectId={projectId}
-								/>
-							)}
-						</div>
+										)}
+									</div>
+								</button>
+								{session.sessionId && (
+									<CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up motion-reduce:animate-none">
+										<SessionTrail
+											fingerprint={fingerprint}
+											sessionId={session.sessionId}
+											projectId={projectId}
+										/>
+									</CollapsibleContent>
+								)}
+							</div>
+						</Collapsible>
 					);
 				})}
 			</div>

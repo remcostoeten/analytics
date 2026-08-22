@@ -114,7 +114,7 @@ describe("extractIpAddress", () => {
 		expect(ip).toBeNull();
 	});
 
-	test("prefers x-real-ip over other headers", () => {
+	test("prefers cf-connecting-ip over other headers", () => {
 		const headers = new Headers({
 			"x-real-ip": "192.0.2.1",
 			"cf-connecting-ip": "192.0.2.2",
@@ -124,7 +124,7 @@ describe("extractIpAddress", () => {
 
 		const ip = extractIpAddress(req);
 
-		expect(ip).toBe("192.0.2.1");
+		expect(ip).toBe("192.0.2.2");
 	});
 });
 

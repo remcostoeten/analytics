@@ -8,6 +8,13 @@ export type RuntimeState = {
 	prefix: string;
 };
 
+export type EventExtras = {
+	userId?: string;
+	previousId?: string;
+	groupType?: string;
+	groupId?: string;
+};
+
 export function scopedName(prefix: string, name: string): string {
 	if (!prefix) return name;
 	return `${prefix}.${name}`;
@@ -19,14 +26,14 @@ export function buildEvent(
 	name: string,
 	properties: Properties,
 	context: Context,
-	userId?: string,
+	extras: EventExtras = {},
 ): AnalyticsEvent {
 	return {
 		kind,
-		name: scopedName(state.prefix, name),
+		name: kind === "track" ? scopedName(state.prefix, name) : name,
 		properties,
 		context: merge(state.context, context),
-		userId,
+		...extras,
 		timestamp: Date.now(),
 	};
 }

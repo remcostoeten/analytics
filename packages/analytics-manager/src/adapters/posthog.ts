@@ -1,5 +1,5 @@
 import type { Adapter, AdapterBuilder, AnalyticsEvent, Properties, RuntimeConfig } from "../types";
-import { hasMethods, loadModule, notifyError } from "../utilities";
+import { hasMethods, isBrowser, loadModule } from "../utilities";
 
 type PosthogConfig = {
 	api_host?: string;
@@ -14,17 +14,14 @@ export type PosthogClient = {
 	capture: (name: string, properties?: Properties) => unknown;
 	identify: (userId: string, properties?: Properties) => unknown;
 	reset: (resetDeviceId?: boolean) => unknown;
+	group?: (groupType: string, groupKey: string, properties?: Properties) => unknown;
+	alias?: (alias: string, original?: string) => unknown;
 	register?: (properties: Properties) => void;
 	isFeatureEnabled?: (flag: string) => boolean | undefined;
 	getFeatureFlag?: (flag: string) => string | boolean | undefined;
 	reloadFeatureFlags?: () => void;
 	startSessionRecording?: () => void;
 	stopSessionRecording?: () => void;
-};
-
-type PosthogModule = {
-	default?: PosthogClient;
-	posthog?: PosthogClient;
 };
 
 export type PosthogProvider = {
@@ -50,8 +47,8 @@ type PosthogState = {
 };
 
 export type PosthogBuilder = AdapterBuilder<"posthog", PosthogProvider> & {
-	token: (token: string) => PosthogBuilder;
-	host: (url: string) => PosthogBuilder;
+	token: (token: string | undefined) => PosthogBuilder;
+	host: (url: string | undefined) => PosthogBuilder;
 	pageviews: (enabled?: boolean) => PosthogBuilder;
 	autocapture: (enabled?: boolean) => PosthogBuilder;
 	sessionReplay: (enabled?: boolean) => PosthogBuilder;
@@ -89,27 +86,30 @@ function toProvider(client: PosthogClient): PosthogProvider {
 
 function buildAdapter(state: PosthogState): Adapter<"posthog", PosthogProvider> {
 	let client: PosthogClient | null = state.client ?? null;
+	const injected = client !== null;
 
 	return {
 		id: "posthog",
 		init: async function init(config: RuntimeConfig) {
+			const token = state.token;
+			if (injected) return;
+			if (!token || !isBrowser()) return;
 			if (!client) {
-				const loaded = await loadModule<PosthogModule>("posthog-js");
+				const loaded = await loadModule(() => import("posthog-js"));
 				const candidate = loaded?.default ?? loaded?.posthog ?? loaded ?? null;
 				client = hasMethods(candidate, ["init", "capture", "identify"])
 					? (candidate as PosthogClient)
 					: null;
 				if (!client) {
-					notifyError(
-						config.environment,
-						"posthog",
+					config.report(
 						new Error("posthog-js is unavailable or exports an unexpected shape"),
+						"init",
 					);
 				}
 			}
-			if (!client || !state.token) return;
+			if (!client) return;
 
-			client.init(state.token, {
+			client.init(token, {
 				api_host: state.host,
 				capture_pageview: state.pageviews,
 				autocapture: state.autocapture,
@@ -122,7 +122,7 @@ function buildAdapter(state: PosthogState): Adapter<"posthog", PosthogProvider> 
 			if (Object.keys(superProperties).length > 0) client.register?.(superProperties);
 		},
 		active: function active() {
-			return client !== null && Boolean(state.token);
+			return client !== null && (injected || Boolean(state.token));
 		},
 		track: function track(event) {
 			client?.capture(event.name, toProperties(event));
@@ -133,6 +133,16 @@ function buildAdapter(state: PosthogState): Adapter<"posthog", PosthogProvider> 
 		identify: function identify(event) {
 			if (!event.userId) return;
 			client?.identify(event.userId, toProperties(event));
+		},
+		group: function group(event) {
+			if (!event.groupType || !event.groupId) return;
+			if (!client?.group) return false;
+			client.group(event.groupType, event.groupId, event.properties);
+		},
+		alias: function alias(event) {
+			if (!event.userId) return;
+			if (!client?.alias) return false;
+			client.alias(event.userId, event.previousId);
 		},
 		reset: function reset() {
 			client?.reset();

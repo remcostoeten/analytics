@@ -133,7 +133,7 @@ export function ViewTabs<T extends string>({ tabs, activeId, hrefFor, ariaLabel 
 					onFocus={() => handleTabHover(tab.id)}
 					onBlur={() => handleTabLeave(tab.id)}
 					className={cn(
-						"relative z-[1] flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors whitespace-nowrap",
+						"relative z-[1] flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap",
 						activeId === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground",
 					)}
 				>

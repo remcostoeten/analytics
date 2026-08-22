@@ -19,9 +19,14 @@ export const eventSchema = z.object({
 	lang: nullableString,
 	visitorId: nullableString,
 	sessionId: nullableString,
-	eventId: z.string().uuid().optional().nullable().transform(function (v) {
-		return v ?? null;
-	}),
+	eventId: z
+		.string()
+		.uuid()
+		.optional()
+		.nullable()
+		.transform(function (v) {
+			return v ?? null;
+		}),
 	ts: nullableString,
 	meta: z
 		.record(z.unknown())

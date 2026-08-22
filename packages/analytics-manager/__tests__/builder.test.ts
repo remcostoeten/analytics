@@ -34,11 +34,20 @@ describe("builder", () => {
 		expect(adapter.events[0].context).toEqual({ app: "skriuw", environment: "production" });
 	});
 
+	test("ignores undefined app and environment", async () => {
+		const adapter = fakeAdapter("one");
+		const analytics = createAnalytics().app(undefined).environment(undefined).use(adapter).build();
+
+		await analytics.track("note.created");
+
+		expect(adapter.events[0].context).toEqual({});
+	});
+
 	test("merges context calls in order", async () => {
 		const adapter = fakeAdapter("one");
 		const analytics = createAnalytics()
 			.context({ version: "1.0.0" })
-			.context(function resolver() {
+			.context(() => {
 				return { version: "2.0.0", region: "eu" };
 			})
 			.use(adapter)
@@ -54,7 +63,7 @@ describe("builder", () => {
 		const disabled = fakeAdapter("disabled");
 		const analytics = createAnalytics()
 			.when(true, enabled)
-			.when(function condition() {
+			.when(() => {
 				return false;
 			}, disabled)
 			.build();
@@ -83,7 +92,7 @@ describe("builder", () => {
 	test("rejects duplicate adapter ids", () => {
 		const builder = createAnalytics().use(fakeAdapter("one")).use(fakeAdapter("one"));
 
-		expect(function build() {
+		expect(() => {
 			builder.build();
 		}).toThrow('duplicate adapter id "one"');
 	});

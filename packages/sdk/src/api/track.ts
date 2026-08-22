@@ -24,8 +24,7 @@ function resolveDefaultProjectId(): string {
 
 export { validateIngestUrl } from "../utilities/ingest-url";
 
-export function resetDedupe(): void {
-}
+export function resetDedupe(): void {}
 
 function buildPayload(
 	type: EventType,

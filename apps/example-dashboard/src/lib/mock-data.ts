@@ -50,6 +50,7 @@ export const mockKPIs: DashboardData["kpis"] = {
 		value: 289431,
 		formattedValue: "289.4K",
 		trend: { value: 3.1, direction: "up", isPositive: true },
+		sparkline: generateSparkline(12, 24000, 6000),
 	},
 	botRate: {
 		id: "bot-rate",

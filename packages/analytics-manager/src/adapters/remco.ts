@@ -1,5 +1,5 @@
 import type { Adapter, AdapterBuilder, AnalyticsEvent, Properties, RuntimeConfig } from "../types";
-import { hasMethods, loadModule, notifyError } from "../utilities";
+import { hasMethods, isBrowser, loadModule } from "../utilities";
 
 type RemcoOptions = {
 	projectId?: string;
@@ -34,8 +34,8 @@ type RemcoState = {
 };
 
 export type RemcoBuilder = AdapterBuilder<"remco", RemcoClient> & {
-	project: (projectId: string) => RemcoBuilder;
-	ingest: (url: string) => RemcoBuilder;
+	project: (projectId: string | undefined) => RemcoBuilder;
+	ingest: (url: string | undefined) => RemcoBuilder;
 	debug: (enabled?: boolean) => RemcoBuilder;
 	client: (client: RemcoClient) => RemcoBuilder;
 	errors: () => RemcoBuilder;
@@ -63,6 +63,7 @@ function toMeta(event: AnalyticsEvent): Properties {
 
 function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 	let client: RemcoClient | null = state.client ?? null;
+	let options = state.options;
 	const teardown: (() => void)[] = [];
 
 	function observerFor(name: RemcoState["observers"][number]): Observer | undefined {
@@ -76,20 +77,20 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 	return {
 		id: "remco",
 		init: async function init(config: RuntimeConfig) {
+			if (!client && !isBrowser()) return;
 			if (!client) {
-				const loaded = await loadModule<RemcoClient>("@remcostoeten/analytics");
+				const loaded = await loadModule(() => import("@remcostoeten/analytics"));
 				client = hasMethods(loaded, ["trackEvent", "trackPageView", "identify"]) ? loaded : null;
 				if (!client) {
-					notifyError(
-						config.environment,
-						"remco",
+					config.report(
 						new Error("@remcostoeten/analytics is unavailable or exports an unexpected shape"),
+						"init",
 					);
 				}
 			}
 			if (!client) return;
 
-			const options = {
+			options = {
 				...state.options,
 				projectId: state.options.projectId ?? config.app,
 			};
@@ -104,14 +105,14 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 			return client !== null;
 		},
 		track: function track(event) {
-			client?.trackEvent(event.name, toMeta(event), state.options);
+			client?.trackEvent(event.name, toMeta(event), options);
 		},
 		page: function page(event) {
-			client?.trackPageView(toMeta(event), state.options);
+			client?.trackPageView(toMeta(event), options);
 		},
 		identify: function identify(event) {
 			if (!event.userId) return;
-			client?.identify(event.userId, toTraits(event.properties), state.options);
+			client?.identify(event.userId, toTraits(event.properties), options);
 		},
 		reset: function reset() {
 			client?.resetVisitorId?.();

@@ -131,7 +131,7 @@ export function PostHogProjectSwitcher({
 					onClick={() => onSelect(project.id)}
 					title={`PostHog project ${project.id}`}
 					className={cn(
-						"inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[10px] transition-colors",
+						"inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] transition-colors",
 						project.id === activeId
 							? "border-primary/40 bg-primary/5 text-primary"
 							: "border-border bg-muted/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
@@ -153,7 +153,7 @@ type PostHogTrackedSitesProps = {
 export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProps) {
 	if (isLoading && !data) {
 		return (
-			<div className="bg-card border border-border rounded-sm px-3 py-2.5">
+			<div className="rounded-lg border border-border bg-card px-3 py-2.5">
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex items-center gap-2">
 						<Skeleton className="h-3.5 w-3.5 rounded-full" />
@@ -173,15 +173,15 @@ export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProp
 	const sites = data?.sites ?? [];
 
 	return (
-		<div className="bg-card border border-border rounded-sm px-3 py-2.5">
+		<div className="rounded-lg border border-border bg-card px-3 py-2.5">
 			<div className="flex items-center justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-2">
 					<Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-					<span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+					<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
 						Tracked {sites.length === 1 ? "site" : "sites"}
 					</span>
 				</div>
-				<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+				<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
 					<span className="tabular-nums font-medium text-foreground">
 						{formatNumber(data?.allTimeEvents ?? 0)}
 					</span>
@@ -194,9 +194,7 @@ export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProp
 				</div>
 			</div>
 			{sites.length === 0 ? (
-				<p className="mt-2 text-[11px] text-muted-foreground">
-					No hosts detected in the last 30 days.
-				</p>
+				<p className="mt-2 text-xs text-muted-foreground">No hosts detected in the last 30 days.</p>
 			) : (
 				<div className="mt-2 flex flex-wrap gap-1.5">
 					{sites.map((site) => (
@@ -205,7 +203,7 @@ export function PostHogTrackedSites({ data, isLoading }: PostHogTrackedSitesProp
 							href={`https://${site.host}`}
 							target="_blank"
 							rel="noreferrer"
-							className="group inline-flex items-center gap-1.5 rounded border border-border bg-muted/30 px-2 py-1 text-[10px] transition-colors hover:border-primary/40 hover:bg-primary/5"
+							className="group inline-flex items-center gap-1.5 rounded border border-border bg-muted/30 px-2 py-1 text-[11px] transition-colors hover:border-primary/40 hover:bg-primary/5"
 							title={`${site.host} — ${site.events.toLocaleString()} events`}
 						>
 							<img
@@ -252,7 +250,7 @@ export function PostHogSummaryCards({ data, isLoading }: PostHogSummaryCardsProp
 		return (
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 				{cards.map((card) => (
-					<div key={card.label} className="bg-card border border-border rounded-sm px-3 py-2.5">
+					<div key={card.label} className="rounded-lg border border-border bg-card px-3 py-2.5">
 						<Skeleton className="h-3 w-20" />
 						<Skeleton className="mt-1.5 h-6 w-14" />
 					</div>
@@ -272,9 +270,9 @@ export function PostHogSummaryCards({ data, isLoading }: PostHogSummaryCardsProp
 				<div
 					key={card.label}
 					onMouseEnter={onItemEnter}
-					className="relative bg-card border border-border rounded-sm px-3 py-2.5 transition-colors hover:border-foreground/20"
+					className="relative rounded-lg border border-border bg-card px-3 py-2.5 transition-colors hover:border-foreground/20"
 				>
-					<p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+					<p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
 						{card.label}
 					</p>
 					<span className="text-xl font-semibold text-foreground tabular-nums tracking-tight">
@@ -324,7 +322,7 @@ export function PostHogInsightsList({ data, isLoading }: PostHogInsightsListProp
 	const insights = data || [];
 
 	return (
-		<div className="bg-card border border-border rounded-sm">
+		<div className="rounded-lg border border-border bg-card">
 			<div className="px-3 py-2 border-b border-border">
 				<h3 className="text-xs font-medium text-foreground">Recent Insights</h3>
 			</div>
@@ -342,7 +340,7 @@ export function PostHogInsightsList({ data, isLoading }: PostHogInsightsListProp
 				</div>
 			) : insights.length === 0 ? (
 				<div className="p-6 text-center">
-					<p className="text-[11px] text-muted-foreground">No insights found</p>
+					<p className="text-xs text-muted-foreground">No insights found</p>
 				</div>
 			) : (
 				<div className="divide-y divide-border">
@@ -352,14 +350,14 @@ export function PostHogInsightsList({ data, isLoading }: PostHogInsightsListProp
 							href={insight.url}
 							target="_blank"
 							rel="noreferrer"
-							className="flex items-center gap-3 px-3 py-2 text-[11px] hover:bg-muted/30 transition-colors"
+							className="flex items-center gap-3 px-3 py-2 text-xs hover:bg-muted/30 transition-colors"
 						>
 							<div className="min-w-0 flex-1">
 								<p className="text-foreground truncate">{insight.name}</p>
 								{insight.description && (
 									<p className="text-muted-foreground truncate">{insight.description}</p>
 								)}
-								<span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+								<span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
 									{formatRelativeTime(insight.lastRefresh)}
 									<ExternalLink className="h-2.5 w-2.5" />
 								</span>
@@ -398,7 +396,7 @@ function EventBadge({ event }: { event: string }) {
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium leading-none",
+				"inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[11px] font-medium leading-none",
 				style,
 			)}
 		>
@@ -450,7 +448,7 @@ function VisitorBadge({ distinctId, active, onToggle }: VisitorBadgeProps) {
 			onClick={onToggle}
 			title={active ? `Stop filtering on ${distinctId}` : `Show only events from ${distinctId}`}
 			className={cn(
-				"inline-flex max-w-[140px] items-center rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none transition-all",
+				"inline-flex max-w-[140px] items-center rounded border px-1.5 py-0.5 font-mono text-[11px] leading-none transition-all",
 				visitorColor(distinctId),
 				active ? "ring-1 ring-current" : "hover:brightness-125",
 			)}
@@ -487,7 +485,7 @@ function VisitorDetailCard({ distinctId, projectId, onClose }: VisitorDetailCard
 				<div className="flex min-w-0 items-center gap-2">
 					<span
 						className={cn(
-							"inline-flex max-w-[220px] items-center rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none",
+							"inline-flex max-w-[220px] items-center rounded border px-1.5 py-0.5 font-mono text-[11px] leading-none",
 							visitorColor(distinctId),
 						)}
 					>
@@ -498,7 +496,7 @@ function VisitorDetailCard({ distinctId, projectId, onClose }: VisitorDetailCard
 							href={data.personUrl}
 							target="_blank"
 							rel="noreferrer"
-							className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+							className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
 						>
 							Open in PostHog
 							<ExternalLink className="h-2.5 w-2.5" />
@@ -518,11 +516,11 @@ function VisitorDetailCard({ distinctId, projectId, onClose }: VisitorDetailCard
 			{error && !data ? (
 				<div className="mt-2 flex items-center gap-2">
 					<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-					<span className="text-[11px] text-muted-foreground">Failed to load visitor details.</span>
+					<span className="text-xs text-muted-foreground">Failed to load visitor details.</span>
 					<button
 						type="button"
 						onClick={() => mutate()}
-						className="text-[11px] text-foreground underline underline-offset-2 hover:text-primary"
+						className="text-xs text-foreground underline underline-offset-2 hover:text-primary"
 					>
 						Retry
 					</button>
@@ -569,7 +567,7 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 				<HoverHighlight rect={rect} settled={settled} />
 				{stats.map((stat) => (
 					<div key={stat.label} onMouseEnter={onItemEnter} className="relative rounded-sm p-1 -m-1">
-						<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+						<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
 							{stat.label}
 						</p>
 						{stat.value === null ? (
@@ -594,14 +592,14 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 							{profile.map((entry) => (
 								<span
 									key={entry}
-									className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+									className="rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[11px] text-muted-foreground"
 								>
 									{entry}
 								</span>
 							))}
 							{data?.initialReferrer && (
 								<span
-									className="max-w-[220px] truncate rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+									className="max-w-[220px] truncate rounded border border-border bg-muted/30 px-1.5 py-0.5 text-[11px] text-muted-foreground"
 									title={`First referrer: ${data.initialReferrer}`}
 								>
 									via {prettyUrl(data.initialReferrer).host || data.initialReferrer}
@@ -613,19 +611,19 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 					{data && (
 						<div className="mt-3 grid gap-3 sm:grid-cols-3">
 							<div>
-								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+								<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
 									Top pages
 								</p>
 								{data.topPages.length === 0 ? (
-									<p className="mt-1 text-[11px] text-muted-foreground">No pageviews</p>
+									<p className="mt-1 text-xs text-muted-foreground">No pageviews</p>
 								) : (
 									<ul className="mt-1 space-y-0.5">
 										{data.topPages.map((page) => (
 											<li
 												key={page.path}
-												className="flex items-center justify-between gap-2 text-[11px]"
+												className="flex items-center justify-between gap-2 text-xs"
 											>
-												<span className="truncate font-mono text-[10px] text-foreground">
+												<span className="truncate font-mono text-[11px] text-foreground">
 													{page.path}
 												</span>
 												<span className="tabular-nums text-muted-foreground">
@@ -637,12 +635,12 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 								)}
 							</div>
 							<div>
-								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">Events</p>
+								<p className="text-[11px] uppercase tracking-wide text-muted-foreground">Events</p>
 								<div className="mt-1 flex flex-wrap gap-1">
 									{data.eventBreakdown.map((entry) => (
 										<span key={entry.event} className="inline-flex items-center gap-1">
 											<EventBadge event={entry.event} />
-											<span className="text-[10px] tabular-nums text-muted-foreground">
+											<span className="text-[11px] tabular-nums text-muted-foreground">
 												{formatNumber(entry.count)}
 											</span>
 										</span>
@@ -650,7 +648,7 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 								</div>
 							</div>
 							<div>
-								<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+								<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
 									Activity (30d)
 								</p>
 								{data.dailyActivity.length > 1 ? (
@@ -658,7 +656,7 @@ function VisitorDetailBody({ data, isLoading }: VisitorDetailBodyProps) {
 										<Sparkline points={data.dailyActivity.map((entry) => entry.events)} />
 									</div>
 								) : (
-									<p className="mt-1 text-[11px] text-muted-foreground">
+									<p className="mt-1 text-xs text-muted-foreground">
 										Active on {data.dailyActivity.length === 1 ? "one day" : "no days"} in the last
 										30
 									</p>
@@ -712,13 +710,13 @@ export function PostHogEventsTable({
 	}
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="flex min-h-[33px] flex-wrap items-center gap-2 px-3 py-2 border-b border-border">
 				<h3 className="text-xs font-medium text-foreground">Recent Events</h3>
 				{focusedId && (
 					<span
 						className={cn(
-							"inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none",
+							"inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] leading-none",
 							visitorColor(focusedId),
 						)}
 					>
@@ -731,7 +729,7 @@ export function PostHogEventsTable({
 				{excludedIds.map((id) => (
 					<span
 						key={id}
-						className="inline-flex items-center gap-1 rounded border border-border bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted-foreground line-through"
+						className="inline-flex items-center gap-1 rounded border border-border bg-muted/30 px-1.5 py-0.5 font-mono text-[11px] leading-none text-muted-foreground line-through"
 					>
 						<span className="max-w-[120px] truncate">{id}</span>
 						<button
@@ -747,7 +745,7 @@ export function PostHogEventsTable({
 					<button
 						type="button"
 						onClick={clearFilters}
-						className="text-[10px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+						className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
 					>
 						clear
 					</button>
@@ -763,7 +761,7 @@ export function PostHogEventsTable({
 			{!hasData ? (
 				isLoading ? (
 					<div className="overflow-x-auto">
-						<table className="w-full text-[11px]">
+						<table className="w-full text-xs">
 							<thead>
 								<tr className="border-b border-border bg-muted/30">
 									<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
@@ -803,7 +801,7 @@ export function PostHogEventsTable({
 				) : (
 					<div className="p-6 text-center">
 						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-xs text-muted-foreground">
 							{hasFilters && allRows.length > 0
 								? "No events match the current filters"
 								: "No events yet"}
@@ -812,7 +810,7 @@ export function PostHogEventsTable({
 							<button
 								type="button"
 								onClick={clearFilters}
-								className="mt-1 text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+								className="mt-1 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
 							>
 								clear filters
 							</button>
@@ -821,7 +819,7 @@ export function PostHogEventsTable({
 				)
 			) : (
 				<div className="overflow-x-auto">
-					<table className="w-full text-[11px]">
+					<table className="w-full text-xs">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
 								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
@@ -856,7 +854,7 @@ export function PostHogEventsTable({
 													className="group inline-flex max-w-[240px] items-center gap-1 text-foreground hover:text-primary"
 													title={url}
 												>
-													<span className="truncate font-mono text-[10px]">
+													<span className="truncate font-mono text-[11px]">
 														{parsed.host && (
 															<span className="text-muted-foreground">{parsed.host}</span>
 														)}

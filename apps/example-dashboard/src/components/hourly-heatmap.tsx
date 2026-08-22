@@ -32,13 +32,13 @@ export function HourlyHeatmap({
 
 	if (!data || data.maxCount === 0) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">{emptyLabel}</p>
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+					<p className="text-xs text-muted-foreground">{emptyLabel}</p>
 				</div>
 			</div>
 		);
@@ -66,11 +66,11 @@ export function HourlyHeatmap({
 		: null;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">{title}</h3>
 				{hoveredInfo && (
-					<span className="text-[10px] text-muted-foreground">
+					<span className="text-[11px] text-muted-foreground">
 						{hoveredInfo.day} {hoveredInfo.hour}:00 - {hoveredInfo.count.toLocaleString()} views
 					</span>
 				)}
@@ -94,7 +94,7 @@ export function HourlyHeatmap({
 				<div className="space-y-0.5">
 					{data.days.map((day, dayIndex) => (
 						<div key={day} className="flex items-center gap-1">
-							<div className="w-7 shrink-0 text-[9px] text-muted-foreground text-right">{day}</div>
+							<div className="w-7 shrink-0 text-[10px] text-muted-foreground text-right">{day}</div>
 							<div className="flex-1 flex gap-px">
 								{hours.map((_, hourIndex) => {
 									const count = data.data[dayIndex][hourIndex];
@@ -124,7 +124,7 @@ export function HourlyHeatmap({
 				</div>
 
 				<div className="flex items-center justify-end gap-2 mt-3">
-					<span className="text-[9px] text-muted-foreground">Less</span>
+					<span className="text-[10px] text-muted-foreground">Less</span>
 					<div className="flex gap-px">
 						{[0, 0.25, 0.5, 0.75, 1].map((intensity, i) => (
 							<div
@@ -139,7 +139,7 @@ export function HourlyHeatmap({
 							/>
 						))}
 					</div>
-					<span className="text-[9px] text-muted-foreground">More</span>
+					<span className="text-[10px] text-muted-foreground">More</span>
 				</div>
 			</div>
 		</div>

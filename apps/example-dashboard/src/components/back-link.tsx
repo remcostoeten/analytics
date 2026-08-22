@@ -24,7 +24,7 @@ export function BackLink({ fallbackHref = "/", label = "Back" }: Props) {
 		<button
 			type="button"
 			onClick={goBack}
-			className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+			className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
 		>
 			<ArrowLeft className="h-3 w-3" />
 			{label}

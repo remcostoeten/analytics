@@ -41,8 +41,20 @@ export type ProviderInference = Expect<
 export type MiddlewareNames = Expect<
 	Equal<
 		EventName<Events>,
-		"note.created" | "editor.opened" | "editor.toolbar.clicked" | "page" | "identify"
+		| "note.created"
+		| "editor.opened"
+		| "editor.toolbar.clicked"
+		| "page"
+		| "identify"
+		| "group"
+		| "alias"
 	>
+>;
+
+declare const typed: Analytics<Events, Registered>;
+
+export type ProviderTyped = Expect<
+	Equal<ReturnType<typeof typed.provider<"posthog">>, { b: 2 } | undefined>
 >;
 
 export type ScopeNarrows = Expect<

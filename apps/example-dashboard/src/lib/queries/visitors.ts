@@ -45,10 +45,7 @@ async function getRelatedIds(fingerprint: string, projectId?: string | null): Pr
 		| Record<string, unknown>
 		| null
 		| undefined;
-	const userId =
-		identity && typeof identity.userId === "string"
-			? identity.userId
-			: null;
+	const userId = identity && typeof identity.userId === "string" ? identity.userId : null;
 	if (!userId) return [fingerprint];
 	const rows = await sql`
 		SELECT fingerprint FROM visitors
@@ -82,7 +79,7 @@ export async function getVisitorsExplorer(
 					? sql`AND activity.pageviews >= 2`
 					: segment === "converted"
 						? sql`AND activity.conversions > 0`
-				: sql``;
+						: sql``;
 
 	const projectFilter = projectId ? sql`AND visitors.project_id = ${projectId}` : sql``;
 	const eventsProjectFilter = projectId ? sql`AND events.project_id = ${projectId}` : sql``;
@@ -469,8 +466,18 @@ export type VisitorInsights = {
 		lastSeen: string;
 	}[];
 	acquisition: {
-		firstTouch: { source: string | null; medium: string | null; campaign: string | null; seenAt: string } | null;
-		lastTouch: { source: string | null; medium: string | null; campaign: string | null; seenAt: string } | null;
+		firstTouch: {
+			source: string | null;
+			medium: string | null;
+			campaign: string | null;
+			seenAt: string;
+		} | null;
+		lastTouch: {
+			source: string | null;
+			medium: string | null;
+			campaign: string | null;
+			seenAt: string;
+		} | null;
 	};
 	conversions: { count: number; lastSeen: string | null; names: string[] };
 	hosts: { host: string; count: number }[];
@@ -538,7 +545,7 @@ export async function getVisitorInsights(
       FROM gaps
       WHERE gap_ms IS NOT NULL
     `,
-			sql`
+		sql`
 	      SELECT
         COUNT(DISTINCT ts::date) as active_days,
         MIN(ts) as first_ts,
@@ -583,7 +590,7 @@ export async function getVisitorInsights(
       ORDER BY last_seen DESC
 	      LIMIT 10
     `,
-			sql`
+		sql`
 				WITH touches AS (
 					SELECT COALESCE(NULLIF(meta->>'utmSource', ''), regexp_replace(referrer, '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/]+).*$', '\\1')) as source, meta->>'utmMedium' as medium,
 						meta->>'utmCampaign' as campaign, ts
@@ -596,7 +603,7 @@ export async function getVisitorInsights(
 				UNION ALL
 				(SELECT source, medium, campaign, ts FROM touches ORDER BY ts DESC LIMIT 1)
 			`,
-			sql`
+		sql`
 				SELECT COUNT(*) as count, MAX(ts) as last_seen,
 					array_agg(DISTINCT meta->>'eventName') FILTER (WHERE meta->>'eventName' IS NOT NULL) as names
 				FROM events
@@ -604,7 +611,7 @@ export async function getVisitorInsights(
 					${projectId ? sql`AND project_id = ${projectId}` : sql``}
 					AND (meta->>'eventName' IN ('transaction', 'purchase', 'conversion') OR meta->>'conversion' = 'true')
 			`,
-			sql`
+		sql`
       SELECT host, COUNT(*) as count
       FROM events
 	      WHERE visitor_id = ANY(${visitorIds}) AND host IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``}
@@ -704,19 +711,19 @@ export async function getVisitorInsights(
 		acquisition: {
 			firstTouch: acquisitionRows[0]
 				? {
-					source: (acquisitionRows[0].source as string | null) ?? null,
-					medium: (acquisitionRows[0].medium as string | null) ?? null,
-					campaign: (acquisitionRows[0].campaign as string | null) ?? null,
-					seenAt: acquisitionRows[0].ts as string,
-				}
+						source: (acquisitionRows[0].source as string | null) ?? null,
+						medium: (acquisitionRows[0].medium as string | null) ?? null,
+						campaign: (acquisitionRows[0].campaign as string | null) ?? null,
+						seenAt: acquisitionRows[0].ts as string,
+					}
 				: null,
 			lastTouch: acquisitionRows[1]
 				? {
-					source: (acquisitionRows[1].source as string | null) ?? null,
-					medium: (acquisitionRows[1].medium as string | null) ?? null,
-					campaign: (acquisitionRows[1].campaign as string | null) ?? null,
-					seenAt: acquisitionRows[1].ts as string,
-				}
+						source: (acquisitionRows[1].source as string | null) ?? null,
+						medium: (acquisitionRows[1].medium as string | null) ?? null,
+						campaign: (acquisitionRows[1].campaign as string | null) ?? null,
+						seenAt: acquisitionRows[1].ts as string,
+					}
 				: null,
 		},
 		conversions: {

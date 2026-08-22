@@ -1,7 +1,6 @@
-export async function loadModule<TModule>(specifier: string): Promise<TModule | null> {
+export async function loadModule<TModule>(loader: () => Promise<TModule>): Promise<TModule | null> {
 	try {
-		const loaded = await import(specifier);
-		return loaded as TModule;
+		return await loader();
 	} catch {
 		return null;
 	}

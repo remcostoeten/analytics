@@ -31,7 +31,34 @@ export function createRuntime<TEvents extends EventMap, TAdapters extends Adapte
 			return dispatch(state.core, event);
 		},
 		identify: function identify(userId, traits): Promise<SendResult[]> {
-			const event = buildEvent(state, "identify", "identify", (traits ?? {}) as Traits, {}, userId);
+			const event = buildEvent(
+				state,
+				"identify",
+				"identify",
+				(traits ?? {}) as Traits,
+				{},
+				{
+					userId,
+				},
+			);
+			return dispatch(state.core, event);
+		},
+		group: function group(groupType, groupId, traits): Promise<SendResult[]> {
+			const event = buildEvent(
+				state,
+				"group",
+				"group",
+				(traits ?? {}) as Traits,
+				{},
+				{
+					groupType,
+					groupId,
+				},
+			);
+			return dispatch(state.core, event);
+		},
+		alias: function alias(userId, previousId): Promise<SendResult[]> {
+			const event = buildEvent(state, "alias", "alias", {}, {}, { userId, previousId });
 			return dispatch(state.core, event);
 		},
 		reset: function reset(): Promise<void> {
@@ -50,18 +77,20 @@ export function createRuntime<TEvents extends EventMap, TAdapters extends Adapte
 			});
 		},
 		provider: function provider<TId extends AdapterId<TAdapters>>(id: TId) {
-			const adapter = state.core.adapters.find(function byId(candidate) {
-				return candidate.id === id;
-			});
+			const adapter = state.core.adapters.find((candidate) => candidate.id === id);
 			if (!adapter || !adapter.expose) return undefined;
 			return adapter.expose() as TAdapters[TId] | undefined;
+		},
+		ready: function ready(): Promise<void> {
+			return state.core.ready;
 		},
 		flush: function flush(): Promise<void> {
 			return runLifecycle(state.core, "flush");
 		},
-		destroy: async function destroy(): Promise<void> {
-			await runLifecycle(state.core, "destroy");
+		destroy: function destroy(): Promise<void> {
+			if (state.core.disposed) return Promise.resolve();
 			state.core.disposed = true;
+			return runLifecycle(state.core, "destroy");
 		},
 	};
 }

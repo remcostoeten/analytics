@@ -2,8 +2,9 @@
 	"extends": "../typescript/tsconfig.base.json",
 	"compilerOptions": {
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"types": ["node"]
+		"types": ["node", "bun-types"],
+		"jsx": "react-jsx"
 	},
-	"include": ["src/**/*.ts"],
-	"exclude": ["node_modules", "dist", "__tests__"]
+	"include": ["src/**/*.ts", "__tests__/**/*.ts", "__tests__/**/*.tsx"],
+	"exclude": ["node_modules", "dist"]
 }

@@ -88,16 +88,14 @@ function PaletteRow({ value, icon: Icon, label, hint, meta, active, onSelect }: 
 				strokeWidth={1.7}
 			/>
 			<span className="truncate">{label}</span>
-			{hint ? (
-				<span className="min-w-0 truncate text-[11px] text-muted-foreground">{hint}</span>
-			) : null}
+			{hint ? <span className="min-w-0 truncate text-xs text-muted-foreground">{hint}</span> : null}
 			<span className="ml-auto flex shrink-0 items-center gap-1.5">
 				{active ? (
-					<span className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+					<span className="rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
 						active
 					</span>
 				) : null}
-				{meta ? <span className="text-[11px] text-muted-foreground">{meta}</span> : null}
+				{meta ? <span className="text-xs text-muted-foreground">{meta}</span> : null}
 				<CornerDownLeft className="hidden h-3.5 w-3.5 text-muted-foreground group-data-[selected=true]:block" />
 			</span>
 		</CommandItem>
@@ -105,7 +103,7 @@ function PaletteRow({ value, icon: Icon, label, hint, meta, active, onSelect }: 
 }
 
 const GROUP_HEADING =
-	"[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground/70";
+	"[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-muted-foreground/70";
 
 export function CommandPalette({
 	open,
@@ -347,7 +345,7 @@ export function CommandPalette({
 				)}
 			</CommandList>
 
-			<div className="flex items-center gap-4 border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground">
+			<div className="flex items-center gap-4 border-t border-border px-3.5 py-2 text-xs text-muted-foreground">
 				<span className="flex items-center gap-1">
 					<ArrowRight className="h-3 w-3 rotate-90" />
 					<ArrowRight className="h-3 w-3 -rotate-90" />
@@ -358,7 +356,7 @@ export function CommandPalette({
 					select
 				</span>
 				<span className="ml-auto flex items-center gap-1">
-					<kbd className="rounded border border-border bg-muted px-1 text-[10px]">⌘K</kbd>
+					<kbd className="rounded border border-border bg-muted px-1 text-[11px]">⌘K</kbd>
 					command palette
 				</span>
 			</div>

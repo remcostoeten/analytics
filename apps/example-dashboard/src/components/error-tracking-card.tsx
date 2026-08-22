@@ -22,7 +22,7 @@ function formatTimeAgo(timestamp: string): string {
 export function ErrorTrackingCard({ data, className }: Props) {
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">JavaScript Errors</h3>
 				</div>
@@ -40,23 +40,23 @@ export function ErrorTrackingCard({ data, className }: Props) {
 
 	if (data.total === 0) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">JavaScript Errors</h3>
 				</div>
 				<div className="p-6 text-center">
 					<ShieldCheck className="h-6 w-6 text-emerald-500/60 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No errors in this period</p>
+					<p className="text-xs text-muted-foreground">No errors in this period</p>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">JavaScript Errors</h3>
-				<span className="text-[10px] text-muted-foreground tabular-nums">
+				<span className="text-[11px] text-muted-foreground tabular-nums">
 					{formatNumber(data.total)} errors · {formatNumber(data.affectedSessions)} sessions
 				</span>
 			</div>
@@ -65,16 +65,16 @@ export function ErrorTrackingCard({ data, className }: Props) {
 					<div key={group.message} className="px-3 py-2 space-y-1">
 						<div className="flex items-start justify-between gap-2">
 							<p
-								className="text-[11px] text-foreground font-mono leading-snug break-all line-clamp-2"
+								className="text-xs text-foreground font-mono leading-snug break-all line-clamp-2"
 								title={group.message}
 							>
 								{group.message}
 							</p>
-							<span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded border bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 tabular-nums">
+							<span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded border bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 tabular-nums">
 								×{formatNumber(group.count)}
 							</span>
 						</div>
-						<div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+						<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
 							<span className="tabular-nums">
 								{formatNumber(group.visitors)} visitor{group.visitors === 1 ? "" : "s"}
 							</span>

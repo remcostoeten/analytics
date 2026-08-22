@@ -2,7 +2,6 @@
 
 import { Users, Globe, Zap, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type LiveData = {
 	activeVisitors: number;
@@ -26,41 +25,28 @@ type LiveNowWidgetProps = {
 export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 	if (!data) {
 		return (
-			<div className="bg-card border border-border rounded-sm">
-				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
-					<Skeleton className="h-3 w-16" />
-					<Skeleton className="h-3 w-20" />
+			<div className="rounded-lg border border-border bg-card">
+				<div className="flex items-center justify-between border-b border-border px-3 py-2">
+					<h3 className="flex items-center gap-2 text-xs font-medium text-foreground">
+						<span className="inline-flex h-2 w-2 rounded-full bg-muted-foreground/40" />
+						Live Now
+					</h3>
+					<span className="text-[11px] text-muted-foreground">Last 5 minutes</span>
 				</div>
-				<div className="p-3 space-y-4">
-					<div className="grid grid-cols-3 gap-3">
-						{[0, 1, 2].map((i) => (
-							<div key={i} className="p-2 bg-muted/30 rounded space-y-1.5">
-								<Skeleton className="h-6 w-10 mx-auto" />
-								<Skeleton className="h-2 w-12 mx-auto" />
-							</div>
-						))}
-					</div>
-					<div className="space-y-1.5">
-						<Skeleton className="h-2 w-20 mb-2" />
-						{[0, 1, 2, 3, 4].map((i) => (
-							<Skeleton key={i} className="h-3 w-full" />
-						))}
-					</div>
-					<div className="space-y-1.5">
-						<Skeleton className="h-2 w-20 mb-2" />
-						<div className="flex flex-wrap gap-1">
-							{[0, 1, 2, 3].map((i) => (
-								<Skeleton key={i} className="h-5 w-16 rounded" />
-							))}
+				<div className="grid grid-cols-3 gap-2 p-3">
+					{["Visitors", "Countries", "Events/min"].map((label) => (
+						<div key={label} className="rounded-md bg-muted/30 p-2 text-center">
+							<div className="text-xl font-semibold tabular-nums text-muted-foreground/60">—</div>
+							<p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
 						</div>
-					</div>
+					))}
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="bg-card border border-border rounded-sm">
+		<div className="rounded-lg border border-border bg-card">
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-2">
 					<span className="relative flex h-2 w-2">
@@ -69,7 +55,7 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 					</span>
 					Live Now
 				</h3>
-				<span className="text-[10px] text-muted-foreground">Last 5 minutes</span>
+				<span className="text-[11px] text-muted-foreground">Last 5 minutes</span>
 			</div>
 			<div className="p-3">
 				<div className="grid grid-cols-3 gap-3 mb-4">
@@ -78,26 +64,26 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 							<Users className="h-4 w-4 text-muted-foreground" />
 							{data.activeVisitors}
 						</div>
-						<p className="text-[10px] text-muted-foreground mt-0.5">Visitors</p>
+						<p className="text-[11px] text-muted-foreground mt-0.5">Visitors</p>
 					</div>
 					<div className="text-center p-2 bg-muted/30 rounded">
 						<div className="flex items-center justify-center gap-1.5 text-xl font-semibold text-foreground">
 							<Globe className="h-4 w-4 text-muted-foreground" />
 							{data.liveGeo.length}
 						</div>
-						<p className="text-[10px] text-muted-foreground mt-0.5">Countries</p>
+						<p className="text-[11px] text-muted-foreground mt-0.5">Countries</p>
 					</div>
 					<div className="text-center p-2 bg-muted/30 rounded">
 						<div className="flex items-center justify-center gap-1.5 text-xl font-semibold text-foreground">
 							<Zap className="h-4 w-4 text-muted-foreground" />
 							{data.eventsPerMinute}
 						</div>
-						<p className="text-[10px] text-muted-foreground mt-0.5">Events/min</p>
+						<p className="text-[11px] text-muted-foreground mt-0.5">Events/min</p>
 					</div>
 				</div>
 
 				<div className="mb-4">
-					<h4 className="text-[10px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+					<h4 className="text-[11px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
 						Active Pages
 					</h4>
 					<div className="space-y-1">
@@ -117,7 +103,7 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 				</div>
 
 				<div className="mb-4">
-					<h4 className="text-[10px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+					<h4 className="text-[11px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
 						Live Locations
 					</h4>
 					<div className="flex flex-wrap gap-1">
@@ -127,7 +113,7 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 							data.liveGeo.slice(0, 8).map((geo) => (
 								<span
 									key={geo.country}
-									className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted/50 rounded text-[11px]"
+									className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted/50 rounded text-xs"
 								>
 									<MapPin className="h-2.5 w-2.5 text-muted-foreground" />
 									{geo.country}
@@ -139,7 +125,7 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 				</div>
 
 				<div>
-					<h4 className="text-[10px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+					<h4 className="text-[11px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
 						Activity Stream
 					</h4>
 					<div className="space-y-0.5 max-h-28 overflow-y-auto">
@@ -150,7 +136,7 @@ export function LiveNowWidget({ data }: LiveNowWidgetProps) {
 								<div
 									key={i}
 									className={cn(
-										"flex items-center gap-2 text-[11px] py-0.5 animate-in slide-in-from-left-2",
+										"flex items-center gap-2 text-xs py-0.5 animate-in slide-in-from-left-2",
 										i === 0 && "font-medium",
 									)}
 									style={{ animationDelay: `${i * 50}ms` }}

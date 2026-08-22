@@ -302,7 +302,7 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 	);
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm overflow-hidden", className)}>
+		<div className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">Geographic Distribution</h3>
 				<div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 						aria-checked={showCities}
 						disabled={!cityPoints}
 						onClick={() => setShowCities((value) => !value)}
-						className="flex items-center gap-1.5 text-[10px] text-muted-foreground disabled:opacity-50"
+						className="flex items-center gap-1.5 text-[11px] text-muted-foreground disabled:opacity-50"
 					>
 						<span
 							className={cn(
@@ -329,13 +329,13 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 						</span>
 						Cities
 					</button>
-					<span className="text-[10px] text-muted-foreground tabular-nums">
+					<span className="text-[11px] text-muted-foreground tabular-nums">
 						{data.length} countries
 					</span>
 				</div>
 			</div>
 			<div
-				className="relative aspect-[2/1] bg-muted/30"
+				className="relative aspect-[2.35/1] max-h-[360px] w-full overflow-hidden bg-muted/30"
 				onMouseLeave={() => setTooltipContent(null)}
 			>
 				<ComposableMap
@@ -436,7 +436,7 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 				{/* Tooltip */}
 				{tooltipContent && (
 					<div
-						className="fixed z-50 px-2.5 py-1.5 bg-background border border-border rounded shadow-lg pointer-events-none"
+						className="fixed z-50 px-2.5 py-1.5 bg-background border border-border rounded shadow-lg pointer-events-none transition-opacity duration-[125ms] ease-out starting:opacity-0"
 						style={{
 							left: tooltipPos.x + 10,
 							top: tooltipPos.y - 40,
@@ -453,12 +453,12 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 										: tooltipContent.data.country}
 								</p>
 								{tooltipContent.kind === "city" ? (
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-[11px] text-muted-foreground">
 										{tooltipContent.data.events.toLocaleString()} events ·{" "}
 										{tooltipContent.data.visitors.toLocaleString()} visitors
 									</p>
 								) : (
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-[11px] text-muted-foreground">
 										{tooltipContent.data.count.toLocaleString()} visits (
 										{tooltipContent.data.percentage.toFixed(1)}%)
 									</p>
@@ -474,7 +474,7 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 				<div className="flex items-center gap-3 mb-2">
 					<div className="flex items-center gap-1">
 						<div className="w-3 h-3 rounded-sm bg-muted" />
-						<span className="text-[10px] text-muted-foreground">No data</span>
+						<span className="text-[11px] text-muted-foreground">No data</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<div
@@ -484,10 +484,10 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 									"linear-gradient(to right, hsl(var(--muted-foreground) / 0.3), hsl(var(--foreground) / 0.8))",
 							}}
 						/>
-						<span className="text-[10px] text-muted-foreground">Traffic</span>
+						<span className="text-[11px] text-muted-foreground">Traffic</span>
 					</div>
 					{showCities && cityPoints && (
-						<span className="text-[10px] text-muted-foreground">Cities with location data</span>
+						<span className="text-[11px] text-muted-foreground">Cities with location data</span>
 					)}
 				</div>
 				<div className="flex flex-wrap gap-2">
@@ -497,15 +497,15 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 							onClick={() => onCountryClick?.(d)}
 							className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
 						>
-							{d.countryCode && <span className="text-[10px]">{getFlagEmoji(d.countryCode)}</span>}
-							<span className="text-[10px] text-foreground">{d.country}</span>
-							<span className="text-[10px] text-muted-foreground tabular-nums">
+							{d.countryCode && <span className="text-[11px]">{getFlagEmoji(d.countryCode)}</span>}
+							<span className="text-[11px] text-foreground">{d.country}</span>
+							<span className="text-[11px] text-muted-foreground tabular-nums">
 								{d.percentage.toFixed(1)}%
 							</span>
 						</button>
 					))}
 					{data.length > 6 && (
-						<span className="text-[10px] text-muted-foreground self-center">
+						<span className="text-[11px] text-muted-foreground self-center">
 							+{data.length - 6} more
 						</span>
 					)}

@@ -50,13 +50,14 @@ describe("runtime", () => {
 		expect(adapter.events[0].properties).toEqual({ section: "settings" });
 	});
 
-	test("falls back to track when an adapter has no page handler", async () => {
+	test("skips page when an adapter has no page handler", async () => {
 		const adapter = fakeAdapter("one", { page: undefined });
 		const analytics = createAnalytics().use(adapter).build();
 
-		await analytics.page();
+		const results = await analytics.page();
 
-		expect(adapter.calls).toContain("track");
+		expect(results).toEqual([{ adapter: "one", ok: true, skipped: true }]);
+		expect(adapter.calls).toEqual(["init"]);
 	});
 
 	test("skips identify when an adapter cannot handle it", async () => {
@@ -101,6 +102,16 @@ describe("runtime", () => {
 		expect(adapter.events[1].name).toBe("editor.toolbar.clicked");
 	});
 
+	test("scope leaves page and identify names untouched", async () => {
+		const adapter = fakeAdapter("one");
+		const analytics = createAnalytics().use(adapter).build();
+
+		await analytics.scope("editor").page();
+		await analytics.scope("editor").identify("user-1");
+
+		expect(adapter.events.map((event) => event.name)).toEqual(["page", "identify"]);
+	});
+
 	test("exposes provider internals", () => {
 		const analytics = createAnalytics().use(fakeAdapter("one")).build();
 
@@ -130,11 +141,44 @@ describe("runtime", () => {
 		expect(adapter.calls).not.toContain("track");
 	});
 
+	test("ignores reset and flush after destroy", async () => {
+		const adapter = fakeAdapter("one");
+		const analytics = createAnalytics().use(adapter).build();
+
+		await analytics.destroy();
+		await analytics.reset();
+		await analytics.flush();
+		await analytics.destroy();
+
+		expect(adapter.calls).toEqual(["init", "destroy"]);
+	});
+
+	test("drops events dispatched while destroy is in progress", async () => {
+		let finish: () => void = () => {};
+		const adapter = fakeAdapter("one", {
+			destroy: function destroy() {
+				return new Promise<void>((resolve) => {
+					finish = resolve;
+				});
+			},
+		});
+		const analytics = createAnalytics().use(adapter).build();
+		await analytics.ready();
+
+		const destroying = analytics.destroy();
+		const results = await analytics.track("note.created");
+		finish();
+		await destroying;
+
+		expect(results).toEqual([]);
+		expect(adapter.calls).toEqual(["init"]);
+	});
+
 	test("waits for slow adapter initialization", async () => {
 		const order: string[] = [];
 		const adapter = fakeAdapter("slow", {
 			init: async function init() {
-				await new Promise(function wait(resolve) {
+				await new Promise((resolve) => {
 					setTimeout(resolve, 10);
 				});
 				order.push("init");

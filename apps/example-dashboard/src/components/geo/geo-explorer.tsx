@@ -149,7 +149,7 @@ export function GeoExplorer() {
 					{country && (
 						<Link
 							href={`/?country=${country}${region ? `&region=${encodeURIComponent(region)}` : ""}`}
-							className="text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
+							className="text-xs px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors"
 						>
 							View filtered dashboard
 						</Link>
@@ -157,7 +157,7 @@ export function GeoExplorer() {
 					<select
 						value={timeRange}
 						onChange={(e) => setTimeRange(e.target.value)}
-						className="text-xs bg-card border border-border rounded-sm px-2 py-1.5 text-foreground"
+						className="text-xs rounded-lg border border-border bg-card px-2 py-1.5 text-foreground"
 						aria-label="Time range"
 					>
 						{TIME_RANGES.map((r) => (
@@ -170,7 +170,7 @@ export function GeoExplorer() {
 			</header>
 
 			{error && (
-				<div className="bg-card border border-border rounded-sm p-4 text-sm text-muted-foreground">
+				<div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
 					Could not load geo data: {error.message}
 				</div>
 			)}
@@ -188,13 +188,13 @@ export function GeoExplorer() {
 			</section>
 
 			<section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-				<div className="lg:col-span-2 bg-card border border-border rounded-sm overflow-hidden">
+				<div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 						<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 							<MapPin className="h-3.5 w-3.5" />
 							{country ? "Visitor locations" : "Traffic map"}
 						</h2>
-						<span className="text-[10px] text-muted-foreground tabular-nums">
+						<span className="text-[11px] text-muted-foreground tabular-nums">
 							{data?.points.length ?? 0} location clusters
 						</span>
 					</div>
@@ -207,12 +207,12 @@ export function GeoExplorer() {
 					/>
 				</div>
 
-				<div className="bg-card border border-border rounded-sm overflow-hidden flex flex-col">
+				<div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 						<h2 className="text-xs font-medium text-foreground">
 							{levelLabel(data?.level ?? "world")}
 						</h2>
-						<span className="text-[10px] text-muted-foreground tabular-nums">
+						<span className="text-[11px] text-muted-foreground tabular-nums">
 							{data?.breakdown.length ?? 0}
 						</span>
 					</div>
@@ -243,7 +243,7 @@ export function GeoExplorer() {
 												<ChevronRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground/70 transition-colors shrink-0" />
 											)}
 										</span>
-										<span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+										<span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
 											{formatNumber(row.visitors)} visitors · {row.percentage.toFixed(1)}%
 										</span>
 									</div>
@@ -309,20 +309,20 @@ export function GeoExplorer() {
 					<QualityBar label="City" value={data?.quality.cityKnown ?? 0} />
 					<QualityBar label="Coordinates" value={data?.quality.coordsKnown ?? 0} />
 					<QualityBar label="Timezone" value={data?.quality.timezoneKnown ?? 0} />
-					<p className="px-3 pt-2 pb-1 text-[10px] text-muted-foreground leading-relaxed">
+					<p className="px-3 pt-2 pb-1 text-[11px] text-muted-foreground leading-relaxed">
 						City-level IP geolocation clusters around ISP hubs (e.g. Amsterdam for NL cable and
 						mobile). Region and coordinates are the more reliable dimensions.
 					</p>
 				</Panel>
 			</section>
 
-			<section className="bg-card border border-border rounded-sm overflow-hidden">
+			<section className="rounded-lg border border-border bg-card overflow-hidden">
 				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 					<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 						<Users2 className="h-3.5 w-3.5" />
 						Visitors in this area
 					</h2>
-					<span className="text-[10px] text-muted-foreground tabular-nums">
+					<span className="text-[11px] text-muted-foreground tabular-nums">
 						{visitors?.length ?? 0} most recent
 					</span>
 				</div>
@@ -338,15 +338,15 @@ export function GeoExplorer() {
 									{v.visitorId.slice(0, 12)}
 								</span>
 								{v.city && (
-									<span className="text-[10px] text-muted-foreground truncate">{v.city}</span>
+									<span className="text-[11px] text-muted-foreground truncate">{v.city}</span>
 								)}
 								{v.asOrg && (
-									<span className="text-[10px] text-muted-foreground/70 truncate hidden md:inline">
+									<span className="text-[11px] text-muted-foreground/70 truncate hidden md:inline">
 										{v.asOrg}
 									</span>
 								)}
 							</span>
-							<span className="flex items-center gap-3 text-[10px] text-muted-foreground tabular-nums shrink-0">
+							<span className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums shrink-0">
 								<span>
 									{v.sessions} session{v.sessions === 1 ? "" : "s"}
 								</span>
@@ -389,8 +389,8 @@ function StatCard({
 	hint?: string;
 }) {
 	return (
-		<div className="bg-card border border-border rounded-sm px-3 py-2.5" title={hint}>
-			<p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+		<div className="rounded-lg border border-border bg-card px-3 py-2.5" title={hint}>
+			<p className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</p>
 			<p className="text-lg font-semibold text-foreground tabular-nums">
 				{loading && value === undefined
 					? "—"
@@ -414,14 +414,14 @@ function Panel({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="bg-card border border-border rounded-sm overflow-hidden">
+		<div className="rounded-lg border border-border bg-card overflow-hidden">
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between gap-2">
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 					{icon}
 					{title}
 				</h3>
 				{badge && (
-					<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 tabular-nums">
+					<span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 tabular-nums">
 						{badge}
 					</span>
 				)}
@@ -447,13 +447,13 @@ function Row({
 	return (
 		<div className="px-3 py-1.5 flex items-center justify-between gap-2">
 			<span
-				className={cn("text-xs text-foreground truncate", mono && "font-mono text-[11px]")}
+				className={cn("text-xs text-foreground truncate", mono && "font-mono text-xs")}
 				title={flagged ? flagTitle : label}
 			>
 				{label}
 				{flagged && <span className="ml-1.5 text-amber-500">⚠</span>}
 			</span>
-			<span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{value}</span>
+			<span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{value}</span>
 		</div>
 	);
 }
@@ -463,7 +463,7 @@ function QualityBar({ label, value }: { label: string; value: number }) {
 		<div className="px-3 py-1.5">
 			<div className="flex items-center justify-between mb-1">
 				<span className="text-xs text-foreground">{label}</span>
-				<span className="text-[10px] text-muted-foreground tabular-nums">{value}%</span>
+				<span className="text-[11px] text-muted-foreground tabular-nums">{value}%</span>
 			</div>
 			<div className="h-1 bg-muted rounded-full overflow-hidden">
 				<div className="h-full bg-primary/60 rounded-full" style={{ width: `${value}%` }} />
@@ -474,5 +474,5 @@ function QualityBar({ label, value }: { label: string; value: number }) {
 
 function EmptyHint({ show, children }: { show: boolean; children: React.ReactNode }) {
 	if (!show) return null;
-	return <p className="px-3 py-4 text-[11px] text-muted-foreground text-center">{children}</p>;
+	return <p className="px-3 py-4 text-xs text-muted-foreground text-center">{children}</p>;
 }
