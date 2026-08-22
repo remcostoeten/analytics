@@ -131,7 +131,7 @@
     },
     "packages/analytics-manager": {
       "name": "@remcostoeten/analytics-manager",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@remcostoeten/analytics": "workspace:*",
         "@types/node": "^25.2.3",
