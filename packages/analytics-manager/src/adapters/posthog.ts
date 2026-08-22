@@ -6,7 +6,6 @@ type PosthogConfig = {
 	capture_pageview?: boolean;
 	autocapture?: boolean;
 	disable_session_recording?: boolean;
-	loaded?: (client: PosthogClient) => void;
 };
 
 export type PosthogClient = {

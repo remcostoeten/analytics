@@ -5,12 +5,14 @@ type AnyAnalytics = Analytics<EventMap, AdapterMap>;
 
 const AnalyticsContext = createContext<AnyAnalytics | null>(null);
 
-type ProviderProps = {
-	analytics: Analytics<never, never> | AnyAnalytics;
+type ProviderProps<TEvents extends EventMap, TAdapters extends AdapterMap> = {
+	analytics: Analytics<TEvents, TAdapters>;
 	children?: ReactNode;
 };
 
-export function AnalyticsProvider(props: ProviderProps) {
+export function AnalyticsProvider<TEvents extends EventMap, TAdapters extends AdapterMap>(
+	props: ProviderProps<TEvents, TAdapters>,
+) {
 	return createElement(
 		AnalyticsContext.Provider,
 		{ value: props.analytics as AnyAnalytics },
