@@ -3,7 +3,10 @@
 	"compilerOptions": {
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"types": ["node", "bun-types"],
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"paths": {
+			"@remcostoeten/analytics": ["../sdk/src/index.ts"]
+		}
 	},
 	"include": ["src/**/*.ts", "__tests__/**/*.ts", "__tests__/**/*.tsx"],
 	"exclude": ["node_modules", "dist"]

@@ -66,11 +66,7 @@ type RankRow = {
 	onClick?: () => void;
 };
 
-export function GeoDetails({
-	data,
-	className,
-	onCountrySelect,
-}: GeoDetailsProps) {
+export function GeoDetails({ data, className, onCountrySelect }: GeoDetailsProps) {
 	const [expandedCity, setExpandedCity] = useState<string | null>(null);
 	const searchParams = useSearchParams();
 	const timeRange = searchParams.get("timeRange");
@@ -88,27 +84,19 @@ export function GeoDetails({
 	const regions = data?.regions ?? [];
 	const cities = data?.cities ?? [];
 	const quality = data?.quality;
-	const hasData =
-		countries.length > 0 || regions.length > 0 || cities.length > 0;
+	const hasData = countries.length > 0 || regions.length > 0 || cities.length > 0;
 
 	if (!hasData) {
 		return (
-			<div
-				className={cn(
-					"rounded-lg border border-border bg-card",
-					className,
-				)}
-			>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="border-b border-border px-3 py-2">
-					<h3 className="text-xs font-medium text-foreground">
-						Location Detail
-					</h3>
+					<h3 className="text-xs font-medium text-foreground">Location Detail</h3>
 				</div>
 				<div className="flex items-center gap-2.5 px-3 py-3">
 					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
 					<p className="text-xs text-muted-foreground">
-						No detailed location data yet — city and region
-						breakdowns appear once geo-enriched events arrive.
+						No detailed location data yet — city and region breakdowns appear once geo-enriched
+						events arrive.
 					</p>
 				</div>
 			</div>
@@ -116,15 +104,11 @@ export function GeoDetails({
 	}
 
 	return (
-		<div
-			className={cn("rounded-lg border border-border bg-card", className)}
-		>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="flex items-center justify-between border-b border-border px-3 py-2">
 				<div className="flex items-center gap-2">
 					<Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
-					<h3 className="text-xs font-medium text-foreground">
-						Location Detail
-					</h3>
+					<h3 className="text-xs font-medium text-foreground">Location Detail</h3>
 				</div>
 				<span className="text-[11px] text-muted-foreground tabular-nums">
 					{quality?.total.toLocaleString() ?? 0} events
@@ -134,15 +118,8 @@ export function GeoDetails({
 			{quality && quality.total > 0 && (
 				<div className="grid grid-cols-3 gap-1 border-b border-border p-2">
 					<QualityPill label="Country" value={quality.countryKnown} />
-					{quality.regionKnown > 0 && (
-						<QualityPill
-							label="Region"
-							value={quality.regionKnown}
-						/>
-					)}
-					{quality.cityKnown > 0 && (
-						<QualityPill label="City" value={quality.cityKnown} />
-					)}
+					{quality.regionKnown > 0 && <QualityPill label="Region" value={quality.regionKnown} />}
+					{quality.cityKnown > 0 && <QualityPill label="City" value={quality.cityKnown} />}
 				</div>
 			)}
 
@@ -163,24 +140,14 @@ export function GeoDetails({
 								const key = `${city.city}-${city.region}-${city.country}`;
 								const expanded = expandedCity === key;
 								const cityName = labelText(city.city);
-								const regionName = city.region
-									? labelText(city.region)
-									: null;
+								const regionName = city.region ? labelText(city.region) : null;
 								const countryName = labelText(city.country);
 								return (
-									<Collapsible
-										key={key}
-										open={expanded}
-										asChild
-									>
+									<Collapsible key={key} open={expanded} asChild>
 										<div className="px-2 py-2">
 											<button
 												type="button"
-												onClick={() =>
-													setExpandedCity(
-														expanded ? null : key,
-													)
-												}
+												onClick={() => setExpandedCity(expanded ? null : key)}
 												className="-mx-2 -my-2 flex w-[calc(100%+1rem)] items-center gap-2 px-2 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted/40 active:scale-[0.99]"
 											>
 												<MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -189,51 +156,32 @@ export function GeoDetails({
 														{cityName}
 													</div>
 													<div className="truncate text-[11px] text-muted-foreground">
-														{[
-															regionName,
-															countryName,
-														]
-															.filter(Boolean)
-															.join(", ")}
+														{[regionName, countryName].filter(Boolean).join(", ")}
 													</div>
 												</div>
 												<div className="text-right">
 													<div className="text-xs font-medium tabular-nums text-foreground">
 														{city.count.toLocaleString()}
 													</div>
-													<div className="text-[11px] text-muted-foreground">
-														events
-													</div>
+													<div className="text-[11px] text-muted-foreground">events</div>
 												</div>
 												<ChevronDown
 													className={cn(
 														"h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ease-out",
-														expanded &&
-															"rotate-180",
+														expanded && "rotate-180",
 													)}
 												/>
 											</button>
 											<CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up motion-reduce:animate-none">
 												<div className="mt-2 grid grid-cols-2 gap-2 pl-5">
-													<MiniStat
-														label="Visitors"
-														value={city.visitors}
-													/>
-													<MiniStat
-														label="Sessions"
-														value={city.sessions}
-													/>
+													<MiniStat label="Visitors" value={city.visitors} />
+													<MiniStat label="Sessions" value={city.sessions} />
 												</div>
 												<Link
-													href={explorerHref(
-														city.country,
-														city.region,
-													)}
+													href={explorerHref(city.country, city.region)}
 													className="mt-2 ml-5 inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
 												>
-													Explore{" "}
-													{regionName ?? countryName}{" "}
-													in geo view
+													Explore {regionName ?? countryName} in geo view
 													<ArrowUpRight className="h-3 w-3" />
 												</Link>
 											</CollapsibleContent>
@@ -253,10 +201,7 @@ export function GeoDetails({
 								label: labelText(region.region),
 								meta: labelText(region.country),
 								value: region.count,
-								href: explorerHref(
-									region.country,
-									region.region,
-								),
+								href: explorerHref(region.country, region.region),
 							}))}
 						/>
 					)}
@@ -267,12 +212,8 @@ export function GeoDetails({
 								label: labelText(country.country),
 								meta: `${country.visitors.toLocaleString()} visitors`,
 								value: country.count,
-								href: onCountrySelect
-									? undefined
-									: explorerHref(country.country),
-								onClick: onCountrySelect
-									? () => onCountrySelect(country.country)
-									: undefined,
+								href: onCountrySelect ? undefined : explorerHref(country.country),
+								onClick: onCountrySelect ? () => onCountrySelect(country.country) : undefined,
 							}))}
 						/>
 					)}
@@ -294,9 +235,7 @@ function QualityPill({ label, value }: { label: string; value: number }) {
 	return (
 		<div className="rounded-sm bg-muted/40 px-2 py-1">
 			<div className="text-[11px] text-muted-foreground">{label}</div>
-			<div className="text-xs font-medium tabular-nums text-foreground">
-				{value.toFixed(1)}%
-			</div>
+			<div className="text-xs font-medium tabular-nums text-foreground">{value.toFixed(1)}%</div>
 		</div>
 	);
 }
@@ -336,12 +275,8 @@ function RankRowItem({ row }: { row: RankRow }) {
 	const content = (
 		<div className="flex items-center justify-between gap-2">
 			<div className="min-w-0">
-				<div className="truncate text-xs font-medium text-foreground">
-					{row.label}
-				</div>
-				<div className="truncate text-[11px] text-muted-foreground">
-					{row.meta}
-				</div>
+				<div className="truncate text-xs font-medium text-foreground">{row.label}</div>
+				<div className="truncate text-[11px] text-muted-foreground">{row.meta}</div>
 			</div>
 			<div className="flex items-center gap-1">
 				<div className="text-xs font-medium tabular-nums text-foreground">
@@ -356,10 +291,7 @@ function RankRowItem({ row }: { row: RankRow }) {
 
 	if (row.href) {
 		return (
-			<Link
-				href={row.href}
-				className={cn(rankRowClass, rankRowInteractiveClass)}
-			>
+			<Link href={row.href} className={cn(rankRowClass, rankRowInteractiveClass)}>
 				{content}
 			</Link>
 		);
