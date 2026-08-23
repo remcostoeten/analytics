@@ -1,6 +1,6 @@
 {
 	"name": "@remcostoeten/analytics-manager",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Typed, fluent analytics orchestration layer on top of @remcostoeten/analytics, PostHog and Vercel Analytics",
 	"keywords": [
 		"adapters",
