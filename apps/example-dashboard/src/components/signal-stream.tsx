@@ -41,6 +41,15 @@ function stringMeta(value: unknown): string | null {
 	return null;
 }
 
+function hostFromOrigin(origin: string | null): string | null {
+	if (!origin) return null;
+	try {
+		return new URL(origin).host;
+	} catch {
+		return origin.replace(/^https?:\/\//, "");
+	}
+}
+
 function numberMeta(value: unknown): number | null {
 	if (typeof value === "number" && Number.isFinite(value)) return value;
 	if (typeof value === "string" && value.length > 0) {
@@ -83,6 +92,7 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 	const region = stringMeta(metadata.region);
 	const userAgent = stringMeta(metadata.userAgent);
 	const path = stringMeta(metadata.path);
+	const host = stringMeta(metadata.host) ?? hostFromOrigin(stringMeta(metadata.origin));
 	const country = stringMeta(metadata.country);
 	const city = stringMeta(metadata.city);
 	const browser = stringMeta(metadata.browser);
@@ -104,6 +114,7 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 		requestId ||
 		userAgent ||
 		path ||
+		host ||
 		country ||
 		browser ||
 		os ||
@@ -137,9 +148,19 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-1.5">
 							<p className="text-xs font-medium text-foreground leading-tight">{signal.category}</p>
-							{(endpoint || path) && (
-								<code className="text-[10px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono truncate max-w-[140px]">
-									{endpoint || path}
+							{(endpoint || path || host) && (
+								<code
+									className="text-[10px] px-1 py-0.5 bg-muted rounded text-muted-foreground font-mono truncate max-w-[200px]"
+									title={endpoint || `${host ?? ""}${path ?? ""}`}
+								>
+									{endpoint ? (
+										endpoint
+									) : (
+										<>
+											{host && <span className="text-muted-foreground/60">{host}</span>}
+											{path}
+										</>
+									)}
 								</code>
 							)}
 							{country && <span className="text-xs leading-none">{getFlagEmoji(country)}</span>}
@@ -268,11 +289,12 @@ function SignalItem({ signal, isNew, isExpanded, onToggle }: SignalItemProps) {
 										</span>
 									</div>
 								)}
-								{path && (
+								{(path || host) && (
 									<div className="flex items-center gap-2">
 										<Server className="h-3 w-3 text-muted-foreground shrink-0" />
 										<span className="text-muted-foreground">Page:</span>
 										<code className="text-foreground font-mono bg-background/50 px-1 rounded break-all">
+											{host && <span className="text-muted-foreground">{host}</span>}
 											{path}
 										</code>
 									</div>
@@ -394,6 +416,7 @@ export function SignalStream({
 					.toLowerCase()
 					.includes(searchLower);
 				const matchesPath = signal.metadata?.path?.toString().toLowerCase().includes(searchLower);
+				const matchesHost = signal.metadata?.host?.toString().toLowerCase().includes(searchLower);
 				const matchesType = signal.type.toLowerCase().includes(searchLower);
 
 				if (
@@ -401,6 +424,7 @@ export function SignalStream({
 					!matchesMessage &&
 					!matchesEndpoint &&
 					!matchesPath &&
+					!matchesHost &&
 					!matchesType
 				) {
 					return false;

@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
@@ -49,6 +50,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { GITHUB_REPO_URL, GithubMark } from "@/components/github-link";
 
 type ProjectOption = {
 	id: string;
@@ -207,11 +209,13 @@ export function AppSidebar() {
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								size="lg"
-								className="h-9 text-xs font-medium"
+								className="h-9 px-3 text-xs font-medium"
 								tooltip="Search"
 								onClick={openSearch}
 							>
-								<Search className="size-3.5" />
+								<span className="flex size-6 shrink-0 items-center justify-center rounded border border-border">
+									<Search className="size-3.5 text-muted-foreground" />
+								</span>
 								<span className="flex-1 text-left">Search</span>
 								<kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
 									⌘K
@@ -273,6 +277,26 @@ export function AppSidebar() {
 						</SidebarGroupContent>
 					</SidebarGroup>
 				</SidebarContent>
+
+				<SidebarFooter className="border-t border-border px-2 py-2">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								tooltip="View on GitHub"
+								className="h-8 text-xs font-medium"
+							>
+								<a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+									<GithubMark className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+									<span className="text-foreground">View on GitHub</span>
+									<span className="ml-auto text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+										remcostoeten/analytics
+									</span>
+								</a>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarFooter>
 			</Sidebar>
 
 			<Dialog open={showCustomPicker} onOpenChange={setShowCustomPicker}>
@@ -420,7 +444,7 @@ function MotionSidebarMenu({ items }: { items: MotionMenuItem[] }) {
 							asChild
 							isActive={item.isActive}
 							tooltip={item.label}
-							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent"
+							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent focus-visible:ring-1 focus-visible:ring-foreground/15 focus-visible:bg-sidebar-accent/40"
 						>
 							<Link
 								href={item.href}

@@ -356,6 +356,7 @@ export function GeoMap({ data, cityPoints, className, onCountryClick }: Props) {
 									<Geography
 										key={geo.rsmKey}
 										geography={geo}
+										tabIndex={-1}
 										fill={hasData ? "var(--color-primary)" : "var(--color-muted)"}
 										stroke="var(--color-border)"
 										strokeWidth={0.5}

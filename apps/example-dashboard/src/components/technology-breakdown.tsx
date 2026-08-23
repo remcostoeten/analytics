@@ -140,7 +140,7 @@ export function TechnologyBreakdown({
 								"flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium transition-colors whitespace-nowrap",
 								activeTab === tab.id
 									? "text-foreground border-b-2 border-primary -mb-px"
-									: "text-muted-foreground hover:text-foreground",
+									: "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
 								!hasData && "opacity-50",
 							)}
 						>

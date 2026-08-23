@@ -7,10 +7,10 @@ import type { Route } from "next";
 import { ChevronRight, Radar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GeoSignal } from "@/lib/queries/signals";
+import { geoScopeParams, type GeoScope } from "@/lib/geo-scope";
 
 type Props = {
-	timeRange: string;
-	projectId?: string | null;
+	scope: GeoScope;
 	className?: string;
 };
 
@@ -27,12 +27,11 @@ async function fetcher(url: string) {
 	return info;
 }
 
-export function SignalsPanel({ timeRange, projectId, className }: Props) {
-	const query = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-signals", timeRange });
-		if (projectId) params.set("projectId", projectId);
-		return `/api/analytics?${params.toString()}`;
-	}, [timeRange, projectId]);
+export function SignalsPanel({ scope, className }: Props) {
+	const query = useMemo(
+		() => `/api/analytics?${geoScopeParams("geo-signals", scope).toString()}`,
+		[scope],
+	);
 
 	const { data: signals, isLoading } = useSWR<GeoSignal[]>(query, fetcher, {
 		keepPreviousData: true,

@@ -53,7 +53,7 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors",
 						activeTab === "entry"
 							? "text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500 -mb-px bg-emerald-500/5"
-							: "text-muted-foreground hover:text-foreground",
+							: "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
 					)}
 				>
 					<LogIn className="h-3 w-3" />
@@ -65,7 +65,7 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors",
 						activeTab === "exit"
 							? "text-red-600 dark:text-red-400 border-b-2 border-red-500 -mb-px bg-red-500/5"
-							: "text-muted-foreground hover:text-foreground",
+							: "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
 					)}
 				>
 					<LogOut className="h-3 w-3" />

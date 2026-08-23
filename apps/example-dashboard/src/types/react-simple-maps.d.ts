@@ -35,6 +35,7 @@ declare module "react-simple-maps" {
 		fill?: string;
 		stroke?: string;
 		strokeWidth?: number;
+		tabIndex?: number;
 		style?: {
 			default?: CSSProperties;
 			hover?: CSSProperties;

@@ -50,7 +50,7 @@ export function DashboardSkeleton() {
 
 export function GeoSkeleton() {
 	return (
-		<div className="mx-auto flex min-h-svh w-full max-w-[1400px] flex-col gap-3 p-3 md:p-4">
+		<div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 p-3 md:p-4">
 			<header className="flex items-center justify-between gap-3">
 				<Skeleton className="h-5 w-52" />
 				<Skeleton className="h-7 w-20" />

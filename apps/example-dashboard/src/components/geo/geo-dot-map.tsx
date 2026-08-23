@@ -84,6 +84,7 @@ export function GeoDotMap({ points, breakdown, scopedCountry, onCountryClick, cl
 									<Geography
 										key={geo.rsmKey}
 										geography={geo}
+										tabIndex={-1}
 										fill={
 											isScoped
 												? "var(--color-primary)"

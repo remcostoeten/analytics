@@ -5,21 +5,14 @@ import useSWR from "swr";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
-import { ArrowLeft, ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "lucide-react";
+import { ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
 import { GeoDotMap } from "./geo-dot-map";
 import { SignalsPanel } from "./signals-panel";
 import { regionName } from "@/lib/geo-names";
 import type { GeoExplorerData, GeoVisitorRow } from "@/lib/queries/geo";
-
-const TIME_RANGES = [
-	{ value: "24h", label: "24 hours" },
-	{ value: "7d", label: "7 days" },
-	{ value: "30d", label: "30 days" },
-	{ value: "90d", label: "90 days" },
-	{ value: "all", label: "All time" },
-];
+import { geoScopeParams, readGeoScope } from "@/lib/geo-scope";
 
 async function fetcher(url: string) {
 	const response = await fetch(url);
@@ -41,16 +34,14 @@ export function GeoExplorer() {
 
 	const country = searchParams.get("country");
 	const region = searchParams.get("region");
-	const timeRange = searchParams.get("timeRange") || "30d";
-	const projectId = searchParams.get("projectId");
+	const scope = useMemo(() => readGeoScope(searchParams), [searchParams]);
 
 	const query = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-explorer", timeRange });
+		const params = geoScopeParams("geo-explorer", scope);
 		if (country) params.set("country", country);
 		if (region) params.set("region", region);
-		if (projectId) params.set("projectId", projectId);
 		return `/api/analytics?${params.toString()}`;
-	}, [country, region, timeRange, projectId]);
+	}, [country, region, scope]);
 
 	const { data, isLoading, error } = useSWR<GeoExplorerData>(query, fetcher, {
 		keepPreviousData: true,
@@ -58,12 +49,11 @@ export function GeoExplorer() {
 	});
 
 	const visitorsQuery = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-visitors", timeRange });
+		const params = geoScopeParams("geo-visitors", scope);
 		if (country) params.set("country", country);
 		if (region) params.set("region", region);
-		if (projectId) params.set("projectId", projectId);
 		return `/api/analytics?${params.toString()}`;
-	}, [country, region, timeRange, projectId]);
+	}, [country, region, scope]);
 
 	const { data: visitors, isLoading: visitorsLoading } = useSWR<GeoVisitorRow[]>(
 		visitorsQuery,
@@ -85,13 +75,6 @@ export function GeoExplorer() {
 		router.push(`${pathname}?${params.toString()}` as Route);
 	};
 
-	const setTimeRange = (range: string) => {
-		const params = new URLSearchParams(searchParams.toString());
-		if (range === "30d") params.delete("timeRange");
-		else params.set("timeRange", range);
-		router.push(`${pathname}?${params.toString()}` as Route);
-	};
-
 	const drill = (key: string) => {
 		if (!country) navigate({ country: key });
 		else if (!region) navigate({ region: key });
@@ -99,18 +82,15 @@ export function GeoExplorer() {
 
 	const regionDisplay = region ? regionName(country, region) : null;
 
+	const filteredDashboardHref = useMemo(() => {
+		const params = new URLSearchParams(searchParams.toString());
+		return `/?${params.toString()}` as Route;
+	}, [searchParams]);
+
 	return (
 		<div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 p-3 md:p-4">
 			<header className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="flex items-center gap-2 min-w-0">
-					<Link
-						href="/"
-						className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-					>
-						<ArrowLeft className="h-3.5 w-3.5" />
-						Dashboard
-					</Link>
-					<span className="text-muted-foreground/40">|</span>
 					<nav className="flex items-center gap-1 text-sm min-w-0" aria-label="Geo drill-down">
 						<button
 							onClick={() => navigate({ country: null })}
@@ -145,28 +125,14 @@ export function GeoExplorer() {
 						)}
 					</nav>
 				</div>
-				<div className="flex items-center gap-2">
-					{country && (
-						<Link
-							href={`/?country=${country}${region ? `&region=${encodeURIComponent(region)}` : ""}`}
-							className="text-xs px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors"
-						>
-							View filtered dashboard
-						</Link>
-					)}
-					<select
-						value={timeRange}
-						onChange={(e) => setTimeRange(e.target.value)}
-						className="text-xs rounded-lg border border-border bg-card px-2 py-1.5 text-foreground"
-						aria-label="Time range"
+				{country && (
+					<Link
+						href={filteredDashboardHref}
+						className="text-xs px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors"
 					>
-						{TIME_RANGES.map((r) => (
-							<option key={r.value} value={r.value}>
-								{r.label}
-							</option>
-						))}
-					</select>
-				</div>
+						View filtered dashboard
+					</Link>
+				)}
 			</header>
 
 			{error && (
@@ -259,7 +225,7 @@ export function GeoExplorer() {
 				</div>
 			</section>
 
-			<SignalsPanel timeRange={timeRange} projectId={projectId} />
+			<SignalsPanel scope={scope} />
 
 			<section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 				<Panel

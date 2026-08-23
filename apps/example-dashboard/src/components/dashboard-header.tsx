@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight, CircleDot } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { GithubLink } from "@/components/github-link";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -66,7 +67,10 @@ export function DashboardHeader({
 
 			<div className="flex items-center gap-1.5">
 				<LivePill count={liveVisitors} />
-				<TypeFilterDropdown value={typeFilter} onChange={onTypeFilterChange} />
+				{onTypeFilterChange && (
+					<TypeFilterDropdown value={typeFilter} onChange={onTypeFilterChange} />
+				)}
+				<GithubLink />
 				<AuthUser login={authUser} authEnabled={authEnabled} />
 			</div>
 		</header>
