@@ -24,13 +24,13 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">Entry / Exit Pages</h3>
 				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No data available</p>
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+					<p className="text-xs text-muted-foreground">No data available</p>
 				</div>
 			</div>
 		);
@@ -40,7 +40,7 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 	const maxCount = Math.max(...activeData.map((p) => p.count), 1);
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h3 className="text-xs font-medium text-foreground">Entry / Exit Pages</h3>
 			</div>
@@ -50,10 +50,10 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 				<button
 					onClick={() => setActiveTab("entry")}
 					className={cn(
-						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors",
+						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors",
 						activeTab === "entry"
 							? "text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500 -mb-px bg-emerald-500/5"
-							: "text-muted-foreground hover:text-foreground",
+							: "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
 					)}
 				>
 					<LogIn className="h-3 w-3" />
@@ -62,10 +62,10 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 				<button
 					onClick={() => setActiveTab("exit")}
 					className={cn(
-						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors",
+						"flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors",
 						activeTab === "exit"
 							? "text-red-600 dark:text-red-400 border-b-2 border-red-500 -mb-px bg-red-500/5"
-							: "text-muted-foreground hover:text-foreground",
+							: "text-muted-foreground hover:text-foreground focus-visible:text-foreground",
 					)}
 				>
 					<LogOut className="h-3 w-3" />
@@ -77,16 +77,16 @@ export function EntryExitPages({ data, className }: EntryExitPagesProps) {
 			<div className="p-3 space-y-2">
 				{activeData.length === 0 ? (
 					<div className="py-4 text-center">
-						<p className="text-[10px] text-muted-foreground">No pages recorded</p>
+						<p className="text-[11px] text-muted-foreground">No pages recorded</p>
 					</div>
 				) : (
 					activeData.slice(0, 8).map((page) => (
 						<div key={page.path} className="space-y-1">
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] text-foreground font-mono truncate max-w-[180px]">
+								<span className="text-[11px] text-foreground font-mono truncate max-w-[180px]">
 									{page.path}
 								</span>
-								<span className="text-[10px] text-muted-foreground tabular-nums">
+								<span className="text-[11px] text-muted-foreground tabular-nums">
 									{page.count.toLocaleString()}
 								</span>
 							</div>

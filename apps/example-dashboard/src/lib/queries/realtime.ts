@@ -12,7 +12,7 @@ export async function getRecentEvents(
 ): Promise<SignalEvent[]> {
 	const range = getRange(from, to);
 	const results =
-		await sql`SELECT id, type, path, ts, country, city, device_type, bot_detected, session_id, visitor_id, referrer, meta FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
+		await sql`SELECT id, type, path, host, origin, ts, country, city, device_type, bot_detected, session_id, visitor_id, referrer, meta FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${range.from} AND ts <= ${range.to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ORDER BY ts DESC LIMIT ${limit}`;
 	return results.map((r) => {
 		const meta = (r.meta as Record<string, unknown>) || {};
 		const isBot = (r as any).bot_detected === true || meta.botDetected === true;
@@ -31,6 +31,8 @@ export async function getRecentEvents(
 			metadata: {
 				...meta,
 				path: r.path,
+				host: r.host,
+				origin: r.origin,
 				country: COUNTRY_NAME_TO_ISO[r.country] || r.country,
 				city: r.city,
 				deviceType: r.device_type,

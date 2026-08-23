@@ -35,7 +35,7 @@ export function DataTable<T extends object>({
 	const hasData = data && data.length > 0;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			{title && (
 				<div className="px-3 py-2 border-b border-border">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
@@ -52,14 +52,14 @@ export function DataTable<T extends object>({
 						))}
 					</div>
 				) : (
-					<div className="p-6 text-center">
-						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-						<p className="text-[11px] text-muted-foreground">No data available</p>
+					<div className="flex items-center gap-2.5 px-3 py-3">
+						<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+						<p className="text-xs text-muted-foreground">No data available</p>
 					</div>
 				)
 			) : (
 				<div className="overflow-x-auto">
-					<table className="w-full text-[11px]">
+					<table className="w-full table-fixed text-xs">
 						<thead>
 							<tr className="border-b border-border bg-muted/30">
 								{columns.map((col) => (
@@ -137,7 +137,7 @@ export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps
 					label: "Domain",
 					width: "120px",
 					render: (v) => (
-						<span className="text-[10px] truncate block text-muted-foreground">
+						<span className="text-[11px] truncate block text-muted-foreground">
 							{(v as string) || "—"}
 						</span>
 					),
@@ -146,7 +146,10 @@ export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps
 					key: "path",
 					label: "Path",
 					render: (_, row) => (
-						<span className="font-mono text-[10px] truncate block max-w-[200px]">
+						<span
+							className="block truncate font-mono text-[11px]"
+							title={(row as ContentMetric).path}
+						>
 							{(row as ContentMetric).path}
 						</span>
 					),
@@ -155,12 +158,14 @@ export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps
 					key: "views",
 					label: "Views",
 					align: "right",
+					width: "76px",
 					render: (v) => Number(v).toLocaleString(),
 				},
 				{
 					key: "uniqueVisitors",
 					label: "Visitors",
 					align: "right",
+					width: "76px",
 					render: (v) => Number(v).toLocaleString(),
 				},
 			]}
@@ -251,7 +256,7 @@ export function GeoTable({ data, className }: GeoTableProps) {
 						return (
 							<div className="flex items-center gap-1.5">
 								{geo.countryCode && (
-									<span className="text-[10px]">{getFlagEmoji(geo.countryCode)}</span>
+									<span className="text-[11px]">{getFlagEmoji(geo.countryCode)}</span>
 								)}
 								<span className="truncate max-w-[120px]">{geo.country}</span>
 							</div>

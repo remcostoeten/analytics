@@ -52,8 +52,7 @@ async function DashboardData() {
 			data={data}
 			databaseReady={databaseReady}
 			databaseIssue={databaseIssue}
-			breadcrumbs={[{ label: "Analytics", href: "/" }, { label: "Live operations" }]}
-			description="Real-time sessions, regional load, and ingest health across your edge network"
+			breadcrumbs={[{ label: "Analytics", href: "/" }]}
 			authUser={authUser}
 			authEnabled={isAuthEnabled()}
 		/>
@@ -63,7 +62,11 @@ async function DashboardData() {
 export default function DashboardPage() {
 	return (
 		<SidebarProvider>
-			<Suspense fallback={<div className="w-(--sidebar-width) shrink-0 border-r border-border bg-sidebar" />}>
+			<Suspense
+				fallback={
+					<div className="w-(--sidebar-width) shrink-0 border-r border-border bg-sidebar" />
+				}
+			>
 				<AppSidebar />
 			</Suspense>
 			<SidebarInset>

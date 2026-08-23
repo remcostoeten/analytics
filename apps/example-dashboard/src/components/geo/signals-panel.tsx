@@ -7,10 +7,10 @@ import type { Route } from "next";
 import { ChevronRight, Radar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GeoSignal } from "@/lib/queries/signals";
+import { geoScopeParams, type GeoScope } from "@/lib/geo-scope";
 
 type Props = {
-	timeRange: string;
-	projectId?: string | null;
+	scope: GeoScope;
 	className?: string;
 };
 
@@ -27,12 +27,11 @@ async function fetcher(url: string) {
 	return info;
 }
 
-export function SignalsPanel({ timeRange, projectId, className }: Props) {
-	const query = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-signals", timeRange });
-		if (projectId) params.set("projectId", projectId);
-		return `/api/analytics?${params.toString()}`;
-	}, [timeRange, projectId]);
+export function SignalsPanel({ scope, className }: Props) {
+	const query = useMemo(
+		() => `/api/analytics?${geoScopeParams("geo-signals", scope).toString()}`,
+		[scope],
+	);
 
 	const { data: signals, isLoading } = useSWR<GeoSignal[]>(query, fetcher, {
 		keepPreviousData: true,
@@ -40,13 +39,13 @@ export function SignalsPanel({ timeRange, projectId, className }: Props) {
 	});
 
 	return (
-		<section className={cn("bg-card border border-border rounded-sm overflow-hidden", className)}>
+		<section className={cn("rounded-lg border border-border bg-card overflow-hidden", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 					<Radar className="h-3.5 w-3.5" />
 					Signals
 				</h2>
-				<span className="text-[10px] text-muted-foreground tabular-nums">
+				<span className="text-[11px] text-muted-foreground tabular-nums">
 					{signals?.length ?? 0} in range
 				</span>
 			</div>
@@ -59,7 +58,7 @@ export function SignalsPanel({ timeRange, projectId, className }: Props) {
 					>
 						<span
 							className={cn(
-								"text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 tabular-nums",
+								"text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 tabular-nums",
 								SEVERITY_STYLES[signal.severity],
 							)}
 						>
@@ -67,7 +66,7 @@ export function SignalsPanel({ timeRange, projectId, className }: Props) {
 						</span>
 						<span className="min-w-0 flex-1">
 							<span className="block text-xs text-foreground truncate">{signal.title}</span>
-							<span className="block text-[10px] text-muted-foreground truncate">
+							<span className="block text-[11px] text-muted-foreground truncate">
 								{signal.description}
 							</span>
 						</span>

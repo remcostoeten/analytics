@@ -18,7 +18,9 @@ type UTMCampaignsTableProps = {
 };
 
 function Badge({ value, color }: { value: string; color: string }) {
-	return <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-medium", color)}>{value}</span>;
+	return (
+		<span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", color)}>{value}</span>
+	);
 }
 
 const mediumColors: Record<string, string> = {
@@ -34,15 +36,15 @@ const mediumColors: Record<string, string> = {
 export function UTMCampaignsTable({ data, className }: UTMCampaignsTableProps) {
 	if (!data || data.length === 0) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border flex items-center gap-1.5">
 					<Tag className="h-3.5 w-3.5 text-muted-foreground" />
 					<h3 className="text-xs font-medium text-foreground">UTM Campaigns</h3>
 				</div>
-				<div className="p-6 text-center">
-					<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-					<p className="text-[11px] text-muted-foreground">No campaign traffic in this period</p>
-					<p className="text-[10px] text-muted-foreground/60 mt-1">
+				<div className="flex items-center gap-2.5 px-3 py-3">
+					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+					<p className="text-xs text-muted-foreground">No campaign traffic in this period</p>
+					<p className="text-[11px] text-muted-foreground/60 mt-1">
 						Add <code className="font-mono">?utm_source=…</code> to track campaigns
 					</p>
 				</div>
@@ -53,29 +55,29 @@ export function UTMCampaignsTable({ data, className }: UTMCampaignsTableProps) {
 	const maxVisits = Math.max(...data.map((d) => d.visits), 1);
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<div className="flex items-center gap-1.5">
 					<Tag className="h-3.5 w-3.5 text-muted-foreground" />
 					<h3 className="text-xs font-medium text-foreground">UTM Campaigns</h3>
 				</div>
-				<span className="text-[10px] text-muted-foreground">{data.length} sources</span>
+				<span className="text-[11px] text-muted-foreground">{data.length} sources</span>
 			</div>
 
 			<div className="overflow-x-auto">
-				<table className="w-full text-[11px]">
+				<table className="w-full text-xs">
 					<thead>
 						<tr className="border-b border-border bg-muted/20">
-							<th className="px-3 py-1.5 text-left text-[10px] font-medium text-muted-foreground">
+							<th className="px-3 py-1.5 text-left text-[11px] font-medium text-muted-foreground">
 								Source / Medium
 							</th>
-							<th className="px-3 py-1.5 text-left text-[10px] font-medium text-muted-foreground">
+							<th className="px-3 py-1.5 text-left text-[11px] font-medium text-muted-foreground">
 								Campaign
 							</th>
-							<th className="px-3 py-1.5 text-right text-[10px] font-medium text-muted-foreground">
+							<th className="px-3 py-1.5 text-right text-[11px] font-medium text-muted-foreground">
 								Sessions
 							</th>
-							<th className="px-3 py-1.5 text-right text-[10px] font-medium text-muted-foreground">
+							<th className="px-3 py-1.5 text-right text-[11px] font-medium text-muted-foreground">
 								Share
 							</th>
 						</tr>

@@ -5,21 +5,14 @@ import useSWR from "swr";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
-import { ArrowLeft, ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "lucide-react";
+import { ChevronRight, Globe, MapPin, Network, Clock, Users2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatTimeAgo, getFlagEmoji } from "@/lib/format";
 import { GeoDotMap } from "./geo-dot-map";
 import { SignalsPanel } from "./signals-panel";
 import { regionName } from "@/lib/geo-names";
 import type { GeoExplorerData, GeoVisitorRow } from "@/lib/queries/geo";
-
-const TIME_RANGES = [
-	{ value: "24h", label: "24 hours" },
-	{ value: "7d", label: "7 days" },
-	{ value: "30d", label: "30 days" },
-	{ value: "90d", label: "90 days" },
-	{ value: "all", label: "All time" },
-];
+import { geoScopeParams, readGeoScope } from "@/lib/geo-scope";
 
 async function fetcher(url: string) {
 	const response = await fetch(url);
@@ -41,16 +34,14 @@ export function GeoExplorer() {
 
 	const country = searchParams.get("country");
 	const region = searchParams.get("region");
-	const timeRange = searchParams.get("timeRange") || "30d";
-	const projectId = searchParams.get("projectId");
+	const scope = useMemo(() => readGeoScope(searchParams), [searchParams]);
 
 	const query = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-explorer", timeRange });
+		const params = geoScopeParams("geo-explorer", scope);
 		if (country) params.set("country", country);
 		if (region) params.set("region", region);
-		if (projectId) params.set("projectId", projectId);
 		return `/api/analytics?${params.toString()}`;
-	}, [country, region, timeRange, projectId]);
+	}, [country, region, scope]);
 
 	const { data, isLoading, error } = useSWR<GeoExplorerData>(query, fetcher, {
 		keepPreviousData: true,
@@ -58,12 +49,11 @@ export function GeoExplorer() {
 	});
 
 	const visitorsQuery = useMemo(() => {
-		const params = new URLSearchParams({ metric: "geo-visitors", timeRange });
+		const params = geoScopeParams("geo-visitors", scope);
 		if (country) params.set("country", country);
 		if (region) params.set("region", region);
-		if (projectId) params.set("projectId", projectId);
 		return `/api/analytics?${params.toString()}`;
-	}, [country, region, timeRange, projectId]);
+	}, [country, region, scope]);
 
 	const { data: visitors, isLoading: visitorsLoading } = useSWR<GeoVisitorRow[]>(
 		visitorsQuery,
@@ -85,13 +75,6 @@ export function GeoExplorer() {
 		router.push(`${pathname}?${params.toString()}` as Route);
 	};
 
-	const setTimeRange = (range: string) => {
-		const params = new URLSearchParams(searchParams.toString());
-		if (range === "30d") params.delete("timeRange");
-		else params.set("timeRange", range);
-		router.push(`${pathname}?${params.toString()}` as Route);
-	};
-
 	const drill = (key: string) => {
 		if (!country) navigate({ country: key });
 		else if (!region) navigate({ region: key });
@@ -99,18 +82,15 @@ export function GeoExplorer() {
 
 	const regionDisplay = region ? regionName(country, region) : null;
 
+	const filteredDashboardHref = useMemo(() => {
+		const params = new URLSearchParams(searchParams.toString());
+		return `/?${params.toString()}` as Route;
+	}, [searchParams]);
+
 	return (
 		<div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 p-3 md:p-4">
 			<header className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="flex items-center gap-2 min-w-0">
-					<Link
-						href="/"
-						className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-					>
-						<ArrowLeft className="h-3.5 w-3.5" />
-						Dashboard
-					</Link>
-					<span className="text-muted-foreground/40">|</span>
 					<nav className="flex items-center gap-1 text-sm min-w-0" aria-label="Geo drill-down">
 						<button
 							onClick={() => navigate({ country: null })}
@@ -145,32 +125,18 @@ export function GeoExplorer() {
 						)}
 					</nav>
 				</div>
-				<div className="flex items-center gap-2">
-					{country && (
-						<Link
-							href={`/?country=${country}${region ? `&region=${encodeURIComponent(region)}` : ""}`}
-							className="text-xs px-2.5 py-1.5 rounded-sm border border-border bg-card hover:bg-muted text-foreground transition-colors"
-						>
-							View filtered dashboard
-						</Link>
-					)}
-					<select
-						value={timeRange}
-						onChange={(e) => setTimeRange(e.target.value)}
-						className="text-xs bg-card border border-border rounded-sm px-2 py-1.5 text-foreground"
-						aria-label="Time range"
+				{country && (
+					<Link
+						href={filteredDashboardHref}
+						className="text-xs px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground transition-colors"
 					>
-						{TIME_RANGES.map((r) => (
-							<option key={r.value} value={r.value}>
-								{r.label}
-							</option>
-						))}
-					</select>
-				</div>
+						View filtered dashboard
+					</Link>
+				)}
 			</header>
 
 			{error && (
-				<div className="bg-card border border-border rounded-sm p-4 text-sm text-muted-foreground">
+				<div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
 					Could not load geo data: {error.message}
 				</div>
 			)}
@@ -188,13 +154,13 @@ export function GeoExplorer() {
 			</section>
 
 			<section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-				<div className="lg:col-span-2 bg-card border border-border rounded-sm overflow-hidden">
+				<div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 						<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 							<MapPin className="h-3.5 w-3.5" />
 							{country ? "Visitor locations" : "Traffic map"}
 						</h2>
-						<span className="text-[10px] text-muted-foreground tabular-nums">
+						<span className="text-[11px] text-muted-foreground tabular-nums">
 							{data?.points.length ?? 0} location clusters
 						</span>
 					</div>
@@ -207,12 +173,12 @@ export function GeoExplorer() {
 					/>
 				</div>
 
-				<div className="bg-card border border-border rounded-sm overflow-hidden flex flex-col">
+				<div className="rounded-lg border border-border bg-card overflow-hidden flex flex-col">
 					<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 						<h2 className="text-xs font-medium text-foreground">
 							{levelLabel(data?.level ?? "world")}
 						</h2>
-						<span className="text-[10px] text-muted-foreground tabular-nums">
+						<span className="text-[11px] text-muted-foreground tabular-nums">
 							{data?.breakdown.length ?? 0}
 						</span>
 					</div>
@@ -243,7 +209,7 @@ export function GeoExplorer() {
 												<ChevronRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground/70 transition-colors shrink-0" />
 											)}
 										</span>
-										<span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+										<span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
 											{formatNumber(row.visitors)} visitors · {row.percentage.toFixed(1)}%
 										</span>
 									</div>
@@ -259,7 +225,7 @@ export function GeoExplorer() {
 				</div>
 			</section>
 
-			<SignalsPanel timeRange={timeRange} projectId={projectId} />
+			<SignalsPanel scope={scope} />
 
 			<section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 				<Panel
@@ -309,20 +275,20 @@ export function GeoExplorer() {
 					<QualityBar label="City" value={data?.quality.cityKnown ?? 0} />
 					<QualityBar label="Coordinates" value={data?.quality.coordsKnown ?? 0} />
 					<QualityBar label="Timezone" value={data?.quality.timezoneKnown ?? 0} />
-					<p className="px-3 pt-2 pb-1 text-[10px] text-muted-foreground leading-relaxed">
+					<p className="px-3 pt-2 pb-1 text-[11px] text-muted-foreground leading-relaxed">
 						City-level IP geolocation clusters around ISP hubs (e.g. Amsterdam for NL cable and
 						mobile). Region and coordinates are the more reliable dimensions.
 					</p>
 				</Panel>
 			</section>
 
-			<section className="bg-card border border-border rounded-sm overflow-hidden">
+			<section className="rounded-lg border border-border bg-card overflow-hidden">
 				<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 					<h2 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 						<Users2 className="h-3.5 w-3.5" />
 						Visitors in this area
 					</h2>
-					<span className="text-[10px] text-muted-foreground tabular-nums">
+					<span className="text-[11px] text-muted-foreground tabular-nums">
 						{visitors?.length ?? 0} most recent
 					</span>
 				</div>
@@ -338,15 +304,15 @@ export function GeoExplorer() {
 									{v.visitorId.slice(0, 12)}
 								</span>
 								{v.city && (
-									<span className="text-[10px] text-muted-foreground truncate">{v.city}</span>
+									<span className="text-[11px] text-muted-foreground truncate">{v.city}</span>
 								)}
 								{v.asOrg && (
-									<span className="text-[10px] text-muted-foreground/70 truncate hidden md:inline">
+									<span className="text-[11px] text-muted-foreground/70 truncate hidden md:inline">
 										{v.asOrg}
 									</span>
 								)}
 							</span>
-							<span className="flex items-center gap-3 text-[10px] text-muted-foreground tabular-nums shrink-0">
+							<span className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums shrink-0">
 								<span>
 									{v.sessions} session{v.sessions === 1 ? "" : "s"}
 								</span>
@@ -389,8 +355,8 @@ function StatCard({
 	hint?: string;
 }) {
 	return (
-		<div className="bg-card border border-border rounded-sm px-3 py-2.5" title={hint}>
-			<p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+		<div className="rounded-lg border border-border bg-card px-3 py-2.5" title={hint}>
+			<p className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</p>
 			<p className="text-lg font-semibold text-foreground tabular-nums">
 				{loading && value === undefined
 					? "—"
@@ -414,14 +380,14 @@ function Panel({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="bg-card border border-border rounded-sm overflow-hidden">
+		<div className="rounded-lg border border-border bg-card overflow-hidden">
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between gap-2">
 				<h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
 					{icon}
 					{title}
 				</h3>
 				{badge && (
-					<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 tabular-nums">
+					<span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 tabular-nums">
 						{badge}
 					</span>
 				)}
@@ -447,13 +413,13 @@ function Row({
 	return (
 		<div className="px-3 py-1.5 flex items-center justify-between gap-2">
 			<span
-				className={cn("text-xs text-foreground truncate", mono && "font-mono text-[11px]")}
+				className={cn("text-xs text-foreground truncate", mono && "font-mono text-xs")}
 				title={flagged ? flagTitle : label}
 			>
 				{label}
 				{flagged && <span className="ml-1.5 text-amber-500">⚠</span>}
 			</span>
-			<span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{value}</span>
+			<span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{value}</span>
 		</div>
 	);
 }
@@ -463,7 +429,7 @@ function QualityBar({ label, value }: { label: string; value: number }) {
 		<div className="px-3 py-1.5">
 			<div className="flex items-center justify-between mb-1">
 				<span className="text-xs text-foreground">{label}</span>
-				<span className="text-[10px] text-muted-foreground tabular-nums">{value}%</span>
+				<span className="text-[11px] text-muted-foreground tabular-nums">{value}%</span>
 			</div>
 			<div className="h-1 bg-muted rounded-full overflow-hidden">
 				<div className="h-full bg-primary/60 rounded-full" style={{ width: `${value}%` }} />
@@ -474,5 +440,5 @@ function QualityBar({ label, value }: { label: string; value: number }) {
 
 function EmptyHint({ show, children }: { show: boolean; children: React.ReactNode }) {
 	if (!show) return null;
-	return <p className="px-3 py-4 text-[11px] text-muted-foreground text-center">{children}</p>;
+	return <p className="px-3 py-4 text-xs text-muted-foreground text-center">{children}</p>;
 }

@@ -4,6 +4,7 @@ import { X, ExternalLink, TrendingUp, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import useSWR from "swr";
+import { useState } from "react";
 
 async function fetcher(url: string) {
 	const response = await fetch(url);
@@ -27,20 +28,33 @@ export function ReferrerDetailPanel({
 	onClose,
 	className,
 }: ReferrerDetailPanelProps) {
+	const [shownDomain, setShownDomain] = useState<string | null>(null);
+	if (domain && domain !== shownDomain) {
+		setShownDomain(domain);
+	}
+
 	const { data, isLoading } = useSWR(
-		domain
-			? `/api/analytics?metric=referrer-detail&domain=${encodeURIComponent(domain)}&timeRange=${timeRange}`
+		shownDomain
+			? `/api/analytics?metric=referrer-detail&domain=${encodeURIComponent(shownDomain)}&timeRange=${timeRange}`
 			: null,
 		fetcher,
 	);
 
-	if (!domain) return null;
+	if (!shownDomain) return null;
+
+	const open = Boolean(domain);
 
 	return (
 		<div
+			data-state={open ? "open" : "closed"}
+			onTransitionEnd={(event) => {
+				if (event.target === event.currentTarget && !open) setShownDomain(null);
+			}}
 			className={cn(
 				"fixed inset-y-0 right-0 w-96 bg-card border-l border-border shadow-xl z-50 flex flex-col",
-				"animate-in slide-in-from-right-full duration-200",
+				"transition-[transform,opacity] ease-drawer data-[state=open]:duration-300 data-[state=closed]:duration-200",
+				"starting:translate-x-full data-[state=closed]:translate-x-full",
+				"motion-reduce:starting:translate-x-0 motion-reduce:data-[state=closed]:translate-x-0 motion-reduce:starting:opacity-0 motion-reduce:data-[state=closed]:opacity-0 motion-reduce:duration-150",
 				className,
 			)}
 		>
@@ -49,7 +63,7 @@ export function ReferrerDetailPanel({
 				<div className="flex items-center gap-2">
 					<div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
 						<img
-							src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+							src={`https://www.google.com/s2/favicons?domain=${shownDomain}&sz=32`}
 							alt=""
 							className="w-4 h-4"
 							onError={(e) => {
@@ -58,8 +72,8 @@ export function ReferrerDetailPanel({
 						/>
 					</div>
 					<div>
-						<h2 className="text-sm font-medium text-foreground">{domain}</h2>
-						<p className="text-[10px] text-muted-foreground">Referrer Analytics</p>
+						<h2 className="text-sm font-medium text-foreground">{shownDomain}</h2>
+						<p className="text-[11px] text-muted-foreground">Referrer Analytics</p>
 					</div>
 				</div>
 				<Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0">
@@ -94,7 +108,7 @@ export function ReferrerDetailPanel({
 						{/* Traffic Share */}
 						<div className="p-3 bg-muted/50 rounded space-y-2">
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] text-muted-foreground">Traffic Share</span>
+								<span className="text-[11px] text-muted-foreground">Traffic Share</span>
 								<span className="text-sm font-semibold text-foreground">
 									{(data.percentage || 0).toFixed(1)}%
 								</span>
@@ -110,8 +124,8 @@ export function ReferrerDetailPanel({
 						{/* Top Landing Pages */}
 						{data.topLandingPages && data.topLandingPages.length > 0 && (
 							<div className="space-y-2">
-								<label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-									Top Landing Pages from {domain}
+								<label className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+									Top Landing Pages from {shownDomain}
 								</label>
 								<div className="space-y-1">
 									{data.topLandingPages.map((page: { path: string; visits: number }) => (
@@ -136,13 +150,13 @@ export function ReferrerDetailPanel({
 
 						{/* External Link */}
 						<a
-							href={`https://${domain}`}
+							href={`https://${shownDomain}`}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="flex items-center justify-center gap-2 p-2 bg-muted/50 rounded hover:bg-muted transition-colors text-xs text-muted-foreground hover:text-foreground"
 						>
 							<ExternalLink className="h-3.5 w-3.5" />
-							Visit {domain}
+							Visit {shownDomain}
 						</a>
 					</>
 				) : (
@@ -160,7 +174,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 		<div className="p-3 bg-muted/50 rounded space-y-1">
 			<div className="flex items-center gap-1.5 text-muted-foreground">
 				{icon}
-				<span className="text-[10px]">{label}</span>
+				<span className="text-[11px]">{label}</span>
 			</div>
 			<p className="text-lg font-semibold text-foreground">{value}</p>
 		</div>

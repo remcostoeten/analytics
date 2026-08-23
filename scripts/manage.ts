@@ -67,6 +67,7 @@ async function runDeployMenu() {
 	console.log(`  4. Run Test Suite`);
 	console.log(`  5. Run Typecheck`);
 	console.log(`  6. Create Git Tag`);
+	console.log(`  7. Build + Publish Analytics Manager (npm)`);
 	console.log(`  0. Back to Main Menu`);
 
 	const choice = await prompt("\n  Select an option: ");
@@ -81,7 +82,7 @@ async function runDeployMenu() {
 			break;
 		}
 		case "3":
-			await handleSdkPublish();
+			await handlePackagePublish("packages/sdk", "SDK");
 			break;
 		case "4":
 			await execCommand("bun test");
@@ -92,6 +93,9 @@ async function runDeployMenu() {
 		case "6":
             // Tagging logic
 			break;
+		case "7":
+			await handlePackagePublish("packages/analytics-manager", "Analytics Manager");
+			break;
 		case "0":
 			return;
 	}
@@ -99,9 +103,9 @@ async function runDeployMenu() {
 	await runDeployMenu();
 }
 
-async function handleSdkPublish() {
-	header("SDK Publish Workflow");
-	const pkgPath = "packages/sdk/package.json";
+async function handlePackagePublish(dir: string, label: string) {
+	header(`${label} Publish Workflow`);
+	const pkgPath = `${dir}/package.json`;
 	const current = getVersion(pkgPath);
 	console.log(`  Current version: ${colors.cyan}${current}${colors.reset}`);
 	
@@ -112,10 +116,10 @@ async function handleSdkPublish() {
 		console.log(`  Updated to ${colors.green}${newVer}${colors.reset}`);
 	}
 	
-	await execCommand("bun run build", "packages/sdk");
+	await execCommand("bun run build", dir);
 	const confirm = (await prompt("  Publish to npm now? (y/n): ")).toLowerCase();
 	if (confirm === 'y') {
-		await execCommand("npm publish --access public", "packages/sdk");
+		await execCommand("npm publish --access public", dir);
 	}
 }
 

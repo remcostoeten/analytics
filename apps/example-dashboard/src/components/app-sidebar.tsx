@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
@@ -49,6 +50,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { GITHUB_REPO_URL, GithubMark } from "@/components/github-link";
 
 type ProjectOption = {
 	id: string;
@@ -207,13 +209,15 @@ export function AppSidebar() {
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								size="lg"
-								className="h-9 text-xs font-medium"
+								className="h-9 px-3 text-xs font-medium"
 								tooltip="Search"
 								onClick={openSearch}
 							>
-								<Search className="size-3.5" />
+								<span className="flex size-6 shrink-0 items-center justify-center rounded border border-border">
+									<Search className="size-3.5 text-muted-foreground" />
+								</span>
 								<span className="flex-1 text-left">Search</span>
-								<kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[9px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+								<kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
 									⌘K
 								</kbd>
 							</SidebarMenuButton>
@@ -223,7 +227,7 @@ export function AppSidebar() {
 
 				<SidebarContent className="px-2">
 					<SidebarGroup className="py-2">
-						<SidebarGroupLabel className="text-[10px] px-2 uppercase tracking-wider font-semibold opacity-50">
+						<SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
 							Insights
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
@@ -249,7 +253,7 @@ export function AppSidebar() {
 					</SidebarGroup>
 
 					<SidebarGroup className="py-2">
-						<SidebarGroupLabel className="text-[10px] px-2 uppercase tracking-wider font-semibold opacity-50">
+						<SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
 							Integrations
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
@@ -273,6 +277,26 @@ export function AppSidebar() {
 						</SidebarGroupContent>
 					</SidebarGroup>
 				</SidebarContent>
+
+				<SidebarFooter className="border-t border-border px-2 py-2">
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								tooltip="View on GitHub"
+								className="h-8 text-xs font-medium"
+							>
+								<a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+									<GithubMark className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+									<span className="text-foreground">View on GitHub</span>
+									<span className="ml-auto text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+										remcostoeten/analytics
+									</span>
+								</a>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarFooter>
 			</Sidebar>
 
 			<Dialog open={showCustomPicker} onOpenChange={setShowCustomPicker}>
@@ -282,7 +306,7 @@ export function AppSidebar() {
 					</DialogHeader>
 					<div className="space-y-3 py-2">
 						<div className="space-y-1">
-							<label className="text-[11px] text-muted-foreground">From</label>
+							<label className="text-xs text-muted-foreground">From</label>
 							<Input
 								type="date"
 								value={customFromInput}
@@ -291,7 +315,7 @@ export function AppSidebar() {
 							/>
 						</div>
 						<div className="space-y-1">
-							<label className="text-[11px] text-muted-foreground">To</label>
+							<label className="text-xs text-muted-foreground">To</label>
 							<Input
 								type="date"
 								value={customToInput}
@@ -420,7 +444,7 @@ function MotionSidebarMenu({ items }: { items: MotionMenuItem[] }) {
 							asChild
 							isActive={item.isActive}
 							tooltip={item.label}
-							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent"
+							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent focus-visible:ring-1 focus-visible:ring-foreground/15 focus-visible:bg-sidebar-accent/40"
 						>
 							<Link
 								href={item.href}
@@ -480,19 +504,19 @@ function TimeRangeSwitcher({ value, customFrom, customTo, onChange }: TimeRangeP
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
 						<div className="truncate text-xs font-medium leading-tight">{displayLabel}</div>
-						<div className="text-[10px] text-muted-foreground leading-tight">Date range</div>
+						<div className="text-[11px] text-muted-foreground leading-tight">Date range</div>
 					</div>
 					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" side="right" className="w-44">
-				<DropdownMenuLabel className="text-[10px]">Date range</DropdownMenuLabel>
+				<DropdownMenuLabel className="text-[11px]">Date range</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{ranges.map((range) => (
 					<DropdownMenuItem
 						key={range.value}
 						onClick={() => onChange(range.value)}
-						className={cn("text-[11px]", value === range.value && "bg-muted")}
+						className={cn("text-xs", value === range.value && "bg-muted")}
 					>
 						{range.label}
 					</DropdownMenuItem>
@@ -500,7 +524,7 @@ function TimeRangeSwitcher({ value, customFrom, customTo, onChange }: TimeRangeP
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={() => onChange("custom")}
-					className={cn("text-[11px]", value === "custom" && "bg-muted")}
+					className={cn("text-xs", value === "custom" && "bg-muted")}
 				>
 					Custom range…
 				</DropdownMenuItem>
@@ -532,17 +556,17 @@ function ProjectSwitcher({ projects, selectedProject, onProjectChange }: Project
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
 						<div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
-						<div className="text-[10px] text-muted-foreground leading-tight">Project scope</div>
+						<div className="text-[11px] text-muted-foreground leading-tight">Project scope</div>
 					</div>
 					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" side="right" className="w-56">
-				<DropdownMenuLabel className="text-[10px]">Project scope</DropdownMenuLabel>
+				<DropdownMenuLabel className="text-[11px]">Project scope</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={() => onProjectChange(null)}
-					className={cn("text-[11px]", !selectedProject && "bg-muted")}
+					className={cn("text-xs", !selectedProject && "bg-muted")}
 				>
 					<span className="flex-1">All Projects</span>
 				</DropdownMenuItem>
@@ -551,18 +575,18 @@ function ProjectSwitcher({ projects, selectedProject, onProjectChange }: Project
 						key={project.id}
 						onClick={() => onProjectChange(project.id)}
 						className={cn(
-							"text-[11px] flex justify-between",
+							"text-xs flex justify-between",
 							selectedProject === project.id && "bg-muted",
 						)}
 					>
 						<span className="truncate flex-1">{project.id}</span>
-						<span className="text-muted-foreground text-[10px] ml-2">
+						<span className="text-muted-foreground text-[11px] ml-2">
 							{project.eventCount.toLocaleString()}
 						</span>
 					</DropdownMenuItem>
 				))}
 				{projects.length === 0 && (
-					<DropdownMenuItem disabled className="text-[11px] text-muted-foreground">
+					<DropdownMenuItem disabled className="text-xs text-muted-foreground">
 						No projects found
 					</DropdownMenuItem>
 				)}
@@ -603,17 +627,17 @@ function OriginSwitcher({ origins, selectedOrigin, onOriginChange }: OriginSwitc
 					</div>
 					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
 						<div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
-						<div className="text-[10px] text-muted-foreground leading-tight">Origin</div>
+						<div className="text-[11px] text-muted-foreground leading-tight">Origin</div>
 					</div>
 					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" side="right" className="w-56">
-				<DropdownMenuLabel className="text-[10px]">Origin</DropdownMenuLabel>
+				<DropdownMenuLabel className="text-[11px]">Origin</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={() => onOriginChange(null)}
-					className={cn("text-[11px]", !selectedOrigin && "bg-muted")}
+					className={cn("text-xs", !selectedOrigin && "bg-muted")}
 				>
 					<span className="flex-1">All Origins</span>
 				</DropdownMenuItem>
@@ -622,7 +646,7 @@ function OriginSwitcher({ origins, selectedOrigin, onOriginChange }: OriginSwitc
 						key={origin.host}
 						onClick={() => onOriginChange(origin.host)}
 						className={cn(
-							"text-[11px] flex items-center gap-2",
+							"text-xs flex items-center gap-2",
 							selectedOrigin === origin.host && "bg-muted",
 						)}
 					>
@@ -635,13 +659,13 @@ function OriginSwitcher({ origins, selectedOrigin, onOriginChange }: OriginSwitc
 							}}
 						/>
 						<span className="truncate flex-1">{origin.host}</span>
-						<span className="text-muted-foreground text-[10px]">
+						<span className="text-muted-foreground text-[11px]">
 							{origin.eventCount.toLocaleString()}
 						</span>
 					</DropdownMenuItem>
 				))}
 				{origins.length === 0 && (
-					<DropdownMenuItem disabled className="text-[11px] text-muted-foreground">
+					<DropdownMenuItem disabled className="text-xs text-muted-foreground">
 						No origins found
 					</DropdownMenuItem>
 				)}

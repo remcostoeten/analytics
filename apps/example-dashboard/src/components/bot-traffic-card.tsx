@@ -24,14 +24,14 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 	const maxHits = Math.max(...(data.topPages?.map((p) => p.hits) || [1]), 1);
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border flex items-center justify-between">
 				<div className="flex items-center gap-1.5">
 					<Bot className="h-3.5 w-3.5 text-muted-foreground" />
 					<h3 className="text-xs font-medium text-foreground">Bot Traffic</h3>
 				</div>
 				{botRate && (
-					<span className="text-[10px] text-amber-500 font-medium">{botRate}% of total</span>
+					<span className="text-[11px] text-amber-500 font-medium">{botRate}% of total</span>
 				)}
 			</div>
 
@@ -40,7 +40,7 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 					<p className="text-sm font-semibold text-foreground tabular-nums">
 						{data.total.toLocaleString()}
 					</p>
-					<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+					<p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
 						Bot Events
 					</p>
 				</div>
@@ -48,7 +48,7 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 					<p className="text-sm font-semibold text-foreground tabular-nums">
 						{data.uniqueVisitors.toLocaleString()}
 					</p>
-					<p className="text-[9px] uppercase tracking-wide text-muted-foreground mt-0.5">
+					<p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
 						Unique Bots
 					</p>
 				</div>
@@ -57,7 +57,7 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 			{data.topPages.length > 0 ? (
 				<div className="divide-y divide-border/40">
 					<div className="px-3 py-1.5">
-						<span className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium">
+						<span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
 							Most Crawled Pages
 						</span>
 					</div>
@@ -68,13 +68,13 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 								style={{ width: `${(page.hits / maxHits) * 100}%` }}
 							/>
 							<div className="relative flex items-center gap-2 px-3 py-1.5">
-								<span className="text-[9px] text-muted-foreground/40 tabular-nums w-3 shrink-0">
+								<span className="text-[10px] text-muted-foreground/40 tabular-nums w-3 shrink-0">
 									{i + 1}
 								</span>
-								<span className="flex-1 text-[10px] text-foreground truncate font-mono">
+								<span className="flex-1 text-[11px] text-foreground truncate font-mono">
 									{page.path}
 								</span>
-								<span className="text-[10px] tabular-nums text-muted-foreground shrink-0">
+								<span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
 									{page.hits}
 								</span>
 							</div>
@@ -82,7 +82,7 @@ export function BotTrafficCard({ data, totalEvents, className }: BotTrafficCardP
 					))}
 				</div>
 			) : (
-				<div className="px-3 py-4 flex items-center gap-2 text-[11px] text-muted-foreground">
+				<div className="px-3 py-4 flex items-center gap-2 text-xs text-muted-foreground">
 					<ShieldAlert className="h-3.5 w-3.5 shrink-0" />
 					No bot page hits in this period
 				</div>

@@ -30,7 +30,7 @@ function formatDuration(seconds: number): string {
 export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 	if (!data) {
 		return (
-			<div className={cn("bg-card border border-border rounded-sm", className)}>
+			<div className={cn("rounded-lg border border-border bg-card", className)}>
 				<div className="px-3 py-2 border-b border-border">
 					<Skeleton className="h-3 w-28" />
 				</div>
@@ -79,7 +79,7 @@ export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 	];
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			<div className="px-3 py-2 border-b border-border">
 				<h3 className="text-xs font-medium text-foreground">Session Analytics</h3>
 			</div>
@@ -90,7 +90,7 @@ export function SessionStatsCard({ data, className }: SessionStatsCardProps) {
 							<div className="flex h-5 w-5 items-center justify-center rounded-sm border border-border/60 bg-muted/30">
 								<stat.icon className={cn("h-3 w-3", stat.color)} />
 							</div>
-							<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+							<span className="text-[11px] text-muted-foreground uppercase tracking-wide">
 								{stat.label}
 							</span>
 						</div>

@@ -57,12 +57,12 @@ export function TrendChart({
 	const average = values.length ? total / values.length : 0;
 
 	return (
-		<div className={cn("bg-card border border-border rounded-sm", className)}>
+		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			{title && (
 				<div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
 					<h3 className="text-xs font-medium text-foreground">{title}</h3>
 					{hasData && (
-						<div className="flex shrink-0 items-center gap-3 text-[10px] text-muted-foreground">
+						<div className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
 							<span className="tabular-nums">total {formatCompact(total)}</span>
 							<span className="tabular-nums">peak {formatCompact(peak)}</span>
 							<span className="tabular-nums">avg {formatCompact(average)}</span>
@@ -78,7 +78,7 @@ export function TrendChart({
 				) : (
 					<div className="p-8 text-center" style={{ height }}>
 						<Inbox className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
-						<p className="text-[11px] text-muted-foreground">No data available</p>
+						<p className="text-xs text-muted-foreground">No data available</p>
 					</div>
 				)
 			) : isSparse && singlePoint ? (
@@ -86,7 +86,7 @@ export function TrendChart({
 					<div className="flex h-full flex-col justify-between rounded-sm border border-border/60 bg-muted/20 px-4 py-3">
 						<div className="flex items-center justify-between gap-4">
 							<div>
-								<p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+								<p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
 									Latest Sample
 								</p>
 								<p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -94,7 +94,7 @@ export function TrendChart({
 								</p>
 							</div>
 							<div className="text-right">
-								<p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+								<p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
 									Time
 								</p>
 								<p className="mt-1 text-sm font-medium text-foreground/80">
@@ -153,7 +153,7 @@ export function TrendChart({
 									const p = payload[0].payload;
 									return (
 										<div className="bg-background border border-border rounded px-2.5 py-1.5 shadow-lg">
-											<p className="text-[10px] text-muted-foreground">{p.formattedTime}</p>
+											<p className="text-[11px] text-muted-foreground">{p.formattedTime}</p>
 											<p className="text-sm font-semibold text-foreground">
 												{Number(p.value).toLocaleString()}
 											</p>
