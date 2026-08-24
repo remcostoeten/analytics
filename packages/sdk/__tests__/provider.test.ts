@@ -21,6 +21,21 @@ describe("mergeAnalyticsOptions", () => {
 		const base = { projectId: "my-app", ingestUrl: "https://ingest.example" };
 		expect(mergeAnalyticsOptions(base)).toEqual(base);
 	});
+
+	test("merges location overrides and preserves an explicit null referrer", () => {
+		expect(
+			mergeAnalyticsOptions(
+				{ path: "/private", referrer: "https://source.example/private" },
+				{ path: "/public", referrer: null },
+			),
+		).toEqual({
+			projectId: undefined,
+			ingestUrl: undefined,
+			debug: undefined,
+			path: "/public",
+			referrer: null,
+		});
+	});
 });
 
 describe("resolveAnalyticsOptions", () => {

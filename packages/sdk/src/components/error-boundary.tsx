@@ -2,7 +2,8 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { trackError } from "../api/track";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
-import { type AnalyticsErrorBoundaryProps, type AnalyticsOptions } from "../types";
+import { type AnalyticsOptions } from "../types";
+import { type AnalyticsErrorBoundaryProps } from "../types/react";
 
 type AnalyticsErrorBoundaryInnerProps = {
 	children: ReactNode;
@@ -46,9 +47,17 @@ export function AnalyticsErrorBoundary({
 	projectId,
 	ingestUrl,
 	debug,
+	path,
+	referrer,
 }: AnalyticsErrorBoundaryProps) {
 	const contextOptions = useAnalyticsOptions();
-	const options = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
+	const options = resolveAnalyticsOptions(contextOptions, {
+		projectId,
+		ingestUrl,
+		debug,
+		path,
+		referrer,
+	});
 
 	return (
 		<AnalyticsErrorBoundaryInner fallback={fallback} onError={onError} options={options}>

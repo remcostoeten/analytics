@@ -7,7 +7,13 @@ const shared = {
 	sourcemap: true,
 	treeshake: true,
 	splitting: false,
-	external: ["@remcostoeten/analytics", "@vercel/analytics", "posthog-js", "react"],
+	external: [
+		"@remcostoeten/analytics",
+		"@remcostoeten/analytics/browser",
+		"@vercel/analytics",
+		"posthog-js",
+		"react",
+	],
 	target: "es2020" as const,
 	outDir: "dist",
 };

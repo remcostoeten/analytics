@@ -1,6 +1,18 @@
 import { Context } from "hono";
+import { timingSafeEqual } from "crypto";
 import { dataRetainer } from "../utilities/data-retention.js";
 import { rollupDays } from "../utilities/rollup.js";
+
+function secretsMatch(provided: string, expected: string | undefined): boolean {
+	if (!expected) return false;
+
+	const a = Buffer.from(provided);
+	const b = Buffer.from(expected);
+
+	if (a.length !== b.length) return false;
+
+	return timingSafeEqual(a, b);
+}
 
 export function requireAdminAuth(c: Context): Response | null {
 	const adminSecret = process.env.ADMIN_SECRET;
@@ -16,8 +28,7 @@ export function requireAdminAuth(c: Context): Response | null {
 	if (!provided) {
 		return c.json({ ok: false, error: "Unauthorized" }, 401);
 	}
-	const allowed =
-		(adminSecret && provided === adminSecret) || (cronSecret && provided === cronSecret);
+	const allowed = secretsMatch(provided, adminSecret) || secretsMatch(provided, cronSecret);
 	if (!allowed) {
 		return c.json({ ok: false, error: "Unauthorized" }, 401);
 	}

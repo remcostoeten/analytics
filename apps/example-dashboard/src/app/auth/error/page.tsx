@@ -38,27 +38,27 @@ async function AuthErrorCard({ searchParams }: Props) {
 	const canRetry = resolvedCode !== "not_allowed";
 
 	return (
-			<Empty className="w-full max-w-md border border-border bg-card">
-				<EmptyHeader>
-					<EmptyMedia variant="icon">
-						<ShieldAlert className="text-destructive" />
-					</EmptyMedia>
-					<EmptyTitle>{copy.title}</EmptyTitle>
-					<EmptyDescription>{copy.description}</EmptyDescription>
-				</EmptyHeader>
-				<EmptyContent className="flex-row justify-center gap-2">
-					{canRetry && (
-						<Button asChild size="sm">
-							<a href="/api/auth/login">Try again</a>
-						</Button>
-					)}
-					<Button asChild size="sm" variant={canRetry ? "outline" : "default"}>
-						<Link href="/">Back to dashboard</Link>
+		<Empty className="w-full max-w-md border border-border bg-card">
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<ShieldAlert className="text-destructive" />
+				</EmptyMedia>
+				<EmptyTitle>{copy.title}</EmptyTitle>
+				<EmptyDescription>{copy.description}</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent className="flex-row justify-center gap-2">
+				{canRetry && (
+					<Button asChild size="sm">
+						<a href="/api/auth/login">Try again</a>
 					</Button>
-				</EmptyContent>
-				<p className="text-[11px] text-muted-foreground">
-					Error code: <code className="font-mono">{resolvedCode}</code>
-				</p>
-			</Empty>
+				)}
+				<Button asChild size="sm" variant={canRetry ? "outline" : "default"}>
+					<Link href="/">Back to dashboard</Link>
+				</Button>
+			</EmptyContent>
+			<p className="text-[11px] text-muted-foreground">
+				Error code: <code className="font-mono">{resolvedCode}</code>
+			</p>
+		</Empty>
 	);
 }

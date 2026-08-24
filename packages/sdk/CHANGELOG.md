@@ -2,6 +2,17 @@
 
 All notable changes to `@remcostoeten/analytics` are documented here.
 
+## [1.7.1] - 2026-08-24
+
+### Added
+
+- React-free `@remcostoeten/analytics/browser` entry for framework-agnostic browser apps
+- Explicit `path` and `referrer` overrides for sensitive URL normalization
+
+### Changed
+
+- React is now an optional peer dependency
+
 ## [1.5.0] - 2026-06-06
 
 ### Added

@@ -1,8 +1,9 @@
 "use client";
 
 import {
-	AreaChart,
 	Area,
+	Bar,
+	ComposedChart,
 	XAxis,
 	YAxis,
 	Tooltip,
@@ -21,6 +22,7 @@ type TrendChartProps = {
 	color?: string;
 	height?: number;
 	showAxis?: boolean;
+	chartType?: "area" | "bar";
 	className?: string;
 	isLoading?: boolean;
 };
@@ -31,17 +33,18 @@ export function TrendChart({
 	color = "var(--chart-1)",
 	height = 120,
 	showAxis = true,
+	chartType = "area",
 	className,
 	isLoading = false,
 }: TrendChartProps) {
 	const hasData = data && data.data && data.data.length > 0;
-	const formatLabel = (timestamp: Date | string) => {
+	function formatLabel(timestamp: Date | string) {
 		const date = new Date(timestamp);
 		if (data.granularity === "day") {
 			return date.toLocaleDateString([], { month: "short", day: "numeric" });
 		}
 		return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-	};
+	}
 	const chartData = hasData
 		? data.data.map((point) => ({
 				timestamp: point.timestamp,
@@ -114,7 +117,7 @@ export function TrendChart({
 			) : (
 				<div aria-label={title || data.label} className="p-2" style={{ height }}>
 					<ResponsiveContainer width="100%" height="100%">
-						<AreaChart data={chartData} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}>
+						<ComposedChart data={chartData} margin={{ top: 10, right: 14, left: 4, bottom: 4 }}>
 							<defs>
 								<linearGradient id={`gradient-${data.id}`} x1="0" y1="0" x2="0" y2="1">
 									<stop offset="0%" stopColor={color} stopOpacity={0.5} />
@@ -131,18 +134,19 @@ export function TrendChart({
 								<>
 									<XAxis
 										dataKey="formattedTime"
-										axisLine={false}
+										axisLine={{ stroke: "var(--border)" }}
 										tickLine={false}
 										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
 										interval="preserveStartEnd"
 										minTickGap={40}
+										height={28}
 									/>
 									<YAxis
-										axisLine={false}
+										axisLine={{ stroke: "var(--border)" }}
 										domain={[0, (max: number) => Math.max(1, Math.ceil(max * 1.2))]}
 										tickLine={false}
 										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-										width={32}
+										width={38}
 										tickFormatter={(v) => formatCompact(v)}
 									/>
 								</>
@@ -162,26 +166,30 @@ export function TrendChart({
 								}}
 							/>
 							<ReferenceLine y={0} stroke="var(--border)" strokeOpacity={0.5} />
-							<Area
-								type="monotone"
-								dataKey="value"
-								stroke={color}
-								strokeWidth={3}
-								fill={`url(#gradient-${data.id})`}
-								dot={{
-									r: 3,
-									fill: "var(--background)",
-									stroke: color,
-									strokeWidth: 2,
-								}}
-								activeDot={{
-									r: 4.5,
-									fill: "var(--background)",
-									stroke: color,
-									strokeWidth: 2,
-								}}
-							/>
-						</AreaChart>
+							{chartType === "bar" ? (
+								<Bar dataKey="value" fill={color} maxBarSize={32} radius={[3, 3, 0, 0]} />
+							) : (
+								<Area
+									type="monotone"
+									dataKey="value"
+									stroke={color}
+									strokeWidth={3}
+									fill={`url(#gradient-${data.id})`}
+									dot={{
+										r: 3,
+										fill: "var(--background)",
+										stroke: color,
+										strokeWidth: 2,
+									}}
+									activeDot={{
+										r: 4.5,
+										fill: "var(--background)",
+										stroke: color,
+										strokeWidth: 2,
+									}}
+								/>
+							)}
+						</ComposedChart>
 					</ResponsiveContainer>
 				</div>
 			)}

@@ -8,6 +8,8 @@ export function mergeAnalyticsOptions(
 		projectId: override?.projectId ?? base.projectId,
 		ingestUrl: override?.ingestUrl ?? base.ingestUrl,
 		debug: override?.debug ?? base.debug,
+		path: override?.path ?? base.path,
+		referrer: override?.referrer !== undefined ? override.referrer : base.referrer,
 	};
 }
 

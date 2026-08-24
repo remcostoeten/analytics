@@ -5,6 +5,8 @@ type RemcoOptions = {
 	projectId?: string;
 	ingestUrl?: string;
 	debug?: boolean;
+	path?: string;
+	referrer?: string | null;
 };
 
 type Observer = (options?: RemcoOptions) => () => void;
@@ -37,6 +39,8 @@ export type RemcoBuilder = AdapterBuilder<"remco", RemcoClient> & {
 	project: (projectId: string | undefined) => RemcoBuilder;
 	ingest: (url: string | undefined) => RemcoBuilder;
 	debug: (enabled?: boolean) => RemcoBuilder;
+	path: (value: string | undefined) => RemcoBuilder;
+	referrer: (value: string | null | undefined) => RemcoBuilder;
 	client: (client: RemcoClient) => RemcoBuilder;
 	errors: () => RemcoBuilder;
 	clicks: () => RemcoBuilder;
@@ -79,11 +83,13 @@ function buildAdapter(state: RemcoState): Adapter<"remco", RemcoClient> {
 		init: async function init(config: RuntimeConfig) {
 			if (!client && !isBrowser()) return;
 			if (!client) {
-				const loaded = await loadModule(() => import("@remcostoeten/analytics"));
+				const loaded = await loadModule(() => import("@remcostoeten/analytics/browser"));
 				client = hasMethods(loaded, ["track", "trackEvent", "trackPageView"]) ? loaded : null;
 				if (!client) {
 					config.report(
-						new Error("@remcostoeten/analytics is unavailable or exports an unexpected shape"),
+						new Error(
+							"@remcostoeten/analytics/browser is unavailable or exports an unexpected shape",
+						),
 						"init",
 					);
 				}
@@ -157,6 +163,12 @@ function fromState(state: RemcoState): RemcoBuilder {
 		},
 		debug: function debug(enabled = true) {
 			return fromState({ ...state, options: { ...state.options, debug: enabled } });
+		},
+		path: function path(value) {
+			return fromState({ ...state, options: { ...state.options, path: value } });
+		},
+		referrer: function referrer(value) {
+			return fromState({ ...state, options: { ...state.options, referrer: value } });
 		},
 		client: function client(instance) {
 			return fromState({ ...state, client: instance });

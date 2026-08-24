@@ -46,6 +46,16 @@ app.route("/", ingestion);
 | `GEOIP_MMDB_PATH`     | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file; defaults to the `GeoLite2-City.mmdb` the Vercel build bundles next to the function |
 | `GEOIP_ASN_MMDB_PATH` | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; defaults to the bundled `GeoLite2-ASN.mmdb`. Adds network/ISP (`asn`, `as_org`) to events  |
 
+### `IP_HASH_SECRET`
+
+IPs are never stored raw — each event keeps an `ip_hash` derived from the address plus a daily-rotating salt. That hash is only pseudonymous if the secret is unguessable: with a known secret, the entire IPv4 space can be hashed offline in seconds and every `ip_hash` reversed to an address.
+
+Ingestion therefore **fails to start in production** (`NODE_ENV=production` or `VERCEL_ENV=production`) when `IP_HASH_SECRET` is missing, still set to the `default-secret-change-me` placeholder, or shorter than 32 characters. Outside production it logs a warning once and falls back to the placeholder.
+
+```bash
+openssl rand -hex 32
+```
+
 ## Geolocation
 
 Geo is resolved per event from free sources:
@@ -112,6 +122,14 @@ Point the SDK at your deployment base URL:
 ```bash
 NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com
 ```
+
+## Rate limiting is per-instance
+
+`utilities/rate-limit.ts` keeps its counters in a module-scope `Map`. On a single long-lived process that is an accurate limit. On serverless (the `vercel.json` in `apps/ingestion` deploys the app as functions) every concurrent instance holds its own counters, so the effective ceiling is the configured limit multiplied by the number of warm instances, and it resets on every cold start.
+
+Treat it as abuse dampening, not a guarantee. If you need a real ceiling, put a CDN/WAF rate limit in front of the ingestion origin, or move the counters into Postgres or Redis.
+
+Deduplication is not affected — events carry a `fingerprint` column with a unique index, so duplicates are rejected by the database across all instances. The in-memory dedupe cache is only a fast path in front of that.
 
 ## Changelog
 

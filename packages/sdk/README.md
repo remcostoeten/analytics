@@ -1,6 +1,6 @@
 # @remcostoeten/analytics
 
-Privacy-focused analytics SDK for Next.js and React. Cookie-free, lightweight (~1.6 KB gzipped), sends events to your self-hosted ingestion service.
+Privacy-focused analytics SDK for JavaScript, TypeScript, and React. Cookie-free and sends events to your self-hosted ingestion service.
 
 ## Install
 
@@ -17,6 +17,19 @@ NEXT_PUBLIC_ANALYTICS_URL=https://analytics-api.yourdomain.com
 # Vite
 VITE_ANALYTICS_URL=https://analytics-api.yourdomain.com
 ```
+
+## Browser usage without React
+
+Use the browser entry in vanilla JavaScript, TypeScript, Vue, Svelte, Solid, or any other browser application. It has no React dependency or React types.
+
+```typescript
+import { trackEvent, trackPageView } from "@remcostoeten/analytics/browser";
+
+trackPageView(undefined, { projectId: "my-app" });
+trackEvent("resume.exported", { format: "pdf" }, { projectId: "my-app" });
+```
+
+The root `@remcostoeten/analytics` entry remains available for React components and hooks.
 
 ## Quick start
 
@@ -268,7 +281,14 @@ import {
 | `identifyUser(properties, options?)`                               | `event`    | User traits       |
 | `setExperiment(experimentId, variantId, options?)`                 | `event`    | A/B exposure      |
 
-Options: `{ projectId?, ingestUrl?, debug? }`.
+Options: `{ projectId?, ingestUrl?, debug?, path?, referrer? }`. Use `path` and `referrer` to replace sensitive location values before they enter an analytics payload.
+
+```typescript
+trackPageView(undefined, {
+	path: "/s/:token",
+	referrer: null,
+});
+```
 
 ### Payload shape
 
@@ -401,27 +421,28 @@ import type {
 
 ## Exports
 
-| Export                                                                                          | Kind                     |
-| ----------------------------------------------------------------------------------------------- | ------------------------ |
-| `@remcostoeten/analytics/server`                                                                | Server-only tracking     |
-| `Analytics`                                                                                     | Component                |
-| `AnalyticsProvider`                                                                             | Component                |
-| `AnalyticsErrorBoundary`                                                                        | Component                |
-| `TrackClick`                                                                                    | Component                |
-| `useTrack`                                                                                      | Hook                     |
-| `useAnalyticsOptions`                                                                           | Hook                     |
-| `createTrackHelpers`                                                                            | Function                 |
-| `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError`                              | Functions                |
-| `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack`                      | Server (`/server` entry) |
-| `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment`                              | Functions                |
-| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions                |
-| `observeOutboundLinks`, `observeForms`, `observeErrors`                                         | Functions                |
-| `flushOfflineQueue`                                                                             | Function                 |
-| `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession`             | Functions                |
-| `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack`                                              | Functions                |
-| `PRIVACY_DISCLOSURE`, `getStoredKeys`                                                           | Privacy helpers          |
-| `setConsentGranted`, `setConsentRequired`, `hasConsent`                                         | Consent API              |
-| `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions`                         | Functions                |
+| Export                                                                                          | Kind                      |
+| ----------------------------------------------------------------------------------------------- | ------------------------- |
+| `@remcostoeten/analytics/browser`                                                               | Browser API without React |
+| `@remcostoeten/analytics/server`                                                                | Server-only tracking      |
+| `Analytics`                                                                                     | Component                 |
+| `AnalyticsProvider`                                                                             | Component                 |
+| `AnalyticsErrorBoundary`                                                                        | Component                 |
+| `TrackClick`                                                                                    | Component                 |
+| `useTrack`                                                                                      | Hook                      |
+| `useAnalyticsOptions`                                                                           | Hook                      |
+| `createTrackHelpers`                                                                            | Function                  |
+| `track`, `trackPageView`, `trackEvent`, `trackClick`, `trackError`                              | Functions                 |
+| `trackServer`, `trackServerEvent`, `trackServerError`, `createServerTrack`                      | Server (`/server` entry)  |
+| `trackTransaction`, `trackSearch`, `identifyUser`, `setExperiment`                              | Functions                 |
+| `observePageViews`, `observePerformance`, `observeScroll`, `observeTimeOnPage`, `observeClicks` | Functions                 |
+| `observeOutboundLinks`, `observeForms`, `observeErrors`                                         | Functions                 |
+| `flushOfflineQueue`                                                                             | Function                  |
+| `getVisitorId`, `resetVisitorId`, `getSessionId`, `resetSessionId`, `extendSession`             | Functions                 |
+| `optOut`, `optIn`, `isOptedOut`, `checkDoNotTrack`                                              | Functions                 |
+| `PRIVACY_DISCLOSURE`, `getStoredKeys`                                                           | Privacy helpers           |
+| `setConsentGranted`, `setConsentRequired`, `hasConsent`                                         | Consent API               |
+| `validateIngestUrl`, `mergeAnalyticsOptions`, `resolveAnalyticsOptions`                         | Functions                 |
 
 ---
 
