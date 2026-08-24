@@ -94,7 +94,7 @@ async function testMenu() {
 			choices: [
 				{ value: "apps/ingestion", name: "Ingestion" },
 				{ value: "packages/sdk", name: "SDK" },
-				{ value: "apps/example-dashboard", name: "Dashboard" },
+				{ value: "apps/dashboard", name: "Dashboard" },
 			],
 		});
 
@@ -140,7 +140,7 @@ async function buildMenu() {
 			message: "Select packages to build:",
 			choices: [
 				{ value: "apps/ingestion", name: "Ingestion" },
-				{ value: "apps/example-dashboard", name: "Dashboard" },
+				{ value: "apps/dashboard", name: "Dashboard" },
 				{ value: "packages/sdk", name: "SDK" },
 			],
 		});
@@ -169,7 +169,7 @@ async function devMenu() {
 
 	const commandMap: Record<string, { command: string; cwd?: string }> = {
 		ingestion: { command: "bun run dev", cwd: "apps/ingestion" },
-		dashboard: { command: "bun run dev", cwd: "apps/example-dashboard" },
+		dashboard: { command: "bun run dev", cwd: "apps/dashboard" },
 		typecheck: { command: "bun run typecheck" },
 		lint: { command: "bun run lint" },
 		"fmt:check": { command: "bun run fmt:check" },

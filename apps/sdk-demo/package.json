@@ -1,5 +1,5 @@
 {
-	"name": "@remcostoeten/example",
+	"name": "@remcostoeten/sdk-demo",
 	"private": true,
 	"scripts": {
 		"dev": "next dev --port 3001",

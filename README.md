@@ -36,7 +36,7 @@ Creates `apps/web` (SDK only) + `apps/analytics-api` (ingestion). See generated 
 6. Add `<Analytics projectId="your-project" />` to your root layout
 7. Call `trackEvent(...)` in client components where needed
 8. Optionally call `trackServerEvent(...)` from API routes for server-only events
-9. Optionally deploy `apps/example-dashboard` with the same `DATABASE_URL`
+9. Optionally deploy `apps/dashboard` with the same `DATABASE_URL`
 
 ```bash
 npm install @remcostoeten/analytics
@@ -75,7 +75,7 @@ Remco Analytics has three parts. Only the SDK is on npm.
 | --- | --- | --- |
 | SDK (`@remcostoeten/analytics`) | `npm install @remcostoeten/analytics` | Runs in the browser |
 | Ingestion (`apps/ingestion`) | Clone repo, deploy yourself | You (Vercel, Bun, Node) |
-| Dashboard (`apps/example-dashboard`) | Clone repo, deploy yourself | You (optional) |
+| Dashboard (`apps/dashboard`) | Clone repo, deploy yourself | You (optional) |
 
 ```
 Your app (Next.js / React)
@@ -149,7 +149,7 @@ bun run db:migrate
 bun run dev          # local
 vercel --prod        # production
 
-cd ../example-dashboard
+cd ../dashboard
 vercel --prod        # optional
 ```
 
@@ -444,8 +444,8 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | `packages/create-analytics` | `@remcostoeten/create-analytics` scaffolder CLI (`npx @remcostoeten/create-analytics@latest`) |
 | `packages/analytics-manager` | `@remcostoeten/analytics-manager` npm package — fluent orchestration across analytics providers |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
-| `apps/example` | Minimal Next.js consumer app (all three tracking patterns) |
-| `apps/example-dashboard` | Next.js analytics UI |
+| `apps/sdk-demo` | Next.js consumer app demoing the SDK surface (events, provider, identity, consent, privacy) |
+| `apps/dashboard` | Next.js analytics UI |
 
 **Stack:** TypeScript, Bun, Neon Postgres, Drizzle ORM, Hono, Next.js, React.
 

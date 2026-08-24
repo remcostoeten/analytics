@@ -1,10 +1,10 @@
 {
-	"name": "@remcostoeten/example-dashboard",
+	"name": "@remcostoeten/dashboard",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "NEXT_CACHE_DIRECTORY=/tmp/next-cache next dev",
-		"build": "cd ../../packages/sdk && bun install && bun run build && cd ../../apps/example-dashboard && next build",
+		"build": "cd ../../packages/sdk && bun install && bun run build && cd ../../apps/dashboard && next build",
 		"start": "next start",
 		"test": "bun test __tests__",
 		"test:skeleton": "playwright test",

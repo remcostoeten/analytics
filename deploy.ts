@@ -109,7 +109,7 @@ async function deployDashboard() {
     log(`Deploying dashboard${isProduction ? " to production" : ""}...`, "blue")
 
     const command = isProduction ? "vercel --prod" : "vercel"
-    const result = await execCommand(command, "apps/example-dashboard")
+    const result = await execCommand(command, "apps/dashboard")
 
     if (result.code === 0) {
         log("✓ Dashboard deployed successfully!", "green")
@@ -416,7 +416,7 @@ async function showMenu() {
             await buildPackage("SDK", "packages/sdk")
             break
         case "3":
-            await buildPackage("Dashboard", "apps/example-dashboard")
+            await buildPackage("Dashboard", "apps/dashboard")
             break
         case "4":
             await buildPackage("Ingestion", "packages/ingestion")
