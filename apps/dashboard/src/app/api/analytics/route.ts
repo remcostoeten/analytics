@@ -223,6 +223,18 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getExperiments(from, to, projectId, excludeVisitorId, origin),
 				);
+			case "revenue":
+				return NextResponse.json(
+					await query.getRevenueStats(from, to, projectId, excludeVisitorId, origin),
+				);
+			case "search-insights":
+				return NextResponse.json(
+					await query.getSearchStats(from, to, projectId, excludeVisitorId, origin),
+				);
+			case "viewport-sizes":
+				return NextResponse.json(
+					await query.getViewportSizes(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "session-stats":
 				return NextResponse.json(
 					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin, geoScope),

@@ -83,6 +83,12 @@ const UTMCampaignsTable = dynamic(() =>
 const InteractionsCard = dynamic(() =>
 	import("@/components/interactions-card").then((module) => module.InteractionsCard),
 );
+const RevenueCard = dynamic(() =>
+	import("@/components/revenue-card").then((module) => module.RevenueCard),
+);
+const SearchInsightsCard = dynamic(() =>
+	import("@/components/search-insights-card").then((module) => module.SearchInsightsCard),
+);
 const ExperimentsCard = dynamic(() =>
 	import("@/components/experiments-card").then((module) => module.ExperimentsCard),
 );
@@ -611,6 +617,27 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
+	const { data: revenue } = useSWR(viewKey(["overview"], "revenue"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: searchInsights } = useSWR(viewKey(["behavior"], "search-insights"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: viewportSizes } = useSWR(viewKey(["technology"], "viewport-sizes"), fetcher, {
+		fallbackData: [],
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
 	const { data: interactions } = useSWR(viewKey(["behavior"], "interactions"), fetcher, {
 		fallbackData: null,
 		refreshInterval: 60000,
@@ -896,6 +923,7 @@ export function DashboardContent({
 									/>
 								</div>
 								{hasCampaignData && <UTMCampaignsTable data={utmCampaigns} />}
+								<RevenueCard data={revenue} />
 								<div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
 									<SessionStatsCard data={sessionStats} />
 									<DonutChart
@@ -990,6 +1018,7 @@ export function DashboardContent({
 								</div>
 								<HourlyHeatmap data={heatmap} />
 								<InteractionsCard data={interactions} />
+								<SearchInsightsCard data={searchInsights} />
 							</div>
 							<div className="space-y-4 lg:col-span-4">
 								<SessionStatsCard data={sessionStats} />
@@ -1010,6 +1039,7 @@ export function DashboardContent({
 										operatingSystems={operatingSystems}
 										languages={languages}
 										screenSizes={screenSizes}
+										viewportSizes={viewportSizes}
 										connectionTypes={connectionTypes}
 									/>
 									<WebVitalsCard data={webVitals} />

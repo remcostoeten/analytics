@@ -14,6 +14,13 @@ export function externalReferrer() {
 	return sql`referrer !~* ${LOCALHOST_REFERRER_PATTERN}`;
 }
 
+/**
+ * Guards `CAST(meta->>'x' AS numeric)`. Postgres aborts the whole statement on the
+ * first unparseable value, so any numeric meta field a consumer controls must be
+ * filtered through this before it is cast.
+ */
+export const NUMERIC_PATTERN = "^-?[0-9]+([.][0-9]+)?$";
+
 export type Range = { from: Date; to: Date };
 
 export type GeoScope = { country: string; region?: string | null };

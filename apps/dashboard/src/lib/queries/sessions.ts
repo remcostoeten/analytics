@@ -177,12 +177,14 @@ export async function getUTMCampaigns(
 	origin?: string | null,
 ) {
 	const results =
-		await sql`SELECT meta->>'utmSource' as utm_source, meta->>'utmMedium' as utm_medium, meta->>'utmCampaign' as utm_campaign, COUNT(DISTINCT COALESCE(session_id, visitor_id, id::text)) as visits, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND NULLIF(meta->>'utmSource', '') IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY utm_source, utm_medium, utm_campaign ORDER BY visits DESC LIMIT 20`;
+		await sql`SELECT meta->>'utmSource' as utm_source, meta->>'utmMedium' as utm_medium, meta->>'utmCampaign' as utm_campaign, meta->>'utmContent' as utm_content, meta->>'utmTerm' as utm_term, COUNT(DISTINCT COALESCE(session_id, visitor_id, id::text)) as visits, COUNT(DISTINCT visitor_id) as visitors FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} AND NULLIF(meta->>'utmSource', '') IS NOT NULL ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY utm_source, utm_medium, utm_campaign, utm_content, utm_term ORDER BY visits DESC LIMIT 20`;
 	const total = results.reduce((sum, r) => sum + Number(r.visits), 0);
 	return results.map((r) => ({
 		source: r.utm_source || "direct",
 		medium: r.utm_medium || "none",
 		campaign: r.utm_campaign || "none",
+		content: r.utm_content || null,
+		term: r.utm_term || null,
 		visits: Number(r.visits),
 		visitors: Number(r.visitors),
 		percentage: total > 0 ? Math.round((Number(r.visits) / total) * 1000) / 10 : 0,

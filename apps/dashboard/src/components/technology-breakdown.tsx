@@ -16,6 +16,7 @@ interface TechnologyBreakdownProps {
 	operatingSystems?: TechItem[];
 	languages?: TechItem[];
 	screenSizes?: TechItem[];
+	viewportSizes?: TechItem[];
 	connectionTypes?: TechItem[];
 	className?: string;
 }
@@ -53,13 +54,14 @@ function getOSColor(os: string): string {
 	return "bg-muted text-muted-foreground";
 }
 
-type TabId = "browsers" | "os" | "languages" | "screens" | "network";
+type TabId = "browsers" | "os" | "languages" | "screens" | "viewport" | "network";
 
 export function TechnologyBreakdown({
 	browsers = [],
 	operatingSystems = [],
 	languages = [],
 	screenSizes = [],
+	viewportSizes = [],
 	connectionTypes = [],
 	className,
 }: TechnologyBreakdownProps) {
@@ -109,11 +111,23 @@ export function TechnologyBreakdown({
 			})),
 		},
 		{
+			id: "viewport",
+			label: "Viewport",
+			icon: Maximize2,
+			data: viewportSizes.map((v) => ({
+				name: v.name,
+				version: v.version,
+				count: v.count,
+				percentage: v.percentage,
+			})),
+		},
+		{
 			id: "network",
 			label: "Network",
 			icon: Wifi,
 			data: connectionTypes.map((c) => ({
 				name: c.name || (c as unknown as { connectionType: string }).connectionType,
+				version: c.version,
 				count: c.count,
 				percentage: c.percentage,
 			})),

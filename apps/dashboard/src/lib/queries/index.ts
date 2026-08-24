@@ -11,3 +11,5 @@ export * from "./signals";
 export * from "./errors";
 export * from "./interactions";
 export * from "./experiments";
+export * from "./revenue";
+export * from "./search";

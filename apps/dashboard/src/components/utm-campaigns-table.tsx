@@ -7,6 +7,8 @@ type UTMCampaign = {
 	source: string | null;
 	medium: string | null;
 	campaign: string | null;
+	content?: string | null;
+	term?: string | null;
 	visits: number;
 	visitors: number;
 	percentage: number;
@@ -107,6 +109,20 @@ export function UTMCampaignsTable({ data, className }: UTMCampaignsTableProps) {
 											</span>
 										) : (
 											<span className="text-muted-foreground/40">—</span>
+										)}
+										{(row.content || row.term) && (
+											<div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+												{row.content && (
+													<span className="truncate max-w-[110px]" title={row.content}>
+														content: {row.content}
+													</span>
+												)}
+												{row.term && (
+													<span className="truncate max-w-[110px]" title={row.term}>
+														term: {row.term}
+													</span>
+												)}
+											</div>
 										)}
 									</td>
 									<td className="px-3 py-2 text-right">

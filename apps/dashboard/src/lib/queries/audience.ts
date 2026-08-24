@@ -1,6 +1,12 @@
 import { sql } from "../db";
 import type { DeviceBreakdown } from "../types";
-import { publicTraffic, getRange, geoScopeFilter, type GeoScope } from "./filters";
+import {
+	publicTraffic,
+	getRange,
+	geoScopeFilter,
+	NUMERIC_PATTERN,
+	type GeoScope,
+} from "./filters";
 
 export async function getDeviceBreakdown(
 	projectId?: string,
@@ -89,6 +95,24 @@ export async function getScreenSizes(
 	}));
 }
 
+export async function getViewportSizes(
+	from: Date,
+	to: Date,
+	projectId: string | null,
+	excludeVisitorId?: string | null,
+	origin?: string | null,
+) {
+	const results =
+		await sql`SELECT COALESCE(NULLIF(meta->>'viewport', ''), 'Unknown') as viewport, COUNT(*) as count, mode() WITHIN GROUP (ORDER BY meta->>'pixelRatio') as pixel_ratio FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY viewport ORDER BY count DESC LIMIT 10`;
+	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
+	return results.map((r) => ({
+		name: r.viewport as string,
+		version: r.pixel_ratio ? `${r.pixel_ratio}x DPR` : undefined,
+		count: Number(r.count),
+		percentage: total > 0 ? (Number(r.count) / total) * 100 : 0,
+	}));
+}
+
 export async function getConnectionTypes(
 	from: Date,
 	to: Date,
@@ -97,8 +121,14 @@ export async function getConnectionTypes(
 	origin?: string | null,
 ) {
 	const results =
-		await sql`SELECT COALESCE(meta->>'connectionType', 'Unknown') as connection_type, COUNT(*) as count FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY connection_type ORDER BY count DESC`;
-	return results.map((r) => ({ type: r.connection_type, count: Number(r.count) }));
+		await sql`SELECT COALESCE(meta->>'connectionType', 'Unknown') as connection_type, COUNT(*) as count, AVG(CAST(meta->>'connectionDownlink' AS float)) FILTER (WHERE meta->>'connectionDownlink' ~ ${NUMERIC_PATTERN}) as avg_downlink FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} GROUP BY connection_type ORDER BY count DESC`;
+	const total = results.reduce((sum, r) => sum + Number(r.count), 0);
+	return results.map((r) => ({
+		name: r.connection_type as string,
+		version: r.avg_downlink ? `${Number(r.avg_downlink).toFixed(1)} Mbps` : undefined,
+		count: Number(r.count),
+		percentage: total > 0 ? (Number(r.count) / total) * 100 : 0,
+	}));
 }
 
 export async function getBotBreakdown(

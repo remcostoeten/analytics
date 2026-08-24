@@ -7,6 +7,7 @@ import {
 	getTimeRangeFilter,
 	calculateTrend,
 	geoScopeFilter,
+	NUMERIC_PATTERN,
 	type GeoScope,
 } from "./filters";
 
@@ -185,7 +186,7 @@ export async function getSegmentedMetrics(
 	if (segment === "pro") segmentFilter = sql`AND meta->'userProperties'->>'plan' = 'pro'`;
 	else if (segment === "free") segmentFilter = sql`AND meta->'userProperties'->>'plan' = 'free'`;
 	const [metrics] =
-		await sql`SELECT COUNT(*) as events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions, COALESCE(SUM(CAST(meta->>'revenue' AS numeric)), 0) as revenue, COUNT(*) FILTER (WHERE path = '/signup') as signups, AVG(CAST(meta->>'timeOnPageMs' AS float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${segmentFilter}`;
+		await sql`SELECT COUNT(*) as events, COUNT(*) FILTER (WHERE type = 'pageview') as pageviews, COUNT(DISTINCT visitor_id) as visitors, COUNT(DISTINCT session_id) as sessions, COALESCE(SUM(CAST(meta->>'revenue' AS numeric)) FILTER (WHERE meta->>'revenue' ~ ${NUMERIC_PATTERN}), 0) as revenue, COUNT(*) FILTER (WHERE path = '/signup') as signups, AVG(CAST(meta->>'timeOnPageMs' AS float)) FILTER (WHERE meta->>'eventName' = 'time-on-page') as avg_time FROM events WHERE ${publicTraffic(excludeVisitorId, origin)} AND ts >= ${from} AND ts <= ${to} ${projectId ? sql`AND project_id = ${projectId}` : sql``} ${segmentFilter}`;
 	const m = metrics || {
 		events: 0,
 		pageviews: 0,
