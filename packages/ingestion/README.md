@@ -36,15 +36,17 @@ app.route("/", ingestion);
 
 ## Environment variables
 
-| Variable              | Required            | Purpose                                                                                                                                 |
-| --------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`        | Yes                 | Neon Postgres connection string                                                                                                         |
-| `IP_HASH_SECRET`      | Yes in production   | Min 32 chars, IP hashing salt                                                                                                           |
-| `ORIGIN_ALLOWLIST`    | No                  | Comma-separated allowed origins (empty = all origins allowed)                                                                           |
-| `INGEST_SECRET`       | For server tracking | Bearer token for server-to-server requests                                                                                              |
-| `INTERNAL_IP_HASHES`  | No                  | Comma-separated IP hashes flagged as internal traffic                                                                                   |
-| `GEOIP_MMDB_PATH`     | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file; defaults to the `GeoLite2-City.mmdb` the Vercel build bundles next to the function |
-| `GEOIP_ASN_MMDB_PATH` | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; defaults to the bundled `GeoLite2-ASN.mmdb`. Adds network/ISP (`asn`, `as_org`) to events  |
+| Variable               | Required            | Purpose                                                                                                                                 |
+| ---------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Yes                 | Neon Postgres connection string                                                                                                         |
+| `IP_HASH_SECRET`       | Yes in production   | Min 32 chars, IP hashing salt                                                                                                           |
+| `ORIGIN_ALLOWLIST`     | No                  | Comma-separated allowed origins (empty = all origins allowed)                                                                           |
+| `INGEST_SECRET`        | For server tracking | Bearer token for server-to-server requests                                                                                              |
+| `INTERNAL_IPS`         | No                  | Comma-separated raw IP addresses flagged as internal traffic                                                                            |
+| `INTERNAL_VISITOR_IDS` | No                  | Comma-separated visitor IDs (SDK `localStorage` fingerprint) flagged as internal traffic                                                |
+| `INTERNAL_IP_HASHES`   | No                  | Deprecated — `ip_hash` uses a daily salt, so values stop matching after a day. Use `INTERNAL_IPS`                                       |
+| `GEOIP_MMDB_PATH`      | No                  | Path to a MaxMind GeoLite2/GeoIP2 City `.mmdb` file; defaults to the `GeoLite2-City.mmdb` the Vercel build bundles next to the function |
+| `GEOIP_ASN_MMDB_PATH`  | No                  | Path to a MaxMind GeoLite2 ASN `.mmdb` file; defaults to the bundled `GeoLite2-ASN.mmdb`. Adds network/ISP (`asn`, `as_org`) to events  |
 
 ### `IP_HASH_SECRET`
 

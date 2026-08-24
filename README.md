@@ -102,7 +102,9 @@ You do **not** need the dashboard to collect data. Ingestion + SDK is enough. Th
 | `IP_HASH_SECRET` | Yes in production (min 32 chars) | Daily-rotating salt for IP hashing. Ingestion refuses to boot in production without it — a guessable secret makes every stored `ip_hash` reversible. Generate with `openssl rand -hex 32` |
 | `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins (empty = all) |
 | `INGEST_SECRET` | No | Bearer token for server-side events via `@remcostoeten/analytics/server` |
-| `INTERNAL_IP_HASHES` | No | IP hashes flagged as internal traffic |
+| `INTERNAL_IPS` | No | Comma-separated raw IP addresses flagged as internal traffic and hidden from every dashboard metric |
+| `INTERNAL_VISITOR_IDS` | No | Comma-separated visitor IDs (the SDK's `localStorage` fingerprint) flagged as internal traffic |
+| `INTERNAL_IP_HASHES` | No | Deprecated. `ip_hash` is salted per calendar day, so entries stop matching the next day — use `INTERNAL_IPS` instead |
 
 **SDK**
 
