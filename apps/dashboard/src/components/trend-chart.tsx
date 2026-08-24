@@ -1,20 +1,18 @@
 "use client";
 
-import {
-	Area,
-	Bar,
-	ComposedChart,
-	XAxis,
-	YAxis,
-	Tooltip,
-	ResponsiveContainer,
-	CartesianGrid,
-	ReferenceLine,
-} from "recharts";
-import { Inbox } from "lucide-react";
+import { useId, type CSSProperties } from "react";
+import { Area, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, ReferenceLine } from "recharts";
+import { Inbox, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import type { TimeSeries } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+	type ChartConfig,
+} from "@/components/ui/chart";
 
 type TrendChartProps = {
 	data: TimeSeries;
@@ -37,6 +35,7 @@ export function TrendChart({
 	className,
 	isLoading = false,
 }: TrendChartProps) {
+	const chartId = useId().replace(/:/g, "");
 	const hasData = data && data.data && data.data.length > 0;
 	function formatLabel(timestamp: Date | string) {
 		const date = new Date(timestamp);
@@ -58,12 +57,41 @@ export function TrendChart({
 	const total = values.reduce((sum, value) => sum + value, 0);
 	const peak = values.length ? Math.max(...values) : 0;
 	const average = values.length ? total / values.length : 0;
+	const change = percentChange(values);
+	const gradientId = `${chartId}-gradient`;
+	const chartConfig = {
+		value: {
+			label: data?.label || title || "Value",
+			color,
+		},
+	} satisfies ChartConfig;
 
 	return (
 		<div className={cn("rounded-lg border border-border bg-card", className)}>
 			{title && (
 				<div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
-					<h3 className="text-xs font-medium text-foreground">{title}</h3>
+					<h3 className="flex items-center gap-2 text-xs font-medium text-foreground">
+						{title}
+						{hasData && change !== null && (
+							<Badge
+								variant="outline"
+								className={cn(
+									"tabular-nums",
+									change >= 0
+										? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+										: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+								)}
+							>
+								{change >= 0 ? (
+									<TrendingUpIcon aria-hidden="true" />
+								) : (
+									<TrendingDownIcon aria-hidden="true" />
+								)}
+								{change >= 0 ? "+" : ""}
+								{change.toFixed(1)}%
+							</Badge>
+						)}
+					</h3>
 					{hasData && (
 						<div className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
 							<span className="tabular-nums">total {formatCompact(total)}</span>
@@ -116,85 +144,97 @@ export function TrendChart({
 				</div>
 			) : (
 				<div aria-label={title || data.label} className="p-2" style={{ height }}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ChartContainer
+						config={chartConfig}
+						className="aspect-auto h-full w-full"
+						style={{ ["--color-value" as string]: color } as CSSProperties}
+					>
 						<ComposedChart data={chartData} margin={{ top: 10, right: 14, left: 4, bottom: 4 }}>
 							<defs>
-								<linearGradient id={`gradient-${data.id}`} x1="0" y1="0" x2="0" y2="1">
-									<stop offset="0%" stopColor={color} stopOpacity={0.5} />
-									<stop offset="100%" stopColor={color} stopOpacity={0.1} />
+								<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor={color} stopOpacity={0.5} />
+									<stop offset="95%" stopColor={color} stopOpacity={0.05} />
 								</linearGradient>
 							</defs>
-							<CartesianGrid
-								strokeDasharray="3 3"
-								vertical={false}
-								stroke="var(--border)"
-								strokeOpacity={0.5}
-							/>
+							<CartesianGrid vertical={false} strokeDasharray="3 3" />
 							{showAxis && (
 								<>
 									<XAxis
 										dataKey="formattedTime"
-										axisLine={{ stroke: "var(--border)" }}
+										axisLine={false}
 										tickLine={false}
-										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+										tickMargin={8}
+										tick={{ fontSize: 10 }}
 										interval="preserveStartEnd"
 										minTickGap={40}
 										height={28}
 									/>
 									<YAxis
-										axisLine={{ stroke: "var(--border)" }}
+										axisLine={false}
 										domain={[0, (max: number) => Math.max(1, Math.ceil(max * 1.2))]}
 										tickLine={false}
-										tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+										tick={{ fontSize: 10 }}
 										width={38}
 										tickFormatter={(v) => formatCompact(v)}
 									/>
 								</>
 							)}
-							<Tooltip
-								content={({ active, payload }) => {
-									if (!active || !payload?.length) return null;
-									const p = payload[0].payload;
-									return (
-										<div className="bg-background border border-border rounded px-2.5 py-1.5 shadow-lg">
-											<p className="text-[11px] text-muted-foreground">{p.formattedTime}</p>
-											<p className="text-sm font-semibold text-foreground">
-												{Number(p.value).toLocaleString()}
-											</p>
-										</div>
-									);
-								}}
+							<ChartTooltip
+								cursor={false}
+								content={
+									<ChartTooltipContent
+										indicator="dot"
+										className="min-w-40 gap-2.5"
+										labelFormatter={(value) => (
+											<div className="border-border/50 mb-0.5 border-b pb-2">
+												<span className="text-xs font-medium">{value}</span>
+											</div>
+										)}
+										formatter={(value, name) => (
+											<div className="flex w-full items-center justify-between gap-2">
+												<div className="flex items-center gap-1.5">
+													<div
+														className="h-2.5 w-2.5 shrink-0 rounded-xs bg-(--color-bg)"
+														style={{ ["--color-bg" as string]: color } as CSSProperties}
+													/>
+													<span className="text-muted-foreground">
+														{chartConfig[name as keyof typeof chartConfig]?.label || name}
+													</span>
+												</div>
+												<span className="text-foreground font-semibold tabular-nums">
+													{Number(value).toLocaleString()}
+												</span>
+											</div>
+										)}
+									/>
+								}
 							/>
 							<ReferenceLine y={0} stroke="var(--border)" strokeOpacity={0.5} />
 							{chartType === "bar" ? (
 								<Bar dataKey="value" fill={color} maxBarSize={32} radius={[3, 3, 0, 0]} />
 							) : (
 								<Area
-									type="monotone"
 									dataKey="value"
+									type="natural"
+									fill={`url(#${gradientId})`}
 									stroke={color}
-									strokeWidth={3}
-									fill={`url(#gradient-${data.id})`}
-									dot={{
-										r: 3,
-										fill: "var(--background)",
-										stroke: color,
-										strokeWidth: 2,
-									}}
-									activeDot={{
-										r: 4.5,
-										fill: "var(--background)",
-										stroke: color,
-										strokeWidth: 2,
-									}}
+									strokeWidth={2}
 								/>
 							)}
 						</ComposedChart>
-					</ResponsiveContainer>
+					</ChartContainer>
 				</div>
 			)}
 		</div>
 	);
+}
+
+function percentChange(values: number[]): number | null {
+	if (values.length < 2) return null;
+	const first = values[0];
+	const last = values[values.length - 1];
+	if (!first) return null;
+	return ((last - first) / first) * 100;
 }
 
 function formatCompact(value: number): string {
