@@ -842,7 +842,8 @@ export function DashboardContent({
 								<TrendChart
 									data={trendData}
 									title="Pageviews over time"
-									height={172}
+									height={220}
+									chartType="bar"
 									isLoading={trendLoading}
 								/>
 								<GeoMap

@@ -10,12 +10,14 @@ import { observeErrors } from "../observers/errors";
 import { setConsentGranted, setConsentRequired } from "../api/consent";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
-import { type AnalyticsProps } from "../types";
+import { type AnalyticsProps } from "../types/react";
 import { debugLog } from "../utilities";
 
 export function Analytics({
 	projectId,
 	ingestUrl,
+	path,
+	referrer,
 	disabled = false,
 	debug = false,
 	trackClicks = false,
@@ -26,7 +28,13 @@ export function Analytics({
 	consentGranted = false,
 }: AnalyticsProps) {
 	const contextOptions = useAnalyticsOptions();
-	const resolved = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
+	const resolved = resolveAnalyticsOptions(contextOptions, {
+		projectId,
+		ingestUrl,
+		debug,
+		path,
+		referrer,
+	});
 
 	useEffect(() => {
 		setConsentRequired(consentRequired);
@@ -61,6 +69,8 @@ export function Analytics({
 		resolved.projectId,
 		resolved.ingestUrl,
 		resolved.debug,
+		resolved.path,
+		resolved.referrer,
 		disabled,
 		trackClicks,
 		trackOutbound,

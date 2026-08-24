@@ -4,8 +4,16 @@ import { cors } from "hono/cors";
 import { handleIngest } from "./handlers/ingest.js";
 import { handleBatch } from "./handlers/batch.js";
 import { handleMetrics } from "./handlers/metrics.js";
-import { handleAdminCleanup, handleAdminStats, handleAdminRollup } from "./handlers/admin.js";
+import {
+	handleAdminCleanup,
+	handleAdminStats,
+	handleAdminRollup,
+	requireAdminAuth,
+} from "./handlers/admin.js";
+import { assertIpHashSecret } from "./utilities/ip-hash.js";
 import { execSync } from "child_process";
+
+assertIpHashSecret();
 
 const app = new Hono();
 
@@ -52,25 +60,40 @@ app.use(
 
 app.use("*", requestCounter());
 
-let commitHash = "unknown";
-let commitMsg = "development setup";
-let commitDate = new Date().toISOString().split("T")[0];
+type BuildInfo = { commitHash: string; commitMsg: string; commitDate: string };
 
-try {
-	commitHash =
-		process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
-		execSync("git rev-parse --short HEAD", { stdio: "pipe" }).toString().trim();
-	commitMsg =
-		process.env.VERCEL_GIT_COMMIT_MESSAGE ||
-		execSync("git log -1 --pretty=%B", { stdio: "pipe" }).toString().trim().split("\n")[0];
-	commitDate = execSync("git log -1 --format=%cd --date=short", { stdio: "pipe" })
-		.toString()
-		.trim();
-} catch {
-	// Fallback when git is unavailable
+let buildInfo: BuildInfo | null = null;
+
+function readGit(command: string, fallback: string): string {
+	try {
+		return execSync(command, { stdio: "pipe" }).toString().trim() || fallback;
+	} catch {
+		return fallback;
+	}
+}
+
+function getBuildInfo(): BuildInfo {
+	if (buildInfo) return buildInfo;
+
+	const envHash = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+	const envMsg = process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0];
+	const today = new Date().toISOString().split("T")[0];
+
+	buildInfo =
+		envHash && envMsg
+			? { commitHash: envHash, commitMsg: envMsg, commitDate: today }
+			: {
+					commitHash: envHash || readGit("git rev-parse --short HEAD", "unknown"),
+					commitMsg:
+						envMsg || readGit("git log -1 --pretty=%B", "development setup").split("\n")[0],
+					commitDate: readGit("git log -1 --format=%cd --date=short", today),
+				};
+
+	return buildInfo;
 }
 
 app.get("/", (c) => {
+	const { commitHash, commitMsg, commitDate } = getBuildInfo();
 	const repoLink = `https://github.com/remcostoeten/analytics`;
 	const commitLink = `${repoLink}/commit/${commitHash}`;
 	const npmLink = `https://www.npmjs.com/package/@remcostoeten/analytics`;
@@ -294,6 +317,11 @@ es.onmessage = (e) => {
 	}
 };
 
+es.onerror = () => {
+	es.close();
+	document.getElementById("req").textContent = "admin only";
+};
+
 fetch("https://registry.npmjs.org/@remcostoeten/analytics/latest")
   .then(res => res.json())
   .then(data => {
@@ -330,6 +358,9 @@ app.post("/admin/rollup", handleAdminRollup);
 app.get("/admin/rollup", handleAdminRollup);
 
 app.get("/events", (c) => {
+	const authError = requireAdminAuth(c);
+	if (authError) return authError;
+
 	return new Response(
 		new ReadableStream({
 			start(controller) {

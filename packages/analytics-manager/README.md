@@ -215,6 +215,8 @@ Adapters expose only configuration that the underlying SDK actually has. Each on
 remco()
 	.project("skriuw")
 	.ingest("https://analytics-api.example.com")
+	.path("/s/:token")
+	.referrer(null)
 	.errors()
 	.clicks()
 	.forms()
@@ -236,7 +238,7 @@ logger()
 	});
 ```
 
-`remco()` falls back to `.app()` for its project id. `posthog()` skips loading and initialization without a token. A PostHog client supplied through `.client()` is treated as already initialized, does not require `.token()`, and is never reinitialized. PostHog sends context plus traits as person properties on `identify` (app and environment are also registered once as super properties for manager-initialized clients), and maps `group` and `alias` onto `posthog.group` and `posthog.alias` — reporting `skipped` when the loaded client lacks them. `vercel()` injects Vercel Analytics when it loads the SDK itself and only handles `track`; `page`, `identify`, `group`, `alias` and `reset` report as skipped because Vercel's injected script owns pageview tracking and its custom events cannot represent the other operations. A Vercel client supplied through `.client()` is assumed to be ready. `logger()` prints every event and is meant for development; target it with `.to("logger")` or drop it with `.when(isDev, logger())`.
+`remco()` loads the React-free `@remcostoeten/analytics/browser` entry and falls back to `.app()` for its project id. Use `.path()` and `.referrer()` to replace sensitive browser location values before delivery. `posthog()` skips loading and initialization without a token. A PostHog client supplied through `.client()` is treated as already initialized, does not require `.token()`, and is never reinitialized. PostHog sends context plus traits as person properties on `identify` (app and environment are also registered once as super properties for manager-initialized clients), and maps `group` and `alias` onto `posthog.group` and `posthog.alias` — reporting `skipped` when the loaded client lacks them. `vercel()` injects Vercel Analytics when it loads the SDK itself and only handles `track`; `page`, `identify`, `group`, `alias` and `reset` report as skipped because Vercel's injected script owns pageview tracking and its custom events cannot represent the other operations. A Vercel client supplied through `.client()` is assumed to be ready. `logger()` prints every event and is meant for development; target it with `.to("logger")` or drop it with `.when(isDev, logger())`.
 
 ### Provider escape hatch
 

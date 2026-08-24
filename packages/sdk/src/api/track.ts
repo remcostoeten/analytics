@@ -37,7 +37,7 @@ function buildPayload(
 		type,
 		projectId: options.projectId || resolveDefaultProjectId(),
 		path: options.path ?? window.location.pathname,
-		referrer: document.referrer || null,
+		referrer: options.referrer !== undefined ? options.referrer : document.referrer || null,
 		origin: window.location.origin,
 		host: window.location.host,
 		ua: navigator.userAgent,

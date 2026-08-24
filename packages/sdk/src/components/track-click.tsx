@@ -2,11 +2,26 @@ import { cloneElement, isValidElement, type MouseEvent, type ReactElement } from
 import { trackClick } from "../api/track";
 import { useAnalyticsOptions } from "./provider";
 import { resolveAnalyticsOptions } from "../utilities/options";
-import { type TrackClickProps } from "../types";
+import { type TrackClickProps } from "../types/react";
 
-export function TrackClick({ name, meta, children, projectId, ingestUrl, debug }: TrackClickProps) {
+export function TrackClick({
+	name,
+	meta,
+	children,
+	projectId,
+	ingestUrl,
+	debug,
+	path,
+	referrer,
+}: TrackClickProps) {
 	const contextOptions = useAnalyticsOptions();
-	const options = resolveAnalyticsOptions(contextOptions, { projectId, ingestUrl, debug });
+	const options = resolveAnalyticsOptions(contextOptions, {
+		projectId,
+		ingestUrl,
+		debug,
+		path,
+		referrer,
+	});
 
 	if (!isValidElement(children)) return children;
 

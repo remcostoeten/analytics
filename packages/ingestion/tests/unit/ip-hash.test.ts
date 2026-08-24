@@ -1,5 +1,5 @@
 import { describe, it, expect, setSystemTime, afterEach } from "bun:test";
-import { hashIp, validateIpHashSecret } from "../../src/utilities/ip-hash";
+import { hashIp, validateIpHashSecret, assertIpHashSecret } from "../../src/utilities/ip-hash";
 
 describe("ip-hash", () => {
 	afterEach(() => {
@@ -71,6 +71,56 @@ describe("ip-hash", () => {
 		it("accepts long custom secret", () => {
 			process.env.IP_HASH_SECRET = "a-very-long-secret-that-is-over-32-characters-long";
 			expect(validateIpHashSecret()).toBe(true);
+		});
+	});
+
+	describe("assertIpHashSecret", () => {
+		const originalSecret = process.env.IP_HASH_SECRET;
+		const originalNodeEnv = process.env.NODE_ENV;
+		const originalVercelEnv = process.env.VERCEL_ENV;
+
+		afterEach(() => {
+			process.env.IP_HASH_SECRET = originalSecret;
+			process.env.NODE_ENV = originalNodeEnv;
+			process.env.VERCEL_ENV = originalVercelEnv;
+		});
+
+		it("throws in production when the secret is missing", () => {
+			delete process.env.IP_HASH_SECRET;
+			process.env.NODE_ENV = "production";
+			expect(() => assertIpHashSecret()).toThrow(/IP_HASH_SECRET is not set/);
+		});
+
+		it("throws in production on the placeholder secret", () => {
+			process.env.IP_HASH_SECRET = "default-secret-change-me";
+			process.env.NODE_ENV = "production";
+			expect(() => assertIpHashSecret()).toThrow(/placeholder value/);
+		});
+
+		it("throws in production on a short secret", () => {
+			process.env.IP_HASH_SECRET = "too-short";
+			process.env.NODE_ENV = "production";
+			expect(() => assertIpHashSecret()).toThrow(/at least 32/);
+		});
+
+		it("throws when VERCEL_ENV is production", () => {
+			delete process.env.IP_HASH_SECRET;
+			process.env.NODE_ENV = "development";
+			process.env.VERCEL_ENV = "production";
+			expect(() => assertIpHashSecret()).toThrow(/Refusing to start ingestion/);
+		});
+
+		it("passes in production with a strong secret", () => {
+			process.env.IP_HASH_SECRET = "a-very-long-secret-that-is-over-32-characters-long";
+			process.env.NODE_ENV = "production";
+			expect(() => assertIpHashSecret()).not.toThrow();
+		});
+
+		it("does not throw outside production", () => {
+			delete process.env.IP_HASH_SECRET;
+			process.env.NODE_ENV = "development";
+			delete process.env.VERCEL_ENV;
+			expect(() => assertIpHashSecret()).not.toThrow();
 		});
 	});
 });

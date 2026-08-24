@@ -52,7 +52,10 @@ function remcoClient(): { calls: Call[]; client: RemcoClient } {
 describe("remco adapter", () => {
 	test("maps events onto the sdk surface", async () => {
 		const { calls, client } = remcoClient();
-		const analytics = createAnalytics().app("skriuw").use(remco().client(client)).build();
+		const analytics = createAnalytics()
+			.app("skriuw")
+			.use(remco().path("/s/:token").referrer(null).client(client))
+			.build();
 
 		await analytics.track("note.created", { noteId: "n1" });
 		await analytics.page({ section: "settings" });
@@ -65,11 +68,23 @@ describe("remco adapter", () => {
 		expect(names).toEqual(["trackEvent", "trackPageView", "identify"]);
 		expect(calls[0].args[0]).toBe("note.created");
 		expect(calls[0].args[1]).toEqual({ app: "skriuw", noteId: "n1" });
-		expect(calls[0].args[2]).toEqual({ projectId: "skriuw" });
-		expect(calls[1].args[1]).toEqual({ projectId: "skriuw" });
+		expect(calls[0].args[2]).toEqual({
+			projectId: "skriuw",
+			path: "/s/:token",
+			referrer: null,
+		});
+		expect(calls[1].args[1]).toEqual({
+			projectId: "skriuw",
+			path: "/s/:token",
+			referrer: null,
+		});
 		expect(calls[2].args[0]).toBe("user-1");
 		expect(calls[2].args[1]).toEqual({ plan: "pro" });
-		expect(calls[2].args[2]).toEqual({ projectId: "skriuw" });
+		expect(calls[2].args[2]).toEqual({
+			projectId: "skriuw",
+			path: "/s/:token",
+			referrer: null,
+		});
 	});
 
 	test("identifies through track for sdk 1.7 clients", async () => {

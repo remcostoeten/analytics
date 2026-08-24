@@ -1,6 +1,6 @@
 {
 	"name": "@remcostoeten/analytics-manager",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Typed, fluent analytics orchestration layer on top of @remcostoeten/analytics, PostHog and Vercel Analytics",
 	"keywords": [
 		"adapters",
@@ -83,7 +83,7 @@
 		"typescript": "^5.9.3"
 	},
 	"peerDependencies": {
-		"@remcostoeten/analytics": "^1.7.0",
+		"@remcostoeten/analytics": "^1.7.1",
 		"@vercel/analytics": "^1.0.0 || ^2.0.0",
 		"posthog-js": "^1.0.0",
 		"react": "^18.0.0 || ^19.0.0"

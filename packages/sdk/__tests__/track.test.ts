@@ -160,6 +160,14 @@ describe("track", () => {
 		expect(callArgs[0]).toBe("https://custom.com/e");
 	});
 
+	test("uses privacy-safe location fields from options", () => {
+		track("pageview", undefined, { path: "/s/:token", referrer: null });
+		const blob = beaconMock.mock.calls[0][1];
+		const payload = JSON.parse(blob.content[0]);
+		expect(payload.path).toBe("/s/:token");
+		expect(payload.referrer).toBeNull();
+	});
+
 	test("includes meta data in payload", () => {
 		const meta = { foo: "bar", count: 42 };
 		track("event", meta);

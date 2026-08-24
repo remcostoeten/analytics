@@ -1,6 +1,6 @@
-# Remco Analytics
+# Self-hosted, cookie-free web analytics for Next.js and React
 
-First-party analytics you self-host. Cookie-free, privacy-first, built for Next.js and React. Install the SDK in your app, deploy the ingestion service against your own Postgres, and optionally run the dashboard on the same database.
+**Remco Analytics** is first-party analytics you host yourself. No cookies, no third-party requests, no data leaving your infrastructure. Install the SDK in your app, deploy the ingestion service against your own Postgres, and optionally run the dashboard on the same database.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
@@ -99,7 +99,7 @@ You do **not** need the dashboard to collect data. Ingestion + SDK is enough. Th
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Neon Postgres connection string |
-| `IP_HASH_SECRET` | Yes in production (min 32 chars) | Daily-rotating salt for IP hashing |
+| `IP_HASH_SECRET` | Yes in production (min 32 chars) | Daily-rotating salt for IP hashing. Ingestion refuses to boot in production without it — a guessable secret makes every stored `ip_hash` reversible. Generate with `openssl rand -hex 32` |
 | `ORIGIN_ALLOWLIST` | No | Comma-separated allowed origins (empty = all) |
 | `INGEST_SECRET` | No | Bearer token for server-side events via `@remcostoeten/analytics/server` |
 | `INTERNAL_IP_HASHES` | No | IP hashes flagged as internal traffic |

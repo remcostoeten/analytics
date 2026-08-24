@@ -5,7 +5,8 @@
 		"types": ["node", "bun-types"],
 		"jsx": "react-jsx",
 		"paths": {
-			"@remcostoeten/analytics": ["../sdk/src/index.ts"]
+			"@remcostoeten/analytics": ["../sdk/src/index.ts"],
+			"@remcostoeten/analytics/browser": ["../sdk/src/browser/index.ts"]
 		}
 	},
 	"include": ["src/**/*.ts", "__tests__/**/*.ts", "__tests__/**/*.tsx"],

@@ -131,7 +131,7 @@
     },
     "packages/analytics-manager": {
       "name": "@remcostoeten/analytics-manager",
-      "version": "0.1.4",
+      "version": "0.1.6",
       "devDependencies": {
         "@remcostoeten/analytics": "workspace:*",
         "@types/node": "^25.2.3",
@@ -146,7 +146,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@remcostoeten/analytics": "^1.7.0",
+        "@remcostoeten/analytics": "^1.7.1",
         "@vercel/analytics": "^1.0.0 || ^2.0.0",
         "posthog-js": "^1.0.0",
         "react": "^18.0.0 || ^19.0.0",
@@ -202,7 +202,7 @@
     },
     "packages/sdk": {
       "name": "@remcostoeten/analytics",
-      "version": "1.7.0",
+      "version": "1.7.1",
       "devDependencies": {
         "@types/node": "^25.2.3",
         "@types/react": "^19.2.14",
@@ -214,6 +214,9 @@
       "peerDependencies": {
         "react": "^18.0.0 || ^19.0.0",
       },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "packages/typescript": {
       "name": "@remcostoeten/tsconfig",
