@@ -27,7 +27,7 @@ bun run deploy.ts
 |---|--------|--------------|
 | **1** | Build all | Compiles SDK, Dashboard, and Ingestion |
 | **2** | Build SDK only | `packages/sdk` |
-| **3** | Build Dashboard only | `apps/example-dashboard` |
+| **3** | Build Dashboard only | `apps/dashboard` |
 | **4** | Build Ingestion only | `packages/ingestion` + `apps/ingestion` |
 | **5** | Deploy Dashboard | Push to Vercel (asks preview vs production) |
 | **6** | Publish SDK | Bump version, update CHANGELOG, publish `@remcostoeten/analytics` |

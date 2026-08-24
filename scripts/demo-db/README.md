@@ -11,13 +11,13 @@ bun run demo:db -- --restore   # switch the dashboard back to your own DATABASE_
 ```
 
 After setup the script asks whether to point the dashboard at the demo database.
-Switching edits `apps/example-dashboard/.env.local` non-destructively: your own
+Switching edits `apps/dashboard/.env.local` non-destructively: your own
 `DATABASE_URL` is kept as a `# demo-db saved:` comment and restored byte-for-byte
 on switch-back.
 
 `db.localtest.me` resolves to `127.0.0.1`; the dashboard's `@neondatabase/serverless`
 HTTP driver is routed to the bundled [local neon proxy](https://github.com/TimoWilhelm/local-neon-http-proxy)
-on port 4444 (see `apps/example-dashboard/src/lib/db.ts`), so production code paths
+on port 4444 (see `apps/dashboard/src/lib/db.ts`), so production code paths
 are exercised unchanged.
 
 Teardown: `docker compose -f scripts/demo-db/docker-compose.yml down` (add `-v` to

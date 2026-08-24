@@ -78,7 +78,7 @@ async function runDeployMenu() {
 			break;
 		case "2": {
 			const prod = (await prompt("  Deploy to production? (y/n): ")).toLowerCase() === "y";
-			await execCommand(prod ? "vercel --prod" : "vercel", "apps/example-dashboard");
+			await execCommand(prod ? "vercel --prod" : "vercel", "apps/dashboard");
 			break;
 		}
 		case "3":
@@ -169,7 +169,7 @@ async function runDevServer() {
 async function runDashboardDev() {
 	header("Dashboard Dev Server");
 	console.log(`  Starting Next.js dev server...`);
-	await execCommand("bun run dev", "apps/example-dashboard");
+	await execCommand("bun run dev", "apps/dashboard");
 }
 
 // --------------------------------------------------------

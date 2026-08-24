@@ -8,7 +8,7 @@ import { DEMO_DATABASE_URL, readEnvState, restoreOwnEnv, switchToDemo } from "./
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..");
-const envFile = join(repoRoot, "apps", "example-dashboard", ".env.local");
+const envFile = join(repoRoot, "apps", "dashboard", ".env.local");
 const migrationsDir = join(repoRoot, "packages", "ingestion", "src", "db", "migrations");
 const PSQL = ["exec", "-i", "analytics-demo-db", "psql", "-U", "postgres", "-d", "analytics", "-q", "-v", "ON_ERROR_STOP=1"];
 
@@ -65,7 +65,7 @@ async function applyEnvChoice(): Promise<void> {
 
 	if (process.argv.includes("--restore")) {
 		restoreOwnEnv(envFile);
-		console.log("Restored your own DATABASE_URL in apps/example-dashboard/.env.local.");
+		console.log("Restored your own DATABASE_URL in apps/dashboard/.env.local.");
 		return;
 	}
 	if (process.argv.includes("--use-demo")) {
@@ -158,7 +158,7 @@ console.log("");
 console.log("Stop it with: docker compose -f scripts/demo-db/docker-compose.yml down");
 
 if (process.stdin.isTTY && (await askYesNo("Start the dashboard dev server now?"))) {
-	const child = spawn("bun", ["run", "--cwd", join(repoRoot, "apps", "example-dashboard"), "dev"], {
+	const child = spawn("bun", ["run", "--cwd", join(repoRoot, "apps", "dashboard"), "dev"], {
 		cwd: repoRoot,
 		stdio: "inherit",
 	});
