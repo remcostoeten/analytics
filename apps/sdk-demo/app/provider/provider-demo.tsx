@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-	AnalyticsProvider,
-	AnalyticsErrorBoundary,
-	useTrack,
-} from "@remcostoeten/analytics";
+import { AnalyticsProvider, AnalyticsErrorBoundary, useTrack } from "@remcostoeten/analytics";
 import { Status, styles } from "@/shared/ui";
 
 type Props = {

@@ -5,16 +5,16 @@ demo of one part of the API, with the calls it makes printed back as you click.
 
 ## What's covered
 
-| Route       | File                    | API surface                                                                        |
-| ----------- | ----------------------- | ---------------------------------------------------------------------------------- |
-| all         | `app/layout.tsx`        | `<Analytics />`: pageviews, web vitals, scroll, time on page, plus the opt-in observers (`trackClicks`, `trackOutbound`, `trackForms`, `trackErrors`) |
-| `/`         | `app/page.tsx`          | Overview and the automatic-tracking setup                                          |
-| `/events`   | `app/events/`           | `trackEvent`, `trackClick`, `trackError`, `trackTransaction`, `trackSearch`, `trackPageView`, `<TrackClick>` |
-| `/provider` | `app/provider/`         | `<AnalyticsProvider>`, `useTrack`, `<AnalyticsErrorBoundary>`                      |
-| `/identity` | `app/identity/`         | `identify`, `identifyUser`, `setExperiment`, visitor and session ID control        |
-| `/consent`  | `app/consent/`          | `consentRequired` / `consentGranted`, `setConsentGranted`, `canTrack`              |
-| `/privacy`  | `app/privacy/`          | `optOut`, `optIn`, `checkDoNotTrack`, `getStoredKeys`, offline queue                |
-| —           | `app/api/purchase/route.ts` | Server-side: `trackServerEvent` from `@remcostoeten/analytics/server`           |
+| Route       | File                        | API surface                                                                                                                                           |
+| ----------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| all         | `app/layout.tsx`            | `<Analytics />`: pageviews, web vitals, scroll, time on page, plus the opt-in observers (`trackClicks`, `trackOutbound`, `trackForms`, `trackErrors`) |
+| `/`         | `app/page.tsx`              | Overview and the automatic-tracking setup                                                                                                             |
+| `/events`   | `app/events/`               | `trackEvent`, `trackClick`, `trackError`, `trackTransaction`, `trackSearch`, `trackPageView`, `<TrackClick>`                                          |
+| `/provider` | `app/provider/`             | `<AnalyticsProvider>`, `useTrack`, `<AnalyticsErrorBoundary>`                                                                                         |
+| `/identity` | `app/identity/`             | `identify`, `identifyUser`, `setExperiment`, visitor and session ID control                                                                           |
+| `/consent`  | `app/consent/`              | `consentRequired` / `consentGranted`, `setConsentGranted`, `canTrack`                                                                                 |
+| `/privacy`  | `app/privacy/`              | `optOut`, `optIn`, `checkDoNotTrack`, `getStoredKeys`, offline queue                                                                                  |
+| —           | `app/api/purchase/route.ts` | Server-side: `trackServerEvent` from `@remcostoeten/analytics/server`                                                                                 |
 
 ## Setup
 

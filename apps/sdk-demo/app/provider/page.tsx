@@ -40,8 +40,8 @@ function Checkout() {
 				title="Catching render errors"
 				hint={
 					<>
-						<code>trackErrors</code> on <code>&lt;Analytics /&gt;</code> catches window errors, but a
-						React render that throws unmounts the tree instead.{" "}
+						<code>trackErrors</code> on <code>&lt;Analytics /&gt;</code> catches window errors, but
+						a React render that throws unmounts the tree instead.{" "}
 						<code>&lt;AnalyticsErrorBoundary&gt;</code> reports those and renders a fallback.
 					</>
 				}

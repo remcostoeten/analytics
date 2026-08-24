@@ -39,7 +39,7 @@ export function IdentityDemo() {
 
 	function handleIdentifyUser() {
 		identifyUser({ theme: "dark", betaTester: true });
-		setStatus("identifyUser({ theme: \"dark\", betaTester: true }) — merged into stored traits");
+		setStatus('identifyUser({ theme: "dark", betaTester: true }) — merged into stored traits');
 	}
 
 	function handleExperiment() {

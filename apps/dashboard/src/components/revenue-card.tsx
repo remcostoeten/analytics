@@ -52,7 +52,8 @@ export function RevenueCard({ data, className }: Props) {
 					<CreditCard className="h-6 w-6 text-muted-foreground/40 mx-auto mb-2" />
 					<p className="text-xs text-muted-foreground">No transactions in this period</p>
 					<p className="text-[11px] text-muted-foreground/70">
-						Call <span className="font-mono">trackTransaction(revenue, currency, orderId, items)</span>{" "}
+						Call{" "}
+						<span className="font-mono">trackTransaction(revenue, currency, orderId, items)</span>{" "}
 						to record one.
 					</p>
 				</div>
@@ -117,9 +118,7 @@ export function RevenueCard({ data, className }: Props) {
 								{order.orderId ?? "no order id"}
 							</span>
 							{order.items !== null && (
-								<span className="shrink-0 text-[10px] text-muted-foreground">
-									×{order.items}
-								</span>
+								<span className="shrink-0 text-[10px] text-muted-foreground">×{order.items}</span>
 							)}
 							<span className="shrink-0 tabular-nums text-[11px] text-muted-foreground">
 								{formatMoney(order.revenue, order.currency)}

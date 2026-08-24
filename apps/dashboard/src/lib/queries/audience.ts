@@ -1,12 +1,6 @@
 import { sql } from "../db";
 import type { DeviceBreakdown } from "../types";
-import {
-	publicTraffic,
-	getRange,
-	geoScopeFilter,
-	NUMERIC_PATTERN,
-	type GeoScope,
-} from "./filters";
+import { publicTraffic, getRange, geoScopeFilter, NUMERIC_PATTERN, type GeoScope } from "./filters";
 
 export async function getDeviceBreakdown(
 	projectId?: string,

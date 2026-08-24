@@ -28,7 +28,7 @@ export function DemoButtons() {
 
 	function handleError() {
 		trackError(new Error("Something went wrong"), { context: "demo" });
-		setStatus("trackError(new Error(\"Something went wrong\"), { context: \"demo\" })");
+		setStatus('trackError(new Error("Something went wrong"), { context: "demo" })');
 	}
 
 	function handleTransaction() {

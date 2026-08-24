@@ -69,8 +69,7 @@ export function InteractionsCard({ data, className }: Props) {
 		);
 	}
 
-	const hasAny =
-		data.elements.length > 0 || data.outbound.length > 0 || data.forms.length > 0;
+	const hasAny = data.elements.length > 0 || data.outbound.length > 0 || data.forms.length > 0;
 
 	if (!hasAny) {
 		return (
@@ -84,8 +83,9 @@ export function InteractionsCard({ data, className }: Props) {
 					<p className="text-[11px] text-muted-foreground/70">
 						Use <span className="font-mono">trackClick</span>,{" "}
 						<span className="font-mono">&lt;TrackClick&gt;</span>, or enable{" "}
-						<span className="font-mono">trackClicks</span> / <span className="font-mono">trackOutbound</span>{" "}
-						/ <span className="font-mono">trackForms</span> on{" "}
+						<span className="font-mono">trackClicks</span> /{" "}
+						<span className="font-mono">trackOutbound</span> /{" "}
+						<span className="font-mono">trackForms</span> on{" "}
 						<span className="font-mono">&lt;Analytics /&gt;</span>.
 					</p>
 				</div>

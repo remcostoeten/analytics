@@ -645,16 +645,12 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
-	const { data: experiments } = useSWR(
-		viewKey(["overview", "behavior"], "experiments"),
-		fetcher,
-		{
-			fallbackData: null,
-			refreshInterval: 60000,
-			revalidateOnFocus: false,
-			keepPreviousData: true,
-		},
-	);
+	const { data: experiments } = useSWR(viewKey(["overview", "behavior"], "experiments"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
 
 	const [dialogCountry, setDialogCountry] = useState<SelectedCountry | null>(null);
 	if (selectedCountry && selectedCountry !== dialogCountry) {
