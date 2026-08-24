@@ -69,6 +69,35 @@ async function throttledFetch(input: RequestInfo | URL, init?: RequestInit): Pro
 
 neonConfig.fetchFunction = throttledFetch;
 
-const sql = neon(process.env.DATABASE_URL!);
+function createClient() {
+	const url = process.env.DATABASE_URL;
+
+	if (!url) {
+		throw new Error("DATABASE_URL is not set");
+	}
+
+	return neon(url);
+}
+
+type SqlClient = ReturnType<typeof createClient>;
+
+let client: SqlClient | null = null;
+
+function getClient(): SqlClient {
+	if (!client) {
+		client = createClient();
+	}
+
+	return client;
+}
+
+const sql = new Proxy(function () {} as unknown as SqlClient, {
+	apply(_target, thisArg, args) {
+		return Reflect.apply(getClient() as never, thisArg, args);
+	},
+	get(_target, prop, receiver) {
+		return Reflect.get(getClient() as object, prop, receiver);
+	},
+});
 
 export { sql };
