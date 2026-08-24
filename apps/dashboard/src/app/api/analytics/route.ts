@@ -215,6 +215,14 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(
 					await query.getErrorStats(from, to, projectId, excludeVisitorId, origin),
 				);
+			case "interactions":
+				return NextResponse.json(
+					await query.getInteractionStats(from, to, projectId, excludeVisitorId, origin),
+				);
+			case "experiments":
+				return NextResponse.json(
+					await query.getExperiments(from, to, projectId, excludeVisitorId, origin),
+				);
 			case "session-stats":
 				return NextResponse.json(
 					await query.getSessionStats(from, to, projectId, excludeVisitorId, origin, geoScope),

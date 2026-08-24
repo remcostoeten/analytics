@@ -9,3 +9,5 @@ export * from "./visitors";
 export * from "./geo";
 export * from "./signals";
 export * from "./errors";
+export * from "./interactions";
+export * from "./experiments";

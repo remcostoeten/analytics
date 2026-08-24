@@ -9,6 +9,11 @@ export type ErrorGroup = {
 	lastSeen: string;
 	topPath: string | null;
 	topBrowser: string | null;
+	kind: "error" | "unhandledrejection";
+	source: string | null;
+	line: number | null;
+	column: number | null;
+	stack: string | null;
 };
 
 export type ErrorStats = {
@@ -44,7 +49,12 @@ export async function getErrorStats(
 				COUNT(DISTINCT session_id) as sessions,
 				MAX(ts) as last_seen,
 				mode() WITHIN GROUP (ORDER BY path) as top_path,
-				mode() WITHIN GROUP (ORDER BY meta->>'browser') as top_browser
+				mode() WITHIN GROUP (ORDER BY meta->>'browser') as top_browser,
+				mode() WITHIN GROUP (ORDER BY meta->>'type') as kind,
+				mode() WITHIN GROUP (ORDER BY meta->>'source') as source,
+				mode() WITHIN GROUP (ORDER BY meta->>'line') as line,
+				mode() WITHIN GROUP (ORDER BY meta->>'col') as col,
+				(ARRAY_AGG(meta->>'stack' ORDER BY ts DESC) FILTER (WHERE meta->>'stack' IS NOT NULL))[1] as stack
 			FROM events WHERE ${base}
 			GROUP BY 1
 			ORDER BY count DESC
@@ -66,6 +76,11 @@ export async function getErrorStats(
 				lastSeen: new Date(row.last_seen as string).toISOString(),
 				topPath: (row.top_path as string) || null,
 				topBrowser: (row.top_browser as string) || null,
+				kind: row.kind === "unhandledrejection" ? "unhandledrejection" : "error",
+				source: (row.source as string) || null,
+				line: row.line !== null && row.line !== undefined ? Number(row.line) : null,
+				column: row.col !== null && row.col !== undefined ? Number(row.col) : null,
+				stack: (row.stack as string) || null,
 			};
 		}),
 	};

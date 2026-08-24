@@ -80,6 +80,12 @@ const SessionPaths = dynamic(() =>
 const UTMCampaignsTable = dynamic(() =>
 	import("@/components/utm-campaigns-table").then((module) => module.UTMCampaignsTable),
 );
+const InteractionsCard = dynamic(() =>
+	import("@/components/interactions-card").then((module) => module.InteractionsCard),
+);
+const ExperimentsCard = dynamic(() =>
+	import("@/components/experiments-card").then((module) => module.ExperimentsCard),
+);
 const BotTrafficCard = dynamic(() =>
 	import("@/components/bot-traffic-card").then((module) => module.BotTrafficCard),
 );
@@ -605,6 +611,24 @@ export function DashboardContent({
 		keepPreviousData: true,
 	});
 
+	const { data: interactions } = useSWR(viewKey(["behavior"], "interactions"), fetcher, {
+		fallbackData: null,
+		refreshInterval: 60000,
+		revalidateOnFocus: false,
+		keepPreviousData: true,
+	});
+
+	const { data: experiments } = useSWR(
+		viewKey(["overview", "behavior"], "experiments"),
+		fetcher,
+		{
+			fallbackData: null,
+			refreshInterval: 60000,
+			revalidateOnFocus: false,
+			keepPreviousData: true,
+		},
+	);
+
 	const [dialogCountry, setDialogCountry] = useState<SelectedCountry | null>(null);
 	if (selectedCountry && selectedCountry !== dialogCountry) {
 		setDialogCountry(selectedCountry);
@@ -843,7 +867,6 @@ export function DashboardContent({
 									data={trendData}
 									title="Pageviews over time"
 									height={220}
-									chartType="bar"
 									isLoading={trendLoading}
 								/>
 								<GeoMap
@@ -966,12 +989,14 @@ export function DashboardContent({
 									/>
 								</div>
 								<HourlyHeatmap data={heatmap} />
+								<InteractionsCard data={interactions} />
 							</div>
 							<div className="space-y-4 lg:col-span-4">
 								<SessionStatsCard data={sessionStats} />
 								<EngagementMetrics data={engagement} />
 								<WebVitalsCard data={webVitals} />
 								<ErrorTrackingCard data={errorStats} />
+								<ExperimentsCard data={experiments} />
 							</div>
 						</div>
 					)}

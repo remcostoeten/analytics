@@ -62,27 +62,52 @@ export function ErrorTrackingCard({ data, className }: Props) {
 			</div>
 			<div className="divide-y divide-border">
 				{data.groups.slice(0, 8).map((group) => (
-					<div key={group.message} className="px-3 py-2 space-y-1">
-						<div className="flex items-start justify-between gap-2">
-							<p
-								className="text-xs text-foreground font-mono leading-snug break-all line-clamp-2"
-								title={group.message}
-							>
-								{group.message}
+					<details key={group.message} className="group px-3 py-2 space-y-1">
+						<summary className="cursor-pointer list-none space-y-1">
+							<div className="flex items-start justify-between gap-2">
+								<p
+									className="text-xs text-foreground font-mono leading-snug break-all line-clamp-2"
+									title={group.message}
+								>
+									{group.message}
+								</p>
+								<span className="shrink-0 inline-flex items-center gap-1">
+									{group.kind === "unhandledrejection" && (
+										<span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30">
+											rejection
+										</span>
+									)}
+									<span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded border bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 tabular-nums">
+										×{formatNumber(group.count)}
+									</span>
+								</span>
+							</div>
+							<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+								<span className="tabular-nums">
+									{formatNumber(group.visitors)} visitor{group.visitors === 1 ? "" : "s"}
+								</span>
+								{group.topPath && <span className="truncate max-w-[10rem]">{group.topPath}</span>}
+								{group.topBrowser && <span>{group.topBrowser}</span>}
+								<span className="ml-auto shrink-0">{formatTimeAgo(group.lastSeen)}</span>
+							</div>
+							{group.source && (
+								<p className="text-[10px] text-muted-foreground/70 font-mono truncate">
+									{group.source}
+									{group.line !== null && `:${group.line}`}
+									{group.column !== null && `:${group.column}`}
+								</p>
+							)}
+						</summary>
+						{group.stack ? (
+							<pre className="mt-1.5 max-h-48 overflow-auto rounded border border-border/60 bg-muted/40 p-2 text-[10px] leading-relaxed font-mono text-muted-foreground whitespace-pre-wrap break-all">
+								{group.stack}
+							</pre>
+						) : (
+							<p className="mt-1.5 text-[10px] text-muted-foreground/60">
+								No stack captured for this error.
 							</p>
-							<span className="shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded border bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 tabular-nums">
-								×{formatNumber(group.count)}
-							</span>
-						</div>
-						<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-							<span className="tabular-nums">
-								{formatNumber(group.visitors)} visitor{group.visitors === 1 ? "" : "s"}
-							</span>
-							{group.topPath && <span className="truncate max-w-[10rem]">{group.topPath}</span>}
-							{group.topBrowser && <span>{group.topBrowser}</span>}
-							<span className="ml-auto shrink-0">{formatTimeAgo(group.lastSeen)}</span>
-						</div>
-					</div>
+						)}
+					</details>
 				))}
 			</div>
 		</div>
