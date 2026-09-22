@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 
+let fallbackWarningEmitted = false;
+
+/**
+ * Every dashboard surface reads the analytics database, so reads are gated the
+ * same as writes: pages render visitor-level history, user agents, geo and any
+ * `identify()` traits, and `/api/analytics*` returns the same data as JSON.
+ */
 export function proxy(request: NextRequest) {
 	if (!isAuthEnabled()) {
-		return NextResponse.next();
-	}
-
-	if (request.method === "GET" || request.method === "HEAD") {
+		if (!fallbackWarningEmitted && process.env.NODE_ENV === "production") {
+			fallbackWarningEmitted = true;
+			console.warn(
+				"[auth] GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET are not both set — " +
+					"the dashboard and its analytics API are serving visitor data unauthenticated.",
+			);
+		}
 		return NextResponse.next();
 	}
 
@@ -23,5 +33,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webp)$).*)"],
+	matcher: [
+		"/((?!api/auth|auth/error|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webp)$).*)",
+	],
 };

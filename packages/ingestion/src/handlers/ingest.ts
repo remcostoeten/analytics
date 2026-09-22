@@ -15,7 +15,7 @@ import { generateFingerprint, dedupeCache, metrics, getDedupeWindow } from "../u
 import { rateLimiter, botRateLimiter } from "../utilities/rate-limit.js";
 import { authorizeIngestRequest } from "../utilities/ingest-auth.js";
 import { UAParser } from "ua-parser-js";
-import { sql as drizzleSql } from "drizzle-orm";
+import { eq, sql as drizzleSql } from "drizzle-orm";
 
 type DbModule = typeof import("../db/index.js");
 
@@ -54,6 +54,8 @@ function createCachedEnvList(envKey: string) {
 
 const getOriginAllowlist = createCachedEnvList("ORIGIN_ALLOWLIST");
 const getInternalIpHashes = createCachedEnvList("INTERNAL_IP_HASHES");
+const getInternalIps = createCachedEnvList("INTERNAL_IPS");
+const getInternalVisitorIds = createCachedEnvList("INTERNAL_VISITOR_IDS");
 
 export function isOriginAllowed(origin: string | null): boolean {
 	const allowlist = getOriginAllowlist();
@@ -62,13 +64,33 @@ export function isOriginAllowed(origin: string | null): boolean {
 	return false;
 }
 
-export function isInternalTraffic(ipHash: string | null, localhost: boolean): boolean {
-	if (localhost) return true;
-	if (ipHash && getInternalIpHashes().includes(ipHash)) return true;
+export type InternalTrafficInput = {
+	localhost: boolean;
+	ip?: string | null;
+	ipHash?: string | null;
+	visitorId?: string | null;
+};
+
+/**
+ * Decides whether a request is the operator's own traffic and must be kept out of
+ * public metrics.
+ *
+ * `INTERNAL_IPS` holds raw addresses and is the reliable IP control:
+ * `ip_hash` is salted per calendar day, so an `INTERNAL_IP_HASHES` entry stops
+ * matching the day after it was generated. That env var is still honoured for
+ * existing deployments, but new setups should use `INTERNAL_IPS` or the stable
+ * `INTERNAL_VISITOR_IDS` fingerprints.
+ */
+export function isInternalTraffic(input: InternalTrafficInput): boolean {
+	if (input.localhost) return true;
+	if (input.ip && getInternalIps().includes(input.ip)) return true;
+	if (input.ipHash && getInternalIpHashes().includes(input.ipHash)) return true;
+	if (input.visitorId && getInternalVisitorIds().includes(input.visitorId)) return true;
 	return false;
 }
 
 export type SharedIngestContext = {
+	ip: string | null;
 	ipHash: string | null;
 	geo: GeoData;
 	network: NetworkData;
@@ -136,7 +158,7 @@ async function upsertVisitor(
 	projectId: string,
 	incrementVisit: boolean,
 	data: VisitorData,
-): Promise<void> {
+): Promise<boolean> {
 	try {
 		const updateSet: Record<string, unknown> = {
 			lastSeen: drizzleSql`now()`,
@@ -154,7 +176,7 @@ async function upsertVisitor(
 			timezone: data.timezone,
 			ua: data.ua,
 			screenResolution: data.screenResolution,
-			isInternal: data.isInternal,
+			isInternal: drizzleSql`${visitors.isInternal} OR ${data.isInternal}`,
 		};
 
 		if (data.metaMerge) {
@@ -167,7 +189,7 @@ async function upsertVisitor(
 			)`;
 		}
 
-		await db
+		const rows = await db
 			.insert(visitors)
 			.values({
 				fingerprint: visitorId,
@@ -191,9 +213,13 @@ async function upsertVisitor(
 			.onConflictDoUpdate({
 				target: [visitors.projectId, visitors.fingerprint],
 				set: updateSet,
-			});
+			})
+			.returning({ isInternal: visitors.isInternal });
+
+		return rows?.[0]?.isInternal ?? data.isInternal;
 	} catch (err) {
 		console.error("[Visitor upsert failed]", err);
+		return data.isInternal;
 	}
 }
 
@@ -279,7 +305,12 @@ export async function processSingleEvent(
 	const os = uaParser.getOS();
 
 	const deviceType = classifyDevice(payload.ua, botIsBot);
-	const internal = isInternalTraffic(ctx.ipHash, ctx.localhost);
+	const internal = isInternalTraffic({
+		localhost: ctx.localhost,
+		ip: ctx.ip,
+		ipHash: ctx.ipHash,
+		visitorId: payload.visitorId,
+	});
 
 	const screenResolution =
 		payload.meta && typeof payload.meta === "object"
@@ -355,26 +386,63 @@ export async function processSingleEvent(
 	}
 
 	if (payload.visitorId) {
-		await upsertVisitor(db, visitors, payload.visitorId, payload.projectId, sessionInserted, {
-			ipHash: ctx.ipHash,
-			deviceType,
-			browser: browser.name,
-			browserVersion: browser.version,
-			os: os.name,
-			osVersion: os.version,
-			language: payload.lang,
-			country: ctx.geo.country,
-			region: ctx.geo.region,
-			city: ctx.geo.city,
-			timezone: ctx.geo.timezone,
-			ua: payload.ua,
-			screenResolution,
-			isInternal: internal,
-			metaMerge: resolveVisitorMetaMerge(payload),
-		});
+		const visitorIsInternal = await upsertVisitor(
+			db,
+			visitors,
+			payload.visitorId,
+			payload.projectId,
+			sessionInserted,
+			{
+				ipHash: ctx.ipHash,
+				deviceType,
+				browser: browser.name,
+				browserVersion: browser.version,
+				os: os.name,
+				osVersion: os.version,
+				language: payload.lang,
+				country: ctx.geo.country,
+				region: ctx.geo.region,
+				city: ctx.geo.city,
+				timezone: ctx.geo.timezone,
+				ua: payload.ua,
+				screenResolution,
+				isInternal: internal,
+				metaMerge: resolveVisitorMetaMerge(payload),
+			},
+		);
+
+		if (visitorIsInternal && !internal) {
+			await propagateInternalFlag(db, events, sessions, insertedRows[0].id, payload.sessionId);
+		}
 	}
 
 	return { ok: true };
+}
+
+/**
+ * Applies a visitor's sticky `is_internal` flag to the row just written. The event
+ * is inserted before the visitor upsert resolves, so a visitor marked internal from
+ * the dashboard would otherwise keep emitting public-looking events.
+ */
+async function propagateInternalFlag(
+	db: DbModule["db"],
+	events: DbModule["events"],
+	sessions: DbModule["sessions"],
+	eventId: bigint,
+	sessionId: string | null | undefined,
+): Promise<void> {
+	try {
+		await db
+			.update(events)
+			.set({ isInternal: true })
+			.where(drizzleSql`${events.id} = ${eventId}`);
+
+		if (sessionId) {
+			await db.update(sessions).set({ isInternal: true }).where(eq(sessions.sessionId, sessionId));
+		}
+	} catch (err) {
+		console.error("[Internal flag propagation failed]", err);
+	}
 }
 
 export async function handleIngest(c: Context) {
@@ -428,12 +496,18 @@ export async function handleIngest(c: Context) {
 			isPreviewEnvironment(payload.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
 		const ctx: SharedIngestContext = {
+			ip: ip ?? null,
 			ipHash,
 			geo,
 			network,
 			localhost,
 			preview,
-			internal: isInternalTraffic(ipHash, localhost),
+			internal: isInternalTraffic({
+				localhost,
+				ip,
+				ipHash,
+				visitorId: payload.visitorId,
+			}),
 		};
 
 		const eventResult = await processSingleEvent(

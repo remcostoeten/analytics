@@ -702,8 +702,8 @@ export function DashboardContent({
 	const setupIssue = setupError ? "missing_database_url" : databaseIssue;
 
 	const pageviewSparkline = useMemo((): number[] | undefined => {
-		if (!trend || !Array.isArray(trend) || trend.length === 0) return undefined;
-		return trend.map((t: { pageviews: number }) => t.pageviews || 0);
+		if (!trend?.data?.length) return undefined;
+		return trend.data.map((point: { value: number }) => Number(point.value) || 0);
 	}, [trend]);
 
 	const kpiArray = useMemo((): KPIMetric[] => {
@@ -763,16 +763,13 @@ export function DashboardContent({
 	}, [overview, sessionStats, initialData.kpis, pageviewSparkline]);
 
 	const trendData = useMemo(() => {
-		if (!trend || !Array.isArray(trend) || trend.length === 0) {
-			return initialData.trends.pageviews;
-		}
+		if (!trend?.data?.length) return initialData.trends.pageviews;
 
 		return {
-			id: "pageviews-trend",
-			label: "Pageviews",
-			data: trend.map((t: { timestamp: string; pageviews: number }) => ({
-				timestamp: new Date(t.timestamp),
-				value: t.pageviews,
+			...trend,
+			data: trend.data.map((point: { timestamp: string; value: number }) => ({
+				timestamp: new Date(point.timestamp),
+				value: Number(point.value) || 0,
 			})),
 		};
 	}, [trend, initialData.trends.pageviews]);

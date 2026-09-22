@@ -12,6 +12,10 @@ function isAuthorized(request: NextRequest): boolean {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
+	if (!isAuthorized(request)) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
 	try {
 		const [visitor] = await sql`
       SELECT
@@ -197,6 +201,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 		await sql`
       UPDATE events SET is_internal = ${isInternal} WHERE visitor_id = ${visitor.fingerprint}
+    `;
+
+		await sql`
+      UPDATE sessions SET is_internal = ${isInternal} WHERE visitor_id = ${visitor.fingerprint}
     `;
 
 		return NextResponse.json({

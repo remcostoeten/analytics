@@ -78,12 +78,18 @@ export async function handleBatch(c: Context) {
 				isPreviewEnvironment(event.host) || isPreviewEnvironment(getHostFromOrigin(origin));
 
 			const ctx: SharedIngestContext = {
+				ip: ip ?? null,
 				ipHash,
 				geo,
 				network,
 				localhost,
 				preview,
-				internal: isInternalTraffic(ipHash, localhost),
+				internal: isInternalTraffic({
+					localhost,
+					ip,
+					ipHash,
+					visitorId: event.visitorId,
+				}),
 			};
 
 			try {

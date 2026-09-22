@@ -15,9 +15,9 @@ type KPICardProps = {
 function KPICard({ metric, isLoading = false }: KPICardProps) {
 	if (isLoading) {
 		return (
-			<div className="h-[88px] rounded-lg border border-border bg-card px-4 py-3">
-				<Skeleton className="h-3 w-20" />
-				<Skeleton className="mt-3 h-7 w-24" />
+			<div className="bg-card px-4 py-3.5">
+				<Skeleton className="h-2.5 w-16" />
+				<Skeleton className="mt-3 h-6 w-20" />
 			</div>
 		);
 	}
@@ -25,24 +25,22 @@ function KPICard({ metric, isLoading = false }: KPICardProps) {
 	const { label, formattedValue, sparkline } = metric;
 
 	return (
-		<div className="group relative h-[88px] overflow-hidden rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-foreground/20">
-			<div className="flex h-full items-start justify-between gap-3">
-				<div className="flex min-w-0 flex-col justify-between self-stretch">
-					<p className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-						{label}
-					</p>
-					<div className="flex min-w-0 items-baseline gap-2">
-						<span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-							{formattedValue}
-						</span>
-						<TrendBadge trend={metric.trend} />
-					</div>
+		<div className="group relative overflow-hidden bg-card px-4 py-3.5 transition-colors hover:bg-muted/30">
+			{sparkline && sparkline.length > 1 && (
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 text-primary opacity-40 transition-opacity group-hover:opacity-70">
+					<Sparkline data={sparkline} />
 				</div>
-				{sparkline && sparkline.length > 1 && (
-					<div className="h-10 w-24 shrink-0 self-end text-primary">
-						<Sparkline data={sparkline} />
-					</div>
-				)}
+			)}
+			<div className="relative">
+				<p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+					{label}
+				</p>
+				<div className="mt-1.5 flex min-w-0 items-baseline gap-2">
+					<span className="text-[22px] font-semibold leading-none tabular-nums tracking-tight text-foreground">
+						{formattedValue}
+					</span>
+					<TrendBadge trend={metric.trend} />
+				</div>
 			</div>
 		</div>
 	);
@@ -50,10 +48,9 @@ function KPICard({ metric, isLoading = false }: KPICardProps) {
 
 type TrendBadgeProps = {
 	trend: KPIMetric["trend"];
-	inline?: boolean;
 };
 
-function TrendBadge({ trend, inline = false }: TrendBadgeProps) {
+function TrendBadge({ trend }: TrendBadgeProps) {
 	if (!trend) return null;
 
 	const value = trend.direction === "new" ? "New" : formatTrend(trend.value);
@@ -66,8 +63,7 @@ function TrendBadge({ trend, inline = false }: TrendBadgeProps) {
 			title={`${sign}${value} vs previous period`}
 			className={cn(
 				"inline-flex shrink-0 items-center gap-0.5 text-[11px] font-medium tabular-nums",
-				inline ? "" : "rounded-md px-1.5 py-0.5",
-				getTrendTone(trend, inline),
+				getTrendTone(trend),
 			)}
 		>
 			<Icon className="h-3 w-3" />
@@ -137,25 +133,28 @@ function SecondaryStrip({ metrics, isLoading }: SecondaryStripProps) {
 	if (metrics.length === 0) return null;
 
 	return (
-		<div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border/70 bg-card/60 px-4 py-2">
+		<>
 			{metrics.map((metric) => (
-				<div key={metric.id} className="flex items-baseline gap-2">
-					<span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+				<div
+					key={metric.id}
+					className="flex items-baseline justify-between gap-3 bg-card px-4 py-2.5 transition-colors hover:bg-muted/30"
+				>
+					<span className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
 						{metric.label}
 					</span>
 					{isLoading ? (
-						<Skeleton className="h-4 w-10" />
+						<Skeleton className="h-3.5 w-10" />
 					) : (
-						<>
+						<span className="flex shrink-0 items-baseline gap-2">
 							<span className="text-sm font-semibold tabular-nums text-foreground">
 								{metric.formattedValue}
 							</span>
-							<TrendBadge trend={metric.trend} inline />
-						</>
+							<TrendBadge trend={metric.trend} />
+						</span>
 					)}
 				</div>
 			))}
-		</div>
+		</>
 	);
 }
 
@@ -170,13 +169,22 @@ export function KPICardsGrid({ kpis, className, isLoading }: KPICardsGridProps) 
 	const secondary = kpis.slice(PRIMARY_COUNT);
 
 	return (
-		<div className={cn("space-y-2", className)}>
-			<div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+		<div
+			className={cn(
+				"grid gap-px overflow-hidden rounded-lg border border-border bg-border",
+				className,
+			)}
+		>
+			<div className="grid grid-cols-2 gap-px xl:grid-cols-4">
 				{primary.map((metric) => (
 					<KPICard key={metric.id} metric={metric} isLoading={isLoading} />
 				))}
 			</div>
-			<SecondaryStrip metrics={secondary} isLoading={isLoading} />
+			{secondary.length > 0 && (
+				<div className="grid grid-cols-1 gap-px sm:grid-cols-3">
+					<SecondaryStrip metrics={secondary} isLoading={isLoading} />
+				</div>
+			)}
 		</div>
 	);
 }
@@ -190,12 +198,10 @@ function formatTrend(value: number): string {
 	return `${rounded}%`;
 }
 
-function getTrendTone(trend: KPIMetric["trend"], inline: boolean): string {
-	if (!trend || trend.direction === "flat") {
-		return inline ? "text-muted-foreground" : "bg-muted text-muted-foreground";
-	}
-	if (trend.isPositive) return inline ? "text-emerald-500" : "bg-emerald-500/10 text-emerald-500";
-	return inline ? "text-red-400" : "bg-red-500/10 text-red-400";
+function getTrendTone(trend: KPIMetric["trend"]): string {
+	if (!trend || trend.direction === "flat") return "text-muted-foreground";
+	if (trend.isPositive) return "text-emerald-500/90";
+	return "text-red-400/90";
 }
 
 export { KPICard, Sparkline };
