@@ -1,10 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
-import { lintSource } from "./lint";
+import { lintCases } from "./lint";
+import type { LintCase } from "./lint";
 
 const code = "house(no-silent-catch)";
 
-const cases = [
+const cases: LintCase[] = [
   { name: "empty catch", source: "try { run(); } catch {}", codes: [code] },
   {
     name: "catch with only a comment",
@@ -21,9 +22,15 @@ const cases = [
 ];
 
 describe("house/no-silent-catch", () => {
-  for (const { name, source, codes } of cases) {
-    test(name, async () => {
-      expect(await lintSource("input.ts", source, "no-silent-catch")).toEqual(codes);
+  let results: string[][] = [];
+
+  beforeAll(async () => {
+    results = await lintCases(cases, "ts", "no-silent-catch");
+  });
+
+  for (const [index, { name, codes }] of cases.entries()) {
+    test(name, () => {
+      expect(results[index]).toEqual(codes);
     });
   }
 });

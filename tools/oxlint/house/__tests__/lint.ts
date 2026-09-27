@@ -4,11 +4,17 @@ import { join, resolve } from "node:path";
 
 type Diagnostic = {
   code: string;
-  message: string;
+  filename: string;
 };
 
 type Report = {
   diagnostics: Diagnostic[];
+};
+
+export type LintCase = {
+  name: string;
+  source: string;
+  codes: string[];
 };
 
 const pluginPath = resolve(import.meta.dir, "../src/index.ts");
@@ -19,7 +25,11 @@ function parseReport(output: string): Report {
   return report;
 }
 
-export async function lintSource(fileName: string, source: string, rule: string) {
+function caseFile(index: number, extension: string) {
+  return `case-${index}.${extension}`;
+}
+
+export async function lintCases(cases: LintCase[], extension: string, rule: string) {
   const directory = await mkdtemp(join(tmpdir(), "oxlint-house-"));
   const config = {
     jsPlugins: [{ name: "house", specifier: pluginPath }],
@@ -28,15 +38,24 @@ export async function lintSource(fileName: string, source: string, rule: string)
   };
   try {
     await writeFile(join(directory, ".oxlintrc.json"), JSON.stringify(config));
-    await writeFile(join(directory, fileName), source);
-    const child = Bun.spawn([oxlintPath, "--format", "json", fileName], {
+    await Promise.all(
+      cases.map((entry, index) =>
+        writeFile(join(directory, caseFile(index, extension)), entry.source),
+      ),
+    );
+    const child = Bun.spawn([oxlintPath, "--format", "json", "."], {
       cwd: directory,
       stdout: "pipe",
       stderr: "pipe",
     });
     const output = await new Response(child.stdout).text();
     await child.exited;
-    return parseReport(output).diagnostics.map((diagnostic) => diagnostic.code);
+    const { diagnostics } = parseReport(output);
+    return cases.map((_, index) =>
+      diagnostics
+        .filter((diagnostic) => diagnostic.filename.endsWith(caseFile(index, extension)))
+        .map((diagnostic) => diagnostic.code),
+    );
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

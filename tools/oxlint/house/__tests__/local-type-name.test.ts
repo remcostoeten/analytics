@@ -1,10 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
-import { lintSource } from "./lint";
+import { lintCases } from "./lint";
+import type { LintCase } from "./lint";
 
 const code = "house(local-type-name)";
 
-const cases = [
+const cases: LintCase[] = [
   {
     name: "single local props type with another name",
     source:
@@ -50,9 +51,15 @@ const cases = [
 ];
 
 describe("house/local-type-name", () => {
-  for (const { name, source, codes } of cases) {
-    test(name, async () => {
-      expect(await lintSource("input.tsx", source, "local-type-name")).toEqual(codes);
+  let results: string[][] = [];
+
+  beforeAll(async () => {
+    results = await lintCases(cases, "tsx", "local-type-name");
+  });
+
+  for (const [index, { name, codes }] of cases.entries()) {
+    test(name, () => {
+      expect(results[index]).toEqual(codes);
     });
   }
 });
