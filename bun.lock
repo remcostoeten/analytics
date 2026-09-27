@@ -16,6 +16,14 @@
         "typescript": "catalog:ts",
       },
     },
+    "packages/shared": {
+      "name": "@remcostoeten/analytics-shared",
+      "version": "0.0.0",
+    },
+    "tools/oxlint/house": {
+      "name": "@remcostoeten/oxlint-house",
+      "version": "0.0.0",
+    },
     "v1/apps/dashboard": {
       "name": "@remcostoeten/dashboard",
       "version": "0.1.0",
@@ -626,6 +634,8 @@
 
     "@remcostoeten/analytics": ["@remcostoeten/analytics@workspace:v1/packages/sdk"],
 
+    "@remcostoeten/analytics-shared": ["@remcostoeten/analytics-shared@workspace:packages/shared"],
+
     "@remcostoeten/dashboard": ["@remcostoeten/dashboard@workspace:v1/apps/dashboard"],
 
     "@remcostoeten/ingestion": ["@remcostoeten/ingestion@workspace:v1/packages/ingestion"],
@@ -633,6 +643,8 @@
     "@remcostoeten/ingestion-deploy": ["@remcostoeten/ingestion-deploy@workspace:v1/apps/ingestion"],
 
     "@remcostoeten/notifier": ["@remcostoeten/notifier@1.1.0", "", { "peerDependencies": { "motion": ">=12.0.0", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-eE1QkF27gxJATV/wlvI4h/LlEM1Lj7+gYRKG4BRdreZZshFUqKwDj3zUpJU7ldU7oXJb2JkZ+/OBm3txP70vnw=="],
+
+    "@remcostoeten/oxlint-house": ["@remcostoeten/oxlint-house@workspace:tools/oxlint/house"],
 
     "@remcostoeten/tsconfig": ["@remcostoeten/tsconfig@workspace:v1/packages/typescript"],
 
