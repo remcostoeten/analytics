@@ -11,25 +11,25 @@ mkdirSync(funcDir, { recursive: true });
 console.log("Building bundle...");
 
 function run(cmd: string, args: string[]): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const child = spawn(cmd, args, { stdio: "inherit", shell: false });
-		child.on("close", (code) => {
-			if (code === 0) resolve();
-			else reject(new Error(`Command failed with code ${code}`));
-		});
-	});
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: "inherit", shell: false });
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Command failed with code ${code}`));
+    });
+  });
 }
 
 await run("bun", [
-	"build",
-	"../../packages/ingestion/dist/vercel.js",
-	"--outfile",
-	join(funcDir, "index.js"),
-	"--target",
-	"node",
-	"--format",
-	"cjs",
-	"--bundle",
+  "build",
+  "../../packages/ingestion/dist/vercel.js",
+  "--outfile",
+  join(funcDir, "index.js"),
+  "--target",
+  "node",
+  "--format",
+  "cjs",
+  "--bundle",
 ]);
 
 await bundleGeoDatabase("GeoLite2-ASN.mmdb");
@@ -41,49 +41,49 @@ await bundleGeoDatabase("GeoLite2-City.mmdb");
  * local copy when present, otherwise downloads the P3TERX mirror.
  */
 async function bundleGeoDatabase(fileName: string): Promise<void> {
-	const localCopy = join("data", fileName);
-	const target = join(funcDir, fileName);
-	if (existsSync(localCopy)) {
-		copyFileSync(localCopy, target);
-		return;
-	}
-	console.log(`Downloading ${fileName}...`);
-	const response = await fetch(
-		`https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download/${fileName}`,
-	);
-	if (!response.ok) {
-		throw new Error(`${fileName} download failed: ${response.status}`);
-	}
-	writeFileSync(target, Buffer.from(await response.arrayBuffer()));
+  const localCopy = join("data", fileName);
+  const target = join(funcDir, fileName);
+  if (existsSync(localCopy)) {
+    copyFileSync(localCopy, target);
+    return;
+  }
+  console.log(`Downloading ${fileName}...`);
+  const response = await fetch(
+    `https://github.com/P3TERX/GeoLite.mmdb/releases/latest/download/${fileName}`,
+  );
+  if (!response.ok) {
+    throw new Error(`${fileName} download failed: ${response.status}`);
+  }
+  writeFileSync(target, Buffer.from(await response.arrayBuffer()));
 }
 
 writeFileSync(
-	join(funcDir, "package.json"),
-	JSON.stringify({
-		name: "@remcostoeten/ingestion",
-		type: "commonjs",
-		dependencies: {},
-	}),
+  join(funcDir, "package.json"),
+  JSON.stringify({
+    name: "@remcostoeten/ingestion",
+    type: "commonjs",
+    dependencies: {},
+  }),
 );
 
 writeFileSync(
-	`${funcDir}/.vc-config.json`,
-	JSON.stringify({
-		runtime: "nodejs20.x",
-		handler: "index.js",
-		launcherType: "Nodejs",
-		shouldAddHelpers: false,
-	}),
+  `${funcDir}/.vc-config.json`,
+  JSON.stringify({
+    runtime: "nodejs20.x",
+    handler: "index.js",
+    launcherType: "Nodejs",
+    shouldAddHelpers: false,
+  }),
 );
 
 // Crons are declared in vercel.json only; also emitting them here makes
 // Vercel register duplicates and fail the deploy with duplicated_cron_job.
 writeFileSync(
-	join(outputDir, "config.json"),
-	JSON.stringify({
-		version: 3,
-		routes: [{ src: "/(.*)", dest: "/index" }],
-	}),
+  join(outputDir, "config.json"),
+  JSON.stringify({
+    version: 3,
+    routes: [{ src: "/(.*)", dest: "/index" }],
+  }),
 );
 
 console.log("Build complete!");

@@ -4,33 +4,33 @@ import { Hono } from "hono";
 const insertedEvents: Record<string, unknown>[] = [];
 
 const dbModule = {
-	db: {
-		insert: () => ({
-			values: (value: Record<string, unknown>) => {
-				if ("type" in value && "path" in value) insertedEvents.push(value);
-				const chain = {
-					onConflictDoUpdate: () => chain,
-					onConflictDoNothing: () => chain,
-					returning: () => Promise.resolve([{ id: 1, inserted: false }]),
-					// oxlint-disable-next-line unicorn/no-thenable -- mocks drizzle's awaitable query chain
-					then: (resolve: (value: unknown) => unknown) => resolve(undefined),
-				};
-				return chain;
-			},
-		}),
-	},
-	events: {},
-	visitors: {
-		projectId: "project_id",
-		fingerprint: "fingerprint",
-		visitCount: "visit_count",
-	},
-	sessions: {
-		sessionId: "session_id",
-		events: "events",
-		pageviews: "pageviews",
-		startedAt: "started_at",
-	},
+  db: {
+    insert: () => ({
+      values: (value: Record<string, unknown>) => {
+        if ("type" in value && "path" in value) insertedEvents.push(value);
+        const chain = {
+          onConflictDoUpdate: () => chain,
+          onConflictDoNothing: () => chain,
+          returning: () => Promise.resolve([{ id: 1, inserted: false }]),
+          // oxlint-disable-next-line unicorn/no-thenable -- mocks drizzle's awaitable query chain
+          then: (resolve: (value: unknown) => unknown) => resolve(undefined),
+        };
+        return chain;
+      },
+    }),
+  },
+  events: {},
+  visitors: {
+    projectId: "project_id",
+    fingerprint: "fingerprint",
+    visitCount: "visit_count",
+  },
+  sessions: {
+    sessionId: "session_id",
+    events: "events",
+    pageviews: "pageviews",
+    startedAt: "started_at",
+  },
 };
 
 const { handleIngest, __setDbModule } = await import("../../src/handlers/ingest");
@@ -40,173 +40,173 @@ const app = new Hono();
 app.post("/ingest", handleIngest);
 
 describe("POST /ingest", () => {
-	test("accepts valid pageview event", async () => {
-		const payload = {
-			projectId: "example.com",
-			type: "pageview",
-			path: "/home",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-		};
+  test("accepts valid pageview event", async () => {
+    const payload = {
+      projectId: "example.com",
+      type: "pageview",
+      path: "/home",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+    };
 
-		const response = await app.request("/ingest", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-		});
+    const response = await app.request("/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-		expect(response.status).toBe(200);
+    expect(response.status).toBe(200);
 
-		const data = (await response.json()) as { ok: boolean; deduped?: boolean };
-		expect(data.ok).toBe(true);
-	});
+    const data = (await response.json()) as { ok: boolean; deduped?: boolean };
+    expect(data.ok).toBe(true);
+  });
 
-	test("accepts valid bearer token for server events", async () => {
-		const previous = process.env.INGEST_SECRET;
-		process.env.INGEST_SECRET = "server-secret-min-32-characters";
+  test("accepts valid bearer token for server events", async () => {
+    const previous = process.env.INGEST_SECRET;
+    process.env.INGEST_SECRET = "server-secret-min-32-characters";
 
-		try {
-			const response = await app.request("/ingest", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: "Bearer server-secret-min-32-characters",
-				},
-				body: JSON.stringify({
-					projectId: "example.com",
-					type: "event",
-					path: "/api/webhook",
-					meta: { eventName: "user_created" },
-				}),
-			});
+    try {
+      const response = await app.request("/ingest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer server-secret-min-32-characters",
+        },
+        body: JSON.stringify({
+          projectId: "example.com",
+          type: "event",
+          path: "/api/webhook",
+          meta: { eventName: "user_created" },
+        }),
+      });
 
-			expect(response.status).toBe(200);
-		} finally {
-			if (previous) {
-				process.env.INGEST_SECRET = previous;
-			} else {
-				delete process.env.INGEST_SECRET;
-			}
-		}
-	});
+      expect(response.status).toBe(200);
+    } finally {
+      if (previous) {
+        process.env.INGEST_SECRET = previous;
+      } else {
+        delete process.env.INGEST_SECRET;
+      }
+    }
+  });
 
-	test("rejects invalid bearer token", async () => {
-		const previous = process.env.INGEST_SECRET;
-		process.env.INGEST_SECRET = "server-secret-min-32-characters";
+  test("rejects invalid bearer token", async () => {
+    const previous = process.env.INGEST_SECRET;
+    process.env.INGEST_SECRET = "server-secret-min-32-characters";
 
-		try {
-			const response = await app.request("/ingest", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: "Bearer wrong-secret",
-				},
-				body: JSON.stringify({
-					projectId: "example.com",
-					type: "event",
-					path: "/api/webhook",
-				}),
-			});
+    try {
+      const response = await app.request("/ingest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer wrong-secret",
+        },
+        body: JSON.stringify({
+          projectId: "example.com",
+          type: "event",
+          path: "/api/webhook",
+        }),
+      });
 
-			expect(response.status).toBe(401);
-		} finally {
-			if (previous) {
-				process.env.INGEST_SECRET = previous;
-			} else {
-				delete process.env.INGEST_SECRET;
-			}
-		}
-	});
+      expect(response.status).toBe(401);
+    } finally {
+      if (previous) {
+        process.env.INGEST_SECRET = previous;
+      } else {
+        delete process.env.INGEST_SECRET;
+      }
+    }
+  });
 
-	test("rejects origins outside configured allowlist", async () => {
-		const previous = process.env.ORIGIN_ALLOWLIST;
-		process.env.ORIGIN_ALLOWLIST = "https://allowed.example";
+  test("rejects origins outside configured allowlist", async () => {
+    const previous = process.env.ORIGIN_ALLOWLIST;
+    process.env.ORIGIN_ALLOWLIST = "https://allowed.example";
 
-		try {
-			const response = await app.request("/ingest", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Origin: "https://blocked.example",
-				},
-				body: JSON.stringify({
-					projectId: "example.com",
-					type: "pageview",
-					path: "/home",
-				}),
-			});
+    try {
+      const response = await app.request("/ingest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://blocked.example",
+        },
+        body: JSON.stringify({
+          projectId: "example.com",
+          type: "pageview",
+          path: "/home",
+        }),
+      });
 
-			expect(response.status).toBe(403);
+      expect(response.status).toBe(403);
 
-			const data = (await response.json()) as { ok: boolean; error: string };
-			expect(data.ok).toBe(false);
-			expect(data.error).toBe("Origin not allowed");
-		} finally {
-			if (previous) {
-				process.env.ORIGIN_ALLOWLIST = previous;
-			} else {
-				delete process.env.ORIGIN_ALLOWLIST;
-			}
-		}
-	});
+      const data = (await response.json()) as { ok: boolean; error: string };
+      expect(data.ok).toBe(false);
+      expect(data.error).toBe("Origin not allowed");
+    } finally {
+      if (previous) {
+        process.env.ORIGIN_ALLOWLIST = previous;
+      } else {
+        delete process.env.ORIGIN_ALLOWLIST;
+      }
+    }
+  });
 
-	test("rejects invalid payload", async () => {
-		const payload = {
-			type: "pageview",
-		};
+  test("rejects invalid payload", async () => {
+    const payload = {
+      type: "pageview",
+    };
 
-		const response = await app.request("/ingest", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-		});
+    const response = await app.request("/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-		expect(response.status).toBe(400);
+    expect(response.status).toBe(400);
 
-		const data = (await response.json()) as { ok: boolean; error: string };
-		expect(data.ok).toBe(false);
-		expect(data.error).toBe("Invalid payload");
-	});
+    const data = (await response.json()) as { ok: boolean; error: string };
+    expect(data.ok).toBe(false);
+    expect(data.error).toBe("Invalid payload");
+  });
 
-	test("marks feature branch vercel deployments as preview", async () => {
-		insertedEvents.length = 0;
+  test("marks feature branch vercel deployments as preview", async () => {
+    insertedEvents.length = 0;
 
-		const response = await app.request("/ingest", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				projectId: "example.com",
-				type: "pageview",
-				path: "/preview-vercel",
-				host: "analytics-git-feature-remco.vercel.app",
-			}),
-		});
+    const response = await app.request("/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: "example.com",
+        type: "pageview",
+        path: "/preview-vercel",
+        host: "analytics-git-feature-remco.vercel.app",
+      }),
+    });
 
-		expect(response.status).toBe(200);
-		const event = insertedEvents.at(-1);
-		expect(event).toBeDefined();
-		if (!event) throw new Error("event missing");
-		expect(event.isPreview).toBe(true);
-	});
+    expect(response.status).toBe(200);
+    const event = insertedEvents.at(-1);
+    expect(event).toBeDefined();
+    if (!event) throw new Error("event missing");
+    expect(event.isPreview).toBe(true);
+  });
 
-	test("keeps production vercel deployments as public traffic", async () => {
-		insertedEvents.length = 0;
+  test("keeps production vercel deployments as public traffic", async () => {
+    insertedEvents.length = 0;
 
-		const response = await app.request("/ingest", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				projectId: "example.com",
-				type: "pageview",
-				path: "/production-vercel",
-				host: "analytics.vercel.app",
-			}),
-		});
+    const response = await app.request("/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: "example.com",
+        type: "pageview",
+        path: "/production-vercel",
+        host: "analytics.vercel.app",
+      }),
+    });
 
-		expect(response.status).toBe(200);
-		const event = insertedEvents.at(-1);
-		expect(event).toBeDefined();
-		if (!event) throw new Error("event missing");
-		expect(event.isPreview).toBe(false);
-	});
+    expect(response.status).toBe(200);
+    const event = insertedEvents.at(-1);
+    expect(event).toBeDefined();
+    if (!event) throw new Error("event missing");
+    expect(event.isPreview).toBe(false);
+  });
 });

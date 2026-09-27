@@ -5,29 +5,29 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 type Props = {
-	fallbackHref?: Route;
-	label?: string;
+  fallbackHref?: Route;
+  label?: string;
 };
 
 export function BackLink({ fallbackHref = "/", label = "Back" }: Props) {
-	const router = useRouter();
+  const router = useRouter();
 
-	function goBack() {
-		if (window.history.length > 1) {
-			router.back();
-		} else {
-			router.push(fallbackHref);
-		}
-	}
+  function goBack() {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(fallbackHref);
+    }
+  }
 
-	return (
-		<button
-			type="button"
-			onClick={goBack}
-			className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-		>
-			<ArrowLeft className="h-3 w-3" />
-			{label}
-		</button>
-	);
+  return (
+    <button
+      type="button"
+      onClick={goBack}
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="h-3 w-3" />
+      {label}
+    </button>
+  );
 }

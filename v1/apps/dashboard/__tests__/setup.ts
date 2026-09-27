@@ -1,12 +1,12 @@
 if (typeof window !== "undefined" && !window.encodeURIComponent) {
-	window.encodeURIComponent = encodeURIComponent;
+  window.encodeURIComponent = encodeURIComponent;
 }
 import { PGlite } from "@electric-sql/pglite";
 
 export async function setupTestDb() {
-	const pg = new PGlite();
+  const pg = new PGlite();
 
-	await pg.exec(`
+  await pg.exec(`
         CREATE TABLE IF NOT EXISTS events (
             id BIGSERIAL PRIMARY KEY,
             project_id TEXT,
@@ -56,9 +56,9 @@ export async function setupTestDb() {
         );
     `);
 
-	async function cleanup(): Promise<void> {
-		await pg.close();
-	}
+  async function cleanup(): Promise<void> {
+    await pg.close();
+  }
 
-	return { pg, cleanup };
+  return { pg, cleanup };
 }

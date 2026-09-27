@@ -1,21 +1,21 @@
 import { type AnalyticsOptions } from "../types";
 
 export function mergeAnalyticsOptions(
-	base: AnalyticsOptions,
-	override?: AnalyticsOptions,
+  base: AnalyticsOptions,
+  override?: AnalyticsOptions,
 ): AnalyticsOptions {
-	return {
-		projectId: override?.projectId ?? base.projectId,
-		ingestUrl: override?.ingestUrl ?? base.ingestUrl,
-		debug: override?.debug ?? base.debug,
-		path: override?.path ?? base.path,
-		referrer: override?.referrer !== undefined ? override.referrer : base.referrer,
-	};
+  return {
+    projectId: override?.projectId ?? base.projectId,
+    ingestUrl: override?.ingestUrl ?? base.ingestUrl,
+    debug: override?.debug ?? base.debug,
+    path: override?.path ?? base.path,
+    referrer: override?.referrer !== undefined ? override.referrer : base.referrer,
+  };
 }
 
 export function resolveAnalyticsOptions(
-	context: AnalyticsOptions,
-	props: AnalyticsOptions,
+  context: AnalyticsOptions,
+  props: AnalyticsOptions,
 ): AnalyticsOptions {
-	return mergeAnalyticsOptions(context, props);
+  return mergeAnalyticsOptions(context, props);
 }

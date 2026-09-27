@@ -6,75 +6,75 @@ export const OFFLINE_QUEUE_KEY = "__analytics_queue__";
 const MAX_SIZE = 50;
 
 type QueueEntry = {
-	baseUrl: string;
-	payload: EventPayload;
+  baseUrl: string;
+  payload: EventPayload;
 };
 
 function read(): QueueEntry[] {
-	if (!isStorageAvailable("local")) return [];
-	try {
-		const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
-		return raw ? (JSON.parse(raw) as QueueEntry[]) : [];
-	} catch {
-		return [];
-	}
+  if (!isStorageAvailable("local")) return [];
+  try {
+    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+    return raw ? (JSON.parse(raw) as QueueEntry[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 function write(entries: QueueEntry[]): void {
-	if (!isStorageAvailable("local")) return;
-	try {
-		localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(entries));
-	} catch {
-		noop();
-	}
+  if (!isStorageAvailable("local")) return;
+  try {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(entries));
+  } catch {
+    noop();
+  }
 }
 
 export function enqueueOffline(baseUrl: string, payload: EventPayload): void {
-	const queue = read();
-	if (queue.length >= MAX_SIZE) return;
-	queue.push({ baseUrl, payload });
-	write(queue);
+  const queue = read();
+  if (queue.length >= MAX_SIZE) return;
+  queue.push({ baseUrl, payload });
+  write(queue);
 }
 
 export function flushOfflineQueue(): void {
-	if (typeof fetch === "undefined") return;
-	const queue = read();
-	if (queue.length === 0) return;
-	write([]);
+  if (typeof fetch === "undefined") return;
+  const queue = read();
+  if (queue.length === 0) return;
+  write([]);
 
-	const groups = new Map<string, EventPayload[]>();
-	for (const { baseUrl, payload } of queue) {
-		const list = groups.get(baseUrl) ?? [];
-		list.push(payload);
-		groups.set(baseUrl, list);
-	}
+  const groups = new Map<string, EventPayload[]>();
+  for (const { baseUrl, payload } of queue) {
+    const list = groups.get(baseUrl) ?? [];
+    list.push(payload);
+    groups.set(baseUrl, list);
+  }
 
-	for (const [baseUrl, events] of groups) {
-		fetch(`${baseUrl}/e/batch`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ events }),
-			keepalive: true,
-		}).catch(() => {
-			for (const payload of events) enqueueOffline(baseUrl, payload);
-		});
-	}
+  for (const [baseUrl, events] of groups) {
+    fetch(`${baseUrl}/e/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events }),
+      keepalive: true,
+    }).catch(() => {
+      for (const payload of events) enqueueOffline(baseUrl, payload);
+    });
+  }
 }
 
 export function clearOfflineQueue(): void {
-	if (!isStorageAvailable("local")) return;
-	try {
-		localStorage.removeItem(OFFLINE_QUEUE_KEY);
-	} catch {
-		noop();
-	}
+  if (!isStorageAvailable("local")) return;
+  try {
+    localStorage.removeItem(OFFLINE_QUEUE_KEY);
+  } catch {
+    noop();
+  }
 }
 
 let registered = false;
 
 export function initOfflineFlush(): void {
-	if (registered || typeof window === "undefined") return;
-	if (typeof window.addEventListener !== "function") return;
-	registered = true;
-	window.addEventListener("online", flushOfflineQueue);
+  if (registered || typeof window === "undefined") return;
+  if (typeof window.addEventListener !== "function") return;
+  registered = true;
+  window.addEventListener("online", flushOfflineQueue);
 }

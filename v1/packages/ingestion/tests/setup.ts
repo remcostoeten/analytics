@@ -1,23 +1,23 @@
 if (typeof globalThis !== "undefined") {
-	const g = globalThis as any;
-	if (typeof g.window !== "undefined") {
-		if (!g.window.encodeURIComponent) g.window.encodeURIComponent = encodeURIComponent;
-		if (!g.window.location) g.window.location = { pathname: "/" };
-	} else {
-		g.window = g;
-		g.encodeURIComponent = encodeURIComponent;
-		g.location = { pathname: "/" };
-	}
+  const g = globalThis as any;
+  if (typeof g.window !== "undefined") {
+    if (!g.window.encodeURIComponent) g.window.encodeURIComponent = encodeURIComponent;
+    if (!g.window.location) g.window.location = { pathname: "/" };
+  } else {
+    g.window = g;
+    g.encodeURIComponent = encodeURIComponent;
+    g.location = { pathname: "/" };
+  }
 }
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "../src/db/index.js";
 
 export async function setupTestDb() {
-	const pg = new PGlite();
-	const db = drizzle(pg, { schema });
+  const pg = new PGlite();
+  const db = drizzle(pg, { schema });
 
-	await pg.exec(`
+  await pg.exec(`
         CREATE TABLE IF NOT EXISTS events (
             id BIGSERIAL PRIMARY KEY,
             project_id TEXT NOT NULL,
@@ -115,5 +115,5 @@ export async function setupTestDb() {
         CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions (session_id);
     `);
 
-	return { db, pg, cleanup: () => pg.close() };
+  return { db, pg, cleanup: () => pg.close() };
 }

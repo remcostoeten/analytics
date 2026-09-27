@@ -1,16 +1,16 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-	entry: ["src/index.ts", "src/browser/index.ts", "src/server/index.ts"],
-	format: ["esm", "cjs"],
-	dts: true,
-	clean: true,
-	minify: false,
-	sourcemap: true,
-	treeshake: true,
-	splitting: false,
-	external: ["react"],
-	target: "es2020",
-	outDir: "dist",
-	onSuccess: "bun run scripts/client-directive.ts",
+  entry: ["src/index.ts", "src/browser/index.ts", "src/server/index.ts"],
+  format: ["esm", "cjs"],
+  dts: true,
+  clean: true,
+  minify: false,
+  sourcemap: true,
+  treeshake: true,
+  splitting: false,
+  external: ["react"],
+  target: "es2020",
+  outDir: "dist",
+  onSuccess: "bun run scripts/client-directive.ts",
 });

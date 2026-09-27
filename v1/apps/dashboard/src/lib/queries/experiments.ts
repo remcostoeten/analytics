@@ -4,21 +4,21 @@ import { publicTraffic } from "./filters";
 const CONVERSION_EVENT_NAMES = ["transaction", "purchase", "conversion"];
 
 export type ExperimentVariant = {
-	variant: string;
-	visitors: number;
-	sessions: number;
-	pageviews: number;
-	conversions: number;
-	convertedVisitors: number;
-	conversionRate: number;
+  variant: string;
+  visitors: number;
+  sessions: number;
+  pageviews: number;
+  conversions: number;
+  convertedVisitors: number;
+  conversionRate: number;
 };
 
 export type Experiment = {
-	experimentId: string;
-	visitors: number;
-	firstSeen: string;
-	lastSeen: string;
-	variants: ExperimentVariant[];
+  experimentId: string;
+  visitors: number;
+  firstSeen: string;
+  lastSeen: string;
+  variants: ExperimentVariant[];
 };
 
 /**
@@ -28,13 +28,13 @@ export type Experiment = {
  * selected time range instead of reflecting the visitor's current assignment.
  */
 export async function getExperiments(
-	from: Date,
-	to: Date,
-	projectId: string | null,
-	excludeVisitorId?: string | null,
-	origin?: string | null,
+  from: Date,
+  to: Date,
+  projectId: string | null,
+  excludeVisitorId?: string | null,
+  origin?: string | null,
 ): Promise<Experiment[]> {
-	const rows = await sql`
+  const rows = await sql`
 		SELECT
 			assignment.key as experiment_id,
 			assignment.value as variant,
@@ -62,41 +62,41 @@ export async function getExperiments(
 		ORDER BY 1, visitors DESC
 	`;
 
-	const byExperiment = new Map<string, Experiment>();
+  const byExperiment = new Map<string, Experiment>();
 
-	for (const row of rows) {
-		const experimentId = row.experiment_id as string;
-		const visitors = Number(row.visitors);
-		const convertedVisitors = Number(row.converted_visitors);
-		const firstSeen = new Date(row.first_seen as string).toISOString();
-		const lastSeen = new Date(row.last_seen as string).toISOString();
+  for (const row of rows) {
+    const experimentId = row.experiment_id as string;
+    const visitors = Number(row.visitors);
+    const convertedVisitors = Number(row.converted_visitors);
+    const firstSeen = new Date(row.first_seen as string).toISOString();
+    const lastSeen = new Date(row.last_seen as string).toISOString();
 
-		const existing = byExperiment.get(experimentId);
-		const experiment = existing ?? {
-			experimentId,
-			visitors: 0,
-			firstSeen,
-			lastSeen,
-			variants: [],
-		};
+    const existing = byExperiment.get(experimentId);
+    const experiment = existing ?? {
+      experimentId,
+      visitors: 0,
+      firstSeen,
+      lastSeen,
+      variants: [],
+    };
 
-		experiment.visitors += visitors;
-		if (firstSeen < experiment.firstSeen) experiment.firstSeen = firstSeen;
-		if (lastSeen > experiment.lastSeen) experiment.lastSeen = lastSeen;
-		experiment.variants.push({
-			variant: row.variant as string,
-			visitors,
-			sessions: Number(row.sessions),
-			pageviews: Number(row.pageviews),
-			conversions: Number(row.conversions),
-			convertedVisitors,
-			conversionRate: visitors > 0 ? (convertedVisitors / visitors) * 100 : 0,
-		});
+    experiment.visitors += visitors;
+    if (firstSeen < experiment.firstSeen) experiment.firstSeen = firstSeen;
+    if (lastSeen > experiment.lastSeen) experiment.lastSeen = lastSeen;
+    experiment.variants.push({
+      variant: row.variant as string,
+      visitors,
+      sessions: Number(row.sessions),
+      pageviews: Number(row.pageviews),
+      conversions: Number(row.conversions),
+      convertedVisitors,
+      conversionRate: visitors > 0 ? (convertedVisitors / visitors) * 100 : 0,
+    });
 
-		if (!existing) byExperiment.set(experimentId, experiment);
-	}
+    if (!existing) byExperiment.set(experimentId, experiment);
+  }
 
-	return [...byExperiment.values()].sort(function (a, b) {
-		return b.visitors - a.visitors;
-	});
+  return [...byExperiment.values()].sort(function (a, b) {
+    return b.visitors - a.visitors;
+  });
 }

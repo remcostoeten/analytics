@@ -1,223 +1,223 @@
 export type BotDetectionResult = {
-	isBot: boolean;
-	reason: string | null;
-	confidence: "high" | "medium" | "low";
+  isBot: boolean;
+  reason: string | null;
+  confidence: "high" | "medium" | "low";
 };
 
 type HeaderBag = {
-	get(name: string): string | null;
+  get(name: string): string | null;
 };
 
 type ReqData = {
-	headers?: HeaderBag | null;
-	method?: string | null;
+  headers?: HeaderBag | null;
+  method?: string | null;
 };
 
 function emptyHeaders(): HeaderBag {
-	return {
-		get() {
-			return null;
-		},
-	};
+  return {
+    get() {
+      return null;
+    },
+  };
 }
 
 function getHeaders(req: ReqData | null | undefined): HeaderBag {
-	const headers = req?.headers;
-	if (!headers) return emptyHeaders();
-	return headers;
+  const headers = req?.headers;
+  if (!headers) return emptyHeaders();
+  return headers;
 }
 
 function getMethod(req: ReqData | null | undefined): string {
-	return req?.method?.toUpperCase() ?? "GET";
+  return req?.method?.toUpperCase() ?? "GET";
 }
 
 const BOT_PATTERNS = [
-	/bot/i,
-	/crawler/i,
-	/spider/i,
-	/scraper/i,
+  /bot/i,
+  /crawler/i,
+  /spider/i,
+  /scraper/i,
 
-	/googlebot/i,
-	/bingbot/i,
-	/slurp/i,
-	/duckduckbot/i,
-	/baiduspider/i,
-	/yandexbot/i,
-	/sogou/i,
-	/exabot/i,
+  /googlebot/i,
+  /bingbot/i,
+  /slurp/i,
+  /duckduckbot/i,
+  /baiduspider/i,
+  /yandexbot/i,
+  /sogou/i,
+  /exabot/i,
 
-	/facebookexternalhit/i,
-	/facebookcatalog/i,
-	/twitterbot/i,
-	/linkedinbot/i,
-	/whatsapp/i,
-	/telegrambot/i,
-	/slackbot/i,
-	/discordbot/i,
+  /facebookexternalhit/i,
+  /facebookcatalog/i,
+  /twitterbot/i,
+  /linkedinbot/i,
+  /whatsapp/i,
+  /telegrambot/i,
+  /slackbot/i,
+  /discordbot/i,
 
-	/pingdom/i,
-	/uptimerobot/i,
-	/statuscake/i,
-	/monitor/i,
-	/newrelic/i,
-	/datadog/i,
+  /pingdom/i,
+  /uptimerobot/i,
+  /statuscake/i,
+  /monitor/i,
+  /newrelic/i,
+  /datadog/i,
 
-	/headless/i,
-	/phantom/i,
-	/selenium/i,
-	/webdriver/i,
-	/puppeteer/i,
-	/playwright/i,
-	/chrome-lighthouse/i,
+  /headless/i,
+  /phantom/i,
+  /selenium/i,
+  /webdriver/i,
+  /puppeteer/i,
+  /playwright/i,
+  /chrome-lighthouse/i,
 
-	/scanner/i,
-	/nikto/i,
-	/nmap/i,
-	/masscan/i,
-	/nessus/i,
-	/acunetix/i,
-	/qualys/i,
+  /scanner/i,
+  /nikto/i,
+  /nmap/i,
+  /masscan/i,
+  /nessus/i,
+  /acunetix/i,
+  /qualys/i,
 
-	/curl/i,
-	/wget/i,
-	/python-requests/i,
-	/python-urllib/i,
-	/java\//i,
-	/go-http-client/i,
-	/okhttp/i,
-	/apache-httpclient/i,
+  /curl/i,
+  /wget/i,
+  /python-requests/i,
+  /python-urllib/i,
+  /java\//i,
+  /go-http-client/i,
+  /okhttp/i,
+  /apache-httpclient/i,
 
-	/gptbot/i,
-	/chatgpt/i,
-	/claude-web/i,
-	/anthropic-ai/i,
-	/cohere-ai/i,
-	/perplexitybot/i,
-	/ai2bot/i,
-	/bytespider/i,
-	/claudebot/i,
+  /gptbot/i,
+  /chatgpt/i,
+  /claude-web/i,
+  /anthropic-ai/i,
+  /cohere-ai/i,
+  /perplexitybot/i,
+  /ai2bot/i,
+  /bytespider/i,
+  /claudebot/i,
 
-	/ahrefsbot/i,
-	/semrushbot/i,
-	/mj12bot/i,
-	/dotbot/i,
-	/rogerbot/i,
-	/screaming frog/i,
+  /ahrefsbot/i,
+  /semrushbot/i,
+  /mj12bot/i,
+  /dotbot/i,
+  /rogerbot/i,
+  /screaming frog/i,
 
-	/feedfetcher/i,
-	/feedparser/i,
-	/rss/i,
-	/aggregator/i,
-	/newspaper/i,
+  /feedfetcher/i,
+  /feedparser/i,
+  /rss/i,
+  /aggregator/i,
+  /newspaper/i,
 
-	/archive\.org_bot/i,
-	/ia_archiver/i,
-	/wayback/i,
+  /archive\.org_bot/i,
+  /ia_archiver/i,
+  /wayback/i,
 ];
 
 export function isBotUserAgent(ua: string | null): boolean {
-	if (!ua) return false;
+  if (!ua) return false;
 
-	return BOT_PATTERNS.some(function (pattern) {
-		return pattern.test(ua);
-	});
+  return BOT_PATTERNS.some(function (pattern) {
+    return pattern.test(ua);
+  });
 }
 
 function isBotByVercelHeader(headers: HeaderBag): boolean {
-	const isBot = headers.get("x-vercel-bot");
-	return isBot === "1" || isBot === "true";
+  const isBot = headers.get("x-vercel-bot");
+  return isBot === "1" || isBot === "true";
 }
 
 function hasValidBrowserHeaders(headers: HeaderBag): boolean {
-	const ua = headers.get("user-agent");
-	const accept = headers.get("accept");
-	const acceptLanguage = headers.get("accept-language");
+  const ua = headers.get("user-agent");
+  const accept = headers.get("accept");
+  const acceptLanguage = headers.get("accept-language");
 
-	if (!ua || !accept) return false;
-	if (!accept.includes("text/html")) return false;
-	if (!acceptLanguage) return false;
+  if (!ua || !accept) return false;
+  if (!accept.includes("text/html")) return false;
+  if (!acceptLanguage) return false;
 
-	return true;
+  return true;
 }
 
 function isNavigationRequest(headers: HeaderBag, method: string): boolean {
-	if (method !== "GET" && method !== "HEAD") return false;
+  if (method !== "GET" && method !== "HEAD") return false;
 
-	const secFetchMode = headers.get("sec-fetch-mode");
-	const secFetchDest = headers.get("sec-fetch-dest");
-	const accept = headers.get("accept");
+  const secFetchMode = headers.get("sec-fetch-mode");
+  const secFetchDest = headers.get("sec-fetch-dest");
+  const accept = headers.get("accept");
 
-	if (secFetchMode === "navigate") return true;
-	if (secFetchDest === "document") return true;
+  if (secFetchMode === "navigate") return true;
+  if (secFetchDest === "document") return true;
 
-	return accept?.includes("text/html") ?? false;
+  return accept?.includes("text/html") ?? false;
 }
 
 function hasPrivacyBrowser(ua: string | null): boolean {
-	if (!ua) return false;
-	return /brave\/|firefox\/|librewolf/i.test(ua);
+  if (!ua) return false;
+  return /brave\/|firefox\/|librewolf/i.test(ua);
 }
 
 function hasSecChUaBrave(secChUa: string | null): boolean {
-	if (!secChUa) return false;
-	return /brave/i.test(secChUa);
+  if (!secChUa) return false;
+  return /brave/i.test(secChUa);
 }
 
 export function detectBot(req: ReqData | null | undefined): BotDetectionResult {
-	const headers = getHeaders(req);
-	const method = getMethod(req);
-	const ua = headers.get("user-agent");
-	const secChUa = headers.get("sec-ch-ua");
+  const headers = getHeaders(req);
+  const method = getMethod(req);
+  const ua = headers.get("user-agent");
+  const secChUa = headers.get("sec-ch-ua");
 
-	if (isBotByVercelHeader(headers)) {
-		return { isBot: true, reason: "vercel-bot-header", confidence: "high" };
-	}
+  if (isBotByVercelHeader(headers)) {
+    return { isBot: true, reason: "vercel-bot-header", confidence: "high" };
+  }
 
-	// Privacy browsers (Brave, Firefox, LibreWolf) - check BEFORE bot UA check
-	// Brave identifies via sec-ch-ua header, not just user-agent
-	if (hasPrivacyBrowser(ua) || hasSecChUaBrave(secChUa)) {
-		return { isBot: false, reason: null, confidence: "low" };
-	}
+  // Privacy browsers (Brave, Firefox, LibreWolf) - check BEFORE bot UA check
+  // Brave identifies via sec-ch-ua header, not just user-agent
+  if (hasPrivacyBrowser(ua) || hasSecChUaBrave(secChUa)) {
+    return { isBot: false, reason: null, confidence: "low" };
+  }
 
-	if (isBotUserAgent(ua)) {
-		return { isBot: true, reason: "bot-user-agent", confidence: "high" };
-	}
+  if (isBotUserAgent(ua)) {
+    return { isBot: true, reason: "bot-user-agent", confidence: "high" };
+  }
 
-	if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
-		return { isBot: true, reason: "invalid-headers", confidence: "medium" };
-	}
+  if (isNavigationRequest(headers, method) && !hasValidBrowserHeaders(headers)) {
+    return { isBot: true, reason: "invalid-headers", confidence: "medium" };
+  }
 
-	return { isBot: false, reason: null, confidence: "low" };
+  return { isBot: false, reason: null, confidence: "low" };
 }
 
 export function classifyDevice(ua: string | null, isBot: boolean = false): string {
-	if (!ua) return "unknown";
-	if (isBot) return "bot";
+  if (!ua) return "unknown";
+  if (isBot) return "bot";
 
-	const lower = ua.toLowerCase();
+  const lower = ua.toLowerCase();
 
-	if (lower.includes("ipad") || lower.includes("tablet")) return "tablet";
-	if (lower.includes("android") && !lower.includes("mobile")) return "tablet";
+  if (lower.includes("ipad") || lower.includes("tablet")) return "tablet";
+  if (lower.includes("android") && !lower.includes("mobile")) return "tablet";
 
-	if (
-		lower.includes("mobile") ||
-		lower.includes("android") ||
-		lower.includes("iphone") ||
-		lower.includes("ipod") ||
-		lower.includes("blackberry") ||
-		lower.includes("windows phone")
-	) {
-		return "mobile";
-	}
+  if (
+    lower.includes("mobile") ||
+    lower.includes("android") ||
+    lower.includes("iphone") ||
+    lower.includes("ipod") ||
+    lower.includes("blackberry") ||
+    lower.includes("windows phone")
+  ) {
+    return "mobile";
+  }
 
-	if (
-		lower.includes("windows") ||
-		lower.includes("macintosh") ||
-		lower.includes("linux") ||
-		lower.includes("x11")
-	) {
-		return "desktop";
-	}
+  if (
+    lower.includes("windows") ||
+    lower.includes("macintosh") ||
+    lower.includes("linux") ||
+    lower.includes("x11")
+  ) {
+    return "desktop";
+  }
 
-	return "unknown";
+  return "unknown";
 }

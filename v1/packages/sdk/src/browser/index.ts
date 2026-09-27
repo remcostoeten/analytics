@@ -1,36 +1,36 @@
 export { createTrackHelpers } from "../api/track-helpers";
 export { mergeAnalyticsOptions, resolveAnalyticsOptions } from "../utilities/options";
 export {
-	track,
-	trackPageView,
-	trackEvent,
-	trackClick,
-	trackError,
-	trackTransaction,
-	trackSearch,
-	identifyUser,
-	identify,
-	setExperiment,
-	validateIngestUrl,
+  track,
+  trackPageView,
+  trackEvent,
+  trackClick,
+  trackError,
+  trackTransaction,
+  trackSearch,
+  identifyUser,
+  identify,
+  setExperiment,
+  validateIngestUrl,
 } from "../api/track";
 export { getVisitorId, resetVisitorId } from "../identity/visitor";
 export { getSessionId, resetSessionId, extendSession } from "../identity/session";
 export {
-	optOut,
-	optIn,
-	isOptedOut,
-	checkDoNotTrack,
-	PRIVACY_DISCLOSURE,
-	getStoredKeys,
+  optOut,
+  optIn,
+  isOptedOut,
+  checkDoNotTrack,
+  PRIVACY_DISCLOSURE,
+  getStoredKeys,
 } from "../api/privacy";
 export type { StorageKeyInfo } from "../api/privacy";
 export {
-	setConsentGranted,
-	setConsentRequired,
-	hasConsent,
-	isConsentRequired,
-	canTrack,
-	canPersist,
+  setConsentGranted,
+  setConsentRequired,
+  hasConsent,
+  isConsentRequired,
+  canTrack,
+  canPersist,
 } from "../api/consent";
 export { observePageViews } from "../observers/pageview";
 export { observePerformance } from "../observers/performance";
@@ -42,12 +42,12 @@ export { observeForms } from "../observers/forms";
 export { observeErrors } from "../observers/errors";
 export { flushOfflineQueue, clearOfflineQueue } from "../utilities/offline-queue";
 export type {
-	AnalyticsOptions,
-	EventPayload,
-	EventType,
-	JsonPrimitive,
-	JsonValue,
-	KnownEventType,
-	TrackHelpers,
-	TrackMeta,
+  AnalyticsOptions,
+  EventPayload,
+  EventType,
+  JsonPrimitive,
+  JsonValue,
+  KnownEventType,
+  TrackHelpers,
+  TrackMeta,
 } from "../types";

@@ -9,77 +9,77 @@ export const IDENTITY_KEY = "__analytics_identity";
 type StoredRecord = Record<string, string | number | boolean>;
 
 function readRecord(key: string): StoredRecord {
-	if (!isStorageAvailable("local")) return {};
+  if (!isStorageAvailable("local")) return {};
 
-	try {
-		const raw = localStorage.getItem(key);
-		if (!raw) return {};
-		const parsed = JSON.parse(raw);
-		return parsed && typeof parsed === "object" ? (parsed as StoredRecord) : {};
-	} catch {
-		return {};
-	}
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as StoredRecord) : {};
+  } catch {
+    return {};
+  }
 }
 
 function mergeRecord(key: string, updates: StoredRecord): void {
-	if (!isStorageAvailable("local") || !canPersist()) return;
+  if (!isStorageAvailable("local") || !canPersist()) return;
 
-	try {
-		localStorage.setItem(key, JSON.stringify({ ...readRecord(key), ...updates }));
-	} catch {
-		noop();
-	}
+  try {
+    localStorage.setItem(key, JSON.stringify({ ...readRecord(key), ...updates }));
+  } catch {
+    noop();
+  }
 }
 
 export function persistUserProperties(userProperties: StoredRecord): void {
-	mergeRecord(USER_PROPERTIES_KEY, userProperties);
+  mergeRecord(USER_PROPERTIES_KEY, userProperties);
 }
 
 export function persistExperiment(experimentId: string, variantId: string): void {
-	mergeRecord(EXPERIMENTS_KEY, { [experimentId]: variantId });
+  mergeRecord(EXPERIMENTS_KEY, { [experimentId]: variantId });
 }
 
 export function persistIdentity(userId: string): void {
-	if (!isStorageAvailable("local") || !canPersist()) return;
+  if (!isStorageAvailable("local") || !canPersist()) return;
 
-	try {
-		localStorage.setItem(IDENTITY_KEY, userId);
-	} catch {
-		noop();
-	}
+  try {
+    localStorage.setItem(IDENTITY_KEY, userId);
+  } catch {
+    noop();
+  }
 }
 
 export function getIdentity(): string | null {
-	if (!isStorageAvailable("local")) return null;
+  if (!isStorageAvailable("local")) return null;
 
-	try {
-		return localStorage.getItem(IDENTITY_KEY);
-	} catch {
-		return null;
-	}
+  try {
+    return localStorage.getItem(IDENTITY_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function getStoredTraits(): TrackMeta {
-	const traits: TrackMeta = {};
-	const userProperties = readRecord(USER_PROPERTIES_KEY);
-	const experiments = readRecord(EXPERIMENTS_KEY);
+  const traits: TrackMeta = {};
+  const userProperties = readRecord(USER_PROPERTIES_KEY);
+  const experiments = readRecord(EXPERIMENTS_KEY);
 
-	if (Object.keys(userProperties).length > 0) traits.userProperties = userProperties;
-	if (Object.keys(experiments).length > 0) traits.experiments = experiments;
-	const userId = getIdentity();
-	if (userId) traits.userId = userId;
+  if (Object.keys(userProperties).length > 0) traits.userProperties = userProperties;
+  if (Object.keys(experiments).length > 0) traits.experiments = experiments;
+  const userId = getIdentity();
+  if (userId) traits.userId = userId;
 
-	return traits;
+  return traits;
 }
 
 export function clearStoredTraits(): void {
-	if (!isStorageAvailable("local")) return;
+  if (!isStorageAvailable("local")) return;
 
-	try {
-		localStorage.removeItem(USER_PROPERTIES_KEY);
-		localStorage.removeItem(EXPERIMENTS_KEY);
-		localStorage.removeItem(IDENTITY_KEY);
-	} catch {
-		noop();
-	}
+  try {
+    localStorage.removeItem(USER_PROPERTIES_KEY);
+    localStorage.removeItem(EXPERIMENTS_KEY);
+    localStorage.removeItem(IDENTITY_KEY);
+  } catch {
+    noop();
+  }
 }

@@ -10,253 +10,253 @@ import { Input } from "@/components/ui/input";
 import { formatDuration, getFlagEmoji } from "@/lib/format";
 
 type VisitorExplorerRow = {
-	id: string;
-	fingerprint: string;
-	firstSeen: string;
-	lastSeen: string;
-	visitCount: number;
-	deviceType: string | null;
-	browser: string | null;
-	os: string | null;
-	country: string | null;
-	city: string | null;
-	isInternal: boolean;
-	totalDurationMs: number;
-	pageviews: number;
-	lastEntryPath: string | null;
+  id: string;
+  fingerprint: string;
+  firstSeen: string;
+  lastSeen: string;
+  visitCount: number;
+  deviceType: string | null;
+  browser: string | null;
+  os: string | null;
+  country: string | null;
+  city: string | null;
+  isInternal: boolean;
+  totalDurationMs: number;
+  pageviews: number;
+  lastEntryPath: string | null;
 };
 
 type VisitorExplorerResponse = {
-	rows: VisitorExplorerRow[];
-	total: number;
+  rows: VisitorExplorerRow[];
+  total: number;
 };
 
 type Segment = "all" | "new" | "returning" | "engaged" | "converted";
 type Sort = "last_seen" | "visit_count" | "first_seen" | "total_time";
 
 type Props = {
-	buildQuery: (metric: string, extraParams?: string) => string;
-	className?: string;
-	projectId?: string | null;
+  buildQuery: (metric: string, extraParams?: string) => string;
+  className?: string;
+  projectId?: string | null;
 };
 
 async function fetcher(url: string): Promise<VisitorExplorerResponse> {
-	const response = await fetch(url);
-	if (!response.ok) throw new Error("Failed to load visitors");
-	return response.json();
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to load visitors");
+  return response.json();
 }
 
 function formatTimeAgo(dateStr: string): string {
-	const date = new Date(dateStr);
-	const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  const date = new Date(dateStr);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
-	if (seconds < 60) return "just now";
-	if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-	if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-	return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
 }
 
 const deviceIcons: Record<string, string> = {
-	desktop: "D",
-	mobile: "M",
-	tablet: "T",
-	bot: "B",
+  desktop: "D",
+  mobile: "M",
+  tablet: "T",
+  bot: "B",
 };
 
 const SEGMENTS: { id: Segment; label: string }[] = [
-	{ id: "all", label: "All" },
-	{ id: "new", label: "New" },
-	{ id: "returning", label: "Returning" },
-	{ id: "engaged", label: "Engaged" },
-	{ id: "converted", label: "Converted" },
+  { id: "all", label: "All" },
+  { id: "new", label: "New" },
+  { id: "returning", label: "Returning" },
+  { id: "engaged", label: "Engaged" },
+  { id: "converted", label: "Converted" },
 ];
 
 export function VisitorsTable({ buildQuery, className, projectId }: Props) {
-	const [segment, setSegment] = useState<Segment>("all");
-	const [sort, setSort] = useState<Sort>("last_seen");
-	const [search, setSearch] = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [segment, setSegment] = useState<Segment>("all");
+  const [sort, setSort] = useState<Sort>("last_seen");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-	useEffect(() => {
-		const handle = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-		return () => clearTimeout(handle);
-	}, [search]);
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [search]);
 
-	const searchParam = debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : "";
-	const { data, isLoading } = useSWR(
-		buildQuery("visitors-explorer", `segment=${segment}&sort=${sort}&limit=25${searchParam}`),
-		fetcher,
-		{ fallbackData: { rows: [], total: 0 }, refreshInterval: 30000, keepPreviousData: true },
-	);
+  const searchParam = debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : "";
+  const { data, isLoading } = useSWR(
+    buildQuery("visitors-explorer", `segment=${segment}&sort=${sort}&limit=25${searchParam}`),
+    fetcher,
+    { fallbackData: { rows: [], total: 0 }, refreshInterval: 30000, keepPreviousData: true },
+  );
 
-	const rows = data?.rows ?? [];
-	const projectQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  const rows = data?.rows ?? [];
+  const projectQuery = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
 
-	return (
-		<div className={cn("rounded-lg border border-border bg-card", className)}>
-			<div className="px-3 py-2 border-b border-border flex items-center gap-2 flex-wrap">
-				<h3 className="text-xs font-medium text-foreground shrink-0">Visitors</h3>
-				<div className="flex items-center gap-1 shrink-0">
-					{SEGMENTS.map((s) => (
-						<button
-							key={s.id}
-							onClick={() => setSegment(s.id)}
-							className={cn(
-								"px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
-								segment === s.id
-									? "bg-foreground text-background"
-									: "text-muted-foreground hover:bg-muted",
-							)}
-						>
-							{s.label}
-						</button>
-					))}
-				</div>
-				<select
-					value={sort}
-					onChange={(e) => setSort(e.target.value as Sort)}
-					className="h-6 text-[11px] bg-muted/50 border border-border rounded px-1"
-				>
-					<option value="last_seen">Last seen</option>
-					<option value="visit_count">Visit count</option>
-					<option value="first_seen">First seen</option>
-					<option value="total_time">Time spent</option>
-				</select>
-				<div className="relative flex-1 min-w-[120px] max-w-[200px] ml-auto">
-					<Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-					<Input
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Search country, city, browser, ID…"
-						className="h-6 pl-6 pr-2 text-[11px] bg-muted/50 border-border"
-					/>
-				</div>
-				<span className="text-[11px] text-muted-foreground shrink-0">
-					{rows.length}/{data?.total ?? 0}
-				</span>
-			</div>
+  return (
+    <div className={cn("rounded-lg border border-border bg-card", className)}>
+      <div className="px-3 py-2 border-b border-border flex items-center gap-2 flex-wrap">
+        <h3 className="text-xs font-medium text-foreground shrink-0">Visitors</h3>
+        <div className="flex items-center gap-1 shrink-0">
+          {SEGMENTS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSegment(s.id)}
+              className={cn(
+                "px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
+                segment === s.id
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as Sort)}
+          className="h-6 text-[11px] bg-muted/50 border border-border rounded px-1"
+        >
+          <option value="last_seen">Last seen</option>
+          <option value="visit_count">Visit count</option>
+          <option value="first_seen">First seen</option>
+          <option value="total_time">Time spent</option>
+        </select>
+        <div className="relative flex-1 min-w-[120px] max-w-[200px] ml-auto">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search country, city, browser, ID…"
+            className="h-6 pl-6 pr-2 text-[11px] bg-muted/50 border-border"
+          />
+        </div>
+        <span className="text-[11px] text-muted-foreground shrink-0">
+          {rows.length}/{data?.total ?? 0}
+        </span>
+      </div>
 
-			{!isLoading && rows.length === 0 ? (
-				<div className="flex items-center gap-2.5 px-3 py-3">
-					<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
-					<p className="text-xs text-muted-foreground">No visitors match this filter</p>
-				</div>
-			) : (
-				<div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-					<table className="w-full text-xs">
-						<thead className="sticky top-0 bg-card z-10">
-							<tr className="border-b border-border bg-muted/30">
-								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-									Visitor
-								</th>
-								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-									Location
-								</th>
-								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-									Device
-								</th>
-								<th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
-									Entry Page
-								</th>
-								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-									Visits
-								</th>
-								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-									Views
-								</th>
-								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-									Time Spent
-								</th>
-								<th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
-									Last Seen
-								</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border">
-							{rows.map((visitor) => (
-								<tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
-									<td className="px-3 py-1.5">
-										<Link
-											href={`/visitor/${visitor.fingerprint}${projectQuery}` as Route}
-											className="flex items-center gap-2 group"
-										>
-											<div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-												<User className="h-3 w-3 text-muted-foreground" />
-											</div>
-											<span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground group-hover:underline">
-												{visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
-											</span>
-											{visitor.visitCount > 1 && (
-												<span className="px-1 py-px rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[8px] font-medium uppercase">
-													Returning
-												</span>
-											)}
-										</Link>
-									</td>
-									<td className="px-3 py-1.5">
-										<div className="flex items-center gap-1.5">
-											{visitor.country && (
-												<span className="text-sm">{getFlagEmoji(visitor.country)}</span>
-											)}
-											<span className="text-foreground truncate max-w-[100px]">
-												{visitor.city || visitor.country || "Unknown"}
-											</span>
-										</div>
-									</td>
-									<td className="px-3 py-1.5">
-										<div className="flex items-center gap-1.5">
-											<span
-												className={cn(
-													"inline-flex items-center justify-center w-4 h-4 rounded text-[8px] font-bold",
-													visitor.deviceType === "desktop" &&
-														"bg-blue-500/15 text-blue-600 dark:text-blue-400",
-													visitor.deviceType === "mobile" &&
-														"bg-green-500/15 text-green-600 dark:text-green-400",
-													visitor.deviceType === "tablet" &&
-														"bg-purple-500/15 text-purple-600 dark:text-purple-400",
-													(!visitor.deviceType || visitor.deviceType === "unknown") &&
-														"bg-muted text-muted-foreground",
-												)}
-											>
-												{deviceIcons[visitor.deviceType || "unknown"] || "?"}
-											</span>
-											<span className="text-muted-foreground truncate max-w-[80px]">
-												{visitor.browser || "Unknown"}
-											</span>
-										</div>
-									</td>
-									<td className="px-3 py-1.5">
-										<span className="font-mono text-[11px] text-muted-foreground truncate max-w-[140px] inline-block align-middle">
-											{visitor.lastEntryPath || "—"}
-										</span>
-									</td>
-									<td className="px-3 py-1.5 text-right tabular-nums">
-										<span
-											className={cn(
-												"font-medium",
-												visitor.visitCount > 5 && "text-emerald-600 dark:text-emerald-400",
-												visitor.visitCount <= 5 && visitor.visitCount > 1 && "text-foreground",
-												visitor.visitCount === 1 && "text-muted-foreground",
-											)}
-										>
-											{visitor.visitCount}
-										</span>
-									</td>
-									<td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
-										{visitor.pageviews}
-									</td>
-									<td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
-										{visitor.totalDurationMs > 0 ? formatDuration(visitor.totalDurationMs) : "—"}
-									</td>
-									<td className="px-3 py-1.5 text-right text-muted-foreground">
-										{formatTimeAgo(visitor.lastSeen)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-		</div>
-	);
+      {!isLoading && rows.length === 0 ? (
+        <div className="flex items-center gap-2.5 px-3 py-3">
+          <Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+          <p className="text-xs text-muted-foreground">No visitors match this filter</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-card z-10">
+              <tr className="border-b border-border bg-muted/30">
+                <th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+                  Visitor
+                </th>
+                <th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+                  Location
+                </th>
+                <th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+                  Device
+                </th>
+                <th className="px-3 py-1.5 text-left font-medium text-muted-foreground uppercase tracking-wide">
+                  Entry Page
+                </th>
+                <th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+                  Visits
+                </th>
+                <th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+                  Views
+                </th>
+                <th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+                  Time Spent
+                </th>
+                <th className="px-3 py-1.5 text-right font-medium text-muted-foreground uppercase tracking-wide">
+                  Last Seen
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.map((visitor) => (
+                <tr key={visitor.id} className="hover:bg-muted/50 transition-colors">
+                  <td className="px-3 py-1.5">
+                    <Link
+                      href={`/visitor/${visitor.fingerprint}${projectQuery}` as Route}
+                      className="flex items-center gap-2 group"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                      <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground group-hover:underline">
+                        {visitor.fingerprint?.slice(0, 8) || visitor.id.slice(0, 8)}
+                      </span>
+                      {visitor.visitCount > 1 && (
+                        <span className="px-1 py-px rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[8px] font-medium uppercase">
+                          Returning
+                        </span>
+                      )}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      {visitor.country && (
+                        <span className="text-sm">{getFlagEmoji(visitor.country)}</span>
+                      )}
+                      <span className="text-foreground truncate max-w-[100px]">
+                        {visitor.city || visitor.country || "Unknown"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center w-4 h-4 rounded text-[8px] font-bold",
+                          visitor.deviceType === "desktop" &&
+                            "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+                          visitor.deviceType === "mobile" &&
+                            "bg-green-500/15 text-green-600 dark:text-green-400",
+                          visitor.deviceType === "tablet" &&
+                            "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+                          (!visitor.deviceType || visitor.deviceType === "unknown") &&
+                            "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {deviceIcons[visitor.deviceType || "unknown"] || "?"}
+                      </span>
+                      <span className="text-muted-foreground truncate max-w-[80px]">
+                        {visitor.browser || "Unknown"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <span className="font-mono text-[11px] text-muted-foreground truncate max-w-[140px] inline-block align-middle">
+                      {visitor.lastEntryPath || "—"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">
+                    <span
+                      className={cn(
+                        "font-medium",
+                        visitor.visitCount > 5 && "text-emerald-600 dark:text-emerald-400",
+                        visitor.visitCount <= 5 && visitor.visitCount > 1 && "text-foreground",
+                        visitor.visitCount === 1 && "text-muted-foreground",
+                      )}
+                    >
+                      {visitor.visitCount}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+                    {visitor.pageviews}
+                  </td>
+                  <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+                    {visitor.totalDurationMs > 0 ? formatDuration(visitor.totalDurationMs) : "—"}
+                  </td>
+                  <td className="px-3 py-1.5 text-right text-muted-foreground">
+                    {formatTimeAgo(visitor.lastSeen)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }

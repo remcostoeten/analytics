@@ -17,7 +17,10 @@ function isTypeDeclaration(node: ESTree.Node): node is TypeDeclaration {
 }
 
 function unwrapExport(statement: ESTree.Node): ESTree.Node | null {
-  if (statement.type === "ExportNamedDeclaration" || statement.type === "ExportDefaultDeclaration") {
+  if (
+    statement.type === "ExportNamedDeclaration" ||
+    statement.type === "ExportDefaultDeclaration"
+  ) {
     return statement.declaration;
   }
   return statement;

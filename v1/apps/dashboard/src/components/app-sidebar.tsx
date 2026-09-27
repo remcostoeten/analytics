@@ -8,668 +8,668 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import useSWR from "swr";
 import {
-	LayoutDashboard,
-	Activity,
-	Users,
-	Zap,
-	Radio,
-	CalendarDays,
-	Settings2,
-	Search,
-	ChevronDown,
-	Globe,
+  LayoutDashboard,
+  Activity,
+  Users,
+  Zap,
+  Radio,
+  CalendarDays,
+  Settings2,
+  Search,
+  ChevronDown,
+  Globe,
 } from "lucide-react";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarGroup,
-	SidebarGroupContent,
-	SidebarGroupLabel,
-	SidebarHeader,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { GITHUB_REPO_URL, GithubMark } from "@/components/github-link";
 
 type ProjectOption = {
-	id: string;
-	eventCount: number;
+  id: string;
+  eventCount: number;
 };
 
 type OriginOption = {
-	host: string;
-	eventCount: number;
+  host: string;
+  eventCount: number;
 };
 
 async function fetchProjects(url: string): Promise<ProjectOption[]> {
-	const response = await fetch(url);
-	if (!response.ok) return [];
-	return response.json();
+  const response = await fetch(url);
+  if (!response.ok) return [];
+  return response.json();
 }
 
 async function fetchOrigins(url: string): Promise<OriginOption[]> {
-	const response = await fetch(url);
-	if (!response.ok) return [];
-	return response.json();
+  const response = await fetch(url);
+  if (!response.ok) return [];
+  return response.json();
 }
 
 export function AppSidebar() {
-	const pathname = usePathname();
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const view = searchParams.get("view") || "overview";
-	const selectedProject = searchParams.get("projectId");
-	const selectedOrigin = searchParams.get("origin");
-	const timeRange = searchParams.get("timeRange") || "30d";
-	const fromParam = searchParams.get("from");
-	const toParam = searchParams.get("to");
-	const isCustomRange = !!(fromParam && toParam);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view") || "overview";
+  const selectedProject = searchParams.get("projectId");
+  const selectedOrigin = searchParams.get("origin");
+  const timeRange = searchParams.get("timeRange") || "30d";
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const isCustomRange = !!(fromParam && toParam);
 
-	const [showCustomPicker, setShowCustomPicker] = useState(false);
-	const [customFromInput, setCustomFromInput] = useState(fromParam || "");
-	const [customToInput, setCustomToInput] = useState(toParam || "");
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [customFromInput, setCustomFromInput] = useState(fromParam || "");
+  const [customToInput, setCustomToInput] = useState(toParam || "");
 
-	const { data: projects = [] } = useSWR("/api/analytics?metric=projects", fetchProjects, {
-		fallbackData: [],
-		refreshInterval: 60000,
-	});
+  const { data: projects = [] } = useSWR("/api/analytics?metric=projects", fetchProjects, {
+    fallbackData: [],
+    refreshInterval: 60000,
+  });
 
-	const originsUrl = selectedProject
-		? `/api/analytics?metric=origins&projectId=${selectedProject}`
-		: "/api/analytics?metric=origins";
-	const { data: origins = [] } = useSWR(originsUrl, fetchOrigins, {
-		fallbackData: [],
-		refreshInterval: 60000,
-	});
+  const originsUrl = selectedProject
+    ? `/api/analytics?metric=origins&projectId=${selectedProject}`
+    : "/api/analytics?metric=origins";
+  const { data: origins = [] } = useSWR(originsUrl, fetchOrigins, {
+    fallbackData: [],
+    refreshInterval: 60000,
+  });
 
-	const dashboardItems = [
-		{ id: "overview", label: "Overview", icon: LayoutDashboard },
-		{ id: "realtime", label: "Live Data", icon: Radio },
-		{ id: "audience", label: "Audience", icon: Users },
-		{ id: "behavior", label: "Behavior", icon: Activity },
-		{ id: "retention", label: "Retention", icon: CalendarDays },
-		{ id: "technology", label: "Technology", icon: Settings2 },
-	];
+  const dashboardItems = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "realtime", label: "Live Data", icon: Radio },
+    { id: "audience", label: "Audience", icon: Users },
+    { id: "behavior", label: "Behavior", icon: Activity },
+    { id: "retention", label: "Retention", icon: CalendarDays },
+    { id: "technology", label: "Technology", icon: Settings2 },
+  ];
 
-	function buildHref(path: string, params: URLSearchParams): Route {
-		const query = params.toString();
-		return (query ? `${path}?${query}` : path) as Route;
-	}
+  function buildHref(path: string, params: URLSearchParams): Route {
+    const query = params.toString();
+    return (query ? `${path}?${query}` : path) as Route;
+  }
 
-	function setSelectedProject(projectId: string | null) {
-		const params = new URLSearchParams(searchParams.toString());
-		if (projectId) {
-			params.set("projectId", projectId);
-		} else {
-			params.delete("projectId");
-		}
-		router.push(buildHref(pathname || "/", params));
-	}
+  function setSelectedProject(projectId: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (projectId) {
+      params.set("projectId", projectId);
+    } else {
+      params.delete("projectId");
+    }
+    router.push(buildHref(pathname || "/", params));
+  }
 
-	function setSelectedOrigin(origin: string | null) {
-		const params = new URLSearchParams(searchParams.toString());
-		if (origin) {
-			params.set("origin", origin);
-		} else {
-			params.delete("origin");
-		}
-		router.push(buildHref(pathname || "/", params));
-	}
+  function setSelectedOrigin(origin: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (origin) {
+      params.set("origin", origin);
+    } else {
+      params.delete("origin");
+    }
+    router.push(buildHref(pathname || "/", params));
+  }
 
-	function setTimeRange(range: string) {
-		if (range === "custom") {
-			setCustomFromInput(fromParam || "");
-			setCustomToInput(toParam || "");
-			setShowCustomPicker(true);
-			return;
-		}
-		const params = new URLSearchParams(searchParams.toString());
-		params.delete("from");
-		params.delete("to");
-		if (range === "30d") {
-			params.delete("timeRange");
-		} else {
-			params.set("timeRange", range);
-		}
-		router.push(buildHref(pathname || "/", params));
-	}
+  function setTimeRange(range: string) {
+    if (range === "custom") {
+      setCustomFromInput(fromParam || "");
+      setCustomToInput(toParam || "");
+      setShowCustomPicker(true);
+      return;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("from");
+    params.delete("to");
+    if (range === "30d") {
+      params.delete("timeRange");
+    } else {
+      params.set("timeRange", range);
+    }
+    router.push(buildHref(pathname || "/", params));
+  }
 
-	function applyCustomRange() {
-		if (!customFromInput || !customToInput) return;
-		const params = new URLSearchParams(searchParams.toString());
-		params.set("from", customFromInput);
-		params.set("to", customToInput);
-		params.delete("timeRange");
-		router.push(buildHref(pathname || "/", params));
-		setShowCustomPicker(false);
-	}
+  function applyCustomRange() {
+    if (!customFromInput || !customToInput) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("from", customFromInput);
+    params.set("to", customToInput);
+    params.delete("timeRange");
+    router.push(buildHref(pathname || "/", params));
+    setShowCustomPicker(false);
+  }
 
-	function viewHref(id: string): Route {
-		const params = new URLSearchParams(searchParams.toString());
-		if (id === "overview") {
-			params.delete("view");
-		} else {
-			params.set("view", id);
-		}
-		return buildHref(pathname || "/", params);
-	}
+  function viewHref(id: string): Route {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id === "overview") {
+      params.delete("view");
+    } else {
+      params.set("view", id);
+    }
+    return buildHref(pathname || "/", params);
+  }
 
-	function openSearch() {
-		window.dispatchEvent(new Event("open-command-palette"));
-	}
+  function openSearch() {
+    window.dispatchEvent(new Event("open-command-palette"));
+  }
 
-	return (
-		<>
-			<Sidebar collapsible="icon" className="border-r border-border">
-				<SidebarHeader className="border-b border-border">
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<ProjectSwitcher
-								projects={projects}
-								selectedProject={selectedProject}
-								onProjectChange={setSelectedProject}
-							/>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<OriginSwitcher
-								origins={origins}
-								selectedOrigin={selectedOrigin}
-								onOriginChange={setSelectedOrigin}
-							/>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<TimeRangeSwitcher
-								value={isCustomRange ? "custom" : timeRange}
-								customFrom={fromParam || undefined}
-								customTo={toParam || undefined}
-								onChange={setTimeRange}
-							/>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								size="lg"
-								className="h-9 px-3 text-xs font-medium"
-								tooltip="Search"
-								onClick={openSearch}
-							>
-								<span className="flex size-6 shrink-0 items-center justify-center rounded border border-border">
-									<Search className="size-3.5 text-muted-foreground" />
-								</span>
-								<span className="flex-1 text-left">Search</span>
-								<kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-									⌘K
-								</kbd>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					</SidebarMenu>
-				</SidebarHeader>
+  return (
+    <>
+      <Sidebar collapsible="icon" className="border-r border-border">
+        <SidebarHeader className="border-b border-border">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <ProjectSwitcher
+                projects={projects}
+                selectedProject={selectedProject}
+                onProjectChange={setSelectedProject}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <OriginSwitcher
+                origins={origins}
+                selectedOrigin={selectedOrigin}
+                onOriginChange={setSelectedOrigin}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <TimeRangeSwitcher
+                value={isCustomRange ? "custom" : timeRange}
+                customFrom={fromParam || undefined}
+                customTo={toParam || undefined}
+                onChange={setTimeRange}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="lg"
+                className="h-9 px-3 text-xs font-medium"
+                tooltip="Search"
+                onClick={openSearch}
+              >
+                <span className="flex size-6 shrink-0 items-center justify-center rounded border border-border">
+                  <Search className="size-3.5 text-muted-foreground" />
+                </span>
+                <span className="flex-1 text-left">Search</span>
+                <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+                  ⌘K
+                </kbd>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
 
-				<SidebarContent className="px-2">
-					<SidebarGroup className="py-2">
-						<SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
-							Insights
-						</SidebarGroupLabel>
-						<SidebarGroupContent>
-							<MotionSidebarMenu
-								items={[
-									...dashboardItems.map((item) => ({
-										id: item.id,
-										label: item.label,
-										icon: item.icon,
-										href: viewHref(item.id),
-										isActive: pathname === "/" && view === item.id,
-									})),
-									{
-										id: "geo",
-										label: "Geo Explorer",
-										icon: Globe,
-										href: "/geo" as Route,
-										isActive: pathname === "/geo",
-									},
-								]}
-							/>
-						</SidebarGroupContent>
-					</SidebarGroup>
+        <SidebarContent className="px-2">
+          <SidebarGroup className="py-2">
+            <SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
+              Insights
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <MotionSidebarMenu
+                items={[
+                  ...dashboardItems.map((item) => ({
+                    id: item.id,
+                    label: item.label,
+                    icon: item.icon,
+                    href: viewHref(item.id),
+                    isActive: pathname === "/" && view === item.id,
+                  })),
+                  {
+                    id: "geo",
+                    label: "Geo Explorer",
+                    icon: Globe,
+                    href: "/geo" as Route,
+                    isActive: pathname === "/geo",
+                  },
+                ]}
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-					<SidebarGroup className="py-2">
-						<SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
-							Integrations
-						</SidebarGroupLabel>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										asChild
-										isActive={pathname === "/" && view === "posthog"}
-										tooltip="PostHog"
-										className="h-9 text-xs font-semibold data-[active=true]:bg-[#f9bd2b]/10 data-[active=true]:text-[#f9bd2b]"
-									>
-										<Link href={viewHref("posthog")}>
-											<span className="flex size-5 shrink-0 items-center justify-center rounded bg-[#f9bd2b]/15">
-												<Zap className="size-3 text-[#f9bd2b]" />
-											</span>
-											<span className="text-foreground">PostHog</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
-				</SidebarContent>
+          <SidebarGroup className="py-2">
+            <SidebarGroupLabel className="text-[11px] px-2 uppercase tracking-wider font-semibold opacity-50">
+              Integrations
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/" && view === "posthog"}
+                    tooltip="PostHog"
+                    className="h-9 text-xs font-semibold data-[active=true]:bg-[#f9bd2b]/10 data-[active=true]:text-[#f9bd2b]"
+                  >
+                    <Link href={viewHref("posthog")}>
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded bg-[#f9bd2b]/15">
+                        <Zap className="size-3 text-[#f9bd2b]" />
+                      </span>
+                      <span className="text-foreground">PostHog</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-				<SidebarFooter className="border-t border-border px-2 py-2">
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								tooltip="View on GitHub"
-								className="h-8 text-xs font-medium"
-							>
-								<a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
-									<GithubMark className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-									<span className="text-foreground">View on GitHub</span>
-									<span className="ml-auto text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-										remcostoeten/analytics
-									</span>
-								</a>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					</SidebarMenu>
-				</SidebarFooter>
-			</Sidebar>
+        <SidebarFooter className="border-t border-border px-2 py-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="View on GitHub"
+                className="h-8 text-xs font-medium"
+              >
+                <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+                  <GithubMark className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <span className="text-foreground">View on GitHub</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+                    remcostoeten/analytics
+                  </span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
 
-			<Dialog open={showCustomPicker} onOpenChange={setShowCustomPicker}>
-				<DialogContent className="sm:max-w-xs">
-					<DialogHeader>
-						<DialogTitle className="text-sm">Custom Date Range</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-3 py-2">
-						<div className="space-y-1">
-							<label className="text-xs text-muted-foreground">From</label>
-							<Input
-								type="date"
-								value={customFromInput}
-								onChange={(e) => setCustomFromInput(e.target.value)}
-								className="h-8 text-xs"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-xs text-muted-foreground">To</label>
-							<Input
-								type="date"
-								value={customToInput}
-								max={new Date().toISOString().split("T")[0]}
-								onChange={(e) => setCustomToInput(e.target.value)}
-								className="h-8 text-xs"
-							/>
-						</div>
-					</div>
-					<DialogFooter>
-						<Button
-							size="sm"
-							variant="outline"
-							className="text-xs h-7"
-							onClick={() => setShowCustomPicker(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							size="sm"
-							className="text-xs h-7"
-							disabled={!customFromInput || !customToInput || customFromInput >= customToInput}
-							onClick={applyCustomRange}
-						>
-							Apply
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
-	);
+      <Dialog open={showCustomPicker} onOpenChange={setShowCustomPicker}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Custom Date Range</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">From</label>
+              <Input
+                type="date"
+                value={customFromInput}
+                onChange={(e) => setCustomFromInput(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">To</label>
+              <Input
+                type="date"
+                value={customToInput}
+                max={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setCustomToInput(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7"
+              onClick={() => setShowCustomPicker(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs h-7"
+              disabled={!customFromInput || !customToInput || customFromInput >= customToInput}
+              onClick={applyCustomRange}
+            >
+              Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 type MotionMenuItem = {
-	id: string;
-	label: string;
-	icon: ComponentType<{ className?: string }>;
-	href: Route;
-	isActive: boolean;
+  id: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  href: Route;
+  isActive: boolean;
 };
 
 type VerticalRect = {
-	top: number;
-	height: number;
+  top: number;
+  height: number;
 };
 
 function measureItem(container: HTMLElement, el: HTMLElement): VerticalRect {
-	const containerBox = container.getBoundingClientRect();
-	const box = el.getBoundingClientRect();
-	return { top: box.top - containerBox.top, height: box.height };
+  const containerBox = container.getBoundingClientRect();
+  const box = el.getBoundingClientRect();
+  return { top: box.top - containerBox.top, height: box.height };
 }
 
 function MotionSidebarMenu({ items }: { items: MotionMenuItem[] }) {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
-	const [activeRect, setActiveRect] = useState<VerticalRect | null>(null);
-	const [hoverRect, setHoverRect] = useState<VerticalRect | null>(null);
-	const [hoverSettled, setHoverSettled] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const [activeRect, setActiveRect] = useState<VerticalRect | null>(null);
+  const [hoverRect, setHoverRect] = useState<VerticalRect | null>(null);
+  const [hoverSettled, setHoverSettled] = useState(false);
 
-	const activeId = items.find((item) => item.isActive)?.id ?? null;
+  const activeId = items.find((item) => item.isActive)?.id ?? null;
 
-	useLayoutEffect(() => {
-		const container = containerRef.current;
-		const el = activeId ? itemRefs.current.get(activeId) : null;
-		if (!container || !el) {
-			setActiveRect(null);
-			return;
-		}
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const el = activeId ? itemRefs.current.get(activeId) : null;
+    if (!container || !el) {
+      setActiveRect(null);
+      return;
+    }
 
-		function sync() {
-			if (!container || !el) return;
-			setActiveRect(measureItem(container, el));
-		}
+    function sync() {
+      if (!container || !el) return;
+      setActiveRect(measureItem(container, el));
+    }
 
-		sync();
-		const observer = new ResizeObserver(() => sync());
-		observer.observe(container);
-		return () => observer.disconnect();
-	}, [activeId]);
+    sync();
+    const observer = new ResizeObserver(() => sync());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [activeId]);
 
-	function handleItemHover(id: string) {
-		const container = containerRef.current;
-		const el = itemRefs.current.get(id);
-		if (!container || !el) return;
-		setHoverRect(measureItem(container, el));
-		requestAnimationFrame(() => setHoverSettled(true));
-	}
+  function handleItemHover(id: string) {
+    const container = containerRef.current;
+    const el = itemRefs.current.get(id);
+    if (!container || !el) return;
+    setHoverRect(measureItem(container, el));
+    requestAnimationFrame(() => setHoverSettled(true));
+  }
 
-	function handleMenuLeave() {
-		setHoverRect(null);
-		setHoverSettled(false);
-	}
+  function handleMenuLeave() {
+    setHoverRect(null);
+    setHoverSettled(false);
+  }
 
-	function indicatorStyle(rect: VerticalRect) {
-		return {
-			transform: `translateY(${rect.top}px)`,
-			height: rect.height,
-		};
-	}
+  function indicatorStyle(rect: VerticalRect) {
+    return {
+      transform: `translateY(${rect.top}px)`,
+      height: rect.height,
+    };
+  }
 
-	return (
-		<div ref={containerRef} className="relative" onMouseLeave={handleMenuLeave}>
-			{hoverRect && (
-				<div
-					aria-hidden
-					className={cn(
-						"absolute inset-x-0 top-0 rounded-md bg-sidebar-accent/60",
-						hoverSettled
-							? "transition-[transform,height,opacity] duration-200 ease-out"
-							: "opacity-0",
-					)}
-					style={indicatorStyle(hoverRect)}
-				/>
-			)}
-			{activeRect && (
-				<div
-					aria-hidden
-					className="absolute inset-x-0 top-0 rounded-md bg-sidebar-accent transition-[transform,height] duration-300 ease-[cubic-bezier(0.3,0.9,0.3,1)]"
-					style={indicatorStyle(activeRect)}
-				/>
-			)}
-			<SidebarMenu className="relative z-[1]">
-				{items.map((item) => (
-					<SidebarMenuItem key={item.id}>
-						<SidebarMenuButton
-							asChild
-							isActive={item.isActive}
-							tooltip={item.label}
-							className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent focus-visible:ring-1 focus-visible:ring-foreground/15 focus-visible:bg-sidebar-accent/40"
-						>
-							<Link
-								href={item.href}
-								ref={(el) => {
-									if (el) {
-										itemRefs.current.set(item.id, el);
-									} else {
-										itemRefs.current.delete(item.id);
-									}
-								}}
-								onMouseEnter={() => handleItemHover(item.id)}
-								onFocus={() => handleItemHover(item.id)}
-							>
-								<item.icon className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-								<span className="text-foreground">{item.label}</span>
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				))}
-			</SidebarMenu>
-		</div>
-	);
+  return (
+    <div ref={containerRef} className="relative" onMouseLeave={handleMenuLeave}>
+      {hoverRect && (
+        <div
+          aria-hidden
+          className={cn(
+            "absolute inset-x-0 top-0 rounded-md bg-sidebar-accent/60",
+            hoverSettled
+              ? "transition-[transform,height,opacity] duration-200 ease-out"
+              : "opacity-0",
+          )}
+          style={indicatorStyle(hoverRect)}
+        />
+      )}
+      {activeRect && (
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 rounded-md bg-sidebar-accent transition-[transform,height] duration-300 ease-[cubic-bezier(0.3,0.9,0.3,1)]"
+          style={indicatorStyle(activeRect)}
+        />
+      )}
+      <SidebarMenu className="relative z-[1]">
+        {items.map((item) => (
+          <SidebarMenuItem key={item.id}>
+            <SidebarMenuButton
+              asChild
+              isActive={item.isActive}
+              tooltip={item.label}
+              className="h-8 text-xs font-medium hover:bg-transparent data-[active=true]:bg-transparent focus-visible:ring-1 focus-visible:ring-foreground/15 focus-visible:bg-sidebar-accent/40"
+            >
+              <Link
+                href={item.href}
+                ref={(el) => {
+                  if (el) {
+                    itemRefs.current.set(item.id, el);
+                  } else {
+                    itemRefs.current.delete(item.id);
+                  }
+                }}
+                onMouseEnter={() => handleItemHover(item.id)}
+                onFocus={() => handleItemHover(item.id)}
+              >
+                <item.icon className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-foreground">{item.label}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+    </div>
+  );
 }
 
 type TimeRangeProps = {
-	value: string;
-	onChange: (range: string) => void;
-	customFrom?: string;
-	customTo?: string;
+  value: string;
+  onChange: (range: string) => void;
+  customFrom?: string;
+  customTo?: string;
 };
 
 function TimeRangeSwitcher({ value, customFrom, customTo, onChange }: TimeRangeProps) {
-	const ranges = [
-		{ value: "all", label: "All time" },
-		{ value: "24h", label: "Last 24 hours" },
-		{ value: "7d", label: "Last 7 days" },
-		{ value: "30d", label: "Last 30 days" },
-		{ value: "60d", label: "Last 60 days" },
-		{ value: "90d", label: "Last 90 days" },
-		{ value: "180d", label: "Last 180 days" },
-	];
+  const ranges = [
+    { value: "all", label: "All time" },
+    { value: "24h", label: "Last 24 hours" },
+    { value: "7d", label: "Last 7 days" },
+    { value: "30d", label: "Last 30 days" },
+    { value: "60d", label: "Last 60 days" },
+    { value: "90d", label: "Last 90 days" },
+    { value: "180d", label: "Last 180 days" },
+  ];
 
-	const displayLabel =
-		value === "custom" && customFrom && customTo
-			? `${customFrom} → ${customTo}`
-			: (ranges.find((r) => r.value === value) || ranges[1]).label;
+  const displayLabel =
+    value === "custom" && customFrom && customTo
+      ? `${customFrom} → ${customTo}`
+      : (ranges.find((r) => r.value === value) || ranges[1]).label;
 
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					className="h-9 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
-						<CalendarDays className="size-3.5 text-muted-foreground" />
-					</div>
-					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-						<div className="truncate text-xs font-medium leading-tight">{displayLabel}</div>
-						<div className="text-[11px] text-muted-foreground leading-tight">Date range</div>
-					</div>
-					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" side="right" className="w-44">
-				<DropdownMenuLabel className="text-[11px]">Date range</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				{ranges.map((range) => (
-					<DropdownMenuItem
-						key={range.value}
-						onClick={() => onChange(range.value)}
-						className={cn("text-xs", value === range.value && "bg-muted")}
-					>
-						{range.label}
-					</DropdownMenuItem>
-				))}
-				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={() => onChange("custom")}
-					className={cn("text-xs", value === "custom" && "bg-muted")}
-				>
-					Custom range…
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-9 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
+          <div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
+            <CalendarDays className="size-3.5 text-muted-foreground" />
+          </div>
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <div className="truncate text-xs font-medium leading-tight">{displayLabel}</div>
+            <div className="text-[11px] text-muted-foreground leading-tight">Date range</div>
+          </div>
+          <ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="right" className="w-44">
+        <DropdownMenuLabel className="text-[11px]">Date range</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {ranges.map((range) => (
+          <DropdownMenuItem
+            key={range.value}
+            onClick={() => onChange(range.value)}
+            className={cn("text-xs", value === range.value && "bg-muted")}
+          >
+            {range.label}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onChange("custom")}
+          className={cn("text-xs", value === "custom" && "bg-muted")}
+        >
+          Custom range…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 type ProjectSwitcherProps = {
-	projects: ProjectOption[];
-	selectedProject: string | null;
-	onProjectChange: (projectId: string | null) => void;
+  projects: ProjectOption[];
+  selectedProject: string | null;
+  onProjectChange: (projectId: string | null) => void;
 };
 
 function ProjectSwitcher({ projects, selectedProject, onProjectChange }: ProjectSwitcherProps) {
-	const displayName = selectedProject
-		? projects.find((project) => project.id === selectedProject)?.id || selectedProject
-		: "All Projects";
+  const displayName = selectedProject
+    ? projects.find((project) => project.id === selectedProject)?.id || selectedProject
+    : "All Projects";
 
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					className="h-10 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
-						<Zap className="size-3.5 text-muted-foreground" />
-					</div>
-					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-						<div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
-						<div className="text-[11px] text-muted-foreground leading-tight">Project scope</div>
-					</div>
-					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" side="right" className="w-56">
-				<DropdownMenuLabel className="text-[11px]">Project scope</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={() => onProjectChange(null)}
-					className={cn("text-xs", !selectedProject && "bg-muted")}
-				>
-					<span className="flex-1">All Projects</span>
-				</DropdownMenuItem>
-				{projects.map((project) => (
-					<DropdownMenuItem
-						key={project.id}
-						onClick={() => onProjectChange(project.id)}
-						className={cn(
-							"text-xs flex justify-between",
-							selectedProject === project.id && "bg-muted",
-						)}
-					>
-						<span className="truncate flex-1">{project.id}</span>
-						<span className="text-muted-foreground text-[11px] ml-2">
-							{project.eventCount.toLocaleString()}
-						</span>
-					</DropdownMenuItem>
-				))}
-				{projects.length === 0 && (
-					<DropdownMenuItem disabled className="text-xs text-muted-foreground">
-						No projects found
-					</DropdownMenuItem>
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-10 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
+          <div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
+            <Zap className="size-3.5 text-muted-foreground" />
+          </div>
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
+            <div className="text-[11px] text-muted-foreground leading-tight">Project scope</div>
+          </div>
+          <ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="right" className="w-56">
+        <DropdownMenuLabel className="text-[11px]">Project scope</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onProjectChange(null)}
+          className={cn("text-xs", !selectedProject && "bg-muted")}
+        >
+          <span className="flex-1">All Projects</span>
+        </DropdownMenuItem>
+        {projects.map((project) => (
+          <DropdownMenuItem
+            key={project.id}
+            onClick={() => onProjectChange(project.id)}
+            className={cn(
+              "text-xs flex justify-between",
+              selectedProject === project.id && "bg-muted",
+            )}
+          >
+            <span className="truncate flex-1">{project.id}</span>
+            <span className="text-muted-foreground text-[11px] ml-2">
+              {project.eventCount.toLocaleString()}
+            </span>
+          </DropdownMenuItem>
+        ))}
+        {projects.length === 0 && (
+          <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+            No projects found
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 type OriginSwitcherProps = {
-	origins: OriginOption[];
-	selectedOrigin: string | null;
-	onOriginChange: (origin: string | null) => void;
+  origins: OriginOption[];
+  selectedOrigin: string | null;
+  onOriginChange: (origin: string | null) => void;
 };
 
 function OriginSwitcher({ origins, selectedOrigin, onOriginChange }: OriginSwitcherProps) {
-	const displayName = selectedOrigin || "All Origins";
+  const displayName = selectedOrigin || "All Origins";
 
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					className="h-10 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-				>
-					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
-						{selectedOrigin ? (
-							<img
-								src={`https://www.google.com/s2/favicons?domain=${selectedOrigin}&sz=16`}
-								alt=""
-								className="size-3.5"
-								onError={(e) => {
-									(e.target as HTMLImageElement).style.display = "none";
-								}}
-							/>
-						) : (
-							<Globe className="size-3.5 text-muted-foreground" />
-						)}
-					</div>
-					<div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-						<div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
-						<div className="text-[11px] text-muted-foreground leading-tight">Origin</div>
-					</div>
-					<ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" side="right" className="w-56">
-				<DropdownMenuLabel className="text-[11px]">Origin</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={() => onOriginChange(null)}
-					className={cn("text-xs", !selectedOrigin && "bg-muted")}
-				>
-					<span className="flex-1">All Origins</span>
-				</DropdownMenuItem>
-				{origins.map((origin) => (
-					<DropdownMenuItem
-						key={origin.host}
-						onClick={() => onOriginChange(origin.host)}
-						className={cn(
-							"text-xs flex items-center gap-2",
-							selectedOrigin === origin.host && "bg-muted",
-						)}
-					>
-						<img
-							src={`https://www.google.com/s2/favicons?domain=${origin.host}&sz=16`}
-							alt=""
-							className="size-3.5 shrink-0"
-							onError={(e) => {
-								(e.target as HTMLImageElement).style.display = "none";
-							}}
-						/>
-						<span className="truncate flex-1">{origin.host}</span>
-						<span className="text-muted-foreground text-[11px]">
-							{origin.eventCount.toLocaleString()}
-						</span>
-					</DropdownMenuItem>
-				))}
-				{origins.length === 0 && (
-					<DropdownMenuItem disabled className="text-xs text-muted-foreground">
-						No origins found
-					</DropdownMenuItem>
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-10 w-full justify-start gap-2 px-2 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+        >
+          <div className="flex size-6 shrink-0 items-center justify-center rounded border border-border bg-transparent">
+            {selectedOrigin ? (
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${selectedOrigin}&sz=16`}
+                alt=""
+                className="size-3.5"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <Globe className="size-3.5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <div className="truncate text-xs font-semibold leading-tight">{displayName}</div>
+            <div className="text-[11px] text-muted-foreground leading-tight">Origin</div>
+          </div>
+          <ChevronDown className="size-3 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="right" className="w-56">
+        <DropdownMenuLabel className="text-[11px]">Origin</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onOriginChange(null)}
+          className={cn("text-xs", !selectedOrigin && "bg-muted")}
+        >
+          <span className="flex-1">All Origins</span>
+        </DropdownMenuItem>
+        {origins.map((origin) => (
+          <DropdownMenuItem
+            key={origin.host}
+            onClick={() => onOriginChange(origin.host)}
+            className={cn(
+              "text-xs flex items-center gap-2",
+              selectedOrigin === origin.host && "bg-muted",
+            )}
+          >
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${origin.host}&sz=16`}
+              alt=""
+              className="size-3.5 shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+            <span className="truncate flex-1">{origin.host}</span>
+            <span className="text-muted-foreground text-[11px]">
+              {origin.eventCount.toLocaleString()}
+            </span>
+          </DropdownMenuItem>
+        ))}
+        {origins.length === 0 && (
+          <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+            No origins found
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

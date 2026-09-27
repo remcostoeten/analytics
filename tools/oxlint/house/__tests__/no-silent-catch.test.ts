@@ -13,7 +13,11 @@ const cases = [
   },
   { name: "catch with a binding", source: "try { run(); } catch (error) {}", codes: [code] },
   { name: "catch calling noop", source: "try { run(); } catch {\n  noop();\n}", codes: [] },
-  { name: "catch rethrowing", source: "try { run(); } catch (error) {\n  throw error;\n}", codes: [] },
+  {
+    name: "catch rethrowing",
+    source: "try { run(); } catch (error) {\n  throw error;\n}",
+    codes: [],
+  },
 ];
 
 describe("house/no-silent-catch", () => {

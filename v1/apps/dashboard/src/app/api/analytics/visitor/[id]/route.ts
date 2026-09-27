@@ -3,21 +3,21 @@ import { SESSION_COOKIE, isAuthEnabled, verifySessionToken } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 function isAuthorized(request: NextRequest): boolean {
-	if (!isAuthEnabled()) {
-		return true;
-	}
-	return verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value) !== null;
+  if (!isAuthEnabled()) {
+    return true;
+  }
+  return verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-	const { id } = await params;
+  const { id } = await params;
 
-	if (!isAuthorized(request)) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-	try {
-		const [visitor] = await sql`
+  try {
+    const [visitor] = await sql`
       SELECT
         id,
         fingerprint,
@@ -43,11 +43,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       LIMIT 1
     `;
 
-		if (!visitor) {
-			return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
-		}
+    if (!visitor) {
+      return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
+    }
 
-		const events = await sql`
+    const events = await sql`
       SELECT
         id,
         type,
@@ -62,9 +62,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       LIMIT 50
     `;
 
-		let sessionsRows: readonly Record<string, unknown>[] = [];
-		try {
-			sessionsRows = await sql`
+    let sessionsRows: readonly Record<string, unknown>[] = [];
+    try {
+      sessionsRows = await sql`
         SELECT
           session_id,
           started_at,
@@ -82,27 +82,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ORDER BY started_at DESC
         LIMIT 30
       `;
-		} catch {
-			sessionsRows = [];
-		}
+    } catch {
+      sessionsRows = [];
+    }
 
-		const sessions =
-			sessionsRows.length > 0
-				? sessionsRows.map((s) => ({
-						sessionId: s.session_id,
-						startedAt: s.started_at,
-						endedAt: s.last_event_at,
-						durationMs: s.duration_ms !== null ? Number(s.duration_ms) : null,
-						entryPath: s.entry_path,
-						exitPath: s.exit_path,
-						referrer: s.referrer,
-						pageviews: Number(s.pageviews ?? 0),
-						events: Number(s.events ?? 0),
-						country: s.country,
-						deviceType: s.device_type,
-					}))
-				: await (async () => {
-						const grouped = await sql`
+    const sessions =
+      sessionsRows.length > 0
+        ? sessionsRows.map((s) => ({
+            sessionId: s.session_id,
+            startedAt: s.started_at,
+            endedAt: s.last_event_at,
+            durationMs: s.duration_ms !== null ? Number(s.duration_ms) : null,
+            entryPath: s.entry_path,
+            exitPath: s.exit_path,
+            referrer: s.referrer,
+            pageviews: Number(s.pageviews ?? 0),
+            events: Number(s.events ?? 0),
+            country: s.country,
+            deviceType: s.device_type,
+          }))
+        : await (async () => {
+            const grouped = await sql`
               SELECT
                 session_id,
                 MIN(ts) as started_at,
@@ -117,102 +117,102 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               ORDER BY started_at DESC
               LIMIT 30
             `;
-						return grouped.map((s) => {
-							const paths = (s.paths as string[] | null) || [];
-							const started = new Date(s.started_at as string);
-							const ended = new Date(s.ended_at as string);
-							return {
-								sessionId: s.session_id,
-								startedAt: s.started_at,
-								endedAt: s.ended_at,
-								durationMs: ended.getTime() - started.getTime(),
-								entryPath: paths[0] ?? null,
-								exitPath: paths[paths.length - 1] ?? null,
-								referrer: null,
-								pageviews: Number(s.pageviews),
-								events: Number(s.events),
-								country: null,
-								deviceType: null,
-							};
-						});
-					})();
+            return grouped.map((s) => {
+              const paths = (s.paths as string[] | null) || [];
+              const started = new Date(s.started_at as string);
+              const ended = new Date(s.ended_at as string);
+              return {
+                sessionId: s.session_id,
+                startedAt: s.started_at,
+                endedAt: s.ended_at,
+                durationMs: ended.getTime() - started.getTime(),
+                entryPath: paths[0] ?? null,
+                exitPath: paths[paths.length - 1] ?? null,
+                referrer: null,
+                pageviews: Number(s.pageviews),
+                events: Number(s.events),
+                country: null,
+                deviceType: null,
+              };
+            });
+          })();
 
-		return NextResponse.json({
-			visitor: {
-				id: String(visitor.id),
-				fingerprint: visitor.fingerprint,
-				firstSeen: visitor.first_seen,
-				lastSeen: visitor.last_seen,
-				visitCount: Number(visitor.visit_count),
-				deviceType: visitor.device_type,
-				os: visitor.os,
-				osVersion: visitor.os_version,
-				browser: visitor.browser,
-				browserVersion: visitor.browser_version,
-				screenResolution: visitor.screen_resolution,
-				timezone: visitor.timezone,
-				language: visitor.language,
-				country: visitor.country,
-				region: visitor.region,
-				city: visitor.city,
-				userAgent: visitor.ua,
-				meta: visitor.meta,
-				isInternal: Boolean(visitor.is_internal),
-			},
-			events: events.map((e) => ({
-				id: String(e.id),
-				type: e.type,
-				path: e.path,
-				timestamp: e.ts,
-				referrer: e.referrer,
-				sessionId: e.session_id,
-				meta: e.meta,
-			})),
-			sessions,
-		});
-	} catch (error) {
-		console.error("[API] Visitor detail error:", error);
-		return NextResponse.json({ error: "Failed to fetch visitor" }, { status: 500 });
-	}
+    return NextResponse.json({
+      visitor: {
+        id: String(visitor.id),
+        fingerprint: visitor.fingerprint,
+        firstSeen: visitor.first_seen,
+        lastSeen: visitor.last_seen,
+        visitCount: Number(visitor.visit_count),
+        deviceType: visitor.device_type,
+        os: visitor.os,
+        osVersion: visitor.os_version,
+        browser: visitor.browser,
+        browserVersion: visitor.browser_version,
+        screenResolution: visitor.screen_resolution,
+        timezone: visitor.timezone,
+        language: visitor.language,
+        country: visitor.country,
+        region: visitor.region,
+        city: visitor.city,
+        userAgent: visitor.ua,
+        meta: visitor.meta,
+        isInternal: Boolean(visitor.is_internal),
+      },
+      events: events.map((e) => ({
+        id: String(e.id),
+        type: e.type,
+        path: e.path,
+        timestamp: e.ts,
+        referrer: e.referrer,
+        sessionId: e.session_id,
+        meta: e.meta,
+      })),
+      sessions,
+    });
+  } catch (error) {
+    console.error("[API] Visitor detail error:", error);
+    return NextResponse.json({ error: "Failed to fetch visitor" }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-	const { id } = await params;
+  const { id } = await params;
 
-	if (!isAuthorized(request)) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-	try {
-		const body = await request.json().catch(() => ({}));
-		const isInternal = Boolean(body?.isInternal);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const isInternal = Boolean(body?.isInternal);
 
-		const [visitor] = await sql`
+    const [visitor] = await sql`
       SELECT id, fingerprint FROM visitors WHERE id = ${id} OR fingerprint = ${id} LIMIT 1
     `;
 
-		if (!visitor) {
-			return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
-		}
+    if (!visitor) {
+      return NextResponse.json({ error: "Visitor not found" }, { status: 404 });
+    }
 
-		await sql`
+    await sql`
       UPDATE visitors SET is_internal = ${isInternal} WHERE fingerprint = ${visitor.fingerprint}
     `;
 
-		await sql`
+    await sql`
       UPDATE events SET is_internal = ${isInternal} WHERE visitor_id = ${visitor.fingerprint}
     `;
 
-		await sql`
+    await sql`
       UPDATE sessions SET is_internal = ${isInternal} WHERE visitor_id = ${visitor.fingerprint}
     `;
 
-		return NextResponse.json({
-			fingerprint: visitor.fingerprint,
-			isInternal,
-		});
-	} catch (error) {
-		console.error("[API] Visitor internal-toggle error:", error);
-		return NextResponse.json({ error: "Failed to update visitor" }, { status: 500 });
-	}
+    return NextResponse.json({
+      fingerprint: visitor.fingerprint,
+      isInternal,
+    });
+  } catch (error) {
+    console.error("[API] Visitor internal-toggle error:", error);
+    return NextResponse.json({ error: "Failed to update visitor" }, { status: 500 });
+  }
 }

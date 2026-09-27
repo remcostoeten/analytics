@@ -5,86 +5,86 @@ export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue
 export type TrackMeta = Record<string, JsonValue | undefined>;
 
 export type AnalyticsOptions = {
-	projectId?: string;
-	ingestUrl?: string;
-	debug?: boolean;
-	path?: string;
-	referrer?: string | null;
+  projectId?: string;
+  ingestUrl?: string;
+  debug?: boolean;
+  path?: string;
+  referrer?: string | null;
 };
 
 export type TrackHelpers = {
-	track: (type: EventType, meta?: TrackMeta, options?: AnalyticsOptions) => void;
-	trackPageView: (meta?: TrackMeta, options?: AnalyticsOptions) => void;
-	trackEvent: (eventName: string, meta?: TrackMeta, options?: AnalyticsOptions) => void;
-	trackClick: (elementName: string, meta?: TrackMeta, options?: AnalyticsOptions) => void;
-	trackError: (error: Error, meta?: TrackMeta, options?: AnalyticsOptions) => void;
-	trackTransaction: (
-		revenue: number,
-		currency?: string,
-		orderId?: string,
-		items?: number,
-		options?: AnalyticsOptions,
-	) => void;
-	trackSearch: (query: string, resultCount: number, options?: AnalyticsOptions) => void;
-	identifyUser: (
-		userProperties: Record<string, string | number | boolean>,
-		options?: AnalyticsOptions,
-	) => void;
-	identify: (
-		userId: string,
-		userProperties?: Record<string, string | number | boolean>,
-		options?: AnalyticsOptions,
-	) => void;
-	setExperiment: (experimentId: string, variantId: string, options?: AnalyticsOptions) => void;
+  track: (type: EventType, meta?: TrackMeta, options?: AnalyticsOptions) => void;
+  trackPageView: (meta?: TrackMeta, options?: AnalyticsOptions) => void;
+  trackEvent: (eventName: string, meta?: TrackMeta, options?: AnalyticsOptions) => void;
+  trackClick: (elementName: string, meta?: TrackMeta, options?: AnalyticsOptions) => void;
+  trackError: (error: Error, meta?: TrackMeta, options?: AnalyticsOptions) => void;
+  trackTransaction: (
+    revenue: number,
+    currency?: string,
+    orderId?: string,
+    items?: number,
+    options?: AnalyticsOptions,
+  ) => void;
+  trackSearch: (query: string, resultCount: number, options?: AnalyticsOptions) => void;
+  identifyUser: (
+    userProperties: Record<string, string | number | boolean>,
+    options?: AnalyticsOptions,
+  ) => void;
+  identify: (
+    userId: string,
+    userProperties?: Record<string, string | number | boolean>,
+    options?: AnalyticsOptions,
+  ) => void;
+  setExperiment: (experimentId: string, variantId: string, options?: AnalyticsOptions) => void;
 };
 
 export type EventPayload<Type extends EventType = EventType> = {
-	type: Type;
-	projectId: string;
-	path: string;
-	referrer: string | null;
-	origin: string;
-	host: string;
-	ua: string;
-	lang: string;
-	visitorId: string;
-	sessionId: string;
-	eventId: string;
-	ts?: string;
-	meta?: TrackMeta;
+  type: Type;
+  projectId: string;
+  path: string;
+  referrer: string | null;
+  origin: string;
+  host: string;
+  ua: string;
+  lang: string;
+  visitorId: string;
+  sessionId: string;
+  eventId: string;
+  ts?: string;
+  meta?: TrackMeta;
 };
 
 export type ServerAnalyticsOptions = {
-	projectId: string;
-	ingestUrl?: string;
-	secret?: string;
-	path?: string;
-	visitorId?: string;
-	sessionId?: string;
-	debug?: boolean;
+  projectId: string;
+  ingestUrl?: string;
+  secret?: string;
+  path?: string;
+  visitorId?: string;
+  sessionId?: string;
+  debug?: boolean;
 };
 
 export type TrackServerResult = {
-	ok: boolean;
-	status: number;
-	deduped?: boolean;
-	error?: string;
+  ok: boolean;
+  status: number;
+  deduped?: boolean;
+  error?: string;
 };
 
 export type ServerTrackHelpers = {
-	track: (
-		type: EventType,
-		meta?: TrackMeta,
-		options?: Partial<ServerAnalyticsOptions>,
-	) => Promise<TrackServerResult>;
-	trackEvent: (
-		eventName: string,
-		meta?: TrackMeta,
-		options?: Partial<ServerAnalyticsOptions>,
-	) => Promise<TrackServerResult>;
-	trackError: (
-		error: Error,
-		meta?: TrackMeta,
-		options?: Partial<ServerAnalyticsOptions>,
-	) => Promise<TrackServerResult>;
+  track: (
+    type: EventType,
+    meta?: TrackMeta,
+    options?: Partial<ServerAnalyticsOptions>,
+  ) => Promise<TrackServerResult>;
+  trackEvent: (
+    eventName: string,
+    meta?: TrackMeta,
+    options?: Partial<ServerAnalyticsOptions>,
+  ) => Promise<TrackServerResult>;
+  trackError: (
+    error: Error,
+    meta?: TrackMeta,
+    options?: Partial<ServerAnalyticsOptions>,
+  ) => Promise<TrackServerResult>;
 };

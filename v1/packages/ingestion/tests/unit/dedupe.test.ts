@@ -3,467 +3,467 @@ import { generateFingerprint, getDedupeWindow, metrics } from "../../src/utiliti
 import { createDedupeCache } from "../../src/utilities/dedupe";
 
 describe("generateFingerprint", () => {
-	test("generates consistent fingerprint for same event", async () => {
-		const event = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("generates consistent fingerprint for same event", async () => {
+    const event = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const fp1 = await generateFingerprint(event);
-		const fp2 = await generateFingerprint(event);
+    const fp1 = await generateFingerprint(event);
+    const fp2 = await generateFingerprint(event);
 
-		expect(fp1).toBe(fp2);
-		expect(fp1).toMatch(/^[a-f0-9]{64}$/);
-	});
+    expect(fp1).toBe(fp2);
+    expect(fp1).toMatch(/^[a-f0-9]{64}$/);
+  });
 
-	test("generates different fingerprints for different paths", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("generates different fingerprints for different paths", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, path: "/about" };
+    const event2 = { ...event1, path: "/about" };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).not.toBe(fp2);
-	});
+    expect(fp1).not.toBe(fp2);
+  });
 
-	test("uses an event id as the idempotency fingerprint", async () => {
-		const event = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "event",
-			path: "/home",
-			timestamp: 1000000000000,
-			eventId: "3da6fbd5-a6ef-4d2f-bf5c-f8fed7454ba4",
-		};
+  test("uses an event id as the idempotency fingerprint", async () => {
+    const event = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "event",
+      path: "/home",
+      timestamp: 1000000000000,
+      eventId: "3da6fbd5-a6ef-4d2f-bf5c-f8fed7454ba4",
+    };
 
-		expect(await generateFingerprint(event)).toBe(event.eventId);
-	});
+    expect(await generateFingerprint(event)).toBe(event.eventId);
+  });
 
-	test("generates different fingerprints for different projects", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("generates different fingerprints for different projects", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, projectId: "other.com" };
+    const event2 = { ...event1, projectId: "other.com" };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).not.toBe(fp2);
-	});
+    expect(fp1).not.toBe(fp2);
+  });
 
-	test("generates different fingerprints for different visitors", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("generates different fingerprints for different visitors", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, visitorId: "visitor-789" };
+    const event2 = { ...event1, visitorId: "visitor-789" };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).not.toBe(fp2);
-	});
+    expect(fp1).not.toBe(fp2);
+  });
 
-	test("rounds timestamps to prevent minor variations", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("rounds timestamps to prevent minor variations", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, timestamp: 1000000005000 };
+    const event2 = { ...event1, timestamp: 1000000005000 };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).toBe(fp2);
-	});
+    expect(fp1).toBe(fp2);
+  });
 
-	test("generates different fingerprints outside 10-second window", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("generates different fingerprints outside 10-second window", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, timestamp: 1000000011000 };
+    const event2 = { ...event1, timestamp: 1000000011000 };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).not.toBe(fp2);
-	});
+    expect(fp1).not.toBe(fp2);
+  });
 
-	test("handles null visitorId", async () => {
-		const event = {
-			projectId: "example.com",
-			visitorId: null,
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("handles null visitorId", async () => {
+    const event = {
+      projectId: "example.com",
+      visitorId: null,
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const fingerprint = await generateFingerprint(event);
+    const fingerprint = await generateFingerprint(event);
 
-		expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
-	});
+    expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
+  });
 
-	test("handles null sessionId", async () => {
-		const event = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: null,
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("handles null sessionId", async () => {
+    const event = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: null,
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const fingerprint = await generateFingerprint(event);
+    const fingerprint = await generateFingerprint(event);
 
-		expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
-	});
+    expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
+  });
 
-	test("handles null path", async () => {
-		const event = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "custom_event",
-			path: null,
-			timestamp: 1000000000000,
-		};
+  test("handles null path", async () => {
+    const event = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "custom_event",
+      path: null,
+      timestamp: 1000000000000,
+    };
 
-		const fingerprint = await generateFingerprint(event);
+    const fingerprint = await generateFingerprint(event);
 
-		expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
-	});
+    expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
+  });
 
-	test("generates different fingerprints for different event names", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "event",
-			path: "/home",
-			eventName: "scroll",
-			timestamp: 1000000000000,
-		};
+  test("generates different fingerprints for different event names", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "event",
+      path: "/home",
+      eventName: "scroll",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, eventName: "time-on-page" };
-		const event3 = { ...event1, eventName: "web-vitals" };
+    const event2 = { ...event1, eventName: "time-on-page" };
+    const event3 = { ...event1, eventName: "web-vitals" };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
-		const fp3 = await generateFingerprint(event3);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
+    const fp3 = await generateFingerprint(event3);
 
-		expect(fp1).not.toBe(fp2);
-		expect(fp1).not.toBe(fp3);
-		expect(fp2).not.toBe(fp3);
-	});
+    expect(fp1).not.toBe(fp2);
+    expect(fp1).not.toBe(fp3);
+    expect(fp2).not.toBe(fp3);
+  });
 
-	test("treats missing and null eventName the same", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: "visitor-123",
-			sessionId: "session-456",
-			type: "pageview",
-			path: "/home",
-			timestamp: 1000000000000,
-		};
+  test("treats missing and null eventName the same", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: "visitor-123",
+      sessionId: "session-456",
+      type: "pageview",
+      path: "/home",
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1, eventName: null };
+    const event2 = { ...event1, eventName: null };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).toBe(fp2);
-	});
+    expect(fp1).toBe(fp2);
+  });
 
-	test("generates same fingerprint for events with all nulls", async () => {
-		const event1 = {
-			projectId: "example.com",
-			visitorId: null,
-			sessionId: null,
-			type: "pageview",
-			path: null,
-			timestamp: 1000000000000,
-		};
+  test("generates same fingerprint for events with all nulls", async () => {
+    const event1 = {
+      projectId: "example.com",
+      visitorId: null,
+      sessionId: null,
+      type: "pageview",
+      path: null,
+      timestamp: 1000000000000,
+    };
 
-		const event2 = { ...event1 };
+    const event2 = { ...event1 };
 
-		const fp1 = await generateFingerprint(event1);
-		const fp2 = await generateFingerprint(event2);
+    const fp1 = await generateFingerprint(event1);
+    const fp2 = await generateFingerprint(event2);
 
-		expect(fp1).toBe(fp2);
-	});
+    expect(fp1).toBe(fp2);
+  });
 });
 
 describe("dedupeCache", () => {
-	let cache: ReturnType<typeof createDedupeCache>;
+  let cache: ReturnType<typeof createDedupeCache>;
 
-	beforeEach(() => {
-		cache = createDedupeCache(1000, 100);
-	});
+  beforeEach(() => {
+    cache = createDedupeCache(1000, 100);
+  });
 
-	afterEach(() => {
-		cache.stopCleanup();
-		cache.clear();
-	});
+  afterEach(() => {
+    cache.stopCleanup();
+    cache.clear();
+  });
 
-	test("detects duplicates within TTL", () => {
-		const fingerprint = "test-fingerprint-123";
+  test("detects duplicates within TTL", () => {
+    const fingerprint = "test-fingerprint-123";
 
-		expect(cache.isDuplicate(fingerprint)).toBe(false);
+    expect(cache.isDuplicate(fingerprint)).toBe(false);
 
-		cache.add(fingerprint);
+    cache.add(fingerprint);
 
-		expect(cache.isDuplicate(fingerprint)).toBe(true);
-	});
+    expect(cache.isDuplicate(fingerprint)).toBe(true);
+  });
 
-	test("returns false for non-existent fingerprint", () => {
-		const fingerprint = "non-existent-fingerprint";
+  test("returns false for non-existent fingerprint", () => {
+    const fingerprint = "non-existent-fingerprint";
 
-		expect(cache.isDuplicate(fingerprint)).toBe(false);
-	});
+    expect(cache.isDuplicate(fingerprint)).toBe(false);
+  });
 
-	test("expires entries after TTL", async () => {
-		const fingerprint = "test-fingerprint-expire";
+  test("expires entries after TTL", async () => {
+    const fingerprint = "test-fingerprint-expire";
 
-		cache.add(fingerprint);
-		expect(cache.isDuplicate(fingerprint)).toBe(true);
+    cache.add(fingerprint);
+    expect(cache.isDuplicate(fingerprint)).toBe(true);
 
-		await Bun.sleep(1100);
+    await Bun.sleep(1100);
 
-		expect(cache.isDuplicate(fingerprint)).toBe(false);
-	});
+    expect(cache.isDuplicate(fingerprint)).toBe(false);
+  });
 
-	test("tracks cache size correctly", () => {
-		expect(cache.size()).toBe(0);
+  test("tracks cache size correctly", () => {
+    expect(cache.size()).toBe(0);
 
-		cache.add("fp1");
-		expect(cache.size()).toBe(1);
+    cache.add("fp1");
+    expect(cache.size()).toBe(1);
 
-		cache.add("fp2");
-		expect(cache.size()).toBe(2);
+    cache.add("fp2");
+    expect(cache.size()).toBe(2);
 
-		cache.add("fp3");
-		expect(cache.size()).toBe(3);
-	});
+    cache.add("fp3");
+    expect(cache.size()).toBe(3);
+  });
 
-	test("does not increase size for duplicate adds", () => {
-		cache.add("fp1");
-		expect(cache.size()).toBe(1);
+  test("does not increase size for duplicate adds", () => {
+    cache.add("fp1");
+    expect(cache.size()).toBe(1);
 
-		cache.add("fp1");
-		expect(cache.size()).toBe(1);
-	});
+    cache.add("fp1");
+    expect(cache.size()).toBe(1);
+  });
 
-	test("enforces max size limit", () => {
-		const smallCache = createDedupeCache(60000, 10);
+  test("enforces max size limit", () => {
+    const smallCache = createDedupeCache(60000, 10);
 
-		for (let i = 0; i < 20; i++) {
-			smallCache.add(`fp-${i}`);
-		}
+    for (let i = 0; i < 20; i++) {
+      smallCache.add(`fp-${i}`);
+    }
 
-		expect(smallCache.size()).toBeLessThan(20);
-		expect(smallCache.size()).toBeGreaterThan(0);
+    expect(smallCache.size()).toBeLessThan(20);
+    expect(smallCache.size()).toBeGreaterThan(0);
 
-		smallCache.stopCleanup();
-	});
+    smallCache.stopCleanup();
+  });
 
-	test("evicts oldest entries when max size reached", () => {
-		const smallCache = createDedupeCache(60000, 10);
+  test("evicts oldest entries when max size reached", () => {
+    const smallCache = createDedupeCache(60000, 10);
 
-		for (let i = 0; i < 10; i++) {
-			smallCache.add(`fp-${i}`);
-		}
+    for (let i = 0; i < 10; i++) {
+      smallCache.add(`fp-${i}`);
+    }
 
-		expect(smallCache.size()).toBe(10);
+    expect(smallCache.size()).toBe(10);
 
-		smallCache.add("fp-new");
+    smallCache.add("fp-new");
 
-		expect(smallCache.size()).toBeLessThanOrEqual(10);
+    expect(smallCache.size()).toBeLessThanOrEqual(10);
 
-		smallCache.stopCleanup();
-	});
+    smallCache.stopCleanup();
+  });
 
-	test("clear removes all entries", () => {
-		cache.add("fp1");
-		cache.add("fp2");
-		cache.add("fp3");
+  test("clear removes all entries", () => {
+    cache.add("fp1");
+    cache.add("fp2");
+    cache.add("fp3");
 
-		expect(cache.size()).toBe(3);
+    expect(cache.size()).toBe(3);
 
-		cache.clear();
+    cache.clear();
 
-		expect(cache.size()).toBe(0);
-		expect(cache.isDuplicate("fp1")).toBe(false);
-	});
+    expect(cache.size()).toBe(0);
+    expect(cache.isDuplicate("fp1")).toBe(false);
+  });
 
-	test("handles many concurrent operations", () => {
-		const fingerprints = Array.from({ length: 50 }, (_, i) => `fp-${i}`);
+  test("handles many concurrent operations", () => {
+    const fingerprints = Array.from({ length: 50 }, (_, i) => `fp-${i}`);
 
-		fingerprints.forEach((fp) => cache.add(fp));
+    fingerprints.forEach((fp) => cache.add(fp));
 
-		fingerprints.forEach((fp) => {
-			expect(cache.isDuplicate(fp)).toBe(true);
-		});
+    fingerprints.forEach((fp) => {
+      expect(cache.isDuplicate(fp)).toBe(true);
+    });
 
-		expect(cache.size()).toBe(50);
-	});
+    expect(cache.size()).toBe(50);
+  });
 
-	test("different fingerprints are not considered duplicates", () => {
-		cache.add("fp1");
+  test("different fingerprints are not considered duplicates", () => {
+    cache.add("fp1");
 
-		expect(cache.isDuplicate("fp1")).toBe(true);
-		expect(cache.isDuplicate("fp2")).toBe(false);
-		expect(cache.isDuplicate("fp3")).toBe(false);
-	});
+    expect(cache.isDuplicate("fp1")).toBe(true);
+    expect(cache.isDuplicate("fp2")).toBe(false);
+    expect(cache.isDuplicate("fp3")).toBe(false);
+  });
 });
 
 describe("getDedupeWindow", () => {
-	test("returns 10 seconds for pageview events", () => {
-		expect(getDedupeWindow("pageview")).toBe(10000);
-	});
+  test("returns 10 seconds for pageview events", () => {
+    expect(getDedupeWindow("pageview")).toBe(10000);
+  });
 
-	test("returns 5 seconds for click events", () => {
-		expect(getDedupeWindow("click")).toBe(5000);
-	});
+  test("returns 5 seconds for click events", () => {
+    expect(getDedupeWindow("click")).toBe(5000);
+  });
 
-	test("returns 30 seconds for submit events", () => {
-		expect(getDedupeWindow("submit")).toBe(30000);
-	});
+  test("returns 30 seconds for submit events", () => {
+    expect(getDedupeWindow("submit")).toBe(30000);
+  });
 
-	test("returns 60 seconds for error events", () => {
-		expect(getDedupeWindow("error")).toBe(60000);
-	});
+  test("returns 60 seconds for error events", () => {
+    expect(getDedupeWindow("error")).toBe(60000);
+  });
 
-	test("returns 60 seconds for custom events", () => {
-		expect(getDedupeWindow("custom")).toBe(60000);
-	});
+  test("returns 60 seconds for custom events", () => {
+    expect(getDedupeWindow("custom")).toBe(60000);
+  });
 
-	test("returns 60 seconds for unknown event types", () => {
-		expect(getDedupeWindow("unknown_event")).toBe(60000);
-		expect(getDedupeWindow("random")).toBe(60000);
-	});
+  test("returns 60 seconds for unknown event types", () => {
+    expect(getDedupeWindow("unknown_event")).toBe(60000);
+    expect(getDedupeWindow("random")).toBe(60000);
+  });
 });
 
 describe("metrics", () => {
-	beforeEach(() => {
-		metrics.reset();
-	});
+  beforeEach(() => {
+    metrics.reset();
+  });
 
-	test("tracks total requests", () => {
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordRequest();
+  test("tracks total requests", () => {
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordRequest();
 
-		const data = metrics.getMetrics();
+    const data = metrics.getMetrics();
 
-		expect(data.totalRequests).toBe(3);
-	});
+    expect(data.totalRequests).toBe(3);
+  });
 
-	test("tracks duplicates blocked", () => {
-		metrics.recordRequest();
-		metrics.recordDuplicate();
-		metrics.recordRequest();
-		metrics.recordDuplicate();
+  test("tracks duplicates blocked", () => {
+    metrics.recordRequest();
+    metrics.recordDuplicate();
+    metrics.recordRequest();
+    metrics.recordDuplicate();
 
-		const data = metrics.getMetrics();
+    const data = metrics.getMetrics();
 
-		expect(data.totalRequests).toBe(2);
-		expect(data.duplicatesBlocked).toBe(2);
-	});
+    expect(data.totalRequests).toBe(2);
+    expect(data.duplicatesBlocked).toBe(2);
+  });
 
-	test("calculates hit rate correctly", () => {
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordDuplicate();
+  test("calculates hit rate correctly", () => {
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordDuplicate();
 
-		const data = metrics.getMetrics();
+    const data = metrics.getMetrics();
 
-		expect(data.hitRate).toBe(25);
-	});
+    expect(data.hitRate).toBe(25);
+  });
 
-	test("returns 0 hit rate when no requests", () => {
-		const data = metrics.getMetrics();
+  test("returns 0 hit rate when no requests", () => {
+    const data = metrics.getMetrics();
 
-		expect(data.hitRate).toBe(0);
-		expect(data.totalRequests).toBe(0);
-		expect(data.duplicatesBlocked).toBe(0);
-	});
+    expect(data.hitRate).toBe(0);
+    expect(data.totalRequests).toBe(0);
+    expect(data.duplicatesBlocked).toBe(0);
+  });
 
-	test("resets metrics correctly", () => {
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordDuplicate();
+  test("resets metrics correctly", () => {
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordDuplicate();
 
-		let data = metrics.getMetrics();
-		expect(data.totalRequests).toBe(2);
-		expect(data.duplicatesBlocked).toBe(1);
+    let data = metrics.getMetrics();
+    expect(data.totalRequests).toBe(2);
+    expect(data.duplicatesBlocked).toBe(1);
 
-		metrics.reset();
+    metrics.reset();
 
-		data = metrics.getMetrics();
-		expect(data.totalRequests).toBe(0);
-		expect(data.duplicatesBlocked).toBe(0);
-	});
+    data = metrics.getMetrics();
+    expect(data.totalRequests).toBe(0);
+    expect(data.duplicatesBlocked).toBe(0);
+  });
 
-	test("includes cache size in metrics", () => {
-		const data = metrics.getMetrics();
+  test("includes cache size in metrics", () => {
+    const data = metrics.getMetrics();
 
-		expect(data.cacheSize).toBeGreaterThanOrEqual(0);
-		expect(typeof data.cacheSize).toBe("number");
-	});
+    expect(data.cacheSize).toBeGreaterThanOrEqual(0);
+    expect(typeof data.cacheSize).toBe("number");
+  });
 
-	test("includes uptime in metrics", () => {
-		const data = metrics.getMetrics();
+  test("includes uptime in metrics", () => {
+    const data = metrics.getMetrics();
 
-		expect(data.uptime).toBeGreaterThanOrEqual(0);
-		expect(typeof data.uptime).toBe("number");
-	});
+    expect(data.uptime).toBeGreaterThanOrEqual(0);
+    expect(typeof data.uptime).toBe("number");
+  });
 
-	test("hit rate has 2 decimal precision", () => {
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordRequest();
-		metrics.recordDuplicate();
+  test("hit rate has 2 decimal precision", () => {
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordRequest();
+    metrics.recordDuplicate();
 
-		const data = metrics.getMetrics();
+    const data = metrics.getMetrics();
 
-		expect(data.hitRate).toBe(33.33);
-	});
+    expect(data.hitRate).toBe(33.33);
+  });
 });

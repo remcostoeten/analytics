@@ -5,17 +5,17 @@
  * removes both listeners.
  */
 export function onUnload(handler: () => void): () => void {
-	if (typeof document === "undefined" || typeof window === "undefined") return () => {};
+  if (typeof document === "undefined" || typeof window === "undefined") return () => {};
 
-	const onVisibility = () => {
-		if (document.visibilityState === "hidden") handler();
-	};
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") handler();
+  };
 
-	document.addEventListener("visibilitychange", onVisibility);
-	window.addEventListener("pagehide", handler);
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", handler);
 
-	return () => {
-		document.removeEventListener("visibilitychange", onVisibility);
-		window.removeEventListener("pagehide", handler);
-	};
+  return () => {
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", handler);
+  };
 }
