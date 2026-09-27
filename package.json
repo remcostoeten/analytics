@@ -35,15 +35,17 @@
         "build": "bun run --filter '*' build",
         "test": "bun run --filter '*' test",
         "typecheck": "bun run --filter '*' typecheck",
-        "lint": "oxlint apps packages --deny-warnings",
-        "fmt": "oxfmt apps packages '!**/dist/**' '!**/.next/**'",
-        "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
-        "dev": "bun run --cwd apps/dashboard dev",
-        "dev:ingestion": "bun run --cwd apps/ingestion dev",
-        "demo:db": "bun run scripts/demo-db/setup.ts"
+        "lint": "oxlint v1/apps v1/packages --deny-warnings",
+        "fmt": "oxfmt v1/apps v1/packages '!**/dist/**' '!**/.next/**'",
+        "fmt:check": "oxfmt --check v1/apps v1/packages '!**/dist/**' '!**/.next/**'",
+        "dev": "bun run --cwd v1/apps/dashboard dev",
+        "dev:ingestion": "bun run --cwd v1/apps/ingestion dev",
+        "demo:db": "bun run v1/scripts/demo-db/setup.ts"
     },
     "workspaces": [
         "apps/*",
-        "packages/*"
+        "packages/*",
+        "v1/apps/*",
+        "v1/packages/*"
     ]
 }
