@@ -6,6 +6,10 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "reui": {
+      "type": "http",
+      "url": "https://mcp.reui.io/api/mcp"
     }
   }
 }

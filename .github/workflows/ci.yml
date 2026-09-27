@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - v2
   pull_request:
 
 concurrency:
@@ -29,7 +30,7 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
       - name: Build packages
-        run: bun run --filter './packages/*' build
+        run: bun run --filter './v1/packages/*' build
       - name: Typecheck
         run: bun run typecheck
       - name: Lint
