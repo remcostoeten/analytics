@@ -1,0 +1,8 @@
+{
+  "name": "GitHub Actions report",
+  "scope": "read",
+  "projectIds": [
+    "remcostoeten.nl"
+  ],
+  "expiresAt": "2027-09-27T00:00:00.000Z"
+}

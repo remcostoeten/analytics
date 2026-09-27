@@ -1,0 +1,10 @@
+{
+  "expectedPath": "/error",
+  "value": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Project not found",
+      "docs": "https://api.remcostoeten.nl/v2/openapi#errors/NOT_FOUND"
+    }
+  }
+}

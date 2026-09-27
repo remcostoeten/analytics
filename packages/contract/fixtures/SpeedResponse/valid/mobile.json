@@ -1,0 +1,66 @@
+{
+  "data": {
+    "score": 86,
+    "rating": "needs-improvement",
+    "samples": 1204,
+    "metrics": {
+      "lcp": {
+        "value": 2710,
+        "rating": "needs-improvement",
+        "score": 78,
+        "shares": {
+          "good": 0.64,
+          "needsImprovement": 0.27,
+          "poor": 0.09
+        }
+      },
+      "inp": {
+        "value": 140,
+        "rating": "good",
+        "score": 95,
+        "shares": {
+          "good": 0.88,
+          "needsImprovement": 0.1,
+          "poor": 0.02
+        }
+      },
+      "cls": {
+        "value": 0.06,
+        "rating": "good",
+        "score": 93,
+        "shares": {
+          "good": 0.91,
+          "needsImprovement": 0.07,
+          "poor": 0.02
+        }
+      },
+      "fcp": {
+        "value": 1520,
+        "rating": "good",
+        "score": 92,
+        "shares": {
+          "good": 0.8,
+          "needsImprovement": 0.15,
+          "poor": 0.05
+        }
+      },
+      "ttfb": {
+        "value": 420,
+        "rating": "good",
+        "score": null,
+        "shares": {
+          "good": 0.86,
+          "needsImprovement": 0.11,
+          "poor": 0.03
+        }
+      }
+    }
+  },
+  "percentile": 75,
+  "device": "mobile",
+  "range": {
+    "from": "2026-08-28T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
+  "traffic": "human"
+}

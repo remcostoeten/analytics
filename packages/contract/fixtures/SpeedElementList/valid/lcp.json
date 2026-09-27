@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "selector": "main>article>img.hero",
+      "route": "/blog/[slug]",
+      "samples": 290,
+      "value": 3200
+    },
+    {
+      "selector": "main>h1",
+      "route": "/",
+      "samples": 610,
+      "value": 1790
+    }
+  ],
+  "metric": "lcp",
+  "nextCursor": null
+}

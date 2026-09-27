@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "route": "/blog/[slug]",
+      "score": 71,
+      "samples": 344,
+      "lcp": 3120,
+      "inp": 180,
+      "cls": 0.12,
+      "fcp": 1680,
+      "ttfb": 460
+    },
+    {
+      "route": "/",
+      "score": 94,
+      "samples": 812,
+      "lcp": 1840,
+      "inp": 96,
+      "cls": 0.02,
+      "fcp": 1020,
+      "ttfb": 310
+    }
+  ],
+  "nextCursor": "eyJvIjoyfQ"
+}

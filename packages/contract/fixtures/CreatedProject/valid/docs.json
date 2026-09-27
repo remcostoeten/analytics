@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "docs",
+    "name": "Docs",
+    "domain": "docs.remcostoeten.nl",
+    "visibility": "public",
+    "publicVisitorData": false,
+    "allowedOrigins": [
+      "https://docs.remcostoeten.nl"
+    ],
+    "retentionDays": 90,
+    "publicKey": "pk_live_c07b19e2",
+    "secretKey": "sk_live_5d0e7c1f9a2b4c6d8e0f",
+    "createdAt": "2026-09-27T16:41:00.000Z",
+    "updatedAt": "2026-09-27T16:41:00.000Z"
+  }
+}

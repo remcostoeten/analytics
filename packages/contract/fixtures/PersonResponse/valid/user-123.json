@@ -1,0 +1,53 @@
+{
+  "data": {
+    "userId": "user_123",
+    "traits": {
+      "plan": "pro"
+    },
+    "firstSeen": "2026-09-02T08:11:00.000Z",
+    "lastSeen": "2026-09-27T16:39:59.901Z",
+    "firstProject": "remcostoeten.nl",
+    "firstSource": {
+      "referrer": null,
+      "referrerDomain": "news.ycombinator.com",
+      "channel": "social",
+      "utm": {
+        "source": null,
+        "medium": null,
+        "campaign": null,
+        "term": null,
+        "content": null
+      }
+    },
+    "projects": [
+      {
+        "projectId": "remcostoeten.nl",
+        "visitorId": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+        "firstSeen": "2026-09-02T08:11:00.000Z",
+        "visits": 6
+      },
+      {
+        "projectId": "skriuw",
+        "visitorId": "77d0c2e1-9a4b-4f10-8c2d-1e5f6a7b8c9d",
+        "firstSeen": "2026-09-14T19:40:00.000Z",
+        "visits": 4
+      }
+    ],
+    "visits": [
+      {
+        "projectId": "skriuw",
+        "visitNumber": 4,
+        "startedAt": "2026-09-26T21:02:00.000Z",
+        "entryUrl": "https://skriuw.app/notes",
+        "pages": 7
+      },
+      {
+        "projectId": "remcostoeten.nl",
+        "visitNumber": 6,
+        "startedAt": "2026-09-27T16:38:10.000Z",
+        "entryUrl": "https://remcostoeten.nl/",
+        "pages": 3
+      }
+    ]
+  }
+}

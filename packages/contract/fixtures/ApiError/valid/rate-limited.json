@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests",
+    "details": {
+      "retryAfterSeconds": 30
+    },
+    "requestId": "req_01J8ZB4K2N",
+    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/RATE_LIMITED"
+  }
+}

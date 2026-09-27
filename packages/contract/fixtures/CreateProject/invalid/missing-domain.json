@@ -1,0 +1,11 @@
+{
+  "expectedPath": "",
+  "value": {
+    "id": "docs",
+    "name": "Docs",
+    "visibility": "public",
+    "allowedOrigins": [
+      "https://docs.remcostoeten.nl"
+    ]
+  }
+}

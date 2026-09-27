@@ -1,0 +1,12 @@
+{
+  "expectedPath": "/data",
+  "value": {
+    "data": {
+      "id": "remcostoeten.nl",
+      "name": "remcostoeten.nl",
+      "domain": "remcostoeten.nl",
+      "visibility": "secret",
+      "createdAt": "2025-03-02T10:14:00.000Z"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "id": "tok_01J8Z7",
+    "name": "GitHub Actions report",
+    "scope": "read",
+    "projectIds": [
+      "remcostoeten.nl"
+    ],
+    "token": "at_live_7c2e9f1a4b6d8e0c",
+    "expiresAt": "2027-09-27T00:00:00.000Z",
+    "createdAt": "2026-09-27T16:44:00.000Z"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "data": {
+    "id": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+    "firstSeen": "2026-09-02T08:11:00.000Z",
+    "lastSeen": "2026-09-27T16:39:59.901Z",
+    "sessions": 6,
+    "pageviews": 19,
+    "events": 27,
+    "visitCount": 6,
+    "daysActive": 5,
+    "medianDaysBetweenVisits": 4.5,
+    "returnedWithin": {
+      "day": false,
+      "week": true,
+      "month": true
+    },
+    "isInternal": false,
+    "identity": {
+      "userId": "user_123",
+      "traits": {
+        "plan": "pro"
+      }
+    },
+    "experiments": {
+      "hero-copy": "b"
+    },
+    "geo": {
+      "country": "NL",
+      "region": "Friesland",
+      "city": "Leeuwarden",
+      "postalCode": null,
+      "timezone": "Europe/Amsterdam",
+      "latitude": null,
+      "longitude": null
+    },
+    "device": {
+      "type": "desktop",
+      "browser": "Firefox",
+      "browserVersion": "143",
+      "os": "Linux",
+      "osVersion": null,
+      "screen": "1440x900",
+      "viewport": null,
+      "language": "nl-NL",
+      "connection": null
+    },
+    "topPages": [
+      {
+        "value": "/blog/rebuilding-analytics",
+        "pageviews": 7
+      },
+      {
+        "value": "/",
+        "pageviews": 6
+      }
+    ],
+    "recentSessions": [
+      {
+        "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+        "startedAt": "2026-09-27T16:38:10.000Z",
+        "durationMs": 109901,
+        "pageviews": 3,
+        "entryPage": "/",
+        "exitPage": "/blog/rebuilding-analytics",
+        "referrer": "https://news.ycombinator.com/"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "id": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "firstSeen": "2026-09-02T08:11:00.000Z",
+      "lastSeen": "2026-09-27T16:39:59.901Z",
+      "sessions": 6,
+      "pageviews": 19,
+      "country": "NL",
+      "device": "desktop",
+      "browser": "Firefox",
+      "isInternal": false,
+      "identified": true
+    }
+  ],
+  "nextCursor": "eyJvIjoxfQ"
+}

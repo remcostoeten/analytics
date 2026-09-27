@@ -1,0 +1,31 @@
+{
+  "expectedPath": "/data/0/visitNumber",
+  "value": {
+    "data": [
+      {
+        "visitNumber": 0,
+        "sessionId": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+        "startedAt": "2026-09-27T16:38:10.000Z",
+        "endedAt": "2026-09-27T16:40:00.000Z",
+        "sincePreviousVisitMs": null,
+        "entryUrl": "https://remcostoeten.nl/",
+        "exitPath": "/",
+        "source": {
+          "referrer": null,
+          "referrerDomain": null,
+          "channel": "direct",
+          "utm": {
+            "source": null,
+            "medium": null,
+            "campaign": null,
+            "term": null,
+            "content": null
+          }
+        },
+        "pages": [],
+        "actions": []
+      }
+    ],
+    "nextCursor": null
+  }
+}

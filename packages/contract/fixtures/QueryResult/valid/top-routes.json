@@ -1,0 +1,18 @@
+{
+  "columns": [
+    "route",
+    "views"
+  ],
+  "rows": [
+    [
+      "/",
+      1011
+    ],
+    [
+      "/blog/[slug]",
+      530
+    ]
+  ],
+  "rowCount": 2,
+  "durationMs": 41
+}

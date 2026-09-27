@@ -1,0 +1,10 @@
+{
+  "data": {
+    "job": "rollup",
+    "status": "ok",
+    "startDay": "2026-09-19",
+    "days": 8,
+    "rowsWritten": 1880,
+    "durationMs": 4120
+  }
+}

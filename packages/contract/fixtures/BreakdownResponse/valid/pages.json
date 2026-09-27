@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "value": "/",
+      "visitors": 702,
+      "pageviews": 1011,
+      "bounceRate": 0.52,
+      "avgTimeMs": 38000,
+      "share": 0.583
+    },
+    {
+      "value": "/blog/rebuilding-analytics",
+      "visitors": 412,
+      "pageviews": 530,
+      "bounceRate": 0.71,
+      "avgTimeMs": 142000,
+      "share": 0.342
+    },
+    {
+      "value": "/projects",
+      "visitors": 188,
+      "pageviews": 240,
+      "bounceRate": 0.33,
+      "avgTimeMs": 51000,
+      "share": 0.156
+    }
+  ],
+  "dimension": "page",
+  "total": 64,
+  "nextCursor": "eyJvIjozfQ",
+  "range": {
+    "from": "2026-09-20T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}

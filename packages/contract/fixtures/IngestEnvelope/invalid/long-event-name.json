@@ -1,0 +1,46 @@
+{
+  "expectedPath": "/events/1/name",
+  "value": {
+    "v": 1,
+    "sentAt": "2026-09-27T16:40:00.120Z",
+    "events": [
+      {
+        "id": "01928c3e-7a4b-7c1d-9f00-2b7c1e5d8a11",
+        "name": "pageview",
+        "ts": "2026-09-27T16:39:58.412Z",
+        "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+        "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+        "page": {
+          "path": "/blog/rebuilding-analytics",
+          "referrer": "https://news.ycombinator.com/",
+          "title": "Rebuilding analytics"
+        },
+        "props": {},
+        "context": {
+          "screen": "1440x900",
+          "viewport": "1280x720",
+          "tz": "Europe/Amsterdam",
+          "lang": "nl-NL",
+          "utm": {
+            "source": "hn"
+          }
+        },
+        "signals": 0
+      },
+      {
+        "id": "01928c3e-7a4c-7a02-8b11-3c8d2f6e9b22",
+        "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "ts": "2026-09-27T16:39:59.901Z",
+        "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+        "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+        "page": {
+          "path": "/blog/rebuilding-analytics"
+        },
+        "props": {
+          "plan": "pro"
+        },
+        "signals": 0
+      }
+    ]
+  }
+}

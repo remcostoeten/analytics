@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "value": "pro",
+      "visitors": 12,
+      "sum:prop.revenue": 588.0
+    }
+  ],
+  "dimension": "prop:plan",
+  "total": 1,
+  "nextCursor": null,
+  "range": {
+    "from": "2026-09-20T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {
+    "event": "purchase"
+  }
+}

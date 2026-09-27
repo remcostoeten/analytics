@@ -1,0 +1,9 @@
+{
+  "data": {
+    "id": "client-portal",
+    "visibility": "public",
+    "publicVisitorData": false,
+    "retentionDays": 180,
+    "updatedAt": "2026-09-27T16:42:00.000Z"
+  }
+}

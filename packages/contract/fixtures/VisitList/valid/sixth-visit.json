@@ -1,0 +1,62 @@
+{
+  "data": [
+    {
+      "visitNumber": 6,
+      "sessionId": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+      "startedAt": "2026-09-27T16:38:10.000Z",
+      "endedAt": "2026-09-27T16:40:00.000Z",
+      "sincePreviousVisitMs": 172800000,
+      "entryUrl": "https://remcostoeten.nl/",
+      "exitPath": "/blog/rebuilding-analytics",
+      "source": {
+        "referrer": null,
+        "referrerDomain": "news.ycombinator.com",
+        "channel": "social",
+        "utm": {
+          "source": "hn",
+          "medium": null,
+          "campaign": null,
+          "term": null,
+          "content": null
+        }
+      },
+      "pages": [
+        {
+          "path": "/",
+          "at": "2026-09-27T16:38:10.000Z",
+          "timeOnPageMs": 52000,
+          "scrollDepth": 0.6
+        },
+        {
+          "path": "/projects",
+          "at": "2026-09-27T16:39:02.000Z",
+          "timeOnPageMs": 56000,
+          "scrollDepth": 0.9
+        },
+        {
+          "path": "/blog/rebuilding-analytics",
+          "at": "2026-09-27T16:39:58.412Z",
+          "timeOnPageMs": 1588,
+          "scrollDepth": 0.1
+        }
+      ],
+      "actions": [
+        {
+          "at": "2026-09-27T16:39:01.200Z",
+          "name": "click",
+          "props": {
+            "element": "nav-projects"
+          }
+        },
+        {
+          "at": "2026-09-27T16:39:59.901Z",
+          "name": "signup",
+          "props": {
+            "plan": "pro"
+          }
+        }
+      ]
+    }
+  ],
+  "nextCursor": "eyJvIjoxfQ"
+}
