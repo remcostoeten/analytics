@@ -1,0 +1,11 @@
+{
+  "expectedPath": "/error/code",
+  "value": {
+    "error": {
+      "code": "TEAPOT",
+      "message": "x",
+      "requestId": "req_1",
+      "docs": "https://api.remcostoeten.nl/v2/openapi#errors/TEAPOT"
+    }
+  }
+}

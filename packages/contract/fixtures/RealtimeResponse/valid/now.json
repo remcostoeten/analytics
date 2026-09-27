@@ -1,0 +1,34 @@
+{
+  "data": {
+    "visitors": 7,
+    "pageviewsPerMinute": 2.4,
+    "pages": [
+      {
+        "value": "/blog/rebuilding-analytics",
+        "visitors": 4
+      },
+      {
+        "value": "/",
+        "visitors": 3
+      }
+    ],
+    "countries": [
+      {
+        "value": "NL",
+        "visitors": 3
+      },
+      {
+        "value": "US",
+        "visitors": 2
+      },
+      {
+        "value": "DE",
+        "visitors": 2
+      }
+    ]
+  },
+  "window": {
+    "from": "2026-09-27T16:35:00.000Z",
+    "to": "2026-09-27T16:40:00.000Z"
+  }
+}

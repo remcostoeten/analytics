@@ -1,0 +1,44 @@
+{
+  "data": {
+    "ingest": {
+      "last24h": {
+        "requests": 18230,
+        "accepted": 40112,
+        "duplicates": 311,
+        "rejected": 42,
+        "rateLimited": 9
+      }
+    },
+    "bots": {
+      "last24h": {
+        "scoredAbove50": 5120,
+        "topReasons": [
+          {
+            "reason": "ua_crawler",
+            "events": 3011
+          },
+          {
+            "reason": "asn_datacenter",
+            "events": 1402
+          }
+        ]
+      }
+    },
+    "jobs": [
+      {
+        "job": "rollup",
+        "lastRunAt": "2026-09-27T02:30:04.000Z",
+        "status": "ok",
+        "durationMs": 4120,
+        "rowsWritten": 1880
+      },
+      {
+        "job": "cleanup",
+        "lastRunAt": "2026-09-27T03:00:02.000Z",
+        "status": "ok",
+        "durationMs": 2210,
+        "rowsDeleted": 30551
+      }
+    ]
+  }
+}

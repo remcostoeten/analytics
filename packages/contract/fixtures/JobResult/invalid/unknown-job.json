@@ -1,0 +1,10 @@
+{
+  "expectedPath": "/data/job",
+  "value": {
+    "data": {
+      "job": "vacuum",
+      "status": "ok",
+      "durationMs": 1
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "expectedPath": "/scope",
+  "value": {
+    "name": "x",
+    "scope": "write"
+  }
+}

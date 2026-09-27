@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "id": "client-portal",
+      "name": "Client portal",
+      "domain": "portal.example.nl",
+      "visibility": "private",
+      "publicVisitorData": false,
+      "allowedOrigins": [
+        "https://portal.example.nl"
+      ],
+      "retentionDays": 90,
+      "publicKey": "pk_live_a81d44e0",
+      "createdAt": "2026-01-11T09:30:00.000Z",
+      "updatedAt": "2026-08-02T12:00:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}

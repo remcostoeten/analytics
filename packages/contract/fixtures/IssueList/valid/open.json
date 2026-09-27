@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "id": "iss_01J8ZC",
+      "title": "TypeError: Cannot read properties of undefined (reading 'slug')",
+      "culprit": "src/components/post-card.tsx in PostCard",
+      "level": "error",
+      "status": "open",
+      "isRegression": false,
+      "count": 37,
+      "visitors": 21,
+      "firstSeen": "2026-09-25T09:12:00.000Z",
+      "lastSeen": "2026-09-27T16:31:44.000Z",
+      "firstRelease": "a1b2c3d",
+      "lastRelease": "e4f5a6b",
+      "resolvedAt": null
+    }
+  ],
+  "nextCursor": "eyJvIjoxfQ"
+}

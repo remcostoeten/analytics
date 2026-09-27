@@ -1,0 +1,11 @@
+{
+  "accepted": 1,
+  "duplicates": 0,
+  "rejected": [
+    {
+      "index": 1,
+      "code": "VALIDATION_FAILED",
+      "message": "events[1].name must be 1 to 64 characters"
+    }
+  ]
+}

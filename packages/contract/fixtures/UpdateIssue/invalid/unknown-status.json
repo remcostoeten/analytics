@@ -1,0 +1,6 @@
+{
+  "expectedPath": "/status",
+  "value": {
+    "status": "closed"
+  }
+}

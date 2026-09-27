@@ -1,0 +1,44 @@
+{
+  "data": {
+    "visitors": {
+      "value": 1204,
+      "previous": 1011,
+      "change": 0.191
+    },
+    "sessions": {
+      "value": 1530,
+      "previous": 1290,
+      "change": 0.186
+    },
+    "pageviews": {
+      "value": 3822,
+      "previous": 3105,
+      "change": 0.231
+    },
+    "pagesPerSession": {
+      "value": 2.5,
+      "previous": 2.41,
+      "change": 0.037
+    },
+    "bounceRate": {
+      "value": 0.46,
+      "previous": 0.49,
+      "change": -0.061
+    },
+    "sessionDurationMs": {
+      "value": 71000,
+      "previous": 64000,
+      "change": 0.109
+    }
+  },
+  "range": {
+    "from": "2026-09-20T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
+  "previousRange": {
+    "from": "2026-09-13T00:00:00.000Z",
+    "to": "2026-09-20T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}

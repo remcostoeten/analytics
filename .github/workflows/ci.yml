@@ -33,12 +33,14 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
       - name: Build packages
-        run: bun run --filter './v1/packages/*' build
+        run: bun run --filter './v1/packages/*' --filter './packages/*' build
       - name: Typecheck
         run: bun run typecheck
       - name: Lint
         run: bun run lint
       - name: Check format
         run: bun run format:check
+      - name: Check boundaries
+        run: bun run boundaries
       - name: Test
         run: bun run test

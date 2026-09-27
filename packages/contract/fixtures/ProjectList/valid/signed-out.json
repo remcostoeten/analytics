@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "id": "remcostoeten.nl",
+      "name": "remcostoeten.nl",
+      "domain": "remcostoeten.nl",
+      "visibility": "public",
+      "createdAt": "2025-03-02T10:14:00.000Z"
+    },
+    {
+      "id": "skriuw",
+      "name": "Skriuw",
+      "domain": "skriuw.app",
+      "visibility": "public",
+      "createdAt": "2025-06-18T08:02:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}

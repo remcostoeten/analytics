@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "FORBIDDEN_ORIGIN",
+    "message": "Origin https://example.com is not allowed for this project",
+    "details": {
+      "origin": "https://example.com",
+      "project": "remcostoeten.nl"
+    },
+    "requestId": "req_01J8ZB4K2M",
+    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/FORBIDDEN_ORIGIN"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "data": [
+    {
+      "id": "01928c41-2b10-7c00-9a00-00000000abcd",
+      "ts": "2026-09-27T16:31:44.000Z",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "release": "e4f5a6b",
+      "environment": "production",
+      "page": {
+        "path": "/blog"
+      },
+      "error": {
+        "type": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'slug')",
+        "stack": [
+          {
+            "file": "/_next/static/chunks/app/blog/page-3f2a.js",
+            "line": 1,
+            "column": 20411,
+            "function": "PostCard",
+            "inApp": true
+          },
+          {
+            "file": "/_next/static/chunks/framework-9c1d.js",
+            "line": 1,
+            "column": 88210,
+            "function": "renderWithHooks",
+            "inApp": false
+          }
+        ]
+      },
+      "breadcrumbs": [
+        {
+          "ts": "2026-09-27T16:31:40.100Z",
+          "kind": "navigation",
+          "message": "/ to /blog"
+        },
+        {
+          "ts": "2026-09-27T16:31:43.900Z",
+          "kind": "fetch",
+          "message": "GET /api/posts 500"
+        }
+      ],
+      "device": {
+        "type": "mobile",
+        "browser": "Safari",
+        "browserVersion": null,
+        "os": "iOS",
+        "osVersion": null,
+        "screen": null,
+        "viewport": null,
+        "language": null,
+        "connection": null
+      }
+    }
+  ],
+  "nextCursor": "eyJvIjoxfQ"
+}

@@ -1,0 +1,14 @@
+{
+  "expectedPath": "/rejected/0/code",
+  "value": {
+    "accepted": 1,
+    "duplicates": 0,
+    "rejected": [
+      {
+        "index": 1,
+        "code": "BAD_EVENT",
+        "message": "x"
+      }
+    ]
+  }
+}

@@ -34,19 +34,26 @@
 		},
 		"neon": {
 			"@neondatabase/serverless": "^0.10.0"
+		},
+		"typebox": {
+			"typebox": "1.3.34"
+		},
+		"tsdown": {
+			"tsdown": "0.23.0"
 		}
 	},
 	"private": true,
 	"scripts": {
 		"build": "bun run --filter '*' build",
-		"test": "bun run --filter '*' test",
+		"test": "bun run --filter './v1/**' test && bun run --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' test",
 		"typecheck": "bun run --filter '*' typecheck",
 		"lint": "oxlint --type-aware --deny-warnings apps packages tools scripts e2e && bun run lint:v1",
 		"lint:fix": "oxlint --type-aware --fix apps packages tools scripts e2e",
 		"lint:v1": "oxlint -c v1/.oxlintrc.json --deny-warnings v1",
 		"format": "oxfmt",
 		"format:check": "oxfmt --check",
-		"check": "bun run typecheck && bun run lint && bun run format:check && bun run test",
+		"boundaries": "bun scripts/check-boundaries.ts",
+		"check": "bun run typecheck && bun run lint && bun run format:check && bun run boundaries && bun run test",
 		"dev": "bun run --cwd v1/apps/dashboard dev",
 		"dev:ingestion": "bun run --cwd v1/apps/ingestion dev",
 		"demo:db": "bun run v1/scripts/demo-db/setup.ts"
@@ -54,6 +61,7 @@
 	"workspaces": [
 		"apps/*",
 		"packages/*",
+		"scripts",
 		"tools/oxlint/*",
 		"v1/apps/*",
 		"v1/packages/*"

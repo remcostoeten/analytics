@@ -1,0 +1,9 @@
+{
+  "id": "docs",
+  "name": "Docs",
+  "domain": "docs.remcostoeten.nl",
+  "visibility": "public",
+  "allowedOrigins": [
+    "https://docs.remcostoeten.nl"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "data": [
+    {
+      "value": "/",
+      "samples": 812,
+      "lcpMs": 1840,
+      "inpMs": 96,
+      "cls": 0.02,
+      "fcpMs": 1020,
+      "ttfbMs": 310,
+      "rating": "good"
+    },
+    {
+      "value": "/blog/rebuilding-analytics",
+      "samples": 344,
+      "lcpMs": 2710,
+      "inpMs": 180,
+      "cls": 0.09,
+      "fcpMs": 1380,
+      "ttfbMs": 350,
+      "rating": "needs-improvement"
+    }
+  ],
+  "dimension": "web_vital",
+  "percentile": 75,
+  "minSamples": 20,
+  "total": 2,
+  "nextCursor": null,
+  "range": {
+    "from": "2026-08-28T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}

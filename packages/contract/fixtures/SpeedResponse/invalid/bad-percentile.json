@@ -1,0 +1,69 @@
+{
+  "expectedPath": "/percentile",
+  "value": {
+    "data": {
+      "score": 86,
+      "rating": "good",
+      "samples": 1,
+      "metrics": {
+        "lcp": {
+          "value": 1,
+          "rating": "good",
+          "score": 1,
+          "shares": {
+            "good": 1,
+            "needsImprovement": 0,
+            "poor": 0
+          }
+        },
+        "inp": {
+          "value": 1,
+          "rating": "good",
+          "score": 1,
+          "shares": {
+            "good": 1,
+            "needsImprovement": 0,
+            "poor": 0
+          }
+        },
+        "cls": {
+          "value": 1,
+          "rating": "good",
+          "score": 1,
+          "shares": {
+            "good": 1,
+            "needsImprovement": 0,
+            "poor": 0
+          }
+        },
+        "fcp": {
+          "value": 1,
+          "rating": "good",
+          "score": 1,
+          "shares": {
+            "good": 1,
+            "needsImprovement": 0,
+            "poor": 0
+          }
+        },
+        "ttfb": {
+          "value": 1,
+          "rating": "good",
+          "score": 1,
+          "shares": {
+            "good": 1,
+            "needsImprovement": 0,
+            "poor": 0
+          }
+        }
+      }
+    },
+    "percentile": 80,
+    "device": "mobile",
+    "range": {
+      "from": "2026-08-28T00:00:00.000Z",
+      "to": "2026-09-27T00:00:00.000Z"
+    },
+    "traffic": "human"
+  }
+}
