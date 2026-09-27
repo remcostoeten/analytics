@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract` and `scripts/` (the boundary check) exist; the rest arrives epic by epic. Bun workspaces cover `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`; `apps/*` is added back when `apps/api` arrives.
+Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (only its database layer so far) and `scripts/` (the boundary check and `migrate.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`; `apps/*` is added back when `apps/api` arrives.
 
 ## Commands
 
@@ -71,9 +71,10 @@ Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` pl
 | `bun run deps` | sherif: consistent dependency versions and manifest fields; v1 is ignored |
 | `bun run knip` | knip: unused files, exports and dependencies in v2 |
 | `bun run knip:v1` | knip report of what v1 no longer uses; never fails |
+| `bun run migrate` | Applies `packages/engine/src/db/migrations` to `DATABASE_URL`; `--dry-run`, and `--baseline 0008_add_rollup_daily` on a database v1 already migrated. Remco runs it against Neon |
 | `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
-| `bun run test` | `bun test` per workspace: the v1 workspaces first, then the v2 ones, so v2 tests do not slow the v1 PGlite suite past its timeouts |
+| `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |

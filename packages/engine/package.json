@@ -1,0 +1,22 @@
+{
+	"name": "@remcostoeten/analytics-engine",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./db/schema": "./src/db/schema.ts",
+		"./db/migrate": "./src/db/migrate.ts",
+		"./db/migration-files": "./src/db/migration-files.ts"
+	},
+	"scripts": {
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@remcostoeten/analytics-shared": "workspace:*",
+		"drizzle-orm": "0.45.3"
+	},
+	"devDependencies": {
+		"@electric-sql/pglite": "0.5.8"
+	}
+}

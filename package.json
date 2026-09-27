@@ -38,7 +38,7 @@
 	"private": true,
 	"scripts": {
 		"build": "bun run --filter '*' build",
-		"test": "bun run --filter './v1/**' test && bun run --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' test",
+		"test": "bun run --filter './v1/**' --sequential test && bun run --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' test",
 		"typecheck": "bun run --filter '*' typecheck",
 		"lint": "oxlint --type-aware --deny-warnings apps packages tools scripts e2e && bun run lint:v1",
 		"lint:fix": "oxlint --type-aware --fix apps packages tools scripts e2e",
@@ -50,6 +50,7 @@
 		"knip": "knip",
 		"knip:v1": "knip --config knip.v1.json --no-exit-code",
 		"changeset": "changeset",
+		"migrate": "bun scripts/migrate.ts",
 		"check": "bun run typecheck && bun run lint && bun run format:check && bun run boundaries && bun run deps && bun run knip && bun run test",
 		"dev": "bun run --cwd v1/apps/dashboard dev",
 		"dev:ingestion": "bun run --cwd v1/apps/ingestion dev",
