@@ -1,0 +1,338 @@
+# Epics and agent prompts
+
+Twenty epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
+
+## How to use this
+
+- Start epics in ID order within a phase; epics in the same phase with no dependency between them can run in parallel.
+- Paste the shared preamble, then the epic's prompt, into a fresh agent session in `~/dev/analytics`.
+- Each epic ends in a draft PR on a `feature/*` or `chore/*` branch with green `bun run check`. The agent does not merge, publish to npm, or apply migrations to Neon; you do those.
+- When an epic changes the plan, the agent says so in the PR description instead of editing the plan doc.
+
+## Shared preamble
+
+Paste this first in every session:
+
+```text
+You are working in ~/dev/analytics, Remco's self-hosted analytics monorepo.
+Before anything else:
+1. Read AGENTS.md at the repo root and follow it.
+2. Load the generic-program-rules skill and follow it for code, comments, types, commits and your summary.
+3. Read the plan: "Analytics SDK v2 plan" at https://claude.ai/artifact/LPNHFpymb9EW3nazt2r3sD (main tab, plus the API reference tab where the epic names it). The plan's decisions table is binding; if something in this task conflicts with it, stop and ask.
+4. Check `git status` and leave unrelated changes alone.
+Rules: TypeScript, `type` never `interface`, function declarations for standalone functions, arrow callbacks, no classes, no comments beyond the allowed kinds, kebab-case files, errors as Result values in engine code, no module mocking in tests.
+Branch from master using the name in the epic, and open the PR against master. Commit with conventional commits. Open a draft PR with a Before/After description. Do not merge, do not publish to npm, do not apply migrations to Neon, do not change Vercel or Cloudflare settings.
+Finish with `bun run check` green (or the closest existing equivalent before E0.1 lands) and report what changed, what is left, and any risk.
+```
+
+## Overview
+
+| ID | Epic | Phase | Needs | Branch |
+| --- | --- | --- | --- | --- |
+| E0.1 | Lint and format baseline | 0 | none | `chore/lint-baseline` |
+| E0.2 | Dropped: 1.x is frozen | 0 | none | `fix/sdk-1-8-vitals-self-traffic` |
+| E0.3 | Shared and contract packages | 0 | E0.1 | `feature/contract-package` |
+| E0.4 | Decision records | 0 | none | `chore/decision-records` |
+| E0.5 | Repo tooling | 0 | E0.1 | chore/repo-tooling |
+| E1.1 | Elysia on Vercel spike | 1 | E0.3 | `feature/api-spike` |
+| E1.2 | Migrations 0009 to 0020 and migrate script | 1 | E0.3 | `feature/v2-migrations` |
+| E2.1 | Engine core | 2 | E0.3, E1.2 | `feature/engine-core` |
+| E2.2 | Port the ingest pipeline into the engine | 2 | E2.1 | `feature/engine-pipeline` |
+| E2.3 | Bot scoring | 2 | E2.1 | `feature/bot-scoring` |
+| E2.4 | API skeleton and `POST /v2/events` | 2 | E1.1, E2.2 | `feature/api-ingest` |
+| E3.1 | SDK 2.0 core | 3 | E0.3, E2.4 | `feature/sdk-2-core` |
+| E3.2 | SDK plugins | 3 | E3.1 | `feature/sdk-2-plugins` |
+| E3.3 | React, server and proxy entries, build and release | 3 | E3.1 | `feature/sdk-2-entries` |
+| E3.4 | End-to-end tests, blocker matrix, 2.0.0 | 3 | E3.2, E3.3 | `chore/sdk-2-release` |
+| E4.1 | Auth, tokens and visibility | 4 | E2.4 | `feature/api-auth` |
+| E4.2 | Read resources | 4 | E4.1 | `feature/api-reads` |
+| E4.3 | Speed insights | 4 | E3.2, E4.2 | `feature/speed-insights` |
+| E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
+| E4.5 | Dashboard on the v2 API | 4 | E4.2 | `feature/dashboard-v2` |
+| E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
+
+After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
+
+## Phase 0: foundations
+
+### E0.1 Lint and format baseline
+
+Delivers: Oxlint 1.85.0 and oxfmt 0.70.0 in the catalog, `.oxlintrc.json` and `.oxfmtrc.json` from the Skriuw rulebook, `tools/oxlint/anti-slop` and `tools/oxlint/house`, `noop()` moved into a shared location, lefthook, and the `lint`, `lint:fix`, `format`, `format:check` and `check` scripts. Done when CI and `bun run check` are green on the reformatted repo.
+
+```text
+Epic E0.1, branch chore/lint-baseline. Branch chore/lint-baseline from master. Read the plan sections "Linting and formatting" and "Code rules and tooling", and the Skriuw lint rulebook at https://claude.ai/artifact/JMt59NUXkw7kfSRLHxWW1x (read it with the Artifact tool).
+1. Bump oxlint to 1.85.0 and oxfmt to 0.70.0 in the root package.json catalogs. Confirm current versions with `npm view` first.
+2. Add .oxlintrc.json copied from the rulebook, with the changes the plan lists: the skriuw plugin becomes tools/oxlint/house (rules house/no-silent-catch and house/local-type-name), drop the Storybook and apps/workspace overrides, keep the tests override, add import/no-cycle, set no-unused-vars argsIgnorePattern "^_", and ignore packages/ingestion/src/db/migrations/**. Try no-floating-promises via type-aware mode; if 1.85.0 does not support it, leave it out and say so.
+3. Install the anti-slop plugin with the install-anti-slop skill. Write the two house rules as a small JS plugin with tests.
+4. Add .oxfmtrc.json with printWidth 100 and the rulebook's ignore shape. Reformat the whole repo in one separate commit.
+5. Rename scripts to lint, lint:fix, format, format:check, and add check (typecheck, lint, format:check, test). Update CI and AGENTS.md's commands table.
+6. Add lefthook running format and lint on staged files.
+7. Fix every new finding properly; never disable a rule to pass. List any rule you had to scope down and why.
+```
+
+### E0.2 Dropped
+
+1.x is frozen, so there is no 1.8 patch. The web vitals and own-traffic fixes ship with 2.0 in E3.2.
+
+### E0.3 Shared and contract packages
+
+Delivers: `packages/shared` (semantic types, `Result`, `noop`) and `packages/contract` (TypeBox schemas for the event envelope, ingest response, error catalog and read DTOs, plus JSON fixtures). Done when both typecheck, the fixtures validate, and the error catalog covers every code in the API reference tab.
+
+```text
+Epic E0.3, branch feature/contract-package. Read the plan sections "Monorepo structure", "Event envelope and transport", "Errors", the whole API reference tab, and the Schemas and types tab, which is the starting point for these types.
+1. Create packages/shared: semantic.ts (ID, Timestamp, ProjectID, VisitorID, SessionID, EventID, Nullable, per the generic-program-rules types section), result.ts (Result, ok, err), noop.ts. Private package, exports point at src.
+2. Create packages/contract as @remcostoeten/analytics-contract with TypeBox schemas: events.ts (envelope v1, event, context, page, signals), errors.ts (the catalog: code, status, retryable, level, docs line; ErrorCode as the union of keys), projects.ts, stats.ts, visitors.ts, issues.ts, speed.ts, tokens.ts matching every request and response in the API reference tab. Export static types with Static<>.
+3. Add fixtures/ with valid and invalid JSON for each schema, and tests that valid ones pass and invalid ones fail with the expected path.
+4. Build contract with tsdown to ESM and types. Add the boundary rule to scripts/check-boundaries.ts: shared imports nothing, contract imports only shared.
+```
+
+### E0.4 Decision records
+
+Delivers: `docs/decisions/0001` to `0012`, one short file per row of the plan's decisions table, each with context, decision, status and consequences. Done when each file exists and the settled ones say so.
+
+```text
+Epic E0.4, branch chore/decision-records. Read the plan's "Decisions needed" table.
+Write one markdown file per row in docs/decisions/, numbered 0001 to 0012, named after the decision in kebab-case. Each has four short sections: Context, Decision, Status (Settled or Open with the recommended default), Consequences. Follow the writing voice rules in generic-program-rules: plain declaratives, no em dashes, no marketing words. Add a docs/decisions/README.md that lists them in a table.
+```
+
+### E0.5 Repo tooling
+
+Delivers: the non-lint tooling that keeps a monorepo healthy, set up once. Done when each tool runs in CI or on a schedule without failing on the current code, and the PR lists anything it turned off and why.
+
+| Tool | Why |
+| --- | --- |
+| knip 6.38 | Finds unused files, exports and dependencies across workspaces; it also shows what can be deleted when 1.x is retired |
+| sherif 1.13 | Checks every `package.json` in the monorepo for mismatched dependency versions and missing fields |
+| Renovate | Grouped weekly dependency PRs that understand Bun workspaces and the root catalogs, instead of one PR per package |
+| Changesets 3.0 | Set up now in pre-release mode so SDK prereleases can start as soon as phase 3 does |
+| oasdiff GitHub Action | Fails a PR that makes a breaking change to the OpenAPI document once `apps/api` exists |
+| lefthook `commit-msg` | Rejects commits that are not conventional commits, with a one-line regex rather than another dependency |
+| gitleaks in lefthook | Blocks commits that contain secrets such as `INGEST_SECRET` or Neon URLs |
+| CodeQL | GitHub's free security scan for TypeScript, on pull requests and weekly |
+| `.coderabbit.yaml` | CodeRabbit already reviews this repo's PRs; the config points it at AGENTS.md and the plan's rules so its comments match the house style |
+
+```text
+Epic E0.5, branch chore/repo-tooling. Needs E0.1. Read the plan sections "Build process", "Test process", "Branching" and "Linting and formatting". Check current versions of each tool on npm or its releases page before installing.
+1. Add knip with a root config that knows every workspace and entry; fix or list its findings (do not delete code the plan still needs, such as packages/ingestion).
+2. Add sherif and fix its findings.
+3. Add renovate.json: weekly schedule, group non-major updates, separate PRs for majors, respect the root catalogs, automerge nothing.
+4. Initialise Changesets for packages/sdk and packages/contract, pre mode with the next tag. Do not publish.
+5. Add a commit-msg hook in lefthook that checks conventional commits with a regex, and gitleaks as a pre-commit step if it is installable without Docker; otherwise run gitleaks in CI.
+6. Add CodeQL for javascript-typescript on pull requests and weekly.
+7. Add .coderabbit.yaml telling the reviewer to follow AGENTS.md and the generic rules (function declarations, type not interface, no comments beyond the allowed kinds, no em dashes in prose) and to skip formatting nits that oxfmt handles.
+8. Prepare the oasdiff job but keep it disabled until apps/api has an OpenAPI document; note that in the PR.
+```
+
+## Phase 1: spike and storage
+
+### E1.1 Elysia on Vercel spike
+
+Delivers: a throwaway `apps/api` with `GET /v2/health` and a stub `POST /v2/events` that reads one MMDB lookup, deployed as a Vercel preview, plus a short findings note. Done when the note answers: Bun or Node runtime, cold start time, bundle size, MMDB bundling, streaming, and whether `cf-connecting-ip` arrives. If any answer is a blocker, the note recommends the Hono plus oRPC fallback.
+
+```text
+Epic E1.1, branch feature/api-spike. Read the plan sections "Architecture", "Build process", and the Elysia skill's Vercel integration (.agents/skills/elysiajs/integrations/vercel.md) and openapi plugin notes. Check current Elysia and @elysiajs/openapi versions on npm.
+1. Create apps/api with Elysia: GET /v2/health returning { ok, version, time }, GET /v2/openapi from @elysiajs/openapi, and POST /v2/events that parses text/plain JSON, looks up the caller IP in the City MMDB (reuse packages/ingestion's geo-mmdb utility) and returns 202 with the lookup result. No database.
+2. Build it into Vercel's Build Output API following apps/ingestion/scripts/build.ts, bundling both MMDB files. Try the Bun runtime first, Node second.
+3. Deploy a preview with the Vercel CLI only if Remco has already linked the project; otherwise stop at a local `vercel build` and document the steps.
+4. Write docs/decisions/0013-elysia-on-vercel.md with measured cold start (5 cold hits), warm p95 (100 hits), bundle size, which runtime, and any blocker. Recommend go or fallback.
+```
+
+### E1.2 Migrations 0009 to 0020 and migrate script
+
+Delivers: SQL migrations for `projects`, `events.name`, bot score columns, per-project session uniqueness, `schema_version`, Better Auth tables, `api_tokens`, `issues`, `events.issue_id`, plus the speed insights columns; `schema.ts` updated; `scripts/migrate.ts`; PGlite tests running the real migration files. Done when a fresh PGlite and the local demo database both migrate cleanly and a second run is a no-op.
+
+```text
+Epic E1.2, branch feature/v2-migrations. Read the plan sections "Storage", "Access and sign-in", "Errors" and "Speed insights", and the Database tables part of the Schemas and types tab, which drafts the SQL.
+1. Add packages/ingestion/src/db/migrations/0009 to 0020 as idempotent SQL (IF NOT EXISTS), exactly as the Storage section lists: 0009 to 0015 from its table, issues (0016), events.issue_id (0017), web_vitals (0018), rollup_vitals (0019) and the nullable route column on events, sessions and rollup_daily (0020). They move into packages/engine/src/db in E2.1. 0009 seeds one public projects row per distinct events.project_id. 0010 backfills events.name from COALESCE(meta->>'eventName', type) in batches.
+2. Update schema.ts, using one baseEntity helper for id and timestamps where the rules require it.
+3. Write scripts/migrate.ts: applies numbered files in order, records them in schema_migrations, prints what it would do with --dry-run, needs DATABASE_URL, never runs on deploy.
+4. Replace the hand-copied DDL in packages/ingestion/tests/setup.ts with running the migration files on PGlite. All existing ingestion tests must still pass.
+5. Run it against the local demo database (bun run demo:db) twice and include the output. Do not touch Neon.
+```
+
+## Phase 2: engine and v2 ingest
+
+### E2.1 Engine core
+
+Delivers: `packages/engine` with `define.ts`, `pipeline.ts`, the port types, `Logger`, memory and PGlite adapters, and a Postgres adapter on Drizzle and Neon. Done when a pipeline of placeholder stages runs end to end on the memory adapter and on PGlite in tests.
+
+```text
+Epic E2.1, branch feature/engine-core. Read the plan sections "Engine and modules", "Errors" (Inside the engine), and "Monorepo structure".
+1. Create packages/engine (private, exports point at src). define.ts exports defineStage, defineSignal, defineEnricher, defineDimension with typed inputs and outputs. Each returns a plain object; no classes.
+2. ports/: EventStore, GeoLookup, RateLimiter, Hasher, Clock, Logger as types. adapters/: memory (all ports), pglite and postgres (EventStore, RateLimiter), maxmind (GeoLookup), system clock, web crypto hasher, JSON logger.
+3. pipeline.ts: createEngine(ports and registries) returns { ingest, rescore }. Stages run in a fixed order and return Result; the first failure stops the batch item and is reported by index. A thrown error becomes INTERNAL with the stack logged.
+4. Unit tests for the pipeline runner with fake stages; integration test on PGlite using E1.2's migrations. Add engine to the boundary check: it may import only contract and shared.
+```
+
+### E2.2 Port the ingest pipeline into the engine
+
+Delivers: stages for parse, authorize (project keys and origins from the `projects` table), enrich (geo, user agent, network, UTM), flags (localhost, preview, internal, admin session), dedupe (event id on the unique index), persist (one multi-row insert per batch) and sessions (visitor and session upserts). Done when the parity test passes: the same fixture events through the legacy `/e` handler and through the engine produce equal rows.
+
+```text
+Epic E2.2, branch feature/engine-pipeline. Read the plan sections "Engine and modules", "Event envelope and transport", "Storage", "Your own traffic", and AGENTS.md's "Pipeline, in order".
+1. Copy the pure logic from v1/packages/ingestion/src/utilities (ip hash, geo, geo-mmdb, timezone-country, dedupe fingerprint, device class) into engine enrichers and stages, one file each, each with a table-driven test. v1 now lives in v1/ and is frozen: copy the logic from v1/packages/ingestion/src/utilities into the engine, never import from or edit v1/.
+2. Implement the stages in the order the plan gives. Clock skew uses sentAt; the IP comes from cf-connecting-ip, then x-real-ip, then x-forwarded-for, unless a valid project secret key allows the forwarded-proxy enricher to use forwarded headers.
+3. Map the v2 name field onto legacy type and meta.eventName on write so the current dashboard keeps working. Write schema_version 1.
+4. Parity test on PGlite: fixture events through the legacy handleIngest and through engine.ingest give the same rows apart from the new columns. This is the phase 2 gate.
+```
+
+### E2.3 Bot scoring
+
+Delivers: every signal in the plan's bot table as its own module, the scoring stage, the session-level job, a `rescore` CLI, and fixes for the three bugs in the legacy detector. Done when the signal tests pass and a PGlite run of known crawler, headless and human fixtures lands on the expected side of 50.
+
+```text
+Epic E2.3, branch feature/bot-scoring. Read the plan sections "Bot detection" and "Engine and modules".
+1. One defineSignal file per row of the bot table in engine/src/signals/, listed in signals/index.ts, each with a table-driven test. Replace the broad /bot/, /monitor/, /rss/ patterns with a named crawler list. No early return for Firefox or Brave. Header checks run on POST.
+2. The bot stage sums weights, caps at 100, stores bot_score and bot_reasons. Treat Brave's randomised values as normal.
+3. The session-level signals (session_velocity, ip_fanout) run in the rollup job and write back to sessions and their events.
+4. scripts/rescore.ts runs the bot stage over stored events for a date range with --dry-run.
+5. Fixture set: crawler UAs, curl, HeadlessChrome, a datacenter ASN, a normal Chrome, Firefox and Safari request. Assert which side of 50 each lands on.
+```
+
+### E2.4 API skeleton and `POST /v2/events`
+
+Delivers: `apps/api` with the request-id, CORS, error-handler and OpenAPI plugins, `GET /v2/health`, and `POST /v2/events` on the engine, deployable to Vercel. Done when integration tests cover 202, duplicates, per-event rejections, wrong origin, bad key, 413 and 429, and the OpenAPI JSON lists the route.
+
+```text
+Epic E2.4, branch feature/api-ingest. Needs E1.1's go decision. Read the plan sections "REST API", "Errors", "OpenAPI and docs", "Build process", and the ingest part of the API reference tab.
+1. apps/api/src/plugins: request-id (read or create x-request-id, return it), cors (credentials only for the dashboard origin; ingest allows any origin but checks the key's allowed origins), error-handler (maps EngineError codes to the catalog status and envelope with requestId and docs link), openapi (/v2/openapi and /v2/openapi/json).
+2. modules/events: route, model, service. Accept text/plain and application/json, 60 KB and 50 events max, X-Project-Key or Bearer secret. The service calls engine.ingest and returns { accepted, duplicates, rejected }.
+3. Build for Vercel as the spike decided. Keep the legacy ingestion project untouched.
+4. Integration tests through app.handle on PGlite for every status in the API reference's ingest examples.
+```
+
+## Phase 3: SDK 2.0
+
+### E3.1 SDK 2.0 core
+
+Delivers: `createAnalytics<Events>()` with `track`, `page`, `identify`, `register`, `error`, `consent`, `optOut`, `reset`, `flush`, `shutdown`, `on`, `status`; the pre-init queue; in-memory batching; the `beacon` transport; identity and session; one `__ra` storage key with migration from the 1.x keys; `mode` and debug output. Done when unit tests cover each method and the contract fixtures match what the client sends, and the core is under 2.5 KB min+gzip.
+
+```text
+Epic E3.1, branch feature/sdk-2-core. The SDK design tab is the spec for the public API, config, typing and file layout; follow it exactly. Read the plan sections "SDK API shape", "Event envelope and transport", "Engine and modules" (SDK plugin part), "Errors" (What developers see), and "Lessons from Vercel".
+1. Rewrite packages/sdk/src as core/, plugins/, transports/, react/, server/, proxy/, internal/. 1.x is frozen in v1/packages/sdk; build 2.0 in packages/sdk.
+2. core: client.ts (createAnalytics with the typed Events map and the method list above), queue.ts (pre-init queue replayed after init and consent; batches of 20 or 5 seconds or pagehide), identity.ts (visitor in localStorage, session in sessionStorage, 30-minute sliding window), storage.ts (one __ra key; on first run read and migrate __analytics_visitor_id, __analytics_opt_out and the traits keys, then remove them), consent.ts (persisted decision), plugin.ts (definePlugin, beforeSend chain, onPage, onHidden, onConsent).
+3. Event shape exactly as packages/contract's envelope, UUIDv7 ids, sentAt, route when a router supplies it. Enforce property limits: names, keys and values up to 255 characters, flat primitive values, at most 25 props; warn in development, strip in production.
+4. mode: auto reads NODE_ENV; development logs with [ra] codes and sends nothing unless an endpoint is set explicitly.
+5. transports/beacon.ts: fetch with keepalive and text/plain, sendBeacon on pagehide, retries 1s, 4s, 16s on network errors and 5xx, persisted queue only with consent.
+6. Tests with happy-dom. Assert the payloads against packages/contract fixtures. Add scripts/size-check.ts with the budgets.
+```
+
+### E3.2 SDK plugins
+
+Delivers: `pageviews` (default on), `speedInsights`, `scrollDepth`, `engagement`, `clicks`, `outboundLinks` (with file downloads), `forms`, `errors` (with breadcrumbs), `ignoreSelf`, `botSignals`, `experiments`, `notFound`. Done when each has tests and meets its size budget.
+
+```text
+Epic E3.2, branch feature/sdk-2-plugins. Read the plan sections "SDK API shape", "Speed insights", "Your own traffic", "Bot detection" (client layer), "Errors" (Error tracking), "Capabilities and gaps" tab, and "Lessons from Vercel".
+1. One file per plugin in packages/sdk/src/plugins, each built with definePlugin and exported from ./plugins. None imports another.
+2. pageviews: history patching and popstate, skipping hash-only and same-path changes; turns itself off when a framework adapter supplies route (no double pageviews).
+3. speedInsights: lazy-load the web-vitals attribution build; LCP, INP, CLS, FCP, TTFB; sampleRate decided once per page load; buffer and flush on hidden, pagehide, route change or 6 metrics; send id, value rounded, rating, route, path, navigationType, connection effectiveType, and one attribution selector.
+4. ignoreSelf (?ra=ignore / ?ra=track / ?ra=debug), botSignals (bitfield: webdriver, headless hints, no input before send), experiments (register plus one experiment_exposure event), errors (uncaught errors, unhandled rejections, last 20 breadcrumbs, scrubbing), outboundLinks with file-download extensions, notFound (a call for 404 pages).
+5. Tests per plugin with happy-dom; size-check budgets per plugin.
+```
+
+### E3.3 React, server and proxy entries, build and release
+
+Delivers: `./react` (`AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, a Next adapter that supplies `route` from `useParams` and `usePathname`, and a `computeRoute` helper), `./server` (`createServerAnalytics`, `captureError`, forwarding the visitor's UA and IP, `waitUntil`), `./proxy` (`createProxy` for any fetch-standard framework), tsdown build, Changesets. Done when all entries build ESM-only with types, `"use client"` is on `./react`, and a changeset for 2.0.0 exists.
+
+```text
+Epic E3.3, branch feature/sdk-2-entries. Read the plan sections "SDK API shape", "Ad blockers and Brave", "Build process", and "Lessons from Vercel".
+1. react/: provider taking a client, hooks, TrackClick, ErrorBoundary (the one allowed class exception), a Next adapter component that computes route with computeRoute(pathname, params) and holds pageviews until the route is known.
+2. server/: createServerAnalytics({ project, secret, endpoint }) with track, identify, captureError, flush; accepts a Request or headers to forward user-agent and client IP; uses waitUntil when the runtime provides it; returns { ok, error } and never throws.
+3. proxy/: createProxy({ secret, endpoint }) returning a (request) => Response handler that forwards the body, adds the secret and forwarded UA and IP, and optionally counts HTML page requests for the blocked-share estimate.
+4. Build config from one JSON env var read with literal process.env / import.meta.env access, merged under explicit options.
+5. tsdown config for all entries, ESM only, externals for react and next. Changesets config and a 2.0.0 changeset. CI size check.
+```
+
+### E3.4 End-to-end tests, blocker matrix, 2.0.0
+
+Delivers: the `e2e/` workspace with Playwright tests of the built SDK against the local API, the bot scoring checks, the manual browser and blocker checklist, the SDK README, and a release PR. Done when e2e is green in CI and the manual checklist is filled in by Remco.
+
+```text
+Epic E3.4, branch chore/sdk-2-release. Read the plan sections "Test process" and "Ad blockers and Brave".
+1. Create e2e/ as a workspace with Playwright (reuse the version apps/dashboard pins). Start the API against PGlite, serve fixture pages that load the built SDK through both transports, and assert stored rows for pageviews, SPA navigation, send on hide, consent, ignoreSelf, speed metrics and errors.
+2. Bot checks: headless run scores 50 or more; headed run with scripted input under 50.
+3. docs/release-checklist.md with the manual matrix (Brave standard and aggressive, uBlock Origin with EasyPrivacy, Firefox strict, Safari) and what to record.
+4. Rewrite packages/sdk/README.md for 2.0 following the README rules in generic-program-rules, including a 1.x to 2.0 migration table.
+5. Add the e2e job to CI on pull requests. Do not publish; the Changesets version PR is for Remco to merge.
+```
+
+## Phase 4: read API, sign-in and dashboard
+
+### E4.1 Auth, tokens and visibility
+
+Delivers: Better Auth with GitHub mounted under `/v2/auth`, the `dashboard_users` allowlist, the admin session cookie, API tokens, the access levels (`public`, `project`, `detail`, `admin`), private projects answering 404, project settings routes, and the admin-session internal-traffic marking at ingest. Done when every access level has an integration test for allowed and denied callers.
+
+```text
+Epic E4.1, branch feature/api-auth. Read the plan sections "Access and sign-in", "Your own traffic", and the API reference tab's access levels, projects, tokens and sign-in examples. Check current better-auth on npm and the Elysia skill's better-auth integration.
+1. Mount Better Auth with the GitHub provider and its organization plugin under /v2/auth; allow sign-in only for logins in dashboard_users. Create one organization with Remco as owner, add org_id to projects, and implement the owner, admin, analyst and viewer roles from the plan's Roles table, plus token scopes read, sql and admin limited to listed projects. Add the query_runs log table and the per-project sqlEnabled switch. Cookie: httpOnly, Secure, SameSite=Lax, Domain from an env var (.remcostoeten.nl in production).
+2. An access macro on routes: public, project, detail, admin, ingest, cron. Private projects return 404 to callers without access.
+3. Projects module: list (visibility filter for admins), get, create, patch, key rotation (secret returned once, stored hashed). Tokens module: create (returned once), list, revoke.
+4. At ingest, a valid admin session cookie marks the event and visitor internal.
+5. Integration tests for each level with and without access. Run the auth-review skill on the result and include its findings in the PR.
+```
+
+### E4.2 Read resources
+
+Delivers: `stats`, `timeseries`, `breakdown/:dimension` driven by the dimension registry, `realtime`, `events`, `visitors`, visitor detail and patch, session trail, shared query parameters, cursors, cache headers and public-read rate limits. Done when every example in the API reference tab is reproduced by an integration test on seeded PGlite data.
+
+```text
+Epic E4.2, branch feature/api-reads. Read the plan sections "REST API", "Engine and modules" (dimensions), every read example in the API reference tab, its Coverage check (sessions, paths, retention, heatmap, map, realtime events, the metrics= list, prop: and trait: dimensions, CSV output), its All projects combined section (every read route without the project prefix, project as a dimension and filter, /v2/people for identified users across projects), the plan's Realtime section (RealtimeFeed port, long-polling /realtime/events with a cursor, SSE on the same route), the Export and SQL section (format=csv|sql|json, /query, /query/schema, /query/explain, saved queries and history, read-only role over views only, built exactly as the SQL reference tab specifies: the nine views in migration 0022, row-level security per project, and the example queries as integration tests), and the Schemas and types tab.
+1. One defineDimension file per dimension listed in the API reference; the breakdown service builds SQL from the registry. traffic=human applies one definition everywhere: bot_score under 50, not internal, not localhost, not preview.
+2. stats with the previous period, timeseries by hour or day, realtime over 5 minutes, raw events and visitors with cursors, session trail, visitor internal toggle scoped to the project.
+3. Cache-Control public, s-maxage=60 on public aggregate reads; private, no-store otherwise. Per-IP-hash rate limit on public reads.
+4. Seed PGlite with a fixed dataset and assert each route's response shape against the contract DTOs.
+```
+
+### E4.3 Speed insights
+
+Delivers: the `web_vitals` table and daily percentile rollup, the Real Experience Score, the `/speed` routes, and the dashboard speed view. Done when a seeded dataset gives scores that match a hand calculation and the view renders on public and private projects.
+
+```text
+Epic E4.3, branch feature/speed-insights. Read the plan section "Speed insights" and the speed examples in the API reference tab.
+1. Ingest: route speed metrics from the speedInsights plugin into web_vitals rows, deduped by metric id per page load.
+2. Rollup: p50, p75, p90, p95, p99 and counts per project, day, route, device and metric, excluding bots and internal traffic.
+3. Score: per-metric 0 to 100 on a log-normal curve where the good threshold scores 90 and the poor threshold 50; RES = LCP 30%, INP 30%, CLS 25%, FCP 15%; bands 0-49, 50-89, 90-100. Unit tests against hand-computed values. Also build the guards in the plan's "What keeps the numbers trustworthy" table: keep only the latest value per metric id, reject impossible values, Playwright fixture pages with known LCP, INP and CLS that must land within 10%, and a weekly Chrome UX Report comparison flagged in /admin/metrics.
+4. Routes: /speed, /speed/timeseries, /speed/routes, /speed/elements with device and percentile parameters; minimum 20 samples before a value is shown.
+5. Dashboard: score ring, one card per metric with its distribution, a route table sorted by worst score, device toggle and percentile selector.
+```
+
+### E4.4 Error tracking
+
+Delivers: scrubbing, fingerprinting and grouping into `issues`, regressions, sampling, the issue routes, webhook or email alerts from the cron job, and the API's own errors captured into an internal project. Done when fixture errors group as expected and a resolved issue reopens on recurrence.
+
+```text
+Epic E4.4, branch feature/error-tracking. Also read the SDK design tab's Error tracking in code section and its Compared with Sentry table, and build filter[issue] and /error-rules from the API reference. Read the plan section "Errors" and the Issues examples in the API reference tab.
+1. A scrub enricher (emails, tokens, long numbers, query strings except UTM) and a fingerprint stage (type, normalised message, top in-app frame).
+2. Upsert issues per project and fingerprint with counts, visitors, releases and status; reopen resolved issues as regressions; store only counts after 100 occurrences per minute.
+3. Routes: list, detail, events, patch status. Alerts: the cron job posts new issues and regressions to a webhook URL from env, and email if configured.
+4. The API's error-handler captures its own INTERNAL errors into an internal analytics project.
+5. Tests with fixture stacks from Chrome, Firefox and Safari.
+```
+
+### E4.5 Dashboard on the v2 API
+
+Delivers: the dashboard reading only through Eden Treaty, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
+
+```text
+Epic E4.5, branch feature/dashboard-v2. Read the plan sections "Access and sign-in", "REST API", and "Phases". Use toasts from @remcostoeten/notifier, never sonner.
+1. Add an Eden Treaty client in apps/dashboard that forwards the session cookie from server components.
+2. Migrate one view at a time, each in its own commit: overview, pages and referrers, geo, devices, visitors and session trails, realtime, speed, issues. Write a parity test per view comparing the old query and the new API on the demo database.
+3. Signed out: list and show public projects only. Signed in: show private projects, the visibility filter and admin controls from /v2/auth/session.
+4. Remove the dashboard's own GitHub OAuth routes once sign-in through the API works. Keep the old API routes until phase 5.
+```
+
+## Phase 5: retire 1.x
+
+### E5.1 Retire 1.x
+
+Delivers: a deprecation notice on `@remcostoeten/analytics@1`, removal of the legacy `/e` routes and `packages/ingestion` and `apps/ingestion` once `schema_version = 0` traffic has stopped, removal of the dashboard's old API routes, and a single cleanup cron. Done when no code path writes `schema_version = 0` and the legacy Vercel project can be deleted by Remco.
+
+```text
+Epic E5.1, branch chore/retire-v1. Read the plan sections "Phases" and "Storage". Start only after Remco confirms that 1.x traffic has stopped.
+1. Query how many schema_version = 0 events arrived in the last 14 days, per project, and report it. Stop if any project still sends them.
+2. Write the npm deprecate command for Remco to run; do not run it.
+3. Remove packages/ingestion and apps/ingestion after moving anything still used into engine; remove the dashboard's /api/analytics and /api/posthog routes and the skriuw-* selectors unless Remco says otherwise.
+4. Keep one cleanup schedule: the Vercel cron calling POST /v2/admin/jobs/cleanup; remove the in-process interval.
+5. Update AGENTS.md so it describes the v2 layout, commands and pipeline.
+6. Make the repo self-hostable by others: a root README setup guide, .env.example listing every variable with a one-line purpose, a `bun run setup` command that runs migrations and creates the owner, organization and first project (printing its keys once), and a Vercel deploy button for apps/api and apps/dashboard.
+```
