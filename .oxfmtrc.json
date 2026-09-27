@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "ignorePatterns": [
+    ".claude/**",
+    "docs/**",
+    "__tests__/fixtures/**",
+    "tools/oxlint/anti-slop/**",
+    "**/*.{json,jsonc,md,mdx,css,html,yml,yaml,toml,webmanifest}"
+  ]
+}
