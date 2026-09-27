@@ -42,5 +42,22 @@ jobs:
         run: bun run format:check
       - name: Check boundaries
         run: bun run boundaries
+      - name: Check package manifests
+        run: bun run deps
+      - name: Check unused code and dependencies
+        run: bun run knip
       - name: Test
         run: bun run test
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

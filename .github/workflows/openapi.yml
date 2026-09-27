@@ -1,0 +1,31 @@
+name: openapi
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "packages/contract/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  breaking-changes:
+    # Stays skipped until apps/api exports its OpenAPI document to apps/api/openapi.json.
+    if: ${{ hashFiles('apps/api/openapi.json') != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Read the base document
+        run: git show "origin/${{ github.base_ref }}:apps/api/openapi.json" > base-openapi.json
+      - name: Fail on breaking changes
+        uses: oasdiff/oasdiff-action/breaking@main
+        with:
+          base: base-openapi.json
+          revision: apps/api/openapi.json
+          fail-on: ERR
