@@ -2,7 +2,6 @@
     "name": "remco-analytics",
     "version": "0.0.1",
     "devDependencies": {
-        "@remcostoeten/create-analytics": "workspace:*",
         "@typescript/native-preview": "^7.0.0-dev.20260707.2",
         "bun-types": "^1.3.9",
         "oxfmt": "catalog:oxfmt",
@@ -33,8 +32,6 @@
     },
     "private": true,
     "scripts": {
-        "prebuild": "bun run scripts/pipeline.ts --no-build",
-        "pipeline": "bun run scripts/pipeline.ts",
         "build": "bun run --filter '*' build",
         "test": "bun run --filter '*' test",
         "typecheck": "bun run --filter '*' typecheck",
@@ -43,8 +40,7 @@
         "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
         "dev": "bun run --cwd apps/dashboard dev",
         "dev:ingestion": "bun run --cwd apps/ingestion dev",
-        "demo:db": "bun run scripts/demo-db/setup.ts",
-        "deploy": "bun run deploy.ts"
+        "demo:db": "bun run scripts/demo-db/setup.ts"
     },
     "workspaces": [
         "apps/*",

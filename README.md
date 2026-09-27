@@ -10,23 +10,13 @@
 [![Self-hosted](https://img.shields.io/badge/Self--hosted-Neon_Postgres-blue.svg)](#deployment-model)
 [![Live Demo](https://img.shields.io/badge/Demo-Live-success.svg)](https://remcostoeten-analytics-demo.vercel.app)
 
-[Live Demo](https://remcostoeten-analytics-demo.vercel.app) · [NPM Package](https://www.npmjs.com/package/@remcostoeten/analytics) · [Roadmap](docs/consumer/roadmap.md)
+[Live Demo](https://remcostoeten-analytics-demo.vercel.app) · [NPM Package](https://www.npmjs.com/package/@remcostoeten/analytics)
 
 ![Dashboard Preview](./dashboard_preview.png)
 
 ---
 
 ## Quick start
-
-### Option A — Scaffold (recommended)
-
-```bash
-npx @remcostoeten/create-analytics@latest my-app --tier separate --yes
-```
-
-Creates `apps/web` (SDK only) + `apps/analytics-api` (ingestion). See generated `README.md`.
-
-### Option B — Manual
 
 1. Create a [Neon](https://neon.tech) Postgres database
 2. Deploy `apps/ingestion` with `DATABASE_URL` + `IP_HASH_SECRET`
@@ -443,8 +433,6 @@ Custom `trackEvent("anything")` calls are stored and queryable in recent events.
 | --- | --- |
 | `packages/sdk` | `@remcostoeten/analytics` npm package |
 | `packages/ingestion` | `@remcostoeten/ingestion` npm package |
-| `packages/create-analytics` | `@remcostoeten/create-analytics` scaffolder CLI (`npx @remcostoeten/create-analytics@latest`) |
-| `packages/analytics-manager` | `@remcostoeten/analytics-manager` npm package — fluent orchestration across analytics providers |
 | `apps/ingestion` | Thin Vercel deploy shell for ingestion |
 | `apps/dashboard` | Next.js analytics UI |
 

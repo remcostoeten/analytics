@@ -27,8 +27,6 @@ Bun workspaces (`apps/*`, `packages/*`), catalogs in the root `package.json`.
 | `packages/ingestion` | `@remcostoeten/ingestion` (npm) | The ingestion service. All pipeline logic, schema, migrations, tests |
 | `apps/ingestion` | `@remcostoeten/ingestion-deploy` (private) | Vercel deploy shell and local dev server. No business logic |
 | `packages/sdk` | `@remcostoeten/analytics` (npm) | Browser, React and server SDK |
-| `packages/analytics-manager` | `@remcostoeten/analytics-manager` (npm) | Typed multi-vendor orchestration (remco, posthog, vercel adapters). Has its own `AGENTS.md` |
-| `packages/create-analytics` | `@remcostoeten/create-analytics` (npm) | Scaffolder CLI (`--tier separate\|colocated\|sdk-only`) |
 | `packages/typescript` | `@remcostoeten/tsconfig` (private) | Shared strict tsconfig base |
 | `apps/*` (others) | private | Consumer apps. Out of scope for this file |
 
@@ -156,20 +154,18 @@ Resolution:
 | `GEOIP_MMDB_PATH`, `GEOIP_ASN_MMDB_PATH` | ingestion | Default `cwd/GeoLite2-{City,ASN}.mmdb`; geo silently disabled if missing |
 | `NEXT_PUBLIC_ANALYTICS_URL`, `VITE_ANALYTICS_URL` | SDK browser | Unless `ingestUrl` passed |
 | `ANALYTICS_URL` | SDK server | Unless `ingestUrl` passed |
-| `SKIP_PIPELINE` | root build | Skips the prebuild pipeline |
 
 ## Deployment
 
 Ingestion: Vercel project `ingestion`, served at `https://ingestion.remcostoeten.nl` behind Cloudflare. `vercel.json` builds `packages/ingestion`, then `apps/ingestion/scripts/build.ts` bundles `dist/vercel.js` into a nodejs20.x function, copies or downloads both MMDB files, and routes everything to it.
 
-npm packages: `bun run deploy` (menu in `deploy.ts`) bumps, builds and publishes the SDK, ingestion and create-analytics. `analytics-manager` publishes via `scripts/manage.ts`.
+npm packages: no release script; bump, build and `npm publish` by hand from `packages/sdk` and `packages/ingestion`.
 
 ## Commands
 
 | Command | Does |
 |---|---|
-| `bun run pipeline` | lint, fmt, typecheck, test, build; stops at first failure |
-| `bun run build` | runs the pipeline first via `prebuild` (fmt writes files) |
+| `bun run build` | builds every workspace |
 | `bun run typecheck` | `tsgo --noEmit` per workspace |
 | `bun run lint` | `oxlint apps packages --deny-warnings` |
 | `bun run fmt` / `fmt:check` | oxfmt over `apps` and `packages` |
