@@ -8,7 +8,7 @@ This tab is the plan. The API reference tab has every route with full examples, 
 
 ## Decisions needed
 
-Six decisions are settled in the thread; the rest are open with a recommended default, and the whole plan assumes those defaults. Changing one mostly affects the sections named in the last column.
+Seven decisions are settled in the thread; the rest are open with a recommended default, and the whole plan assumes those defaults. Changing one mostly affects the sections named in the last column.
 
 | # | Decision | Status | Choice | Affects |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ Six decisions are settled in the thread; the rest are open with a recommended de
 | 8 | Admin sign-in | Open, default | GitHub OAuth in the API through Better Auth with the `dashboard_users` allowlist and an admin-only session cookie. Reads the repo's no-cookies rule as covering tracked visitors only | Access and sign-in |
 | 9 | Event names | Open, default | One `name` field with snake\_case built-ins; ingest maps them onto legacy `type` and `meta.eventName` during the transition | Envelope, Storage |
 | 10 | Contract schema library | Open, default | TypeBox; the SDK imports only its types | Contract, Build |
-| 11 | Indentation | Open, default | Adopt Skriuw's oxfmt defaults and reformat the repo once in the phase 0 lint PR, instead of keeping tabs | Linting and formatting |
+| 11 | Indentation | Settled | Adopt Skriuw's oxfmt defaults and reformat the repo once in the phase 0 lint PR, instead of keeping tabs | Linting and formatting |
 | 12 | Patch 1.x first | Settled | No. 1.x is frozen and gets no more releases; the web vitals and own-traffic fixes ship with 2.0 | Phases |
 | 13 | Branching | Settled | Trunk on master: v1 in `v1/`, v2 at the root, epics squash-merge into master | Branching, Phases |
 | 14 | Who runs this | Settled | Models 1 and 2: you self-host, and others can self-host their own copy. A hosted service stays a note for later | Who runs this |
