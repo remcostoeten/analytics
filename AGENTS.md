@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin) and `packages/shared` (only `noop` so far) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `tools/oxlint/*`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract` and `scripts/` (the boundary check) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `scripts`, `tools/oxlint/*`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -67,13 +67,14 @@ Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` pl
 | `bun run lint:fix` | Oxlint autofixes on the same folders |
 | `bun run lint:v1` | Oxlint correctness rules on `v1/` with `v1/.oxlintrc.json` |
 | `bun run format` / `format:check` | oxfmt on the whole repo, `v1/` included |
-| `bun run check` | typecheck, lint, format check and tests |
-| `bun run test` | `bun test` per workspace |
+| `bun run boundaries` | `scripts/check-boundaries.ts`: which workspace may import which, and nothing from `v1/` |
+| `bun run check` | typecheck, lint, format check, boundaries and tests |
+| `bun run test` | `bun test` per workspace: the v1 workspaces first, then the v2 ones, so v2 tests do not slow the v1 PGlite suite past its timeouts |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, test. Lefthook runs oxfmt and Oxlint on staged files before each commit; `bun install` sets it up.
+CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, boundaries, test. Lefthook runs oxfmt and Oxlint on staged files before each commit; `bun install` sets it up.
 
 Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 
