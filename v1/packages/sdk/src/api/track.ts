@@ -4,22 +4,22 @@ import { isOptedOut, checkDoNotTrack } from "./privacy";
 import { canTrack } from "./consent";
 import { isRuntime, debugLog, collectEnrichment, uuid } from "../utilities";
 import {
-	normalizeIngestUrl,
-	resolveBrowserIngestUrl,
-	validateIngestUrl,
+  normalizeIngestUrl,
+  resolveBrowserIngestUrl,
+  validateIngestUrl,
 } from "../utilities/ingest-url";
 import { enqueueOffline, initOfflineFlush } from "../utilities/offline-queue";
 import {
-	getStoredTraits,
-	persistExperiment,
-	persistIdentity,
-	persistUserProperties,
+  getStoredTraits,
+  persistExperiment,
+  persistIdentity,
+  persistUserProperties,
 } from "../identity/traits";
 import { type AnalyticsOptions, type EventPayload, type EventType, type TrackMeta } from "../types";
 
 function resolveDefaultProjectId(): string {
-	if (isRuntime("server") || typeof window === "undefined") return "unknown";
-	return window.location?.hostname || "unknown";
+  if (isRuntime("server") || typeof window === "undefined") return "unknown";
+  return window.location?.hostname || "unknown";
 }
 
 export { validateIngestUrl } from "../utilities/ingest-url";
@@ -27,161 +27,161 @@ export { validateIngestUrl } from "../utilities/ingest-url";
 export function resetDedupe(): void {}
 
 function buildPayload(
-	type: EventType,
-	meta: TrackMeta | undefined,
-	options: AnalyticsOptions,
+  type: EventType,
+  meta: TrackMeta | undefined,
+  options: AnalyticsOptions,
 ): EventPayload | null {
-	if (isRuntime("server")) return null;
+  if (isRuntime("server")) return null;
 
-	return {
-		type,
-		projectId: options.projectId || resolveDefaultProjectId(),
-		path: options.path ?? window.location.pathname,
-		referrer: options.referrer !== undefined ? options.referrer : document.referrer || null,
-		origin: window.location.origin,
-		host: window.location.host,
-		ua: navigator.userAgent,
-		lang: navigator.language,
-		visitorId: getVisitorId(),
-		sessionId: getSessionId(),
-		eventId: uuid(),
-		ts: new Date().toISOString(),
-		meta: { ...collectEnrichment(), ...getStoredTraits(), ...meta },
-	};
+  return {
+    type,
+    projectId: options.projectId || resolveDefaultProjectId(),
+    path: options.path ?? window.location.pathname,
+    referrer: options.referrer !== undefined ? options.referrer : document.referrer || null,
+    origin: window.location.origin,
+    host: window.location.host,
+    ua: navigator.userAgent,
+    lang: navigator.language,
+    visitorId: getVisitorId(),
+    sessionId: getSessionId(),
+    eventId: uuid(),
+    ts: new Date().toISOString(),
+    meta: { ...collectEnrichment(), ...getStoredTraits(), ...meta },
+  };
 }
 
 function sendWithBeacon(url: string, payload: EventPayload): boolean {
-	if (typeof navigator === "undefined" || !navigator.sendBeacon) return false;
-	try {
-		const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-		return navigator.sendBeacon(url, blob);
-	} catch {
-		return false;
-	}
+  if (typeof navigator === "undefined" || !navigator.sendBeacon) return false;
+  try {
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    return navigator.sendBeacon(url, blob);
+  } catch {
+    return false;
+  }
 }
 
 function sendWithFetch(baseUrl: string, url: string, payload: EventPayload): void {
-	if (typeof fetch === "undefined") return;
-	fetch(url, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(payload),
-		keepalive: true,
-	}).catch(() => {
-		enqueueOffline(baseUrl, payload);
-	});
+  if (typeof fetch === "undefined") return;
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {
+    enqueueOffline(baseUrl, payload);
+  });
 }
 
 export function track(type: EventType, meta?: TrackMeta, options: AnalyticsOptions = {}): void {
-	if (isOptedOut()) {
-		debugLog(options.debug, "User opted out");
-		return;
-	}
+  if (isOptedOut()) {
+    debugLog(options.debug, "User opted out");
+    return;
+  }
 
-	if (checkDoNotTrack()) {
-		debugLog(options.debug, "DNT enabled");
-		return;
-	}
+  if (checkDoNotTrack()) {
+    debugLog(options.debug, "DNT enabled");
+    return;
+  }
 
-	if (!canTrack()) {
-		debugLog(options.debug, "Consent not granted");
-		return;
-	}
+  if (!canTrack()) {
+    debugLog(options.debug, "Consent not granted");
+    return;
+  }
 
-	const payload = buildPayload(type, meta, options);
-	if (!payload) return;
+  const payload = buildPayload(type, meta, options);
+  if (!payload) return;
 
-	let ingestUrl = options.ingestUrl ? normalizeIngestUrl(options.ingestUrl) : undefined;
-	if (ingestUrl && !validateIngestUrl(ingestUrl)) {
-		debugLog(options.debug, `Invalid ingestUrl: "${ingestUrl}". Using default.`);
-		ingestUrl = undefined;
-	}
+  let ingestUrl = options.ingestUrl ? normalizeIngestUrl(options.ingestUrl) : undefined;
+  if (ingestUrl && !validateIngestUrl(ingestUrl)) {
+    debugLog(options.debug, `Invalid ingestUrl: "${ingestUrl}". Using default.`);
+    ingestUrl = undefined;
+  }
 
-	const baseUrl = ingestUrl || resolveBrowserIngestUrl();
-	if (!baseUrl) {
-		debugLog(options.debug, "No ingest URL configured, event dropped.");
-		return;
-	}
+  const baseUrl = ingestUrl || resolveBrowserIngestUrl();
+  if (!baseUrl) {
+    debugLog(options.debug, "No ingest URL configured, event dropped.");
+    return;
+  }
 
-	const endpoint = `${baseUrl}/e`;
-	extendSession();
-	initOfflineFlush();
+  const endpoint = `${baseUrl}/e`;
+  extendSession();
+  initOfflineFlush();
 
-	if (typeof navigator !== "undefined" && navigator.onLine === false) {
-		enqueueOffline(baseUrl, payload);
-		debugLog(options.debug, "Offline — event queued", payload);
-		return;
-	}
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    enqueueOffline(baseUrl, payload);
+    debugLog(options.debug, "Offline — event queued", payload);
+    return;
+  }
 
-	if (!sendWithBeacon(endpoint, payload)) {
-		sendWithFetch(baseUrl, endpoint, payload);
-	}
+  if (!sendWithBeacon(endpoint, payload)) {
+    sendWithFetch(baseUrl, endpoint, payload);
+  }
 
-	debugLog(options.debug, "Event tracked", payload);
+  debugLog(options.debug, "Event tracked", payload);
 }
 
 export function trackPageView(meta?: TrackMeta, options?: AnalyticsOptions): void {
-	track("pageview", meta, options);
+  track("pageview", meta, options);
 }
 
 export function trackEvent(eventName: string, meta?: TrackMeta, options?: AnalyticsOptions): void {
-	track("event", { eventName, ...meta }, options);
+  track("event", { eventName, ...meta }, options);
 }
 
 export function trackClick(
-	elementName: string,
-	meta?: TrackMeta,
-	options?: AnalyticsOptions,
+  elementName: string,
+  meta?: TrackMeta,
+  options?: AnalyticsOptions,
 ): void {
-	track("click", { elementName, ...meta }, options);
+  track("click", { elementName, ...meta }, options);
 }
 
 export function trackError(error: Error, meta?: TrackMeta, options?: AnalyticsOptions): void {
-	track("error", { message: error.message, stack: error.stack, ...meta }, options);
+  track("error", { message: error.message, stack: error.stack, ...meta }, options);
 }
 
 export function trackTransaction(
-	revenue: number,
-	currency: string = "USD",
-	orderId?: string,
-	items?: number,
-	options?: AnalyticsOptions,
+  revenue: number,
+  currency: string = "USD",
+  orderId?: string,
+  items?: number,
+  options?: AnalyticsOptions,
 ): void {
-	track("event", { eventName: "transaction", revenue, currency, orderId, items }, options);
+  track("event", { eventName: "transaction", revenue, currency, orderId, items }, options);
 }
 
 export function trackSearch(query: string, resultCount: number, options?: AnalyticsOptions): void {
-	track("event", { eventName: "site_search", query, resultCount }, options);
+  track("event", { eventName: "site_search", query, resultCount }, options);
 }
 
 export function identifyUser(
-	userProperties: Record<string, string | number | boolean>,
-	options?: AnalyticsOptions,
+  userProperties: Record<string, string | number | boolean>,
+  options?: AnalyticsOptions,
 ): void {
-	persistUserProperties(userProperties);
-	track("event", { eventName: "identify", userProperties }, options);
+  persistUserProperties(userProperties);
+  track("event", { eventName: "identify", userProperties }, options);
 }
 
 export function identify(
-	userId: string,
-	userProperties: Record<string, string | number | boolean> = {},
-	options?: AnalyticsOptions,
+  userId: string,
+  userProperties: Record<string, string | number | boolean> = {},
+  options?: AnalyticsOptions,
 ): void {
-	if (!userId.trim()) return;
-	persistIdentity(userId);
-	persistUserProperties(userProperties);
-	track("event", { eventName: "identify", userId, userProperties }, options);
+  if (!userId.trim()) return;
+  persistIdentity(userId);
+  persistUserProperties(userProperties);
+  track("event", { eventName: "identify", userId, userProperties }, options);
 }
 
 export function setExperiment(
-	experimentId: string,
-	variantId: string,
-	options?: AnalyticsOptions,
+  experimentId: string,
+  variantId: string,
+  options?: AnalyticsOptions,
 ): void {
-	persistExperiment(experimentId, variantId);
-	track(
-		"event",
-		{ eventName: "experiment_exposure", experiments: { [experimentId]: variantId } },
-		options,
-	);
+  persistExperiment(experimentId, variantId);
+  track(
+    "event",
+    { eventName: "experiment_exposure", experiments: { [experimentId]: variantId } },
+    options,
+  );
 }

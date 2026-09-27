@@ -1,0 +1,13 @@
+{
+	"name": "@remcostoeten/oxlint-house",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	}
+}

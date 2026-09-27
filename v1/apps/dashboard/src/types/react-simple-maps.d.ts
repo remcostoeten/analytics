@@ -1,72 +1,72 @@
 declare module "react-simple-maps" {
-	import { ComponentType, ReactNode, CSSProperties } from "react";
+  import { ComponentType, ReactNode, CSSProperties } from "react";
 
-	interface ProjectionConfig {
-		rotate?: [number, number, number];
-		center?: [number, number];
-		scale?: number;
-	}
+  interface ProjectionConfig {
+    rotate?: [number, number, number];
+    center?: [number, number];
+    scale?: number;
+  }
 
-	interface ComposableMapProps {
-		projectionConfig?: ProjectionConfig;
-		width?: number;
-		height?: number;
-		style?: CSSProperties;
-		children?: ReactNode;
-	}
+  interface ComposableMapProps {
+    projectionConfig?: ProjectionConfig;
+    width?: number;
+    height?: number;
+    style?: CSSProperties;
+    children?: ReactNode;
+  }
 
-	interface GeographiesProps {
-		geography: string | object;
-		children: (props: { geographies: Geography[] }) => ReactNode;
-	}
+  interface GeographiesProps {
+    geography: string | object;
+    children: (props: { geographies: Geography[] }) => ReactNode;
+  }
 
-	interface Geography {
-		id: string | number;
-		rsmKey: string;
-		properties: {
-			name?: string;
-			[key: string]: unknown;
-		};
-	}
+  interface Geography {
+    id: string | number;
+    rsmKey: string;
+    properties: {
+      name?: string;
+      [key: string]: unknown;
+    };
+  }
 
-	interface GeographyProps {
-		geography: Geography;
-		key?: string;
-		fill?: string;
-		stroke?: string;
-		strokeWidth?: number;
-		tabIndex?: number;
-		style?: {
-			default?: CSSProperties;
-			hover?: CSSProperties;
-			pressed?: CSSProperties;
-		};
-		onMouseEnter?: (event: React.MouseEvent) => void;
-		onMouseMove?: (event: React.MouseEvent) => void;
-		onMouseLeave?: () => void;
-		onClick?: () => void;
-	}
+  interface GeographyProps {
+    geography: Geography;
+    key?: string;
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
+    tabIndex?: number;
+    style?: {
+      default?: CSSProperties;
+      hover?: CSSProperties;
+      pressed?: CSSProperties;
+    };
+    onMouseEnter?: (event: React.MouseEvent) => void;
+    onMouseMove?: (event: React.MouseEvent) => void;
+    onMouseLeave?: () => void;
+    onClick?: () => void;
+  }
 
-	interface MarkerProps {
-		coordinates: [number, number];
-		children?: ReactNode;
-		onMouseEnter?: (event: React.MouseEvent) => void;
-		onMouseMove?: (event: React.MouseEvent) => void;
-		onMouseLeave?: () => void;
-		onClick?: () => void;
-	}
+  interface MarkerProps {
+    coordinates: [number, number];
+    children?: ReactNode;
+    onMouseEnter?: (event: React.MouseEvent) => void;
+    onMouseMove?: (event: React.MouseEvent) => void;
+    onMouseLeave?: () => void;
+    onClick?: () => void;
+  }
 
-	interface ZoomableGroupProps {
-		center?: [number, number];
-		zoom?: number;
-		minZoom?: number;
-		maxZoom?: number;
-		children?: ReactNode;
-	}
+  interface ZoomableGroupProps {
+    center?: [number, number];
+    zoom?: number;
+    minZoom?: number;
+    maxZoom?: number;
+    children?: ReactNode;
+  }
 
-	export const ComposableMap: ComponentType<ComposableMapProps>;
-	export const Geographies: ComponentType<GeographiesProps>;
-	export const Geography: ComponentType<GeographyProps>;
-	export const Marker: ComponentType<MarkerProps>;
-	export const ZoomableGroup: ComponentType<ZoomableGroupProps>;
+  export const ComposableMap: ComponentType<ComposableMapProps>;
+  export const Geographies: ComponentType<GeographiesProps>;
+  export const Geography: ComponentType<GeographyProps>;
+  export const Marker: ComponentType<MarkerProps>;
+  export const ZoomableGroup: ComponentType<ZoomableGroupProps>;
 }

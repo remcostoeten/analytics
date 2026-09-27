@@ -5,16 +5,16 @@ import { countryFromTimezone } from "./timezone-country.js";
 type ReqLike = Parameters<typeof extractGeoFromRequest>[0];
 
 function mergeGeo(base: GeoData, fallback: GeoData): GeoData {
-	return {
-		country: base.country ?? fallback.country,
-		region: base.region ?? fallback.region,
-		city: base.city ?? fallback.city,
-		latitude: base.latitude ?? fallback.latitude,
-		longitude: base.longitude ?? fallback.longitude,
-		timezone: base.timezone ?? fallback.timezone,
-		postalCode: base.postalCode ?? fallback.postalCode,
-		continent: base.continent ?? fallback.continent,
-	};
+  return {
+    country: base.country ?? fallback.country,
+    region: base.region ?? fallback.region,
+    city: base.city ?? fallback.city,
+    latitude: base.latitude ?? fallback.latitude,
+    longitude: base.longitude ?? fallback.longitude,
+    timezone: base.timezone ?? fallback.timezone,
+    postalCode: base.postalCode ?? fallback.postalCode,
+    continent: base.continent ?? fallback.continent,
+  };
 }
 
 /**
@@ -26,27 +26,27 @@ function mergeGeo(base: GeoData, fallback: GeoData): GeoData {
  * remains the last-resort country-level signal.
  */
 export async function resolveGeo(
-	req: ReqLike,
-	ip: string | null,
-	clientTimezone: string | null,
+  req: ReqLike,
+  ip: string | null,
+  clientTimezone: string | null,
 ): Promise<GeoData> {
-	const headerGeo = extractGeoFromRequest(req);
-	const mmdbGeo = await lookupGeoFromMmdb(ip);
+  const headerGeo = extractGeoFromRequest(req);
+  const mmdbGeo = await lookupGeoFromMmdb(ip);
 
-	let geo = mmdbGeo.city ? mergeGeo(mmdbGeo, headerGeo) : mergeGeo(headerGeo, mmdbGeo);
+  let geo = mmdbGeo.city ? mergeGeo(mmdbGeo, headerGeo) : mergeGeo(headerGeo, mmdbGeo);
 
-	if (!geo.timezone && clientTimezone) geo = { ...geo, timezone: clientTimezone };
+  if (!geo.timezone && clientTimezone) geo = { ...geo, timezone: clientTimezone };
 
-	if (!geo.country) {
-		const tzCountry = countryFromTimezone(clientTimezone);
-		if (tzCountry) geo = { ...geo, country: tzCountry };
-	}
+  if (!geo.country) {
+    const tzCountry = countryFromTimezone(clientTimezone);
+    if (tzCountry) geo = { ...geo, country: tzCountry };
+  }
 
-	return geo;
+  return geo;
 }
 
 export function extractClientTimezone(meta: unknown): string | null {
-	if (!meta || typeof meta !== "object") return null;
-	const timezone = (meta as Record<string, unknown>).timezone;
-	return typeof timezone === "string" && timezone.length > 0 ? timezone : null;
+  if (!meta || typeof meta !== "object") return null;
+  const timezone = (meta as Record<string, unknown>).timezone;
+  return typeof timezone === "string" && timezone.length > 0 ? timezone : null;
 }

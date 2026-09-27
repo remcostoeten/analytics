@@ -7,276 +7,276 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getFlagEmoji } from "@/lib/format";
 
 type DataTableProps<T extends object> = {
-	data: T[];
-	columns: {
-		key: keyof T | string;
-		label: string;
-		width?: string;
-		align?: "left" | "right" | "center";
-		render?: (value: unknown, row: T) => React.ReactNode;
-	}[];
-	title?: string;
-	maxRows?: number;
-	className?: string;
-	onRowClick?: (row: T) => void;
-	isLoading?: boolean;
+  data: T[];
+  columns: {
+    key: keyof T | string;
+    label: string;
+    width?: string;
+    align?: "left" | "right" | "center";
+    render?: (value: unknown, row: T) => React.ReactNode;
+  }[];
+  title?: string;
+  maxRows?: number;
+  className?: string;
+  onRowClick?: (row: T) => void;
+  isLoading?: boolean;
 };
 
 export function DataTable<T extends object>({
-	data,
-	columns,
-	title,
-	maxRows = 8,
-	className,
-	onRowClick,
-	isLoading = false,
+  data,
+  columns,
+  title,
+  maxRows = 8,
+  className,
+  onRowClick,
+  isLoading = false,
 }: DataTableProps<T>) {
-	const displayData = data.slice(0, maxRows);
-	const hasData = data && data.length > 0;
+  const displayData = data.slice(0, maxRows);
+  const hasData = data && data.length > 0;
 
-	return (
-		<div className={cn("rounded-lg border border-border bg-card", className)}>
-			{title && (
-				<div className="px-3 py-2 border-b border-border">
-					<h3 className="text-xs font-medium text-foreground">{title}</h3>
-				</div>
-			)}
-			{!hasData ? (
-				isLoading ? (
-					<div className="divide-y divide-border">
-						{Array.from({ length: 5 }).map((_, i) => (
-							<div key={i} className="px-3 py-2 flex items-center justify-between gap-4">
-								<Skeleton className="h-3 w-40" />
-								<Skeleton className="h-3 w-12" />
-							</div>
-						))}
-					</div>
-				) : (
-					<div className="flex items-center gap-2.5 px-3 py-3">
-						<Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
-						<p className="text-xs text-muted-foreground">No data available</p>
-					</div>
-				)
-			) : (
-				<div className="overflow-x-auto">
-					<table className="w-full table-fixed text-xs">
-						<thead>
-							<tr className="border-b border-border bg-muted/30">
-								{columns.map((col) => (
-									<th
-										key={String(col.key)}
-										className={cn(
-											"px-3 py-1.5 font-medium text-muted-foreground uppercase tracking-wide",
-											col.align === "right"
-												? "text-right"
-												: col.align === "center"
-													? "text-center"
-													: "text-left",
-										)}
-										style={{ width: col.width }}
-									>
-										{col.label}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border">
-							{displayData.map((row, i) => (
-								<tr
-									key={i}
-									className={cn(
-										"border-b border-border/50 hover:bg-muted/30 transition-colors",
-										onRowClick && "cursor-pointer",
-									)}
-									onClick={() => onRowClick?.(row)}
-								>
-									{columns.map((col) => {
-										const value = row[col.key as keyof T];
-										return (
-											<td
-												key={String(col.key)}
-												className={cn(
-													"px-3 py-1.5 text-foreground",
-													col.align === "right"
-														? "text-right tabular-nums font-medium"
-														: col.align === "center"
-															? "text-center"
-															: "text-left",
-												)}
-											>
-												{col.render ? col.render(value, row) : String(value ?? "")}
-											</td>
-										);
-									})}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-		</div>
-	);
+  return (
+    <div className={cn("rounded-lg border border-border bg-card", className)}>
+      {title && (
+        <div className="px-3 py-2 border-b border-border">
+          <h3 className="text-xs font-medium text-foreground">{title}</h3>
+        </div>
+      )}
+      {!hasData ? (
+        isLoading ? (
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-3 py-2 flex items-center justify-between gap-4">
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 px-3 py-3">
+            <Inbox className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground">No data available</p>
+          </div>
+        )
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed text-xs">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                {columns.map((col) => (
+                  <th
+                    key={String(col.key)}
+                    className={cn(
+                      "px-3 py-1.5 font-medium text-muted-foreground uppercase tracking-wide",
+                      col.align === "right"
+                        ? "text-right"
+                        : col.align === "center"
+                          ? "text-center"
+                          : "text-left",
+                    )}
+                    style={{ width: col.width }}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {displayData.map((row, i) => (
+                <tr
+                  key={i}
+                  className={cn(
+                    "border-b border-border/50 hover:bg-muted/30 transition-colors",
+                    onRowClick && "cursor-pointer",
+                  )}
+                  onClick={() => onRowClick?.(row)}
+                >
+                  {columns.map((col) => {
+                    const value = row[col.key as keyof T];
+                    return (
+                      <td
+                        key={String(col.key)}
+                        className={cn(
+                          "px-3 py-1.5 text-foreground",
+                          col.align === "right"
+                            ? "text-right tabular-nums font-medium"
+                            : col.align === "center"
+                              ? "text-center"
+                              : "text-left",
+                        )}
+                      >
+                        {col.render ? col.render(value, row) : String(value ?? "")}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 type TopPagesTableProps = {
-	data: ContentMetric[];
-	className?: string;
-	isLoading?: boolean;
+  data: ContentMetric[];
+  className?: string;
+  isLoading?: boolean;
 };
 
 export function TopPagesTable({ data, className, isLoading }: TopPagesTableProps) {
-	return (
-		<DataTable
-			data={data}
-			title="Top Pages"
-			className={className}
-			isLoading={isLoading}
-			columns={[
-				{
-					key: "host",
-					label: "Domain",
-					width: "120px",
-					render: (v) => (
-						<span className="text-[11px] truncate block text-muted-foreground">
-							{(v as string) || "—"}
-						</span>
-					),
-				},
-				{
-					key: "path",
-					label: "Path",
-					render: (_, row) => (
-						<span
-							className="block truncate font-mono text-[11px]"
-							title={(row as ContentMetric).path}
-						>
-							{(row as ContentMetric).path}
-						</span>
-					),
-				},
-				{
-					key: "views",
-					label: "Views",
-					align: "right",
-					width: "76px",
-					render: (v) => Number(v).toLocaleString(),
-				},
-				{
-					key: "uniqueVisitors",
-					label: "Visitors",
-					align: "right",
-					width: "76px",
-					render: (v) => Number(v).toLocaleString(),
-				},
-			]}
-		/>
-	);
+  return (
+    <DataTable
+      data={data}
+      title="Top Pages"
+      className={className}
+      isLoading={isLoading}
+      columns={[
+        {
+          key: "host",
+          label: "Domain",
+          width: "120px",
+          render: (v) => (
+            <span className="text-[11px] truncate block text-muted-foreground">
+              {(v as string) || "—"}
+            </span>
+          ),
+        },
+        {
+          key: "path",
+          label: "Path",
+          render: (_, row) => (
+            <span
+              className="block truncate font-mono text-[11px]"
+              title={(row as ContentMetric).path}
+            >
+              {(row as ContentMetric).path}
+            </span>
+          ),
+        },
+        {
+          key: "views",
+          label: "Views",
+          align: "right",
+          width: "76px",
+          render: (v) => Number(v).toLocaleString(),
+        },
+        {
+          key: "uniqueVisitors",
+          label: "Visitors",
+          align: "right",
+          width: "76px",
+          render: (v) => Number(v).toLocaleString(),
+        },
+      ]}
+    />
+  );
 }
 
 type ReferrersTableProps = {
-	data: ReferrerMetric[];
-	className?: string;
-	onDomainClick?: (domain: string) => void;
-	isLoading?: boolean;
+  data: ReferrerMetric[];
+  className?: string;
+  onDomainClick?: (domain: string) => void;
+  isLoading?: boolean;
 };
 
 export function ReferrersTable({ data, className, onDomainClick, isLoading }: ReferrersTableProps) {
-	return (
-		<DataTable
-			data={data}
-			title="Top Referrers"
-			className={className}
-			isLoading={isLoading}
-			onRowClick={
-				onDomainClick ? (row) => onDomainClick((row as ReferrerMetric).domain) : undefined
-			}
-			columns={[
-				{
-					key: "domain",
-					label: "Source",
-					render: (_, row) => {
-						const domain = (row as ReferrerMetric).domain;
-						return (
-							<div className="flex items-center gap-2">
-								<img
-									src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
-									alt=""
-									className="w-3.5 h-3.5"
-									onError={(e) => {
-										(e.target as HTMLImageElement).style.display = "none";
-									}}
-								/>
-								<span
-									className={cn(
-										"truncate block max-w-[140px]",
-										onDomainClick && "text-primary hover:underline",
-									)}
-								>
-									{domain}
-								</span>
-							</div>
-						);
-					},
-				},
-				{
-					key: "visits",
-					label: "Visits",
-					align: "right",
-					render: (v) => Number(v).toLocaleString(),
-				},
-				{
-					key: "percentage",
-					label: "%",
-					align: "right",
-					width: "50px",
-					render: (v) => `${Number(v).toFixed(1)}%`,
-				},
-			]}
-		/>
-	);
+  return (
+    <DataTable
+      data={data}
+      title="Top Referrers"
+      className={className}
+      isLoading={isLoading}
+      onRowClick={
+        onDomainClick ? (row) => onDomainClick((row as ReferrerMetric).domain) : undefined
+      }
+      columns={[
+        {
+          key: "domain",
+          label: "Source",
+          render: (_, row) => {
+            const domain = (row as ReferrerMetric).domain;
+            return (
+              <div className="flex items-center gap-2">
+                <img
+                  src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
+                  alt=""
+                  className="w-3.5 h-3.5"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <span
+                  className={cn(
+                    "truncate block max-w-[140px]",
+                    onDomainClick && "text-primary hover:underline",
+                  )}
+                >
+                  {domain}
+                </span>
+              </div>
+            );
+          },
+        },
+        {
+          key: "visits",
+          label: "Visits",
+          align: "right",
+          render: (v) => Number(v).toLocaleString(),
+        },
+        {
+          key: "percentage",
+          label: "%",
+          align: "right",
+          width: "50px",
+          render: (v) => `${Number(v).toFixed(1)}%`,
+        },
+      ]}
+    />
+  );
 }
 
 type GeoTableProps = {
-	data: GeoDistribution[];
-	className?: string;
+  data: GeoDistribution[];
+  className?: string;
 };
 
 export function GeoTable({ data, className }: GeoTableProps) {
-	return (
-		<DataTable
-			data={data}
-			title="Geography"
-			className={className}
-			columns={[
-				{
-					key: "country",
-					label: "Country",
-					render: (_, row) => {
-						const geo = row as GeoDistribution;
-						return (
-							<div className="flex items-center gap-1.5">
-								{geo.countryCode && (
-									<span className="text-[11px]">{getFlagEmoji(geo.countryCode)}</span>
-								)}
-								<span className="truncate max-w-[120px]">{geo.country}</span>
-							</div>
-						);
-					},
-				},
-				{
-					key: "count",
-					label: "Visits",
-					align: "right",
-					render: (v) => Number(v).toLocaleString(),
-				},
-				{
-					key: "percentage",
-					label: "%",
-					align: "right",
-					width: "50px",
-					render: (v) => `${Number(v).toFixed(1)}%`,
-				},
-			]}
-		/>
-	);
+  return (
+    <DataTable
+      data={data}
+      title="Geography"
+      className={className}
+      columns={[
+        {
+          key: "country",
+          label: "Country",
+          render: (_, row) => {
+            const geo = row as GeoDistribution;
+            return (
+              <div className="flex items-center gap-1.5">
+                {geo.countryCode && (
+                  <span className="text-[11px]">{getFlagEmoji(geo.countryCode)}</span>
+                )}
+                <span className="truncate max-w-[120px]">{geo.country}</span>
+              </div>
+            );
+          },
+        },
+        {
+          key: "count",
+          label: "Visits",
+          align: "right",
+          render: (v) => Number(v).toLocaleString(),
+        },
+        {
+          key: "percentage",
+          label: "%",
+          align: "right",
+          width: "50px",
+          render: (v) => `${Number(v).toFixed(1)}%`,
+        },
+      ]}
+    />
+  );
 }

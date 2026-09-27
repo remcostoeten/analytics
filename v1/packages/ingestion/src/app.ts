@@ -5,10 +5,10 @@ import { handleIngest } from "./handlers/ingest.js";
 import { handleBatch } from "./handlers/batch.js";
 import { handleMetrics } from "./handlers/metrics.js";
 import {
-	handleAdminCleanup,
-	handleAdminStats,
-	handleAdminRollup,
-	requireAdminAuth,
+  handleAdminCleanup,
+  handleAdminStats,
+  handleAdminRollup,
+  requireAdminAuth,
 } from "./handlers/admin.js";
 import { assertIpHashSecret } from "./utilities/ip-hash.js";
 import { execSync } from "child_process";
@@ -22,40 +22,40 @@ let requestCount = 0;
 const listeners = new Set<(data: string) => void>();
 
 function incrementRequestCount(req: Request) {
-	requestCount++;
+  requestCount++;
 
-	const payload = JSON.stringify({
-		type: "request",
-		count: requestCount,
-		method: req.method,
-		path: new URL(req.url).pathname,
-		timestamp: Date.now(),
-	});
+  const payload = JSON.stringify({
+    type: "request",
+    count: requestCount,
+    method: req.method,
+    path: new URL(req.url).pathname,
+    timestamp: Date.now(),
+  });
 
-	for (const send of listeners) {
-		send(payload);
-	}
+  for (const send of listeners) {
+    send(payload);
+  }
 }
 
 function requestCounter() {
-	return async function (c, next) {
-		incrementRequestCount(c.req.raw);
-		await next();
-	} satisfies MiddlewareHandler;
+  return async function (c, next) {
+    incrementRequestCount(c.req.raw);
+    await next();
+  } satisfies MiddlewareHandler;
 }
 
 function getCorsOrigin(origin: string | undefined): string | undefined {
-	return origin;
+  return origin;
 }
 
 app.use(
-	"*",
-	cors({
-		origin: getCorsOrigin,
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "X-Requested-With", "Authorization"],
-		credentials: true,
-	}),
+  "*",
+  cors({
+    origin: getCorsOrigin,
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "X-Requested-With", "Authorization"],
+    credentials: true,
+  }),
 );
 
 app.use("*", requestCounter());
@@ -65,40 +65,40 @@ type BuildInfo = { commitHash: string; commitMsg: string; commitDate: string };
 let buildInfo: BuildInfo | null = null;
 
 function readGit(command: string, fallback: string): string {
-	try {
-		return execSync(command, { stdio: "pipe" }).toString().trim() || fallback;
-	} catch {
-		return fallback;
-	}
+  try {
+    return execSync(command, { stdio: "pipe" }).toString().trim() || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function getBuildInfo(): BuildInfo {
-	if (buildInfo) return buildInfo;
+  if (buildInfo) return buildInfo;
 
-	const envHash = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
-	const envMsg = process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0];
-	const today = new Date().toISOString().split("T")[0];
+  const envHash = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+  const envMsg = process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0];
+  const today = new Date().toISOString().split("T")[0];
 
-	buildInfo =
-		envHash && envMsg
-			? { commitHash: envHash, commitMsg: envMsg, commitDate: today }
-			: {
-					commitHash: envHash || readGit("git rev-parse --short HEAD", "unknown"),
-					commitMsg:
-						envMsg || readGit("git log -1 --pretty=%B", "development setup").split("\n")[0],
-					commitDate: readGit("git log -1 --format=%cd --date=short", today),
-				};
+  buildInfo =
+    envHash && envMsg
+      ? { commitHash: envHash, commitMsg: envMsg, commitDate: today }
+      : {
+          commitHash: envHash || readGit("git rev-parse --short HEAD", "unknown"),
+          commitMsg:
+            envMsg || readGit("git log -1 --pretty=%B", "development setup").split("\n")[0],
+          commitDate: readGit("git log -1 --format=%cd --date=short", today),
+        };
 
-	return buildInfo;
+  return buildInfo;
 }
 
 app.get("/", (c) => {
-	const { commitHash, commitMsg, commitDate } = getBuildInfo();
-	const repoLink = `https://github.com/remcostoeten/analytics`;
-	const commitLink = `${repoLink}/commit/${commitHash}`;
-	const npmLink = `https://www.npmjs.com/package/@remcostoeten/analytics`;
+  const { commitHash, commitMsg, commitDate } = getBuildInfo();
+  const repoLink = `https://github.com/remcostoeten/analytics`;
+  const commitLink = `${repoLink}/commit/${commitHash}`;
+  const npmLink = `https://www.npmjs.com/package/@remcostoeten/analytics`;
 
-	return c.html(`<!DOCTYPE html>
+  return c.html(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -337,11 +337,11 @@ fetch("https://registry.npmjs.org/@remcostoeten/analytics/latest")
 });
 
 app.get("/health", (c) => {
-	return c.json({
-		ok: true,
-		timestamp: new Date().toISOString(),
-		requests: requestCount,
-	});
+  return c.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    requests: requestCount,
+  });
 });
 
 app.get("/metrics", handleMetrics);
@@ -358,41 +358,41 @@ app.post("/admin/rollup", handleAdminRollup);
 app.get("/admin/rollup", handleAdminRollup);
 
 app.get("/events", (c) => {
-	const authError = requireAdminAuth(c);
-	if (authError) return authError;
+  const authError = requireAdminAuth(c);
+  if (authError) return authError;
 
-	return new Response(
-		new ReadableStream({
-			start(controller) {
-				const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
 
-				function send(data: string) {
-					controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-				}
+        function send(data: string) {
+          controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+        }
 
-				listeners.add(send);
+        listeners.add(send);
 
-				send(
-					JSON.stringify({
-						type: "connected",
-						count: requestCount,
-					}),
-				);
+        send(
+          JSON.stringify({
+            type: "connected",
+            count: requestCount,
+          }),
+        );
 
-				c.req.raw.signal.addEventListener("abort", () => {
-					listeners.delete(send);
-					controller.close();
-				});
-			},
-		}),
-		{
-			headers: {
-				"Content-Type": "text/event-stream",
-				"Cache-Control": "no-cache",
-				Connection: "keep-alive",
-			},
-		},
-	);
+        c.req.raw.signal.addEventListener("abort", () => {
+          listeners.delete(send);
+          controller.close();
+        });
+      },
+    }),
+    {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    },
+  );
 });
 
 export default app;

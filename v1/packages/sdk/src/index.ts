@@ -4,8 +4,8 @@ export { TrackClick } from "./components/track-click";
 export { AnalyticsProvider, useTrack, useAnalyticsOptions } from "./components/provider";
 export * from "./browser";
 export type {
-	AnalyticsErrorBoundaryProps,
-	AnalyticsProps,
-	AnalyticsProviderProps,
-	TrackClickProps,
+  AnalyticsErrorBoundaryProps,
+  AnalyticsProps,
+  AnalyticsProviderProps,
+  TrackClickProps,
 } from "./types/react";

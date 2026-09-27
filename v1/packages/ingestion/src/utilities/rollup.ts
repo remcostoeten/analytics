@@ -5,20 +5,20 @@ type DbModule = typeof import("../db/index.js");
 let cached: DbModule | null = null;
 
 async function getDb(): Promise<DbModule> {
-	if (!cached) {
-		cached = await import("../db/index.js");
-	}
-	return cached;
+  if (!cached) {
+    cached = await import("../db/index.js");
+  }
+  return cached;
 }
 
 export function __setDbModule(mock: DbModule) {
-	cached = mock;
+  cached = mock;
 }
 
 export type RollupResult = {
-	startDay: string;
-	days: number;
-	rowsWritten: number;
+  startDay: string;
+  days: number;
+  rowsWritten: number;
 };
 
 const CLEAN_TRAFFIC = sql`
@@ -36,15 +36,15 @@ const CLEAN_TRAFFIC = sql`
  * so no late event is ever missed.
  */
 export async function rollupDays(days: number): Promise<RollupResult> {
-	const { db } = await getDb();
+  const { db } = await getDb();
 
-	const start = new Date();
-	start.setUTCDate(start.getUTCDate() - (days - 1));
-	const startDay = start.toISOString().slice(0, 10);
+  const start = new Date();
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  const startDay = start.toISOString().slice(0, 10);
 
-	await db.execute(sql`DELETE FROM rollup_daily WHERE day >= ${startDay}::date`);
+  await db.execute(sql`DELETE FROM rollup_daily WHERE day >= ${startDay}::date`);
 
-	const inserted = await db.execute(sql`
+  const inserted = await db.execute(sql`
 		INSERT INTO rollup_daily (project_id, day, dimension, dim_value, pageviews, events, visitors, sessions)
 		SELECT
 			project_id,
@@ -86,8 +86,8 @@ export async function rollupDays(days: number): Promise<RollupResult> {
 		GROUP BY project_id, 2, country
 	`);
 
-	const insertResult = inserted as { rowCount?: number | null; affectedRows?: number | null };
-	const rowsWritten = insertResult.rowCount ?? insertResult.affectedRows ?? 0;
+  const insertResult = inserted as { rowCount?: number | null; affectedRows?: number | null };
+  const rowsWritten = insertResult.rowCount ?? insertResult.affectedRows ?? 0;
 
-	return { startDay, days, rowsWritten };
+  return { startDay, days, rowsWritten };
 }

@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Only `v1/` exists today; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin) and `packages/shared` (only `noop` so far) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `tools/oxlint/*`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -63,14 +63,19 @@ Only `v1/` exists today; the rest arrives epic by epic. Bun workspaces cover `ap
 | `bun install` | Installs every workspace |
 | `bun run build` | Builds every workspace |
 | `bun run typecheck` | `tsgo --noEmit` per workspace |
-| `bun run lint` | Oxlint; covers `v1/` until epic E0.1 adds the v2 folders |
-| `bun run fmt` / `fmt:check` | oxfmt, same scope as lint |
+| `bun run lint` | Oxlint with `.oxlintrc.json` and type-aware rules on `apps`, `packages`, `tools`, `scripts` and `e2e`, then `lint:v1` |
+| `bun run lint:fix` | Oxlint autofixes on the same folders |
+| `bun run lint:v1` | Oxlint correctness rules on `v1/` with `v1/.oxlintrc.json` |
+| `bun run format` / `format:check` | oxfmt on the whole repo, `v1/` included |
+| `bun run check` | typecheck, lint, format check and tests |
 | `bun run test` | `bun test` per workspace |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, test.
+CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, test. Lefthook runs oxfmt and Oxlint on staged files before each commit; `bun install` sets it up.
+
+Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 
 ## Deployment
 

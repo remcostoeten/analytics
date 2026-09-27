@@ -14,71 +14,71 @@ import { type AnalyticsProps } from "../types/react";
 import { debugLog } from "../utilities";
 
 export function Analytics({
-	projectId,
-	ingestUrl,
-	path,
-	referrer,
-	disabled = false,
-	debug = false,
-	trackClicks = false,
-	trackOutbound = false,
-	trackForms = false,
-	trackErrors = false,
-	consentRequired = false,
-	consentGranted = false,
+  projectId,
+  ingestUrl,
+  path,
+  referrer,
+  disabled = false,
+  debug = false,
+  trackClicks = false,
+  trackOutbound = false,
+  trackForms = false,
+  trackErrors = false,
+  consentRequired = false,
+  consentGranted = false,
 }: AnalyticsProps) {
-	const contextOptions = useAnalyticsOptions();
-	const resolved = resolveAnalyticsOptions(contextOptions, {
-		projectId,
-		ingestUrl,
-		debug,
-		path,
-		referrer,
-	});
+  const contextOptions = useAnalyticsOptions();
+  const resolved = resolveAnalyticsOptions(contextOptions, {
+    projectId,
+    ingestUrl,
+    debug,
+    path,
+    referrer,
+  });
 
-	useEffect(() => {
-		setConsentRequired(consentRequired);
-		setConsentGranted(consentGranted);
-	}, [consentRequired, consentGranted]);
+  useEffect(() => {
+    setConsentRequired(consentRequired);
+    setConsentGranted(consentGranted);
+  }, [consentRequired, consentGranted]);
 
-	useEffect(() => {
-		if (disabled) {
-			debugLog(resolved.debug, "Tracking disabled");
-			return;
-		}
+  useEffect(() => {
+    if (disabled) {
+      debugLog(resolved.debug, "Tracking disabled");
+      return;
+    }
 
-		if (consentRequired && !consentGranted) {
-			debugLog(resolved.debug, "Consent required, tracking idle");
-			return;
-		}
+    if (consentRequired && !consentGranted) {
+      debugLog(resolved.debug, "Consent required, tracking idle");
+      return;
+    }
 
-		const cleanups = [
-			observePageViews(resolved),
-			observePerformance(resolved),
-			observeScroll(resolved),
-			observeTimeOnPage(resolved),
-		];
+    const cleanups = [
+      observePageViews(resolved),
+      observePerformance(resolved),
+      observeScroll(resolved),
+      observeTimeOnPage(resolved),
+    ];
 
-		if (trackClicks) cleanups.push(observeClicks(resolved));
-		if (trackOutbound) cleanups.push(observeOutboundLinks(resolved));
-		if (trackForms) cleanups.push(observeForms(resolved));
-		if (trackErrors) cleanups.push(observeErrors(resolved));
+    if (trackClicks) cleanups.push(observeClicks(resolved));
+    if (trackOutbound) cleanups.push(observeOutboundLinks(resolved));
+    if (trackForms) cleanups.push(observeForms(resolved));
+    if (trackErrors) cleanups.push(observeErrors(resolved));
 
-		return () => cleanups.forEach((c) => c());
-	}, [
-		resolved.projectId,
-		resolved.ingestUrl,
-		resolved.debug,
-		resolved.path,
-		resolved.referrer,
-		disabled,
-		trackClicks,
-		trackOutbound,
-		trackForms,
-		trackErrors,
-		consentRequired,
-		consentGranted,
-	]);
+    return () => cleanups.forEach((c) => c());
+  }, [
+    resolved.projectId,
+    resolved.ingestUrl,
+    resolved.debug,
+    resolved.path,
+    resolved.referrer,
+    disabled,
+    trackClicks,
+    trackOutbound,
+    trackForms,
+    trackErrors,
+    consentRequired,
+    consentGranted,
+  ]);
 
-	return null;
+  return null;
 }

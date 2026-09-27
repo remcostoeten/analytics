@@ -9,71 +9,71 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 
 type DashboardResult = {
-	data: DashboardData;
-	databaseReady: boolean;
-	databaseIssue?: "missing_database_url" | "query_failed";
+  data: DashboardData;
+  databaseReady: boolean;
+  databaseIssue?: "missing_database_url" | "query_failed";
 };
 
 async function fetchDashboardData(): Promise<DashboardResult> {
-	if (process.env.DATABASE_URL) {
-		try {
-			const { getDashboardData } = await import("@/lib/queries");
-			const data = await getDashboardData();
+  if (process.env.DATABASE_URL) {
+    try {
+      const { getDashboardData } = await import("@/lib/queries");
+      const data = await getDashboardData();
 
-			return {
-				data,
-				databaseReady: true,
-			};
-		} catch (error) {
-			console.error("[v0] Database query failed, falling back to mock data:", error);
+      return {
+        data,
+        databaseReady: true,
+      };
+    } catch (error) {
+      console.error("[v0] Database query failed, falling back to mock data:", error);
 
-			return {
-				data: mockDashboardData,
-				databaseReady: false,
-				databaseIssue: "query_failed",
-			};
-		}
-	}
+      return {
+        data: mockDashboardData,
+        databaseReady: false,
+        databaseIssue: "query_failed",
+      };
+    }
+  }
 
-	return {
-		data: mockDashboardData,
-		databaseReady: false,
-		databaseIssue: "missing_database_url",
-	};
+  return {
+    data: mockDashboardData,
+    databaseReady: false,
+    databaseIssue: "missing_database_url",
+  };
 }
 
 async function DashboardData() {
-	const { data, databaseReady, databaseIssue } = await fetchDashboardData();
-	const cookieStore = await cookies();
-	const authUser = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+  const { data, databaseReady, databaseIssue } = await fetchDashboardData();
+  const cookieStore = await cookies();
+  const authUser = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 
-	return (
-		<DashboardContent
-			data={data}
-			databaseReady={databaseReady}
-			databaseIssue={databaseIssue}
-			breadcrumbs={[{ label: "Analytics", href: "/" }]}
-			authUser={authUser}
-			authEnabled={isAuthEnabled()}
-		/>
-	);
+  return (
+    <DashboardContent
+      data={data}
+      databaseReady={databaseReady}
+      databaseIssue={databaseIssue}
+      breadcrumbs={[{ label: "Analytics", href: "/" }]}
+      authUser={authUser}
+      authEnabled={isAuthEnabled()}
+    />
+  );
 }
 
 export default function DashboardPage() {
-	return (
-		<SidebarProvider>
-			<Suspense
-				fallback={
-					<div className="w-(--sidebar-width) shrink-0 border-r border-border bg-sidebar" />
-				}
-			>
-				<AppSidebar />
-			</Suspense>
-			<SidebarInset>
-				<Suspense fallback={<DashboardSkeleton />}>
-					<DashboardData />
-				</Suspense>
-			</SidebarInset>
-		</SidebarProvider>
-	);
+  return (
+    <SidebarProvider>
+      <Suspense
+        fallback={
+          <div className="w-(--sidebar-width) shrink-0 border-r border-border bg-sidebar" />
+        }
+      >
+        <AppSidebar />
+      </Suspense>
+      <SidebarInset>
+        <Suspense fallback={<DashboardSkeleton />}>
+          <DashboardData />
+        </Suspense>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
