@@ -11,12 +11,9 @@
 		"db:generate": "bun run --cwd ../../packages/ingestion db:generate",
 		"db:migrate": "bun run --cwd ../../packages/ingestion db:migrate",
 		"db:studio": "drizzle-kit studio --config ../../packages/ingestion/drizzle.config.ts",
-		"db:seed": "bun run ../../packages/ingestion/src/db/seed.ts",
-		"ops": "bun run scripts/ops.ts",
-		"ops:build": "bun build --compile --outfile dist/analytics-ops scripts/ops.ts"
+		"db:seed": "bun run ../../packages/ingestion/src/db/seed.ts"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^0.10.0",
 		"@remcostoeten/ingestion": "workspace:*",
 		"drizzle-orm": "^0.36.0",
 		"hono": "4.6.10",

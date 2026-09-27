@@ -1,27 +1,6 @@
 {
     "name": "remco-analytics",
     "version": "0.0.1",
-    "private": true,
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "scripts": {
-        "prebuild": "bun run scripts/pipeline.ts --no-build",
-        "pipeline": "bun run scripts/pipeline.ts",
-        "build": "bun run --filter '*' build",
-        "test": "bun run --filter '*' test",
-        "typecheck": "bun run --filter '*' typecheck",
-        "lint": "oxlint apps packages --deny-warnings",
-        "fmt": "oxfmt apps packages '!**/dist/**' '!**/.next/**'",
-        "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
-        "dev": "bun run --cwd apps/dashboard dev",
-        "dev:ingestion": "bun run --cwd apps/ingestion dev",
-        "demo:db": "bun run scripts/demo-db/setup.ts",
-        "ops": "bun run --cwd apps/ingestion ops",
-        "ops:build": "bun run --cwd apps/ingestion ops:build",
-        "deploy": "bun run deploy.ts"
-    },
     "devDependencies": {
         "@remcostoeten/create-analytics": "workspace:*",
         "@typescript/native-preview": "^7.0.0-dev.20260707.2",
@@ -51,5 +30,24 @@
         "neon": {
             "@neondatabase/serverless": "^0.10.0"
         }
-    }
+    },
+    "private": true,
+    "scripts": {
+        "prebuild": "bun run scripts/pipeline.ts --no-build",
+        "pipeline": "bun run scripts/pipeline.ts",
+        "build": "bun run --filter '*' build",
+        "test": "bun run --filter '*' test",
+        "typecheck": "bun run --filter '*' typecheck",
+        "lint": "oxlint apps packages --deny-warnings",
+        "fmt": "oxfmt apps packages '!**/dist/**' '!**/.next/**'",
+        "fmt:check": "oxfmt --check apps packages '!**/dist/**' '!**/.next/**'",
+        "dev": "bun run --cwd apps/dashboard dev",
+        "dev:ingestion": "bun run --cwd apps/ingestion dev",
+        "demo:db": "bun run scripts/demo-db/setup.ts",
+        "deploy": "bun run deploy.ts"
+    },
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ]
 }
