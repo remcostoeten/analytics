@@ -1,0 +1,68 @@
+name: jobs
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+    - cron: "17 2 * * *"
+    - cron: "43 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "The job to run now"
+        type: choice
+        options:
+          - alerts
+          - rollup
+          - cleanup
+          - crux
+        default: rollup
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jobs-${{ github.event.schedule || inputs.job }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      API_URL: ${{ vars.API_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SCHEDULE: ${{ github.event.schedule }}
+      CHOSEN: ${{ inputs.job }}
+    steps:
+      - name: Pick the jobs
+        id: pick
+        run: |
+          case "$SCHEDULE" in
+            "*/10 * * * *") jobs="alerts" ;;
+            "17 2 * * *") jobs="rollup cleanup" ;;
+            "43 4 * * 1") jobs="crux" ;;
+            *) jobs="$CHOSEN" ;;
+          esac
+          echo "jobs=$jobs" >> "$GITHUB_OUTPUT"
+      - name: Skip until the API is configured
+        if: env.API_URL == '' || env.CRON_SECRET == ''
+        run: echo "::notice::Set the API_URL variable and the CRON_SECRET secret on the production environment to run the jobs."
+      - name: Run
+        if: env.API_URL != '' && env.CRON_SECRET != ''
+        env:
+          JOBS: ${{ steps.pick.outputs.jobs }}
+        run: |
+          status=0
+          for job in $JOBS; do
+            code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
+              -H "authorization: Bearer $CRON_SECRET" \
+              "$API_URL/v2/admin/jobs/$job")
+            echo "$job answered $code: $(cat response.json)"
+            if [ "$code" = "503" ] && grep -q "is not set" response.json; then
+              echo "::notice::$job is not configured on the API yet"
+            elif [ "$code" != "200" ]; then
+              status=1
+            fi
+          done
+          exit "$status"
