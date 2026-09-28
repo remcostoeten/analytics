@@ -210,7 +210,7 @@ The full method list, config options, usage in every environment, error tracking
 Entries:
 
 - `.` framework-free browser core: client, pre-init queue, batching, the `beacon` transport, identity, consent, and the `pageviews` plugin. Budget 4.5 KB min+gzip: the first build with the full API from the SDK design tab measured 4.35 KB, and Remco raised the budget from 2.5 KB on Sep 28 rather than move methods out of the core.
-- `./plugins` one export per plugin: `speedInsights`, `scrollDepth`, `engagement`, `clicks`, `outboundLinks` (including file downloads), `forms`, `errors`, `notFound`, `ignoreSelf`, `botSignals`, `experiments`. Each under 0.6 KB except `speedInsights`, which lazy-loads `web-vitals` and has a 2.5 KB budget.
+- `./plugins` one export per plugin: `speedInsights`, `scrollDepth`, `engagement`, `clicks`, `outboundLinks` (including file downloads), `forms`, `errors`, `notFound`, `ignoreSelf`, `botSignals`, `experiments`. Each under 0.6 KB except `speedInsights`, which lazy-loads `web-vitals` and has a 2.5 KB budget, and `errors` at 0.7 KB, which carries breadcrumbs and scrubbing.
 - `./react` `AnalyticsProvider client={analytics}`, `useAnalytics()`, `TrackClick`, `ErrorBoundary`, a Next adapter that supplies `route`, and `computeRoute`. Gets `"use client"`.
 - `./server` `createServerAnalytics({ project, secret, endpoint })` with `track`, `identify`, `captureError`, batching, and `flush()`; forwards the visitor's user agent and IP from a passed request and uses `waitUntil` when the runtime has it.
 - `./proxy` `createProxy({ secret })`, a fetch-standard handler for the same-origin path.
@@ -709,7 +709,7 @@ Only the two published packages get a build step; internal packages are imported
 
 - **ESM only for SDK 2.0.** Every current bundler and Node 22+ load ESM, and dropping the CJS copy halves the package. It is a major version anyway.
 - **Task order**: `bun run --filter` already runs workspace scripts in dependency order. Turborepo is only worth adding if CI time becomes a problem, for its caching.
-- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 4.5 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB.
+- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 4.5 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
 - **Releases**: Changesets. Each PR that changes a published package adds a changeset; merging to `master` opens a version PR; merging that publishes to npm from CI with provenance. This replaces today's manual `npm publish`.
 - **Migrations**: `scripts/migrate.ts` applies the numbered SQL files in order and records them in a `schema_migrations` table. It is run by hand against Neon, never on deploy, which keeps the repo rule of applying migrations manually while removing the copy-paste step.
 - **Deploys**: Vercel builds `apps/api` and `apps/dashboard` per PR as previews and on `master` as production. The legacy `apps/ingestion` project stays as it is until phase 5.

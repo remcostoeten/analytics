@@ -50,6 +50,7 @@ export type Status = {
   queued: number;
   consent: ConsentStatus;
   endpoint: string;
+  route: string | null;
   lastError: string | null;
   lastSend: string | null;
 };
@@ -117,4 +118,7 @@ export type Analytics<Events extends EventMap = EventMap> = {
   route: (template: string | null) => void;
 };
 
-export type PluginClient = Analytics & Hooks;
+export type PluginClient = Analytics &
+  Hooks & {
+    record: (path: string, name: string, props: Props) => void;
+  };

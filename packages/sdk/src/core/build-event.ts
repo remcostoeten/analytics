@@ -27,6 +27,8 @@ export type EventInput = {
 
 const maxProps = 25;
 const maxLength = 255;
+const longKeys = new Set(["stack", "breadcrumbs"]);
+const longLength = 2048;
 
 function isPrimitive(value: unknown): value is Props[string] {
   return value === null || ["string", "number", "boolean"].includes(typeof value);
@@ -36,12 +38,13 @@ function isPrimitive(value: unknown): value is Props[string] {
  * @name limitProps
  * @description Keeps event props inside the limits: at most 25, names and keys up to 255
  * characters, flat primitive values, strings cut at 255 characters. Anything outside is left out
- * or shortened, and its key is listed in `problems` so development mode can warn about it.
+ * or shortened, and its key is listed in `problems` so development mode can warn about it. On
+ * error events `stack` and `breadcrumbs` may be up to 2048 characters.
  *
  * @example
  * limitProps({ plan: "pro", nested: { a: 1 } }).problems; // ["nested"]
  */
-export function limitProps(props: { [key: string]: unknown }): Limited {
+export function limitProps(props: { [key: string]: unknown }, error = false): Limited {
   const kept: Props = {};
   const problems: string[] = [];
   for (const [key, value] of Object.entries(props)) {
@@ -50,8 +53,9 @@ export function limitProps(props: { [key: string]: unknown }): Limited {
       problems.push(key.slice(0, 32));
       continue;
     }
-    if (typeof value === "string" && value.length > maxLength) problems.push(key);
-    kept[key] = typeof value === "string" ? value.slice(0, maxLength) : value;
+    const limit = error && longKeys.has(key) ? longLength : maxLength;
+    if (typeof value === "string" && value.length > limit) problems.push(key);
+    kept[key] = typeof value === "string" ? value.slice(0, limit) : value;
   }
   return { props: kept, problems };
 }

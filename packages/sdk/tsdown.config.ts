@@ -1,11 +1,15 @@
 import { defineConfig } from "tsdown";
+import type { UserConfig } from "tsdown";
 
-export default defineConfig({
-  entry: ["src/index.ts"],
+const shared: UserConfig = {
   format: "esm",
   dts: true,
   sourcemap: true,
   minify: true,
-  clean: true,
   noExternal: [/^@remcostoeten\/analytics-shared/],
-});
+};
+
+export default defineConfig([
+  { ...shared, entry: { index: "src/index.ts" }, clean: true },
+  { ...shared, entry: { plugins: "src/plugins/index.ts" }, clean: false },
+]);

@@ -121,14 +121,20 @@ export function createAnalytics<Events extends EventMap = EventMap>(
     if (!quiet) queue.add(event);
   }
 
-  function send(name: string, props: { [key: string]: unknown }, tags: Props) {
-    const limited = limitProps({ ...registered, ...tags, ...props });
+  function send(
+    name: string,
+    props: { [key: string]: unknown },
+    tags: Props,
+    path: string | null = null,
+  ) {
+    const limited = limitProps({ ...registered, ...tags, ...props }, name === "error");
     if (mode === "development") {
       if (limited.problems.length > 0) {
         log.warn("RA_PROPS_LIMITED", `${name}: left out or cut ${limited.problems.join(", ")}`);
       }
     }
     const page = pageFacts(route, name === "pageview" && firstPage);
+    if (path) page.path = path;
     if (name === "pageview") firstPage = false;
     const event = buildEvent({
       id: uuidv7(now()),
@@ -241,6 +247,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
         queued: queue.size() + held.length,
         consent: consentStatus(),
         endpoint,
+        route,
         lastError,
         lastSend,
       }),
@@ -273,6 +280,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
     onPage: host.onPage,
     onHidden: host.onHidden,
     onConsent: host.onConsent,
+    record: (path, name, props) => send(name, props, {}, path),
   };
 
   function hidden() {

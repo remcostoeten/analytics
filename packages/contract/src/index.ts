@@ -6,6 +6,7 @@ export * from "./issues";
 export * from "./projects";
 export * from "./query";
 export * from "./schema";
+export * from "./signals";
 export * from "./speed";
 export * from "./stats";
 export * from "./system";
