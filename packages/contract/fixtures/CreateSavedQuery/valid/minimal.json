@@ -1,0 +1,4 @@
+{
+  "name": "Signups",
+  "sql": "select count(*) from events where name = 'signup'"
+}

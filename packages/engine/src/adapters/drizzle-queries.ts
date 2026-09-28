@@ -1,7 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
-import { queryRuns, querySecret } from "../db/schema";
-import type { QueryLog } from "../ports";
+import { queryRuns, querySecret, savedQueries } from "../db/schema";
+import type { QueryLog, SavedQuery, SavedQueryStore } from "../ports";
 import type { Database } from "./drizzle";
 import { attempt } from "./drizzle-rows";
 
@@ -68,4 +68,77 @@ export async function readQuerySecret(db: Database): Promise<string> {
   const [row] = await db.select({ secret: querySecret.secret }).from(querySecret).limit(1);
   if (!row) throw new Error("query_secret is empty; run migration 0024");
   return row.secret;
+}
+
+function toSaved(row: typeof savedQueries.$inferSelect): SavedQuery {
+  return {
+    id: row.id,
+    name: row.name,
+    sql: row.sql,
+    description: row.description,
+    chart: row.chart,
+    createdBy: { kind: row.createdByKind, id: row.createdById },
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/**
+ * @name drizzleSavedQueries
+ * @description The `SavedQueryStore` on the `saved_queries` table, listed by name; new ids are
+ * `sq_` plus a random UUID.
+ *
+ * @example
+ * await drizzleSavedQueries(db).create({ name: "Top routes", sql: "select 1", description: null, chart: null, createdBy });
+ */
+export function drizzleSavedQueries(db: Database): SavedQueryStore {
+  return {
+    list: () =>
+      attempt("Could not list the saved queries", async () => {
+        const rows = await db
+          .select()
+          .from(savedQueries)
+          .orderBy(sql`lower(${savedQueries.name})`, savedQueries.id);
+        return rows.map(toSaved);
+      }),
+    get: (id) =>
+      attempt("Could not read the saved query", async () => {
+        const [row] = await db.select().from(savedQueries).where(eq(savedQueries.id, id));
+        return row ? toSaved(row) : null;
+      }),
+    create: (query) =>
+      attempt("Could not save the query", async () => {
+        const [row] = await db
+          .insert(savedQueries)
+          .values({
+            id: `sq_${crypto.randomUUID()}`,
+            name: query.name,
+            sql: query.sql,
+            description: query.description,
+            chart: query.chart,
+            createdByKind: query.createdBy.kind,
+            createdById: query.createdBy.id,
+          })
+          .returning();
+        if (!row) throw new Error("The saved query was not stored");
+        return toSaved(row);
+      }),
+    update: (id, patch) =>
+      attempt("Could not update the saved query", async () => {
+        const [row] = await db
+          .update(savedQueries)
+          .set({ ...patch, updatedAt: sql`now()` })
+          .where(eq(savedQueries.id, id))
+          .returning();
+        return row ? toSaved(row) : null;
+      }),
+    remove: (id) =>
+      attempt("Could not delete the saved query", async () => {
+        const rows = await db
+          .delete(savedQueries)
+          .where(eq(savedQueries.id, id))
+          .returning({ id: savedQueries.id });
+        return rows.length > 0;
+      }),
+  };
 }

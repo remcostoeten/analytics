@@ -17,6 +17,7 @@ const builtIn: { [Name in BuiltInMetric]: SQL } = {
   pages_per_session: sql`CASE WHEN ea.sessions > 0 THEN ea.pageviews::numeric / ea.sessions ELSE 0 END`,
   time_on_page: sql`COALESCE(pm.stay, 0)`,
   scroll_depth: sql`COALESCE(ea.scroll, 0)`,
+  conversion_rate: sql`CASE WHEN ea.sessions > 0 THEN ea.converted::numeric / ea.sessions ELSE 0 END`,
 };
 
 function customColumn(index: number) {
@@ -42,7 +43,7 @@ function customAggregates(metrics: Metric[]): SQL[] {
  * @description Metrics per group `k` over a `scoped` CTE: visitors, sessions, pageviews and events
  * from the events; bounce rate and session duration from each session's events across the
  * whole scope, so a page's bounce rate counts the sessions that viewed it; time on page from the gap to the session's next pageview; sums and averages of numeric
- * props; scroll depth as the average `scroll_depth` event, as a share of the page. Each metric comes back as column `m0`, `m1`... in the order given, with `visitors` always
+ * props; scroll depth as the average `scroll_depth` event, as a share of the page; conversion rate as the share of sessions the `scoped` CTE marks `converted`. Each metric comes back as column `m0`, `m1`... in the order given, with `visitors` always
  * included for shares.
  *
  * @example
@@ -59,7 +60,8 @@ export function aggregateQuery(metrics: Metric[]): SQL {
         count(*) FILTER (WHERE type = 'pageview') AS pageviews,
         count(*) FILTER (WHERE type <> 'pageview') AS events,
         avg(CASE WHEN COALESCE(name, meta->>'eventName') = 'scroll_depth' AND jsonb_typeof(meta->'depth') = 'number'
-          THEN LEAST((meta->>'depth')::numeric / 100, 1) END) AS scroll
+          THEN LEAST((meta->>'depth')::numeric / 100, 1) END) AS scroll,
+        count(DISTINCT session_id) FILTER (WHERE converted) AS converted
         ${custom.length > 0 ? sql`, ${sql.join(custom, sql`, `)}` : sql``}
       FROM scoped GROUP BY k
     ),

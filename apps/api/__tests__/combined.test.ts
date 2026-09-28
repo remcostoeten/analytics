@@ -78,6 +78,7 @@ const api = createApp({
   query: {
     runner: stores.queries,
     log: stores.queryLog,
+    saved: stores.savedQueries,
     limiter: pgliteAdapters(database, clock).limiter,
     perMinute: 30,
   },

@@ -27,6 +27,7 @@ const builtIns: { [name: string]: BuiltInMetric } = {
   pages_per_session: "pages_per_session",
   time_on_page: "time_on_page",
   scroll_depth: "scroll_depth",
+  conversion_rate: "conversion_rate",
 };
 // A filter parameter such as filter[country] or filter[prop:plan].
 const filterParameter = /^filter\[([^\]]+)\]$/;

@@ -102,6 +102,7 @@ export default createApp({
   query: {
     runner: stores.queries,
     log: stores.queryLog,
+    saved: stores.savedQueries,
     limiter: adapters.limiter,
     perMinute: Number(process.env.QUERY_LIMIT ?? 30),
   },

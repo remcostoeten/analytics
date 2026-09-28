@@ -55,7 +55,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 
 Dimensions for `breakdown` and `filter`: `host`, `page`, `route`, `entry_page`, `exit_page`, `referrer`, `referrer_domain`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `country`, `region`, `city`, `continent`, `timezone`, `device`, `browser`, `browser_version`, `os`, `os_version`, `screen`, `viewport`, `language`, `connection`, `visitor_type` (new or returning), `event`, `bot_reason`, `release`, plus `prop:<key>` for any event prop and `trait:<key>` for any visitor trait.
 
-Metrics, for `timeseries` and the `metrics=` list on `breakdown` (default `visitors,pageviews`): `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `time_on_page`, `scroll_depth`, `pages_per_session`, `conversion_rate` (share of sessions with the filtered event), plus `sum:prop.<key>` and `avg:prop.<key>` for numeric props such as revenue. `timeseries` also takes `compare=previous` to return the previous period alongside.
+Metrics, for `timeseries` and the `metrics=` list on `breakdown` (default `visitors,pageviews`): `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `time_on_page`, `scroll_depth`, `pages_per_session`, `conversion_rate` (share of sessions with the event in `filter[event]`; with this metric that filter defines the conversion instead of narrowing the rows, and a request without it answers `400`), plus `sum:prop.<key>` and `avg:prop.<key>` for numeric props such as revenue. `timeseries` also takes `compare=previous` to return the previous period alongside.
 
 Every list or breakdown route also answers `Accept: text/csv` with the same rows as CSV.
 
@@ -383,8 +383,8 @@ The SQL console, complete:
 | POST | `/v2/query` | The same, across every project you may run SQL on, with `project_id` as a column |
 | GET | `/v2/query/schema` | Every queryable view with its columns, types and a one-line description, for autocomplete and a schema sidebar |
 | POST | `/v2/query/explain` | Postgres' cost estimate for a query, so the console can warn before running something heavy |
-| GET, POST | `/v2/queries` | Saved queries: name, SQL, description, and optionally a chart type so a query can become a dashboard panel |
-| GET, PATCH, DELETE | `/v2/queries/:query` | One saved query |
+| GET, POST | `/v2/queries` | Saved queries: name, SQL, description, and optionally a chart type (`table`, `line` or `bar`) so a query can become a dashboard panel. Shared by everyone who may run SQL; the SQL passes the same checks as a run when saved |
+| GET, PATCH, DELETE | `/v2/queries/:query` | One saved query; only its creator or the owner may change or delete it |
 | GET | `/v2/queries/history` | Your last 100 runs with duration, row count and whether they were blocked; the owner sees everyone's |
 
 - **Parameters, not string building**: a query can use `:from`, `:to` and `:project`, sent in `params` from the dashboard's date range and project switcher and passed to Postgres as bound parameters.

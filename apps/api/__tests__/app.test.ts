@@ -89,6 +89,7 @@ function app(limit = 1000) {
     query: {
       runner: pgliteAccess(database).queries,
       log: pgliteAccess(database).queryLog,
+      saved: pgliteAccess(database).savedQueries,
       limiter: pgliteAdapters(database, clock).limiter,
       perMinute: 30,
     },
@@ -372,7 +373,9 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/visitors",
       "/v2/projects/{project}/visitors/{visitor}",
       "/v2/projects/{project}/visitors/{visitor}/visits",
+      "/v2/queries",
       "/v2/queries/history",
+      "/v2/queries/{query}",
       "/v2/query",
       "/v2/query/explain",
       "/v2/query/schema",

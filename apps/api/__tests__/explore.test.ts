@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
 import {
+  BreakdownResponse,
   HeatmapResponse,
   LiveEvents,
   MapResponse,
@@ -90,6 +91,7 @@ const api = createApp({
   query: {
     runner: stores.queries,
     log: stores.queryLog,
+    saved: stores.savedQueries,
     limiter: pgliteAdapters(database, clock).limiter,
     perMinute: 30,
   },
@@ -187,6 +189,32 @@ beforeAll(async () => {
     },
   ];
   for (const event of history) await seed(event);
+  await database.query(
+    `INSERT INTO events (project_id, type, name, ts, received_at, path, host, visitor_id, session_id, fingerprint, meta)
+     VALUES ('site', 'custom', 'signup', '2026-09-15T10:00:30Z', '2026-09-15T10:00:30Z', '/', 'site.test', 'v1', 's3', 'signup1', '{}')`,
+  );
+});
+
+describe("conversion_rate", () => {
+  test("the share of each page's sessions that had the filtered event", async () => {
+    const pages = await body(
+      `/v2/projects/site/breakdown/page?${month}&metrics=sessions,conversion_rate&filter[event]=signup`,
+      BreakdownResponse,
+    );
+    expect(pages.data).toEqual([
+      { value: "/", sessions: 4, conversionRate: 0.25, share: 1 },
+      { value: "/pricing", sessions: 2, conversionRate: 0, share: 0.667 },
+      { value: "/blog", sessions: 1, conversionRate: 0, share: 0.333 },
+      { value: "/signup", sessions: 1, conversionRate: 0, share: 0.333 },
+    ]);
+  });
+
+  test("needs filter[event]", async () => {
+    const response = await call(
+      `/v2/projects/site/breakdown/page?${month}&metrics=conversion_rate`,
+    );
+    expect(response.status).toBe(400);
+  });
 });
 
 describe("paths", () => {

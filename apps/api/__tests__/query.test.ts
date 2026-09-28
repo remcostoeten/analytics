@@ -6,6 +6,8 @@ import {
   QueryPlan,
   QueryResult,
   QuerySchema,
+  SavedQueryList,
+  SavedQueryResponse,
 } from "@remcostoeten/analytics-contract";
 import {
   createEngine,
@@ -77,6 +79,7 @@ const api = createApp({
   query: {
     runner: stores.queries,
     log: stores.queryLog,
+    saved: stores.savedQueries,
     limiter: pgliteAdapters(database, clock).limiter,
     perMinute: 10,
   },
@@ -97,6 +100,16 @@ function post(path: string, body: Json, headers: Headers = {}) {
       method: "POST",
       headers: { "content-type": "application/json", ...headers },
       body: JSON.stringify(body),
+    }),
+  );
+}
+
+function send(method: string, path: string, body: Json | null, headers: Headers = {}) {
+  return api.handle(
+    new Request(`http://localhost${path}`, {
+      method,
+      headers: { "content-type": "application/json", ...headers },
+      ...(body ? { body: JSON.stringify(body) } : {}),
     }),
   );
 }
@@ -340,5 +353,51 @@ describe("GET /v2/queries/history", () => {
       "tok_burst",
       "tok_sql",
     ]);
+  });
+});
+
+describe("saved queries", () => {
+  test("shared by everyone who may run SQL, changed only by their creator or the owner", async () => {
+    expect((await get("/v2/queries")).status).toBe(401);
+    expect((await get("/v2/queries", as("viewer"))).status).toBe(403);
+    const created = await send(
+      "POST",
+      "/v2/queries",
+      { name: "Views per path", sql: "select path, count(*) from events group by 1", chart: "bar" },
+      as("analyst"),
+    );
+    expect(created.status).toBe(201);
+    expect(Value.Check(SavedQueryResponse, await created.json())).toBe(true);
+    const list = await valid(await get("/v2/queries", bearer("sql")), SavedQueryList);
+    const [first] = list.data as Json[];
+    expect(first).toMatchObject({
+      name: "Views per path",
+      chart: "bar",
+      description: null,
+      createdBy: { kind: "user", id: "analyst" },
+    });
+    const id = String(first?.id);
+    const one = await valid(await get(`/v2/queries/${id}`, as("owner")), SavedQueryResponse);
+    expect((one.data as Json).id).toBe(id);
+    expect((await send("PATCH", `/v2/queries/${id}`, { name: "x" }, bearer("sql"))).status).toBe(
+      403,
+    );
+    const renamed = await valid(
+      await send("PATCH", `/v2/queries/${id}`, { name: "Views by path" }, as("analyst")),
+      SavedQueryResponse,
+    );
+    expect((renamed.data as Json).name).toBe("Views by path");
+    expect((await send("DELETE", `/v2/queries/${id}`, null, as("owner"))).status).toBe(204);
+    expect((await get(`/v2/queries/${id}`, as("owner"))).status).toBe(404);
+  });
+
+  test("the SQL passes the same checks as a run", async () => {
+    const response = await send(
+      "POST",
+      "/v2/queries",
+      { name: "Bad", sql: "drop table events" },
+      as("analyst"),
+    );
+    expect(response.status).toBe(400);
   });
 });

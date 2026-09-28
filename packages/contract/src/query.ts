@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { Count, Id, listOf, Milliseconds, nullable, oneOf, Timestamp } from "./schema";
+import { Count, dataOf, Id, listOf, Milliseconds, nullable, oneOf, Timestamp } from "./schema";
 
 export const QueryParams = Type.Object({
   from: Type.Optional(Timestamp),
@@ -71,3 +71,39 @@ export type QueryRun = Static<typeof QueryRun>;
 
 export const QueryHistory = listOf(QueryRun);
 export type QueryHistory = Static<typeof QueryHistory>;
+
+export const ChartType = oneOf(["table", "line", "bar"]);
+export type ChartType = Static<typeof ChartType>;
+
+const SavedQueryFields = {
+  name: Type.String({ minLength: 1, maxLength: 100 }),
+  sql: Type.String({ minLength: 1, maxLength: 20000 }),
+  description: nullable(Type.String({ maxLength: 500 })),
+  chart: nullable(ChartType),
+};
+
+export const SavedQuery = Type.Object({
+  id: Id,
+  ...SavedQueryFields,
+  createdBy: Type.Object({ kind: oneOf(["user", "token"]), id: Id }),
+  createdAt: Timestamp,
+  updatedAt: Timestamp,
+});
+export type SavedQuery = Static<typeof SavedQuery>;
+
+export const SavedQueryList = listOf(SavedQuery);
+export type SavedQueryList = Static<typeof SavedQueryList>;
+
+export const SavedQueryResponse = dataOf(SavedQuery);
+export type SavedQueryResponse = Static<typeof SavedQueryResponse>;
+
+export const CreateSavedQuery = Type.Object({
+  name: SavedQueryFields.name,
+  sql: SavedQueryFields.sql,
+  description: Type.Optional(SavedQueryFields.description),
+  chart: Type.Optional(SavedQueryFields.chart),
+});
+export type CreateSavedQuery = Static<typeof CreateSavedQuery>;
+
+export const UpdateSavedQuery = Type.Partial(CreateSavedQuery, { minProperties: 1 });
+export type UpdateSavedQuery = Static<typeof UpdateSavedQuery>;
