@@ -24,10 +24,13 @@
       "dependencies": {
         "@elysiajs/openapi": "1.4.16",
         "@remcostoeten/analytics-contract": "workspace:*",
+        "@remcostoeten/analytics-engine": "workspace:*",
         "@remcostoeten/analytics-shared": "workspace:*",
         "@sinclair/typebox": "catalog:typebox",
         "elysia": "1.4.30",
-        "mmdb-lib": "3.0.3",
+      },
+      "devDependencies": {
+        "@electric-sql/pglite": "0.5.8",
       },
     },
     "packages/contract": {
