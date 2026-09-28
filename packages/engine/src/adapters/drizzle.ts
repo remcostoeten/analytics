@@ -278,6 +278,72 @@ export function unavailable(message: string, error: unknown) {
   return err({ ...engineError("UNAVAILABLE", message), cause: new Error(describe(error)) });
 }
 
+const sampleAfter = 100;
+
+function issueGroups(drafts: EventDraft[]) {
+  const groups = new Map<string, EventDraft[]>();
+  for (const draft of drafts) {
+    const key = `${draft.projectId}\u0000${draft.issue?.fingerprint ?? ""}`;
+    groups.set(key, [...(groups.get(key) ?? []), draft]);
+  }
+  return [...groups.values()].map((group) =>
+    [...group].sort((left, right) => Date.parse(left.ts) - Date.parse(right.ts)),
+  );
+}
+
+async function groupIssue(db: Database, group: EventDraft[]) {
+  const first = group[0];
+  const last = group.at(-1);
+  if (!first?.issue || !last?.issue) return;
+  const releases = group.map((draft) => draft.issue?.release).filter((release) => release);
+  const result: unknown = await db.execute(
+    sql`
+    INSERT INTO issues (project_id, fingerprint, title, culprit, level, count, visitors, first_seen, last_seen,
+      first_release, last_release, minute_start, minute_count)
+    VALUES (${first.projectId}, ${first.issue.fingerprint}, ${last.issue.title}, ${last.issue.culprit},
+      ${last.issue.level}, ${group.length}, 0, ${timestamp(first.ts)}, ${timestamp(last.ts)},
+      ${releases[0] ?? null}, ${releases.at(-1) ?? null}, date_trunc('minute', now()), ${group.length})
+    ON CONFLICT (project_id, fingerprint) DO UPDATE SET
+      count = issues.count + excluded.count,
+      first_seen = LEAST(issues.first_seen, excluded.first_seen),
+      last_seen = GREATEST(issues.last_seen, excluded.last_seen),
+      first_release = COALESCE(issues.first_release, excluded.first_release),
+      last_release = COALESCE(excluded.last_release, issues.last_release),
+      title = excluded.title,
+      culprit = excluded.culprit,
+      status = CASE WHEN issues.status = 'resolved' THEN 'open' ELSE issues.status END,
+      is_regression = issues.is_regression OR issues.status = 'resolved',
+      resolved_at = CASE WHEN issues.status = 'resolved' THEN NULL ELSE issues.resolved_at END,
+      minute_count = CASE WHEN issues.minute_start = excluded.minute_start
+        THEN issues.minute_count + excluded.minute_count ELSE excluded.minute_count END,
+      minute_start = excluded.minute_start,
+      updated_at = now()
+    RETURNING id, minute_count`,
+  );
+  const rows =
+    typeof result === "object" && result !== null && "rows" in result && Array.isArray(result.rows)
+      ? (result.rows as { id: unknown; minute_count: unknown }[])
+      : [];
+  const [row] = rows;
+  if (!row) return;
+  const id = BigInt(String(row.id));
+  const before = Number(row.minute_count) - group.length;
+  const keep = Math.max(0, sampleAfter - before);
+  const kept = group.slice(0, keep).map((draft) => draft.event.id);
+  const dropped = group.slice(keep).map((draft) => draft.event.id);
+  if (kept.length > 0) {
+    await db.update(events).set({ issueId: id }).where(inArray(events.fingerprint, kept));
+  }
+  if (dropped.length > 0) await db.delete(events).where(inArray(events.fingerprint, dropped));
+  await db.execute(
+    sql`UPDATE issues SET visitors = (SELECT count(DISTINCT visitor_id) FROM events WHERE issue_id = ${id}) WHERE id = ${id}`,
+  );
+}
+
+async function groupIssues(db: Database, drafts: EventDraft[]) {
+  for (const group of issueGroups(drafts)) await groupIssue(db, group);
+}
+
 async function upsertVitals(db: Database, drafts: EventDraft[]) {
   const latest = new Map<string, VitalRow>();
   for (const row of drafts.map(vitalRow)) {
@@ -308,6 +374,9 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
  * `type`, `meta` and `device_type` values the v1 dashboard reads. Sessions and visitors are
  * upserted once per session; a visitor marked internal makes that session's new events internal.
  * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
+ * Newly stored `error` events are grouped into `issues` by fingerprint: counts, visitors, releases
+ * and a resolved issue reopening as a regression; past 100 of one issue in a minute, only the
+ * count is kept and the events are dropped.
  *
  * @example
  * const store = drizzleStore(drizzle(new PGlite()));
@@ -322,6 +391,10 @@ export function drizzleStore(db: Database): EventStore {
           .onConflictDoNothing({ target: events.fingerprint })
           .returning({ id: events.fingerprint });
         const inserted = new Set(rows.map((row) => row.id));
+        await groupIssues(
+          db,
+          drafts.filter((draft) => draft.issue && inserted.has(draft.event.id)),
+        );
         await upsertVitals(
           db,
           drafts.filter((draft) => inserted.has(draft.event.id)),

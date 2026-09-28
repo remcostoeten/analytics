@@ -10,6 +10,7 @@ import { combinedModule } from "./modules/combined/route";
 import { detailsModule } from "./modules/details/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
+import { issuesModule } from "./modules/issues/route";
 import { jobsModule } from "./modules/jobs/route";
 import { projectsModule } from "./modules/projects/route";
 import { queryModule } from "./modules/query/route";
@@ -81,6 +82,7 @@ export function createApp(options: AppOptions) {
     .use(tokensModule(options.access, options.docsBase))
     .use(readsModule(options.access, options.reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))
+    .use(issuesModule(options.access, options.reads, options.docsBase))
     .use(detailsModule(options.access, options.reads, options.docsBase))
     .use(combinedModule(options.access, options.reads, options.docsBase))
     .use(queryModule(options.access, options.query, options.docsBase))

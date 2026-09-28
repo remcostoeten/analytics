@@ -21,6 +21,7 @@ import { projectDimension } from "./project";
 import { referrerDimension } from "./referrer";
 import { referrerDomainDimension } from "./referrer-domain";
 import { regionDimension } from "./region";
+import { issueDimension } from "./issue";
 import { releaseDimension } from "./release";
 import { routeDimension } from "./route";
 import { screenDimension } from "./screen";
@@ -69,6 +70,7 @@ export const defaultDimensions: Dimension[] = [
   eventDimension,
   botReasonDimension,
   releaseDimension,
+  issueDimension,
   projectDimension,
 ];
 

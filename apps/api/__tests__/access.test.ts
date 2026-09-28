@@ -82,6 +82,7 @@ const api = createApp({
     details: pgliteAccess(database).details,
     feed: pgliteAccess(database).feed,
     speed: pgliteAccess(database).speed,
+    issues: pgliteAccess(database).issues,
     live: { waitMs: 50, streamMs: 200 },
     limiter: pgliteAdapters(database, clock).limiter,
     hasher: webCryptoHasher(),

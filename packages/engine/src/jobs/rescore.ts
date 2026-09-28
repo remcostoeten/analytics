@@ -73,6 +73,7 @@ function replayDraft(row: StoredRow): EventDraft {
       reasons: row.botReasons as EventDraft["bot"]["reasons"],
     },
     replay: true,
+    issue: null,
   };
 }
 
