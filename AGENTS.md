@@ -73,7 +73,7 @@ Today `v1/`, `apps/api` (health and `POST /v2/events` on the engine), `tools/oxl
 | `bun run knip:v1` | knip report of what v1 no longer uses; never fails |
 | `bun run migrate` | Applies `packages/engine/src/db/migrations` to `DATABASE_URL`; `--dry-run`, and `--baseline 0008_add_rollup_daily` on a database v1 already migrated. Remco runs it against Neon |
 | `bun run rescore` | `scripts/rescore.ts`: reruns bot scoring and the session signals over stored events for `--from` to `--to` (UTC dates); `--dry-run`, and `--include-legacy` for v1 rows. Remco runs it against Neon |
-| `bun run size` | `scripts/size-check.ts`: gzips the built SDK core and each plugin bundled alone, and fails above the budgets (core 4.5 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB); build `packages/sdk` first |
+| `bun run size` | `scripts/size-check.ts`: gzips the built SDK core, `react` and `next` entries and each plugin bundled alone, and fails above the budgets (core 4.5 KB, `react` 1.5 KB, `next` 1 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB); build `packages/sdk` first |
 | `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |

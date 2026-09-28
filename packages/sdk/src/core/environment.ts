@@ -1,6 +1,7 @@
 import type { WireContext } from "@remcostoeten/analytics-contract";
 
 import type { PageFacts } from "./build-event";
+import { readEnv } from "./config";
 import type { Store } from "./storage";
 
 type Connection = { effectiveType?: string };
@@ -32,12 +33,12 @@ export function browserStore(name: "localStorage" | "sessionStorage"): Store | n
  * pageFacts("/blog/[slug]", true);
  */
 export function pageFacts(route: string | null, first: boolean): PageFacts {
-  if (typeof location === "undefined") return { path: "/", route, title: null, referrer: null };
+  const browser = typeof document !== "undefined";
   return {
-    path: location.pathname || "/",
+    path: (browser && location.pathname) || "/",
     route,
-    title: document.title || null,
-    referrer: first ? document.referrer || null : null,
+    title: (browser && document.title) || null,
+    referrer: (browser && first && document.referrer) || null,
   };
 }
 
@@ -95,6 +96,6 @@ export function resolveMode(
   mode: "auto" | "development" | "production",
 ): "development" | "production" {
   if (mode !== "auto") return mode;
-  const env = typeof process === "undefined" ? undefined : process.env.NODE_ENV;
+  const env = readEnv(() => process.env.NODE_ENV);
   return env === "development" || env === "test" ? "development" : "production";
 }

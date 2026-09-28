@@ -63,7 +63,7 @@ Config:
 | `strict` | `false` | `true` rejects event names that are not in `Events` at compile time |
 | `autostart` | `true` in browsers | `false` for tests or when the app decides when tracking may begin |
 
-The server client, `createServerAnalytics<Events>()`, has the same `track`, `identify`, `captureError`, `captureMessage`, `scope`, `flush` and `shutdown`, plus `withErrors(handler)`. The React entry has `AnalyticsProvider`, `useAnalytics()` returning the same typed client, `TrackClick`, `ErrorBoundary`, and a Next `Analytics` component that supplies routes.
+The server client, `createServerAnalytics<Events>()`, has the same `track`, `identify`, `captureError`, `captureMessage`, `scope`, `flush` and `shutdown`, plus `withErrors(handler)`. Every server method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. The React entry has `AnalyticsProvider`, `useAnalytics()` returning the same typed client, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` for router adapters and `computeRoute`; the `./next` entry has the `Analytics` component that supplies routes.
 
 ## Usage
 
@@ -114,7 +114,8 @@ function onAcceptCookies() {
 **React and Next.** `app/layout.tsx`:
 
 ```tsx
-import { AnalyticsProvider, Analytics } from "@remcostoeten/analytics/react";
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { Analytics } from "@remcostoeten/analytics/next";
 import { analytics } from "@/lib/analytics";
 
 export default function RootLayout({ children }: Props) {
@@ -131,7 +132,7 @@ export default function RootLayout({ children }: Props) {
 }
 ```
 
-`<Analytics />` supplies the route template (`/blog/[slug]`) from Next's router, so pageviews are grouped by route. In a component:
+`<Analytics />` supplies the route template (`/blog/[slug]`) from Next's router, so pageviews are grouped by route. It sends the pageviews itself, so the client is created with `pageviews: false`. It lives in its own `./next` entry so that `./react` never imports `next/navigation` in apps without Next. In a component:
 
 ```tsx
 function UpgradeButton() {

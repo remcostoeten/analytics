@@ -9,7 +9,16 @@ const shared: UserConfig = {
   noExternal: [/^@remcostoeten\/analytics-shared/],
 };
 
+const client: UserConfig = { ...shared, banner: { js: '"use client";' } };
+
 export default defineConfig([
   { ...shared, entry: { index: "src/index.ts" }, clean: true },
   { ...shared, entry: { plugins: "src/plugins/index.ts" }, clean: false },
+  {
+    ...client,
+    entry: { react: "src/react/index.ts", next: "src/next/index.tsx" },
+    clean: false,
+  },
+  { ...shared, entry: { server: "src/server/index.ts" }, clean: false },
+  { ...shared, entry: { proxy: "src/proxy/index.ts" }, clean: false },
 ]);

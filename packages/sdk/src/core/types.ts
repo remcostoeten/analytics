@@ -76,8 +76,8 @@ export type ErrorContext = {
 };
 
 export type AnalyticsConfig = {
-  project: string;
-  key: string;
+  project?: string;
+  key?: string;
   endpoint?: string;
   consent?: ConsentMode;
   plugins?: Plugin[];
