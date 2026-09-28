@@ -1,0 +1,15 @@
+{
+  "expectedPath": "/data/remaining",
+  "value": {
+    "data": {
+      "id": "mute_iss_42",
+      "kind": "mute",
+      "field": null,
+      "pattern": null,
+      "issue": "iss_42",
+      "until": null,
+      "remaining": -1,
+      "createdAt": null
+    }
+  }
+}

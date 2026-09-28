@@ -347,6 +347,7 @@ describe("GET /v2/openapi/json", () => {
       await api.handle(new Request("http://localhost/v2/openapi/json"))
     ).json();
     expect(Object.keys(document.paths).sort()).toEqual([
+      "/v2/admin/jobs/alerts",
       "/v2/admin/jobs/rollup",
       "/v2/auth/session",
       "/v2/breakdown/{dimension}",
@@ -361,6 +362,8 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects",
       "/v2/projects/{project}",
       "/v2/projects/{project}/breakdown/{dimension}",
+      "/v2/projects/{project}/error-rules",
+      "/v2/projects/{project}/error-rules/{rule}",
       "/v2/projects/{project}/events",
       "/v2/projects/{project}/heatmap",
       "/v2/projects/{project}/issues",

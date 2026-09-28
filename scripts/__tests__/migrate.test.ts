@@ -81,18 +81,18 @@ describe("scripts/migrate.ts against a Postgres server", () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("Would apply 0009_add_projects");
     expect(result.stdout).toContain(
-      "18 to apply, 9 baselined, 0 already applied (dry run, nothing changed)",
+      "19 to apply, 9 baselined, 0 already applied (dry run, nothing changed)",
     );
     const projects = await database.query("SELECT to_regclass('public.projects') AS projects");
     expect(projects.rows).toEqual([{ projects: null }]);
   });
 
-  test("applies 0009 to 0026 once, then does nothing", async () => {
+  test("applies 0009 to 0027 once, then does nothing", async () => {
     const first = await migrate(["--baseline", "0008_add_rollup_daily"], { DATABASE_URL: url });
     expect(first.stderr).toBe("");
-    expect(first.stdout).toContain("18 to apply, 9 baselined, 0 already applied");
+    expect(first.stdout).toContain("19 to apply, 9 baselined, 0 already applied");
     const second = await migrate([], { DATABASE_URL: url });
-    expect(second.stdout.trim()).toBe("0 to apply, 0 baselined, 27 already applied");
+    expect(second.stdout.trim()).toBe("0 to apply, 0 baselined, 28 already applied");
     const projects = await database.query("SELECT id, domain FROM projects");
     expect(projects.rows).toEqual([{ id: "site", domain: "site.nl" }]);
   }, 60000);

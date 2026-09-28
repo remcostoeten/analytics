@@ -53,7 +53,14 @@ export type {
   VitalDay,
   VitalStat,
 } from "./speed";
-export type { IssueEventRecord, IssueRecord, IssueStatus, IssueStore } from "./issues";
+export type {
+  IgnoreRule,
+  IssueEventRecord,
+  IssueRecord,
+  IssueStatus,
+  IssueStore,
+  PendingAlert,
+} from "./issues";
 export type { FeedCursor, FeedPage, FeedQuery, LiveEvent, RealtimeFeed } from "./feed";
 export type {
   Cell,

@@ -1,0 +1,18 @@
+{
+  "expectedPath": "/data/0/kind",
+  "value": {
+    "data": [
+      {
+        "id": "rule_1",
+        "kind": "drop",
+        "field": "message",
+        "pattern": "x",
+        "issue": null,
+        "until": null,
+        "remaining": null,
+        "createdAt": null
+      }
+    ],
+    "nextCursor": null
+  }
+}

@@ -5,6 +5,7 @@ import { Elysia } from "elysia";
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
+import type { AlertOptions } from "./modules/jobs/alerts";
 import { authModule } from "./modules/auth/route";
 import { combinedModule } from "./modules/combined/route";
 import { detailsModule } from "./modules/details/route";
@@ -20,6 +21,7 @@ import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
+import { internalCapture } from "./plugins/capture";
 import { docs } from "./plugins/docs";
 import { errorHandler } from "./plugins/error-handler";
 import { requestId } from "./plugins/request-id";
@@ -37,6 +39,8 @@ export type AppOptions = {
   reads: ReadsOptions;
   query: QueryOptions;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
+  alerts?: Nullable<AlertOptions>;
+  internalSecret?: Nullable<string>;
 };
 
 async function signedInAdmin(headers: Headers, access: AccessDeps) {
@@ -50,6 +54,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
  * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
  * health, ingest, sign-in, projects, tokens, the reads and the SQL console. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
+ * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
  *
  * @example
  * const app = createApp({ engine, logger, clock: () => new Date(), dashboardOrigin: null, docsBase, geo, access, authHandler: null });
@@ -59,7 +64,20 @@ export function createApp(options: AppOptions) {
   return new Elysia({ prefix: "/v2" })
     .use(requestId())
     .use(cors({ dashboardOrigin: options.dashboardOrigin }))
-    .use(errorHandler({ docsBase: options.docsBase, logger: options.logger }))
+    .use(
+      errorHandler({
+        docsBase: options.docsBase,
+        logger: options.logger,
+        capture: options.internalSecret
+          ? internalCapture({
+              engine: options.engine,
+              logger: options.logger,
+              secretKey: options.internalSecret,
+              clock: options.clock,
+            })
+          : undefined,
+      }),
+    )
     .use(docs(version))
     .use(healthModule({ version, clock: options.clock, geo: options.geo }))
     .use(
@@ -89,7 +107,12 @@ export function createApp(options: AppOptions) {
     .use(
       jobsModule(
         options.access,
-        { speed: options.reads.speed, clock: options.clock },
+        {
+          speed: options.reads.speed,
+          issues: options.reads.issues,
+          alerts: options.alerts ?? null,
+          clock: options.clock,
+        },
         options.docsBase,
       ),
     );

@@ -58,6 +58,8 @@ const settings = {
   rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
 };
 
+const alertUrl = process.env.ALERT_WEBHOOK_URL || null;
+
 function logger(requestId: string) {
   return jsonLogger((line) => console.log(line), { requestId });
 }
@@ -109,4 +111,8 @@ export default createApp({
     perMinute: Number(process.env.QUERY_LIMIT ?? 30),
   },
   authHandler: auth.handler,
+  alerts: alertUrl
+    ? { url: alertUrl, secret: process.env.ALERT_WEBHOOK_SECRET || null, send: fetch }
+    : null,
+  internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
 });

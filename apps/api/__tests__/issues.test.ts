@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import {
   BreakdownResponse,
+  ErrorRuleList,
+  ErrorRuleResponse,
   IssueEventList,
   IssueList,
   IssueResponse,
@@ -279,5 +281,79 @@ describe("issues", () => {
   test("across projects", async () => {
     const all = await body("/v2/issues", IssueList, admin);
     expect(all.data).toHaveLength(1);
+  });
+});
+
+describe("error rules", () => {
+  function send(method: string, path: string, headers: { [name: string]: string }, json?: Json) {
+    return api.handle(
+      new Request(`http://localhost/v2/projects/alpha${path}`, {
+        method,
+        headers: { "content-type": "application/json", ...headers },
+        body: json ? JSON.stringify(json) : undefined,
+      }),
+    );
+  }
+
+  test("need admin access", async () => {
+    expect((await send("GET", "/error-rules", reader)).status).toBe(403);
+    const refused = await send("POST", "/error-rules", reader, {
+      kind: "ignore",
+      field: "message",
+      pattern: "x",
+    });
+    expect(refused.status).toBe(403);
+  });
+
+  test("an ignore pattern drops matching errors before grouping", async () => {
+    const created = await send("POST", "/error-rules", admin, {
+      kind: "ignore",
+      field: "message",
+      pattern: "resizeobserver loop",
+    });
+    expect(created.status).toBe(201);
+    const rule: unknown = await created.json();
+    expect(Value.Check(ErrorRuleResponse, rule)).toBe(true);
+    const ruleId = (rule as { data: { id: string } }).data.id;
+    await ingest([error({ type: "Error", message: "ResizeObserver loop limit exceeded" })]);
+    const listed = await body("/v2/projects/alpha/issues", IssueList, admin);
+    expect(
+      (listed.data as { title: string }[]).some((issue) => issue.title.includes("ResizeObserver")),
+    ).toBe(false);
+    expect((await send("DELETE", `/error-rules/${ruleId}`, admin)).status).toBe(204);
+    expect((await send("DELETE", `/error-rules/${ruleId}`, admin)).status).toBe(404);
+  });
+
+  test("a mute lists as a rule and deleting it reopens the issue", async () => {
+    expect(
+      (await send("POST", "/error-rules", admin, { kind: "mute", issue: issueId })).status,
+    ).toBe(400);
+    const created = await send("POST", "/error-rules", admin, {
+      kind: "mute",
+      issue: issueId,
+      until: "2026-10-27T00:00:00.000Z",
+      count: 10,
+    });
+    expect(created.status).toBe(201);
+    const rules = await body("/v2/projects/alpha/error-rules", ErrorRuleList, admin);
+    expect(rules.data).toEqual([
+      {
+        id: `mute_${issueId}`,
+        kind: "mute",
+        field: null,
+        pattern: null,
+        issue: issueId,
+        until: "2026-10-27T00:00:00.000Z",
+        remaining: 10,
+        createdAt: null,
+      },
+    ]);
+    const muted = await body(`/v2/projects/alpha/issues/${issueId}`, IssueResponse, admin);
+    expect(muted.data).toMatchObject({ status: "ignored" });
+    expect((await send("DELETE", `/error-rules/mute_${issueId}`, admin)).status).toBe(204);
+    const reopened = await body(`/v2/projects/alpha/issues/${issueId}`, IssueResponse, admin);
+    expect(reopened.data).toMatchObject({ status: "open" });
+    const empty = await body("/v2/projects/alpha/error-rules", ErrorRuleList, admin);
+    expect(empty.data).toEqual([]);
   });
 });

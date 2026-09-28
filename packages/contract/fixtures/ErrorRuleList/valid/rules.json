@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": "rule_7f3c2a10-5b1e-4c8d-9a2f-0e6d4b8c1a33",
+      "kind": "ignore",
+      "field": "message",
+      "pattern": "ResizeObserver loop",
+      "issue": null,
+      "until": null,
+      "remaining": null,
+      "createdAt": "2026-09-20T08:12:00.000Z"
+    },
+    {
+      "id": "mute_iss_42",
+      "kind": "mute",
+      "field": null,
+      "pattern": null,
+      "issue": "iss_42",
+      "until": "2026-10-01T00:00:00.000Z",
+      "remaining": 50,
+      "createdAt": null
+    }
+  ],
+  "nextCursor": null
+}
