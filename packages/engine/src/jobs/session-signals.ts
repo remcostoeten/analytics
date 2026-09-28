@@ -45,11 +45,19 @@ function fastSessions(range: Range): SQL {
   )`;
 }
 
+function wholeDays(range: Range): Range {
+  const from = new Date(range.from);
+  from.setUTCHours(0, 0, 0, 0);
+  const to = new Date(range.to.getTime() - 1);
+  to.setUTCHours(24, 0, 0, 0);
+  return { from, to };
+}
+
 function crowdedAddresses(range: Range): SQL {
-  return sql`(${events.projectId}, ${events.ipHash}, (${events.ts} AT TIME ZONE 'UTC')::date) IN (
+  return sql`${inRange(range)} AND (${events.projectId}, ${events.ipHash}, (${events.ts} AT TIME ZONE 'UTC')::date) IN (
     SELECT project_id, ip_hash, (ts AT TIME ZONE 'UTC')::date
     FROM events
-    WHERE ip_hash IS NOT NULL AND ${inRange(range)}
+    WHERE ip_hash IS NOT NULL AND ${inRange(wholeDays(range))}
     GROUP BY 1, 2, 3
     HAVING COUNT(DISTINCT visitor_id) > ${visitorsPerIpDay}
   )`;
@@ -81,7 +89,8 @@ async function apply(db: Database, signal: Signal, target: SQL, dryRun: boolean)
 
 /**
  * @name syncSessionScores
- * @description Raises each session's `bot_score` to the highest score of its events in the range.
+ * @description Sets the `bot_score` of every session with events in the range to the highest score
+ * of its events, so a rescore that lowers events lowers their sessions too.
  *
  * @example
  * await syncSessionScores(db, { from, to });
@@ -90,10 +99,10 @@ export async function syncSessionScores(db: Database, range: Range): Promise<voi
   await db
     .update(sessions)
     .set({
-      botScore: sql`GREATEST(${sessions.botScore}, (
+      botScore: sql`COALESCE((
         SELECT MAX(bot_score) FROM events
         WHERE events.project_id = ${sessions.projectId} AND events.session_id = ${sessions.sessionId}
-      ))`,
+      ), 0)`,
     })
     .where(
       sql`(${sessions.projectId}, ${sessions.sessionId}) IN (
@@ -106,8 +115,9 @@ export async function syncSessionScores(db: Database, range: Range): Promise<voi
  * @name scoreSessions
  * @description The session layer of bot detection, run by the daily job over a time range. It adds
  * `session_velocity` to every event of a session with more than 30 pageviews a minute or
- * near-identical gaps between pageviews, adds `ip_fanout` to events from an IP hash that showed
- * more than 20 visitor ids in a UTC day, and raises the sessions' `bot_score`. A reason is added
+ * near-identical gaps between pageviews, adds `ip_fanout` to events in the range from an IP hash
+ * that showed more than 20 visitor ids over its whole UTC day, and updates the sessions'
+ * `bot_score`. A reason is added
  * once, so rerunning over the same range changes nothing.
  *
  * @example

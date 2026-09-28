@@ -9,7 +9,7 @@ import { webCryptoHasher } from "../src/adapters/system";
 import { runMigrations } from "../src/db/migrate";
 import { migrationsDirectory, readMigrations } from "../src/db/migration-files";
 import { defaultEnrichers } from "../src/enrichers";
-import { rescoreEvents, scoreSessions } from "../src/jobs";
+import { rescoreEvents, scoreSessions, syncSessionScores } from "../src/jobs";
 import { createEngine } from "../src/pipeline";
 import { defaultSignals } from "../src/signals";
 import { uaCrawler } from "../src/signals/ua-crawler";
@@ -197,10 +197,22 @@ describe("session job", () => {
         "2.125.160.216",
       );
     }
+    const lastVisitor = new Date(now.getTime() - 60_000 + 20_000);
+    const partial = { from: lastVisitor, to: range.to };
+    expect(await scoreSessions(db, partial, true)).toEqual({ velocity: 0, fanout: 1 });
     expect(await scoreSessions(db, range, false)).toEqual({ velocity: 0, fanout: 21 });
     const [row] = await session("fanout-0");
     expect(row?.bot_reasons).toEqual(["ip_fanout"]);
     expect(row?.bot_score).toBe(40);
+  });
+
+  test("lowers a session's score when its events score lower", async () => {
+    await database.query("UPDATE sessions SET bot_score = 90 WHERE session_id = 'session-slow'");
+    await syncSessionScores(db, range);
+    const sessions = await database.query<{ bot_score: number }>(
+      "SELECT bot_score FROM sessions WHERE session_id = 'session-slow'",
+    );
+    expect(sessions.rows).toEqual([{ bot_score: 0 }]);
   });
 });
 
