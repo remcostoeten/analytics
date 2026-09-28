@@ -348,7 +348,10 @@ describe("GET /v2/openapi/json", () => {
     ).json();
     expect(Object.keys(document.paths).sort()).toEqual([
       "/v2/admin/jobs/alerts",
+      "/v2/admin/jobs/cleanup",
+      "/v2/admin/jobs/crux",
       "/v2/admin/jobs/rollup",
+      "/v2/admin/metrics",
       "/v2/auth/session",
       "/v2/breakdown/{dimension}",
       "/v2/events",

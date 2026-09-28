@@ -41,7 +41,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET, POST | `/v2/tokens` | admin | List and create API tokens |
 | DELETE | `/v2/tokens/:token` | admin | Revoke a token |
 | GET | `/v2/admin/metrics` | admin | Ingest counters and job history |
-| POST | `/v2/admin/jobs/:job` | cron | Run `rollup` or `cleanup` |
+| POST | `/v2/admin/jobs/:job` | cron | Run `rollup`, `cleanup`, `alerts` or `crux`; each run is recorded in the job history |
 
 ## Shared query parameters
 
@@ -864,13 +864,19 @@ request
     "bots": { "last24h": { "scoredAbove50": 5120, "topReasons": [ { "reason": "ua_crawler", "events": 3011 }, { "reason": "asn_datacenter", "events": 1402 } ] } },
     "jobs": [
       { "job": "rollup", "lastRunAt": "2026-09-27T02:30:04.000Z", "status": "ok", "durationMs": 4120, "rowsWritten": 1880 },
-      { "job": "cleanup", "lastRunAt": "2026-09-27T03:00:02.000Z", "status": "ok", "durationMs": 2210, "rowsDeleted": 30551 }
+      { "job": "cleanup", "lastRunAt": "2026-09-27T03:00:02.000Z", "status": "ok", "durationMs": 2210, "rowsDeleted": 30551 },
+      { "job": "crux", "lastRunAt": "2026-09-27T04:00:01.000Z", "status": "failed", "durationMs": 310, "message": "The Chrome UX Report answered 429" }
+    ],
+    "speedChecks": [
+      { "project": "remcostoeten.nl", "metric": "lcp", "checkedAt": "2026-09-21T04:00:01.000Z", "ours": 2710, "crux": 2100, "gap": 0.29, "flagged": true }
     ]
   }
 }
 ```
 
-These counters come from Postgres, not instance memory, so they are correct across serverless instances.
+These counters come from Postgres, not instance memory, so they are correct across serverless instances. `ingest` counts requests to `/v2/events` per hour; `bots` counts stored events scored 50 or more; `jobs` holds each job's last run; `speedChecks` holds the last Chrome UX Report comparison per project and metric, where `gap` is `|ours - crux| / crux` and a gap over 0.25 is `flagged`. `ours` is null under 20 samples and `crux` is null when Google has no data for the origin.
+
+`POST /v2/admin/jobs/cleanup` deletes events and sessions older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
 `POST /v2/admin/jobs/rollup?days=8` with the cron secret
 

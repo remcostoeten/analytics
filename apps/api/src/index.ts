@@ -115,4 +115,6 @@ export default createApp({
     ? { url: alertUrl, secret: process.env.ALERT_WEBHOOK_SECRET || null, send: fetch }
     : null,
   internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
+  ops: stores.ops,
+  crux: process.env.CRUX_API_KEY ? { key: process.env.CRUX_API_KEY, send: fetch } : null,
 });

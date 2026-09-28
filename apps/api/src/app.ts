@@ -1,11 +1,13 @@
-import type { Engine, Logger } from "@remcostoeten/analytics-engine";
+import type { Engine, Logger, OpsStore } from "@remcostoeten/analytics-engine";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { Elysia } from "elysia";
 
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
+import { adminModule } from "./modules/admin/route";
 import type { AlertOptions } from "./modules/jobs/alerts";
+import type { CruxOptions } from "./modules/jobs/crux";
 import { authModule } from "./modules/auth/route";
 import { combinedModule } from "./modules/combined/route";
 import { detailsModule } from "./modules/details/route";
@@ -39,7 +41,9 @@ export type AppOptions = {
   reads: ReadsOptions;
   query: QueryOptions;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
+  ops?: Nullable<OpsStore>;
   alerts?: Nullable<AlertOptions>;
+  crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
 };
 
@@ -61,6 +65,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
  * const response = await app.handle(new Request("http://localhost/v2/health"));
  */
 export function createApp(options: AppOptions) {
+  const ops = options.ops ?? null;
   return new Elysia({ prefix: "/v2" })
     .use(requestId())
     .use(cors({ dashboardOrigin: options.dashboardOrigin }))
@@ -87,6 +92,7 @@ export function createApp(options: AppOptions) {
         clock: options.clock,
         docsBase: options.docsBase,
         isAdmin: (headers) => signedInAdmin(headers, options.access),
+        count: ops ? (at, count) => ops.countIngest(at, count) : undefined,
       }),
     )
     .use(
@@ -110,10 +116,13 @@ export function createApp(options: AppOptions) {
         {
           speed: options.reads.speed,
           issues: options.reads.issues,
+          ops,
           alerts: options.alerts ?? null,
+          crux: options.crux ?? null,
           clock: options.clock,
         },
         options.docsBase,
       ),
-    );
+    )
+    .use(adminModule(options.access, { ops, clock: options.clock }, options.docsBase));
 }
