@@ -1,0 +1,40 @@
+{
+	"name": "@remcostoeten/analytics-sdk",
+	"version": "2.0.0-next.0",
+	"private": true,
+	"description": "Privacy-first analytics for browsers, servers and React: typed events, batching, consent and plugins.",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@remcostoeten/analytics-contract": "workspace:*"
+	},
+	"devDependencies": {
+		"@happy-dom/global-registrator": "20.14.5",
+		"@remcostoeten/analytics-shared": "workspace:*",
+		"@sinclair/typebox": "catalog:typebox",
+		"tsdown": "catalog:tsdown"
+	}
+}

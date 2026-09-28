@@ -10,7 +10,7 @@ Every route the v2 API will have, who may call it, and what comes back. This is 
 | `project` | Anyone when the project is public; otherwise an admin session or an API token with `read` scope for that project |
 | `detail` | Admin or `read` token; also anyone when the project is public **and** has `publicVisitorData` switched on |
 | `admin` | Admin session or an API token with `admin` scope |
-| `ingest` | `X-Project-Key: pk_...` from an allowed Origin, or `Bearer sk_...` |
+| `ingest` | `X-Project-Key: pk_...` or `?key=pk_...` from an allowed Origin, or `Bearer sk_...`. The browser SDK uses `?key=` because `sendBeacon` cannot set headers and a custom header would trigger a CORS preflight |
 | `cron` | `Bearer CRON_SECRET` |
 
 A private project answers 404, not 403, to callers without access, so its name does not leak.

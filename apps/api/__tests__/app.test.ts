@@ -194,6 +194,23 @@ describe("POST /v2/events", () => {
     expect((await response.json()).error.message).toBe("The body is not valid JSON");
   });
 
+  test("the public key can come from the key query parameter, as sendBeacon sends it", async () => {
+    const response = await api.handle(
+      new Request(`http://localhost/v2/events?key=${publicKey}`, {
+        method: "POST",
+        headers: {
+          "content-type": "text/plain;charset=UTF-8",
+          origin: "https://remcostoeten.nl",
+          "user-agent": chrome,
+          "accept-language": "en-GB",
+        },
+        body: batch("10"),
+      }),
+    );
+    expect(response.status).toBe(202);
+    expect((await response.json()).accepted).toBe(2);
+  });
+
   test("401 for an unknown key", async () => {
     const response = await post(batch("4"), { "x-project-key": "pk_unknown" });
     expect(response.status).toBe(401);

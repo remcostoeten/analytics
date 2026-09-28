@@ -39,24 +39,27 @@ export function readBody(text: string): Result<unknown, EngineError> {
 /**
  * @name ingestEvents
  * @description The events service: limits a batch to 50 events, reads the public key from
- * `X-Project-Key` or the secret key from `Authorization: Bearer`, and hands the batch to the
- * engine, which checks each event and answers `{ accepted, duplicates, rejected }`.
+ * `X-Project-Key` or the `key` query parameter (which `sendBeacon` needs, as it cannot set
+ * headers) or the secret key from `Authorization: Bearer`, and hands the batch to the engine,
+ * which checks each event and answers `{ accepted, duplicates, rejected }`.
  *
  * @example
- * const result = await ingestEvents(engine, body, request.headers, new Date());
+ * const result = await ingestEvents(engine, body, request, new Date());
  */
 export async function ingestEvents(
   engine: Engine,
   body: IngestBody,
-  headers: Headers,
+  incoming: Request,
   receivedAt: Date,
 ): Promise<Result<IngestResult, EngineError>> {
+  const { headers } = incoming;
   if (body.events.length > maxEventsPerBatch) {
     return err(tooLarge(`A batch holds at most ${maxEventsPerBatch} events`));
   }
   const request: IngestRequest = {
     credentials: {
-      publicKey: headers.get("x-project-key") || null,
+      publicKey:
+        headers.get("x-project-key") || new URL(incoming.url).searchParams.get("key") || null,
       secretKey: secretKey(headers.get("authorization")),
     },
     receivedAt: receivedAt.toISOString(),

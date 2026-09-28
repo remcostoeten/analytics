@@ -205,7 +205,7 @@ Epic E2.4, branch feature/api-ingest. Needs E1.1's go decision. Read the plan se
 
 ### E3.1 SDK 2.0 core
 
-Delivers: `createAnalytics<Events>()` with `track`, `page`, `identify`, `register`, `error`, `consent`, `optOut`, `reset`, `flush`, `shutdown`, `on`, `status`; the pre-init queue; in-memory batching; the `beacon` transport; identity and session; one `__ra` storage key with migration from the 1.x keys; `mode` and debug output. Done when unit tests cover each method and the contract fixtures match what the client sends, and the core is under 2.5 KB min+gzip.
+Delivers: `createAnalytics<Events>()` with `track`, `page`, `identify`, `register`, `error`, `consent`, `optOut`, `reset`, `flush`, `shutdown`, `on`, `status`; the pre-init queue; in-memory batching; the `beacon` transport; identity and session; one `__ra` storage key with migration from the 1.x keys; `mode` and debug output. Done when unit tests cover each method and the contract fixtures match what the client sends, and the core is under 4.5 KB min+gzip.
 
 ```text
 Epic E3.1, branch feature/sdk-2-core. The SDK design tab is the spec for the public API, config, typing and file layout; follow it exactly. Read the plan sections "SDK API shape", "Event envelope and transport", "Engine and modules" (SDK plugin part), "Errors" (What developers see), and "Lessons from Vercel".

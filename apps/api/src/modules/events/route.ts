@@ -17,7 +17,8 @@ export type EventsOptions = {
 /**
  * @name eventsModule
  * @description `POST /v2/events`: a `text/plain` or `application/json` batch of up to 50 events and
- * 60 KB, with `X-Project-Key` from an allowed origin or `Authorization: Bearer sk_...`. Answers
+ * 60 KB, with the public key in `X-Project-Key` or `?key=` from an allowed origin, or
+ * `Authorization: Bearer sk_...`. Answers
  * 202 with `{ accepted, duplicates, rejected }`, or the error envelope.
  *
  * @example
@@ -28,12 +29,7 @@ export function eventsModule(options: EventsOptions) {
     "/events",
     async ({ body, request, set, status }) => {
       const logger = options.logger(readRequestId(set.headers));
-      const result = await ingestEvents(
-        options.engine(logger),
-        body,
-        request.headers,
-        options.clock(),
-      );
+      const result = await ingestEvents(options.engine(logger), body, request, options.clock());
       if (result.ok) return status(202, result.value);
       if (result.error.cause) {
         logger.error("ingest failed", {
