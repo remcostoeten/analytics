@@ -217,9 +217,24 @@ export const issues = pgTable(
     isRegression: boolean("is_regression").notNull().default(false),
     minuteStart: timestamp("minute_start", { withTimezone: true }),
     minuteCount: integer("minute_count").notNull().default(0),
+    mutedUntil: timestamp("muted_until", { withTimezone: true }),
+    muteRemaining: integer("mute_remaining"),
+    regressedAt: timestamp("regressed_at", { withTimezone: true }),
+    alertedAt: timestamp("alerted_at", { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [unique().on(table.projectId, table.fingerprint)],
+);
+
+export const errorRules = pgTable(
+  "error_rules",
+  {
+    ...baseEntity(),
+    projectId: text("project_id").notNull(),
+    field: text("field", { enum: ["message", "stack"] }).notNull(),
+    pattern: text("pattern").notNull(),
+  },
+  (table) => [index("error_rules_project_idx").on(table.projectId)],
 );
 
 export const webVitals = pgTable(

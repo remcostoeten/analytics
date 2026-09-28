@@ -1,18 +1,29 @@
 import {
+  CreateErrorRule,
+  ErrorRuleList,
+  ErrorRuleResponse,
   IssueEventList,
   IssueList,
   IssueResponse,
   UpdatedIssue,
   UpdateIssue,
 } from "@remcostoeten/analytics-contract";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
 import { access } from "../../plugins/access";
 import { errorResponses } from "../../plugins/error-responses";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
-import { issueDetail, issueEvents, listIssues, updateIssue } from "./service";
+import {
+  createErrorRule,
+  deleteErrorRule,
+  issueDetail,
+  issueEvents,
+  listErrorRules,
+  listIssues,
+  updateIssue,
+} from "./service";
 
 const tags = ["Issues"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
@@ -20,8 +31,8 @@ const responses = { ...errorResponses, 429: errorResponses[400] };
 /**
  * @name issuesModule
  * @description Error tracking under `/v2/projects/:project`: issues, one issue, its events at the
- * `detail` level, and an admin status change. Any breakdown narrows to one issue with
- * `filter[issue]=iss_<id>`.
+ * `detail` level, an admin status change, and the admin `/error-rules` for ignore patterns and
+ * mutes. Any breakdown narrows to one issue with `filter[issue]=iss_<id>`.
  *
  * @example
  * app.use(issuesModule(deps, reads, docsBase));
@@ -89,6 +100,60 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
         detail: {
           summary: "Resolve, ignore or reopen an issue",
           description: "A resolved issue that happens again reopens as a regression.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/projects/:project/error-rules",
+      ({ request, caller, project, set }) =>
+        gate.answer(request, caller, project, set, "private", (_, id) => listErrorRules(store, id)),
+      {
+        access: "admin",
+        response: { 200: ErrorRuleList, ...responses },
+        detail: {
+          summary: "Error rules",
+          description:
+            "Ignore patterns on the message or stack, then muted issues as `mute_iss_<id>` rules.",
+          tags,
+        },
+      },
+    )
+    .post(
+      "/projects/:project/error-rules",
+      async ({ request, caller, project, body, set }) => {
+        const created = await gate.answer(request, caller, project, set, "private", (_, id) =>
+          createErrorRule(store, id, body, options.clock()),
+        );
+        if (set.status === 200) set.status = 201;
+        return created;
+      },
+      {
+        access: "admin",
+        body: CreateErrorRule,
+        response: { 201: ErrorRuleResponse, ...responses },
+        detail: {
+          summary: "Add an error rule",
+          description:
+            "`ignore` drops new errors whose message or stack contains `pattern`, ignoring case. `mute` ignores an issue until a date, a count of further occurrences, or whichever comes first, then reopens it.",
+          tags,
+        },
+      },
+    )
+    .delete(
+      "/projects/:project/error-rules/:rule",
+      async ({ request, caller, project, params: path, set, status }) => {
+        const removed = await gate.answer(request, caller, project, set, "private", (_, id) =>
+          deleteErrorRule(store, id, path.rule),
+        );
+        return removed === null ? status(204, undefined) : removed;
+      },
+      {
+        access: "admin",
+        response: { 204: t.Void(), ...responses },
+        detail: {
+          summary: "Remove an error rule",
+          description: "Deleting a `mute_iss_<id>` rule unmutes and reopens the issue.",
           tags,
         },
       },

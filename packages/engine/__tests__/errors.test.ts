@@ -278,3 +278,73 @@ describe("grouping into issues", () => {
     expect(stored.rows).toEqual([{ n: 100 }]);
   });
 });
+
+describe("rules, mutes and alerts", () => {
+  test("an ignore rule drops matching errors before they are counted", async () => {
+    const rule = await issues.addIgnore(project.id, "message", "ResizeObserver loop");
+    expect(rule.ok ? rule.value.field : null).toBe("message");
+    await send([
+      error({ type: "Error", message: "ResizeObserver loop limit exceeded", stack: chromeStack }),
+    ]);
+    const rows = await database.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM events WHERE meta->>'message' LIKE 'ResizeObserver%'",
+    );
+    expect(rows.rows).toEqual([{ n: 0 }]);
+    expect((await issueRows()).some((issue) => issue.title.includes("ResizeObserver"))).toBe(false);
+    const listed = await issues.ignores(project.id);
+    expect(listed.ok ? listed.value.map((item) => item.pattern) : null).toEqual([
+      "ResizeObserver loop",
+    ]);
+    const removed = await issues.removeIgnore(project.id, rule.ok ? rule.value.id : "");
+    expect(removed).toEqual({ ok: true, value: true });
+  });
+
+  test("a mute by count reopens the issue once the count is used up", async () => {
+    await send([error({ type: "MuteError", message: "muted", stack: chromeStack })]);
+    const listed = await issues.list([project.id], null, { limit: 50, offset: 0 });
+    const target = listed.ok
+      ? listed.value.rows.find((issue) => issue.title.startsWith("MuteError"))
+      : undefined;
+    if (!target) throw new Error("issue not found");
+    const muted = await issues.mute(target, null, 2);
+    expect(muted.ok ? muted.value : null).toMatchObject({ status: "ignored", muteRemaining: 2 });
+    await send([error({ type: "MuteError", message: "muted", stack: chromeStack })]);
+    const still = await issues.get([project.id], target.id);
+    expect(still.ok ? still.value : null).toMatchObject({ status: "ignored", muteRemaining: 1 });
+    await send([error({ type: "MuteError", message: "muted", stack: chromeStack })]);
+    const reopened = await issues.get([project.id], target.id);
+    expect(reopened.ok ? reopened.value : null).toMatchObject({
+      status: "open",
+      muteRemaining: null,
+      mutedUntil: null,
+    });
+  });
+
+  test("alerts cover new issues once, and regressions again", async () => {
+    const first = await issues.pendingAlerts(100);
+    const pending = first.ok ? first.value : [];
+    expect(pending.length).toBeGreaterThan(0);
+    expect(pending.every((alert) => alert.kind === "new")).toBe(true);
+    await issues.markAlerted(pending.map((alert) => alert.issue));
+    const none = await issues.pendingAlerts(100);
+    expect(none.ok ? none.value : null).toEqual([]);
+    const [target] = pending;
+    if (!target) throw new Error("no issue");
+    await issues.setStatus(target.issue, "resolved");
+    await database.query(
+      "UPDATE issues SET alerted_at = now() - interval '1 minute' WHERE id = $1",
+      [target.issue.id.replace("iss_", "")],
+    );
+    const again = await database.query<{ type: string; message: string; stack: string }>(
+      "SELECT meta->>'type' AS type, meta->>'message' AS message, meta->>'stack' AS stack FROM events WHERE issue_id = $1 LIMIT 1",
+      [target.issue.id.replace("iss_", "")],
+    );
+    const sample = again.rows[0];
+    if (!sample) throw new Error("no event");
+    await send([error({ type: sample.type, message: sample.message, stack: sample.stack })]);
+    const regressions = await issues.pendingAlerts(100);
+    expect(
+      regressions.ok ? regressions.value.map((alert) => [alert.issue.id, alert.kind]) : null,
+    ).toEqual([[target.issue.id, "regression"]]);
+  });
+});

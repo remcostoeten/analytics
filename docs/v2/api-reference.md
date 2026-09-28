@@ -1127,6 +1127,24 @@ Also for issues:
 | GET, POST | `/error-rules` | admin | Ignore rules per project: message or stack patterns, and mute an issue until a date or a count |
 | DELETE | `/error-rules/:rule` | admin | Remove a rule |
 
+```http
+POST /v2/projects/remcostoeten.nl/error-rules
+{ "kind": "ignore", "field": "message", "pattern": "ResizeObserver loop" }
+
+201 Created
+{ "data": { "id": "rule_7f3c2a10-5b1e-4c8d-9a2f-0e6d4b8c1a33", "kind": "ignore", "field": "message", "pattern": "ResizeObserver loop", "issue": null, "until": null, "remaining": null, "createdAt": "2026-09-27T16:50:00.000Z" } }
+
+POST /v2/projects/remcostoeten.nl/error-rules
+{ "kind": "mute", "issue": "iss_01J8ZC", "until": "2026-10-27T00:00:00.000Z", "count": 100 }
+
+201 Created
+{ "data": { "id": "mute_iss_01J8ZC", "kind": "mute", "field": null, "pattern": null, "issue": "iss_01J8ZC", "until": "2026-10-27T00:00:00.000Z", "remaining": 100, "createdAt": null } }
+```
+
+An ignore pattern matches new errors' message or stack as a case-insensitive substring and drops them before grouping. A mute sets the issue to `ignored` until the date passes or `count` more occurrences arrive, whichever comes first, then reopens it; it needs `until`, `count` or both. `GET` lists ignore patterns, then muted issues. Deleting a `mute_iss_` rule unmutes and reopens the issue.
+
+`POST /v2/admin/jobs/alerts` with the cron secret posts new issues and regressions since its last run, up to 100, to `ALERT_WEBHOOK_URL` as `{ type: "issues.alert", sentAt, alerts: [{ kind, project, issue }] }`, signed with `ALERT_WEBHOOK_SECRET` as `x-analytics-signature: sha256=<hex hmac of the body>`. A failed delivery answers 503 and keeps them pending. Without the URL it answers 503.
+
 ### Error codes
 
 | Status | Code | When |

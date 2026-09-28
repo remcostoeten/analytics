@@ -26,7 +26,7 @@ export const AuthSession = Type.Object({
 });
 export type AuthSession = Static<typeof AuthSession>;
 
-export const JobName = oneOf(["rollup", "cleanup"]);
+export const JobName = oneOf(["rollup", "cleanup", "alerts"]);
 export type JobName = Static<typeof JobName>;
 
 export const JobStatus = oneOf(["ok", "failed"]);

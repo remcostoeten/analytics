@@ -3,6 +3,7 @@ import type { ApiError } from "@remcostoeten/analytics-contract";
 import type { EngineError, Logger } from "@remcostoeten/analytics-engine";
 import { Elysia, ValidationError } from "elysia";
 
+import type { Capture } from "./capture";
 import { readRequestId } from "./request-id";
 
 type Headers = { [name: string]: unknown };
@@ -59,15 +60,19 @@ function describe(error: unknown) {
  * `VALIDATION_FAILED` with each field, unreadable JSON to `VALIDATION_FAILED`, an unknown route
  * to `NOT_FOUND`, and anything thrown to `INTERNAL`, logged with its stack. A thrown `status()`
  * is a deliberate response and passes through unchanged. The message of an
- * `INTERNAL` never includes internals.
+ * `INTERNAL` never includes internals; with `capture` it is also recorded as an error event.
  *
  * @example
  * new Elysia().use(errorHandler({ docsBase, logger: (requestId) => jsonLogger(console.log, { requestId }) }));
  */
-export function errorHandler(options: { docsBase: string; logger: (requestId: string) => Logger }) {
+export function errorHandler(options: {
+  docsBase: string;
+  logger: (requestId: string) => Logger;
+  capture?: Capture;
+}) {
   return new Elysia({ name: "error-handler" }).onError(
     { as: "global" },
-    ({ code, error, set, request }) => {
+    async ({ code, error, set, request }) => {
       if (typeof code === "number") return;
       const engineError: EngineError =
         code === "VALIDATION"
@@ -88,6 +93,7 @@ export function errorHandler(options: { docsBase: string; logger: (requestId: st
           code: String(code),
           stack: describe(error),
         });
+        await options.capture?.(error, request, readRequestId(set.headers));
       }
       const { status, body } = failure(engineError, set.headers, options.docsBase);
       set.status = status;

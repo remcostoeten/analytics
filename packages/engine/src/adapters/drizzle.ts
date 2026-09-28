@@ -5,7 +5,15 @@ import { eq, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
-import { events, projects, rateLimits, sessions, visitors, webVitals } from "../db/schema";
+import {
+  errorRules,
+  events,
+  projects,
+  rateLimits,
+  sessions,
+  visitors,
+  webVitals,
+} from "../db/schema";
 import type { EventDraft } from "../draft";
 import { engineError } from "../errors";
 import type { EventStore, ProjectStore, RateLimiter } from "../ports";
@@ -311,9 +319,18 @@ async function groupIssue(db: Database, group: EventDraft[]) {
       last_release = COALESCE(excluded.last_release, issues.last_release),
       title = excluded.title,
       culprit = excluded.culprit,
-      status = CASE WHEN issues.status = 'resolved' THEN 'open' ELSE issues.status END,
+      status = CASE
+        WHEN issues.status = 'resolved' THEN 'open'
+        WHEN issues.status = 'ignored' AND (issues.muted_until <= now()
+          OR issues.mute_remaining <= excluded.count) THEN 'open'
+        ELSE issues.status END,
       is_regression = issues.is_regression OR issues.status = 'resolved',
+      regressed_at = CASE WHEN issues.status = 'resolved' THEN now() ELSE issues.regressed_at END,
       resolved_at = CASE WHEN issues.status = 'resolved' THEN NULL ELSE issues.resolved_at END,
+      mute_remaining = CASE WHEN issues.mute_remaining IS NULL OR issues.mute_remaining <= excluded.count
+        OR issues.muted_until <= now() THEN NULL ELSE issues.mute_remaining - excluded.count END,
+      muted_until = CASE WHEN issues.muted_until <= now() OR issues.mute_remaining <= excluded.count
+        THEN NULL ELSE issues.muted_until END,
       minute_count = CASE WHEN issues.minute_start = excluded.minute_start
         THEN issues.minute_count + excluded.minute_count ELSE excluded.minute_count END,
       minute_start = excluded.minute_start,
@@ -340,8 +357,44 @@ async function groupIssue(db: Database, group: EventDraft[]) {
   );
 }
 
+function propText(draft: EventDraft, field: "message" | "stack") {
+  const value = draft.event.props[field];
+  return typeof value === "string" ? value.toLowerCase() : "";
+}
+
+async function withoutIgnored(db: Database, drafts: EventDraft[]) {
+  const projectIds = [...new Set(drafts.map((draft) => draft.projectId))];
+  if (projectIds.length === 0) return drafts;
+  const rules = await db
+    .select({
+      projectId: errorRules.projectId,
+      field: errorRules.field,
+      pattern: errorRules.pattern,
+    })
+    .from(errorRules)
+    .where(inArray(errorRules.projectId, projectIds));
+  if (rules.length === 0) return drafts;
+  const ignored = drafts.filter((draft) =>
+    rules.some(
+      (rule) =>
+        rule.projectId === draft.projectId &&
+        propText(draft, rule.field).includes(rule.pattern.toLowerCase()),
+    ),
+  );
+  if (ignored.length > 0) {
+    await db.delete(events).where(
+      inArray(
+        events.fingerprint,
+        ignored.map((draft) => draft.event.id),
+      ),
+    );
+  }
+  return drafts.filter((draft) => !ignored.includes(draft));
+}
+
 async function groupIssues(db: Database, drafts: EventDraft[]) {
-  for (const group of issueGroups(drafts)) await groupIssue(db, group);
+  const counted = await withoutIgnored(db, drafts);
+  for (const group of issueGroups(counted)) await groupIssue(db, group);
 }
 
 async function upsertVitals(db: Database, drafts: EventDraft[]) {
@@ -375,8 +428,9 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
  * upserted once per session; a visitor marked internal makes that session's new events internal.
  * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
  * Newly stored `error` events are grouped into `issues` by fingerprint: counts, visitors, releases
- * and a resolved issue reopening as a regression; past 100 of one issue in a minute, only the
- * count is kept and the events are dropped.
+ * and a resolved issue reopening as a regression; a muted issue reopens once its date passes or
+ * its count runs out; events matching a project's ignore rule are dropped uncounted; past 100 of
+ * one issue in a minute, only the count is kept and the events are dropped.
  *
  * @example
  * const store = drizzleStore(drizzle(new PGlite()));

@@ -1,5 +1,9 @@
 import type {
+  CreateErrorRule,
   DeviceType,
+  ErrorRule,
+  ErrorRuleList,
+  ErrorRuleResponse,
   IssueEventList,
   IssueList,
   IssueResponse,
@@ -8,6 +12,7 @@ import type {
 import { engineError, parseStack } from "@remcostoeten/analytics-engine";
 import type {
   EngineError,
+  IgnoreRule,
   IssueEventRecord,
   IssueRecord,
   IssueStatus,
@@ -195,4 +200,109 @@ export async function updateIssue(
       resolvedAt: updated.value.resolvedAt ? updated.value.resolvedAt.toISOString() : null,
     },
   });
+}
+
+const mutePrefix = "mute_";
+
+function ignoreRule(rule: IgnoreRule): ErrorRule {
+  return {
+    id: rule.id,
+    kind: "ignore",
+    field: rule.field,
+    pattern: rule.pattern,
+    issue: null,
+    until: null,
+    remaining: null,
+    createdAt: rule.createdAt.toISOString(),
+  };
+}
+
+function muteRule(issue: IssueRecord): ErrorRule {
+  return {
+    id: `${mutePrefix}${issue.id}`,
+    kind: "mute",
+    field: null,
+    pattern: null,
+    issue: issue.id,
+    until: issue.mutedUntil ? issue.mutedUntil.toISOString() : null,
+    remaining: issue.muteRemaining,
+    createdAt: null,
+  };
+}
+
+/**
+ * @name listErrorRules
+ * @description A project's ignore patterns, then its muted issues as `mute_<issue>` rules.
+ *
+ * @example
+ * await listErrorRules(store, "remcostoeten.nl");
+ */
+export async function listErrorRules(store: IssueStore, projectId: string): Reply<ErrorRuleList> {
+  const ignores = await store.ignores(projectId);
+  if (!ignores.ok) return ignores;
+  const muted = await store.muted(projectId);
+  if (!muted.ok) return muted;
+  return ok({
+    data: [...ignores.value.map(ignoreRule), ...muted.value.map(muteRule)],
+    nextCursor: null,
+  });
+}
+
+/**
+ * @name createErrorRule
+ * @description Adds an ignore pattern, matched case-insensitively against new errors' message or
+ * stack, or mutes an issue until a date, a number of further occurrences, or whichever comes
+ * first.
+ *
+ * @example
+ * await createErrorRule(store, "remcostoeten.nl", { kind: "mute", issue: "iss_42", count: 100 }, now);
+ */
+export async function createErrorRule(
+  store: IssueStore,
+  projectId: string,
+  body: CreateErrorRule,
+  now: Date,
+): Reply<ErrorRuleResponse> {
+  if (body.kind === "ignore") {
+    const added = await store.addIgnore(projectId, body.field, body.pattern);
+    return added.ok ? ok({ data: ignoreRule(added.value) }) : added;
+  }
+  if (body.until === undefined && body.count === undefined) {
+    return err(engineError("VALIDATION_FAILED", "A mute needs until, count or both"));
+  }
+  const until = body.until === undefined ? null : new Date(body.until);
+  if (until && until <= now) {
+    return err(engineError("VALIDATION_FAILED", "until must be in the future"));
+  }
+  const issue = await found(store, [projectId], body.issue);
+  if (!issue.ok) return issue;
+  const muted = await store.mute(issue.value, until, body.count ?? null);
+  return muted.ok ? ok({ data: muteRule(muted.value) }) : muted;
+}
+
+/**
+ * @name deleteErrorRule
+ * @description Removes an ignore pattern by its `rule_` id, or unmutes an issue by its
+ * `mute_iss_` id, which reopens it.
+ *
+ * @example
+ * await deleteErrorRule(store, "remcostoeten.nl", "mute_iss_42");
+ */
+export async function deleteErrorRule(
+  store: IssueStore,
+  projectId: string,
+  id: string,
+): Reply<null> {
+  if (id.startsWith(mutePrefix)) {
+    const issue = await found(store, [projectId], id.slice(mutePrefix.length));
+    if (!issue.ok) return issue;
+    if (issue.value.status !== "ignored") {
+      return err(engineError("NOT_FOUND", "Error rule not found"));
+    }
+    const reopened = await store.setStatus(issue.value, "open");
+    return reopened.ok ? ok(null) : reopened;
+  }
+  const removed = await store.removeIgnore(projectId, id);
+  if (!removed.ok) return removed;
+  return removed.value ? ok(null) : err(engineError("NOT_FOUND", "Error rule not found"));
 }

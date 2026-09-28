@@ -77,3 +77,42 @@ export const UpdatedIssue = dataOf(
   Type.Object({ id: Id, status: IssueStatus, resolvedAt: nullable(Timestamp) }),
 );
 export type UpdatedIssue = Static<typeof UpdatedIssue>;
+
+export const ErrorRuleKind = oneOf(["ignore", "mute"]);
+export type ErrorRuleKind = Static<typeof ErrorRuleKind>;
+
+export const ErrorRuleField = oneOf(["message", "stack"]);
+export type ErrorRuleField = Static<typeof ErrorRuleField>;
+
+export const ErrorRule = Type.Object({
+  id: Id,
+  kind: ErrorRuleKind,
+  field: nullable(ErrorRuleField),
+  pattern: nullable(Type.String({ minLength: 1 })),
+  issue: nullable(Id),
+  until: nullable(Timestamp),
+  remaining: nullable(Count),
+  createdAt: nullable(Timestamp),
+});
+export type ErrorRule = Static<typeof ErrorRule>;
+
+export const ErrorRuleList = listOf(ErrorRule);
+export type ErrorRuleList = Static<typeof ErrorRuleList>;
+
+export const ErrorRuleResponse = dataOf(ErrorRule);
+export type ErrorRuleResponse = Static<typeof ErrorRuleResponse>;
+
+export const CreateErrorRule = Type.Union([
+  Type.Object({
+    kind: Type.Literal("ignore"),
+    field: ErrorRuleField,
+    pattern: Type.String({ minLength: 1, maxLength: 500 }),
+  }),
+  Type.Object({
+    kind: Type.Literal("mute"),
+    issue: Id,
+    until: Type.Optional(Timestamp),
+    count: Type.Optional(Type.Integer({ minimum: 1 })),
+  }),
+]);
+export type CreateErrorRule = Static<typeof CreateErrorRule>;
