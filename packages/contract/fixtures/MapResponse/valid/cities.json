@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "country": "NL",
+      "region": "Noord-Holland",
+      "city": "Amsterdam",
+      "latitude": 52.37,
+      "longitude": 4.9,
+      "visitors": 64,
+      "share": 0.213
+    },
+    {
+      "country": "US",
+      "region": "California",
+      "city": "San Francisco",
+      "latitude": 37.77,
+      "longitude": -122.42,
+      "visitors": 31,
+      "share": 0.103
+    }
+  ],
+  "level": "city",
+  "total": 142,
+  "nextCursor": "eyJvIjoyfQ",
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}

@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "id": "48213",
+      "project": "remcostoeten.nl",
+      "name": "pageview",
+      "ts": "2026-09-27T16:39:58.412Z",
+      "path": "/blog/rebuilding-analytics",
+      "country": "NL",
+      "device": "desktop",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607"
+    },
+    {
+      "id": "48214",
+      "project": "remcostoeten.nl",
+      "name": "signup",
+      "ts": "2026-09-27T16:39:59.901Z",
+      "path": "/blog/rebuilding-analytics",
+      "country": "NL",
+      "device": "desktop",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607"
+    }
+  ],
+  "nextCursor": "eyJyIjoiMjAyNi0wOS0yNyAxNjo0MDowMC4xMjM0NTYrMDAiLCJpIjoiNDgyMTQifQ"
+}

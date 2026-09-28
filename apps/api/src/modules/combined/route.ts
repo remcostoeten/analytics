@@ -1,6 +1,11 @@
 import {
   BreakdownResponse,
   EventList,
+  HeatmapResponse,
+  LiveEvents,
+  MapResponse,
+  PathsResponse,
+  RetentionResponse,
   PeopleList,
   PersonResponse,
   RealtimeResponse,
@@ -26,9 +31,12 @@ import {
   listVisitors,
   personDetail,
 } from "../details/service";
+import { heatmap, paths, places, retention } from "../reads/explore";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
+import { eventStream, liveEvents, liveQuery, liveStream } from "../reads/live";
 import { breakdown, breakdownCsv, readScope, realtime, stats, timeseries } from "../reads/service";
+import type { Scoped as ReadScoped } from "../reads/service";
 
 type Scoped = { params: URLSearchParams; projects: string[] };
 
@@ -67,7 +75,8 @@ async function readableProjects(
 /**
  * @name combinedModule
  * @description Every read route without the `/projects/:project` prefix: stats, timeseries,
- * breakdowns (with `project` as a dimension) and realtime over the projects the caller may read,
+ * breakdowns (with `project` as a dimension), paths, retention, heatmap, map, realtime and the
+ * live feed over the projects the caller may read,
  * and events, visitors and sessions over the projects whose visitor-level data the caller may see.
  * `/people` and `/people/:userId` link identified users across projects and need a signed-in
  * member or a token.
@@ -100,6 +109,28 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       const scoped = await readableProjects(deps, caller, params, true);
       return scoped.ok ? run(scoped.value) : scoped;
     });
+  }
+
+  function explore<Value>(
+    read: (
+      store: ReadsOptions["store"],
+      scope: ReadScoped,
+      params: URLSearchParams,
+    ) => Promise<Result<Value, EngineError>>,
+  ) {
+    return ({
+      request,
+      caller,
+      set,
+    }: {
+      request: Request;
+      caller: Caller;
+      set: Parameters<typeof gate.answerMany>[2];
+    }) =>
+      aggregate(request, caller, set, async ({ params, projects }) => {
+        const scope = readScope(params, projects, options.clock());
+        return scope.ok ? read(options.store, scope.value, params) : scope;
+      });
   }
 
   function signedIn(caller: Caller): Result<null, EngineError> {
@@ -260,6 +291,86 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           summary: "One person across projects",
           description:
             "Which project they came in through, from where, and every visit in time order.",
+          tags,
+        },
+      },
+    )
+    .get("/paths", explore(paths), {
+      access: "public",
+      response: { 200: PathsResponse, ...responses },
+      detail: {
+        summary: "Where visitors went next, across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    })
+    .get("/retention", explore(retention), {
+      access: "public",
+      response: { 200: RetentionResponse, ...responses },
+      detail: {
+        summary: "Returning visitors by cohort, across projects",
+        description: "Each project's visitors counted separately.",
+        tags,
+      },
+    })
+    .get("/heatmap", explore(heatmap), {
+      access: "public",
+      response: { 200: HeatmapResponse, ...responses },
+      detail: {
+        summary: "Weekday and hour heatmap across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    })
+    .get("/map", explore(places), {
+      access: "public",
+      response: { 200: MapResponse, ...responses },
+      detail: {
+        summary: "Visitors per place across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    })
+    .get(
+      "/realtime/events",
+      ({ request, caller, set }) =>
+        gate.answerMany(
+          request,
+          caller,
+          set,
+          "private",
+          async (params): Promise<Result<LiveEvents | Response, EngineError>> => {
+            const [readable, detailed] = await Promise.all([
+              readableProjects(deps, caller, params, false),
+              readableProjects(deps, caller, params, true),
+            ]);
+            if (!readable.ok) return readable;
+            if (!detailed.ok) return detailed;
+            const query = liveQuery(
+              readable.value.params,
+              readable.value.projects,
+              request.headers.get("last-event-id"),
+            );
+            if (!query.ok) return query;
+            const visible = new Set(detailed.value.projects);
+            if (request.headers.get("accept")?.includes("text/event-stream")) {
+              return ok(
+                liveStream(options.feed, query.value, visible, options.live, request.signal),
+              );
+            }
+            return liveEvents(options.feed, query.value, visible, {
+              ms: options.live.waitMs,
+              signal: request.signal,
+            });
+          },
+        ),
+      {
+        access: "public",
+        response: { 200: t.Union([LiveEvents, eventStream]), ...responses },
+        detail: {
+          summary: "Live events across projects",
+          description:
+            "As the per-project route; visitor and session ids only for projects with `detail` access.",
           tags,
         },
       },

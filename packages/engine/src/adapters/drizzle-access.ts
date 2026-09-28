@@ -15,6 +15,7 @@ import type {
   ProjectAdmin,
   ProjectRecord,
   ReadStore,
+  RealtimeFeed,
   DetailStore,
   TokenRecord,
   TokenStore,
@@ -24,6 +25,7 @@ import type { Database } from "./drizzle";
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 import { drizzleDetails } from "./drizzle-details";
+import { drizzleFeed } from "./drizzle-feed";
 import { drizzleReads } from "./drizzle-reads";
 
 export const organizationId = "org_main";
@@ -243,11 +245,12 @@ export type Access = {
   members: MemberStore;
   reads: ReadStore;
   details: DetailStore;
+  feed: RealtimeFeed;
 };
 
 /**
  * @name accessOn
- * @description The project, token, member and read stores on one Drizzle database, with the
+ * @description The project, token, member and read stores and the live feed on one Drizzle database, with the
  * database for Better Auth's adapter.
  *
  * @example
@@ -261,5 +264,6 @@ export function accessOn(db: Database): Access {
     members: drizzleMembers(db),
     reads: drizzleReads(db),
     details: drizzleDetails(db),
+    feed: drizzleFeed(db, { pollMs: 2000 }),
   };
 }

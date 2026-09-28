@@ -67,6 +67,8 @@ const api = createApp({
   reads: {
     store: stores.reads,
     details: stores.details,
+    feed: stores.feed,
+    live: { waitMs: 50, streamMs: 200 },
     limiter: pgliteAdapters(database, clock).limiter,
     hasher,
     ipSecret: "x".repeat(48),

@@ -179,6 +179,6 @@ where first_project = 'remcostoeten.nl' and 'skriuw' = any(projects);
 
 ## How it is built
 
-- The views live in a migration of their own (0022) and are owned by an `analytics_reader` role with `SELECT` on the views only. The API runs console queries as that role inside `BEGIN READ ONLY`.
+- The views live in a migration of their own (0024) and are owned by an `analytics_reader` role with `SELECT` on the views only. The API runs console queries as that role inside `BEGIN READ ONLY`.
 - Project scoping is a Postgres row-level security policy on the views, keyed on a `app.project_ids` setting the API sets per query, so a query cannot read outside the caller's projects even if it tries.
 - The views, their columns and the descriptions in this tab are generated into `/v2/query/schema`, so the console's sidebar and this spec cannot drift apart.

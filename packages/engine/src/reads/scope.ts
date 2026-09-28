@@ -88,5 +88,5 @@ export function scopeParts(
  */
 export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
   const { joins: joined, where } = scopeParts(scope, keyDimensions);
-  return sql`SELECT ${key} AS k, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
+  return sql`SELECT ${key} AS k, e.id, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
 }
