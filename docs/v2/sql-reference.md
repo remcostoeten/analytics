@@ -1,14 +1,14 @@
-# SQL reference (draft)
+# SQL reference
 
-The spec for the SQL console: nine read-only views, their columns, what is allowed, and example queries. The views are the contract; the tables under them can change without breaking saved queries.
+The spec for the SQL console: nine read-only views in the `query` schema (migration 0024), their columns, what is allowed, and example queries. The views are the contract; the tables under them can change without breaking saved queries. `GET /v2/query/schema` serves the same list from `packages/engine/src/query/views.ts`, and a test checks it against the migrated views; every example query below runs in `packages/engine/__tests__/query.test.ts`.
 
 ## Rules
 
 - One statement, `SELECT` or `WITH ... SELECT`. Anything else is rejected before it reaches Postgres.
 - Every view is already limited to the projects you may read; `/v2/projects/:project/query` limits it further to one project.
-- Bound parameters: `:from`, `:to` (timestamps) and `:project` (text), filled from the dashboard's date range and project switcher.
-- Allowed: all standard aggregates, `percentile_cont`, `percentile_disc`, window functions, `date_trunc`, `generate_series`, date and string functions, and jsonb operators (`props->>'plan'`). Not allowed: `pg_*` and `set_config` functions, `dblink`, anything that writes, sleeps or reads files.
-- Limits: 10-second timeout, 10,000 rows, 30 queries a minute per admin.
+- Bound parameters: `:from`, `:to` (timestamps) and `:project` (text), sent in the request's `params` from the dashboard's date range and project switcher. Positional `$1` parameters and any other `:name` are rejected.
+- Allowed: all standard aggregates, `percentile_cont`, `percentile_disc`, window functions, `date_trunc`, `generate_series`, date and string functions, and jsonb operators (`props->>'plan'`). Not allowed: `pg_*` names (including `pg_catalog`), `set_config`, `dblink`, large-object and `*_to_xml` functions, `ts_stat`, `SELECT INTO`, and anything that writes, sleeps or reads files.
+- Limits: 10-second timeout, 10,000 rows (`truncated` says when there were more), 30 queries a minute per user or token.
 - Every view has `is_human`: true when not a bot (score under 50), not internal, not localhost and not a preview. Add `where is_human` to match what the dashboard shows.
 
 ## Views
@@ -25,7 +25,7 @@ One row per event: pageviews, custom events, clicks, errors.
 | `ts` | timestamptz | When it happened, clock-corrected |
 | `received_at` | timestamptz | When the API received it |
 | `visitor_id`, `session_id` | text | Links to `visitors` and `sessions` |
-| `host`, `path`, `route`, `title` | text | Where it happened; `route` is the template such as `/blog/[slug]` |
+| `host`, `path`, `route` | text | Where it happened; `route` is the template such as `/blog/[slug]` |
 | `referrer`, `referrer_domain`, `channel` | text | Where the visitor came from |
 | `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` | text | Campaign tags |
 | `country`, `region`, `city`, `continent`, `timezone` | text | From the IP address |
@@ -46,8 +46,8 @@ One row per event: pageviews, custom events, clicks, errors.
 | Column | Type | Meaning |
 | --- | --- | --- |
 | all `events` columns |  |  |
-| `time_on_page_ms` | bigint | Visible time on this page before the next page or leaving |
-| `scroll_depth` | real | Deepest scroll, 0 to 1 |
+| `time_on_page_ms` | bigint | Time until the next page, null on the last page |
+| `scroll_depth` | real | Deepest scroll on this page in the visit, 0 to 1 |
 | `is_entry`, `is_exit` | boolean | First or last page of the visit |
 | `previous_path`, `next_path` | text | The page before and after, null at the ends |
 | `page_number` | integer | Position in the visit, 1 for the entry page |
@@ -62,13 +62,14 @@ One row per visit.
 | `visit_number` | integer | 1 for the visitor's first visit, 2 for the second, ... |
 | `since_previous_visit_ms` | bigint | Gap since the visitor's previous visit, null on the first |
 | `started_at`, `ended_at` | timestamptz |  |
-| `duration_ms` | bigint | Visible time on the site |
+| `duration_ms` | bigint | Time on the site |
 | `pageviews`, `events` | integer | Counts in this visit |
 | `is_bounce` | boolean | One pageview and no interaction |
 | `entry_path`, `entry_route`, `exit_path`, `exit_route` | text |  |
 | `referrer_domain`, `channel`, `utm_source`, `utm_campaign` | text | How this visit started |
-| `country`, `city`, `device`, `browser`, `os` | text |  |
-| `bot_score`, `is_human`, `is_internal` |  |  |
+| `country`, `device` | text | For this visit |
+| `city`, `browser`, `os` | text | The visitor's latest known |
+| `bot_score`, `is_human`, `is_internal` | smallint, boolean, boolean | `is_human` here is a bot score under 50 and not internal |
 
 ### visitors
 
@@ -102,9 +103,9 @@ Identified users across projects.
 
 ### web\_vitals, issues, daily, daily\_vitals
 
-- `web_vitals`: one row per measured metric, columns as in the Schemas and types tab (`metric`, `value`, `rating`, `route`, `path`, `device`, `country`, `connection`, `selector`, `sample_rate`, `navigation_type`, `ts`, `session_id`, `is_human`).
-- `issues`: one row per grouped error, columns as in the Schemas and types tab.
-- `daily`: the pre-aggregated `rollup_daily` (`day`, `dimension`, `value`, `visitors`, `sessions`, `pageviews`, `events`), fast for long ranges.
+- `web_vitals`: one row per measured metric: `vital_id`, `project_id`, `session_id`, `ts`, `metric`, `value`, `rating`, `route`, `path`, `device`, `country`, `connection`, `selector`, `sample_rate`, `navigation_type`, `bot_score`, `is_human`, `is_internal`.
+- `issues`: one row per grouped error: `issue_id`, `project_id`, `fingerprint`, `title`, `culprit`, `level`, `status`, `count`, `visitors`, `first_seen`, `last_seen`, `first_release`, `last_release`, `resolved_at`.
+- `daily`: the pre-aggregated `rollup_daily` (`project_id`, `day`, `dimension`, `value`, `visitors`, `sessions`, `pageviews`, `events`), fast for long ranges.
 - `daily_vitals`: the pre-aggregated `rollup_vitals` with p50 to p99 per day, route, device and metric.
 
 ## Example queries
@@ -179,6 +180,7 @@ where first_project = 'remcostoeten.nl' and 'skriuw' = any(projects);
 
 ## How it is built
 
-- The views live in a migration of their own (0024) and are owned by an `analytics_reader` role with `SELECT` on the views only. The API runs console queries as that role inside `BEGIN READ ONLY`.
-- Project scoping is a Postgres row-level security policy on the views, keyed on a `app.project_ids` setting the API sets per query, so a query cannot read outside the caller's projects even if it tries.
-- The views, their columns and the descriptions in this tab are generated into `/v2/query/schema`, so the console's sidebar and this spec cannot drift apart.
+- The views live in migration 0024, in a `query` schema, so their names do not clash with the tables. An `analytics_reader` role has `USAGE` on that schema and `SELECT` on the views only; the views run with their owner's rights, so the role never reads a table directly.
+- The API runs each query in a read-only transaction: it sets `app.project_ids` and a signature of them, switches to `analytics_reader` with `search_path = query`, sets the 10-second `statement_timeout`, and wraps the query in `SELECT * FROM (...) LIMIT 10001`.
+- Project scoping is in the views, not in the parser: each is a `security_barrier` view filtered on `query.allowed_projects()`, a `SECURITY DEFINER` function that returns `app.project_ids` only when its signature matches a double SHA-256 over a secret in `query_secret`, a table the reader cannot see. A query that changes `app.project_ids` itself gets no rows. (Postgres row-level security applies to tables, not views, so the policy is this filter.)
+- On Neon the transaction is one non-interactive HTTP request with `readOnly: true`; on PGlite it starts with `SET TRANSACTION READ ONLY`.

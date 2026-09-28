@@ -11,6 +11,8 @@ import { detailsModule } from "./modules/details/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
 import { projectsModule } from "./modules/projects/route";
+import { queryModule } from "./modules/query/route";
+import type { QueryOptions } from "./modules/query/service";
 import { readsModule } from "./modules/reads/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import { tokensModule } from "./modules/tokens/route";
@@ -30,6 +32,7 @@ export type AppOptions = {
   geo: { city: string | null; asn: string | null; loadMs: number };
   access: AccessDeps;
   reads: ReadsOptions;
+  query: QueryOptions;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
 };
 
@@ -42,7 +45,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens and the aggregate reads. The engine is created per request so its log
+ * health, ingest, sign-in, projects, tokens, the reads and the SQL console. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  *
  * @example
@@ -76,5 +79,6 @@ export function createApp(options: AppOptions) {
     .use(tokensModule(options.access, options.docsBase))
     .use(readsModule(options.access, options.reads, options.docsBase))
     .use(detailsModule(options.access, options.reads, options.docsBase))
-    .use(combinedModule(options.access, options.reads, options.docsBase));
+    .use(combinedModule(options.access, options.reads, options.docsBase))
+    .use(queryModule(options.access, options.query, options.docsBase));
 }

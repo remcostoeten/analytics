@@ -45,6 +45,16 @@ export type {
   Traffic,
 } from "./reads";
 export type { FeedCursor, FeedPage, FeedQuery, LiveEvent, RealtimeFeed } from "./feed";
+export type {
+  Cell,
+  QueryActor,
+  QueryLog,
+  QueryOutput,
+  QueryPlan,
+  QueryRun,
+  QueryRunner,
+  QueryRunRecord,
+} from "./query";
 export type { EventStore, InsertOutcome } from "./event-store";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
 export type { Hasher } from "./hasher";

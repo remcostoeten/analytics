@@ -78,6 +78,12 @@ const api = createApp({
     publicLimit: 1000,
     clock: () => clock.now(),
   },
+  query: {
+    runner: stores.queries,
+    log: stores.queryLog,
+    limiter: pgliteAdapters(database, clock).limiter,
+    perMinute: 30,
+  },
   authHandler: null,
 });
 

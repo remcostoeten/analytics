@@ -76,3 +76,25 @@ export function canAdmin(caller: Caller, project: Nullable<ProjectID>): boolean 
 export function isSignedInAdmin(caller: Caller): boolean {
   return caller.kind === "user" && (caller.role === "owner" || caller.role === "admin");
 }
+
+/**
+ * @name canQuery
+ * @description Who may run SQL on a project: owners always; admins and analysts who list it, and
+ * tokens with the `sql` scope that list it, while the project's `sqlEnabled` switch is on. Never
+ * viewers or anonymous callers, whatever the project's visibility.
+ *
+ * @example
+ * canQuery(analyst, project); // true when listed and sqlEnabled
+ */
+export function canQuery(caller: Caller, project: ProjectRecord): boolean {
+  if (caller.kind === "user") {
+    if (caller.role === "owner") return true;
+    return caller.role !== "viewer" && project.sqlEnabled && isListed(caller, project.id);
+  }
+  return (
+    caller.kind === "token" &&
+    caller.scope === "sql" &&
+    project.sqlEnabled &&
+    isListed(caller, project.id)
+  );
+}

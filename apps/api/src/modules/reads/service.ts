@@ -9,6 +9,7 @@ import type { EngineError, Metric, ReadScope, ReadStore } from "@remcostoeten/an
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
+import { toCsv } from "./csv";
 import {
   nextCursor,
   previousRange,
@@ -263,15 +264,10 @@ export async function realtime(
 export function breakdownCsv(response: BreakdownResponse): string {
   const columns = [...new Set(response.data.flatMap((row) => Object.keys(row)))];
   const header = columns.length > 0 ? columns : ["value"];
-  function cell(value: string | number | undefined) {
-    const text = value === undefined ? "" : String(value);
-    // Quotes, commas and newlines need the field wrapped in quotes.
-    return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-  }
-  const lines = response.data.map((row) =>
-    header
-      .map((column) => cell(Object.entries(row).find(([key]) => key === column)?.[1]))
-      .join(","),
+  return toCsv(
+    header,
+    response.data.map((row) =>
+      header.map((column) => Object.entries(row).find(([key]) => key === column)?.[1]),
+    ),
   );
-  return `${[header.join(","), ...lines].join("\n")}\n`;
 }

@@ -368,6 +368,11 @@ export const queryRuns = pgTable(
   (table) => [index("query_runs_actor_idx").on(table.actorKind, table.actorId, table.createdAt)],
 );
 
+export const querySecret = pgTable("query_secret", {
+  id: boolean("id").primaryKey().default(true),
+  secret: text("secret").notNull(),
+});
+
 export const schemaMigrations = pgTable("schema_migrations", {
   name: text("name").primaryKey(),
   checksum: text("checksum").notNull(),

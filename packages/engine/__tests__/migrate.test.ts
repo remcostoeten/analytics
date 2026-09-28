@@ -11,10 +11,10 @@ const legacy = files.slice(0, names.indexOf(baseline) + 1);
 const apply = { dryRun: false, baseline: null };
 
 describe("readMigrations", () => {
-  test("reads 0000 to 0023 in order", () => {
+  test("reads 0000 to 0024 in order", () => {
     expect(names[0]).toBe("0000_create_events");
-    expect(names.at(-1)).toBe("0023_add_realtime_index");
-    expect(names).toHaveLength(24);
+    expect(names.at(-1)).toBe("0024_add_query_views");
+    expect(names).toHaveLength(25);
     expect(names).toEqual([...names].sort());
   });
 });

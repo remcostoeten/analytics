@@ -72,6 +72,12 @@ function app(publicLimit: number) {
       publicLimit,
       clock: () => clock.now(),
     },
+    query: {
+      runner: stores.queries,
+      log: stores.queryLog,
+      limiter: pgliteAdapters(database, clock).limiter,
+      perMinute: 30,
+    },
     authHandler: null,
   });
 }

@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "id": "812",
+      "actor": {
+        "kind": "user",
+        "id": "user_remco"
+      },
+      "projectIds": [
+        "remcostoeten.nl"
+      ],
+      "sql": "select route, count(*) as views from events where name = 'pageview' group by 1 order by 2 desc limit 5",
+      "durationMs": 41,
+      "rowCount": 5,
+      "blocked": false,
+      "error": null,
+      "createdAt": "2026-09-27T16:40:00.000Z"
+    },
+    {
+      "id": "811",
+      "actor": {
+        "kind": "user",
+        "id": "user_remco"
+      },
+      "projectIds": [
+        "remcostoeten.nl"
+      ],
+      "sql": "delete from events",
+      "durationMs": null,
+      "rowCount": null,
+      "blocked": true,
+      "error": "Only SELECT and WITH queries can run",
+      "createdAt": "2026-09-27T16:39:12.000Z"
+    }
+  ],
+  "nextCursor": null
+}
