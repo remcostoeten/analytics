@@ -40,6 +40,7 @@
 		"build": "bun run --filter '*' build",
 		"test": "bun run --filter './v1/**' --sequential test && bun run --filter './apps/*' --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' test",
 		"typecheck": "bun run --filter '*' typecheck",
+		"test:e2e": "bun run --cwd e2e test:e2e",
 		"lint": "oxlint --type-aware --deny-warnings apps packages tools scripts e2e && bun run lint:v1",
 		"lint:fix": "oxlint --type-aware --fix apps packages tools scripts e2e",
 		"lint:v1": "oxlint -c v1/.oxlintrc.json --deny-warnings v1",
@@ -60,6 +61,7 @@
 	},
 	"workspaces": [
 		"apps/*",
+		"e2e",
 		"packages/*",
 		"scripts",
 		"tools/oxlint/house",

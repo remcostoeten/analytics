@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/api` (health and `POST /v2/events` on the engine), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core and plugins) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/api` (health and `POST /v2/events` on the engine), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -76,12 +76,13 @@ Today `v1/`, `apps/api` (health and `POST /v2/events` on the engine), `tools/oxl
 | `bun run size` | `scripts/size-check.ts`: gzips the built SDK core, `react` and `next` entries and each plugin bundled alone, and fails above the budgets (core 4.5 KB, `react` 1.5 KB, `next` 1 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB); build `packages/sdk` first |
 | `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
+| `bun run test:e2e` | Playwright in `e2e/` against the built SDK, the API on PGlite and the `/_ra` proxy; build `packages/sdk` first, and on Linux without a display run it under `xvfb-run -a` for the headed project. `docs/release-checklist.md` is the manual browser and blocker matrix |
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, SDK size, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. CodeQL runs on pull requests and weekly. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
+CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, SDK size, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. Pull requests also run the `e2e` job. CodeQL runs on pull requests and weekly. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
 
 Lefthook runs oxfmt, Oxlint and gitleaks (when installed) on staged files before each commit, and rejects commit subjects that are not conventional commits; `bun install` sets it up.
 

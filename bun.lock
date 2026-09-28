@@ -33,6 +33,17 @@
         "@electric-sql/pglite": "0.5.8",
       },
     },
+    "e2e": {
+      "name": "@remcostoeten/analytics-e2e",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@electric-sql/pglite": "0.5.8",
+        "@playwright/test": "1.62.0",
+        "@remcostoeten/analytics-api": "workspace:*",
+        "@remcostoeten/analytics-engine": "workspace:*",
+        "@remcostoeten/analytics-sdk": "workspace:*",
+      },
+    },
     "packages/contract": {
       "name": "@remcostoeten/analytics-contract",
       "version": "0.0.0",
@@ -807,6 +818,8 @@
     "@remcostoeten/analytics-api": ["@remcostoeten/analytics-api@workspace:apps/api"],
 
     "@remcostoeten/analytics-contract": ["@remcostoeten/analytics-contract@workspace:packages/contract"],
+
+    "@remcostoeten/analytics-e2e": ["@remcostoeten/analytics-e2e@workspace:e2e"],
 
     "@remcostoeten/analytics-engine": ["@remcostoeten/analytics-engine@workspace:packages/engine"],
 

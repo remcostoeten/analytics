@@ -301,8 +301,8 @@ export function createAnalytics<Events extends EventMap = EventMap>(
       for (const event of leftover) queue.add(event);
     }
     const plugins: Plugin[] = [
-      ...(config.pageviews === false ? [] : [pageviews()]),
       ...(config.plugins ?? []),
+      ...(config.pageviews === false ? [] : [pageviews()]),
     ];
     for (const plugin of plugins) removers.push(host.use(plugin, pluginClient));
     if (typeof document !== "undefined") {

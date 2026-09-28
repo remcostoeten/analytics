@@ -1,0 +1,18 @@
+{
+	"name": "@remcostoeten/analytics-e2e",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"serve": "bun serve.ts",
+		"test:e2e": "playwright test",
+		"typecheck": "tsgo --noEmit"
+	},
+	"devDependencies": {
+		"@electric-sql/pglite": "0.5.8",
+		"@playwright/test": "1.62.0",
+		"@remcostoeten/analytics-api": "workspace:*",
+		"@remcostoeten/analytics-engine": "workspace:*",
+		"@remcostoeten/analytics-sdk": "workspace:*"
+	}
+}

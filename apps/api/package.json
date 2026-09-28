@@ -3,6 +3,10 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"exports": {
+		"./app": "./src/app.ts",
+		"./geo": "./src/geo.ts"
+	},
 	"scripts": {
 		"dev": "bun --watch src/server.ts",
 		"build": "bun scripts/download-geo.ts",
