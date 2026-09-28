@@ -57,11 +57,11 @@ describe("POST /v2/events", () => {
     expect(body.geo).toMatchObject({ country: "GB", city: "London", timezone: "Europe/London" });
   });
 
-  test("rejects an invalid envelope with the failing paths", async () => {
+  test("rejects an invalid envelope through the contract schema", async () => {
     const response = await postEvents(JSON.stringify({ v: 2, sentAt: "now", events: [] }), {});
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
     const body = await response.json();
-    expect(body.error.paths).toContain("/v");
+    expect(body.property).toBe("/v");
   });
 });
 

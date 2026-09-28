@@ -1,11 +1,11 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { Range } from "./common";
 import { Percentile, TrafficFilter, VitalMetric, VitalRating } from "./enums";
-import { Count, listOf, nullable, Ratio } from "./schema";
+import { Count, listOf, nullable, oneOf, Ratio } from "./schema";
 
-export const SpeedDevice = Type.Enum(["mobile", "desktop", "all"]);
+export const SpeedDevice = oneOf(["mobile", "desktop", "all"]);
 export type SpeedDevice = Static<typeof SpeedDevice>;
 
 export const SpeedQuery = Type.Object({

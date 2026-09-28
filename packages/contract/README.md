@@ -1,6 +1,6 @@
 # @remcostoeten/analytics-contract
 
-TypeBox schemas and static types for every request and response of the v2 API, plus the error catalog. The API validates with the schemas; the SDK imports only the types, so no validator ships in the browser bundle.
+TypeBox (`@sinclair/typebox` 0.34, the version Elysia supports) schemas and static types for every request and response of the v2 API, plus the error catalog. The API validates with the schemas; the SDK imports only the types, so no validator ships in the browser bundle.
 
 | File | Covers |
 | --- | --- |
@@ -14,6 +14,8 @@ TypeBox schemas and static types for every request and response of the v2 API, p
 | `tokens.ts` | API tokens |
 | `system.ts` | Health, the auth session, admin metrics and jobs |
 | `query.ts` | The SQL console |
+
+Finite sets are built with `oneOf([...])`, a union of literals. The package registers the `date-time`, `date`, `uuid` and `uri` formats on import, because TypeBox 0.34 checks no formats by default.
 
 Each schema and its type share a name: `IngestEnvelope` is the schema and `Static<typeof IngestEnvelope>` is exported as the type `IngestEnvelope`.
 

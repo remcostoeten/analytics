@@ -1,7 +1,6 @@
 import { openapi } from "@elysiajs/openapi";
 import { IngestEnvelope } from "@remcostoeten/analytics-contract";
 import { Elysia, t } from "elysia";
-import { Value } from "typebox/value";
 
 import { clientIp } from "./client-ip";
 import { lookupCity } from "./geo";
@@ -59,20 +58,19 @@ export function createApp(database: CityDatabase) {
     .post(
       "/events",
       ({ body, request, status }) => {
-        const parsed: unknown = JSON.parse(body);
-        if (!Value.Check(IngestEnvelope, parsed)) {
-          const paths = Value.Errors(IngestEnvelope, parsed).map((error) => error.instancePath);
-          return status(400, { error: { code: "VALIDATION_FAILED", paths } });
-        }
         const caller = clientIp(request.headers);
         return status(202, {
-          accepted: parsed.events.length,
+          accepted: body.events.length,
           duplicates: 0,
           rejected: [],
           ipHeader: caller.header,
           geo: lookupCity(database.reader, caller.ip),
         });
       },
-      { parse: "text", body: t.String(), detail: { summary: "Stub ingest with one City lookup" } },
+      {
+        parse: async ({ request }): Promise<unknown> => JSON.parse(await request.text()),
+        body: IngestEnvelope,
+        detail: { summary: "Stub ingest with one City lookup" },
+      },
     );
 }

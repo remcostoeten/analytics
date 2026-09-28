@@ -1,8 +1,8 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { Visibility } from "./enums";
-import { dataOf, listOf, Timestamp } from "./schema";
+import { dataOf, listOf, oneOf, Timestamp } from "./schema";
 
 const ProjectId = Type.String({ minLength: 1, maxLength: 64, pattern: "^[a-z0-9][a-z0-9.-]*$" });
 const Origin = Type.String({ format: "uri" });
@@ -84,7 +84,7 @@ export const UpdatedProject = dataOf(
 );
 export type UpdatedProject = Static<typeof UpdatedProject>;
 
-export const KeyKind = Type.Enum(["public", "secret"]);
+export const KeyKind = oneOf(["public", "secret"]);
 export type KeyKind = Static<typeof KeyKind>;
 
 export const RotateKey = Type.Object({ kind: KeyKind });

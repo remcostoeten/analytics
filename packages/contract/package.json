@@ -1,16 +1,20 @@
 {
 	"name": "@remcostoeten/analytics-contract",
 	"version": "0.0.0",
-	"description": "Schemas, types and the error catalog for the v2 analytics API.",
-	"license": "MIT",
-	"type": "module",
-	"sideEffects": false,
+	"devDependencies": {
+		"tsdown": "catalog:tsdown"
+	},
 	"exports": {
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		}
 	},
+	"description": "Schemas, types and the error catalog for the v2 analytics API.",
+	"files": [
+		"dist"
+	],
+	"license": "MIT",
 	"publishConfig": {
 		"exports": {
 			".": {
@@ -19,18 +23,14 @@
 			}
 		}
 	},
-	"files": [
-		"dist"
-	],
 	"scripts": {
 		"build": "tsdown",
 		"typecheck": "tsgo --noEmit",
 		"test": "bun test"
 	},
+	"sideEffects": false,
+	"type": "module",
 	"dependencies": {
-		"typebox": "catalog:typebox"
-	},
-	"devDependencies": {
-		"tsdown": "catalog:tsdown"
+		"@sinclair/typebox": "catalog:typebox"
 	}
 }

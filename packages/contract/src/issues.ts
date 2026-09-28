@@ -1,9 +1,9 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { Device } from "./common";
 import { IssueLevel, IssueStatus } from "./enums";
-import { Count, dataOf, Id, listOf, nullable, Timestamp } from "./schema";
+import { Count, dataOf, Id, listOf, nullable, oneOf, Timestamp } from "./schema";
 
 export const IssuesQuery = Type.Object({ status: Type.Optional(IssueStatus) });
 export type IssuesQuery = Static<typeof IssuesQuery>;
@@ -40,7 +40,7 @@ export const StackFrame = Type.Object({
 });
 export type StackFrame = Static<typeof StackFrame>;
 
-export const BreadcrumbKind = Type.Enum(["navigation", "click", "fetch", "event"]);
+export const BreadcrumbKind = oneOf(["navigation", "click", "fetch", "event"]);
 export type BreadcrumbKind = Static<typeof BreadcrumbKind>;
 
 export const Breadcrumb = Type.Object({

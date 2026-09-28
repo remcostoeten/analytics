@@ -13,9 +13,8 @@
 		"@elysiajs/openapi": "1.4.16",
 		"@remcostoeten/analytics-contract": "workspace:*",
 		"@remcostoeten/analytics-shared": "workspace:*",
-		"@sinclair/typebox": "0.34.52",
+		"@sinclair/typebox": "catalog:typebox",
 		"elysia": "1.4.30",
-		"mmdb-lib": "3.0.3",
-		"typebox": "catalog:typebox"
+		"mmdb-lib": "3.0.3"
 	}
 }

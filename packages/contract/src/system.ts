@@ -1,8 +1,8 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { BotReason } from "./enums";
-import { Count, dataOf, Day, Id, Milliseconds, nullable, Timestamp, Url } from "./schema";
+import { Count, dataOf, Day, Id, Milliseconds, nullable, oneOf, Timestamp, Url } from "./schema";
 
 export const Health = Type.Object({
   ok: Type.Boolean(),
@@ -25,10 +25,10 @@ export const AuthSession = Type.Object({
 });
 export type AuthSession = Static<typeof AuthSession>;
 
-export const JobName = Type.Enum(["rollup", "cleanup"]);
+export const JobName = oneOf(["rollup", "cleanup"]);
 export type JobName = Static<typeof JobName>;
 
-export const JobStatus = Type.Enum(["ok", "failed"]);
+export const JobStatus = oneOf(["ok", "failed"]);
 export type JobStatus = Static<typeof JobStatus>;
 
 export const JobRun = Type.Object({

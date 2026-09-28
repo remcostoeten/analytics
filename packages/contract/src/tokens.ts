@@ -1,5 +1,5 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { TokenScope } from "./enums";
 import { dataOf, Id, listOf, nullable, Timestamp } from "./schema";
