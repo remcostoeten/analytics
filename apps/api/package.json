@@ -11,7 +11,8 @@
 		"dev": "bun --watch src/server.ts",
 		"build": "bun scripts/download-geo.ts",
 		"typecheck": "tsgo --noEmit",
-		"test": "bun test"
+		"test": "bun test",
+		"openapi": "bun scripts/openapi.ts"
 	},
 	"dependencies": {
 		"@elysiajs/openapi": "1.4.16",

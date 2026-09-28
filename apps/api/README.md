@@ -59,4 +59,5 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 
 - `bun run dev` serves on port 3100.
 - `bun run build` downloads the GeoLite2 City and ASN files into `data/`.
-- `bun test` runs the integration tests through `app.handle` on PGlite.
+- `bun test` runs the integration tests through `app.handle` on PGlite, including a check that `openapi.json` matches the routes.
+- `bun run openapi` writes the OpenAPI document to `openapi.json`; the docs site reads it and the `openapi` workflow fails a pull request that breaks it.

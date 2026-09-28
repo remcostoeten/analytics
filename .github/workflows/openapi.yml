@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   breaking-changes:
-    # Stays skipped until apps/api exports its OpenAPI document to apps/api/openapi.json.
     if: ${{ hashFiles('apps/api/openapi.json') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -22,7 +21,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Read the base document
-        run: git show "origin/${{ github.base_ref }}:apps/api/openapi.json" > base-openapi.json
+        # The first pull request that adds the document has no base to compare with, so it compares with itself.
+        run: git show "origin/${{ github.base_ref }}:apps/api/openapi.json" > base-openapi.json || cp apps/api/openapi.json base-openapi.json
       - name: Fail on breaking changes
         uses: oasdiff/oasdiff-action/breaking@main
         with:
