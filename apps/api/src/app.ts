@@ -1,76 +1,47 @@
-import { openapi } from "@elysiajs/openapi";
-import { IngestEnvelope } from "@remcostoeten/analytics-contract";
-import { Elysia, t } from "elysia";
+import type { Engine, Logger } from "@remcostoeten/analytics-engine";
+import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { Elysia } from "elysia";
 
-import { clientIp } from "./client-ip";
-import { lookupCity } from "./geo";
-import type { CityDatabase } from "./geo";
+import { eventsModule } from "./modules/events/route";
+import { healthModule } from "./modules/health/route";
+import { cors } from "./plugins/cors";
+import { docs } from "./plugins/docs";
+import { errorHandler } from "./plugins/error-handler";
+import { requestId } from "./plugins/request-id";
 
-const version = "2.0.0-spike.0";
+const version = "2.0.0-next";
 
-const Health = t.Object({
-  ok: t.Boolean(),
-  version: t.String(),
-  time: t.String({ format: "date-time" }),
-  runtime: t.String(),
-  coldStart: t.Boolean(),
-  bootedAt: t.String({ format: "date-time" }),
-  geo: t.Object({ loaded: t.Boolean(), path: t.Nullable(t.String()), loadMs: t.Number() }),
-});
+export type AppOptions = {
+  engine: (logger: Logger) => Engine;
+  logger: (requestId: string) => Logger;
+  clock: () => Date;
+  dashboardOrigin: Nullable<string>;
+  docsBase: string;
+  geo: { city: string | null; asn: string | null; loadMs: number };
+};
 
 /**
  * @name createApp
- * @description Builds the spike API: health with cold start and runtime details, OpenAPI docs,
- * and an events route that validates the envelope with the contract and looks up the caller's
- * city.
+ * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
+ * health and ingest. The engine is created per request so its log lines carry the request id.
  *
  * @example
- * const app = createApp(openCityDatabase(candidatePaths(null, import.meta.dir, process.cwd())));
+ * const app = createApp({ engine, logger, clock: () => new Date(), dashboardOrigin: null, docsBase, geo });
  * const response = await app.handle(new Request("http://localhost/v2/health"));
  */
-export function createApp(database: CityDatabase) {
-  const bootedAt = new Date().toISOString();
-  let served = 0;
-  const runtime = process.versions.bun
-    ? `bun ${process.versions.bun}`
-    : `node ${process.versions.node}`;
-
+export function createApp(options: AppOptions) {
   return new Elysia({ prefix: "/v2" })
+    .use(requestId())
+    .use(cors({ dashboardOrigin: options.dashboardOrigin }))
+    .use(errorHandler({ docsBase: options.docsBase, logger: options.logger }))
+    .use(docs(version))
+    .use(healthModule({ version, clock: options.clock, geo: options.geo }))
     .use(
-      openapi({ path: "/openapi", documentation: { info: { title: "Analytics API", version } } }),
-    )
-    .get(
-      "/health",
-      () => {
-        served += 1;
-        return {
-          ok: true,
-          version,
-          time: new Date().toISOString(),
-          runtime,
-          coldStart: served === 1,
-          bootedAt,
-          geo: { loaded: database.reader !== null, path: database.path, loadMs: database.loadMs },
-        };
-      },
-      { response: Health, detail: { summary: "Liveness, version and cold start details" } },
-    )
-    .post(
-      "/events",
-      ({ body, request, status }) => {
-        const caller = clientIp(request.headers);
-        return status(202, {
-          accepted: body.events.length,
-          duplicates: 0,
-          rejected: [],
-          ipHeader: caller.header,
-          geo: lookupCity(database.reader, caller.ip),
-        });
-      },
-      {
-        parse: async ({ request }): Promise<unknown> => JSON.parse(await request.text()),
-        body: IngestEnvelope,
-        detail: { summary: "Stub ingest with one City lookup" },
-      },
+      eventsModule({
+        engine: options.engine,
+        logger: options.logger,
+        clock: options.clock,
+        docsBase: options.docsBase,
+      }),
     );
 }

@@ -1,78 +1,60 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { memoryGeo } from "@remcostoeten/analytics-engine/adapters/memory";
+import { maxmindGeo } from "@remcostoeten/analytics-engine/adapters/maxmind";
+import type { GeoLookup } from "@remcostoeten/analytics-engine";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
-import { Reader } from "mmdb-lib";
-import type { CityResponse } from "mmdb-lib";
 
-export type CityLookup = {
-  country: Nullable<string>;
-  region: Nullable<string>;
+export type GeoSource = {
+  lookup: GeoLookup;
   city: Nullable<string>;
-  timezone: Nullable<string>;
-  latitude: Nullable<number>;
-  longitude: Nullable<number>;
-};
-
-export type CityDatabase = {
-  reader: Nullable<Reader<CityResponse>>;
-  path: Nullable<string>;
+  asn: Nullable<string>;
   loadMs: number;
 };
 
-const cityFile = "GeoLite2-City.mmdb";
+type Props = {
+  explicit: Nullable<string>;
+  sourceDirectory: string;
+  cwd: string;
+};
 
 /**
  * @name candidatePaths
- * @description Lists where the City database may sit: an explicit path, next to the source, or
+ * @description Lists where a MaxMind database may sit: an explicit path, next to the source, or
  * relative to the working directory of a Vercel function in a monorepo.
  *
  * @example
- * candidatePaths(process.env.GEOIP_CITY_PATH ?? null, import.meta.dir, process.cwd());
+ * candidatePaths("GeoLite2-City.mmdb", { explicit: null, sourceDirectory: import.meta.dir, cwd: process.cwd() });
  */
-export function candidatePaths(explicit: Nullable<string>, sourceDirectory: string, cwd: string) {
+export function candidatePaths(file: string, where: Props) {
   const bundled = [
-    join(sourceDirectory, "..", "data", cityFile),
-    join(cwd, "data", cityFile),
-    join(cwd, "apps", "api", "data", cityFile),
+    join(where.sourceDirectory, "..", "data", file),
+    join(where.cwd, "data", file),
+    join(where.cwd, "apps", "api", "data", file),
   ];
-  return explicit ? [explicit, ...bundled] : bundled;
+  return where.explicit ? [where.explicit, ...bundled] : bundled;
+}
+
+function firstExisting(paths: string[]) {
+  return paths.find((candidate) => existsSync(candidate)) ?? null;
 }
 
 /**
- * @name openCityDatabase
- * @description Opens the first City database found, timing the load for the spike's findings.
- * Returns an empty reader when none exists, so lookups degrade to nulls.
+ * @name openGeo
+ * @description Opens the first City and ASN databases found and builds the engine's
+ * `GeoLookup`. Without a City database every lookup is empty, so ingest still works and geo
+ * columns stay null.
  *
  * @example
- * const database = openCityDatabase(candidatePaths(null, import.meta.dir, process.cwd()));
+ * const geo = openGeo(candidatePaths("GeoLite2-City.mmdb", where), candidatePaths("GeoLite2-ASN.mmdb", where));
  */
-export function openCityDatabase(paths: string[]): CityDatabase {
+export function openGeo(cityPaths: string[], asnPaths: string[]): GeoSource {
   const started = performance.now();
-  const path = paths.find((candidate) => existsSync(candidate)) ?? null;
-  const reader = path ? new Reader<CityResponse>(readFileSync(path)) : null;
-  return { reader, path, loadMs: Math.round(performance.now() - started) };
-}
-
-/**
- * @name lookupCity
- * @description Resolves an IP address to country, region, city, timezone and coordinates, with
- * nulls for anything the database does not know.
- *
- * @example
- * lookupCity(database.reader, "81.2.69.160").country; // "GB"
- */
-export function lookupCity(
-  reader: Nullable<Reader<CityResponse>>,
-  ip: Nullable<string>,
-): CityLookup {
-  const record = reader && ip ? reader.get(ip) : null;
-  return {
-    country: record?.country?.iso_code ?? null,
-    region: record?.subdivisions?.[0]?.names?.en ?? null,
-    city: record?.city?.names?.en ?? null,
-    timezone: record?.location?.time_zone ?? null,
-    latitude: record?.location?.latitude ?? null,
-    longitude: record?.location?.longitude ?? null,
-  };
+  const city = firstExisting(cityPaths);
+  const asn = firstExisting(asnPaths);
+  const lookup = city
+    ? maxmindGeo(readFileSync(city), asn ? readFileSync(asn) : null)
+    : memoryGeo(new Map());
+  return { lookup, city, asn: city ? asn : null, loadMs: Math.round(performance.now() - started) };
 }

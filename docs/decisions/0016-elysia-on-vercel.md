@@ -29,7 +29,7 @@ Measured locally with Bun 1.3.11 and Elysia 1.4.30:
 Not measured, because the Vercel token available to the agent has no permission to create a project. Both project creation and a file deployment returned `403 forbidden: You don't have permission to create the project`, and deploying into the existing `ingestion` or `analytics` projects would change production settings:
 
 - Cold start on Vercel (5 cold hits) and warm p95 on Vercel (100 hits).
-- Whether `cf-connecting-ip` arrives behind Cloudflare. `/v2/events` returns `ipHeader`, so one request through the proxied domain answers it.
+- Whether `cf-connecting-ip` arrives behind Cloudflare. `/v2/health` returns `ipHeader`, the header the caller's IP came from, so one request through the proxied domain answers it.
 - Streaming (SSE) on the Bun runtime.
 
 ## Decision
@@ -50,8 +50,8 @@ Open. The local spike is done, Elysia is recommended and the contract fix is in.
 1. In the Vercel team `remcostoetens-projects`, create a project `analytics-api` linked to `remcostoeten/analytics`, with root directory `apps/api`, the Elysia framework preset and Vercel Authentication off for previews.
 2. Push the E1.1 branch. Vercel reads `apps/api/vercel.json` (`bunVersion`, the build command and `includeFiles`).
 3. Hit `/v2/health` five times with at least ten minutes between hits, and record `coldStart` and the response time of each.
-4. Send 100 `POST /v2/events` requests with `packages/contract/fixtures/IngestEnvelope/valid/browser-batch.json` and record the p95.
-5. Send one request through the Cloudflare-proxied domain and read `ipHeader`.
+4. Send 100 `POST /v2/events` requests with `packages/contract/fixtures/IngestEnvelope/valid/browser-batch.json` and a project key from the `projects` table, and record the p95. Since E2.4 the route runs the full engine, so this now includes the database write.
+5. Send one `GET /v2/health` through the Cloudflare-proxied domain and read `ipHeader`.
 
 ## Consequences
 
