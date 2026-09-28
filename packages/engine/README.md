@@ -1,6 +1,33 @@
 # @remcostoeten/analytics-engine
 
-The v2 ingest engine. Private: `exports` point at `src/`, so there is no build step. For now it holds the database layer; the pipeline, ports and adapters arrive in epic E2.1.
+The v2 ingest engine. Private: `exports` point at `src/`, so there is no build step. It has no runtime of its own: hosts such as `apps/api` pass in adapters for its ports.
+
+## Core
+
+- `define.ts`: `defineStage`, `defineSignal`, `defineEnricher` and `defineDimension`. Each returns a plain object.
+- `pipeline.ts`: `createEngine(ports, registry)` returns `{ ingest, rescore }`.
+  - `ingest` runs each event of a batch through the stages in order. The first failing stage rejects that event by index, and a throwing stage becomes `INTERNAL` with its stack logged. Accepted events are stored in one call.
+  - `rescore` reruns only the stages marked `rescores`.
+- `stages/`: `enrichStage` merges the registered enrichers in order. `botScoreStage` sums the weights of the signals that fire, capped at 100. The remaining stages arrive in E2.2.
+- `ports/`: `EventStore`, `GeoLookup`, `RateLimiter`, `Hasher`, `Clock` and `Logger` as plain types.
+
+## Adapters
+
+Each adapter has its own export path, so a host only bundles what it uses.
+
+| Import | Provides |
+| --- | --- |
+| `@remcostoeten/analytics-engine/adapters/memory` | Every port in memory, for tests |
+| `@remcostoeten/analytics-engine/adapters/system` | `systemClock`, `webCryptoHasher` and `jsonLogger` (one JSON line per entry) |
+| `@remcostoeten/analytics-engine/adapters/maxmind` | `maxmindGeo(city, asn)` over MMDB file contents |
+| `@remcostoeten/analytics-engine/adapters/pglite` | `EventStore` and `RateLimiter` on PGlite |
+| `@remcostoeten/analytics-engine/adapters/postgres` | `EventStore` and `RateLimiter` on Neon over HTTP |
+
+The PGlite and Postgres adapters share one Drizzle implementation:
+
+- Each batch is one insert with `ON CONFLICT DO NOTHING` on the event id, which lives in `fingerprint`.
+- It writes the legacy `type` and `meta.eventName` columns that the v1 dashboard reads, and sets `schema_version` to 1.
+- The rate limiter keeps a fixed-window count in `rate_limits` (migration 0021).
 
 ## Database
 

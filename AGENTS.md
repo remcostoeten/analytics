@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (only its database layer so far) and `scripts/` (the boundary check and `migrate.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`; `apps/*` is added back when `apps/api` arrives.
+Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, pipeline core, ports and adapters) and `scripts/` (the boundary check and `migrate.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`; `apps/*` is added back when `apps/api` arrives.
 
 ## Commands
 

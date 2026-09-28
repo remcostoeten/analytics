@@ -4,6 +4,12 @@
 	"private": true,
 	"type": "module",
 	"exports": {
+		".": "./src/index.ts",
+		"./adapters/memory": "./src/adapters/memory.ts",
+		"./adapters/system": "./src/adapters/system.ts",
+		"./adapters/maxmind": "./src/adapters/maxmind.ts",
+		"./adapters/pglite": "./src/adapters/pglite.ts",
+		"./adapters/postgres": "./src/adapters/postgres.ts",
 		"./db/schema": "./src/db/schema.ts",
 		"./db/migrate": "./src/db/migrate.ts",
 		"./db/migration-files": "./src/db/migration-files.ts"
@@ -13,10 +19,22 @@
 		"test": "bun test"
 	},
 	"dependencies": {
+		"@neondatabase/serverless": "1.1.0",
+		"@remcostoeten/analytics-contract": "workspace:*",
 		"@remcostoeten/analytics-shared": "workspace:*",
-		"drizzle-orm": "0.45.3"
+		"@sinclair/typebox": "catalog:typebox",
+		"drizzle-orm": "0.45.3",
+		"mmdb-lib": "3.0.3"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8"
+	},
+	"peerDependencies": {
+		"@electric-sql/pglite": "0.5.8"
+	},
+	"peerDependenciesMeta": {
+		"@electric-sql/pglite": {
+			"optional": true
+		}
 	}
 }
