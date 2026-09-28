@@ -220,6 +220,27 @@ describe("engine on PGlite", () => {
     expect(visitors.rows[0]?.meta).toEqual({ identity: { userId: "user_123", plan: "pro" } });
   });
 
+  test("keeps the exit page of the latest event when an older one arrives late", async () => {
+    const [pageview] = browserRequest().events as { [key: string]: unknown }[];
+    function event(id: string, path: string, ts: string) {
+      return { ...pageview, id, ts, session: "session-late", page: { path } };
+    }
+    await engine.ingest({
+      ...browserRequest(),
+      events: [
+        event("01928c3e-7a4b-7c1d-9f00-000000000010", "/latest", "2026-09-27T16:39:59.000Z"),
+      ],
+    });
+    await engine.ingest({
+      ...browserRequest(),
+      events: [event("01928c3e-7a4b-7c1d-9f00-000000000011", "/older", "2026-09-27T16:39:50.000Z")],
+    });
+    const sessions = await database.query<{ exit_path: string; events: number }>(
+      "SELECT exit_path, events FROM sessions WHERE session_id = 'session-late'",
+    );
+    expect(sessions.rows).toEqual([{ exit_path: "/latest", events: 2 }]);
+  });
+
   test("counts rate limit hits in the database", async () => {
     const decisions = [];
     for (let hit = 0; hit < 3; hit += 1) {

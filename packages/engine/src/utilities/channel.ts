@@ -41,7 +41,7 @@ export type ChannelInput = {
 function matches(host: string, patterns: string[]) {
   return patterns.some((pattern) =>
     pattern.endsWith(".")
-      ? host.includes(pattern)
+      ? host.startsWith(pattern) || host.includes(`.${pattern}`)
       : host === pattern || host.endsWith(`.${pattern}`),
   );
 }

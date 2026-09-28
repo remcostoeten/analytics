@@ -33,7 +33,8 @@ const emptyRecord: GeoRecord = {
 /**
  * @name memoryStore
  * @description An `EventStore` held in a map keyed by event id, which reports repeated ids as
- * duplicates the way the database's unique index does, and keeps each session's drafts.
+ * duplicates the way the database's unique index does, and keeps each session's drafts. A
+ * visitor seen internal once stays internal, and its later events are stored as internal.
  *
  * @example
  * const store = memoryStore();
@@ -46,13 +47,20 @@ export function memoryStore(): EventStore & {
 } {
   const events = new Map<string, EventDraft>();
   const sessions = new Map<string, EventDraft[]>();
+  const internalVisitors = new Set<string>();
   return {
     events,
     sessions,
     upsertSessions: async (drafts) => {
       for (const draft of drafts) {
+        if (draft.flags.internal) internalVisitors.add(`${draft.projectId}:${draft.event.visitor}`);
+      }
+      for (const draft of drafts) {
+        const internal = internalVisitors.has(`${draft.projectId}:${draft.event.visitor}`);
+        const stored = internal ? { ...draft, flags: { ...draft.flags, internal } } : draft;
+        events.set(draft.event.id, stored);
         const key = `${draft.projectId}:${draft.event.session}`;
-        sessions.set(key, [...(sessions.get(key) ?? []), draft]);
+        sessions.set(key, [...(sessions.get(key) ?? []), stored]);
       }
       return ok(undefined);
     },

@@ -9,6 +9,7 @@ import { engineError } from "../src/errors";
 import { createEngine } from "../src/pipeline";
 import { botScoreStage } from "../src/stages/bot-score";
 import { enrichStage } from "../src/stages/enrich";
+import { flagsStage } from "../src/stages/flags";
 import {
   batchContext,
   browserEvents,
@@ -284,6 +285,23 @@ describe("parse and dedupe", () => {
       events: [pageview, pageview],
     });
     expect(result).toEqual(ok({ accepted: 1, duplicates: 1, rejected: [] }));
+  });
+
+  test("keeps a visitor internal once an admin session marks it", async () => {
+    const ports = memoryPorts();
+    const engine = createEngine(ports, registry([flagsStage]), settings);
+    const admin = browserRequest();
+    const [pageview, signup] = browserEvents();
+    await engine.ingest({
+      ...admin,
+      request: { ...admin.request, adminSession: true },
+      events: [pageview],
+    });
+    await engine.ingest({ ...browserRequest(), events: [signup] });
+    expect([...ports.store.events.values()].map((draft) => draft.flags.internal)).toEqual([
+      true,
+      true,
+    ]);
   });
 
   test("upserts sessions for new events only and logs a session failure", async () => {

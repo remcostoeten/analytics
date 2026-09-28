@@ -183,8 +183,8 @@ async function upsertSession(db: Database, group: EventDraft[]) {
       target: [sessions.projectId, sessions.sessionId],
       set: {
         lastEventAt: latest,
-        exitPath: last.event.page.path,
-        exitRoute: last.event.page.route ?? null,
+        exitPath: sql`CASE WHEN ${lastEventAt} >= ${sessions.lastEventAt} THEN ${last.event.page.path} ELSE ${sessions.exitPath} END`,
+        exitRoute: sql`CASE WHEN ${lastEventAt} >= ${sessions.lastEventAt} THEN ${last.event.page.route ?? null} ELSE ${sessions.exitRoute} END`,
         events: sql`${sessions.events} + ${group.length}`,
         pageviews: sql`${sessions.pageviews} + ${pageviews}`,
         durationMs: sql`(EXTRACT(EPOCH FROM (${latest} - ${sessions.startedAt})) * 1000)::integer`,

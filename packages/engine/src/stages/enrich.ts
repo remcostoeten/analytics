@@ -8,7 +8,7 @@ import { defineStage } from "../define";
  * the draft's enrichment; a later enricher can override an earlier one.
  *
  * @example
- * createEngine(ports, { stages: [enrichStage], signals: [], enrichers: [geoEnricher], dimensions: [] });
+ * createEngine(ports, { stages: [enrichStage], signals: [], enrichers: [geo], dimensions: [] }, settings);
  */
 export const enrichStage = defineStage({
   name: "enrich",

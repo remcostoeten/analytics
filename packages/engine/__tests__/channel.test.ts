@@ -27,6 +27,8 @@ describe("channelOf", () => {
     ["social network", "news.ycombinator.com", null, "social"],
     ["subdomain of a social network", "old.reddit.com", null, "social"],
     ["lookalike is not social", "notx.com", null, "referral"],
+    ["lookalike is not search", "evilgoogle.com", null, "referral"],
+    ["subdomain of a search engine", "www.google.co.uk", null, "search"],
     ["other site", "dev.to", null, "referral"],
   ])("%s", (_, referrerDomain, medium, expected) => {
     expect<string>(channelOf({ referrerDomain, siteHost: site, medium })).toBe(expected);
