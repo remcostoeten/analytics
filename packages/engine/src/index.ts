@@ -55,3 +55,5 @@ export {
   vitalThresholds,
 } from "./speed/score";
 export type { VitalName, VitalRating } from "./speed/score";
+export { parseStack } from "./errors/stack";
+export type { Frame } from "./errors/stack";

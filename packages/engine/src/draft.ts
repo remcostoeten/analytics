@@ -1,6 +1,7 @@
 import type { BotVerdict, Device, Source, WireEvent } from "@remcostoeten/analytics-contract";
 import type { Nullable, ProjectID, Timestamp } from "@remcostoeten/analytics-shared/semantic";
 
+import type { IssueDraft } from "./errors/stage";
 import type { Location } from "./ports";
 import { clientIp } from "./utilities/client-ip";
 import type { HeaderBag } from "./utilities/client-ip";
@@ -71,6 +72,7 @@ export type EventDraft = {
   flags: Flags;
   bot: BotVerdict;
   replay: boolean;
+  issue: Nullable<IssueDraft>;
 };
 
 /**
@@ -122,5 +124,6 @@ export function createDraft(batch: BatchContext, event: WireEvent, index: number
     flags: { localhost: false, preview: false, internal: false },
     bot: { score: 0, reasons: [] },
     replay: false,
+    issue: null,
   };
 }

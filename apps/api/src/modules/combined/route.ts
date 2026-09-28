@@ -1,4 +1,5 @@
 import {
+  IssueList,
   SpeedElementList,
   SpeedResponse,
   SpeedRouteList,
@@ -39,6 +40,7 @@ import { heatmap, paths, places, retention } from "../reads/explore";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "../reads/live";
+import { listIssues } from "../issues/service";
 import { download } from "../reads/export";
 import {
   readSpeedScope,
@@ -489,5 +491,21 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
         description: "As the per-project route.",
         tags,
       },
-    });
+    })
+    .get(
+      "/issues",
+      ({ request, caller, set }) =>
+        detailed(request, caller, set, ({ params, projects }) =>
+          listIssues(options.issues, params, projects),
+        ),
+      {
+        access: "public",
+        response: { 200: IssueList, ...responses },
+        detail: {
+          summary: "Issues across projects",
+          description: "Projects whose visitor-level data you may see, most recently seen first.",
+          tags,
+        },
+      },
+    );
 }

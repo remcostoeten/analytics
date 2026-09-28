@@ -1048,6 +1048,8 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
 
 ### Issues
 
+Issue ids read `iss_<id>`. `status=open|resolved|ignored` narrows the list, newest `lastSeen` first; `/v2/issues` lists every project whose visitor-level data you may see. An issue's events carry the parsed stack (Chrome, Edge, Firefox and Safari formats), up to 20 breadcrumbs, release, environment, page and device. Error messages, stacks and breadcrumbs are scrubbed of emails, tokens, long numbers and query strings other than `utm_` before they are stored.
+
 `GET /v2/projects/remcostoeten.nl/issues?status=open&limit=1`
 
 ```json

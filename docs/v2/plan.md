@@ -421,7 +421,7 @@ Stay on Neon Postgres and the existing tables; every change is additive, so the 
 | 0014 | Better Auth's user, session and account tables, generated through its Drizzle adapter; `dashboard_users` stays as the allowlist | Admin sign-in |
 | 0015 | `api_tokens`: `id`, `name`, `token_hash`, `scope` (`read` or `admin`, `sql` from 0022), `project_ids text[]` null for all, `last_used_at`, `expires_at`, timestamps | Scripts, CI and other frontends |
 
-Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log; 0023 the `(project_id, received_at, id)` index the realtime feed polls; 0024 the `query` schema with the nine console views, the `analytics_reader` role and the `query_secret` that signs a query's project ids; 0025 `saved_queries`.
+Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log; 0023 the `(project_id, received_at, id)` index the realtime feed polls; 0024 the `query` schema with the nine console views, the `analytics_reader` role and the `query_secret` that signs a query's project ids; 0025 `saved_queries`; 0026 `issues.is_regression` and the per-minute sampling counter.
 
 - **Idempotency**: the event `id` (UUIDv7) goes into the existing `fingerprint` column, so the unique index `events_fingerprint_uidx` rejects retries. The key lives as long as the event does, which outlives any client retry window.
 - **Writes**: one multi-row `INSERT ... ON CONFLICT DO NOTHING RETURNING` per batch, then session and visitor upserts grouped per session. Today's batch handler loops one event at a time.
@@ -633,7 +633,9 @@ New routes, detailed in the API reference tab:
 | PATCH | `/v2/projects/:project/issues/:issue` | admin |
 | POST | `/v2/projects/:project/releases/:release/sourcemaps` | project secret key, later phase |
 
-Storage: migration 0016 adds `issues` with a unique `(project_id, fingerprint)`; 0017 adds `events.issue_id`. Errors keep the 30-day retention of other events; issue rows stay until deleted.
+Storage: migration 0016 adds `issues` with a unique `(project_id, fingerprint)`; 0017 adds `events.issue_id`; 0026 adds `is_regression` and the per-minute counter behind sampling.
+
+Built so far (E4.4): the `error` stage scrubs and fingerprints error events (Chrome, Edge, Firefox and Safari stacks), the store groups newly stored events into issues after insert so a retried batch never counts twice, a resolved issue reopens as a regression, and past 100 of one issue in a minute only the count is kept. Issue ids read `iss_<id>`. The issue routes, `/v2/issues` and `filter[issue]` are live. Alerts from the cron job, `/error-rules` and capturing the API's own errors follow. Errors keep the 30-day retention of other events; issue rows stay until deleted.
 
 ## Lessons from Vercel
 
