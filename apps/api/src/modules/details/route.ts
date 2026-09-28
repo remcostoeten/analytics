@@ -47,7 +47,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
       "/projects/:project/events",
       ({ request, caller, project, set }) =>
         gate.answer(request, caller, project, set, "private", (params, id) =>
-          listEvents(store, params, id, options.clock()),
+          listEvents(store, params, [id], options.clock()),
         ),
       {
         access: "detail",
@@ -63,7 +63,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
       "/projects/:project/visitors",
       ({ request, caller, project, set }) =>
         gate.answer(request, caller, project, set, "private", (params, id) =>
-          listVisitors(store, params, id, options.clock()),
+          listVisitors(store, params, [id], options.clock()),
         ),
       {
         access: "detail",
@@ -130,7 +130,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
       "/projects/:project/sessions",
       ({ request, caller, project, set }) =>
         gate.answer(request, caller, project, set, "private", (params, id) =>
-          listSessions(store, params, id, options.clock()),
+          listSessions(store, params, [id], options.clock()),
         ),
       {
         access: "detail",

@@ -34,6 +34,7 @@ const responseKeys: { [name: string]: string } = {
   session_duration: "sessionDurationMs",
   pages_per_session: "pagesPerSession",
   time_on_page: "avgTimeMs",
+  scroll_depth: "scrollDepth",
 };
 const defaultMetrics: { [dimension: string]: string[] } = {
   page: ["visitors", "pageviews", "bounce_rate", "time_on_page"],
@@ -64,6 +65,7 @@ function metricValue(metric: Metric, value: number) {
   if (metric.kind !== "built-in") return round(value, 2);
   if (metric.name === "bounce_rate") return round(value, 3);
   if (metric.name === "pages_per_session") return round(value, 2);
+  if (metric.name === "scroll_depth") return round(value, 3);
   return Math.round(value);
 }
 

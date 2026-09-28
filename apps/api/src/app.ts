@@ -6,6 +6,7 @@ import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
 import { authModule } from "./modules/auth/route";
+import { combinedModule } from "./modules/combined/route";
 import { detailsModule } from "./modules/details/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
@@ -74,5 +75,6 @@ export function createApp(options: AppOptions) {
     .use(projectsModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
     .use(readsModule(options.access, options.reads, options.docsBase))
-    .use(detailsModule(options.access, options.reads, options.docsBase));
+    .use(detailsModule(options.access, options.reads, options.docsBase))
+    .use(combinedModule(options.access, options.reads, options.docsBase));
 }

@@ -29,7 +29,8 @@ export type BuiltInMetric =
   | "bounce_rate"
   | "session_duration"
   | "pages_per_session"
-  | "time_on_page";
+  | "time_on_page"
+  | "scroll_depth";
 
 export type Metric =
   | { kind: "built-in"; name: BuiltInMetric }

@@ -61,11 +61,15 @@ export function scopeParts(
   for (const dimension of [...keyDimensions, ...scope.filters.map((filter) => filter.dimension)]) {
     if (dimension.join) needed.add(dimension.join);
   }
+  const projects =
+    scope.projectIds.length > 0
+      ? sql`e.project_id IN (${sql.join(
+          scope.projectIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`
+      : sql`false`;
   const conditions = [
-    sql`e.project_id IN (${sql.join(
-      scope.projectIds.map((id) => sql`${id}`),
-      sql`, `,
-    )})`,
+    projects,
     sql`e.ts >= ${scope.from.toISOString()}::timestamptz`,
     sql`e.ts < ${scope.to.toISOString()}::timestamptz`,
     trafficCondition(scope.traffic),
@@ -84,5 +88,5 @@ export function scopeParts(
  */
 export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
   const { joins: joined, where } = scopeParts(scope, keyDimensions);
-  return sql`SELECT ${key} AS k, e.project_id, e.visitor_id, e.session_id, e.type, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
+  return sql`SELECT ${key} AS k, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
 }
