@@ -1,5 +1,5 @@
 {
-  "expectedPath": "/events/0",
+  "expectedPath": "/events/0/page",
   "value": {
     "v": 1,
     "sentAt": "2026-09-27T16:40:00.120Z",

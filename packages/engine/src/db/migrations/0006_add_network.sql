@@ -1,0 +1,2 @@
+ALTER TABLE events ADD COLUMN IF NOT EXISTS asn integer;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS as_org text;

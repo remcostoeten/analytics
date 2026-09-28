@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreWorkspaces": ["v1/**"],
+  "ignore": ["tools/oxlint/anti-slop/**"],
+  "workspaces": {
+    "apps/api": {
+      "entry": ["src/index.ts", "src/server.ts", "scripts/*.ts"]
+    }
+  }
+}

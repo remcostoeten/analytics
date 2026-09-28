@@ -1,5 +1,5 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { Compared, Filters, Range, ValueCount } from "./common";
 import { Interval, Percentile, TrafficFilter, VitalRating } from "./enums";

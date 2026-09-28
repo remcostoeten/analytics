@@ -1,5 +1,13 @@
-import Type from "typebox";
-import type { TSchema } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { TLiteral, TSchema, TUnion } from "@sinclair/typebox";
+
+import { registerFormats } from "./formats";
+
+registerFormats();
+
+type Literals<Values extends readonly string[]> = {
+  -readonly [Key in keyof Values]: TLiteral<Values[Key]>;
+};
 
 /**
  * @name nullable
@@ -33,6 +41,21 @@ export function listOf<Item extends TSchema>(item: Item) {
  */
 export function dataOf<Value extends TSchema>(value: Value) {
   return Type.Object({ data: value });
+}
+
+/**
+ * @name oneOf
+ * @description A union of string literals, the TypeBox 0.34 form of a finite set such as
+ * `"public" | "private"`. Its static type is the union of the given values.
+ *
+ * @example
+ * const Visibility = oneOf(["public", "private"]);
+ */
+export function oneOf<const Values extends readonly [string, ...string[]]>(
+  values: Values,
+): TUnion<Literals<Values>> {
+  // Array.map cannot carry a tuple type through, so the union of literals is restated for TypeBox.
+  return Type.Union(values.map((value) => Type.Literal(value))) as TUnion<Literals<Values>>;
 }
 
 export const Timestamp = Type.String({ format: "date-time" });

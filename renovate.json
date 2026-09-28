@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "timezone": "Europe/Amsterdam",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "pin",
+  "automerge": false,
+  "ignorePaths": ["**/node_modules/**", "v1/**"],
+  "lockFileMaintenance": { "enabled": true, "schedule": ["before 6am on monday"] },
+  "packageRules": [
+    {
+      "description": "One grouped PR for every non-major update, catalogs included",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major"
+    },
+    {
+      "description": "Majors get their own PR per package",
+      "matchUpdateTypes": ["major"],
+      "groupName": null
+    },
+    {
+      "description": "Oxlint, its plugin API and tsgolint move together",
+      "matchPackageNames": ["oxlint", "@oxlint/plugins", "oxlint-tsgolint"],
+      "groupName": "oxlint"
+    }
+  ]
+}

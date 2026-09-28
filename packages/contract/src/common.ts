@@ -1,5 +1,5 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { BotReason, Channel, DeviceType, Period, TrafficFilter } from "./enums";
 import { Count, nullable, Timestamp } from "./schema";

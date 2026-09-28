@@ -19,3 +19,4 @@ One short record per row of the decisions table in [`docs/v2/plan.md`](../v2/pla
 | [0013](0013-branching.md) | Branching | Settled |
 | [0014](0014-who-runs-this.md) | Who runs this | Settled |
 | [0015](0015-roles-and-sql-access.md) | Roles and SQL access | Open, default |
+| [0016](0016-elysia-on-vercel.md) | Elysia on Vercel | Open |

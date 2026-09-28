@@ -54,7 +54,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract` and `scripts/` (the boundary check) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `packages/*`, `scripts`, `tools/oxlint/*`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (only its database layer so far) and `scripts/` (the boundary check and `migrate.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`; `apps/*` is added back when `apps/api` arrives.
 
 ## Commands
 
@@ -68,13 +68,22 @@ Today `v1/`, `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` pl
 | `bun run lint:v1` | Oxlint correctness rules on `v1/` with `v1/.oxlintrc.json` |
 | `bun run format` / `format:check` | oxfmt on the whole repo, `v1/` included |
 | `bun run boundaries` | `scripts/check-boundaries.ts`: which workspace may import which, and nothing from `v1/` |
-| `bun run check` | typecheck, lint, format check, boundaries and tests |
-| `bun run test` | `bun test` per workspace: the v1 workspaces first, then the v2 ones, so v2 tests do not slow the v1 PGlite suite past its timeouts |
+| `bun run deps` | sherif: consistent dependency versions and manifest fields; v1 is ignored |
+| `bun run knip` | knip: unused files, exports and dependencies in v2 |
+| `bun run knip:v1` | knip report of what v1 no longer uses; never fails |
+| `bun run migrate` | Applies `packages/engine/src/db/migrations` to `DATABASE_URL`; `--dry-run`, and `--baseline 0008_add_rollup_daily` on a database v1 already migrated. Remco runs it against Neon |
+| `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
+| `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
+| `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, boundaries, test. Lefthook runs oxfmt and Oxlint on staged files before each commit; `bun install` sets it up.
+CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. CodeQL runs on pull requests and weekly. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
+
+Lefthook runs oxfmt, Oxlint and gitleaks (when installed) on staged files before each commit, and rejects commit subjects that are not conventional commits; `bun install` sets it up.
+
+A pull request that changes a published package (`packages/contract`, later `packages/sdk`) adds a changeset with `bun run changeset`.
 
 Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 

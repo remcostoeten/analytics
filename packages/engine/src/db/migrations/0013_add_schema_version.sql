@@ -1,0 +1,1 @@
+ALTER TABLE events ADD COLUMN IF NOT EXISTS schema_version smallint NOT NULL DEFAULT 0;

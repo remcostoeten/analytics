@@ -1,5 +1,5 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 import { BotVerdict, Device, Geo, Props, Source } from "./common";
 import { DeviceType, EventName } from "./enums";

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+tone_instructions: "Short and direct. Point at the rule a finding breaks. Skip praise and summaries of what the code already says."
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!v1/**"
+    - "!bun.lock"
+    - "!tools/oxlint/anti-slop/**"
+    - "!packages/contract/fixtures/**"
+  path_instructions:
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        Follow AGENTS.md and the generic program rules:
+        - Standalone functions are function declarations; callbacks are arrow functions. No classes except React error boundaries.
+        - `type`, never `interface`. Finite sets are literal unions. `Nullable<T>` for present-but-empty values.
+        - No comments except a one-line workaround reason, a one-line regex explanation, or a TODO. Exported shared and business-logic functions have a JSDoc block with @name, @description and @example.
+        - Engine code returns errors as Result values instead of throwing. No module mocking in tests.
+        - v2 code never imports from v1/.
+        Do not comment on formatting; oxfmt handles it.
+    - path: "**/*.md"
+      instructions: "Prose uses plain declaratives with no em dashes and no marketing language."
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"

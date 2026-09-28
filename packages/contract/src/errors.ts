@@ -1,7 +1,7 @@
-import Type from "typebox";
-import type { Static } from "typebox";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
-import { Url } from "./schema";
+import { oneOf, Url } from "./schema";
 
 type LogLevel = "info" | "warn" | "error";
 
@@ -90,7 +90,7 @@ export const errorCatalog = {
   },
 } as const satisfies { [Code in ErrorCode]: ErrorSpec };
 
-export const ErrorCode = Type.Enum(errorCodes);
+export const ErrorCode = oneOf(errorCodes);
 
 export const ErrorDetails = Type.Record(Type.String(), Type.Unknown());
 export type ErrorDetails = Static<typeof ErrorDetails>;

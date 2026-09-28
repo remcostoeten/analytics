@@ -2,9 +2,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
-import Type from "typebox";
-import type { TSchema } from "typebox";
-import { Value } from "typebox/value";
+import { Type } from "@sinclair/typebox";
+import type { TSchema } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
 import {
   AdminMetrics,
@@ -126,8 +126,8 @@ describe("fixtures", () => {
     describe(name, () => {
       for (const { file, raw } of fixtureFiles(name, "valid")) {
         test(`accepts valid/${file}`, () => {
-          const errors = Value.Errors(schemaFor(name), raw).map(
-            (error) => `${error.instancePath} ${error.message}`,
+          const errors = [...Value.Errors(schemaFor(name), raw)].map(
+            (error) => `${error.path} ${error.message}`,
           );
           expect(errors).toEqual([]);
         });
@@ -137,7 +137,7 @@ describe("fixtures", () => {
         test(`rejects invalid/${file} at its expected path`, () => {
           if (!Value.Check(InvalidFixture, raw))
             throw new Error(`${file} is not an invalid fixture`);
-          const paths = Value.Errors(schemaFor(name), raw.value).map((error) => error.instancePath);
+          const paths = [...Value.Errors(schemaFor(name), raw.value)].map((error) => error.path);
           expect(paths.length).toBeGreaterThan(0);
           expect(paths).toContain(raw.expectedPath);
         });

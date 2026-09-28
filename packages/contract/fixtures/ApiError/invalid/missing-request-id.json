@@ -1,5 +1,5 @@
 {
-  "expectedPath": "/error",
+  "expectedPath": "/error/requestId",
   "value": {
     "error": {
       "code": "NOT_FOUND",
