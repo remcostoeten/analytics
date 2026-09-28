@@ -10,7 +10,7 @@ const maxScore = 100;
  * the firing signals as reasons. It reruns on `engine.rescore` after a signal changes.
  *
  * @example
- * createEngine(ports, { stages: [enrichStage, botScoreStage], signals: [webdriver], enrichers: [], dimensions: [] });
+ * createEngine(ports, { stages: [enrichStage, botScoreStage], signals: [webdriver], enrichers: [], dimensions: [] }, settings);
  */
 export const botScoreStage = defineStage({
   name: "bot-score",

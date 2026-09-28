@@ -47,12 +47,13 @@ describe("maxmindGeo", () => {
     expect(geo.lookup("81.2.69.160")).toEqual({
       geo: {
         country: "GB",
-        region: "England",
+        region: "ENG",
         city: "London",
         postalCode: null,
         timezone: "Europe/London",
         latitude: 51.5142,
         longitude: -0.0931,
+        continent: "EU",
       },
       network: { asn: null, asOrg: null },
     });
@@ -60,5 +61,9 @@ describe("maxmindGeo", () => {
 
   test("returns nulls for an unknown address", () => {
     expect(geo.lookup("10.0.0.1").geo.country).toBeNull();
+  });
+
+  test("returns nulls for a malformed address", () => {
+    expect(geo.lookup("not-an-ip").geo.country).toBeNull();
   });
 });

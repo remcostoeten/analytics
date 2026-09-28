@@ -1,18 +1,35 @@
-import type { BotVerdict, Device, Geo, Source, WireEvent } from "@remcostoeten/analytics-contract";
+import type { BotVerdict, Device, Source, WireEvent } from "@remcostoeten/analytics-contract";
 import type { Nullable, ProjectID, Timestamp } from "@remcostoeten/analytics-shared/semantic";
 
-export type RequestFacts = {
-  ip: Nullable<string>;
-  userAgent: Nullable<string>;
-  origin: Nullable<string>;
+import type { Location } from "./ports";
+import { clientIp } from "./utilities/client-ip";
+import type { HeaderBag } from "./utilities/client-ip";
+import { hostOf } from "./utilities/hosts";
+
+export type Credentials = {
+  publicKey: Nullable<string>;
+  secretKey: Nullable<string>;
 };
 
-export type IngestBatch = {
-  projectId: ProjectID;
+export type RequestFacts = {
+  headers: HeaderBag;
+  adminSession: boolean;
+};
+
+export type IngestRequest = {
+  credentials: Credentials;
   receivedAt: Timestamp;
   sentAt: Timestamp;
   request: RequestFacts;
-  events: WireEvent[];
+  events: unknown[];
+};
+
+export type BatchContext = {
+  projectId: ProjectID;
+  trusted: boolean;
+  receivedAt: Timestamp;
+  sentAt: Timestamp;
+  request: RequestFacts;
 };
 
 export type Network = {
@@ -20,25 +37,40 @@ export type Network = {
   asOrg: Nullable<string>;
 };
 
+export type Client = {
+  ip: Nullable<string>;
+  userAgent: Nullable<string>;
+  ipHash: Nullable<string>;
+};
+
 export type Enrichment = {
-  geo: Nullable<Geo>;
+  client: Client;
+  geo: Nullable<Location>;
   network: Nullable<Network>;
   device: Nullable<Device>;
   source: Nullable<Source>;
 };
 
+export type Flags = {
+  localhost: boolean;
+  preview: boolean;
+  internal: boolean;
+};
+
 export type EventDraft = {
   index: number;
   projectId: ProjectID;
+  trusted: boolean;
   receivedAt: Timestamp;
   ts: Timestamp;
+  origin: Nullable<string>;
+  host: Nullable<string>;
   event: WireEvent;
   request: RequestFacts;
   enrichment: Enrichment;
+  flags: Flags;
   bot: BotVerdict;
 };
-
-export const emptyEnrichment: Enrichment = { geo: null, network: null, device: null, source: null };
 
 /**
  * @name correctedTimestamp
@@ -56,21 +88,37 @@ export function correctedTimestamp(ts: Timestamp, sentAt: Timestamp, receivedAt:
 
 /**
  * @name createDraft
- * @description Turns one wire event of a batch into the draft the pipeline stages refine, with
- * a skew-corrected timestamp, empty enrichment and a clean bot verdict.
+ * @description Turns one parsed wire event into the draft the pipeline stages refine: a
+ * skew-corrected timestamp, the client IP and user agent from the request headers, empty
+ * enrichment, cleared flags and a clean bot verdict.
  *
  * @example
- * const drafts = batch.events.map((event, index) => createDraft(batch, event, index));
+ * const drafts = events.map((event, index) => createDraft(batch, event, index));
  */
-export function createDraft(batch: IngestBatch, event: WireEvent, index: number): EventDraft {
+export function createDraft(batch: BatchContext, event: WireEvent, index: number): EventDraft {
+  const origin = batch.request.headers.get("origin");
   return {
     index,
     projectId: batch.projectId,
+    trusted: batch.trusted,
     receivedAt: batch.receivedAt,
     ts: correctedTimestamp(event.ts, batch.sentAt, batch.receivedAt),
+    origin,
+    host: hostOf(origin),
     event,
     request: batch.request,
-    enrichment: emptyEnrichment,
+    enrichment: {
+      client: {
+        ip: clientIp(batch.request.headers),
+        userAgent: batch.request.headers.get("user-agent"),
+        ipHash: null,
+      },
+      geo: null,
+      network: null,
+      device: null,
+      source: null,
+    },
+    flags: { localhost: false, preview: false, internal: false },
     bot: { score: 0, reasons: [] },
   };
 }

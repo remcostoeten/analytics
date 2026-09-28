@@ -1,21 +1,25 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 
-import type { Clock, EventStore, RateLimiter } from "../ports";
-import { drizzleLimiter, drizzleStore } from "./drizzle";
+import type { Clock, EventStore, ProjectStore, RateLimiter } from "../ports";
+import { drizzleLimiter, drizzleProjects, drizzleStore } from "./drizzle";
 
 /**
  * @name pgliteAdapters
- * @description The `EventStore` and `RateLimiter` on an in-process PGlite database, for tests
+ * @description The `EventStore`, `ProjectStore` and `RateLimiter` on an in-process PGlite database, for tests
  * and local runs. Migrate the database first.
  *
  * @example
- * const { store, limiter } = pgliteAdapters(new PGlite(), systemClock());
+ * const { store, projects, limiter } = pgliteAdapters(new PGlite(), systemClock());
  */
 export function pgliteAdapters(
   client: PGlite,
   clock: Clock,
-): { store: EventStore; limiter: RateLimiter } {
+): { store: EventStore; projects: ProjectStore; limiter: RateLimiter } {
   const db = drizzle(client);
-  return { store: drizzleStore(db), limiter: drizzleLimiter(db, clock) };
+  return {
+    store: drizzleStore(db),
+    projects: drizzleProjects(db),
+    limiter: drizzleLimiter(db, clock),
+  };
 }
