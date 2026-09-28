@@ -63,6 +63,7 @@ function app(publicLimit: number) {
     },
     reads: {
       store: stores.reads,
+      details: stores.details,
       limiter: pgliteAdapters(database, clock).limiter,
       hasher,
       ipSecret: "x".repeat(48),

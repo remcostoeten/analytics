@@ -6,11 +6,12 @@ import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
 import { authModule } from "./modules/auth/route";
+import { detailsModule } from "./modules/details/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
 import { projectsModule } from "./modules/projects/route";
 import { readsModule } from "./modules/reads/route";
-import type { ReadsOptions } from "./modules/reads/route";
+import type { ReadsOptions } from "./modules/reads/guard";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { docs } from "./plugins/docs";
@@ -72,5 +73,6 @@ export function createApp(options: AppOptions) {
     )
     .use(projectsModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
-    .use(readsModule(options.access, options.reads, options.docsBase));
+    .use(readsModule(options.access, options.reads, options.docsBase))
+    .use(detailsModule(options.access, options.reads, options.docsBase));
 }

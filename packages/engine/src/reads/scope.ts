@@ -45,15 +45,18 @@ function joins(needed: Set<DimensionJoin>): SQL {
 }
 
 /**
- * @name scopedEvents
- * @description The events one read covers, as a `SELECT` for a `scoped` CTE: the projects, the
- * half-open range `[from, to)`, the traffic filter and every dimension filter, with each row's
- * group `key`. Sessions and visitors are joined only when a dimension needs them.
+ * @name scopeParts
+ * @description The joins and `WHERE` condition for the events one read covers: the projects, the
+ * half-open range `[from, to)`, the traffic filter and every dimension filter. Sessions and
+ * visitors are joined only when a dimension needs them.
  *
  * @example
- * sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}) SELECT count(*) FROM scoped`;
+ * const { joins, where } = scopeParts(scope, []);
  */
-export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
+export function scopeParts(
+  scope: ReadScope,
+  keyDimensions: Dimension[],
+): { joins: SQL; where: SQL } {
   const needed = new Set<DimensionJoin>();
   for (const dimension of [...keyDimensions, ...scope.filters.map((filter) => filter.dimension)]) {
     if (dimension.join) needed.add(dimension.join);
@@ -68,5 +71,18 @@ export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimensio
     trafficCondition(scope.traffic),
     ...scope.filters.map((filter) => filterCondition(filter, scope)),
   ];
-  return sql`SELECT ${key} AS k, e.visitor_id, e.session_id, e.type, e.ts, e.meta, e.path, e.country FROM events e ${joins(needed)} WHERE ${sql.join(conditions, sql` AND `)}`;
+  return { joins: joins(needed), where: sql.join(conditions, sql` AND `) };
+}
+
+/**
+ * @name scopedEvents
+ * @description The events one read covers, as a `SELECT` for a `scoped` CTE, with each row's
+ * group `key`.
+ *
+ * @example
+ * sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}) SELECT count(*) FROM scoped`;
+ */
+export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
+  const { joins: joined, where } = scopeParts(scope, keyDimensions);
+  return sql`SELECT ${key} AS k, e.project_id, e.visitor_id, e.session_id, e.type, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
 }

@@ -90,6 +90,7 @@ export default createApp({
   },
   reads: {
     store: stores.reads,
+    details: stores.details,
     limiter: adapters.limiter,
     hasher,
     ipSecret: settings.ipSecret,
