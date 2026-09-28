@@ -5,8 +5,9 @@ import { definePlugin } from "../core/plugin-host";
 /**
  * @name pageviews
  * @description Sends a pageview on start and on every client-side navigation: `pushState`,
- * `replaceState` to a new path, and back and forward. A repeat of the same URL is skipped.
- * Included by default unless `pageviews: false`.
+ * `replaceState` to a new path, and back and forward. A repeat of the same URL or a change of
+ * only the hash is skipped, and nothing is sent once a framework adapter supplies the route,
+ * because the adapter sends pageviews itself. Included by default unless `pageviews: false`.
  *
  * @example
  * createAnalytics({ project, key, pageviews: false, plugins: [pageviews()] });
@@ -19,7 +20,7 @@ export function pageviews() {
       let last = "";
       function visit() {
         const url = location.pathname + location.search;
-        if (url === last) return;
+        if (url === last || client.status().route !== null) return;
         last = url;
         client.page();
       }
