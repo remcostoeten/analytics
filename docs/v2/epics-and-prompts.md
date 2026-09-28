@@ -48,7 +48,8 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.2 | Read resources | 4 | E4.1 | `feature/api-reads` |
 | E4.3 | Speed insights | 4 | E3.2, E4.2 | `feature/speed-insights` |
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
-| E4.5 | Dashboard on the v2 API | 4 | E4.2 | `feature/dashboard-v2` |
+| E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
+| E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
@@ -311,6 +312,8 @@ Epic E4.4, branch feature/error-tracking. Also read the SDK design tab's Error t
 
 ### E4.5 Dashboard on the v2 API
 
+On hold since Sep 28 until Remco provides a design. Parity tests will compare each view against fixed expected values from a seeded dataset.
+
 Delivers: the dashboard reading only through Eden Treaty, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
 
 ```text
@@ -319,6 +322,17 @@ Epic E4.5, branch feature/dashboard-v2. Read the plan sections "Access and sign-
 2. Migrate one view at a time, each in its own commit: overview, pages and referrers, geo, devices, visitors and session trails, realtime, speed, issues. Write a parity test per view comparing the old query and the new API on the demo database.
 3. Signed out: list and show public projects only. Signed in: show private projects, the visibility filter and admin controls from /v2/auth/session.
 4. Remove the dashboard's own GitHub OAuth routes once sign-in through the API works. Keep the old API routes until phase 5.
+```
+
+### E4.6 Docs site
+
+Delivers: `apps/docs` on Fumadocs with every SDK method, option and plugin, the API reference generated from `apps/api/openapi.json`, an auth overview (sign-in, access levels, tokens, the session route) and a small SQL query page that runs `POST /v2/query` with a token. Done when every exported SDK function and every API route has a page and the site builds in CI.
+
+```text
+Epic E4.6, branch feature/docs-site. Read the plan sections "SDK API shape", "Access and sign-in", "REST API" and "SQL console".
+1. Export the OpenAPI document to apps/api/openapi.json with a script, and fail CI when it is stale.
+2. Add apps/docs on Fumadocs: MDX pages for the SDK (install, config, client methods, each plugin, react, next, server, proxy) and generated API reference pages from openapi.json.
+3. Add an auth overview page and a query page: the API URL and a token go in, SQL runs through POST /v2/query, results show as a table. No other dashboard views.
 ```
 
 ## Phase 5: retire 1.x

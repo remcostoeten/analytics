@@ -78,6 +78,15 @@ export type {
   SavedQueryStore,
 } from "./query";
 export type { EventStore, InsertOutcome } from "./event-store";
+export type {
+  CheckTarget,
+  IngestCount,
+  JobName,
+  JobRunRecord,
+  OpsMetrics,
+  OpsStore,
+  SpeedCheck,
+} from "./ops";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
 export type { Hasher } from "./hasher";
 export type { LogEntry, LogFields, Logger, LogLevel } from "./logger";

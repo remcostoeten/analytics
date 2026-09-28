@@ -1,0 +1,83 @@
+{
+  "expectedPath": "/data/speedChecks/0/metric",
+  "value": {
+    "data": {
+      "ingest": {
+        "last24h": {
+          "requests": 18230,
+          "accepted": 40112,
+          "duplicates": 311,
+          "rejected": 42,
+          "rateLimited": 9
+        }
+      },
+      "bots": {
+        "last24h": {
+          "scoredAbove50": 5120,
+          "topReasons": [
+            {
+              "reason": "ua_crawler",
+              "events": 3011
+            },
+            {
+              "reason": "asn_datacenter",
+              "events": 1402
+            }
+          ]
+        }
+      },
+      "jobs": [
+        {
+          "job": "rollup",
+          "lastRunAt": "2026-09-27T02:30:04.000Z",
+          "status": "ok",
+          "durationMs": 4120,
+          "rowsWritten": 1880
+        },
+        {
+          "job": "cleanup",
+          "lastRunAt": "2026-09-27T03:00:02.000Z",
+          "status": "ok",
+          "durationMs": 2210,
+          "rowsDeleted": 30551
+        },
+        {
+          "job": "crux",
+          "lastRunAt": "2026-09-27T04:00:01.000Z",
+          "status": "failed",
+          "durationMs": 310,
+          "message": "The Chrome UX Report answered 429"
+        }
+      ],
+      "speedChecks": [
+        {
+          "project": "remcostoeten.nl",
+          "metric": "ttfb",
+          "checkedAt": "2026-09-21T04:00:01.000Z",
+          "ours": 2710,
+          "crux": 2100,
+          "gap": 0.29,
+          "flagged": true
+        },
+        {
+          "project": "remcostoeten.nl",
+          "metric": "cls",
+          "checkedAt": "2026-09-21T04:00:01.000Z",
+          "ours": 0.06,
+          "crux": 0.05,
+          "gap": 0.2,
+          "flagged": false
+        },
+        {
+          "project": "blog.remcostoeten.nl",
+          "metric": "inp",
+          "checkedAt": "2026-09-21T04:00:01.000Z",
+          "ours": 140,
+          "crux": null,
+          "gap": null,
+          "flagged": false
+        }
+      ]
+    }
+  }
+}

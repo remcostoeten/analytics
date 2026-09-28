@@ -1,5 +1,5 @@
 import { WireEvent } from "@remcostoeten/analytics-contract";
-import type { Engine, Logger } from "@remcostoeten/analytics-engine";
+import type { Engine, IngestCount, Logger } from "@remcostoeten/analytics-engine";
 import { Elysia } from "elysia";
 
 import { failure } from "../../plugins/error-handler";
@@ -13,14 +13,18 @@ export type EventsOptions = {
   clock: () => Date;
   docsBase: string;
   isAdmin: (headers: Headers) => Promise<boolean>;
+  count?: (at: Date, count: IngestCount) => Promise<unknown>;
 };
+
+const none = { requests: 1, accepted: 0, duplicates: 0, rejected: 0, rateLimited: 0 };
 
 /**
  * @name eventsModule
  * @description `POST /v2/events`: a `text/plain` or `application/json` batch of up to 50 events and
  * 60 KB, with the public key in `X-Project-Key` or `?key=` from an allowed origin, or
  * `Authorization: Bearer sk_...`. Answers
- * 202 with `{ accepted, duplicates, rejected }`, or the error envelope.
+ * 202 with `{ accepted, duplicates, rejected }`, or the error envelope. Each request is added to
+ * the hourly ingest counters when `count` is given.
  *
  * @example
  * new Elysia({ prefix: "/v2" }).use(eventsModule({ engine, logger, clock: () => new Date(), docsBase }));
@@ -31,12 +35,18 @@ export function eventsModule(options: EventsOptions) {
     async ({ body, request, set, status }) => {
       const logger = options.logger(readRequestId(set.headers));
       const admin = await options.isAdmin(request.headers);
-      const result = await ingestEvents(
-        options.engine(logger),
-        body,
-        request,
-        options.clock(),
-        admin,
+      const receivedAt = options.clock();
+      const result = await ingestEvents(options.engine(logger), body, request, receivedAt, admin);
+      await options.count?.(
+        receivedAt,
+        result.ok
+          ? {
+              ...none,
+              accepted: result.value.accepted,
+              duplicates: result.value.duplicates,
+              rejected: result.value.rejected.length,
+            }
+          : { ...none, rateLimited: result.error.code === "RATE_LIMITED" ? 1 : 0 },
       );
       if (result.ok) return status(202, result.value);
       if (result.error.cause) {

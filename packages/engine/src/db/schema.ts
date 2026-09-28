@@ -416,3 +416,41 @@ export const rateLimits = pgTable(
   },
   (table) => [primaryKey({ columns: [table.key, table.windowStart] })],
 );
+
+export const ingestCounts = pgTable("ingest_counts", {
+  hourStart: timestamp("hour_start", { withTimezone: true }).primaryKey(),
+  requests: integer("requests").notNull().default(0),
+  accepted: integer("accepted").notNull().default(0),
+  duplicates: integer("duplicates").notNull().default(0),
+  rejected: integer("rejected").notNull().default(0),
+  rateLimited: integer("rate_limited").notNull().default(0),
+});
+
+export const jobRuns = pgTable(
+  "job_runs",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    job: text("job").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    status: text("status", { enum: ["ok", "failed"] }).notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    rowsWritten: integer("rows_written"),
+    rowsDeleted: integer("rows_deleted"),
+    message: text("message"),
+  },
+  (table) => [index("job_runs_job_idx").on(table.job, table.startedAt)],
+);
+
+export const speedChecks = pgTable(
+  "speed_checks",
+  {
+    projectId: text("project_id").notNull(),
+    metric: text("metric").notNull(),
+    checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+    ours: doublePrecision("ours"),
+    crux: doublePrecision("crux"),
+    gap: doublePrecision("gap"),
+    flagged: boolean("flagged").notNull().default(false),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.metric] })],
+);

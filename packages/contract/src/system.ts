@@ -26,7 +26,7 @@ export const AuthSession = Type.Object({
 });
 export type AuthSession = Static<typeof AuthSession>;
 
-export const JobName = oneOf(["rollup", "cleanup", "alerts"]);
+export const JobName = oneOf(["rollup", "cleanup", "alerts", "crux"]);
 export type JobName = Static<typeof JobName>;
 
 export const JobStatus = oneOf(["ok", "failed"]);
@@ -39,8 +39,20 @@ export const JobRun = Type.Object({
   durationMs: Milliseconds,
   rowsWritten: Type.Optional(Count),
   rowsDeleted: Type.Optional(Count),
+  message: Type.Optional(Type.String()),
 });
 export type JobRun = Static<typeof JobRun>;
+
+export const SpeedCheck = Type.Object({
+  project: Type.String({ minLength: 1 }),
+  metric: oneOf(["lcp", "inp", "cls", "fcp"]),
+  checkedAt: Timestamp,
+  ours: nullable(Type.Number({ minimum: 0 })),
+  crux: nullable(Type.Number({ minimum: 0 })),
+  gap: nullable(Type.Number({ minimum: 0 })),
+  flagged: Type.Boolean(),
+});
+export type SpeedCheck = Static<typeof SpeedCheck>;
 
 export const AdminMetrics = dataOf(
   Type.Object({
@@ -60,6 +72,7 @@ export const AdminMetrics = dataOf(
       }),
     }),
     jobs: Type.Array(JobRun),
+    speedChecks: Type.Array(SpeedCheck),
   }),
 );
 export type AdminMetrics = Static<typeof AdminMetrics>;
