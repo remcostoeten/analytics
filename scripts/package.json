@@ -12,6 +12,7 @@
 		"@electric-sql/pglite-socket": "0.2.11"
 	},
 	"dependencies": {
-		"@remcostoeten/analytics-engine": "workspace:*"
+		"@remcostoeten/analytics-engine": "workspace:*",
+		"drizzle-orm": "0.45.3"
 	}
 }

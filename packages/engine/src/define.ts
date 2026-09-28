@@ -27,6 +27,7 @@ export type Stage = {
 export type Signal = {
   name: BotReason;
   weight: number;
+  replayable: boolean;
   detect: (draft: EventDraft) => boolean;
 };
 
@@ -66,9 +67,11 @@ export function defineStage(stage: Stage): Stage {
 /**
  * @name defineSignal
  * @description Declares a bot signal: a named, weighted check the bot score stage sums.
+ * `replayable` says its inputs are stored with the event, so a rescore runs `detect` again;
+ * otherwise a rescore keeps the reason the event was stored with.
  *
  * @example
- * const webdriver = defineSignal({ name: "client_webdriver", weight: 60, detect: (draft) => (draft.event.signals ?? 0) > 0 });
+ * const webdriver = defineSignal({ name: "client_webdriver", weight: 60, replayable: false, detect: (draft) => (draft.event.signals ?? 0) > 0 });
  */
 export function defineSignal(signal: Signal): Signal {
   return signal;

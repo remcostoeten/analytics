@@ -16,7 +16,7 @@ import type {
 } from "../ports";
 import type { LogFields, LogLevel } from "../ports/logger";
 
-const emptyRecord: GeoRecord = {
+export const emptyRecord: GeoRecord = {
   geo: {
     country: null,
     region: null,

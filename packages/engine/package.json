@@ -12,7 +12,8 @@
 		"./adapters/postgres": "./src/adapters/postgres.ts",
 		"./db/schema": "./src/db/schema.ts",
 		"./db/migrate": "./src/db/migrate.ts",
-		"./db/migration-files": "./src/db/migration-files.ts"
+		"./db/migration-files": "./src/db/migration-files.ts",
+		"./jobs": "./src/jobs/index.ts"
 	},
 	"scripts": {
 		"typecheck": "tsgo --noEmit",

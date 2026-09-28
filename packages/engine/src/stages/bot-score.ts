@@ -1,26 +1,47 @@
+import type { BotVerdict } from "@remcostoeten/analytics-contract";
 import { ok } from "@remcostoeten/analytics-shared/result";
 
 import { defineStage } from "../define";
+import type { Signal } from "../define";
+import type { EventDraft } from "../draft";
 
 const maxScore = 100;
 
+function fires(signal: Signal, draft: EventDraft) {
+  if (draft.replay && !signal.replayable) return draft.bot.reasons.includes(signal.name);
+  return signal.detect(draft);
+}
+
 /**
- * @name botScoreStage
- * @description Sums the weights of every registered signal that fires, capped at 100, and lists
- * the firing signals as reasons. It reruns on `engine.rescore` after a signal changes.
+ * @name scoreBot
+ * @description Sums the weights of the signals that fire, capped at 100, and lists them as
+ * reasons. On a replayed draft a signal whose inputs are not stored counts only when the draft
+ * already had its reason.
  *
  * @example
- * createEngine(ports, { stages: [enrichStage, botScoreStage], signals: [webdriver], enrichers: [], dimensions: [] }, settings);
+ * scoreBot(defaultSignals, draft); // { score: 100, reasons: ["ua_automation"] }
+ */
+export function scoreBot(signals: Signal[], draft: EventDraft): BotVerdict {
+  const firing = signals.filter((signal) => fires(signal, draft));
+  return {
+    score: Math.min(
+      maxScore,
+      firing.reduce((total, signal) => total + signal.weight, 0),
+    ),
+    reasons: firing.map((signal) => signal.name),
+  };
+}
+
+/**
+ * @name botScoreStage
+ * @description Scores the draft with every registered signal through `scoreBot`. It reruns on
+ * `engine.rescore` after a signal changes.
+ *
+ * @example
+ * createEngine(ports, { stages: [enrichStage, botScoreStage], signals: defaultSignals, enrichers: [], dimensions: [] }, settings);
  */
 export const botScoreStage = defineStage({
   name: "bot-score",
   rescores: true,
-  run: (draft, context) => {
-    const firing = context.registry.signals.filter((signal) => signal.detect(draft));
-    const score = Math.min(
-      maxScore,
-      firing.reduce((total, signal) => total + signal.weight, 0),
-    );
-    return ok({ ...draft, bot: { score, reasons: firing.map((signal) => signal.name) } });
-  },
+  run: (draft, context) => ok({ ...draft, bot: scoreBot(context.registry.signals, draft) }),
 });

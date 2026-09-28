@@ -151,11 +151,13 @@ describe("enrich and bot score stages", () => {
   const firefox = defineSignal({
     name: "ua_automation",
     weight: 30,
+    replayable: true,
     detect: (draft) => draft.enrichment.client.userAgent?.includes("Firefox") ?? false,
   });
   const signup = defineSignal({
     name: "client_no_input",
     weight: 80,
+    replayable: true,
     detect: (draft) => draft.event.name === "signup",
   });
 
