@@ -8,11 +8,12 @@ import {
   VisitorDetail,
   VisitorList,
 } from "@remcostoeten/analytics-contract";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
 import { access } from "../../plugins/access";
 import { errorResponses } from "../../plugins/error-responses";
+import { download } from "../reads/export";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
 import {
@@ -32,7 +33,7 @@ const responses = { ...errorResponses, 429: errorResponses[400] };
  * @name detailsModule
  * @description The visitor-level reads under `/v2/projects/:project` at the `detail` level: raw
  * events, visitors and one visitor in full, their visits, sessions and one session's events. An
- * admin can mark a visitor as internal. These answers are never cached publicly.
+ * admin can mark a visitor as internal. Every list also answers `format=csv|json|sql` as one download. These answers are never cached publicly.
  *
  * @example
  * app.use(detailsModule(deps, reads, docsBase));
@@ -46,12 +47,12 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
     .get(
       "/projects/:project/events",
       ({ request, caller, project, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.list(request, caller, project, set, "private", "events", (params, id) =>
           listEvents(store, params, [id], options.clock()),
         ),
       {
         access: "detail",
-        response: { 200: EventList, ...responses },
+        response: { 200: t.Union([EventList, download]), ...responses },
         detail: {
           summary: "Raw events",
           description: "Newest first; `name` keeps one event name.",
@@ -62,12 +63,12 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
     .get(
       "/projects/:project/visitors",
       ({ request, caller, project, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.list(request, caller, project, set, "private", "visitors", (params, id) =>
           listVisitors(store, params, [id], options.clock()),
         ),
       {
         access: "detail",
-        response: { 200: VisitorList, ...responses },
+        response: { 200: t.Union([VisitorList, download]), ...responses },
         detail: {
           summary: "Visitors",
           description: "Visitors active in the range, most recently seen first.",
@@ -112,12 +113,12 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
     .get(
       "/projects/:project/visitors/:visitor/visits",
       ({ request, caller, project, params: path, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.list(request, caller, project, set, "private", "visits", (params, id) =>
           visitorVisits(store, params, id, path.visitor),
         ),
       {
         access: "detail",
-        response: { 200: VisitList, ...responses },
+        response: { 200: t.Union([VisitList, download]), ...responses },
         detail: {
           summary: "A visitor's visits",
           description:
@@ -129,12 +130,12 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
     .get(
       "/projects/:project/sessions",
       ({ request, caller, project, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.list(request, caller, project, set, "private", "sessions", (params, id) =>
           listSessions(store, params, [id], options.clock()),
         ),
       {
         access: "detail",
-        response: { 200: SessionList, ...responses },
+        response: { 200: t.Union([SessionList, download]), ...responses },
         detail: {
           summary: "Sessions",
           description: "Sessions with events in the range, newest first.",
@@ -145,12 +146,12 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
     .get(
       "/projects/:project/sessions/:session/events",
       ({ request, caller, project, params: path, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.list(request, caller, project, set, "private", "session_events", (params, id) =>
           sessionTrail(store, params, id, path.session),
         ),
       {
         access: "detail",
-        response: { 200: SessionEvents, ...responses },
+        response: { 200: t.Union([SessionEvents, download]), ...responses },
         detail: {
           summary: "One session's events",
           description: "Every event in order, paged with a cursor.",

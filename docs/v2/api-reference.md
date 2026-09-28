@@ -354,13 +354,15 @@ The visitor detail gains `visitCount`, `firstSeen`, `lastSeen`, `daysActive`, `m
 
 ### Export and SQL
 
-Every list and breakdown route returns other formats on request, with the same filters and without the page limit (up to 1 million rows, streamed):
+Every list and breakdown route (`breakdown`, `paths`, `map`, `events`, `visitors`, `visits`, `sessions`, a session's events and `people`, per project and across projects) returns other formats on request, with the same filters and without the page limit (up to 1 million rows, read 1,000 at a time and streamed as a download):
 
 | Ask for | You get |
 | --- | --- |
 | `Accept: text/csv` or `?format=csv` | CSV with a header row |
 | `?format=json` | The normal response, all pages at once |
 | `?format=sql` | A `.sql` file with a `CREATE TABLE` and `INSERT` statements, ready to load into any Postgres or SQLite |
+
+Nested fields become dotted columns (`page.path`, `geo.country`), columns come from the first 1,000 rows, and column types in the `.sql` file are inferred from them (`bigint`, `double precision`, `boolean`, else `text`). An error on the first page answers as usual; one on a later page ends the file (JSON gains an `error` field, SQL a closing comment). Past 1 million rows JSON gains `"truncated": true` and SQL a closing comment.
 
 For questions no route answers, owners, admins and analysts, and tokens with the `sql` scope, get read-only SQL on the projects they list, while each project's `sqlEnabled` switch is on (the owner is exempt):
 

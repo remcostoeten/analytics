@@ -10,6 +10,8 @@ import type {
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
+import { exportPageSize } from "./export";
+
 export type Range = { from: Date; to: Date };
 
 const hourMs = 60 * 60 * 1000;
@@ -36,6 +38,7 @@ const customMetric = /^(sum|avg):prop\.([\w.-]{1,64})$/;
 const earliest = new Date("2020-01-01T00:00:00.000Z");
 const maxLimit = 100;
 const defaultLimit = 20;
+const exportFormats = new Set<string>(["csv", "json", "sql"]);
 
 function invalid<Value>(message: string): Result<Value, EngineError> {
   return err(engineError("VALIDATION_FAILED", message));
@@ -185,6 +188,18 @@ export function readInterval(params: URLSearchParams, range: Range): Result<Inte
 }
 
 /**
+ * @name limitCap
+ * @description The largest `limit` a list accepts: 100 for a page, and the export page size when
+ * the request is a `format=csv|json|sql` download.
+ *
+ * @example
+ * limitCap(new URLSearchParams("format=csv")); // 1000
+ */
+export function limitCap(params: URLSearchParams): number {
+  return exportFormats.has(params.get("format") ?? "") ? exportPageSize : maxLimit;
+}
+
+/**
  * @name readPage
  * @description `limit` (1 to 100, default 20) and the offset in an opaque `cursor`.
  *
@@ -195,8 +210,9 @@ export function readPage(
   params: URLSearchParams,
 ): Result<{ limit: number; offset: number }, EngineError> {
   const limit = Number(params.get("limit") ?? defaultLimit);
-  if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
-    return invalid(`limit must be a whole number from 1 to ${maxLimit}`);
+  const cap = limitCap(params);
+  if (!Number.isInteger(limit) || limit < 1 || limit > cap) {
+    return invalid(`limit must be a whole number from 1 to ${cap}`);
   }
   const cursor = params.get("cursor");
   if (!cursor) return ok({ limit, offset: 0 });

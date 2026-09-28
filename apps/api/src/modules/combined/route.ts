@@ -35,7 +35,9 @@ import { heatmap, paths, places, retention } from "../reads/explore";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "../reads/live";
-import { breakdown, breakdownCsv, readScope, realtime, stats, timeseries } from "../reads/service";
+import { download } from "../reads/export";
+import type { Listing } from "../reads/export";
+import { breakdown, readScope, realtime, stats, timeseries } from "../reads/service";
 import type { Scoped as ReadScoped } from "../reads/service";
 
 type Scoped = { params: URLSearchParams; projects: string[] };
@@ -111,6 +113,55 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     });
   }
 
+  function aggregateList<Page extends Listing>(
+    request: Request,
+    caller: Caller,
+    set: Parameters<typeof gate.answerMany>[2],
+    name: string,
+    run: (scoped: Scoped) => Promise<Result<Page, EngineError>>,
+  ) {
+    return gate.listMany(request, caller, set, "aggregate", name, async (params) => {
+      const scoped = await readableProjects(deps, caller, params, false);
+      return scoped.ok ? run(scoped.value) : scoped;
+    });
+  }
+
+  function detailedList<Page extends Listing>(
+    request: Request,
+    caller: Caller,
+    set: Parameters<typeof gate.answerMany>[2],
+    name: string,
+    run: (scoped: Scoped) => Promise<Result<Page, EngineError>>,
+  ) {
+    return gate.listMany(request, caller, set, "private", name, async (params) => {
+      const scoped = await readableProjects(deps, caller, params, true);
+      return scoped.ok ? run(scoped.value) : scoped;
+    });
+  }
+
+  function exploreList<Page extends Listing>(
+    name: string,
+    read: (
+      store: ReadsOptions["store"],
+      scope: ReadScoped,
+      params: URLSearchParams,
+    ) => Promise<Result<Page, EngineError>>,
+  ) {
+    return ({
+      request,
+      caller,
+      set,
+    }: {
+      request: Request;
+      caller: Caller;
+      set: Parameters<typeof gate.answerMany>[2];
+    }) =>
+      aggregateList(request, caller, set, name, async ({ params, projects }) => {
+        const scope = readScope(params, projects, options.clock());
+        return scope.ok ? read(options.store, scope.value, params) : scope;
+      });
+  }
+
   function explore<Value>(
     read: (
       store: ReadsOptions["store"],
@@ -177,22 +228,20 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     )
     .get(
       "/breakdown/:dimension",
-      async ({ request, caller, params: path, set }) => {
-        const result = await aggregate(request, caller, set, async ({ params, projects }) => {
-          const scope = readScope(params, projects, options.clock());
-          return scope.ok ? breakdown(options.store, scope.value, path.dimension, params) : scope;
-        });
-        const url = new URL(request.url);
-        const csv =
-          url.searchParams.get("format") === "csv" ||
-          request.headers.get("accept")?.includes("text/csv");
-        if (!csv || !("dimension" in result)) return result;
-        set.headers["content-type"] = "text/csv; charset=utf-8";
-        return breakdownCsv(result);
-      },
+      ({ request, caller, params: path, set }) =>
+        aggregateList(
+          request,
+          caller,
+          set,
+          `breakdown_${path.dimension}`,
+          async ({ params, projects }) => {
+            const scope = readScope(params, projects, options.clock());
+            return scope.ok ? breakdown(options.store, scope.value, path.dimension, params) : scope;
+          },
+        ),
       {
         access: "public",
-        response: { 200: t.Union([BreakdownResponse, t.String()]), ...responses },
+        response: { 200: t.Union([BreakdownResponse, download]), ...responses },
         detail: {
           summary: "Top values of a dimension across projects",
           description: "`breakdown/project` gives one row per project.",
@@ -219,12 +268,12 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     .get(
       "/events",
       ({ request, caller, set }) =>
-        detailed(request, caller, set, ({ params, projects }) =>
+        detailedList(request, caller, set, "events", ({ params, projects }) =>
           listEvents(options.details, params, projects, options.clock()),
         ),
       {
         access: "public",
-        response: { 200: EventList, ...responses },
+        response: { 200: t.Union([EventList, download]), ...responses },
         detail: {
           summary: "Raw events across projects",
           description: "Projects whose visitor-level data you may see.",
@@ -235,12 +284,12 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     .get(
       "/visitors",
       ({ request, caller, set }) =>
-        detailed(request, caller, set, ({ params, projects }) =>
+        detailedList(request, caller, set, "visitors", ({ params, projects }) =>
           listVisitors(options.details, params, projects, options.clock()),
         ),
       {
         access: "public",
-        response: { 200: VisitorList, ...responses },
+        response: { 200: t.Union([VisitorList, download]), ...responses },
         detail: {
           summary: "Visitors across projects",
           description: "Each project's visitors counted separately.",
@@ -251,25 +300,25 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     .get(
       "/sessions",
       ({ request, caller, set }) =>
-        detailed(request, caller, set, ({ params, projects }) =>
+        detailedList(request, caller, set, "sessions", ({ params, projects }) =>
           listSessions(options.details, params, projects, options.clock()),
         ),
       {
         access: "public",
-        response: { 200: SessionList, ...responses },
+        response: { 200: t.Union([SessionList, download]), ...responses },
         detail: { summary: "Sessions across projects", description: "Newest first.", tags },
       },
     )
     .get(
       "/people",
       ({ request, caller, set }) =>
-        detailed(request, caller, set, async ({ params, projects }) => {
+        detailedList(request, caller, set, "people", async ({ params, projects }) => {
           const allowed = signedIn(caller);
           return allowed.ok ? listPeople(options.details, params, projects) : allowed;
         }),
       {
         access: "public",
-        response: { 200: PeopleList, ...responses },
+        response: { 200: t.Union([PeopleList, download]), ...responses },
         detail: {
           summary: "Identified people",
           description: "One row per `userId` from `identify`, linked across projects.",
@@ -295,9 +344,9 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
         },
       },
     )
-    .get("/paths", explore(paths), {
+    .get("/paths", exploreList("paths", paths), {
       access: "public",
-      response: { 200: PathsResponse, ...responses },
+      response: { 200: t.Union([PathsResponse, download]), ...responses },
       detail: {
         summary: "Where visitors went next, across projects",
         description: "As the per-project route.",
@@ -322,9 +371,9 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
         tags,
       },
     })
-    .get("/map", explore(places), {
+    .get("/map", exploreList("map", places), {
       access: "public",
-      response: { 200: MapResponse, ...responses },
+      response: { 200: t.Union([MapResponse, download]), ...responses },
       detail: {
         summary: "Visitors per place across projects",
         description: "As the per-project route.",
