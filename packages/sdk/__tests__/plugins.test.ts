@@ -216,6 +216,13 @@ describe("errors", () => {
     expect(scrub(input)).toBe(expected);
   });
 
+  test("scrub stays linear on long runs of email and token characters", () => {
+    const started = performance.now();
+    scrub("+".repeat(50_000));
+    scrub("a-".repeat(25_000));
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+
   test("captures uncaught errors and rejections with scrubbed breadcrumbs", async () => {
     const { analytics, transport } = client({ plugins: [errors()] });
     analytics.track("opened");

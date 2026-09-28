@@ -4,7 +4,8 @@ import { definePlugin } from "../core/plugin-host";
 
 const maxCrumbs = 20;
 // Query strings, then emails, then tokens of 20 or more word characters, then runs of 6 or more digits.
-const sensitive = /\?[^\s#]*|[\w.+-]+@[\w-]+\.[\w.]+|\b[\w-]{20,}\b|\d{6,}/g;
+const sensitive =
+  /\?[^\s#]*|(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.]+|(?<![\w-])[\w-]{20,}(?![\w-])|\d{6,}/g;
 
 /**
  * @name scrub
