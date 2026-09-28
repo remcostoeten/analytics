@@ -39,6 +39,8 @@ export type SpeedOptions = {
 };
 
 const flushAt = 6;
+// Some browsers fire only pagehide when a tab navigates away, and web-vitals reports INP and CLS on visibilitychange.
+const changes = { reportAllChanges: true };
 
 function selector(metric: Measured): string | null {
   switch (metric.name) {
@@ -82,8 +84,10 @@ export function speedProps(metric: Measured, sampleRate: number, connection: str
  * @name speedInsights
  * @description Real-user Core Web Vitals: lazy-loads the `web-vitals` attribution build and
  * records LCP, INP, CLS, FCP and TTFB for the hard navigation. Sampling is decided once per page
- * load. Metrics are buffered and sent together, credited to the path the page loaded with, when
- * the tab is hidden, the route changes or 6 metrics are waiting.
+ * load. LCP, INP and CLS are reported on every change and the buffer keeps the latest value per
+ * metric id, so the values are ready when the page unloads without a visibility change. Metrics
+ * are sent together, credited to the path the page loaded with, when the tab is hidden, the
+ * route changes or 6 metrics are waiting.
  *
  * @example
  * createAnalytics({ ...config, plugins: [speedInsights({ sampleRate: 0.5 })] });
@@ -110,14 +114,15 @@ export function speedInsights(options: SpeedOptions = {}) {
         return pending.length > 0;
       }
       function add(metric: Measured) {
+        buffer = buffer.filter((props) => props.id !== metric.id);
         buffer.push(speedProps(metric, sampleRate, connection));
         if (buffer.length >= flushAt && send()) void client.flush();
       }
       void (options.load ?? (() => import("web-vitals/attribution")))().then((vitals) => {
         if (stopped) return;
-        vitals.onLCP(add);
-        vitals.onINP(add);
-        vitals.onCLS(add);
+        vitals.onLCP(add, changes);
+        vitals.onINP(add, changes);
+        vitals.onCLS(add, changes);
         vitals.onFCP(add);
         vitals.onTTFB(add);
       });
