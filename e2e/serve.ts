@@ -19,7 +19,7 @@ import {
 } from "@remcostoeten/analytics-engine/db/migration-files";
 import { createProxy } from "@remcostoeten/analytics-sdk/proxy";
 
-import { apiPort, publicKey, secretKey, sitePort } from "./ports";
+import { apiPort, blockMs, lcpAt, publicKey, secretKey, shiftAt, sitePort } from "./ports";
 
 const dist = join(import.meta.dir, "..", "packages", "sdk", "dist");
 const database = new PGlite();
@@ -77,6 +77,47 @@ function page(scenario: string) {
     <button id="navigate" type="button">Next page</button>
     <button id="fail" type="button">Throw an error</button>
     <input id="name" aria-label="Name">
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>`;
+}
+
+function vitalsPage() {
+  return `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Fixture vitals</title></head>
+  <body data-scenario="vitals" style="margin:0;font:16px sans-serif">
+    <div id="spacer"></div>
+    <div id="content" style="height:400px;background:#ddd">Content that moves once.</div>
+    <button id="slow" type="button">Slow handler</button>
+    <script>
+      window.truth = { lcp: 0, cls: 0, inp: 0, ready: false };
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) window.truth.lcp = entry.startTime;
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.truth.cls += entry.value;
+      }).observe({ type: "layout-shift", buffered: true });
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries())
+          if (entry.interactionId) window.truth.inp = Math.max(window.truth.inp, entry.duration);
+      }).observe({ type: "event", buffered: true, durationThreshold: 16 });
+      setTimeout(() => {
+        document.querySelector("#spacer").style.height = "200px";
+      }, ${shiftAt});
+      setTimeout(() => {
+        const hero = document.createElement("p");
+        hero.id = "hero";
+        hero.style.cssText = "font-size:48px;width:900px";
+        hero.textContent = "The largest contentful paint of this fixture arrives late on purpose. ".repeat(4);
+        document.body.append(hero);
+        requestAnimationFrame(() => setTimeout(() => (window.truth.ready = true), 300));
+      }, ${lcpAt});
+      document.querySelector("#slow").addEventListener("click", () => {
+        const until = performance.now() + ${blockMs};
+        while (performance.now() < until) {}
+      });
+    </script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>`;
@@ -163,6 +204,9 @@ Bun.serve({
     }
     if (url.pathname === "/__e2e/events") return rows(url);
     const [, scenario] = url.pathname.split("/");
+    if (scenario === "vitals") {
+      return new Response(vitalsPage(), { headers: { "content-type": "text/html" } });
+    }
     if (scenario === "direct" || scenario === "proxy" || scenario === "consent") {
       return new Response(page(scenario), { headers: { "content-type": "text/html" } });
     }

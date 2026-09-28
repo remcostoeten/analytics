@@ -532,7 +532,7 @@ All four take `device=mobile|desktop|all`, `percentile=75|90|95|99` (default 75)
 | Test | Playwright fixture pages with known behaviour (an image that paints after 2 s, a button whose handler blocks for 300 ms, a banner that shifts the layout by a known amount) must produce values within 10% of the expected ones, in CI |
 | Cross-check | A weekly job compares each project's p75 with Google's Chrome UX Report for the same origin, where Google has data, and flags a gap over 25% in `/admin/metrics` |
 
-Built so far (E4.3): ingest writes human `web_vital` events to `web_vitals`, keeping the latest value per metric id and dropping impossible values; the score and the four read routes read the raw table; `POST /v2/admin/jobs/rollup` fills `rollup_vitals` and trims raw rows past 30 days. The Playwright fixture pages, the Chrome UX Report comparison and the dashboard speed view follow.
+Built so far (E4.3): ingest writes human `web_vital` events to `web_vitals`, keeping the latest value per metric id and dropping impossible values; the score and the four read routes read the raw table; `POST /v2/admin/jobs/rollup` fills `rollup_vitals` and trims raw rows past 30 days. The `/vitals/<run>` Playwright fixture page shifts the layout at 300 ms, paints a late hero at 800 ms and has a button that blocks for 250 ms; the stored LCP, INP and CLS must land within 10% of what the browser's own observers measured on that page. The Chrome UX Report comparison and the dashboard speed view follow.
 
 The fixture tests and the Chrome UX Report comparison are what make this sturdy over time: a regression in collection shows up as a failed test or a flagged gap, not as numbers that quietly look strange.
 

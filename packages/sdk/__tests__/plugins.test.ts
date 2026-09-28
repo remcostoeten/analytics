@@ -270,12 +270,13 @@ function metric(
   name: Metric["name"],
   value: number,
   attribution: { [key: string]: string },
+  id = `v5-${name}`,
 ): never {
   return {
     name,
     value,
     rating: "good",
-    id: `v5-${name}`,
+    id,
     navigationType: "navigate",
     attribution,
   } as never;
@@ -340,10 +341,40 @@ describe("speedInsights", () => {
     await analytics.shutdown();
   });
 
+  test("keeps only the latest report per metric id and asks for every change", async () => {
+    const options: unknown[] = [];
+    const load: SpeedOptions["load"] = async () => {
+      function register(callback: (value: never) => void, settings?: unknown) {
+        options.push(settings);
+        callback(metric("CLS", 0.01, {}));
+        callback(metric("CLS", 0.04, {}));
+      }
+      return {
+        onLCP: register,
+        onINP: register,
+        onCLS: register,
+        onFCP: () => {},
+        onTTFB: () => {},
+      } as never;
+    };
+    const { analytics, transport } = client({ plugins: [speedInsights({ load })] });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    hide();
+    await analytics.flush();
+    const vitals = sent(transport).filter((event) => event.name === "web_vital");
+    expect(vitals.map((event) => event.props.value)).toEqual([0.04]);
+    expect(options).toEqual([
+      { reportAllChanges: true },
+      { reportAllChanges: true },
+      { reportAllChanges: true },
+    ]);
+    await analytics.shutdown();
+  });
+
   test("flushes at 6 metrics and skips pages outside the sample", async () => {
     const six = loader((callbacks) => {
       for (let index = 0; index < 6; index += 1)
-        callbacks[index % 5]?.(metric("FCP", 100 + index, {}));
+        callbacks[index % 5]?.(metric("FCP", 100 + index, {}, `v5-FCP-${index}`));
     });
     const sampled = client({ plugins: [speedInsights({ load: six })] });
     await new Promise((resolve) => setTimeout(resolve, 10));
