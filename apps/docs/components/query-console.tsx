@@ -36,7 +36,9 @@ function withoutSlash(url: string): string {
 }
 
 function timestamp(value: string) {
-  return value ? new Date(value).toISOString() : undefined;
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function display(cell: Cell) {
@@ -51,8 +53,13 @@ async function runQuery(_: Outcome, form: FormData): Promise<Outcome> {
   if (!endpoint || !token || !sql) {
     return { status: "failed", message: "The API URL, a token and a query are required." };
   }
+  const from = timestamp(field(form, "from"));
+  const to = timestamp(field(form, "to"));
+  if (from === null || to === null) {
+    return { status: "failed", message: "From and To must be valid dates." };
+  }
   const path = project ? `/v2/projects/${encodeURIComponent(project)}/query` : "/v2/query";
-  const params = { from: timestamp(field(form, "from")), to: timestamp(field(form, "to")) };
+  const params = { from, to };
   try {
     const response = await fetch(`${endpoint}${path}`, {
       method: "POST",
