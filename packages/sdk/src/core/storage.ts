@@ -25,16 +25,6 @@ export type SavedStore = {
 
 const key = "__ra";
 const legacyPrefix = "__analytics_";
-const legacyKeys = [
-  "visitor_id",
-  "opt_out",
-  "identity",
-  "user_props",
-  "experiments",
-  "queue__",
-  "session_id",
-  "session_timeout",
-];
 
 function parse<Value>(raw: string | null, fallback: Value): Value {
   if (!raw) return fallback;
@@ -59,16 +49,10 @@ function legacy(store: Store): Saved {
   if (read("opt_out") === "true") saved.optOut = true;
   if (Object.keys(traits).length > 0) saved.traits = traits;
   if (Object.keys(experiments).length > 0) saved.experiments = experiments;
-  for (const name of legacyKeys) store.removeItem(legacyPrefix + name);
-  return saved;
-}
-
-function safely<Value>(run: () => Value, fallback: Value): Value {
-  try {
-    return run();
-  } catch {
-    return fallback;
+  for (const name of Object.keys(store)) {
+    if (name.startsWith(legacyPrefix)) store.removeItem(name);
   }
+  return saved;
 }
 
 /**
@@ -85,14 +69,14 @@ function safely<Value>(run: () => Value, fallback: Value): Value {
  * saved.write({ optOut: true });
  */
 export function createSavedStore(store: Store | null, allowed: () => boolean): SavedStore {
-  let memory: Saved = safely(() => {
-    if (!store) return {};
-    const raw = store.getItem(key);
-    if (raw) return parse<Saved>(raw, {});
-    const migrated = legacy(store);
-    store.setItem(key, JSON.stringify(migrated));
-    return migrated;
-  }, {});
+  let memory: Saved = {};
+  try {
+    const raw = store?.getItem(key);
+    memory = raw ? parse<Saved>(raw, {}) : store ? legacy(store) : {};
+    if (!raw) store?.setItem(key, JSON.stringify(memory));
+  } catch {
+    noop();
+  }
 
   function persist(always = false) {
     if (!always && !allowed()) return;

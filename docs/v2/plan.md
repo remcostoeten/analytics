@@ -211,9 +211,12 @@ Entries:
 
 - `.` framework-free browser core: client, pre-init queue, batching, the `beacon` transport, identity, consent, and the `pageviews` plugin. Budget 4.5 KB min+gzip: the first build with the full API from the SDK design tab measured 4.35 KB, and Remco raised the budget from 2.5 KB on Sep 28 rather than move methods out of the core.
 - `./plugins` one export per plugin: `speedInsights`, `scrollDepth`, `engagement`, `clicks`, `outboundLinks` (including file downloads), `forms`, `errors`, `notFound`, `ignoreSelf`, `botSignals`, `experiments`. Each under 0.6 KB except `speedInsights`, which lazy-loads `web-vitals` and has a 2.5 KB budget, and `errors` at 0.7 KB, which carries breadcrumbs and scrubbing.
-- `./react` `AnalyticsProvider client={analytics}`, `useAnalytics()`, `TrackClick`, `ErrorBoundary`, a Next adapter that supplies `route`, and `computeRoute`. Gets `"use client"`.
+- `./react` `AnalyticsProvider client={analytics}`, `useAnalytics()`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` for router adapters, and `computeRoute`. Gets `"use client"`. Budget 1.5 KB.
+- `./next` the Next adapter `Analytics`, which supplies `route` from `usePathname` and `useParams`. A separate entry so `./react` never imports `next/navigation`; it shares a chunk with `./react`, so both use one React context. Gets `"use client"`. Budget 1 KB.
 - `./server` `createServerAnalytics({ project, secret, endpoint })` with `track`, `identify`, `captureError`, batching, and `flush()`; forwards the visitor's user agent and IP from a passed request and uses `waitUntil` when the runtime has it.
-- `./proxy` `createProxy({ secret })`, a fetch-standard handler for the same-origin path.
+- `./proxy` `createProxy({ secret, endpoint })`, a fetch-standard handler for the same-origin path, and `createPageCounter` for middleware, which counts HTML page loads as `page_request` events for the blocked-share estimate.
+
+Build config: the browser client reads JSON from `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`, the server client and proxy from `RA_CONFIG`, each with literal `process.env` or `import.meta.env` access; explicit options win, except ones that are `undefined`.
 
 Other options: `mode` (`auto` reads `NODE_ENV`; development logs and sends nothing unless `endpoint` is set explicitly), `debug`, `route` for adapters, and `beforeSend`. Props are limited to 25 per event, with names, keys and values up to 255 characters and flat primitive values.
 
@@ -637,7 +640,7 @@ Vercel's `@vercel/analytics` and `@vercel/speed-insights` are thin npm loaders f
 | Vercel does | v2 takes from it |
 | --- | --- |
 | A `window.va` stub queues calls made before the script loads, then replays them | The client queues calls made before init or before consent, and replays them instead of dropping them |
-| Sends `route` (`/blog/[slug]`) next to the full URL; each framework adapter computes it with `computeRoute(pathname, params)` or SvelteKit's `route.id` | A nullable `route` on events and rollups, a `computeRoute` helper, and a Next adapter in `./react`. Reports group by route, so `/blog/*` pages add up |
+| Sends `route` (`/blog/[slug]`) next to the full URL; each framework adapter computes it with `computeRoute(pathname, params)` or SvelteKit's `route.id` | A nullable `route` on events and rollups, a `computeRoute` helper in `./react`, and a Next adapter in `./next`. Reports group by route, so `/blog/*` pages add up |
 | A `null` route means "router not ready", and the adapter turns off history patching once it supplies routes | The `pageviews` plugin steps aside when an adapter provides routes, so no double pageviews |
 | `beforeSend(event) => event \| null` is the one redaction and drop hook, and debug mode logs the before and after | Same hook as the first plugin hook, with the diff in `[ra]` debug output |
 | `mode` defaults from `NODE_ENV`; in development nothing is sent and payloads are logged instead | Same: development sends nothing unless an endpoint is set explicitly, instead of storing localhost rows and flagging them afterwards |
@@ -646,7 +649,7 @@ Vercel's `@vercel/analytics` and `@vercel/speed-insights` are thin npm loaders f
 | Server `track` forwards the visitor's user agent and IP so the event joins the browser session, and uses `waitUntil` | `createServerAnalytics` accepts the request, forwards both, and uses `waitUntil` when available |
 | Build-time config from one JSON env var read with literal `process.env.X` access | Same, which fixes the "env inlining is unreliable" gotcha in the current SDK |
 | Vitals sent as a `text/plain` body with `keepalive`, one request per flush, with a client-side exit for `navigator.webdriver` and Headless user agents | Already in the plan; the bot exit becomes part of the `botSignals` plugin as a pre-filter, with server scoring as the backstop |
-| One build entry per framework with framework packages external | The `./react`, `./server`, `./proxy` and `./plugins` entries follow the same pattern |
+| One build entry per framework with framework packages external | The `./react`, `./next`, `./server`, `./proxy` and `./plugins` entries follow the same pattern |
 
 Where v2 deliberately differs: Vercel identifies visitors by a server-side request hash that resets daily and keeps no visitor across days, while v2 keeps a localStorage visitor id so returning visitors and retention work. Vercel also sends each analytics event as its own request; v2 batches.
 
@@ -701,7 +704,7 @@ Only the two published packages get a build step; internal packages are imported
 
 | Target | Tool | Output |
 | --- | --- | --- |
-| `packages/sdk` | tsdown (0.23.0, the Rolldown-based successor to tsup 8.5.1 that the repo uses today) | ESM only, one file per entry (`.`, `./plugins`, `./react`, `./server`, `./proxy`), `.d.ts` per entry, minified, source maps; `"use client"` banner on `./react` |
+| `packages/sdk` | tsdown (0.23.0, the Rolldown-based successor to tsup 8.5.1 that the repo uses today) | ESM only, one file per entry (`.`, `./plugins`, `./react`, `./next`, `./server`, `./proxy`), `.d.ts` per entry, minified, source maps; `"use client"` banner on `./react` and `./next` |
 | `packages/contract` | tsdown | ESM and types; published so other projects can type against the API |
 | `packages/shared`, `packages/engine` | none | `exports` point at `src/*.ts`; Bun, the API bundler and TypeScript read them directly |
 | `apps/api` | `bun build` into Vercel's Build Output API, the approach `apps/ingestion/scripts/build.ts` already uses | One bundled function plus the two MMDB files; the Elysia spike decides the Bun or Node runtime |
@@ -709,7 +712,7 @@ Only the two published packages get a build step; internal packages are imported
 
 - **ESM only for SDK 2.0.** Every current bundler and Node 22+ load ESM, and dropping the CJS copy halves the package. It is a major version anyway.
 - **Task order**: `bun run --filter` already runs workspace scripts in dependency order. Turborepo is only worth adding if CI time becomes a problem, for its caching.
-- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 4.5 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
+- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 4.5 KB, `./react` 1.5 KB, `./next` 1 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
 - **Releases**: Changesets. Each PR that changes a published package adds a changeset; merging to `master` opens a version PR; merging that publishes to npm from CI with provenance. This replaces today's manual `npm publish`.
 - **Migrations**: `scripts/migrate.ts` applies the numbered SQL files in order and records them in a `schema_migrations` table. It is run by hand against Neon, never on deploy, which keeps the repo rule of applying migrations manually while removing the copy-paste step.
 - **Deploys**: Vercel builds `apps/api` and `apps/dashboard` per PR as previews and on `master` as production. The legacy `apps/ingestion` project stays as it is until phase 5.

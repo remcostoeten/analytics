@@ -25,6 +25,10 @@ function list<Item>() {
   };
 }
 
+function each<Value>(runs: ((value: Value) => void)[], value: Value) {
+  for (const run of runs.slice()) run(value);
+}
+
 /**
  * @name definePlugin
  * @description Declares a plugin: a name and a `setup` that receives the client with its hooks
@@ -78,15 +82,9 @@ export function createPluginHost(): PluginHost {
     onPage: pages.add,
     onHidden: hides.add,
     onConsent: consents.add,
-    page: () => {
-      for (const run of pages.items.slice()) run();
-    },
-    hidden: () => {
-      for (const run of hides.items.slice()) run();
-    },
-    consent: (status) => {
-      for (const run of consents.items.slice()) run(status);
-    },
+    page: () => each(pages.items, undefined),
+    hidden: () => each(hides.items, undefined),
+    consent: (status) => each(consents.items, status),
     stop: () => {
       for (const cleanup of cleanups.values()) cleanup();
       cleanups.clear();

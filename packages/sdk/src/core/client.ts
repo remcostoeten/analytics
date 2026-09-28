@@ -3,6 +3,7 @@ import type { WireEvent } from "@remcostoeten/analytics-contract";
 import { pageviews } from "../plugins/pageviews";
 import { beacon } from "../transports/beacon";
 import { buildEvent, limitProps } from "./build-event";
+import { browserConfig, mergeConfig } from "./config";
 import { browserContext, browserStore, debugFlag, pageFacts, resolveMode } from "./environment";
 import { createIdentity } from "./identity";
 import { createLog } from "./logger";
@@ -30,9 +31,9 @@ type Registry = { [Name in Listener]: Set<Handlers[Name]> };
 const maxSaved = 100;
 
 function describe(error: unknown) {
-  if (error instanceof Error)
-    return { type: error.name, message: error.message, stack: error.stack };
-  return { type: "Error", message: String(error), stack: undefined };
+  return error instanceof Error
+    ? { type: error.name, message: error.message, stack: error.stack }
+    : { type: "Error", message: String(error) };
 }
 
 /**
@@ -41,15 +42,17 @@ function describe(error: unknown) {
  * keeps a visitor id in `localStorage` and a session in `sessionStorage`, honours consent and
  * opt-out, and runs plugins, with `pageviews` on by default. Calls made before `start()` or,
  * with `consent: "required"`, before `consent.grant()` are held and replayed. In development mode
- * without an explicit `endpoint` it logs events instead of sending them.
+ * without an explicit `endpoint` it logs events instead of sending them. Options missing here are
+ * read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`.
  *
  * @example
  * const analytics = createAnalytics<Events>({ project: "remcostoeten.nl", key: "pk_test", endpoint: "/_ra" });
  * analytics.track("signup", { plan: "pro" });
  */
 export function createAnalytics<Events extends EventMap = EventMap>(
-  config: AnalyticsConfig,
+  options: AnalyticsConfig = {},
 ): Analytics<Events> & { start: () => void } {
+  const config = mergeConfig(browserConfig(), options);
   function now() {
     return Date.now();
   }
@@ -71,7 +74,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
   const removers: (() => void)[] = [];
 
   const queue = createQueue({
-    transport: config.transport ?? beacon({ endpoint, key: config.key }),
+    transport: config.transport ?? beacon({ endpoint, key: config.key ?? "" }),
     now,
     wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     schedule: (run, ms) => {

@@ -16,7 +16,11 @@ const sdk = join(import.meta.dir, "..", "packages", "sdk");
 const pluginDirectory = join(sdk, "src", "plugins");
 const pluginBudget = 0.6 * 1024;
 
-export const coreBudget: Budget = { file: "index.mjs", limitBytes: 4.5 * 1024 };
+export const entryBudgets: Budget[] = [
+  { file: "index.mjs", limitBytes: 4.5 * 1024 },
+  { file: "react.mjs", limitBytes: 1.5 * 1024 },
+  { file: "next.mjs", limitBytes: 1 * 1024 },
+];
 
 export const pluginExceptions: { [file: string]: number } = {
   "speed-insights.ts": 2.5 * 1024,
@@ -28,7 +32,7 @@ export const pluginExceptions: { [file: string]: number } = {
  * @description Gzips each entry and compares it with its budget in bytes.
  *
  * @example
- * measure([coreBudget], (file) => readFileSync(join(dist, file)));
+ * measure(entryBudgets, (file) => readFileSync(join(dist, file)));
  */
 export function measure(list: Budget[], read: (file: string) => Uint8Array): Measured[] {
   return list.map((budget) => {
@@ -96,9 +100,9 @@ function kilobytes(bytes: number) {
 }
 
 async function main() {
-  const core = join(sdk, "dist", coreBudget.file);
-  if (!existsSync(core)) {
-    console.error("Build the SDK first: packages/sdk/dist/index.mjs is missing");
+  const missing = entryBudgets.find((budget) => !existsSync(join(sdk, "dist", budget.file)));
+  if (missing) {
+    console.error(`Build the SDK first: packages/sdk/dist/${missing.file} is missing`);
     process.exitCode = 1;
     return;
   }
@@ -106,9 +110,9 @@ async function main() {
   const bundles = new Map<string, Uint8Array>();
   for (const plugin of plugins) bundles.set(plugin.file, await bundlePlugin(plugin.file));
   const results = [
-    ...measure([coreBudget], () =>
+    ...measure(entryBudgets, (entry) =>
       new TextEncoder().encode(
-        withChunks(coreBudget.file, (file) => readFileSync(join(sdk, "dist", file), "utf8")),
+        withChunks(entry, (file) => readFileSync(join(sdk, "dist", file), "utf8")),
       ),
     ),
     ...measure(plugins, (file) => bundles.get(file) ?? new Uint8Array()),

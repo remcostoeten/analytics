@@ -14,6 +14,22 @@
 		"./plugins": {
 			"types": "./src/plugins/index.ts",
 			"default": "./src/plugins/index.ts"
+		},
+		"./react": {
+			"types": "./src/react/index.ts",
+			"default": "./src/react/index.ts"
+		},
+		"./next": {
+			"types": "./src/next/index.tsx",
+			"default": "./src/next/index.tsx"
+		},
+		"./server": {
+			"types": "./src/server/index.ts",
+			"default": "./src/server/index.ts"
+		},
+		"./proxy": {
+			"types": "./src/proxy/index.ts",
+			"default": "./src/proxy/index.ts"
 		}
 	},
 	"files": [
@@ -28,6 +44,22 @@
 			"./plugins": {
 				"types": "./dist/plugins.d.mts",
 				"default": "./dist/plugins.mjs"
+			},
+			"./react": {
+				"types": "./dist/react.d.mts",
+				"default": "./dist/react.mjs"
+			},
+			"./next": {
+				"types": "./dist/next.d.mts",
+				"default": "./dist/next.mjs"
+			},
+			"./server": {
+				"types": "./dist/server.d.mts",
+				"default": "./dist/server.mjs"
+			},
+			"./proxy": {
+				"types": "./dist/proxy.d.mts",
+				"default": "./dist/proxy.mjs"
 			}
 		}
 	},
@@ -40,10 +72,27 @@
 		"@remcostoeten/analytics-contract": "workspace:*",
 		"web-vitals": "6.2.2"
 	},
+	"peerDependencies": {
+		"next": ">=15",
+		"react": ">=19"
+	},
+	"peerDependenciesMeta": {
+		"next": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
 		"@happy-dom/global-registrator": "20.14.5",
 		"@remcostoeten/analytics-shared": "workspace:*",
 		"@sinclair/typebox": "catalog:typebox",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"next": "16.2.0",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
 		"tsdown": "catalog:tsdown"
 	}
 }
