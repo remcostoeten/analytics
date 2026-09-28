@@ -91,6 +91,8 @@ export default createApp({
   reads: {
     store: stores.reads,
     details: stores.details,
+    feed: stores.feed,
+    live: { waitMs: 25_000, streamMs: 55_000 },
     limiter: adapters.limiter,
     hasher,
     ipSecret: settings.ipSecret,

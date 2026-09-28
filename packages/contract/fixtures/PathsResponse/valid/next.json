@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "path": "/signup",
+      "count": 38,
+      "share": 0.304
+    },
+    {
+      "path": "/docs",
+      "count": 21,
+      "share": 0.168
+    },
+    {
+      "path": "/",
+      "count": 9,
+      "share": 0.072
+    }
+  ],
+  "page": "/pricing",
+  "direction": "next",
+  "views": 125,
+  "dropOff": {
+    "count": 57,
+    "share": 0.456
+  },
+  "total": 3,
+  "nextCursor": null,
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}

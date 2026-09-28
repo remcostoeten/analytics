@@ -60,6 +60,37 @@ export type Realtime = {
   countries: { value: string; visitors: number }[];
 };
 
+export type PathDirection = "next" | "previous";
+
+export type Paths = {
+  views: number;
+  dropOff: number;
+  steps: { path: string; count: number }[];
+};
+
+export type Cohort = {
+  cohort: Date;
+  lastOffset: number;
+  periods: { offset: number; visitors: number }[];
+};
+
+export type HeatMetric = "visitors" | "pageviews";
+
+export type HeatCell = { weekday: number; hour: number; value: number };
+
+export type MapLevel = "country" | "region" | "city";
+
+export type Place = {
+  country: string;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  visitors: number;
+};
+
+export type PlacesPage = { rows: Place[]; total: number; scopeVisitors: number };
+
 type Read<Value> = Promise<Result<Value, EngineError>>;
 
 export type ReadStore = {
@@ -72,4 +103,12 @@ export type ReadStore = {
     page: { limit: number; offset: number },
   ) => Read<BreakdownPage>;
   realtime: (projectIds: ProjectID[], from: Date, to: Date) => Read<Realtime>;
+  paths: (scope: ReadScope, page: string, direction: PathDirection) => Read<Paths>;
+  retention: (scope: ReadScope, interval: "week" | "month") => Read<Cohort[]>;
+  heatmap: (scope: ReadScope, metric: HeatMetric, timezone: string) => Read<HeatCell[]>;
+  places: (
+    scope: ReadScope,
+    level: MapLevel,
+    page: { limit: number; offset: number },
+  ) => Read<PlacesPage>;
 };

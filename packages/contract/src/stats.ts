@@ -2,8 +2,8 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Compared, Filters, Range, ValueCount } from "./common";
-import { Interval, Percentile, TrafficFilter, VitalRating } from "./enums";
-import { Count, nullable, Ratio, Timestamp } from "./schema";
+import { DeviceType, EventName, Interval, Percentile, TrafficFilter, VitalRating } from "./enums";
+import { Count, Id, nullable, oneOf, Ratio, Timestamp } from "./schema";
 
 const Scope = {
   range: Range,
@@ -114,3 +114,98 @@ export const RealtimeResponse = Type.Object({
   window: Range,
 });
 export type RealtimeResponse = Static<typeof RealtimeResponse>;
+
+export const PathDirection = oneOf(["next", "previous"]);
+export type PathDirection = Static<typeof PathDirection>;
+
+export const PathStep = Type.Object({ path: Type.String(), count: Count, share: Ratio });
+export type PathStep = Static<typeof PathStep>;
+
+export const PathsResponse = Type.Object({
+  data: Type.Array(PathStep),
+  page: Type.String({ minLength: 1 }),
+  direction: PathDirection,
+  views: Count,
+  dropOff: Type.Object({ count: Count, share: Ratio }),
+  total: Count,
+  nextCursor: nullable(Type.String()),
+  ...Scope,
+});
+export type PathsResponse = Static<typeof PathsResponse>;
+
+export const RetentionInterval = oneOf(["week", "month"]);
+export type RetentionInterval = Static<typeof RetentionInterval>;
+
+export const RetentionCohort = Type.Object({
+  cohort: Timestamp,
+  visitors: Count,
+  periods: Type.Array(Type.Object({ offset: Count, visitors: Count, share: Ratio })),
+});
+export type RetentionCohort = Static<typeof RetentionCohort>;
+
+export const RetentionResponse = Type.Object({
+  data: Type.Array(RetentionCohort),
+  interval: RetentionInterval,
+  ...Scope,
+});
+export type RetentionResponse = Static<typeof RetentionResponse>;
+
+export const HeatmapMetric = oneOf(["visitors", "pageviews"]);
+export type HeatmapMetric = Static<typeof HeatmapMetric>;
+
+export const HeatmapCell = Type.Object({
+  weekday: Type.Integer({ minimum: 1, maximum: 7 }),
+  hour: Type.Integer({ minimum: 0, maximum: 23 }),
+  value: Count,
+});
+export type HeatmapCell = Static<typeof HeatmapCell>;
+
+export const HeatmapResponse = Type.Object({
+  data: Type.Array(HeatmapCell),
+  metric: HeatmapMetric,
+  timezone: Type.String({ minLength: 1 }),
+  ...Scope,
+});
+export type HeatmapResponse = Static<typeof HeatmapResponse>;
+
+export const MapLevel = oneOf(["country", "region", "city"]);
+export type MapLevel = Static<typeof MapLevel>;
+
+export const MapPlace = Type.Object({
+  country: Type.String({ minLength: 2, maxLength: 2 }),
+  region: nullable(Type.String()),
+  city: nullable(Type.String()),
+  latitude: nullable(Type.Number({ minimum: -90, maximum: 90 })),
+  longitude: nullable(Type.Number({ minimum: -180, maximum: 180 })),
+  visitors: Count,
+  share: Ratio,
+});
+export type MapPlace = Static<typeof MapPlace>;
+
+export const MapResponse = Type.Object({
+  data: Type.Array(MapPlace),
+  level: MapLevel,
+  total: Count,
+  nextCursor: nullable(Type.String()),
+  ...Scope,
+});
+export type MapResponse = Static<typeof MapResponse>;
+
+export const LiveEvent = Type.Object({
+  id: Id,
+  project: Type.String({ minLength: 1 }),
+  name: EventName,
+  ts: Timestamp,
+  path: nullable(Type.String()),
+  country: nullable(Type.String({ minLength: 2, maxLength: 2 })),
+  device: DeviceType,
+  visitor: Type.Optional(Id),
+  session: Type.Optional(Id),
+});
+export type LiveEvent = Static<typeof LiveEvent>;
+
+export const LiveEvents = Type.Object({
+  data: Type.Array(LiveEvent),
+  nextCursor: Type.String({ minLength: 1 }),
+});
+export type LiveEvents = Static<typeof LiveEvents>;

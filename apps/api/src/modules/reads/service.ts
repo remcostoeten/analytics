@@ -22,7 +22,7 @@ import {
 } from "./params";
 import type { Range } from "./params";
 
-type Scoped = {
+export type Scoped = {
   scope: ReadScope;
   range: Range;
   echo: { [name: string]: string };

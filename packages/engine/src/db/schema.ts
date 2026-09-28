@@ -65,6 +65,7 @@ export const events = pgTable(
   (table) => [
     uniqueIndex("events_fingerprint_uidx").on(table.fingerprint),
     index("events_project_ts_idx").on(table.projectId, table.ts),
+    index("events_project_received_idx").on(table.projectId, table.receivedAt, table.id),
     index("events_project_type_idx").on(table.projectId, table.type),
     index("events_project_name_ts_idx").on(table.projectId, table.name, table.ts),
     index("events_project_route_ts_idx").on(table.projectId, table.route, table.ts),

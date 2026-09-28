@@ -27,15 +27,24 @@ export type {
   BreakdownPage,
   Bucket,
   BuiltInMetric,
+  Cohort,
+  HeatCell,
+  HeatMetric,
   Headline,
   Interval,
+  MapLevel,
   Metric,
+  PathDirection,
+  Paths,
+  Place,
+  PlacesPage,
   ReadFilter,
   ReadScope,
   ReadStore,
   Realtime,
   Traffic,
 } from "./reads";
+export type { FeedCursor, FeedPage, FeedQuery, LiveEvent, RealtimeFeed } from "./feed";
 export type { EventStore, InsertOutcome } from "./event-store";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
 export type { Hasher } from "./hasher";

@@ -80,6 +80,8 @@ const api = createApp({
   reads: {
     store: pgliteAccess(database).reads,
     details: pgliteAccess(database).details,
+    feed: pgliteAccess(database).feed,
+    live: { waitMs: 50, streamMs: 200 },
     limiter: pgliteAdapters(database, clock).limiter,
     hasher: webCryptoHasher(),
     ipSecret: "x".repeat(48),

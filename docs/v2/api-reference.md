@@ -84,11 +84,233 @@ Added routes, all under `/v2/projects/:project` with the shared query parameters
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
 | GET | `/sessions` | detail | All sessions, newest first, with duration, pages, entry, exit, source, geo and device; filter and sort like visitors |
-| GET | `/paths?from=/pricing` | project | The pages visitors went to next from a page, or came from with `direction=previous`, with counts and drop-off |
+| GET | `/paths?page=/pricing` | project | The pages visitors went to next from a page, or came from with `direction=previous`, with counts and drop-off |
 | GET | `/retention?interval=week` | project | Cohorts by first visit week or month and the share returning in each later period |
 | GET | `/heatmap` | project | Visitors or pageviews by weekday and hour of day, in the project's or a given timezone |
 | GET | `/map?level=city` | project | Visitor counts per country, region or city with coordinates for a map |
-| GET | `/realtime/events` | detail | Server-sent events stream of incoming events for the live view, with the same filters |
+| GET | `/realtime/events` | project | Incoming events for the live view, with the same filters: long-polling with `after`, or server-sent events with `Accept: text/event-stream`. Visitor and session ids need `detail` |
+
+### Paths, retention, heatmap and map
+
+All four take the shared range, traffic and filter parameters, and answer without the project prefix across every project you may read.
+
+- `paths` follows the pageviews of `page` inside each session: `direction=next` (default) gives the page viewed right after it, `previous` the one right before. `dropOff` counts the views that ended the session, or for `previous`, started it. Shares are of `views`. `page` is the query parameter because `from` is the range start.
+- `retention` groups visitors by the `week` (default, Monday start, UTC) or `month` of their first visit in the range, and counts how many were active in each later period up to the end of the range. Offset 0 is the cohort itself.
+- `heatmap` has all 168 cells, weekday 1 (Monday) to 7 and hour 0 to 23, counting `metric=visitors` (default) or `pageviews` in `timezone` (IANA, default UTC).
+- `map` counts visitors per `level=country` (default), `region` or `city`, with the average of their geo lookup coordinates rounded to two decimals, paged like a breakdown.
+
+`GET /v2/projects/remcostoeten.nl/paths?page=/pricing&period=28d`
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "path": "/signup",
+      "count": 38,
+      "share": 0.304
+    },
+    {
+      "path": "/docs",
+      "count": 21,
+      "share": 0.168
+    },
+    {
+      "path": "/",
+      "count": 9,
+      "share": 0.072
+    }
+  ],
+  "page": "/pricing",
+  "direction": "next",
+  "views": 125,
+  "dropOff": {
+    "count": 57,
+    "share": 0.456
+  },
+  "total": 3,
+  "nextCursor": null,
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/retention?interval=week&period=28d`
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "cohort": "2026-09-07T00:00:00.000Z",
+      "visitors": 120,
+      "periods": [
+        {
+          "offset": 0,
+          "visitors": 120,
+          "share": 1
+        },
+        {
+          "offset": 1,
+          "visitors": 22,
+          "share": 0.183
+        },
+        {
+          "offset": 2,
+          "visitors": 14,
+          "share": 0.117
+        },
+        {
+          "offset": 3,
+          "visitors": 9,
+          "share": 0.075
+        }
+      ]
+    },
+    {
+      "cohort": "2026-09-14T00:00:00.000Z",
+      "visitors": 96,
+      "periods": [
+        {
+          "offset": 0,
+          "visitors": 96,
+          "share": 1
+        },
+        {
+          "offset": 1,
+          "visitors": 17,
+          "share": 0.177
+        },
+        {
+          "offset": 2,
+          "visitors": 10,
+          "share": 0.104
+        }
+      ]
+    }
+  ],
+  "interval": "week",
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/heatmap?timezone=Europe/Amsterdam&period=28d` (three of the 168 cells shown)
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "weekday": 1,
+      "hour": 0,
+      "value": 0
+    },
+    {
+      "weekday": 1,
+      "hour": 9,
+      "value": 14
+    },
+    {
+      "weekday": 1,
+      "hour": 10,
+      "value": 21
+    }
+  ],
+  "metric": "visitors",
+  "timezone": "Europe/Amsterdam",
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/map?level=city&limit=2&period=28d`
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "country": "NL",
+      "region": "Noord-Holland",
+      "city": "Amsterdam",
+      "latitude": 52.37,
+      "longitude": 4.9,
+      "visitors": 64,
+      "share": 0.213
+    },
+    {
+      "country": "US",
+      "region": "California",
+      "city": "San Francisco",
+      "latitude": 37.77,
+      "longitude": -122.42,
+      "visitors": 31,
+      "share": 0.103
+    }
+  ],
+  "level": "city",
+  "total": 142,
+  "nextCursor": "eyJvIjoyfQ",
+  "range": {
+    "from": "2026-08-31T00:00:00.000Z",
+    "to": "2026-09-28T00:00:00.000Z"
+  },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+### Live events
+
+`GET /v2/projects/:project/realtime/events` without `after` answers at once with the events received in the last five minutes (up to `limit`, default 50). With `after=<nextCursor>` it answers as soon as newer events arrive, or with an empty page and the same cursor after 25 seconds, checking every 2 seconds. Events are ordered by when the API received them. `traffic` and `filter[...]` apply as on every read; `visitor` and `session` appear only with `detail` access.
+
+With `Accept: text/event-stream` the same route streams the pages as server-sent events: one `events` message per batch with the cursor as its `id`, a comment when a wait ends empty, and an `error` message if a read fails. The stream closes after about 55 seconds and the browser reconnects with `Last-Event-ID`, carrying on from the last batch.
+
+`GET /v2/projects/remcostoeten.nl/realtime/events?after=eyJy...` with an admin token
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "id": "48213",
+      "project": "remcostoeten.nl",
+      "name": "pageview",
+      "ts": "2026-09-27T16:39:58.412Z",
+      "path": "/blog/rebuilding-analytics",
+      "country": "NL",
+      "device": "desktop",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607"
+    },
+    {
+      "id": "48214",
+      "project": "remcostoeten.nl",
+      "name": "signup",
+      "ts": "2026-09-27T16:39:59.901Z",
+      "path": "/blog/rebuilding-analytics",
+      "country": "NL",
+      "device": "desktop",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607"
+    }
+  ],
+  "nextCursor": "eyJyIjoiMjAyNi0wOS0yNyAxNjo0MDowMC4xMjM0NTYrMDAiLCJpIjoiNDgyMTQifQ"
+}
+```
 
 ### Returning visitors in detail
 

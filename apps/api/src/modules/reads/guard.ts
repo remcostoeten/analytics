@@ -6,15 +6,19 @@ import type {
   ProjectRecord,
   RateLimiter,
   ReadStore,
+  RealtimeFeed,
 } from "@remcostoeten/analytics-engine";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
 import type { Caller } from "../../access/types";
 import { failure } from "../../plugins/error-handler";
+import type { LiveOptions } from "./live";
 
 export type ReadsOptions = {
   store: ReadStore;
   details: DetailStore;
+  feed: RealtimeFeed;
+  live: LiveOptions;
   limiter: RateLimiter;
   hasher: Hasher;
   ipSecret: string;

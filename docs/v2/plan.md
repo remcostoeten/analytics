@@ -261,7 +261,7 @@ About 25 routes under `/v2` replace the 50 `?metric=` selectors and the dashboar
 | Group | Routes | Who can call them |
 | --- | --- | --- |
 | Ingest | `POST /v2/events` | Browser with a public key from an allowed origin, or a server with a secret key |
-| Aggregate reads | `stats`, `timeseries`, `breakdown/:dimension`, `realtime` under `/v2/projects/:project` | Anyone for a public project, admin or read token for a private one |
+| Aggregate reads | `stats`, `timeseries`, `breakdown/:dimension`, `paths`, `retention`, `heatmap`, `map`, `realtime` and `realtime/events` under `/v2/projects/:project` | Anyone for a public project, admin or read token for a private one |
 | Visitor-level reads | `events`, `visitors`, `visitors/:visitor`, `sessions/:session/events` | Admin or read token; anyone only if the project is public and has `publicVisitorData` on |
 | Project settings | `POST /v2/projects`, `PATCH /v2/projects/:project`, key rotation | Admin |
 | Project list | `GET /v2/projects` | Anyone sees public projects; an admin sees all and can filter with `visibility=private` |
@@ -385,7 +385,7 @@ The design keeps Postgres as the only source of truth and hides delivery behind 
 
 | Stage | How | Why |
 | --- | --- | --- |
-| Now (phase 4) | `GET /realtime/events?after=<cursor>` long-polls: it answers at once when newer events exist, otherwise waits up to 25 seconds, checking an index on `(project_id, received_at)` every 2 seconds. The dashboard's live counter and stream use it; KPI tiles simply refetch every 30 seconds | Works on Vercel today, needs no new service, and costs one indexed query per open dashboard every 2 seconds, which is fine for a handful of viewers |
+| Now (phase 4) | `GET /realtime/events?after=<cursor>` long-polls: it answers at once when newer events exist, otherwise waits up to 25 seconds, checking an index on `(project_id, received_at, id)` (migration 0023) every 2 seconds. The dashboard's live counter and stream use it; KPI tiles simply refetch every 30 seconds | Works on Vercel today, needs no new service, and costs one indexed query per open dashboard every 2 seconds, which is fine for a handful of viewers |
 | Later, if needed | A Cloudflare Durable Object per project: after ingest persists a batch, it forwards a summary to that project's object, which holds WebSocket connections and the last 5 minutes in memory | You are already behind Cloudflare; true push, one hub per project so every viewer sees the same stream, and no polling load on Neon |
 
 - The response shape is the same in both stages (events with a cursor), so the dashboard does not change when delivery does.
@@ -421,7 +421,7 @@ Stay on Neon Postgres and the existing tables; every change is additive, so the 
 | 0014 | Better Auth's user, session and account tables, generated through its Drizzle adapter; `dashboard_users` stays as the allowlist | Admin sign-in |
 | 0015 | `api_tokens`: `id`, `name`, `token_hash`, `scope` (`read` or `admin`, `sql` from 0022), `project_ids text[]` null for all, `last_used_at`, `expires_at`, timestamps | Scripts, CI and other frontends |
 
-Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log.
+Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log; 0023 the `(project_id, received_at, id)` index the realtime feed polls.
 
 - **Idempotency**: the event `id` (UUIDv7) goes into the existing `fingerprint` column, so the unique index `events_fingerprint_uidx` rejects retries. The key lives as long as the event does, which outlives any client retry window.
 - **Writes**: one multi-row `INSERT ... ON CONFLICT DO NOTHING RETURNING` per batch, then session and visitor upserts grouped per session. Today's batch handler loops one event at a time.
