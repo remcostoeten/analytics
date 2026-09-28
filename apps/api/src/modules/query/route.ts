@@ -1,9 +1,13 @@
 import {
+  CreateSavedQuery,
   QueryHistory,
   QueryPlan,
   QueryRequest,
   QueryResult,
   QuerySchema,
+  SavedQueryList,
+  SavedQueryResponse,
+  UpdateSavedQuery,
 } from "@remcostoeten/analytics-contract";
 import { engineError } from "@remcostoeten/analytics-engine";
 import type { EngineError, ProjectRecord, QueryActor } from "@remcostoeten/analytics-engine";
@@ -17,7 +21,18 @@ import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import type { Set } from "../reads/guard";
-import { explainQuery, queryActor, queryCsv, queryHistory, querySchema, runQuery } from "./service";
+import {
+  changeSaved,
+  createSaved,
+  explainQuery,
+  getSaved,
+  listSaved,
+  queryActor,
+  queryCsv,
+  queryHistory,
+  querySchema,
+  runQuery,
+} from "./service";
 import type { QueryOptions } from "./service";
 
 const tags = ["SQL"];
@@ -40,7 +55,8 @@ function signedIn(caller: Caller): Result<QueryActor, EngineError> {
  * @description The SQL console: `POST /projects/:project/query` and `POST /query` run one
  * read-only `SELECT` against the documented views, for one project or every project the caller
  * may query; `POST /query/explain` estimates its cost; `GET /query/schema` lists the views and
- * `GET /queries/history` the latest runs. SQL needs an owner, an admin or analyst who lists the
+ * `GET /queries/history` the latest runs; `/queries` and `/queries/:query` keep saved queries,
+ * shared by everyone who may run SQL and changed only by their creator or the owner. SQL needs an owner, an admin or analyst who lists the
  * project, or a `sql` token, and the project's `sqlEnabled` switch. Results answer CSV for
  * `Accept: text/csv` or `format=csv`.
  *
@@ -74,6 +90,15 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
     return canQuery(caller, project)
       ? ok({ actor: actor.value, projectIds: [project.id] })
       : err(engineError("FORBIDDEN", "You may not run SQL on this project"));
+  }
+
+  async function sqlUser(caller: Caller) {
+    const scope = await everywhere(caller);
+    return scope.ok ? ok(scope.value.actor) : scope;
+  }
+
+  function isOwner(caller: Caller) {
+    return caller.kind === "user" && caller.role === "owner";
   }
 
   async function everywhere(caller: Caller) {
@@ -176,8 +201,7 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
         set.headers["cache-control"] = "private, no-store";
         const actor = signedIn(caller);
         if (!actor.ok) return reject(set, actor.error);
-        const owner = caller.kind === "user" && caller.role === "owner";
-        return answer(set, await queryHistory(options.log, actor.value, owner));
+        return answer(set, await queryHistory(options.log, actor.value, isOwner(caller)));
       },
       {
         access: "public",
@@ -186,6 +210,109 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
           summary: "Latest query runs",
           description:
             "Your last 100 runs with duration, rows and whether they were blocked; the owner sees everyone's.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/queries",
+      async ({ caller, set }) => {
+        set.headers["cache-control"] = "private, no-store";
+        const actor = await sqlUser(caller);
+        if (!actor.ok) return reject(set, actor.error);
+        return answer(set, await listSaved(options.saved));
+      },
+      {
+        access: "public",
+        response: { 200: SavedQueryList, ...errorResponses },
+        detail: {
+          summary: "Saved queries",
+          description: "Every saved query, by name, for anyone who may run SQL.",
+          tags,
+        },
+      },
+    )
+    .post(
+      "/queries",
+      async ({ caller, body, set }) => {
+        const actor = await sqlUser(caller);
+        if (!actor.ok) return reject(set, actor.error);
+        const created = await createSaved(options.saved, actor.value, body);
+        if (created.ok) set.status = 201;
+        return answer(set, created);
+      },
+      {
+        access: "public",
+        body: CreateSavedQuery,
+        response: { 201: SavedQueryResponse, ...errorResponses },
+        detail: {
+          summary: "Save a query",
+          description:
+            "Name, SQL, an optional description and an optional chart type (`table`, `line` or `bar`). The SQL passes the same checks as a run.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/queries/:query",
+      async ({ caller, params, set }) => {
+        set.headers["cache-control"] = "private, no-store";
+        const actor = await sqlUser(caller);
+        if (!actor.ok) return reject(set, actor.error);
+        return answer(set, await getSaved(options.saved, params.query));
+      },
+      {
+        access: "public",
+        response: { 200: SavedQueryResponse, ...errorResponses },
+        detail: { summary: "One saved query", description: "By its id.", tags },
+      },
+    )
+    .patch(
+      "/queries/:query",
+      async ({ caller, params, body, set }) => {
+        const actor = await sqlUser(caller);
+        if (!actor.ok) return reject(set, actor.error);
+        const changed = await changeSaved(
+          options.saved,
+          actor.value,
+          isOwner(caller),
+          params.query,
+          body,
+        );
+        if (!changed.ok) return reject(set, changed.error);
+        return changed.value ?? reject(set, engineError("NOT_FOUND", "Saved query not found"));
+      },
+      {
+        access: "public",
+        body: UpdateSavedQuery,
+        response: { 200: SavedQueryResponse, ...errorResponses },
+        detail: {
+          summary: "Change a saved query",
+          description: "Its creator or the owner may change it.",
+          tags,
+        },
+      },
+    )
+    .delete(
+      "/queries/:query",
+      async ({ caller, params, set, status }) => {
+        const actor = await sqlUser(caller);
+        if (!actor.ok) return reject(set, actor.error);
+        const removed = await changeSaved(
+          options.saved,
+          actor.value,
+          isOwner(caller),
+          params.query,
+          null,
+        );
+        return removed.ok ? status(204, undefined) : reject(set, removed.error);
+      },
+      {
+        access: "public",
+        response: { 204: t.Void(), ...errorResponses },
+        detail: {
+          summary: "Delete a saved query",
+          description: "Its creator or the owner may delete it.",
           tags,
         },
       },

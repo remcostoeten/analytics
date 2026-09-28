@@ -47,6 +47,8 @@ export type {
 export type { FeedCursor, FeedPage, FeedQuery, LiveEvent, RealtimeFeed } from "./feed";
 export type {
   Cell,
+  Chart,
+  NewSavedQuery,
   QueryActor,
   QueryLog,
   QueryOutput,
@@ -54,6 +56,9 @@ export type {
   QueryRun,
   QueryRunner,
   QueryRunRecord,
+  SavedQuery,
+  SavedQueryPatch,
+  SavedQueryStore,
 } from "./query";
 export type { EventStore, InsertOutcome } from "./event-store";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";

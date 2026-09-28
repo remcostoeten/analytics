@@ -17,6 +17,7 @@ import type {
   QueryLog,
   QueryRunner,
   ReadStore,
+  SavedQueryStore,
   RealtimeFeed,
   DetailStore,
   TokenRecord,
@@ -31,7 +32,7 @@ export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
-import { drizzleQueryLog, readQuerySecret } from "./drizzle-queries";
+import { drizzleQueryLog, drizzleSavedQueries, readQuerySecret } from "./drizzle-queries";
 import { drizzleReads } from "./drizzle-reads";
 
 export const organizationId = "org_main";
@@ -254,6 +255,7 @@ export type Access = {
   feed: RealtimeFeed;
   queries: QueryRunner;
   queryLog: QueryLog;
+  savedQueries: SavedQueryStore;
 };
 
 /**
@@ -279,5 +281,6 @@ export function accessOn(db: Database, transact: Transact): Access {
       maxRows: 10_000,
     }),
     queryLog: drizzleQueryLog(db),
+    savedQueries: drizzleSavedQueries(db),
   };
 }

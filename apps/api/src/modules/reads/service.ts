@@ -36,6 +36,7 @@ const responseKeys: { [name: string]: string } = {
   pages_per_session: "pagesPerSession",
   time_on_page: "avgTimeMs",
   scroll_depth: "scrollDepth",
+  conversion_rate: "conversionRate",
 };
 const defaultMetrics: { [dimension: string]: string[] } = {
   page: ["visitors", "pageviews", "bounce_rate", "time_on_page"],
@@ -58,6 +59,20 @@ function compared(value: number, previous: number) {
   };
 }
 
+function convertible(metrics: Metric[], scope: ReadScope): Result<null, EngineError> {
+  const wanted = metrics.some(
+    (metric) => metric.kind === "built-in" && metric.name === "conversion_rate",
+  );
+  const defined = scope.filters.some(
+    (filter) => filter.dimension.name === "event" && !filter.exclude,
+  );
+  return wanted && !defined
+    ? err(
+        engineError("VALIDATION_FAILED", "conversion_rate needs filter[event] for the conversion"),
+      )
+    : ok(null);
+}
+
 function metricKey(metric: Metric) {
   return metric.kind === "built-in" ? (responseKeys[metric.name] ?? metric.name) : metric.name;
 }
@@ -66,7 +81,7 @@ function metricValue(metric: Metric, value: number) {
   if (metric.kind !== "built-in") return round(value, 2);
   if (metric.name === "bounce_rate") return round(value, 3);
   if (metric.name === "pages_per_session") return round(value, 2);
-  if (metric.name === "scroll_depth") return round(value, 3);
+  if (metric.name === "scroll_depth" || metric.name === "conversion_rate") return round(value, 3);
   return Math.round(value);
 }
 
@@ -150,6 +165,8 @@ export async function timeseries(
   if (!name) return err(engineError("VALIDATION_FAILED", "metric is required"));
   const metric = readMetric(name);
   if (!metric.ok) return metric;
+  const ready = convertible([metric.value], scoped.scope);
+  if (!ready.ok) return ready;
   const interval = readInterval(params, scoped.range);
   if (!interval.ok) return interval;
   const current = await store.timeseries(scoped.scope, metric.value, interval.value);
@@ -202,6 +219,8 @@ export async function breakdown(
     defaultMetrics[name] ?? ["visitors", "pageviews"],
   );
   if (!metrics.ok) return metrics;
+  const ready = convertible(metrics.value, scoped.scope);
+  if (!ready.ok) return ready;
   const page = readPage(params);
   if (!page.ok) return page;
   const found = await store.breakdown(scoped.scope, dimension, metrics.value, page.value);

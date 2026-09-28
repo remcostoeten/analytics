@@ -81,12 +81,43 @@ export function scopeParts(
 /**
  * @name scopedEvents
  * @description The events one read covers, as a `SELECT` for a `scoped` CTE, with each row's
- * group `key`.
+ * group `key` and, given a `conversion` condition, whether the row's session converted.
  *
  * @example
  * sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}) SELECT count(*) FROM scoped`;
  */
-export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
+export function scopedEvents(
+  scope: ReadScope,
+  key: SQL,
+  keyDimensions: Dimension[],
+  conversion: SQL | null = null,
+): SQL {
   const { joins: joined, where } = scopeParts(scope, keyDimensions);
-  return sql`SELECT ${key} AS k, e.id, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country FROM events e ${joined} WHERE ${where}`;
+  const converted = conversion
+    ? sql`COALESCE(bool_or(${conversion}) OVER (PARTITION BY e.project_id, e.session_id), false)`
+    : sql`false`;
+  return sql`SELECT ${key} AS k, e.id, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country, ${converted} AS converted FROM events e ${joined} WHERE ${where}`;
+}
+
+/**
+ * @name conversionScope
+ * @description For reads with `conversion_rate`: the `filter[event]` filters stop narrowing the
+ * events and define the conversion instead, so the other metrics cover every event in scope and a
+ * session counts as converted when any of its events matches. Null when there is no event filter.
+ *
+ * @example
+ * const split = conversionScope(scope); // { scope: without filter[event], conversion: SQL }
+ */
+export function conversionScope(scope: ReadScope): { scope: ReadScope; conversion: SQL } | null {
+  const events = scope.filters.filter(
+    (filter) => filter.dimension.name === "event" && !filter.exclude,
+  );
+  if (events.length === 0) return null;
+  return {
+    scope: { ...scope, filters: scope.filters.filter((filter) => !events.includes(filter)) },
+    conversion: sql.join(
+      events.map((filter) => filterCondition(filter, scope)),
+      sql` AND `,
+    ),
+  };
 }

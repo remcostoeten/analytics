@@ -30,7 +30,8 @@ export type BuiltInMetric =
   | "session_duration"
   | "pages_per_session"
   | "time_on_page"
-  | "scroll_depth";
+  | "scroll_depth"
+  | "conversion_rate";
 
 export type Metric =
   | { kind: "built-in"; name: BuiltInMetric }

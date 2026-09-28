@@ -368,6 +368,16 @@ export const queryRuns = pgTable(
   (table) => [index("query_runs_actor_idx").on(table.actorKind, table.actorId, table.createdAt)],
 );
 
+export const savedQueries = pgTable("saved_queries", {
+  ...baseEntity(),
+  name: text("name").notNull(),
+  sql: text("sql").notNull(),
+  description: text("description"),
+  chart: text("chart", { enum: ["table", "line", "bar"] }),
+  createdByKind: text("created_by_kind", { enum: ["user", "token"] }).notNull(),
+  createdById: text("created_by_id").notNull(),
+});
+
 export const querySecret = pgTable("query_secret", {
   id: boolean("id").primaryKey().default(true),
   secret: text("secret").notNull(),

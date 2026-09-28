@@ -1,9 +1,13 @@
 import type {
+  CreateSavedQuery,
   QueryHistory,
   QueryPlan,
   QueryRequest,
   QueryResult,
   QuerySchema,
+  SavedQueryList,
+  SavedQueryResponse,
+  UpdateSavedQuery,
 } from "@remcostoeten/analytics-contract";
 import { engineError, prepareQuery, queryViews } from "@remcostoeten/analytics-engine";
 import type {
@@ -12,6 +16,8 @@ import type {
   QueryLog,
   QueryRunner,
   RateLimiter,
+  SavedQuery,
+  SavedQueryStore,
 } from "@remcostoeten/analytics-engine";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
@@ -22,6 +28,7 @@ import { toCsv } from "../reads/csv";
 export type QueryOptions = {
   runner: QueryRunner;
   log: QueryLog;
+  saved: SavedQueryStore;
   limiter: RateLimiter;
   perMinute: number;
 };
@@ -187,4 +194,116 @@ export function querySchema(): QuerySchema {
  */
 export function queryCsv(result: QueryResult): string {
   return toCsv(result.columns, result.rows);
+}
+
+const sampleParams = {
+  from: "2026-01-01T00:00:00.000Z",
+  to: "2026-01-02T00:00:00.000Z",
+  project: "example",
+};
+
+function shapeSaved(query: SavedQuery) {
+  return {
+    id: query.id,
+    name: query.name,
+    sql: query.sql,
+    description: query.description,
+    chart: query.chart,
+    createdBy: query.createdBy,
+    createdAt: query.createdAt.toISOString(),
+    updatedAt: query.updatedAt.toISOString(),
+  };
+}
+
+function checkable(sql: string | undefined): Result<null, EngineError> {
+  if (sql === undefined) return ok(null);
+  const prepared = prepareQuery(sql, sampleParams);
+  return prepared.ok ? ok(null) : prepared;
+}
+
+function missing() {
+  return err(engineError("NOT_FOUND", "Saved query not found"));
+}
+
+/**
+ * @name listSaved
+ * @description Every saved query, by name; they are shared by everyone who may run SQL.
+ *
+ * @example
+ * await listSaved(options.saved);
+ */
+export async function listSaved(store: SavedQueryStore): Reply<SavedQueryList> {
+  const found = await store.list();
+  return found.ok ? ok({ data: found.value.map(shapeSaved), nextCursor: null }) : found;
+}
+
+/**
+ * @name getSaved
+ * @description One saved query, or `NOT_FOUND`.
+ *
+ * @example
+ * await getSaved(options.saved, "sq_1");
+ */
+export async function getSaved(store: SavedQueryStore, id: string): Reply<SavedQueryResponse> {
+  const found = await store.get(id);
+  if (!found.ok) return found;
+  return found.value ? ok({ data: shapeSaved(found.value) }) : missing();
+}
+
+/**
+ * @name createSaved
+ * @description Saves a query after the same checks a run gets, so a saved query always passes
+ * `prepareQuery`.
+ *
+ * @example
+ * await createSaved(options.saved, actor, { name: "Signups", sql: "select 1" });
+ */
+export async function createSaved(
+  store: SavedQueryStore,
+  actor: QueryActor,
+  body: CreateSavedQuery,
+): Reply<SavedQueryResponse> {
+  const checked = checkable(body.sql);
+  if (!checked.ok) return checked;
+  const created = await store.create({
+    name: body.name,
+    sql: body.sql,
+    description: body.description ?? null,
+    chart: body.chart ?? null,
+    createdBy: actor,
+  });
+  return created.ok ? ok({ data: shapeSaved(created.value) }) : created;
+}
+
+/**
+ * @name changeSaved
+ * @description Changes or deletes a saved query: its creator and the owner may, anyone else gets
+ * `FORBIDDEN`. `patch` null deletes.
+ *
+ * @example
+ * await changeSaved(options.saved, actor, false, "sq_1", { name: "Renamed" });
+ */
+export async function changeSaved(
+  store: SavedQueryStore,
+  actor: QueryActor,
+  owner: boolean,
+  id: string,
+  patch: UpdateSavedQuery | null,
+): Reply<SavedQueryResponse | null> {
+  const found = await store.get(id);
+  if (!found.ok) return found;
+  if (!found.value) return missing();
+  const creator = found.value.createdBy;
+  if (!owner && (creator.kind !== actor.kind || creator.id !== actor.id)) {
+    return err(engineError("FORBIDDEN", "Only its creator or the owner may change a saved query"));
+  }
+  if (!patch) {
+    const removed = await store.remove(id);
+    return removed.ok ? ok(null) : removed;
+  }
+  const checked = checkable(patch.sql);
+  if (!checked.ok) return checked;
+  const updated = await store.update(id, patch);
+  if (!updated.ok) return updated;
+  return updated.value ? ok({ data: shapeSaved(updated.value) }) : missing();
 }

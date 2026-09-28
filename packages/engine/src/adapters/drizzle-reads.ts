@@ -3,7 +3,7 @@ import type { SQL } from "drizzle-orm";
 
 import type { Metric, ReadScope, ReadStore } from "../ports";
 import { aggregateQuery } from "../reads/aggregate";
-import { scopedEvents } from "../reads/scope";
+import { conversionScope, scopedEvents } from "../reads/scope";
 import type { Database } from "./drizzle";
 import { exploreReads } from "./drizzle-explore";
 import { attempt, numeric, rounded, selectRows, textual } from "./drizzle-rows";
@@ -20,13 +20,22 @@ const headlineMetrics: Metric[] = [
 
 const topLimit = 10;
 
+function effective(scope: ReadScope, metrics: Metric[]) {
+  const wanted = metrics.some(
+    (metric) => metric.kind === "built-in" && metric.name === "conversion_rate",
+  );
+  const split = wanted ? conversionScope(scope) : null;
+  return { scope: split?.scope ?? scope, conversion: split?.conversion ?? null };
+}
+
 function withScope(
   scope: ReadScope,
   key: SQL,
   keyDimensions: Parameters<typeof scopedEvents>[2],
   metrics: Metric[],
 ) {
-  return sql`WITH scoped AS (${scopedEvents(scope, key, keyDimensions)})${aggregateQuery(metrics)}`;
+  const read = effective(scope, metrics);
+  return sql`WITH scoped AS (${scopedEvents(read.scope, key, keyDimensions, read.conversion)})${aggregateQuery(metrics)}`;
 }
 
 /**
@@ -79,7 +88,7 @@ export function drizzleReads(db: Database): ReadStore {
         const key = dimension.expression({ from: scope.from });
         const [counts] = await selectRows(
           db,
-          sql`WITH scoped AS (${scopedEvents(scope, key, [dimension])})
+          sql`WITH scoped AS (${scopedEvents(effective(scope, metrics).scope, key, [dimension])})
             SELECT count(DISTINCT k) FILTER (WHERE k IS NOT NULL) AS total, count(DISTINCT visitor_id) AS visitors FROM scoped`,
         );
         const order = metrics.slice(0, 2).map((_, index) => sql.raw(`a.m${index} DESC`));

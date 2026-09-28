@@ -35,3 +35,31 @@ export type QueryLog = {
   record: (run: QueryRun) => Reply<null>;
   history: (actor: QueryActor | null, limit: number) => Reply<QueryRunRecord[]>;
 };
+
+export type Chart = "table" | "line" | "bar";
+
+export type SavedQuery = {
+  id: string;
+  name: string;
+  sql: string;
+  description: string | null;
+  chart: Chart | null;
+  createdBy: QueryActor;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type NewSavedQuery = Pick<
+  SavedQuery,
+  "name" | "sql" | "description" | "chart" | "createdBy"
+>;
+
+export type SavedQueryPatch = Partial<Pick<SavedQuery, "name" | "sql" | "description" | "chart">>;
+
+export type SavedQueryStore = {
+  list: () => Reply<SavedQuery[]>;
+  get: (id: string) => Reply<SavedQuery | null>;
+  create: (query: NewSavedQuery) => Reply<SavedQuery>;
+  update: (id: string, patch: SavedQueryPatch) => Reply<SavedQuery | null>;
+  remove: (id: string) => Reply<boolean>;
+};
