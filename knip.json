@@ -16,8 +16,6 @@
     },
     "e2e": {
       "entry": [
-        "serve.ts",
-        "playwright.config.ts",
         "tests/*.spec.ts",
         "site/app.ts"
       ]

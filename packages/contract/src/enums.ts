@@ -49,8 +49,11 @@ export type IssueStatus = Static<typeof IssueStatus>;
 export const IssueLevel = oneOf(["error", "warning"]);
 export type IssueLevel = Static<typeof IssueLevel>;
 
-export const TokenScope = oneOf(["read", "admin"]);
+export const TokenScope = oneOf(["read", "sql", "admin"]);
 export type TokenScope = Static<typeof TokenScope>;
+
+export const Role = oneOf(["owner", "admin", "analyst", "viewer"]);
+export type Role = Static<typeof Role>;
 
 export const Channel = oneOf([
   "direct",

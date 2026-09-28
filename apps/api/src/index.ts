@@ -5,7 +5,7 @@ import {
   defaultStages,
   ipSecretProblem,
 } from "@remcostoeten/analytics-engine";
-import { postgresAdapters } from "@remcostoeten/analytics-engine/adapters/postgres";
+import { postgresAccess, postgresAdapters } from "@remcostoeten/analytics-engine/adapters/postgres";
 import {
   jsonLogger,
   systemClock,
@@ -13,6 +13,7 @@ import {
 } from "@remcostoeten/analytics-engine/adapters/system";
 
 import { createApp } from "./app";
+import { betterAuthSessions, createAuth } from "./auth/better-auth";
 import { candidatePaths, openGeo } from "./geo";
 
 const production = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
@@ -32,6 +33,26 @@ const clock = systemClock();
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("Refusing to start: DATABASE_URL is not set.");
 const adapters = postgresAdapters(databaseUrl, clock);
+const stores = postgresAccess(databaseUrl);
+const hasher = webCryptoHasher();
+const authSecret = process.env.BETTER_AUTH_SECRET ?? "";
+// Sessions signed with a guessable secret could be forged, so production refuses to start.
+if (production && authSecret.length < 32)
+  throw new Error("Refusing to start: BETTER_AUTH_SECRET must be at least 32 characters.");
+const dashboardOrigin = process.env.DASHBOARD_ORIGIN ?? null;
+const auth = createAuth({
+  db: stores.db,
+  members: stores.members,
+  secret: authSecret || "insecure-development-auth-secret-change-me",
+  baseURL: process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 3100}`,
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID ?? "",
+    clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+  },
+  cookieDomain: process.env.AUTH_COOKIE_DOMAIN || null,
+  trustedOrigins: dashboardOrigin ? [dashboardOrigin] : [],
+  secure: production,
+});
 const settings = {
   ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
   rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
@@ -44,7 +65,7 @@ function logger(requestId: string) {
 export default createApp({
   engine: (log) =>
     createEngine(
-      { ...adapters, geo: geo.lookup, hasher: webCryptoHasher(), clock, logger: log },
+      { ...adapters, geo: geo.lookup, hasher, clock, logger: log },
       {
         stages: defaultStages,
         signals: defaultSignals,
@@ -55,7 +76,17 @@ export default createApp({
     ),
   logger,
   clock: () => clock.now(),
-  dashboardOrigin: process.env.DASHBOARD_ORIGIN ?? null,
+  dashboardOrigin,
   docsBase: process.env.DOCS_BASE ?? "https://api.remcostoeten.nl/v2/openapi",
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  access: {
+    projects: stores.projects,
+    tokens: stores.tokens,
+    members: stores.members,
+    sessions: betterAuthSessions(auth, stores.members),
+    hasher,
+    clock: () => clock.now(),
+    cronSecret: process.env.CRON_SECRET || null,
+  },
+  authHandler: auth.handler,
 });

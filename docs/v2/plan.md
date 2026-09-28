@@ -416,12 +416,12 @@ Stay on Neon Postgres and the existing tables; every change is additive, so the 
 | 0009 | New `projects` table: `id` slug, `name`, `visibility` (`public` or `private`, default `public`), `public_visitor_data` boolean default false, `allowed_origins text[]`, `public_key`, `secret_key_hash`, `retention_days`, timestamps | Moves `ORIGIN_ALLOWLIST` and `INGEST_SECRET` from env into per-project rows and holds the visibility switch. Existing distinct `project_id` values are seeded as public rows, matching today |
 | 0010 | `events.name text`, backfilled from `COALESCE(meta->>'eventName', type)`; index `(project_id, name, ts)` | Stops the 34 `meta->>'eventName'` lookups in dashboard queries |
 | 0011 | `events.bot_score smallint`, `events.bot_reasons text[]`, `sessions.bot_score smallint`; partial index on `(project_id, ts) WHERE bot_score < 50` | One scored bot model instead of a boolean, and fast human-only reads |
-| 0012 | Unique index on `sessions (project_id, session_id)` replacing the global one | Session ids are only unique per project |
+| 0012 | Unique index on `sessions (project_id, session_id)` next to the global one, which v1's `ON CONFLICT (session_id)` still needs; the global index is dropped with v1 in E5.1, and until then one session id cannot be stored under two projects | Session ids are only unique per project |
 | 0013 | `events.schema_version smallint` default 0; v2 writes 1 | Tells legacy rows apart during the transition |
 | 0014 | Better Auth's user, session and account tables, generated through its Drizzle adapter; `dashboard_users` stays as the allowlist | Admin sign-in |
-| 0015 | `api_tokens`: `id`, `name`, `token_hash`, `scope` (`read` or `admin`), `project_ids text[]` null for all, `last_used_at`, `expires_at`, timestamps | Scripts, CI and other frontends |
+| 0015 | `api_tokens`: `id`, `name`, `token_hash`, `scope` (`read` or `admin`, `sql` from 0022), `project_ids text[]` null for all, `last_used_at`, `expires_at`, timestamps | Scripts, CI and other frontends |
 
-Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template.
+Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log.
 
 - **Idempotency**: the event `id` (UUIDv7) goes into the existing `fingerprint` column, so the unique index `events_fingerprint_uidx` rejects retries. The key lives as long as the event does, which outlives any client retry window.
 - **Writes**: one multi-row `INSERT ... ON CONFLICT DO NOTHING RETURNING` per batch, then session and visitor upserts grouped per session. Today's batch handler loops one event at a time.

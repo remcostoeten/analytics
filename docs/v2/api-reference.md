@@ -7,13 +7,13 @@ Every route the v2 API will have, who may call it, and what comes back. This is 
 | Level | Who passes |
 | --- | --- |
 | `public` | Anyone |
-| `project` | Anyone when the project is public; otherwise an admin session or an API token with `read` scope for that project |
-| `detail` | Admin or `read` token; also anyone when the project is public **and** has `publicVisitorData` switched on |
-| `admin` | Admin session or an API token with `admin` scope |
+| `project` | Anyone when the project is public; otherwise a signed-in member whose role lists the project, or an API token (any scope) that lists it |
+| `detail` | An owner, admin or analyst who lists the project, or an API token that lists it; also anyone when the project is public **and** has `publicVisitorData` switched on. Viewers get aggregates only |
+| `admin` | An owner's session, an admin's session for the projects their role lists, or an API token with `admin` scope for its projects. Organization-wide routes (creating projects, tokens) need an owner, or an admin or `admin` token that lists no projects |
 | `ingest` | `X-Project-Key: pk_...` or `?key=pk_...` from an allowed Origin, or `Bearer sk_...`. The browser SDK uses `?key=` because `sendBeacon` cannot set headers and a custom header would trigger a CORS preflight |
 | `cron` | `Bearer CRON_SECRET` |
 
-A private project answers 404, not 403, to callers without access, so its name does not leak.
+A private project answers 404, not 403, to callers without access, so its name does not leak. A project the caller can read but not change or see in detail answers 401 when signed out and 403 otherwise. An unknown or expired `at_` token is 401, never treated as anonymous.
 
 ## Routes
 
@@ -289,6 +289,7 @@ Browser requests are limited to 100 per minute per project and daily IP hash. A 
 {
   "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
   "session": { "expiresAt": "2026-10-27T16:40:01.000Z" },
+  "role": "owner",
   "isAdmin": true
 }
 ```
@@ -297,7 +298,7 @@ Signed out:
 
 ```json
 200 OK
-{ "user": null, "session": null, "isAdmin": false }
+{ "user": null, "session": null, "role": null, "isAdmin": false }
 ```
 
 Sign-in starts at the Better Auth GitHub route and ends in a `302` back to the dashboard with a `Set-Cookie` header; sign-out is a `POST` that clears it. Both are browser redirects, not JSON.

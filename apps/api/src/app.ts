@@ -2,8 +2,14 @@ import type { Engine, Logger } from "@remcostoeten/analytics-engine";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { Elysia } from "elysia";
 
+import { resolveCaller } from "./access/caller";
+import { isSignedInAdmin } from "./access/rules";
+import type { AccessDeps } from "./access/types";
+import { authModule } from "./modules/auth/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
+import { projectsModule } from "./modules/projects/route";
+import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { docs } from "./plugins/docs";
 import { errorHandler } from "./plugins/error-handler";
@@ -18,15 +24,24 @@ export type AppOptions = {
   dashboardOrigin: Nullable<string>;
   docsBase: string;
   geo: { city: string | null; asn: string | null; loadMs: number };
+  access: AccessDeps;
+  authHandler: Nullable<(request: Request) => Promise<Response>>;
 };
+
+async function signedInAdmin(headers: Headers, access: AccessDeps) {
+  if (!headers.get("cookie")) return false;
+  const caller = await resolveCaller(headers, access);
+  return caller.ok && isSignedInAdmin(caller.value);
+}
 
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health and ingest. The engine is created per request so its log lines carry the request id.
+ * health, ingest, sign-in, projects and tokens. The engine is created per request so its log
+ * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  *
  * @example
- * const app = createApp({ engine, logger, clock: () => new Date(), dashboardOrigin: null, docsBase, geo });
+ * const app = createApp({ engine, logger, clock: () => new Date(), dashboardOrigin: null, docsBase, geo, access, authHandler: null });
  * const response = await app.handle(new Request("http://localhost/v2/health"));
  */
 export function createApp(options: AppOptions) {
@@ -42,6 +57,16 @@ export function createApp(options: AppOptions) {
         logger: options.logger,
         clock: options.clock,
         docsBase: options.docsBase,
+        isAdmin: (headers) => signedInAdmin(headers, options.access),
       }),
-    );
+    )
+    .use(
+      authModule({
+        deps: options.access,
+        docsBase: options.docsBase,
+        handler: options.authHandler,
+      }),
+    )
+    .use(projectsModule(options.access, options.docsBase))
+    .use(tokensModule(options.access, options.docsBase));
 }

@@ -263,7 +263,15 @@ function describe(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function unavailable(message: string, error: unknown) {
+/**
+ * @name unavailable
+ * @description An `UNAVAILABLE` engine error for a failed database call, keeping the driver's
+ * message as the cause for the logs.
+ *
+ * @example
+ * return unavailable("Could not read projects", error);
+ */
+export function unavailable(message: string, error: unknown) {
   return err({ ...engineError("UNAVAILABLE", message), cause: new Error(describe(error)) });
 }
 

@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { BotReason } from "./enums";
+import { BotReason, Role } from "./enums";
 import { Count, dataOf, Day, Id, Milliseconds, nullable, oneOf, Timestamp, Url } from "./schema";
 
 export const Health = Type.Object({
@@ -21,6 +21,7 @@ export const AuthSession = Type.Object({
     }),
   ),
   session: nullable(Type.Object({ expiresAt: Timestamp })),
+  role: nullable(Role),
   isAdmin: Type.Boolean(),
 });
 export type AuthSession = Static<typeof AuthSession>;

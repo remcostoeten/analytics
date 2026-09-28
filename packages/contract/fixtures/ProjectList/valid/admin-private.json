@@ -6,6 +6,7 @@
       "domain": "portal.example.nl",
       "visibility": "private",
       "publicVisitorData": false,
+      "sqlEnabled": true,
       "allowedOrigins": [
         "https://portal.example.nl"
       ],

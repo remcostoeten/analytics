@@ -10,7 +10,7 @@ import {
   defaultStages,
 } from "@remcostoeten/analytics-engine";
 import { fixedClock, memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
+import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
 import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
 import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
 import {
@@ -68,6 +68,14 @@ function app(limit = 1000) {
     dashboardOrigin: "https://dashboard.example.test",
     docsBase,
     geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+    access: {
+      ...pgliteAccess(database),
+      sessions: async () => null,
+      hasher: webCryptoHasher(),
+      clock: () => clock.now(),
+      cronSecret: null,
+    },
+    authHandler: null,
   });
 }
 
@@ -318,7 +326,16 @@ describe("GET /v2/openapi/json", () => {
     const document = await (
       await api.handle(new Request("http://localhost/v2/openapi/json"))
     ).json();
-    expect(Object.keys(document.paths).sort()).toEqual(["/v2/events", "/v2/health"]);
+    expect(Object.keys(document.paths).sort()).toEqual([
+      "/v2/auth/session",
+      "/v2/events",
+      "/v2/health",
+      "/v2/projects",
+      "/v2/projects/{project}",
+      "/v2/projects/{project}/keys",
+      "/v2/tokens",
+      "/v2/tokens/{token}",
+    ]);
     const ingest = document.paths["/v2/events"].post;
     expect(Object.keys(ingest.responses).sort()).toEqual([
       "202",

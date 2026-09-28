@@ -10,7 +10,7 @@ import {
   defaultStages,
 } from "@remcostoeten/analytics-engine";
 import { memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
+import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
 import { systemClock, webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
 import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
 import {
@@ -120,6 +120,14 @@ const api = createApp({
   dashboardOrigin: null,
   docsBase: "http://localhost/v2/openapi",
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  access: {
+    ...pgliteAccess(database),
+    sessions: async () => null,
+    hasher: webCryptoHasher(),
+    clock: () => clock.now(),
+    cronSecret: null,
+  },
+  authHandler: null,
 });
 api.listen(apiPort);
 

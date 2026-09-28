@@ -10,6 +10,7 @@
 		"./adapters/maxmind": "./src/adapters/maxmind.ts",
 		"./adapters/pglite": "./src/adapters/pglite.ts",
 		"./adapters/postgres": "./src/adapters/postgres.ts",
+		"./adapters/access": "./src/adapters/drizzle-access.ts",
 		"./db/schema": "./src/db/schema.ts",
 		"./db/migrate": "./src/db/migrate.ts",
 		"./db/migration-files": "./src/db/migration-files.ts",
