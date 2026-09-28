@@ -2,8 +2,10 @@ import type { Frame } from "./stack";
 
 // A UUID.
 const uuid = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
-// A hexadecimal id: 0x-prefixed, or 8 or more hex digits with at least one digit.
-const hex = /\b(?:0x[0-9a-f]+|(?=[0-9a-f]*\d)[0-9a-f]{8,})\b/gi;
+// A hexadecimal id: 0x-prefixed, or a run of 8 or more hex digits.
+const hex = /\b(?:0x[0-9a-f]+|[0-9a-f]{8,})\b/gi;
+// A digit.
+const digit = /\d/;
 // A number.
 const number = /\d+(?:\.\d+)?/g;
 // A scheme and host at the start of a URL.
@@ -20,7 +22,11 @@ const fileHash = /[.-][0-9a-f]{6,}(?=\.[a-z]+$)/i;
  * normaliseMessage("Item 4521 not found"); // "Item <n> not found"
  */
 export function normaliseMessage(message: string): string {
-  return message.replaceAll(uuid, "<id>").replaceAll(hex, "<id>").replaceAll(number, "<n>").trim();
+  return message
+    .replaceAll(uuid, "<id>")
+    .replaceAll(hex, (run) => (run.startsWith("0x") || digit.test(run) ? "<id>" : run))
+    .replaceAll(number, "<n>")
+    .trim();
 }
 
 /**

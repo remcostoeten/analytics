@@ -6,10 +6,8 @@ export type Frame = {
   inApp: boolean;
 };
 
-// Chrome and Edge: "    at fn (https://x.test/a.js:10:5)" or "    at https://x.test/a.js:10:5".
-const chromeFrame = /^\s*at (?:(?:async )?(.+?) \()?(.+?):(\d+):(\d+)\)?$/;
-// Firefox and Safari: "fn@https://x.test/a.js:10:5" or "@https://x.test/a.js:10:5".
-const geckoFrame = /^\s*(.*?)@(.+?):(\d+):(\d+)$/;
+// The trailing ":line:column" of a frame's location.
+const position = /:(\d+):(\d+)$/;
 const outside = [
   "node_modules",
   "chrome-extension://",
@@ -21,15 +19,32 @@ const outside = [
   "[native code]",
 ];
 
-function frameOf(match: RegExpExecArray): Frame {
-  const [, name, file = "", line, column] = match;
+function frameOf(name: string, location: string): Frame | null {
+  const match = position.exec(location);
+  if (!match) return null;
+  const file = location.slice(0, match.index);
+  if (file.length === 0) return null;
   return {
     file,
-    line: line ? Number(line) : null,
-    column: column ? Number(column) : null,
-    function: name && name !== "global code" ? name : null,
+    line: Number(match[1]),
+    column: Number(match[2]),
+    function: name.length > 0 && name !== "global code" ? name : null,
     inApp: !outside.some((marker) => file.includes(marker)),
   };
+}
+
+function parseLine(line: string): Frame | null {
+  const trimmed = line.trim();
+  if (trimmed.startsWith("at ")) {
+    const after = trimmed.slice(3);
+    const rest = after.startsWith("async ") ? after.slice(6) : after;
+    const open = rest.lastIndexOf(" (");
+    if (open !== -1 && rest.endsWith(")"))
+      return frameOf(rest.slice(0, open), rest.slice(open + 2, -1));
+    return frameOf("", rest);
+  }
+  const at = trimmed.indexOf("@");
+  return at === -1 ? null : frameOf(trimmed.slice(0, at), trimmed.slice(at + 1));
 }
 
 /**
@@ -43,10 +58,8 @@ function frameOf(match: RegExpExecArray): Frame {
  * // [{ file: "https://site.test/app.js", line: 10, column: 5, function: "render", inApp: true }]
  */
 export function parseStack(stack: string): Frame[] {
-  const frames: Frame[] = [];
-  for (const line of stack.split("\n")) {
-    const match = chromeFrame.exec(line) ?? geckoFrame.exec(line);
-    if (match) frames.push(frameOf(match));
-  }
-  return frames;
+  return stack.split("\n").flatMap((line) => {
+    const frame = parseLine(line);
+    return frame ? [frame] : [];
+  });
 }
