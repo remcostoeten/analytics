@@ -350,3 +350,13 @@ export const schemaMigrations = pgTable("schema_migrations", {
   checksum: text("checksum").notNull(),
   appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    hits: integer("hits").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.key, table.windowStart] })],
+);

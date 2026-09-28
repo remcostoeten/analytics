@@ -11,10 +11,10 @@ const legacy = files.slice(0, names.indexOf(baseline) + 1);
 const apply = { dryRun: false, baseline: null };
 
 describe("readMigrations", () => {
-  test("reads 0000 to 0020 in order", () => {
+  test("reads 0000 to 0021 in order", () => {
     expect(names[0]).toBe("0000_create_events");
-    expect(names.at(-1)).toBe("0020_add_route");
-    expect(names).toHaveLength(21);
+    expect(names.at(-1)).toBe("0021_add_rate_limits");
+    expect(names).toHaveLength(22);
     expect(names).toEqual([...names].sort());
   });
 });
@@ -68,7 +68,7 @@ describe("runMigrations on a database v1 already migrated", () => {
     return database;
   }
 
-  test("baselines 0000 to 0008 and applies 0009 to 0020", async () => {
+  test("baselines 0000 to 0008 and applies 0009 to 0021", async () => {
     const database = await legacyDatabase();
     const report = await runMigrations(createClient(database), files, { dryRun: false, baseline });
     expect(report.ok && report.value.baselined).toEqual(legacy.map((file) => file.name));

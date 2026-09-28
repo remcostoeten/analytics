@@ -1,0 +1,1 @@
+`GeoIP2-City-Test.mmdb` is MaxMind's test database from [maxmind/MaxMind-DB](https://github.com/maxmind/MaxMind-DB/tree/main/test-data), licensed under CC BY-SA 4.0. It holds a handful of documented test networks, such as `81.2.69.160`, so tests do not need the 65 MB GeoLite2 download.
