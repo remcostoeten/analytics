@@ -50,6 +50,7 @@ function legacyMeta(draft: EventDraft): Meta {
       viewport: context?.viewport,
       timezone: context?.tz,
       connectionType: context?.connection,
+      release: context?.release,
       utmSource: context?.utm?.source,
       utmMedium: context?.utm?.medium,
       utmCampaign: context?.utm?.campaign,

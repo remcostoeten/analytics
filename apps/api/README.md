@@ -12,6 +12,7 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 | `GET /v2/auth/session`, `/v2/auth/*` | The current session, role and `isAdmin`; every other path is Better Auth: GitHub sign-in, callback, sign-out, organization routes |
 | `GET, POST /v2/projects`, `GET, PATCH /v2/projects/:project`, `POST /v2/projects/:project/keys` | Projects, with the access levels from the API reference; a private project answers 404 to callers who may not read it |
 | `GET, POST /v2/tokens`, `DELETE /v2/tokens/:token` | API tokens for organization admins; a token's value is returned once and stored hashed |
+| `GET /v2/projects/:project/stats`, `timeseries`, `breakdown/:dimension`, `realtime` | Aggregate reads with the shared `period`, `from`/`to`, `traffic` and `filter[...]` parameters; dimensions come from the engine's registry in `packages/engine/src/dimensions/`. `breakdown` pages with `limit` and `cursor` and answers CSV for `Accept: text/csv` or `format=csv` |
 
 Access is one route option, `{ access: "public" | "project" | "detail" | "admin" | "cron" }`, from `src/plugins/access.ts`; the rules are in `src/access/`. Only GitHub logins in `dashboard_users` can sign in, checked again on every request. The first to sign in owns the organization; later ones join as viewers of no projects. Events sent with an owner's or admin's session cookie are stored as internal traffic.
 
@@ -29,6 +30,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | For sign-in | The GitHub OAuth app, with callback `${API_URL}/v2/auth/callback/github` |
 | `AUTH_COOKIE_DOMAIN` | In production | `.remcostoeten.nl`, so the dashboard and every tracked subdomain receive the session cookie |
 | `CRON_SECRET` | For jobs | `Authorization: Bearer` value for `cron` routes |
+| `PUBLIC_READ_LIMIT` | No | Anonymous reads per minute per daily IP hash; defaults to 120 |
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |

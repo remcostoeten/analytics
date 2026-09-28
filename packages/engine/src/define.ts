@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import type { BotReason } from "@remcostoeten/analytics-contract";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
@@ -39,10 +40,16 @@ export type Enricher = {
   ) => Partial<Enrichment> | Promise<Partial<Enrichment>>;
 };
 
+export type DimensionJoin = "session" | "visitor";
+
+export type DimensionScope = { from: Date };
+
 export type Dimension = {
   name: string;
   label: string;
-  column: string;
+  join: DimensionJoin | null;
+  expression: (scope: DimensionScope) => SQL;
+  matches?: (value: string, scope: DimensionScope) => SQL;
 };
 
 export type Registry = {
@@ -91,11 +98,12 @@ export function defineEnricher(enricher: Enricher): Enricher {
 
 /**
  * @name defineDimension
- * @description Declares a report dimension: the name the breakdown and filter routes accept and
- * the column it reads.
+ * @description Declares a report dimension: the name the breakdown and filter routes accept, the
+ * SQL expression it reads over `events e` (with `sessions s` or `visitors v` joined when `join`
+ * asks for them), and, for multi-valued columns, how a filter value matches.
  *
  * @example
- * const page = defineDimension({ name: "page", label: "Page", column: "path" });
+ * const page = defineDimension({ name: "page", label: "Page", join: null, expression: () => sql`e.path` });
  */
 export function defineDimension(dimension: Dimension): Dimension {
   return dimension;

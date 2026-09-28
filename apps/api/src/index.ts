@@ -88,5 +88,13 @@ export default createApp({
     clock: () => clock.now(),
     cronSecret: process.env.CRON_SECRET || null,
   },
+  reads: {
+    store: stores.reads,
+    limiter: adapters.limiter,
+    hasher,
+    ipSecret: settings.ipSecret,
+    publicLimit: Number(process.env.PUBLIC_READ_LIMIT ?? 120),
+    clock: () => clock.now(),
+  },
   authHandler: auth.handler,
 });

@@ -22,6 +22,19 @@ export type {
   Visibility,
 } from "./access";
 export type { Clock } from "./clock";
+export type {
+  BreakdownPage,
+  Bucket,
+  BuiltInMetric,
+  Headline,
+  Interval,
+  Metric,
+  ReadFilter,
+  ReadScope,
+  ReadStore,
+  Realtime,
+  Traffic,
+} from "./reads";
 export type { EventStore, InsertOutcome } from "./event-store";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
 export type { Hasher } from "./hasher";
