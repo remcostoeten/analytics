@@ -15,6 +15,7 @@ import type {
   ProjectAdmin,
   ProjectRecord,
   ReadStore,
+  DetailStore,
   TokenRecord,
   TokenStore,
 } from "../ports";
@@ -22,6 +23,7 @@ import type { Database } from "./drizzle";
 
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
+import { drizzleDetails } from "./drizzle-details";
 import { drizzleReads } from "./drizzle-reads";
 
 export const organizationId = "org_main";
@@ -240,6 +242,7 @@ export type Access = {
   tokens: TokenStore;
   members: MemberStore;
   reads: ReadStore;
+  details: DetailStore;
 };
 
 /**
@@ -257,5 +260,6 @@ export function accessOn(db: Database): Access {
     tokens: drizzleTokens(db),
     members: drizzleMembers(db),
     reads: drizzleReads(db),
+    details: drizzleDetails(db),
   };
 }

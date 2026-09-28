@@ -79,6 +79,7 @@ const api = createApp({
   access: deps,
   reads: {
     store: pgliteAccess(database).reads,
+    details: pgliteAccess(database).details,
     limiter: pgliteAdapters(database, clock).limiter,
     hasher: webCryptoHasher(),
     ipSecret: "x".repeat(48),

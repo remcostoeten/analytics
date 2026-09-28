@@ -1,0 +1,90 @@
+import { clientIp, engineError, hashIp } from "@remcostoeten/analytics-engine";
+import type {
+  DetailStore,
+  EngineError,
+  Hasher,
+  ProjectRecord,
+  RateLimiter,
+  ReadStore,
+} from "@remcostoeten/analytics-engine";
+import type { Result } from "@remcostoeten/analytics-shared/result";
+
+import type { Caller } from "../../access/types";
+import { failure } from "../../plugins/error-handler";
+
+export type ReadsOptions = {
+  store: ReadStore;
+  details: DetailStore;
+  limiter: RateLimiter;
+  hasher: Hasher;
+  ipSecret: string;
+  publicLimit: number;
+  clock: () => Date;
+};
+
+export type Set = { status?: unknown; headers: { [name: string]: unknown } };
+
+export type Cache = "aggregate" | "private";
+
+const windowSeconds = 60;
+
+/**
+ * @name readGate
+ * @description What every read route does before and after its query: a missing project is
+ * `NOT_FOUND`; aggregate reads of a public project get `Cache-Control: public, s-maxage=60` and
+ * everything else `private, no-store`; anonymous callers are rate limited per daily IP hash; an
+ * error becomes the error envelope with its status.
+ *
+ * @example
+ * const gate = readGate(options, docsBase);
+ * return gate.answer(request, caller, project, set, "aggregate", (params, id) => run(params, id));
+ */
+export function readGate(options: ReadsOptions, docsBase: string) {
+  function reject(error: EngineError, set: Set) {
+    const failed = failure(error, set.headers, docsBase);
+    set.status = failed.status;
+    return failed.body;
+  }
+
+  async function limited(request: Request, caller: Caller): Promise<EngineError | null> {
+    if (caller.kind !== "anonymous") return null;
+    const now = options.clock();
+    const ipHash = await hashIp(
+      options.hasher,
+      options.ipSecret,
+      clientIp(request.headers),
+      now.toISOString(),
+    );
+    const decision = await options.limiter.hit(
+      `read:${ipHash ?? "unknown"}`,
+      options.publicLimit,
+      windowSeconds,
+    );
+    if (decision.allowed) return null;
+    return {
+      ...engineError("RATE_LIMITED", "Too many reads; try again shortly"),
+      details: { retryAfterSeconds: decision.retryAfterSeconds },
+    };
+  }
+
+  async function answer<Value>(
+    request: Request,
+    caller: Caller,
+    project: ProjectRecord | null,
+    set: Set,
+    cache: Cache,
+    run: (params: URLSearchParams, projectId: string) => Promise<Result<Value, EngineError>>,
+  ) {
+    if (!project) return reject(engineError("NOT_FOUND", "Project not found"), set);
+    set.headers["cache-control"] =
+      cache === "aggregate" && project.visibility === "public"
+        ? "public, s-maxage=60"
+        : "private, no-store";
+    const refused = await limited(request, caller);
+    if (refused) return reject(refused, set);
+    const result = await run(new URL(request.url).searchParams, project.id);
+    return result.ok ? result.value : reject(result.error, set);
+  }
+
+  return { answer, reject };
+}

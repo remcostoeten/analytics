@@ -22,6 +22,7 @@ export type {
   Visibility,
 } from "./access";
 export type { Clock } from "./clock";
+export type { DetailStore, Keyset, MarkedVisitor, Offset, Page } from "./details";
 export type {
   BreakdownPage,
   Bucket,

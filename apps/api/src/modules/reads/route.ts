@@ -4,36 +4,18 @@ import {
   StatsResponse,
   TimeseriesResponse,
 } from "@remcostoeten/analytics-contract";
-import { clientIp, engineError, hashIp } from "@remcostoeten/analytics-engine";
-import type {
-  EngineError,
-  Hasher,
-  ProjectRecord,
-  RateLimiter,
-  ReadStore,
-} from "@remcostoeten/analytics-engine";
+import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps, Caller } from "../../access/types";
 import { access } from "../../plugins/access";
-import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
+import { readGate } from "./guard";
+import type { ReadsOptions, Set } from "./guard";
 import { breakdown, breakdownCsv, readScope, realtime, stats, timeseries } from "./service";
 
-export type ReadsOptions = {
-  store: ReadStore;
-  limiter: RateLimiter;
-  hasher: Hasher;
-  ipSecret: string;
-  publicLimit: number;
-  clock: () => Date;
-};
-
-type Set = { status?: unknown; headers: { [name: string]: unknown } };
-
 const tags = ["Reads"];
-const windowSeconds = 60;
 const readResponses = { ...errorResponses, 429: errorResponses[400] };
 
 /**
@@ -48,48 +30,16 @@ const readResponses = { ...errorResponses, 429: errorResponses[400] };
  * app.use(readsModule(deps, reads, docsBase));
  */
 export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: string) {
-  function reject(error: EngineError, set: Set) {
-    const failed = failure(error, set.headers, docsBase);
-    set.status = failed.status;
-    return failed.body;
-  }
+  const gate = readGate(options, docsBase);
 
-  async function admit(request: Request, caller: Caller, project: ProjectRecord | null, set: Set) {
-    if (!project) return engineError("NOT_FOUND", "Project not found");
-    set.headers["cache-control"] =
-      project.visibility === "public" ? "public, s-maxage=60" : "private, no-store";
-    if (caller.kind !== "anonymous") return null;
-    const now = options.clock();
-    const ipHash = await hashIp(
-      options.hasher,
-      options.ipSecret,
-      clientIp(request.headers),
-      now.toISOString(),
-    );
-    const decision = await options.limiter.hit(
-      `read:${ipHash ?? "unknown"}`,
-      options.publicLimit,
-      windowSeconds,
-    );
-    if (decision.allowed) return null;
-    return {
-      ...engineError("RATE_LIMITED", "Too many reads; try again shortly"),
-      details: { retryAfterSeconds: decision.retryAfterSeconds },
-    };
-  }
-
-  async function answer<Value>(
+  function answer<Value>(
     request: Request,
     caller: Caller,
     project: ProjectRecord | null,
     set: Set,
     run: (params: URLSearchParams, projectId: string) => Promise<Result<Value, EngineError>>,
   ) {
-    const refused = await admit(request, caller, project, set);
-    if (refused || !project)
-      return reject(refused ?? engineError("NOT_FOUND", "Project not found"), set);
-    const result = await run(new URL(request.url).searchParams, project.id);
-    return result.ok ? result.value : reject(result.error, set);
+    return gate.answer(request, caller, project, set, "aggregate", run);
   }
 
   function scoped(params: URLSearchParams, projectId: string) {
