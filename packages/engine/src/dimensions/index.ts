@@ -7,6 +7,7 @@ import { cityDimension } from "./city";
 import { connectionDimension } from "./connection";
 import { continentDimension } from "./continent";
 import { countryDimension } from "./country";
+import { daysSincePreviousVisitDimension } from "./days-since-previous-visit";
 import { deviceDimension } from "./device";
 import { entryPageDimension } from "./entry-page";
 import { eventDimension } from "./event";
@@ -30,6 +31,7 @@ import { utmMediumDimension } from "./utm-medium";
 import { utmSourceDimension } from "./utm-source";
 import { utmTermDimension } from "./utm-term";
 import { viewportDimension } from "./viewport";
+import { visitNumberDimension } from "./visit-number";
 import { visitorTypeDimension } from "./visitor-type";
 import { propDimension, traitDimension } from "./keyed";
 
@@ -62,6 +64,8 @@ export const defaultDimensions: Dimension[] = [
   languageDimension,
   connectionDimension,
   visitorTypeDimension,
+  visitNumberDimension,
+  daysSincePreviousVisitDimension,
   eventDimension,
   botReasonDimension,
   releaseDimension,

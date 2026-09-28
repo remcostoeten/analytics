@@ -81,7 +81,7 @@ beforeAll(async () => {
     "INSERT INTO visitors (project_id, fingerprint, first_seen, meta) VALUES ('site', 'ada', '2026-09-01T00:00:00Z', '{\"identity\":{\"plan\":\"pro\"}}'), ('site', 'bo', '2026-09-21T09:00:00Z', null)",
   );
   await database.query(
-    "INSERT INTO sessions (project_id, session_id, visitor_id, entry_path, exit_path) VALUES ('site', 's1', 'ada', '/', '/pricing'), ('site', 's2', 'bo', '/blog', '/blog'), ('site', 's3', 'ada', '/pricing', '/pricing')",
+    "INSERT INTO sessions (project_id, session_id, visitor_id, entry_path, exit_path, started_at) VALUES ('site', 's1', 'ada', '/', '/pricing', '2026-09-21T10:00:00Z'), ('site', 's2', 'bo', '/blog', '/blog', '2026-09-22T09:00:00Z'), ('site', 's3', 'ada', '/pricing', '/pricing', '2026-09-23T12:00:00Z')",
   );
   await seed({ id: "e1", visitor: "ada", session: "s1", ts: "2026-09-21T10:00:00Z", path: "/" });
   await seed({
@@ -255,5 +255,41 @@ describe("drizzleReads", () => {
       ],
       countries: [{ value: "NL", visitors: 1 }],
     });
+  });
+
+  test("visit number and days since the previous visit come from the visitor's sessions", async () => {
+    const numbers = value(
+      await reads.breakdown(week, dimension("visit_number"), [visitors], { limit: 10, offset: 0 }),
+    );
+    expect(numbers.rows.map((row) => [row.value, row.visitors])).toEqual([
+      ["1", 2],
+      ["2", 1],
+    ]);
+    const gaps = value(
+      await reads.breakdown(week, dimension("days_since_previous_visit"), [pageviews], {
+        limit: 10,
+        offset: 0,
+      }),
+    );
+    expect(gaps.rows.map((row) => [row.value, row.metrics[0]])).toEqual([["2-7", 1]]);
+  });
+
+  test("scroll depth averages scroll_depth events as a share of the page", async () => {
+    await database.query(
+      "INSERT INTO events (project_id, type, name, ts, path, visitor_id, session_id, fingerprint, meta) VALUES ('scrolls', 'event', 'scroll_depth', '2026-09-21T10:00:00Z', '/', 'v', 's', 'd1', '{\"depth\":40}'), ('scrolls', 'event', 'scroll_depth', '2026-09-21T10:01:00Z', '/', 'w', 't', 'd2', '{\"depth\":80}')",
+    );
+    const scroll: Metric = { kind: "built-in", name: "scroll_depth" };
+    const depth = value(
+      await reads.breakdown({ ...week, projectIds: ["scrolls"] }, dimension("page"), [scroll], {
+        limit: 10,
+        offset: 0,
+      }),
+    );
+    expect(depth.rows).toEqual([{ value: "/", visitors: 2, metrics: [0.6] }]);
+  });
+
+  test("no readable projects reads nothing instead of failing", async () => {
+    expect(value(await reads.headline({ ...week, projectIds: [] })).visitors).toBe(0);
+    expect(value(await reads.realtime([], week.from, week.to)).visitors).toBe(0);
   });
 });

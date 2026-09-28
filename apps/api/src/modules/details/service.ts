@@ -1,5 +1,7 @@
 import type {
   EventList,
+  PeopleList,
+  PersonResponse,
   SessionEvents,
   SessionList,
   UpdatedVisitor,
@@ -68,15 +70,15 @@ function keysetCursor(next: Nullable<Keyset>) {
  * @description Raw events in the scope, newest first, optionally one `name` only.
  *
  * @example
- * await listEvents(store, params, "remcostoeten.nl", new Date());
+ * await listEvents(store, params, ["remcostoeten.nl"], new Date());
  */
 export async function listEvents(
   store: DetailStore,
   params: URLSearchParams,
-  project: string,
+  projects: string[],
   now: Date,
 ): Promise<Result<EventList, EngineError>> {
-  const scoped = readScope(params, [project], now);
+  const scoped = readScope(params, projects, now);
   if (!scoped.ok) return scoped;
   const limit = readLimit(params);
   if (!limit.ok) return limit;
@@ -92,15 +94,15 @@ export async function listEvents(
  * @description Visitors active in the scope, most recently seen first.
  *
  * @example
- * await listVisitors(store, params, "remcostoeten.nl", new Date());
+ * await listVisitors(store, params, ["remcostoeten.nl"], new Date());
  */
 export async function listVisitors(
   store: DetailStore,
   params: URLSearchParams,
-  project: string,
+  projects: string[],
   now: Date,
 ): Promise<Result<VisitorList, EngineError>> {
-  const scoped = readScope(params, [project], now);
+  const scoped = readScope(params, projects, now);
   if (!scoped.ok) return scoped;
   const page = readPage(params);
   if (!page.ok) return page;
@@ -115,15 +117,15 @@ export async function listVisitors(
  * @description Sessions with events in the scope, newest first.
  *
  * @example
- * await listSessions(store, params, "remcostoeten.nl", new Date());
+ * await listSessions(store, params, ["remcostoeten.nl"], new Date());
  */
 export async function listSessions(
   store: DetailStore,
   params: URLSearchParams,
-  project: string,
+  projects: string[],
   now: Date,
 ): Promise<Result<SessionList, EngineError>> {
-  const scoped = readScope(params, [project], now);
+  const scoped = readScope(params, projects, now);
   if (!scoped.ok) return scoped;
   const page = readPage(params);
   if (!page.ok) return page;
@@ -219,4 +221,45 @@ export async function visitorVisits(
   if (!found.ok) return found;
   const { rows, total } = found.value;
   return ok({ data: rows, nextCursor: nextCursor(page.value.offset, rows.length, total ?? 0) });
+}
+
+/**
+ * @name listPeople
+ * @description Identified users across the given projects, one row per `userId`, most recently
+ * seen first.
+ *
+ * @example
+ * await listPeople(store, params, ["remcostoeten.nl", "skriuw"]);
+ */
+export async function listPeople(
+  store: DetailStore,
+  params: URLSearchParams,
+  projects: string[],
+): Promise<Result<PeopleList, EngineError>> {
+  const page = readPage(params);
+  if (!page.ok) return page;
+  const found = await store.people(projects, page.value);
+  if (!found.ok) return found;
+  const { rows, total } = found.value;
+  return ok({ data: rows, nextCursor: nextCursor(page.value.offset, rows.length, total ?? 0) });
+}
+
+/**
+ * @name personDetail
+ * @description One identified user across the given projects: where they first came in, and
+ * every visit in every project in time order. `NOT_FOUND` when no readable project knows them.
+ *
+ * @example
+ * await personDetail(store, ["remcostoeten.nl", "skriuw"], "user_123");
+ */
+export async function personDetail(
+  store: DetailStore,
+  projects: string[],
+  userId: string,
+): Promise<Result<PersonResponse, EngineError>> {
+  const found = await store.person(projects, userId);
+  if (!found.ok) return found;
+  return found.value
+    ? ok({ data: found.value })
+    : err(engineError("NOT_FOUND", "Person not found"));
 }

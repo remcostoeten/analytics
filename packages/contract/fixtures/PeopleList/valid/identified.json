@@ -1,0 +1,14 @@
+{
+  "data": [
+    {
+      "userId": "user_123",
+      "traits": { "plan": "pro" },
+      "firstSeen": "2026-09-02T08:11:00.000Z",
+      "lastSeen": "2026-09-27T16:39:59.901Z",
+      "firstProject": "remcostoeten.nl",
+      "projects": 2,
+      "visits": 10
+    }
+  ],
+  "nextCursor": null
+}

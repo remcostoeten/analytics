@@ -3,6 +3,8 @@ import type {
   Channel,
   DeviceType,
   EventRow,
+  Person,
+  PersonRow,
   Props,
   PropValue,
   SessionRow,
@@ -239,6 +241,23 @@ function returnedWithin(starts: number[]) {
     return first !== undefined && later.some((start) => start - first <= days * dayMs);
   }
   return { day: within(1), week: within(7), month: within(30) };
+}
+
+function projectList(projects: string[]): SQL {
+  return projects.length > 0
+    ? sql`(${sql.join(
+        projects.map((id) => sql`${id}`),
+        sql`, `,
+      )})`
+    : sql`(NULL)`;
+}
+
+function traitsOf(identity: unknown): Props {
+  return Object.fromEntries(
+    Object.entries(record(identity))
+      .filter(([key]) => key !== "userId")
+      .map(([key, value]) => [key, propValue(value)]),
+  );
 }
 
 /**
@@ -581,6 +600,105 @@ export function drizzleDetails(db: Database): DetailStore {
         }
         const total = count(sessions[0]?.total ?? previousStart?.total);
         return { rows: visits, next: null, total };
+      }),
+    people: (projects, page) =>
+      attempt("Could not read people", async (): Promise<Page<PersonRow>> => {
+        const identified = sql`WITH identified AS (
+            SELECT v.project_id, v.fingerprint, v.first_seen, v.last_seen, v.meta->'identity' AS identity,
+              v.meta->'identity'->>'userId' AS user_id
+            FROM visitors v
+            WHERE v.project_id IN ${projectList(projects)} AND v.meta->'identity'->>'userId' IS NOT NULL
+          ),
+          per AS (
+            SELECT user_id, min(first_seen) AS first_seen, max(last_seen) AS last_seen,
+              count(DISTINCT project_id) AS projects,
+              (array_agg(project_id ORDER BY first_seen ASC))[1] AS first_project,
+              (array_agg(identity ORDER BY last_seen DESC))[1] AS identity
+            FROM identified GROUP BY user_id
+          )`;
+        const [totals] = await select(db, sql`${identified} SELECT count(*) AS total FROM per`);
+        const rows = await select(
+          db,
+          sql`${identified} SELECT per.*, (
+              SELECT count(DISTINCT e.project_id || ':' || e.session_id) FROM events e
+              JOIN identified i ON i.project_id = e.project_id AND i.fingerprint = e.visitor_id
+              WHERE i.user_id = per.user_id AND e.session_id IS NOT NULL
+            ) AS visits
+            FROM per ORDER BY per.last_seen DESC, per.user_id ASC LIMIT ${page.limit} OFFSET ${page.offset}`,
+        );
+        return {
+          rows: rows.map((row) => ({
+            userId: String(row.user_id),
+            traits: traitsOf(row.identity),
+            firstSeen: iso(row.first_seen),
+            lastSeen: iso(row.last_seen),
+            firstProject: String(row.first_project),
+            projects: count(row.projects),
+            visits: count(row.visits),
+          })),
+          next: null,
+          total: count(totals?.total),
+        };
+      }),
+    person: (projects, userId) =>
+      attempt("Could not read the person", async (): Promise<Nullable<Person>> => {
+        const visitors = await select(
+          db,
+          sql`SELECT project_id, fingerprint, first_seen, last_seen, meta FROM visitors
+            WHERE project_id IN ${projectList(projects)} AND meta->'identity'->>'userId' = ${userId}
+            ORDER BY first_seen ASC, project_id ASC`,
+        );
+        const [first] = visitors;
+        if (!first) return null;
+        const pairs = sql.join(
+          visitors.map((row) => sql`(${String(row.project_id)}, ${String(row.fingerprint)})`),
+          sql`, `,
+        );
+        const visits = await select(
+          db,
+          sql`SELECT e.project_id, e.visitor_id, e.session_id, min(e.ts) AS started_at,
+              count(*) FILTER (WHERE e.type = 'pageview') AS pages,
+              (array_agg(e.path ORDER BY e.ts ASC))[1] AS entry_path,
+              (array_agg(COALESCE(e.host, p.domain) ORDER BY e.ts ASC))[1] AS host,
+              row_number() OVER (PARTITION BY e.project_id, e.visitor_id ORDER BY min(e.ts) ASC) AS visit_number
+            FROM events e JOIN projects p ON p.id = e.project_id
+            WHERE (e.project_id, e.visitor_id) IN (${pairs}) AND e.session_id IS NOT NULL
+            GROUP BY e.project_id, e.visitor_id, e.session_id
+            ORDER BY min(e.ts) ASC`,
+        );
+        const [source] = await select(
+          db,
+          sql`SELECT ${eventColumns} FROM events e
+            WHERE e.project_id = ${String(first.project_id)} AND e.visitor_id = ${String(first.fingerprint)}
+            ORDER BY e.ts ASC, e.id ASC LIMIT 1`,
+        );
+        const latest = visitors.reduce((newest, row) =>
+          new Date(iso(row.last_seen)) > new Date(iso(newest.last_seen)) ? row : newest,
+        );
+        return {
+          userId,
+          traits: traitsOf(record(latest.meta).identity),
+          firstSeen: iso(first.first_seen),
+          lastSeen: iso(latest.last_seen),
+          firstProject: String(first.project_id),
+          firstSource: sourceOf(source ?? {}),
+          projects: visitors.map((row) => ({
+            projectId: String(row.project_id),
+            visitorId: String(row.fingerprint),
+            firstSeen: iso(row.first_seen),
+            visits: visits.filter(
+              (visit) =>
+                visit.project_id === row.project_id && visit.visitor_id === row.fingerprint,
+            ).length,
+          })),
+          visits: visits.map((visit) => ({
+            projectId: String(visit.project_id),
+            visitNumber: count(visit.visit_number),
+            startedAt: iso(visit.started_at),
+            entryUrl: `https://${text(visit.host) ?? "localhost"}${text(visit.entry_path) ?? "/"}`,
+            pages: count(visit.pages),
+          })),
+        };
       }),
   };
 }

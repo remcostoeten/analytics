@@ -32,7 +32,8 @@ const windowSeconds = 60;
  * @name readGate
  * @description What every read route does before and after its query: a missing project is
  * `NOT_FOUND`; aggregate reads of a public project get `Cache-Control: public, s-maxage=60` and
- * everything else `private, no-store`; anonymous callers are rate limited per daily IP hash; an
+ * everything else `private, no-store` (for reads across projects, only anonymous aggregate reads
+ * are public, as the answer depends on who asks); anonymous callers are rate limited per daily IP hash; an
  * error becomes the error envelope with its status.
  *
  * @example
@@ -86,5 +87,22 @@ export function readGate(options: ReadsOptions, docsBase: string) {
     return result.ok ? result.value : reject(result.error, set);
   }
 
-  return { answer, reject };
+  async function answerMany<Value>(
+    request: Request,
+    caller: Caller,
+    set: Set,
+    cache: Cache,
+    run: (params: URLSearchParams) => Promise<Result<Value, EngineError>>,
+  ) {
+    set.headers["cache-control"] =
+      cache === "aggregate" && caller.kind === "anonymous"
+        ? "public, s-maxage=60"
+        : "private, no-store";
+    const refused = await limited(request, caller);
+    if (refused) return reject(refused, set);
+    const result = await run(new URL(request.url).searchParams);
+    return result.ok ? result.value : reject(result.error, set);
+  }
+
+  return { answer, answerMany, reject };
 }

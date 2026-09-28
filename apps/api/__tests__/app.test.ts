@@ -337,8 +337,11 @@ describe("GET /v2/openapi/json", () => {
     ).json();
     expect(Object.keys(document.paths).sort()).toEqual([
       "/v2/auth/session",
+      "/v2/breakdown/{dimension}",
       "/v2/events",
       "/v2/health",
+      "/v2/people",
+      "/v2/people/{userId}",
       "/v2/projects",
       "/v2/projects/{project}",
       "/v2/projects/{project}/breakdown/{dimension}",
@@ -352,8 +355,13 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/visitors",
       "/v2/projects/{project}/visitors/{visitor}",
       "/v2/projects/{project}/visitors/{visitor}/visits",
+      "/v2/realtime",
+      "/v2/sessions",
+      "/v2/stats",
+      "/v2/timeseries",
       "/v2/tokens",
       "/v2/tokens/{token}",
+      "/v2/visitors",
     ]);
     const ingest = document.paths["/v2/events"].post;
     expect(Object.keys(ingest.responses).sort()).toEqual([

@@ -213,3 +213,17 @@ export type Person = Static<typeof Person>;
 
 export const PersonResponse = dataOf(Person);
 export type PersonResponse = Static<typeof PersonResponse>;
+
+export const PersonRow = Type.Object({
+  userId: Id,
+  traits: Props,
+  firstSeen: Timestamp,
+  lastSeen: Timestamp,
+  firstProject: Id,
+  projects: Count,
+  visits: Count,
+});
+export type PersonRow = Static<typeof PersonRow>;
+
+export const PeopleList = listOf(PersonRow);
+export type PeopleList = Static<typeof PeopleList>;

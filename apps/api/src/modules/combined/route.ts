@@ -1,0 +1,267 @@
+import {
+  BreakdownResponse,
+  EventList,
+  PeopleList,
+  PersonResponse,
+  RealtimeResponse,
+  SessionList,
+  StatsResponse,
+  TimeseriesResponse,
+  VisitorList,
+} from "@remcostoeten/analytics-contract";
+import { engineError } from "@remcostoeten/analytics-engine";
+import type { EngineError } from "@remcostoeten/analytics-engine";
+import { err, ok } from "@remcostoeten/analytics-shared/result";
+import type { Result } from "@remcostoeten/analytics-shared/result";
+import { Elysia, t } from "elysia";
+
+import { canRead, canReadDetail } from "../../access/rules";
+import type { AccessDeps, Caller } from "../../access/types";
+import { access } from "../../plugins/access";
+import { errorResponses } from "../../plugins/error-responses";
+import {
+  listEvents,
+  listPeople,
+  listSessions,
+  listVisitors,
+  personDetail,
+} from "../details/service";
+import { readGate } from "../reads/guard";
+import type { ReadsOptions } from "../reads/guard";
+import { breakdown, breakdownCsv, readScope, realtime, stats, timeseries } from "../reads/service";
+
+type Scoped = { params: URLSearchParams; projects: string[] };
+
+const tags = ["All projects"];
+const responses = { ...errorResponses, 429: errorResponses[400] };
+const projectFilter = "filter[project]";
+
+/**
+ * @name readableProjects
+ * @description The projects a caller may read at the aggregate or the detail level, narrowed by
+ * `filter[project]=a,b`. The filter is taken out of the parameters, since the project list
+ * replaces it.
+ *
+ * @example
+ * await readableProjects(deps, caller, params, false);
+ */
+async function readableProjects(
+  deps: AccessDeps,
+  caller: Caller,
+  params: URLSearchParams,
+  detail: boolean,
+): Promise<Result<Scoped, EngineError>> {
+  const listed = await deps.projects.list(null);
+  if (!listed.ok) return listed;
+  const allowed = listed.value
+    .filter((project) => (detail ? canReadDetail(caller, project) : canRead(caller, project)))
+    .map((project) => project.id);
+  const rest = new URLSearchParams(params);
+  const wanted = rest.get(projectFilter);
+  rest.delete(projectFilter);
+  if (!wanted) return ok({ params: rest, projects: allowed });
+  const names = new Set(wanted.split(",").map((name) => name.trim()));
+  return ok({ params: rest, projects: allowed.filter((id) => names.has(id)) });
+}
+
+/**
+ * @name combinedModule
+ * @description Every read route without the `/projects/:project` prefix: stats, timeseries,
+ * breakdowns (with `project` as a dimension) and realtime over the projects the caller may read,
+ * and events, visitors and sessions over the projects whose visitor-level data the caller may see.
+ * `/people` and `/people/:userId` link identified users across projects and need a signed-in
+ * member or a token.
+ *
+ * @example
+ * app.use(combinedModule(deps, reads, docsBase));
+ */
+export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase: string) {
+  const gate = readGate(options, docsBase);
+
+  function aggregate<Value>(
+    request: Request,
+    caller: Caller,
+    set: Parameters<typeof gate.answerMany>[2],
+    run: (scoped: Scoped) => Promise<Result<Value, EngineError>>,
+  ) {
+    return gate.answerMany(request, caller, set, "aggregate", async (params) => {
+      const scoped = await readableProjects(deps, caller, params, false);
+      return scoped.ok ? run(scoped.value) : scoped;
+    });
+  }
+
+  function detailed<Value>(
+    request: Request,
+    caller: Caller,
+    set: Parameters<typeof gate.answerMany>[2],
+    run: (scoped: Scoped) => Promise<Result<Value, EngineError>>,
+  ) {
+    return gate.answerMany(request, caller, set, "private", async (params) => {
+      const scoped = await readableProjects(deps, caller, params, true);
+      return scoped.ok ? run(scoped.value) : scoped;
+    });
+  }
+
+  function signedIn(caller: Caller): Result<null, EngineError> {
+    return caller.kind === "anonymous"
+      ? err(engineError("UNAUTHORIZED", "Sign in or send an API token"))
+      : ok(null);
+  }
+
+  return new Elysia({ name: "combined" })
+    .use(access(deps, docsBase))
+    .get(
+      "/stats",
+      ({ request, caller, set }) =>
+        aggregate(request, caller, set, async ({ params, projects }) => {
+          const scope = readScope(params, projects, options.clock());
+          return scope.ok ? stats(options.store, scope.value) : scope;
+        }),
+      {
+        access: "public",
+        response: { 200: StatsResponse, ...responses },
+        detail: {
+          summary: "Headline numbers across projects",
+          description: "Summed over every readable project.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/timeseries",
+      ({ request, caller, set }) =>
+        aggregate(request, caller, set, async ({ params, projects }) => {
+          const scope = readScope(params, projects, options.clock());
+          return scope.ok ? timeseries(options.store, scope.value, params) : scope;
+        }),
+      {
+        access: "public",
+        response: { 200: TimeseriesResponse, ...responses },
+        detail: {
+          summary: "One metric over time across projects",
+          description: "As the per-project route.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/breakdown/:dimension",
+      async ({ request, caller, params: path, set }) => {
+        const result = await aggregate(request, caller, set, async ({ params, projects }) => {
+          const scope = readScope(params, projects, options.clock());
+          return scope.ok ? breakdown(options.store, scope.value, path.dimension, params) : scope;
+        });
+        const url = new URL(request.url);
+        const csv =
+          url.searchParams.get("format") === "csv" ||
+          request.headers.get("accept")?.includes("text/csv");
+        if (!csv || !("dimension" in result)) return result;
+        set.headers["content-type"] = "text/csv; charset=utf-8";
+        return breakdownCsv(result);
+      },
+      {
+        access: "public",
+        response: { 200: t.Union([BreakdownResponse, t.String()]), ...responses },
+        detail: {
+          summary: "Top values of a dimension across projects",
+          description: "`breakdown/project` gives one row per project.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/realtime",
+      ({ request, caller, set }) =>
+        aggregate(request, caller, set, ({ projects }) =>
+          realtime(options.store, projects, options.clock()),
+        ),
+      {
+        access: "public",
+        response: { 200: RealtimeResponse, ...responses },
+        detail: {
+          summary: "The last five minutes across projects",
+          description: "As the per-project route.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/events",
+      ({ request, caller, set }) =>
+        detailed(request, caller, set, ({ params, projects }) =>
+          listEvents(options.details, params, projects, options.clock()),
+        ),
+      {
+        access: "public",
+        response: { 200: EventList, ...responses },
+        detail: {
+          summary: "Raw events across projects",
+          description: "Projects whose visitor-level data you may see.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/visitors",
+      ({ request, caller, set }) =>
+        detailed(request, caller, set, ({ params, projects }) =>
+          listVisitors(options.details, params, projects, options.clock()),
+        ),
+      {
+        access: "public",
+        response: { 200: VisitorList, ...responses },
+        detail: {
+          summary: "Visitors across projects",
+          description: "Each project's visitors counted separately.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/sessions",
+      ({ request, caller, set }) =>
+        detailed(request, caller, set, ({ params, projects }) =>
+          listSessions(options.details, params, projects, options.clock()),
+        ),
+      {
+        access: "public",
+        response: { 200: SessionList, ...responses },
+        detail: { summary: "Sessions across projects", description: "Newest first.", tags },
+      },
+    )
+    .get(
+      "/people",
+      ({ request, caller, set }) =>
+        detailed(request, caller, set, async ({ params, projects }) => {
+          const allowed = signedIn(caller);
+          return allowed.ok ? listPeople(options.details, params, projects) : allowed;
+        }),
+      {
+        access: "public",
+        response: { 200: PeopleList, ...responses },
+        detail: {
+          summary: "Identified people",
+          description: "One row per `userId` from `identify`, linked across projects.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/people/:userId",
+      ({ request, caller, params: path, set }) =>
+        detailed(request, caller, set, async ({ projects }) => {
+          const allowed = signedIn(caller);
+          return allowed.ok ? personDetail(options.details, projects, path.userId) : allowed;
+        }),
+      {
+        access: "public",
+        response: { 200: PersonResponse, ...responses },
+        detail: {
+          summary: "One person across projects",
+          description:
+            "Which project they came in through, from where, and every visit in time order.",
+          tags,
+        },
+      },
+    );
+}

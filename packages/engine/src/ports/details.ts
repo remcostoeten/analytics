@@ -1,5 +1,7 @@
 import type {
   EventRow,
+  Person,
+  PersonRow,
   SessionEvents,
   SessionRow,
   Visit,
@@ -54,4 +56,6 @@ export type DetailStore = {
     Nullable<{ session: SessionEvents["session"]; page: Page<SessionEvents["data"][number]> }>
   >;
   visits: (project: ProjectID, visitor: VisitorID, page: Offset) => Detail<Page<Visit>>;
+  people: (projects: ProjectID[], page: Offset) => Detail<Page<PersonRow>>;
+  person: (projects: ProjectID[], userId: string) => Detail<Nullable<Person>>;
 };
