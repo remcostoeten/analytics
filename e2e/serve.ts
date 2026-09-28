@@ -127,6 +127,14 @@ const api = createApp({
     clock: () => clock.now(),
     cronSecret: null,
   },
+  reads: {
+    store: pgliteAccess(database).reads,
+    limiter: pgliteAdapters(database, clock).limiter,
+    hasher: webCryptoHasher(),
+    ipSecret: "x".repeat(48),
+    publicLimit: 1000,
+    clock: () => clock.now(),
+  },
   authHandler: null,
 });
 api.listen(apiPort);

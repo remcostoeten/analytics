@@ -75,6 +75,14 @@ function app(limit = 1000) {
       clock: () => clock.now(),
       cronSecret: null,
     },
+    reads: {
+      store: pgliteAccess(database).reads,
+      limiter: pgliteAdapters(database, clock).limiter,
+      hasher: webCryptoHasher(),
+      ipSecret: "x".repeat(48),
+      publicLimit: 1000,
+      clock: () => clock.now(),
+    },
     authHandler: null,
   });
 }
@@ -332,7 +340,11 @@ describe("GET /v2/openapi/json", () => {
       "/v2/health",
       "/v2/projects",
       "/v2/projects/{project}",
+      "/v2/projects/{project}/breakdown/{dimension}",
       "/v2/projects/{project}/keys",
+      "/v2/projects/{project}/realtime",
+      "/v2/projects/{project}/stats",
+      "/v2/projects/{project}/timeseries",
       "/v2/tokens",
       "/v2/tokens/{token}",
     ]);

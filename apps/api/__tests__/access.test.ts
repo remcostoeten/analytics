@@ -77,6 +77,14 @@ const api = createApp({
   docsBase,
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
   access: deps,
+  reads: {
+    store: pgliteAccess(database).reads,
+    limiter: pgliteAdapters(database, clock).limiter,
+    hasher: webCryptoHasher(),
+    ipSecret: "x".repeat(48),
+    publicLimit: 1000,
+    clock: () => clock.now(),
+  },
   authHandler: null,
 });
 

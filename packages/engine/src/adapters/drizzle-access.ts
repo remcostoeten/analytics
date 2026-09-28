@@ -14,6 +14,7 @@ import type {
   MemberStore,
   ProjectAdmin,
   ProjectRecord,
+  ReadStore,
   TokenRecord,
   TokenStore,
 } from "../ports";
@@ -21,6 +22,7 @@ import type { Database } from "./drizzle";
 
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
+import { drizzleReads } from "./drizzle-reads";
 
 export const organizationId = "org_main";
 
@@ -237,12 +239,13 @@ export type Access = {
   projects: ProjectAdmin;
   tokens: TokenStore;
   members: MemberStore;
+  reads: ReadStore;
 };
 
 /**
  * @name accessOn
- * @description The project, token and member stores on one Drizzle database, with the database
- * for Better Auth's adapter.
+ * @description The project, token, member and read stores on one Drizzle database, with the
+ * database for Better Auth's adapter.
  *
  * @example
  * const access = accessOn(drizzle(client));
@@ -253,5 +256,6 @@ export function accessOn(db: Database): Access {
     projects: drizzleProjectAdmin(db),
     tokens: drizzleTokens(db),
     members: drizzleMembers(db),
+    reads: drizzleReads(db),
   };
 }

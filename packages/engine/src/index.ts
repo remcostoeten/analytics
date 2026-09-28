@@ -5,6 +5,8 @@ export type { Deduped } from "./dedupe";
 export { defineDimension, defineEnricher, defineSignal, defineStage } from "./define";
 export type {
   Dimension,
+  DimensionJoin,
+  DimensionScope,
   Enricher,
   Registry,
   Settings,
@@ -26,6 +28,7 @@ export type {
   RequestFacts,
 } from "./draft";
 export { defaultEnrichers, forwardedHeaders } from "./enrichers";
+export { defaultDimensions, findDimension, propDimension, traitDimension } from "./dimensions";
 export { defaultSignals } from "./signals";
 export { engineError } from "./errors";
 export type { EngineError } from "./errors";
@@ -39,4 +42,4 @@ export { flagsStage } from "./stages/flags";
 export { parseEvent } from "./stages/parse";
 export { clientIp } from "./utilities/client-ip";
 export type { HeaderBag } from "./utilities/client-ip";
-export { ipSecretProblem } from "./utilities/ip-hash";
+export { hashIp, ipSecretProblem } from "./utilities/ip-hash";

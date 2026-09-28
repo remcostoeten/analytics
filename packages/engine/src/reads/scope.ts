@@ -1,0 +1,72 @@
+import { sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+
+import type { Dimension, DimensionJoin } from "../define";
+import type { ReadFilter, ReadScope, Traffic } from "../ports";
+
+const humanScore = 50;
+
+/**
+ * @name trafficCondition
+ * @description The one definition of each traffic filter: `human` is a bot score under 50 and not
+ * internal, localhost or preview traffic; `bots` is 50 or more; `internal` is the owner's own.
+ *
+ * @example
+ * trafficCondition("human");
+ */
+function trafficCondition(traffic: Traffic): SQL {
+  if (traffic === "bots") return sql`e.bot_score >= ${humanScore}`;
+  if (traffic === "internal") return sql`COALESCE(e.is_internal, false)`;
+  if (traffic === "all") return sql`true`;
+  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false) AND NOT COALESCE(e.is_preview, false)`;
+}
+
+function filterCondition(filter: ReadFilter, scope: ReadScope): SQL {
+  const at = { from: scope.from };
+  const matches = filter.dimension.matches
+    ? filter.dimension.matches(filter.value, at)
+    : sql`(${filter.dimension.expression(at)}) = ${filter.value}`;
+  return filter.exclude ? sql`NOT COALESCE(${matches}, false)` : sql`COALESCE(${matches}, false)`;
+}
+
+function joins(needed: Set<DimensionJoin>): SQL {
+  const parts: SQL[] = [];
+  if (needed.has("session")) {
+    parts.push(
+      sql`LEFT JOIN sessions s ON s.project_id = e.project_id AND s.session_id = e.session_id`,
+    );
+  }
+  if (needed.has("visitor")) {
+    parts.push(
+      sql`LEFT JOIN visitors v ON v.project_id = e.project_id AND v.fingerprint = e.visitor_id`,
+    );
+  }
+  return sql.join(parts, sql` `);
+}
+
+/**
+ * @name scopedEvents
+ * @description The events one read covers, as a `SELECT` for a `scoped` CTE: the projects, the
+ * half-open range `[from, to)`, the traffic filter and every dimension filter, with each row's
+ * group `key`. Sessions and visitors are joined only when a dimension needs them.
+ *
+ * @example
+ * sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}) SELECT count(*) FROM scoped`;
+ */
+export function scopedEvents(scope: ReadScope, key: SQL, keyDimensions: Dimension[]): SQL {
+  const needed = new Set<DimensionJoin>();
+  for (const dimension of [...keyDimensions, ...scope.filters.map((filter) => filter.dimension)]) {
+    if (dimension.join) needed.add(dimension.join);
+  }
+  const conditions = [
+    sql`e.project_id IN (${sql.join(
+      scope.projectIds.map((id) => sql`${id}`),
+      sql`, `,
+    )})`,
+    sql`e.ts >= ${scope.from.toISOString()}::timestamptz`,
+    sql`e.ts < ${scope.to.toISOString()}::timestamptz`,
+    trafficCondition(scope.traffic),
+    ...scope.filters.map((filter) => filterCondition(filter, scope)),
+  ];
+  return sql`SELECT ${key} AS k, e.visitor_id, e.session_id, e.type, e.ts, e.meta, e.path, e.country FROM events e ${joins(needed)} WHERE ${sql.join(conditions, sql` AND `)}`;
+}
