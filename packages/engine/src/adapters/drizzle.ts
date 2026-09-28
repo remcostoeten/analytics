@@ -5,10 +5,12 @@ import { eq, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
-import { events, projects, rateLimits, sessions, visitors } from "../db/schema";
+import { events, projects, rateLimits, sessions, visitors, webVitals } from "../db/schema";
 import type { EventDraft } from "../draft";
 import { engineError } from "../errors";
 import type { EventStore, ProjectStore, RateLimiter } from "../ports";
+import { vitalRow } from "../speed/vitals";
+import type { VitalRow } from "../speed/vitals";
 
 export type Database = PgDatabase<PgQueryResultHKT>;
 
@@ -276,12 +278,36 @@ export function unavailable(message: string, error: unknown) {
   return err({ ...engineError("UNAVAILABLE", message), cause: new Error(describe(error)) });
 }
 
+async function upsertVitals(db: Database, drafts: EventDraft[]) {
+  const latest = new Map<string, VitalRow>();
+  for (const row of drafts.map(vitalRow)) {
+    if (!row) continue;
+    const seen = latest.get(row.id);
+    if (!seen || seen.ts <= row.ts) latest.set(row.id, row);
+  }
+  if (latest.size === 0) return;
+  await db
+    .insert(webVitals)
+    .values([...latest.values()])
+    .onConflictDoUpdate({
+      target: webVitals.id,
+      set: {
+        value: sql`excluded.value`,
+        rating: sql`excluded.rating`,
+        ts: sql`excluded.ts`,
+        selector: sql`excluded.selector`,
+      },
+      setWhere: sql`${webVitals.ts} <= excluded.ts`,
+    });
+}
+
 /**
  * @name drizzleStore
  * @description An `EventStore` on any Drizzle Postgres database. Events go in one multi-row insert
  * per batch with `ON CONFLICT DO NOTHING` on the event id, writing the v2 columns plus the legacy
  * `type`, `meta` and `device_type` values the v1 dashboard reads. Sessions and visitors are
  * upserted once per session; a visitor marked internal makes that session's new events internal.
+ * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
  *
  * @example
  * const store = drizzleStore(drizzle(new PGlite()));
@@ -296,6 +322,10 @@ export function drizzleStore(db: Database): EventStore {
           .onConflictDoNothing({ target: events.fingerprint })
           .returning({ id: events.fingerprint });
         const inserted = new Set(rows.map((row) => row.id));
+        await upsertVitals(
+          db,
+          drafts.filter((draft) => inserted.has(draft.event.id)),
+        );
         const ids = drafts.map((draft) => draft.event.id);
         return ok({
           inserted: ids.filter((id) => inserted.has(id)),

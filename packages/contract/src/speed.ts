@@ -3,7 +3,7 @@ import type { Static } from "@sinclair/typebox";
 
 import { Range } from "./common";
 import { Percentile, TrafficFilter, VitalMetric, VitalRating } from "./enums";
-import { Count, listOf, nullable, oneOf, Ratio } from "./schema";
+import { Count, listOf, nullable, oneOf, Ratio, Timestamp } from "./schema";
 
 export const SpeedDevice = oneOf(["mobile", "desktop", "all"]);
 export type SpeedDevice = Static<typeof SpeedDevice>;
@@ -18,17 +18,18 @@ export type SpeedQuery = Static<typeof SpeedQuery>;
 const Score = Type.Integer({ minimum: 0, maximum: 100 });
 
 export const MetricSummary = Type.Object({
-  value: Type.Number({ minimum: 0 }),
-  rating: VitalRating,
+  value: nullable(Type.Number({ minimum: 0 })),
+  rating: nullable(VitalRating),
   score: nullable(Score),
+  samples: Count,
   shares: Type.Object({ good: Ratio, needsImprovement: Ratio, poor: Ratio }),
 });
 export type MetricSummary = Static<typeof MetricSummary>;
 
 export const SpeedResponse = Type.Object({
   data: Type.Object({
-    score: Score,
-    rating: VitalRating,
+    score: nullable(Score),
+    rating: nullable(VitalRating),
     samples: Count,
     metrics: Type.Object({
       lcp: MetricSummary,
@@ -49,7 +50,7 @@ const VitalValue = nullable(Type.Number({ minimum: 0 }));
 
 export const SpeedRoute = Type.Object({
   route: Type.String(),
-  score: Score,
+  score: nullable(Score),
   samples: Count,
   lcp: VitalValue,
   inp: VitalValue,
@@ -76,3 +77,19 @@ export const SpeedElementList = Type.Object({
   nextCursor: nullable(Type.String()),
 });
 export type SpeedElementList = Static<typeof SpeedElementList>;
+
+export const SpeedPoint = Type.Object({
+  bucket: Timestamp,
+  value: VitalValue,
+  samples: Count,
+});
+export type SpeedPoint = Static<typeof SpeedPoint>;
+
+export const SpeedTimeseries = Type.Object({
+  data: Type.Array(SpeedPoint),
+  metric: VitalMetric,
+  percentile: Percentile,
+  device: SpeedDevice,
+  range: Range,
+});
+export type SpeedTimeseries = Static<typeof SpeedTimeseries>;

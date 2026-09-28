@@ -79,6 +79,7 @@ function app(limit = 1000) {
       store: pgliteAccess(database).reads,
       details: pgliteAccess(database).details,
       feed: pgliteAccess(database).feed,
+      speed: pgliteAccess(database).speed,
       live: { waitMs: 50, streamMs: 200 },
       limiter: pgliteAdapters(database, clock).limiter,
       hasher: webCryptoHasher(),
@@ -345,6 +346,7 @@ describe("GET /v2/openapi/json", () => {
       await api.handle(new Request("http://localhost/v2/openapi/json"))
     ).json();
     expect(Object.keys(document.paths).sort()).toEqual([
+      "/v2/admin/jobs/rollup",
       "/v2/auth/session",
       "/v2/breakdown/{dimension}",
       "/v2/events",
@@ -368,6 +370,10 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/retention",
       "/v2/projects/{project}/sessions",
       "/v2/projects/{project}/sessions/{session}/events",
+      "/v2/projects/{project}/speed",
+      "/v2/projects/{project}/speed/elements",
+      "/v2/projects/{project}/speed/routes",
+      "/v2/projects/{project}/speed/timeseries",
       "/v2/projects/{project}/stats",
       "/v2/projects/{project}/timeseries",
       "/v2/projects/{project}/visitors",
@@ -383,6 +389,10 @@ describe("GET /v2/openapi/json", () => {
       "/v2/realtime/events",
       "/v2/retention",
       "/v2/sessions",
+      "/v2/speed",
+      "/v2/speed/elements",
+      "/v2/speed/routes",
+      "/v2/speed/timeseries",
       "/v2/stats",
       "/v2/timeseries",
       "/v2/tokens",

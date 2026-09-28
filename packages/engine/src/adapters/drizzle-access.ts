@@ -18,6 +18,7 @@ import type {
   QueryRunner,
   ReadStore,
   SavedQueryStore,
+  SpeedStore,
   RealtimeFeed,
   DetailStore,
   TokenRecord,
@@ -32,6 +33,7 @@ export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
+import { drizzleSpeed } from "./drizzle-speed";
 import { drizzleQueryLog, drizzleSavedQueries, readQuerySecret } from "./drizzle-queries";
 import { drizzleReads } from "./drizzle-reads";
 
@@ -256,6 +258,7 @@ export type Access = {
   queries: QueryRunner;
   queryLog: QueryLog;
   savedQueries: SavedQueryStore;
+  speed: SpeedStore;
 };
 
 /**
@@ -282,5 +285,6 @@ export function accessOn(db: Database, transact: Transact): Access {
     }),
     queryLog: drizzleQueryLog(db),
     savedQueries: drizzleSavedQueries(db),
+    speed: drizzleSpeed(db),
   };
 }

@@ -10,10 +10,12 @@ import { combinedModule } from "./modules/combined/route";
 import { detailsModule } from "./modules/details/route";
 import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
+import { jobsModule } from "./modules/jobs/route";
 import { projectsModule } from "./modules/projects/route";
 import { queryModule } from "./modules/query/route";
 import type { QueryOptions } from "./modules/query/service";
 import { readsModule } from "./modules/reads/route";
+import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
@@ -78,7 +80,15 @@ export function createApp(options: AppOptions) {
     .use(projectsModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
     .use(readsModule(options.access, options.reads, options.docsBase))
+    .use(speedModule(options.access, options.reads, options.docsBase))
     .use(detailsModule(options.access, options.reads, options.docsBase))
     .use(combinedModule(options.access, options.reads, options.docsBase))
-    .use(queryModule(options.access, options.query, options.docsBase));
+    .use(queryModule(options.access, options.query, options.docsBase))
+    .use(
+      jobsModule(
+        options.access,
+        { speed: options.reads.speed, clock: options.clock },
+        options.docsBase,
+      ),
+    );
 }

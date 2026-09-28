@@ -47,3 +47,11 @@ export { prepareQuery } from "./query/guard";
 export type { PreparedQuery, QueryParams } from "./query/guard";
 export { queryViews } from "./query/views";
 export type { QueryView, ViewColumn } from "./query/views";
+export {
+  experienceScore,
+  metricScore,
+  scoreRating,
+  vitalRating,
+  vitalThresholds,
+} from "./speed/score";
+export type { VitalName, VitalRating } from "./speed/score";

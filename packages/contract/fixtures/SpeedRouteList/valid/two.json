@@ -2,7 +2,7 @@
   "data": [
     {
       "route": "/blog/[slug]",
-      "score": 71,
+      "score": 85,
       "samples": 344,
       "lcp": 3120,
       "inp": 180,
@@ -12,7 +12,7 @@
     },
     {
       "route": "/",
-      "score": 94,
+      "score": 99,
       "samples": 812,
       "lcp": 1840,
       "inp": 96,
