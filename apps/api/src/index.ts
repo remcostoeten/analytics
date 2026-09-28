@@ -29,7 +29,9 @@ const geo = openGeo(
   candidatePaths("GeoLite2-ASN.mmdb", { ...where, explicit: process.env.GEOIP_ASN_PATH ?? null }),
 );
 const clock = systemClock();
-const adapters = postgresAdapters(process.env.DATABASE_URL ?? "", clock);
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("Refusing to start: DATABASE_URL is not set.");
+const adapters = postgresAdapters(databaseUrl, clock);
 const settings = {
   ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
   rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
