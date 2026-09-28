@@ -1,9 +1,12 @@
 import { ok } from "@remcostoeten/analytics-shared/result";
+import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 
 import type { EventDraft } from "../draft";
 import type {
   Clock,
   EventStore,
+  ProjectAccess,
+  ProjectStore,
   GeoLookup,
   GeoRecord,
   Hasher,
@@ -22,6 +25,7 @@ const emptyRecord: GeoRecord = {
     timezone: null,
     latitude: null,
     longitude: null,
+    continent: null,
   },
   network: { asn: null, asOrg: null },
 };
@@ -29,17 +33,29 @@ const emptyRecord: GeoRecord = {
 /**
  * @name memoryStore
  * @description An `EventStore` held in a map keyed by event id, which reports repeated ids as
- * duplicates the way the database's unique index does.
+ * duplicates the way the database's unique index does, and keeps each session's drafts.
  *
  * @example
  * const store = memoryStore();
  * await store.insertEvents(drafts);
  * store.events.size; // number of stored events
  */
-export function memoryStore(): EventStore & { events: Map<string, EventDraft> } {
+export function memoryStore(): EventStore & {
+  events: Map<string, EventDraft>;
+  sessions: Map<string, EventDraft[]>;
+} {
   const events = new Map<string, EventDraft>();
+  const sessions = new Map<string, EventDraft[]>();
   return {
     events,
+    sessions,
+    upsertSessions: async (drafts) => {
+      for (const draft of drafts) {
+        const key = `${draft.projectId}:${draft.event.session}`;
+        sessions.set(key, [...(sessions.get(key) ?? []), draft]);
+      }
+      return ok(undefined);
+    },
     insertEvents: async (drafts) => {
       const inserted: string[] = [];
       const duplicates: string[] = [];
@@ -139,5 +155,27 @@ export function memoryLogger(): Logger & { entries: LogEntry[] } {
     info: log("info"),
     warn: log("warn"),
     error: log("error"),
+  };
+}
+
+export type MemoryProject = ProjectAccess & {
+  publicKey: string;
+  secretHash: string;
+};
+
+/**
+ * @name memoryProjects
+ * @description A `ProjectStore` over a fixed list of projects.
+ *
+ * @example
+ * const projects = memoryProjects([{ id: "demo", publicKey: "pk_demo", secretHash: "sha256(sk_demo)", allowedOrigins: [] }]);
+ */
+export function memoryProjects(list: MemoryProject[]): ProjectStore {
+  function access(project: MemoryProject | undefined): Nullable<ProjectAccess> {
+    return project ? { id: project.id, allowedOrigins: project.allowedOrigins } : null;
+  }
+  return {
+    byPublicKey: async (key) => ok(access(list.find((project) => project.publicKey === key))),
+    bySecretHash: async (hash) => ok(access(list.find((project) => project.secretHash === hash))),
   };
 }

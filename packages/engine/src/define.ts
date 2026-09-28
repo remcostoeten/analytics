@@ -5,9 +5,15 @@ import type { Enrichment, EventDraft } from "./draft";
 import type { EngineError } from "./errors";
 import type { Ports } from "./ports";
 
+export type Settings = {
+  ipSecret: string;
+  rateLimit: { limit: number; windowSeconds: number };
+};
+
 export type StageContext = {
   ports: Ports;
   registry: Registry;
+  settings: Settings;
 };
 
 export type StageResult = Result<EventDraft, EngineError>;
@@ -26,7 +32,10 @@ export type Signal = {
 
 export type Enricher = {
   name: string;
-  enrich: (draft: EventDraft, ports: Ports) => Partial<Enrichment> | Promise<Partial<Enrichment>>;
+  enrich: (
+    draft: EventDraft,
+    context: StageContext,
+  ) => Partial<Enrichment> | Promise<Partial<Enrichment>>;
 };
 
 export type Dimension = {
@@ -67,11 +76,11 @@ export function defineSignal(signal: Signal): Signal {
 
 /**
  * @name defineEnricher
- * @description Declares an enricher: it reads the draft and ports and returns the enrichment
- * fields it fills, which the enrich stage merges in registration order.
+ * @description Declares an enricher: it reads the draft, the ports and the settings, and returns
+ * the enrichment fields it fills, which the enrich stage merges in registration order.
  *
  * @example
- * const geo = defineEnricher({ name: "geo", enrich: (draft, ports) => ({ geo: ports.geo.lookup(draft.request.ip ?? "").geo }) });
+ * const network = defineEnricher({ name: "network", enrich: (draft, { ports }) => ({ network: ports.geo.lookup(draft.enrichment.client.ip ?? "").network }) });
  */
 export function defineEnricher(enricher: Enricher): Enricher {
   return enricher;

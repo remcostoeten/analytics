@@ -18,7 +18,7 @@ export const enrichStage = defineStage({
     for (const enricher of context.registry.enrichers) {
       enrichment = {
         ...enrichment,
-        ...(await enricher.enrich({ ...draft, enrichment }, context.ports)),
+        ...(await enricher.enrich({ ...draft, enrichment }, context)),
       };
     }
     return ok({ ...draft, enrichment });

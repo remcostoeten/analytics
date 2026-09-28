@@ -267,6 +267,8 @@ Retry-After: 30
 { "error": { "code": "RATE_LIMITED", "message": "Too many requests", "details": { "retryAfterSeconds": 30 } } }
 ```
 
+Browser requests are limited to 100 per minute per project and daily IP hash. A request with the secret key (`Authorization: Bearer sk_...`) is not rate-limited, may come from any origin, and is the only kind whose forwarded visitor details are used: `context.ip` and `context.ua` on an event, or the `X-Visitor-IP` and `X-Visitor-UA` headers a same-origin proxy adds. Without the secret key the IP comes from `cf-connecting-ip`, then `x-real-ip`, then the first `x-forwarded-for` entry, and the user agent from `User-Agent`.
+
 ### Health and docs
 
 `GET /v2/health`

@@ -11,4 +11,5 @@ export type InsertOutcome = {
 
 export type EventStore = {
   insertEvents: (drafts: EventDraft[]) => Promise<Result<InsertOutcome, EngineError>>;
+  upsertSessions: (drafts: EventDraft[]) => Promise<Result<void, EngineError>>;
 };

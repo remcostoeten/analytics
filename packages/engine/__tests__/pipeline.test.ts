@@ -9,7 +9,14 @@ import { engineError } from "../src/errors";
 import { createEngine } from "../src/pipeline";
 import { botScoreStage } from "../src/stages/bot-score";
 import { enrichStage } from "../src/stages/enrich";
-import { browserBatch, memoryPorts } from "./batch";
+import {
+  batchContext,
+  browserEvents,
+  browserRequest,
+  memoryPorts,
+  settings,
+  testKey,
+} from "./batch";
 
 function registry(stages: Stage[]): Registry {
   return { stages, signals: [], enrichers: [], dimensions: [] };
@@ -37,16 +44,18 @@ const throwing = defineStage({
 describe("createEngine().ingest", () => {
   test("stores every event that passes all stages", async () => {
     const ports = memoryPorts();
-    const result = await createEngine(ports, registry([passThrough])).ingest(browserBatch());
+    const result = await createEngine(ports, registry([passThrough]), settings).ingest(
+      browserRequest(),
+    );
     expect(result).toEqual(ok({ accepted: 2, duplicates: 0, rejected: [] }));
     expect(ports.store.events.size).toBe(2);
   });
 
   test("reports the same batch again as duplicates", async () => {
     const ports = memoryPorts();
-    const engine = createEngine(ports, registry([passThrough]));
-    await engine.ingest(browserBatch());
-    const again = await engine.ingest(browserBatch());
+    const engine = createEngine(ports, registry([passThrough]), settings);
+    await engine.ingest(browserRequest());
+    const again = await engine.ingest(browserRequest());
     expect(again).toEqual(ok({ accepted: 0, duplicates: 2, rejected: [] }));
   });
 
@@ -61,8 +70,8 @@ describe("createEngine().ingest", () => {
         return ok(draft);
       },
     });
-    const result = await createEngine(ports, registry([rejectSignup, record])).ingest(
-      browserBatch(),
+    const result = await createEngine(ports, registry([rejectSignup, record]), settings).ingest(
+      browserRequest(),
     );
     expect(result).toEqual(
       ok({
@@ -76,7 +85,9 @@ describe("createEngine().ingest", () => {
 
   test("turns a thrown error into INTERNAL and logs its stack", async () => {
     const ports = memoryPorts();
-    const result = await createEngine(ports, registry([throwing])).ingest(browserBatch());
+    const result = await createEngine(ports, registry([throwing]), settings).ingest(
+      browserRequest(),
+    );
     expect(result.ok && result.value.rejected.map((rejection) => rejection.code)).toEqual([
       "INTERNAL",
       "INTERNAL",
@@ -93,19 +104,22 @@ describe("createEngine().ingest", () => {
       ...memoryPorts(),
       store: {
         insertEvents: async () => err(engineError("UNAVAILABLE", "Could not store events")),
+        upsertSessions: async () => ok(undefined),
       },
     };
-    const result = await createEngine(ports, registry([passThrough])).ingest(browserBatch());
+    const result = await createEngine(ports, registry([passThrough]), settings).ingest(
+      browserRequest(),
+    );
     expect(result).toEqual(err(engineError("UNAVAILABLE", "Could not store events")));
   });
 
   test("corrects each timestamp for client clock skew", async () => {
     const ports = memoryPorts();
-    const batch = browserBatch();
-    await createEngine(ports, registry([passThrough])).ingest(batch);
+    const batch = browserRequest();
+    await createEngine(ports, registry([passThrough]), settings).ingest(batch);
     const stored = [...ports.store.events.values()][0];
     expect(stored?.ts).toBe("2026-09-27T16:39:58.912Z");
-    expect(correctedTimestamp(batch.events[0]?.ts ?? "", batch.sentAt, batch.receivedAt)).toBe(
+    expect(correctedTimestamp(browserEvents()[0]?.ts ?? "", batch.sentAt, batch.receivedAt)).toBe(
       "2026-09-27T16:39:58.912Z",
     );
   });
@@ -123,6 +137,7 @@ describe("enrich and bot score stages", () => {
         timezone: null,
         latitude: null,
         longitude: null,
+        continent: null,
       },
     }),
   });
@@ -135,7 +150,7 @@ describe("enrich and bot score stages", () => {
   const firefox = defineSignal({
     name: "ua_automation",
     weight: 30,
-    detect: (draft) => draft.request.userAgent?.includes("Firefox") ?? false,
+    detect: (draft) => draft.enrichment.client.userAgent?.includes("Firefox") ?? false,
   });
   const signup = defineSignal({
     name: "client_no_input",
@@ -145,13 +160,17 @@ describe("enrich and bot score stages", () => {
 
   test("merges enrichers in order and caps the bot score at 100", async () => {
     const ports = memoryPorts();
-    const engine = createEngine(ports, {
-      stages: [enrichStage, botScoreStage],
-      signals: [firefox, signup],
-      enrichers: [country, override],
-      dimensions: [],
-    });
-    await engine.ingest(browserBatch());
+    const engine = createEngine(
+      ports,
+      {
+        stages: [enrichStage, botScoreStage],
+        signals: [firefox, signup],
+        enrichers: [country, override],
+        dimensions: [],
+      },
+      settings,
+    );
+    await engine.ingest(browserRequest());
     const [pageview, signupEvent] = [...ports.store.events.values()];
     expect(pageview?.enrichment.geo).toMatchObject({ country: "GB", city: "London" });
     expect(pageview?.bot).toEqual({ score: 30, reasons: ["ua_automation"] });
@@ -160,12 +179,16 @@ describe("enrich and bot score stages", () => {
 
   test("rescore reruns only the stages marked rescores", async () => {
     const ports = memoryPorts();
-    const engine = createEngine(ports, {
-      stages: [throwing, botScoreStage],
-      signals: [signup],
-      enrichers: [],
-      dimensions: [],
-    });
+    const engine = createEngine(
+      ports,
+      {
+        stages: [throwing, botScoreStage],
+        signals: [signup],
+        enrichers: [],
+        dimensions: [],
+      },
+      settings,
+    );
     const drafts = [...memoryPortsDrafts()];
     const results = await engine.rescore(drafts);
     expect(results.map((result) => result.ok && result.value.bot.score)).toEqual([0, 80]);
@@ -174,6 +197,115 @@ describe("enrich and bot score stages", () => {
 });
 
 function memoryPortsDrafts() {
-  const batch = browserBatch();
-  return batch.events.map((event, index) => createDraft(batch, event, index));
+  const batch = batchContext();
+  return browserEvents().map((event, index) => createDraft(batch, event, index));
 }
+
+describe("admitting a batch", () => {
+  function engine(ports = memoryPorts()) {
+    return createEngine(ports, registry([passThrough]), settings);
+  }
+
+  test("rejects an unknown public key", async () => {
+    const request = { ...browserRequest(), credentials: { publicKey: "pk_nope", secretKey: null } };
+    const result = await engine().ingest(request);
+    expect(!result.ok && result.error.code).toBe("UNAUTHORIZED");
+  });
+
+  test("rejects an origin the project does not allow", async () => {
+    const result = await engine().ingest(browserRequest({ origin: "https://example.com" }));
+    expect(result).toEqual(
+      err(
+        engineError(
+          "FORBIDDEN_ORIGIN",
+          "Origin https://example.com is not allowed for this project",
+        ),
+      ),
+    );
+  });
+
+  test("accepts any origin with the secret key and trusts forwarded details", async () => {
+    const ports = memoryPorts();
+    const request = {
+      ...browserRequest({ origin: "https://proxy.example", "x-visitor-ip": "2.125.160.216" }),
+      credentials: { publicKey: null, secretKey: testKey },
+    };
+    const result = await engine(ports).ingest(request);
+    expect(result.ok && result.value.accepted).toBe(2);
+    expect([...ports.store.events.values()][0]?.trusted).toBe(true);
+  });
+
+  test("rate-limits an untrusted caller per IP hash", async () => {
+    const ports = memoryPorts();
+    const limited = createEngine(ports, registry([passThrough]), {
+      ...settings,
+      rateLimit: { limit: 1, windowSeconds: 60 },
+    });
+    await limited.ingest(browserRequest());
+    const result = await limited.ingest(browserRequest());
+    expect(result).toEqual(
+      err({
+        ...engineError("RATE_LIMITED", "Too many requests"),
+        details: { retryAfterSeconds: 60 },
+      }),
+    );
+  });
+});
+
+describe("parse and dedupe", () => {
+  test("rejects an invalid event by index and stores the rest", async () => {
+    const ports = memoryPorts();
+    const request = browserRequest();
+    const [pageview, signup] = browserEvents();
+    const result = await createEngine(ports, registry([passThrough]), settings).ingest({
+      ...request,
+      events: [pageview, { ...signup, name: "" }],
+    });
+    expect(result).toEqual(
+      ok({
+        accepted: 1,
+        duplicates: 0,
+        rejected: [
+          {
+            index: 1,
+            code: "VALIDATION_FAILED",
+            message: "events[1].name: Expected string length greater or equal to 1",
+          },
+        ],
+      }),
+    );
+  });
+
+  test("counts a repeated id inside one batch as a duplicate", async () => {
+    const ports = memoryPorts();
+    const [pageview] = browserEvents();
+    const result = await createEngine(ports, registry([passThrough]), settings).ingest({
+      ...browserRequest(),
+      events: [pageview, pageview],
+    });
+    expect(result).toEqual(ok({ accepted: 1, duplicates: 1, rejected: [] }));
+  });
+
+  test("upserts sessions for new events only and logs a session failure", async () => {
+    const ports = memoryPorts();
+    const engine = createEngine(ports, registry([passThrough]), settings);
+    await engine.ingest(browserRequest());
+    await engine.ingest(browserRequest());
+    expect([...ports.store.sessions.values()].map((drafts) => drafts.length)).toEqual([2]);
+
+    const failing = memoryPorts();
+    const result = await createEngine(
+      {
+        ...failing,
+        store: {
+          ...failing.store,
+          upsertSessions: async () => err(engineError("UNAVAILABLE", "Could not store sessions")),
+        },
+      },
+      registry([passThrough]),
+      settings,
+    ).ingest(browserRequest());
+    expect(result.ok && result.value.accepted).toBe(2);
+    expect(failing.logger.entries.map((entry) => entry.message)).toEqual(["session upsert failed"]);
+  });
+});
