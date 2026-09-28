@@ -41,7 +41,8 @@ Load the `generic-program-rules` skill before writing code, prose, commits or su
 ```text
 analytics/
 ├─ apps/
-│  └─ api/            v2 API on Elysia (phase 1 onward)
+│  ├─ api/            v2 API on Elysia (phase 1 onward)
+│  └─ docs/           docs site on Fumadocs: SDK, API reference, auth overview, query page
 ├─ packages/
 │  ├─ contract/       schemas, types, error catalog (phase 0)
 │  ├─ shared/         semantic types, Result, noop (phase 0)
@@ -54,7 +55,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -78,6 +79,8 @@ Today `v1/`, `apps/api` (health, `POST /v2/events` on the engine, Better Auth si
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
 | `bun run test:e2e` | Playwright in `e2e/` against the built SDK, the API on PGlite and the `/_ra` proxy; build `packages/sdk` first, and on Linux without a display run it under `xvfb-run -a` for the headed project. `docs/release-checklist.md` is the manual browser and blocker matrix |
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
+| `bun run --cwd apps/docs dev` | The docs site on port 3200; `build` regenerates the API reference from `apps/api/openapi.json` first |
+| `bun run --cwd apps/api openapi` | Rewrites `apps/api/openapi.json` after a route change; a test fails while it is stale |
 | `bun run dev` | v1 dashboard |
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
@@ -93,4 +96,4 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 ## Deployment
 
 - v1's Vercel projects deploy from `master`: `ingestion` from `v1/apps/ingestion`, `analytics` (the dashboard) from `v1/apps/dashboard`. To stop them rebuilding on every v2 merge, set their ignored build step to `git diff --quiet HEAD^ HEAD -- ../../` (Remco does this).
-- `apps/api` and the v2 dashboard get their own Vercel projects on `master`.
+- `apps/api`, `apps/docs` and the v2 dashboard get their own Vercel projects on `master` (Remco creates them).

@@ -13,6 +13,7 @@ export function docs(version: string) {
     path: "/openapi",
     documentation: {
       info: { title: "Analytics API", version },
+      servers: [{ url: "https://api.remcostoeten.nl", description: "Production" }],
       tags: [
         { name: "Ingest", description: "Send events from browsers and servers" },
         {

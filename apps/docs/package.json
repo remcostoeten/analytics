@@ -1,0 +1,33 @@
+{
+	"name": "@remcostoeten/analytics-docs",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"generate": "bun scripts/generate-reference.ts && fumadocs-mdx",
+		"dev": "bun run generate && next dev --port 3200",
+		"build": "bun run generate && next build",
+		"start": "next start --port 3200",
+		"typecheck": "bun run generate && tsgo --noEmit"
+	},
+	"dependencies": {
+		"fumadocs-core": "16.15.15",
+		"fumadocs-mdx": "15.4.5",
+		"fumadocs-openapi": "12.0.4",
+		"fumadocs-ui": "16.15.15",
+		"next": "16.2.0",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
+		"zod": "4.6.5"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "4.3.3",
+		"@types/mdx": "2.0.14",
+		"@types/node": "26.6.3",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"postcss": "8.5.28",
+		"tailwindcss": "4.3.3",
+		"typescript": "catalog:ts"
+	}
+}

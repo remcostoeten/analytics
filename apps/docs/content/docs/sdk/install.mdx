@@ -1,0 +1,58 @@
+---
+title: Install
+description: Add the SDK, list your events once, and send the first one.
+---
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+`events.ts` lists every custom event once, for the browser and the server:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+`analytics.ts` creates the client:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  project: "remcostoeten.nl",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [speedInsights(), errors()],
+});
+
+analytics.track("signup", { plan: "pro" });
+analytics.track("newsletter_subscribed");
+```
+
+Pageviews are sent on load and on client-side navigation unless `pageviews: false`.
+
+Options left out are read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`, so the key and endpoint can live in the environment:
+
+```bash
+NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_...","endpoint":"/_ra"}'
+```
+
+## Entries
+
+| Import | Contains |
+| --- | --- |
+| `@remcostoeten/analytics` | `createAnalytics`, `definePlugin` and the types |
+| `@remcostoeten/analytics/plugins` | Every plugin, each in its own file |
+| `@remcostoeten/analytics/react` | `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews`, `computeRoute` |
+| `@remcostoeten/analytics/next` | `<Analytics />`, the App Router route adapter |
+| `@remcostoeten/analytics/server` | `createServerAnalytics` for route handlers and server actions |
+| `@remcostoeten/analytics/proxy` | `createProxy` and `createPageCounter` |
+
+Size budgets, gzipped: core 4.5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB (`errors` 0.7 KB, `speedInsights` 2.5 KB).

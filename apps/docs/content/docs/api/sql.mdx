@@ -1,0 +1,38 @@
+---
+title: SQL console
+description: Read-only SQL against documented views, scoped to the projects you may query.
+---
+
+`POST /v2/projects/:project/query` runs one `SELECT` or `WITH` statement against the views in the `query` schema, already limited to that project. `POST /v2/query` does the same across every project you may run SQL on, with `project_id` as a column. The [query page](/query) on this site runs these routes with a token.
+
+## Who may run SQL
+
+Owners, admins and analysts whose role lists the project, and API tokens with the `sql` scope. Never anonymous callers, even on a public project. Each project's `sqlEnabled` switch is on by default; off blocks SQL on it for everyone except the owner. Every run is logged, with its duration, row count and whether it was blocked, and the database checks a signed list of project ids on every query.
+
+## Limits
+
+- Read-only: queries run as the `analytics_reader` role inside a read-only transaction.
+- A 10-second timeout and at most 10,000 rows; `truncated` is `true` when there were more.
+- 30 queries per minute per user or token by default.
+
+## Parameters
+
+`:from`, `:to` and `:project` are bound from `params`, so a query can be saved once and run for any range:
+
+```json
+{
+  "sql": "SELECT path, count(*) AS views FROM events WHERE ts >= :from AND ts < :to GROUP BY path ORDER BY views DESC LIMIT 20",
+  "params": { "from": "2026-09-01T00:00:00.000Z", "to": "2026-10-01T00:00:00.000Z" }
+}
+```
+
+The answer is `{ columns, rows, rowCount, truncated, durationMs }`.
+
+## Related routes
+
+| Route | Does |
+| --- | --- |
+| `GET /v2/query/schema` | Every view with its columns, types and a one-line description |
+| `POST /v2/query/explain` | Postgres' cost estimate for a query before running it |
+| `GET /v2/queries/history` | Your last 100 runs; the owner sees everyone's |
+| `GET, POST /v2/queries`, `GET, PATCH, DELETE /v2/queries/:query` | Saved queries shared by everyone who may run SQL |

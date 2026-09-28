@@ -1,0 +1,25 @@
+---
+title: Overview
+description: Privacy-first web analytics you host yourself, with a typed SDK and one API for ingest, reads and sign-in.
+---
+
+Analytics has three parts:
+
+| Part | What it is |
+| --- | --- |
+| SDK | `@remcostoeten/analytics`: a browser client, plugins, and React, Next, server and proxy entries. ESM only, no cookies for visitors |
+| API | One Elysia service under `/v2`: ingest, aggregate and visitor-level reads, speed insights, error tracking, a read-only SQL console, sign-in, projects and tokens |
+| Database | Postgres (Neon in production); every read goes through the API |
+
+## How data flows
+
+1. The SDK batches events in the browser and sends them to `/v2/events`, directly or through a same-origin proxy path such as `/_ra`.
+2. The API checks the key and origin, scores bots, enriches the event with geo, device and channel, and stores it. Raw IP addresses are never stored; a daily salted hash is used for rate limits and visitor counting.
+3. Reads, exports and the SQL console answer from the same tables, with access decided per project and per caller.
+
+## Where to start
+
+- [Install the SDK](/docs/sdk/install) and send your first event.
+- [Auth overview](/docs/api/auth): who can call what, sign-in, tokens and keys.
+- [API reference](/docs/reference): every route, generated from the OpenAPI document.
+- [Query console](/query): run read-only SQL against your projects with a token.
