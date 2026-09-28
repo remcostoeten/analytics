@@ -1,0 +1,33 @@
+---
+title: Client methods
+description: Everything on the object createAnalytics returns.
+---
+
+`createAnalytics<Events>(options)` returns the client. Every method is safe to call before consent, during server rendering and after `shutdown()`; nothing throws.
+
+| Method | Does |
+| --- | --- |
+| `track(name, props?)` | Sends a custom event; `props` is typed per event name from your `Events` map, and required only when the event has props |
+| `page(props?)` | Sends a pageview now |
+| `identify(userId, traits?)` | Links this visitor to a user, only with consent |
+| `register(props)` | Adds props to every later event |
+| `captureError(error, context?)` | Records an error with `level`, `tags` and `fingerprint` from `context` |
+| `captureMessage(message, context?)` | Records a message as an error event, `warning` level by default |
+| `scope(tags)` | The same client, adding `tags` to everything it sends |
+| `use(plugin)` | Adds a plugin and returns its remover |
+| `consent.grant()`, `consent.revoke()`, `consent.status()` | Consent, remembered across reloads; `status()` is `granted`, `denied` or `unset` |
+| `optOut()`, `optIn()`, `isOptedOut()` | Stops or resumes all sending from this browser |
+| `reset()` | New visitor and session; call it on logout |
+| `flush()` | Sends the queue now and resolves to `{ accepted, duplicates, failed }` |
+| `shutdown()` | Flushes, then removes plugins and listeners |
+| `on("error" \| "send" \| "drop", handler)` | Delivery problems, sends and dropped events |
+| `status()` | Queue size, consent, endpoint, route, last error and last send |
+| `start()` | Starts a client created with `autostart: false` |
+
+## Delivery
+
+Events are batched: 20 events or 5 seconds, whichever comes first. They go out with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. A network error or 5xx is retried after 1, 4 and 16 seconds with the same event ids, so the API can drop duplicates; events still unsent are kept for the next page load.
+
+## Identity
+
+The visitor is a random id in `localStorage` and the session a random id in `sessionStorage`. No cookies are set for visitors. `reset()` replaces both.

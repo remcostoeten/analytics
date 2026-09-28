@@ -1,4 +1,4 @@
-import { WireEvent } from "@remcostoeten/analytics-contract";
+import { ApiError, WireEvent } from "@remcostoeten/analytics-contract";
 import type { Engine, IngestCount, Logger } from "@remcostoeten/analytics-engine";
 import { Elysia } from "elysia";
 
@@ -30,7 +30,7 @@ const none = { requests: 1, accepted: 0, duplicates: 0, rejected: 0, rateLimited
  * new Elysia({ prefix: "/v2" }).use(eventsModule({ engine, logger, clock: () => new Date(), docsBase }));
  */
 export function eventsModule(options: EventsOptions) {
-  return new Elysia({ name: "events" }).model({ WireEvent }).post(
+  return new Elysia({ name: "events" }).model({ WireEvent, ApiError }).post(
     "/events",
     async ({ body, request, set, status }) => {
       const logger = options.logger(readRequestId(set.headers));

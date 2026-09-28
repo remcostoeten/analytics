@@ -1,0 +1,24 @@
+---
+title: Next
+description: Pageviews with route templates in the App Router.
+---
+
+```tsx
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { Analytics } from "@remcostoeten/analytics/next";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <AnalyticsProvider client={analytics}>
+          <Analytics />
+          {children}
+        </AnalyticsProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+`<Analytics />` sends each pageview with its route template, such as `/blog/[slug]`, so reports group by page type. Create the client with `pageviews: false` so pageviews are not sent twice.

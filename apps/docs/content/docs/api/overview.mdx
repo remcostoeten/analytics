@@ -1,0 +1,53 @@
+---
+title: Overview
+description: Base URL, conventions, shared parameters and errors.
+---
+
+Every route lives under `/v2`, for example `https://api.remcostoeten.nl/v2/health`. The live OpenAPI document is served at `/v2/openapi/json`, with interactive docs at `/v2/openapi`; the [API reference](/docs/reference) on this site is generated from the same document.
+
+## Conventions
+
+- Lists answer `{ data, nextCursor }`; single resources answer `{ data }`.
+- Timestamps are ISO 8601 in UTC.
+- Every response carries `x-request-id`.
+- Aggregate reads of a public project are cached for 60 seconds (`Cache-Control: public, s-maxage=60`); everything else is `private, no-store`.
+- Every list and breakdown also answers `format=csv|json|sql` (or `Accept: text/csv`) with the whole list as one download, up to 1 million rows.
+
+## Shared query parameters
+
+| Parameter | Values | Default |
+| --- | --- | --- |
+| `from`, `to` | ISO 8601 timestamps | last 30 days |
+| `period` | `24h`, `7d`, `30d`, `90d`, `12mo`, `all`; ignored when `from` and `to` are set | `30d` |
+| `traffic` | `human` (bot score under 50, no internal, localhost or preview), `all` | `human` |
+| `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |
+| `limit`, `cursor` | up to 100; opaque cursor from the previous page | 20 |
+
+## Errors
+
+Every error uses one envelope:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "The request does not match the schema",
+    "details": { "fields": [{ "path": "/period", "message": "Expected union value" }] },
+    "requestId": "req_01J8Z3",
+    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/VALIDATION_FAILED"
+  }
+}
+```
+
+| Status | Code | When |
+| --- | --- | --- |
+| 400 | `VALIDATION_FAILED` | Body, query or path fails the schema; `details` lists each field |
+| 401 | `UNAUTHORIZED` | No or invalid session, token or key |
+| 403 | `FORBIDDEN_ORIGIN` | Public key used from an origin not in the project's list |
+| 403 | `FORBIDDEN` | The caller's role or token scope does not allow the action |
+| 404 | `NOT_FOUND` | Unknown route or resource, or a private project without access |
+| 409 | `CONFLICT` | Creating something that exists |
+| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events |
+| 429 | `RATE_LIMITED` | A rate limit was hit; `Retry-After` says when to try again |
+| 500 | `INTERNAL` | Unexpected failure; the message never includes internals |
+| 503 | `UNAVAILABLE` | The database or a configured service is unreachable, or a job is not configured |

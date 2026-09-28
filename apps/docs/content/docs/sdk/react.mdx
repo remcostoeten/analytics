@@ -1,0 +1,21 @@
+---
+title: React
+description: Provider, hook, click tracking and an error boundary.
+---
+
+```tsx
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <AnalyticsProvider client={analytics}>{children}</AnalyticsProvider>;
+}
+```
+
+| Export | Does |
+| --- | --- |
+| `AnalyticsProvider` | Makes the client available to hooks and components below it |
+| `useAnalytics<Events>()` | The client, typed by your events; a no-op client outside the provider |
+| `TrackClick` | Wraps one element and sends a named event on click |
+| `ErrorBoundary` | Catches render errors, records them with `captureError` and shows a fallback |
+| `useRoutePageviews(path, route)` | Sends a pageview with the route template for routers other than Next |
+| `computeRoute(pathname, params)` | Turns `/blog/hello` and `{ slug: "hello" }` into `/blog/[slug]` |

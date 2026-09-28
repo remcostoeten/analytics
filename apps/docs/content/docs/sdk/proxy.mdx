@@ -1,0 +1,16 @@
+---
+title: Proxy
+description: A same-origin ingest path that ad blockers do not block.
+---
+
+In the Next App Router, `app/%5Fra/route.ts` serves `/_ra`:
+
+```ts
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+```
+
+The proxy refuses other methods, cross-site requests and bodies over 64 KB, and forwards the visitor's IP and user agent with the secret key.
+
+`createPageCounter` counts HTML page loads in middleware as `page_request` events. Comparing them with pageviews estimates how many visitors block the client.

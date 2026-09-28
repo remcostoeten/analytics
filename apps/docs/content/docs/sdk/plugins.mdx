@@ -1,0 +1,39 @@
+---
+title: Plugins
+description: Opt-in features, each in its own file so an app only ships what it uses.
+---
+
+Import from `@remcostoeten/analytics/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`. No plugin imports another.
+
+| Plugin | Sends |
+| --- | --- |
+| `pageviews()` | `pageview` on load and client-side navigation; on by default, and silent once an adapter supplies routes |
+| `speedInsights({ sampleRate })` | `web_vital` for LCP, INP, CLS, FCP and TTFB through the lazily loaded `web-vitals` attribution build. LCP, INP and CLS are reported on every change and the latest value per metric id wins |
+| `scrollDepth()` | `scroll_depth` with the deepest percentage reached |
+| `engagement()` | `engagement` with the milliseconds the page was visible |
+| `clicks()` | `click` for elements with `data-ra-click`, plus their `data-ra-prop-*` attributes |
+| `outboundLinks()` | `outbound_click` for other hosts and `file_download` by file extension |
+| `forms()` | `form_submit` with the form id and action path, nothing from the fields |
+| `errors()` | `error` for uncaught errors and rejections, with 20 scrubbed breadcrumbs |
+| `ignoreSelf()` | Nothing; `?ra=ignore` opts this browser out and `?ra=track` back in |
+| `botSignals()` | Adds webdriver, headless and no-input bits to every event's `signals` |
+| `experiments({ id: variant })` | Registers `experiment:<id>` on every event and sends one `experiment_exposure` per experiment on each page load |
+| `notFound()` | `not_found` with the referrer on pages with `<meta name="ra-not-found">` |
+
+## Writing a plugin
+
+```ts
+import { definePlugin } from "@remcostoeten/analytics";
+
+export function outboundHosts() {
+  return definePlugin({
+    name: "outbound-hosts",
+    setup: (client) => {
+      const remove = client.onPage(() => client.record(location.pathname, "page_seen", {}));
+      return remove;
+    },
+  });
+}
+```
+
+`setup` receives hooks (`beforeSend`, `onPage`, `onHidden`, `onConsent`) and returns its cleanup, which `shutdown()` calls.

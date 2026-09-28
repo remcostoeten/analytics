@@ -1,0 +1,23 @@
+---
+title: Options
+description: What createAnalytics accepts.
+---
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `project`, `key` | from the environment | Project slug and public key (`pk_...`) |
+| `endpoint` | `/_ra` | A same-origin path behind the proxy, or the API's `/v2/events` URL |
+| `consent` | `"optional"` | `"required"` holds everything until `consent.grant()` and then sends it |
+| `plugins` | `[]` | Plugins to start with |
+| `pageviews` | `true` | Automatic pageviews; set `false` when a router adapter sends them |
+| `mode` | `"auto"` | `"development"` logs instead of sending unless `endpoint` is set; `"auto"` reads `NODE_ENV` |
+| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser |
+| `release` | none | Attached to every event, and used to tie errors to a deploy |
+| `environment` | none | Attached to errors |
+| `beforeSend` | none | `(event) => event \| null` to change or drop any event |
+| `autostart` | `true` in browsers | `false` to call `start()` yourself |
+| `transport` | `fetch` and `sendBeacon` | A custom `Transport` with `send(envelope, unloading)` |
+
+## Environment
+
+When an option is left out, the client reads JSON from the first of `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` and `VITE_RA_CONFIG` that is set. Explicit options win.

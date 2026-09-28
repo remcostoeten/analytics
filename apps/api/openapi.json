@@ -4,6 +4,12 @@
     "description": "Development documentation",
     "version": "2.0.0-next"
   },
+  "servers": [
+    {
+      "url": "https://api.remcostoeten.nl",
+      "description": "Production"
+    }
+  ],
   "tags": [
     {
       "name": "Ingest",
@@ -247,57 +253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -307,57 +263,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -367,57 +273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -427,57 +283,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -487,57 +293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -547,57 +303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -607,57 +313,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "error"
-                  ],
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "required": [
-                        "code",
-                        "message",
-                        "requestId",
-                        "docs"
-                      ],
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "VALIDATION_FAILED",
-                            "UNAUTHORIZED",
-                            "FORBIDDEN_ORIGIN",
-                            "FORBIDDEN",
-                            "NOT_FOUND",
-                            "CONFLICT",
-                            "PAYLOAD_TOO_LARGE",
-                            "RATE_LIMITED",
-                            "INTERNAL",
-                            "UNAVAILABLE"
-                          ]
-                        },
-                        "message": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "details": {
-                          "type": "object",
-                          "patternProperties": {
-                            "^(.*)$": {}
-                          }
-                        },
-                        "requestId": {
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "docs": {
-                          "format": "uri",
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "$id": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }

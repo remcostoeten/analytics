@@ -1,0 +1,72 @@
+---
+title: Auth overview
+description: Who can call what, how sign-in works, and the keys and tokens each caller uses.
+---
+
+Every route declares one access level, and the API decides it on each request from the credential it receives.
+
+## Callers and credentials
+
+| Caller | Credential | Can do |
+| --- | --- | --- |
+| Anyone | none | Read public projects' aggregates, the project list and the docs |
+| A visitor's browser, through the SDK | `X-Project-Key: pk_...` or `?key=pk_...`, from an origin in the project's allowed origins | Send events |
+| Your server, through the SDK | `Authorization: Bearer sk_...` | Send events, forwarding the visitor's user agent and IP for hashing |
+| You, signed in | The session cookie from GitHub sign-in | Everything your role allows, including private projects |
+| Scripts, CI and other frontends | `Authorization: Bearer at_...`, an API token with scope `read`, `admin` or `sql` and an optional project list | What the scope allows |
+| The scheduler | `Authorization: Bearer <CRON_SECRET>` | Run the jobs under `/v2/admin/jobs` |
+
+Secret keys and API tokens are shown once, when created or rotated, and stored hashed.
+
+## Access levels
+
+| Level | Who passes |
+| --- | --- |
+| `public` | Anyone |
+| `project` | Anyone when the project is public; otherwise a signed-in member whose role lists the project, or an API token that lists it |
+| `detail` | An owner, admin or analyst who lists the project, or an API token that lists it; also anyone when the project is public and has `publicVisitorData` on. Viewers get aggregates only |
+| `admin` | An owner, an admin for the projects their role lists, or an `admin` token for its projects. Organization-wide routes such as creating projects and tokens need an owner, or an admin or `admin` token that lists no projects |
+| `ingest` | A public key from an allowed origin, or a secret key |
+| `cron` | The cron secret |
+
+A private project answers 404, not 403, to callers without access, so its name does not leak. A project the caller can read but not change answers 401 when signed out and 403 otherwise. An unknown or expired `at_` token is 401, never treated as anonymous.
+
+## Roles
+
+| Role | Scope | Can |
+| --- | --- | --- |
+| Owner | Organization | Everything, including members, keys and deleting projects |
+| Admin | Organization or listed projects | Settings, visibility, internal-traffic marking, tokens and SQL |
+| Analyst | Listed projects | All reads including visitor-level data, and SQL |
+| Viewer | Listed projects | Aggregate reads only, the same as a public project shows |
+
+## Sign-in
+
+Sign-in goes through the API, so every frontend shares one access check.
+
+1. The browser goes to the API's GitHub sign-in route under `/v2/auth`.
+2. GitHub redirects back to the API. The API checks the GitHub login against the `dashboard_users` allowlist, stores a session, and sets an httpOnly, Secure, `SameSite=Lax` cookie for the parent domain.
+3. Server components forward that cookie on API calls; browser calls use `credentials: "include"`. CORS allows credentials only for the configured `DASHBOARD_ORIGIN`.
+4. `GET /v2/auth/session` answers who is signed in, their role and `isAdmin`.
+
+```json
+{
+  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
+  "session": { "expiresAt": "2026-10-27T16:40:01.000Z" },
+  "role": "owner",
+  "isAdmin": true
+}
+```
+
+Signed out, the same route answers `{ "user": null, "session": null, "role": null, "isAdmin": false }`.
+
+Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic, so your own visits never count.
+
+## API tokens
+
+Create a token with `POST /v2/tokens` as an owner or admin, list them with `GET /v2/tokens` and revoke one with `DELETE /v2/tokens/:token`. The response to the create call is the only time the token's value is shown.
+
+```bash
+curl https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/stats?period=7d \
+  -H "authorization: Bearer $RA_TOKEN"
+```
