@@ -1,0 +1,55 @@
+name: migrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run lists what would change; apply runs the migrations"
+        type: choice
+        options:
+          - dry-run
+          - apply
+        default: dry-run
+      baseline:
+        description: "Mark migrations up to this name as applied without running them; v1 already ran 0000 to 0008 on Neon"
+        type: string
+        default: "0008_add_rollup_daily"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Require the database secret
+        if: env.DATABASE_URL == ''
+        run: |
+          echo "::error::Add DATABASE_URL as a secret of the production environment first."
+          exit 1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Migrate
+        env:
+          MODE: ${{ inputs.mode }}
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          args=()
+          if [ "$MODE" = "dry-run" ]; then args+=(--dry-run); fi
+          if [ -n "$BASELINE" ]; then args+=(--baseline "$BASELINE"); fi
+          bun run migrate "${args[@]}"

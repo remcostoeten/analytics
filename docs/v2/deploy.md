@@ -1,0 +1,101 @@
+# Deploying v2
+
+Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
+
+## 1. Stop v1 building on every push
+
+In Vercel, for both `ingestion` and `v1.analytics`: Settings, Git, Ignored Build Step, "Run my Bash script":
+
+```bash
+git diff --quiet HEAD^ HEAD -- ../../
+```
+
+The free plan allows 100 deployments a day, and every v2 merge used one per v1 project.
+
+## 2. Generate the secrets
+
+Run each once and keep the output:
+
+```bash
+openssl rand -hex 32   # IP_HASH_SECRET
+openssl rand -hex 32   # BETTER_AUTH_SECRET
+openssl rand -hex 32   # CRON_SECRET
+openssl rand -hex 32   # ALERT_WEBHOOK_SECRET
+```
+
+## 3. Migrate Neon
+
+1. GitHub, Settings, Environments, New environment `production`. Add the secret `DATABASE_URL` with the Neon connection string (the pooled one the v1 `ingestion` project uses).
+2. Actions, `migrate`, Run workflow, mode `dry-run`, baseline `0008_add_rollup_daily`. It lists what would change: 0000 to 0008 baselined, 0009 to 0028 to apply.
+3. Run it again with mode `apply`.
+
+Every migration is additive, so v1 keeps working on the same database.
+
+## 4. GitHub sign-in
+
+GitHub, Settings, Developer settings, OAuth Apps, New:
+
+| Field | Value |
+| --- | --- |
+| Homepage URL | `https://api.remcostoeten.nl` |
+| Authorization callback URL | `https://api.remcostoeten.nl/v2/auth/callback/github` |
+
+Keep the client id and a new client secret.
+
+## 5. The API on Vercel
+
+New project `analytics-api`, repository `remcostoeten/analytics`, root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files. Environment variables for Production:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | The Neon connection string |
+| `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET` | From step 2 |
+| `API_URL` | `https://api.remcostoeten.nl` |
+| `DASHBOARD_ORIGIN` | `https://analytics.remcostoeten.nl` (the dashboard or docs origin that signs in) |
+| `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
+| `ALERT_WEBHOOK_URL`, `ALERT_WEBHOOK_SECRET` | Optional: where issue alerts go, and the secret from step 2 |
+| `INTERNAL_PROJECT_SECRET` | Optional: the secret key of a project that should collect the API's own errors |
+| `CRUX_API_KEY` | Optional: a Google Cloud API key with the Chrome UX Report API enabled |
+
+Add the domain `api.remcostoeten.nl`. Check `https://api.remcostoeten.nl/v2/health` answers `ok: true`.
+
+## 6. The docs site on Vercel
+
+New project `analytics-docs`, same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
+
+## 7. Scheduled jobs
+
+GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https://api.remcostoeten.nl`) and the secret `CRON_SECRET` from step 2. The `jobs` workflow then runs:
+
+| When (UTC) | Job |
+| --- | --- |
+| Every 10 minutes | `alerts` |
+| Daily 02:17 | `rollup`, then `cleanup` |
+| Mondays 04:43 | `crux` |
+
+Until both are set, the workflow only prints a notice. A job whose setting is missing on the API, such as alerts without `ALERT_WEBHOOK_URL`, is reported as a notice rather than a failure. Run any job by hand from Actions, `jobs`, Run workflow.
+
+## 8. First sign-in and token
+
+Sign-in is a `POST` that answers with the GitHub URL. Open `https://api.remcostoeten.nl/v2/health`, then run this in that tab's console:
+
+```js
+const response = await fetch("/v2/auth/sign-in/social", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ provider: "github", callbackURL: "/v2/auth/session" }),
+});
+location.href = (await response.json()).url;
+```
+
+GitHub sends you back to `/v2/auth/session`, which should show your login with `"role": "owner"`: the first login in `dashboard_users` to sign in owns the organization. In the same tab, create a token for scripts and the docs site's query page; it is shown once:
+
+```js
+const token = await fetch("/v2/tokens", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ name: "docs query page", scope: "sql" }),
+});
+console.log(await token.json());
+```
