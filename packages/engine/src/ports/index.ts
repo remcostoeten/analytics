@@ -44,6 +44,15 @@ export type {
   Realtime,
   Traffic,
 } from "./reads";
+export type {
+  ElementStat,
+  RouteStat,
+  SpeedDevice,
+  SpeedScope,
+  SpeedStore,
+  VitalDay,
+  VitalStat,
+} from "./speed";
 export type { FeedCursor, FeedPage, FeedQuery, LiveEvent, RealtimeFeed } from "./feed";
 export type {
   Cell,

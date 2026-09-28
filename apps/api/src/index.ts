@@ -92,6 +92,7 @@ export default createApp({
     store: stores.reads,
     details: stores.details,
     feed: stores.feed,
+    speed: stores.speed,
     live: { waitMs: 25_000, streamMs: 55_000 },
     limiter: adapters.limiter,
     hasher,

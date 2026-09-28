@@ -1,13 +1,14 @@
 {
   "data": {
-    "score": 86,
-    "rating": "needs-improvement",
+    "score": 94,
+    "rating": "good",
     "samples": 1204,
     "metrics": {
       "lcp": {
         "value": 2710,
         "rating": "needs-improvement",
-        "score": 78,
+        "score": 86,
+        "samples": 1204,
         "shares": {
           "good": 0.64,
           "needsImprovement": 0.27,
@@ -17,7 +18,8 @@
       "inp": {
         "value": 140,
         "rating": "good",
-        "score": 95,
+        "score": 96,
+        "samples": 988,
         "shares": {
           "good": 0.88,
           "needsImprovement": 0.1,
@@ -27,7 +29,8 @@
       "cls": {
         "value": 0.06,
         "rating": "good",
-        "score": 93,
+        "score": 98,
+        "samples": 1204,
         "shares": {
           "good": 0.91,
           "needsImprovement": 0.07,
@@ -37,7 +40,8 @@
       "fcp": {
         "value": 1520,
         "rating": "good",
-        "score": 92,
+        "score": 96,
+        "samples": 1204,
         "shares": {
           "good": 0.8,
           "needsImprovement": 0.15,
@@ -48,6 +52,7 @@
         "value": 420,
         "rating": "good",
         "score": null,
+        "samples": 1204,
         "shares": {
           "good": 0.86,
           "needsImprovement": 0.11,

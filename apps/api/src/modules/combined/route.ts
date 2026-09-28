@@ -1,4 +1,8 @@
 import {
+  SpeedElementList,
+  SpeedResponse,
+  SpeedRouteList,
+  SpeedTimeseries,
   BreakdownResponse,
   EventList,
   HeatmapResponse,
@@ -36,6 +40,14 @@ import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "../reads/live";
 import { download } from "../reads/export";
+import {
+  readSpeedScope,
+  speedElements,
+  speedRoutes,
+  speedSummary,
+  speedTimeseries,
+} from "../speed/service";
+import type { SpeedScoped } from "../speed/service";
 import type { Listing } from "../reads/export";
 import { breakdown, readScope, realtime, stats, timeseries } from "../reads/service";
 import type { Scoped as ReadScoped } from "../reads/service";
@@ -77,8 +89,8 @@ async function readableProjects(
 /**
  * @name combinedModule
  * @description Every read route without the `/projects/:project` prefix: stats, timeseries,
- * breakdowns (with `project` as a dimension), paths, retention, heatmap, map, realtime and the
- * live feed over the projects the caller may read,
+ * breakdowns (with `project` as a dimension), paths, retention, heatmap, map, realtime, the
+ * live feed and speed over the projects the caller may read,
  * and events, visitors and sessions over the projects whose visitor-level data the caller may see.
  * `/people` and `/people/:userId` link identified users across projects and need a signed-in
  * member or a token.
@@ -159,6 +171,28 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       aggregateList(request, caller, set, name, async ({ params, projects }) => {
         const scope = readScope(params, projects, options.clock());
         return scope.ok ? read(options.store, scope.value, params) : scope;
+      });
+  }
+
+  function speedRead<Value>(
+    read: (
+      store: ReadsOptions["speed"],
+      scoped: SpeedScoped,
+      params: URLSearchParams,
+    ) => Promise<Result<Value, EngineError>>,
+  ) {
+    return ({
+      request,
+      caller,
+      set,
+    }: {
+      request: Request;
+      caller: Caller;
+      set: Parameters<typeof gate.answerMany>[2];
+    }) =>
+      aggregate(request, caller, set, async ({ params, projects }) => {
+        const scoped = readSpeedScope(params, projects, options.clock());
+        return scoped.ok ? read(options.speed, scoped.value, params) : scoped;
       });
   }
 
@@ -423,5 +457,37 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           tags,
         },
       },
-    );
+    )
+    .get("/speed", speedRead(speedSummary), {
+      access: "public",
+      response: { 200: SpeedResponse, ...responses },
+      detail: { summary: "Speed across projects", description: "As the per-project route.", tags },
+    })
+    .get("/speed/timeseries", speedRead(speedTimeseries), {
+      access: "public",
+      response: { 200: SpeedTimeseries, ...responses },
+      detail: {
+        summary: "One metric per day across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    })
+    .get("/speed/routes", speedRead(speedRoutes), {
+      access: "public",
+      response: { 200: SpeedRouteList, ...responses },
+      detail: {
+        summary: "Speed per route across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    })
+    .get("/speed/elements", speedRead(speedElements), {
+      access: "public",
+      response: { 200: SpeedElementList, ...responses },
+      detail: {
+        summary: "Elements behind slow values across projects",
+        description: "As the per-project route.",
+        tags,
+      },
+    });
 }

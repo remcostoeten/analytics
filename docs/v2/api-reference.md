@@ -881,7 +881,9 @@ These counters come from Postgres, not instance memory, so they are correct acro
 
 ### Speed insights
 
-Four more routes at the `project` access level, all taking `device=mobile|desktop|all`, `percentile=75|90|95|99`, the date range and filters: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`.
+Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`.
+
+Each metric's percentile is scored 0 to 100 on a log-normal curve where the good threshold scores 90 and the poor threshold 50, and the score is LCP 30%, INP 30%, CLS 25% and FCP 15% of those (TTFB is shown, not scored); metrics without enough samples drop out and the weights of the rest are scaled up. With the values below, LCP 2710 ms scores 86, INP 140 ms 96, CLS 0.06 98 and FCP 1520 ms 96, so the score is 0.3 × 86 + 0.3 × 96 + 0.25 × 98 + 0.15 × 96 = 93.5, shown as 94.
 
 `GET /v2/projects/remcostoeten.nl/speed?period=30d&device=mobile`
 
@@ -889,50 +891,160 @@ Four more routes at the `project` access level, all taking `device=mobile|deskto
 200 OK
 {
   "data": {
-    "score": 86,
-    "rating": "needs-improvement",
+    "score": 94,
+    "rating": "good",
     "samples": 1204,
     "metrics": {
-      "lcp": { "value": 2710, "rating": "needs-improvement", "score": 78, "shares": { "good": 0.64, "needsImprovement": 0.27, "poor": 0.09 } },
-      "inp": { "value": 140, "rating": "good", "score": 95, "shares": { "good": 0.88, "needsImprovement": 0.1, "poor": 0.02 } },
-      "cls": { "value": 0.06, "rating": "good", "score": 93, "shares": { "good": 0.91, "needsImprovement": 0.07, "poor": 0.02 } },
-      "fcp": { "value": 1520, "rating": "good", "score": 92, "shares": { "good": 0.8, "needsImprovement": 0.15, "poor": 0.05 } },
-      "ttfb": { "value": 420, "rating": "good", "score": null, "shares": { "good": 0.86, "needsImprovement": 0.11, "poor": 0.03 } }
+      "lcp": {
+        "value": 2710,
+        "rating": "needs-improvement",
+        "score": 86,
+        "samples": 1204,
+        "shares": {
+          "good": 0.64,
+          "needsImprovement": 0.27,
+          "poor": 0.09
+        }
+      },
+      "inp": {
+        "value": 140,
+        "rating": "good",
+        "score": 96,
+        "samples": 988,
+        "shares": {
+          "good": 0.88,
+          "needsImprovement": 0.1,
+          "poor": 0.02
+        }
+      },
+      "cls": {
+        "value": 0.06,
+        "rating": "good",
+        "score": 98,
+        "samples": 1204,
+        "shares": {
+          "good": 0.91,
+          "needsImprovement": 0.07,
+          "poor": 0.02
+        }
+      },
+      "fcp": {
+        "value": 1520,
+        "rating": "good",
+        "score": 96,
+        "samples": 1204,
+        "shares": {
+          "good": 0.8,
+          "needsImprovement": 0.15,
+          "poor": 0.05
+        }
+      },
+      "ttfb": {
+        "value": 420,
+        "rating": "good",
+        "score": null,
+        "samples": 1204,
+        "shares": {
+          "good": 0.86,
+          "needsImprovement": 0.11,
+          "poor": 0.03
+        }
+      }
     }
   },
   "percentile": 75,
   "device": "mobile",
-  "range": { "from": "2026-08-28T00:00:00.000Z", "to": "2026-09-27T00:00:00.000Z" },
+  "range": {
+    "from": "2026-08-28T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  },
   "traffic": "human"
 }
 ```
 
-`GET /v2/projects/remcostoeten.nl/speed/routes?limit=2`
+`GET /v2/projects/remcostoeten.nl/speed/timeseries?metric=lcp&device=mobile&from=2026-09-25&to=2026-09-27`
 
 ```json
 200 OK
 {
   "data": [
-    { "route": "/blog/[slug]", "score": 71, "samples": 344, "lcp": 3120, "inp": 180, "cls": 0.12, "fcp": 1680, "ttfb": 460 },
-    { "route": "/", "score": 94, "samples": 812, "lcp": 1840, "inp": 96, "cls": 0.02, "fcp": 1020, "ttfb": 310 }
+    {
+      "bucket": "2026-09-25T00:00:00.000Z",
+      "value": 2640,
+      "samples": 41
+    },
+    {
+      "bucket": "2026-09-26T00:00:00.000Z",
+      "value": null,
+      "samples": 12
+    }
+  ],
+  "metric": "lcp",
+  "percentile": 75,
+  "device": "mobile",
+  "range": {
+    "from": "2026-09-25T00:00:00.000Z",
+    "to": "2026-09-27T00:00:00.000Z"
+  }
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/speed/routes?limit=2` (worst score first)
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "route": "/blog/[slug]",
+      "score": 85,
+      "samples": 344,
+      "lcp": 3120,
+      "inp": 180,
+      "cls": 0.12,
+      "fcp": 1680,
+      "ttfb": 460
+    },
+    {
+      "route": "/",
+      "score": 99,
+      "samples": 812,
+      "lcp": 1840,
+      "inp": 96,
+      "cls": 0.02,
+      "fcp": 1020,
+      "ttfb": 310
+    }
   ],
   "nextCursor": "eyJvIjoyfQ"
 }
 ```
 
-`GET /v2/projects/remcostoeten.nl/speed/elements?metric=lcp&limit=2`
+`GET /v2/projects/remcostoeten.nl/speed/elements?metric=lcp&limit=2`, the selectors most often behind needs-improvement and poor values, each with at least 20 samples
 
 ```json
 200 OK
 {
   "data": [
-    { "selector": "main>article>img.hero", "route": "/blog/[slug]", "samples": 290, "value": 3200 },
-    { "selector": "main>h1", "route": "/", "samples": 610, "value": 1790 }
+    {
+      "selector": "main>article>img.hero",
+      "route": "/blog/[slug]",
+      "samples": 290,
+      "value": 3200
+    },
+    {
+      "selector": "main>h1",
+      "route": "/",
+      "samples": 610,
+      "value": 1790
+    }
   ],
   "metric": "lcp",
   "nextCursor": null
 }
 ```
+
+`POST /v2/admin/jobs/rollup?days=2` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` (p50 to p99 and rating counts per project, day, route, device and metric) and drops raw speed rows older than 30 days.
 
 ### Issues
 

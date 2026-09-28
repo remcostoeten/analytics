@@ -7,6 +7,7 @@ import type {
   RateLimiter,
   ReadStore,
   RealtimeFeed,
+  SpeedStore,
 } from "@remcostoeten/analytics-engine";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
@@ -20,6 +21,7 @@ export type ReadsOptions = {
   store: ReadStore;
   details: DetailStore;
   feed: RealtimeFeed;
+  speed: SpeedStore;
   live: LiveOptions;
   limiter: RateLimiter;
   hasher: Hasher;
