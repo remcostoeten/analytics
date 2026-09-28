@@ -9,7 +9,6 @@ import type { EngineError, Metric, ReadScope, ReadStore } from "@remcostoeten/an
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
-import { toCsv } from "./csv";
 import {
   nextCursor,
   previousRange,
@@ -271,22 +270,4 @@ export async function realtime(
     },
     window: { from: from.toISOString(), to: now.toISOString() },
   });
-}
-
-/**
- * @name breakdownCsv
- * @description A breakdown as CSV with a header row, quoting values that need it.
- *
- * @example
- * breakdownCsv(response);
- */
-export function breakdownCsv(response: BreakdownResponse): string {
-  const columns = [...new Set(response.data.flatMap((row) => Object.keys(row)))];
-  const header = columns.length > 0 ? columns : ["value"];
-  return toCsv(
-    header,
-    response.data.map((row) =>
-      header.map((column) => Object.entries(row).find(([key]) => key === column)?.[1]),
-    ),
-  );
 }

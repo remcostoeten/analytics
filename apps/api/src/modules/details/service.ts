@@ -15,11 +15,10 @@ import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 
-import { nextCursor, readPage } from "../reads/params";
+import { limitCap, nextCursor, readPage } from "../reads/params";
 import { readScope } from "../reads/service";
 
 const defaultLimit = 20;
-const maxLimit = 100;
 
 function invalid<Value>(message: string): Result<Value, EngineError> {
   return err(engineError("VALIDATION_FAILED", message));
@@ -27,9 +26,10 @@ function invalid<Value>(message: string): Result<Value, EngineError> {
 
 function readLimit(params: URLSearchParams): Result<number, EngineError> {
   const limit = Number(params.get("limit") ?? defaultLimit);
-  return Number.isInteger(limit) && limit >= 1 && limit <= maxLimit
+  const cap = limitCap(params);
+  return Number.isInteger(limit) && limit >= 1 && limit <= cap
     ? ok(limit)
-    : invalid(`limit must be a whole number from 1 to ${maxLimit}`);
+    : invalid(`limit must be a whole number from 1 to ${cap}`);
 }
 
 /**

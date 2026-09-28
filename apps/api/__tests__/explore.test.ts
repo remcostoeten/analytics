@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { PGlite } from "@electric-sql/pglite";
 import {
   BreakdownResponse,
+  EventList,
   HeatmapResponse,
   LiveEvents,
   MapResponse,
@@ -459,5 +460,54 @@ describe("live events", () => {
     const rest = await resumed.text();
     expect(rest).not.toContain("event: events");
     expect(rest).toContain(": waiting");
+  });
+});
+
+describe("exports", () => {
+  test("format=csv streams every row with a header, nested fields as dotted columns", async () => {
+    const response = await call(`/v2/projects/site/map?${month}&level=city&limit=1&format=csv`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toStartWith("text/csv");
+    expect(response.headers.get("content-disposition")).toBe('attachment; filename="map.csv"');
+    expect((await response.text()).split("\n")).toEqual([
+      "country,region,city,latitude,longitude,visitors,share",
+      "NL,Noord-Holland,Amsterdam,52.37,4.9,1,0.333",
+      "NL,Utrecht,Utrecht,52.09,5.12,1,0.333",
+      "US,New York,New York,40.71,-74.01,1,0.333",
+      "",
+    ]);
+    const events = await call(`/v2/events?${month}`, { ...admin, accept: "text/csv" });
+    const [header] = (await events.text()).split("\n");
+    expect(header?.split(",")).toContain("page.path");
+  });
+
+  test("format=json is the normal response with all rows at once", async () => {
+    const response = await call(`/v2/events?${month}&limit=2&format=json`, admin);
+    const json = (await response.json()) as Json;
+    expect(json.nextCursor).toBeNull();
+    expect(json.data).toHaveLength(10);
+    expect(Value.Check(EventList, json)).toBe(true);
+  });
+
+  test("format=sql pages past 1,000 rows and loads into Postgres", async () => {
+    await database.query(
+      "INSERT INTO projects (id, name, domain, visibility, public_key, secret_key_hash) VALUES ('bulk', 'bulk', 'bulk.test', 'private', 'pk_test_bulk', 'z')",
+    );
+    await database.query(
+      `INSERT INTO events (project_id, type, name, ts, path, host, visitor_id, session_id, fingerprint, meta)
+       SELECT 'bulk', 'pageview', 'pageview', timestamptz '2026-09-10T00:00:00Z' + g * interval '1 second',
+         '/it''s-' || g, 'bulk.test', 'v' || (g % 7), 's' || (g % 50), 'bulk' || g, '{}'
+       FROM generate_series(1, 1200) g`,
+    );
+    const response = await call(`/v2/projects/bulk/events?${month}&format=sql`, admin);
+    expect(response.headers.get("content-type")).toStartWith("application/sql");
+    const text = await response.text();
+    expect(text).toStartWith('CREATE TABLE "events" (\n  "id" text,');
+    const copy = new PGlite();
+    await copy.exec(text);
+    const loaded = await copy.query<{ n: number; quoted: number }>(
+      `SELECT count(*)::int AS n, count(*) FILTER (WHERE "page.path" LIKE '/it''s-%')::int AS quoted FROM events`,
+    );
+    expect(loaded.rows).toEqual([{ n: 1200, quoted: 1200 }]);
   });
 });

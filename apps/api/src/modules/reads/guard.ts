@@ -12,6 +12,8 @@ import type { Result } from "@remcostoeten/analytics-shared/result";
 
 import type { Caller } from "../../access/types";
 import { failure } from "../../plugins/error-handler";
+import { exportFormat, exportList } from "./export";
+import type { Listing } from "./export";
 import type { LiveOptions } from "./live";
 
 export type ReadsOptions = {
@@ -38,7 +40,8 @@ const windowSeconds = 60;
  * `NOT_FOUND`; aggregate reads of a public project get `Cache-Control: public, s-maxage=60` and
  * everything else `private, no-store` (for reads across projects, only anonymous aggregate reads
  * are public, as the answer depends on who asks); anonymous callers are rate limited per daily IP hash; an
- * error becomes the error envelope with its status.
+ * error becomes the error envelope with its status. `list` and `listMany` also answer
+ * `format=csv|json|sql` (or `Accept: text/csv`) with the whole list as one download.
  *
  * @example
  * const gate = readGate(options, docsBase);
@@ -108,5 +111,36 @@ export function readGate(options: ReadsOptions, docsBase: string) {
     return result.ok ? result.value : reject(result.error, set);
   }
 
-  return { answer, answerMany, reject };
+  function list<Page extends Listing>(
+    request: Request,
+    caller: Caller,
+    project: ProjectRecord | null,
+    set: Set,
+    cache: Cache,
+    name: string,
+    run: (params: URLSearchParams, projectId: string) => Promise<Result<Page, EngineError>>,
+  ) {
+    const format = exportFormat(request);
+    if (!format) return answer(request, caller, project, set, cache, run);
+    return answer(request, caller, project, set, cache, (params, id) =>
+      exportList(name, format, params, (page) => run(page, id)),
+    );
+  }
+
+  function listMany<Page extends Listing>(
+    request: Request,
+    caller: Caller,
+    set: Set,
+    cache: Cache,
+    name: string,
+    run: (params: URLSearchParams) => Promise<Result<Page, EngineError>>,
+  ) {
+    const format = exportFormat(request);
+    if (!format) return answerMany(request, caller, set, cache, run);
+    return answerMany(request, caller, set, cache, (params) =>
+      exportList(name, format, params, run),
+    );
+  }
+
+  return { answer, answerMany, list, listMany, reject };
 }

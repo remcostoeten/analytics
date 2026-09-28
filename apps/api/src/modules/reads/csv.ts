@@ -15,6 +15,16 @@ function cell(value: Value) {
  * toCsv(["route", "views"], [["/", 1011]]); // "route,views\n/,1011\n"
  */
 export function toCsv(header: string[], rows: Value[][]): string {
-  const lines = [header, ...rows].map((row) => row.map(cell).join(","));
-  return `${lines.join("\n")}\n`;
+  return csvLines([header, ...rows]);
+}
+
+/**
+ * @name csvLines
+ * @description Rows as CSV lines without a header, each ending in a newline.
+ *
+ * @example
+ * csvLines([["/", 1011]]); // "/,1011\n"
+ */
+export function csvLines(rows: Value[][]): string {
+  return rows.map((row) => `${row.map(cell).join(",")}\n`).join("");
 }

@@ -19,10 +19,12 @@ import type { AccessDeps, Caller } from "../../access/types";
 import { access } from "../../plugins/access";
 import { errorResponses } from "../../plugins/error-responses";
 import { heatmap, paths, places, retention } from "./explore";
+import { download } from "./export";
+import type { Listing } from "./export";
 import { readGate } from "./guard";
 import type { ReadsOptions, Set } from "./guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "./live";
-import { breakdown, breakdownCsv, readScope, realtime, stats, timeseries } from "./service";
+import { breakdown, readScope, realtime, stats, timeseries } from "./service";
 
 const tags = ["Reads"];
 
@@ -36,8 +38,8 @@ const readResponses = { ...errorResponses, 429: errorResponses[400] };
  * `realtime/events`, all at the `project` level; the feed adds visitor and session ids only with
  * `detail` access. Public projects answer with
  * `Cache-Control: public, s-maxage=60`, private ones with `private, no-store`, and anonymous
- * callers are rate limited per daily IP hash. `breakdown` also answers CSV for
- * `Accept: text/csv` or `format=csv`.
+ * callers are rate limited per daily IP hash. `breakdown`, `paths` and `map` also answer
+ * `format=csv|json|sql` (or `Accept: text/csv`) with every row as one download.
  *
  * @example
  * app.use(readsModule(deps, reads, docsBase));
@@ -68,6 +70,21 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
   ) {
     return ({ request, caller, project, set }: Route) =>
       answer(request, caller, project, set, async (params, id) => {
+        const scope = scoped(params, id);
+        return scope.ok ? read(options.store, scope.value, params) : scope;
+      });
+  }
+
+  function exploreList<Page extends Listing>(
+    name: string,
+    read: (
+      store: ReadsOptions["store"],
+      scope: Parameters<typeof paths>[1],
+      params: URLSearchParams,
+    ) => Promise<Result<Page, EngineError>>,
+  ) {
+    return ({ request, caller, project, set }: Route) =>
+      gate.list(request, caller, project, set, "aggregate", name, async (params, id) => {
         const scope = scoped(params, id);
         return scope.ok ? read(options.store, scope.value, params) : scope;
       });
@@ -113,22 +130,22 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
     )
     .get(
       "/projects/:project/breakdown/:dimension",
-      async ({ request, caller, project, params: path, set }) => {
-        const result = await answer(request, caller, project, set, async (params, id) => {
-          const scope = scoped(params, id);
-          return scope.ok ? breakdown(options.store, scope.value, path.dimension, params) : scope;
-        });
-        const url = new URL(request.url);
-        const csv =
-          url.searchParams.get("format") === "csv" ||
-          request.headers.get("accept")?.includes("text/csv");
-        if (!csv || !("dimension" in result)) return result;
-        set.headers["content-type"] = "text/csv; charset=utf-8";
-        return breakdownCsv(result);
-      },
+      ({ request, caller, project, params: path, set }) =>
+        gate.list(
+          request,
+          caller,
+          project,
+          set,
+          "aggregate",
+          `breakdown_${path.dimension}`,
+          async (params, id) => {
+            const scope = scoped(params, id);
+            return scope.ok ? breakdown(options.store, scope.value, path.dimension, params) : scope;
+          },
+        ),
       {
         access: "project",
-        response: { 200: t.Union([BreakdownResponse, t.String()]), ...readResponses },
+        response: { 200: t.Union([BreakdownResponse, download]), ...readResponses },
         detail: {
           summary: "Top values of a dimension",
           description:
@@ -153,9 +170,9 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
         },
       },
     )
-    .get("/projects/:project/paths", explore(paths), {
+    .get("/projects/:project/paths", exploreList("paths", paths), {
       access: "project",
-      response: { 200: PathsResponse, ...readResponses },
+      response: { 200: t.Union([PathsResponse, download]), ...readResponses },
       detail: {
         summary: "Where visitors went next",
         description:
@@ -183,9 +200,9 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
         tags,
       },
     })
-    .get("/projects/:project/map", explore(places), {
+    .get("/projects/:project/map", exploreList("map", places), {
       access: "project",
-      response: { 200: MapResponse, ...readResponses },
+      response: { 200: t.Union([MapResponse, download]), ...readResponses },
       detail: {
         summary: "Visitors per place",
         description: "Per `country`, `region` or `city`, with coordinates for a map.",
