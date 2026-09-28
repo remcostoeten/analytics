@@ -53,8 +53,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // The database stays open: pglite-socket handles a late client close by querying it.
   await server.stop();
-  await database.close();
 });
 
 describe("parseArguments", () => {
