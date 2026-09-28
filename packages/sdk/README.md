@@ -29,7 +29,7 @@ Import from `@remcostoeten/analytics-sdk/plugins`; each is one file and none imp
 | `errors()` | `error` for uncaught errors and rejections, with 20 scrubbed breadcrumbs |
 | `ignoreSelf()` | Nothing; `?ra=ignore` opts this browser out and `?ra=track` back in |
 | `botSignals()` | Adds webdriver, headless and no-input bits to every event's `signals` |
-| `experiments({ id: variant })` | Registers `experiment:<id>` on every event and one `experiment_exposure` each |
+| `experiments({ id: variant })` | Registers `experiment:<id>` on every event and sends one `experiment_exposure` per experiment on each page load |
 | `notFound()` | `not_found` with the referrer on pages with `<meta name="ra-not-found">` |
 
 | Command | Does |
