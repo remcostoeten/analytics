@@ -1,3 +1,4 @@
+import { ApiError } from "@remcostoeten/analytics-contract";
 import { Elysia } from "elysia";
 
 import { decide } from "../access/decide";
@@ -21,13 +22,14 @@ function projectOf(url: string) {
  * @name access
  * @description The `access` route option: `{ access: "project" }` and the other levels run
  * `decide` before the handler, answer with the error envelope when the caller may not pass, and
- * give the handler `caller` and, on `/projects/:project` routes, `project`.
+ * give the handler `caller` and, on `/projects/:project` routes, `project`. It also registers the
+ * `ApiError` model that `errorResponses` refers to, so the OpenAPI document holds it once.
  *
  * @example
  * app.use(access(deps, docsBase)).get("/projects/:project", ({ project }) => project, { access: "project" });
  */
 export function access(deps: AccessDeps, docsBase: string) {
-  return new Elysia({ name: "access" }).macro({
+  return new Elysia({ name: "access" }).model({ ApiError }).macro({
     access: (level: Level) => ({
       resolve: async ({ request, set, status }) => {
         const decision = await decide(level, request.headers, projectOf(request.url), deps);
