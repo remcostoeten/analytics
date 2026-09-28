@@ -86,6 +86,12 @@ function app(limit = 1000) {
       publicLimit: 1000,
       clock: () => clock.now(),
     },
+    query: {
+      runner: pgliteAccess(database).queries,
+      log: pgliteAccess(database).queryLog,
+      limiter: pgliteAdapters(database, clock).limiter,
+      perMinute: 30,
+    },
     authHandler: null,
   });
 }
@@ -355,6 +361,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/keys",
       "/v2/projects/{project}/map",
       "/v2/projects/{project}/paths",
+      "/v2/projects/{project}/query",
       "/v2/projects/{project}/realtime",
       "/v2/projects/{project}/realtime/events",
       "/v2/projects/{project}/retention",
@@ -365,6 +372,10 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/visitors",
       "/v2/projects/{project}/visitors/{visitor}",
       "/v2/projects/{project}/visitors/{visitor}/visits",
+      "/v2/queries/history",
+      "/v2/query",
+      "/v2/query/explain",
+      "/v2/query/schema",
       "/v2/realtime",
       "/v2/realtime/events",
       "/v2/retention",

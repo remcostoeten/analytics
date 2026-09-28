@@ -17,6 +17,7 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 | `GET /v2/projects/:project/realtime/events` | The live feed through the engine's `RealtimeFeed` port: long-polls with `after` (25 s wait, a check every 2 s) or streams server-sent events for `Accept: text/event-stream`, resuming from `Last-Event-ID`. Visitor and session ids need `detail` access |
 | `GET /v2/projects/:project/events`, `visitors`, `visitors/:visitor`, `visitors/:visitor/visits`, `sessions`, `sessions/:session/events`; `PATCH visitors/:visitor` | Visitor-level reads at the `detail` level, never cached publicly; events and session trails page with a time-ordered cursor, lists with an offset cursor. Admins mark a visitor internal with `{ "isInternal": true }` |
 | `GET /v2/stats`, `timeseries`, `breakdown/:dimension`, `paths`, `retention`, `heatmap`, `map`, `realtime`, `realtime/events`, `events`, `visitors`, `sessions` | The same reads across every project the caller may read (visitor-level ones: every project whose visitor-level data they may see), narrowed with `filter[project]=a,b`; `breakdown/project` has one row per project. Only anonymous aggregate answers are cached publicly |
+| `POST /v2/projects/:project/query`, `POST /v2/query`, `POST /v2/query/explain`, `GET /v2/query/schema`, `GET /v2/queries/history` | The SQL console: one read-only `SELECT` or `WITH` against the views of migration 0024, as the `analytics_reader` role with a 10-second timeout and 10,000 rows, for owners, admins and analysts who list the project and `sql` tokens, while the project's `sqlEnabled` is on. `:from`, `:to` and `:project` are bound from `params`; every run is logged in `query_runs`. See `docs/v2/sql-reference.md` |
 | `GET /v2/people`, `/v2/people/:userId` | Identified users linked across projects by `identify(userId)`; needs a signed-in member or a token |
 
 Access is one route option, `{ access: "public" | "project" | "detail" | "admin" | "cron" }`, from `src/plugins/access.ts`; the rules are in `src/access/`. Only GitHub logins in `dashboard_users` can sign in, checked again on every request. The first to sign in owns the organization; later ones join as viewers of no projects. Events sent with an owner's or admin's session cookie are stored as internal traffic.
@@ -36,6 +37,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `AUTH_COOKIE_DOMAIN` | In production | `.remcostoeten.nl`, so the dashboard and every tracked subdomain receive the session cookie |
 | `CRON_SECRET` | For jobs | `Authorization: Bearer` value for `cron` routes |
 | `PUBLIC_READ_LIMIT` | No | Anonymous reads per minute per daily IP hash; defaults to 120 |
+| `QUERY_LIMIT` | No | SQL console queries per minute per user or token; defaults to 30 |
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |

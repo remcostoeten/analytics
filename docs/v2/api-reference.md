@@ -362,35 +362,36 @@ Every list and breakdown route returns other formats on request, with the same f
 | `?format=json` | The normal response, all pages at once |
 | `?format=sql` | A `.sql` file with a `CREATE TABLE` and `INSERT` statements, ready to load into any Postgres or SQLite |
 
-For questions no route answers, admins get read-only SQL:
+For questions no route answers, owners, admins and analysts, and tokens with the `sql` scope, get read-only SQL on the projects they list, while each project's `sqlEnabled` switch is on (the owner is exempt):
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
-| POST | `/v2/projects/:project/query` | admin | Runs one `SELECT` against documented views (`events`, `sessions`, `visitors`, `web_vitals`, `issues`) already limited to that project, as a read-only database role, with a 10-second timeout and 10,000 rows; results as JSON or CSV |
+| POST | `/v2/projects/:project/query` | SQL | Runs one `SELECT` against documented views (`events`, `sessions`, `visitors`, `web_vitals`, `issues`) already limited to that project, as a read-only database role, with a 10-second timeout and 10,000 rows; results as JSON or CSV |
 
 ```json
 request
-{ "sql": "select route, count(*) as views from events where name = 'pageview' and ts > now() - interval '7 days' group by 1 order by 2 desc limit 5" }
+{ "sql": "select route, count(*) as views from events where name = 'pageview' and ts >= :from group by 1 order by 2 desc limit 5", "params": { "from": "2026-09-20T00:00:00.000Z" } }
 
 200 OK
-{ "columns": ["route", "views"], "rows": [["/", 1011], ["/blog/[slug]", 530]], "rowCount": 2, "durationMs": 41 }
+{ "columns": ["route", "views"], "rows": [["/", 1011], ["/blog/[slug]", 530]], "rowCount": 2, "truncated": false, "durationMs": 41 }
 ```
 
 The SQL console, complete:
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| POST | `/v2/query` | The same, across every project, with `project_id` as a column |
+| POST | `/v2/query` | The same, across every project you may run SQL on, with `project_id` as a column |
 | GET | `/v2/query/schema` | Every queryable view with its columns, types and a one-line description, for autocomplete and a schema sidebar |
 | POST | `/v2/query/explain` | Postgres' cost estimate for a query, so the console can warn before running something heavy |
 | GET, POST | `/v2/queries` | Saved queries: name, SQL, description, and optionally a chart type so a query can become a dashboard panel |
 | GET, PATCH, DELETE | `/v2/queries/:query` | One saved query |
-| GET | `/v2/queries/history` | Your last 100 runs with duration and row count |
+| GET | `/v2/queries/history` | Your last 100 runs with duration, row count and whether they were blocked; the owner sees everyone's |
 
-- **Parameters, not string building**: a query can use `:from`, `:to` and `:project`, filled from the dashboard's date range and project switcher and passed to Postgres as bound parameters.
+- **Parameters, not string building**: a query can use `:from`, `:to` and `:project`, sent in `params` from the dashboard's date range and project switcher and passed to Postgres as bound parameters.
+- **Errors**: a query the parser rejects, or one Postgres fails (a syntax error, an unknown column, the timeout), answers `400 VALIDATION_FAILED` with the reason; `429` past 30 queries a minute. Every run, blocked or not, is logged.
 - **Safety in layers**: a SQL parser accepts only a single `SELECT` or `WITH`; the query runs in a read-only transaction as a database role that can see only the analytics views, never the auth, token or project-secret tables; 10-second statement timeout, 10,000-row cap, and a per-admin rate limit.
 - **Results**: table, CSV or JSON download, and a quick line or bar chart built from the result in the browser.
-- **Views instead of raw tables**: `events`, `sessions`, `visitors`, `people`, `web_vitals`, `issues` and the rollups, with stable column names, so a table change in a later migration does not break saved queries.
+- **Views instead of raw tables**: `events`, `pageviews`, `sessions`, `visitors`, `people`, `web_vitals`, `issues`, `daily` and `daily_vitals`, with stable column names, so a table change in a later migration does not break saved queries.
 
 ### All projects combined
 

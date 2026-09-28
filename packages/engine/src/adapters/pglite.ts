@@ -2,6 +2,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 
 import type { Clock, EventStore, ProjectStore, RateLimiter } from "../ports";
+import type { Answer, Statement, Transact } from "../query/runner";
 import { drizzleLimiter, drizzleProjects, drizzleStore } from "./drizzle";
 import { accessOn } from "./drizzle-access";
 import type { Access } from "./drizzle-access";
@@ -35,5 +36,32 @@ export function pgliteAdapters(
  * const access = pgliteAccess(new PGlite());
  */
 export function pgliteAccess(client: PGlite): Access {
-  return accessOn(drizzle(client));
+  return accessOn(drizzle(client), pgliteTransact(client));
+}
+
+/**
+ * @name pgliteTransact
+ * @description Runs console statements in one read-only PGlite transaction and returns the last
+ * one's columns and rows as arrays.
+ *
+ * @example
+ * await pgliteTransact(client)([{ text: "SELECT 1", params: [] }]);
+ */
+export function pgliteTransact(client: PGlite): Transact {
+  return (statements) =>
+    client.transaction(async (tx) => {
+      await tx.query("SET TRANSACTION READ ONLY");
+      async function each(rest: Statement[], last: Answer): Promise<Answer> {
+        const [statement, ...remaining] = rest;
+        if (!statement) return last;
+        const result = await tx.query<unknown[]>(statement.text, statement.params, {
+          rowMode: "array",
+        });
+        return each(remaining, {
+          columns: result.fields.map((field) => field.name),
+          rows: result.rows,
+        });
+      }
+      return each(statements, { columns: [], rows: [] });
+    });
 }

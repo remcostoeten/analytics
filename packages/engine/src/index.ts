@@ -43,3 +43,7 @@ export { parseEvent } from "./stages/parse";
 export { clientIp } from "./utilities/client-ip";
 export type { HeaderBag } from "./utilities/client-ip";
 export { hashIp, ipSecretProblem } from "./utilities/ip-hash";
+export { prepareQuery } from "./query/guard";
+export type { PreparedQuery, QueryParams } from "./query/guard";
+export { queryViews } from "./query/views";
+export type { QueryView, ViewColumn } from "./query/views";

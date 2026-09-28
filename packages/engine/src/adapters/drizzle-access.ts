@@ -14,18 +14,24 @@ import type {
   MemberStore,
   ProjectAdmin,
   ProjectRecord,
+  QueryLog,
+  QueryRunner,
   ReadStore,
   RealtimeFeed,
   DetailStore,
   TokenRecord,
   TokenStore,
 } from "../ports";
+import { queryRunner } from "../query/runner";
+import type { Transact } from "../query/runner";
 import type { Database } from "./drizzle";
+import { webCryptoHasher } from "./system";
 
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
+import { drizzleQueryLog, readQuerySecret } from "./drizzle-queries";
 import { drizzleReads } from "./drizzle-reads";
 
 export const organizationId = "org_main";
@@ -246,17 +252,20 @@ export type Access = {
   reads: ReadStore;
   details: DetailStore;
   feed: RealtimeFeed;
+  queries: QueryRunner;
+  queryLog: QueryLog;
 };
 
 /**
  * @name accessOn
- * @description The project, token, member and read stores and the live feed on one Drizzle database, with the
- * database for Better Auth's adapter.
+ * @description The project, token, member and read stores, the live feed and the SQL console on
+ * one Drizzle database, with the database for Better Auth's adapter. Console queries run through
+ * `transact`, the driver's read-only transaction, with a 10-second timeout and 10,000 rows.
  *
  * @example
- * const access = accessOn(drizzle(client));
+ * const access = accessOn(drizzle(client), pgliteTransact(client));
  */
-export function accessOn(db: Database): Access {
+export function accessOn(db: Database, transact: Transact): Access {
   return {
     db,
     projects: drizzleProjectAdmin(db),
@@ -265,5 +274,10 @@ export function accessOn(db: Database): Access {
     reads: drizzleReads(db),
     details: drizzleDetails(db),
     feed: drizzleFeed(db, { pollMs: 2000 }),
+    queries: queryRunner(transact, () => readQuerySecret(db), webCryptoHasher(), {
+      timeoutMs: 10_000,
+      maxRows: 10_000,
+    }),
+    queryLog: drizzleQueryLog(db),
   };
 }

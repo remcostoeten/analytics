@@ -99,5 +99,11 @@ export default createApp({
     publicLimit: Number(process.env.PUBLIC_READ_LIMIT ?? 120),
     clock: () => clock.now(),
   },
+  query: {
+    runner: stores.queries,
+    log: stores.queryLog,
+    limiter: adapters.limiter,
+    perMinute: Number(process.env.QUERY_LIMIT ?? 30),
+  },
   authHandler: auth.handler,
 });

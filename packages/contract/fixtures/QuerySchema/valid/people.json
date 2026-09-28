@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "name": "people",
+      "description": "Identified users across projects.",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "text",
+          "description": "The id sent to identify"
+        },
+        {
+          "name": "projects",
+          "type": "text[]",
+          "description": "Every project they used"
+        }
+      ]
+    }
+  ],
+  "params": [
+    {
+      "name": "from",
+      "type": "timestamptz"
+    },
+    {
+      "name": "to",
+      "type": "timestamptz"
+    },
+    {
+      "name": "project",
+      "type": "text"
+    }
+  ]
+}

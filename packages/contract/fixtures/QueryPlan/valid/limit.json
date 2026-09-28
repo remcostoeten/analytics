@@ -1,0 +1,15 @@
+{
+  "data": {
+    "totalCost": 1843.52,
+    "estimatedRows": 5,
+    "plan": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Total Cost": 1843.52,
+          "Plan Rows": 5
+        }
+      }
+    ]
+  }
+}

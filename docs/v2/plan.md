@@ -321,7 +321,7 @@ API tokens get the same scopes plus one more split: `read`, `sql` and `admin`, e
 - Only owners, admins and analysts, or a token with the `sql` scope, and only on the projects their role lists. Never anonymous visitors, even on a public project with `publicVisitorData` on, because SQL can reach every visitor-level row.
 - Each project has an `sqlEnabled` switch, on by default; off blocks SQL on it for everyone except the owner.
 - Every run is logged in a `query_runs` table: who, when, which projects, the SQL, duration, rows, and whether it was blocked. Owners see all runs; everyone sees their own through `/v2/queries/history`.
-- The database enforces the scope too: the API sets the caller's allowed project ids on the connection, and the views' row-level policy returns nothing outside them.
+- The database enforces the scope too: the API sets the caller's allowed project ids and their signature on the transaction, and the views return nothing outside a correctly signed list.
 
 ## Who runs this
 
@@ -421,7 +421,7 @@ Stay on Neon Postgres and the existing tables; every change is additive, so the 
 | 0014 | Better Auth's user, session and account tables, generated through its Drizzle adapter; `dashboard_users` stays as the allowlist | Admin sign-in |
 | 0015 | `api_tokens`: `id`, `name`, `token_hash`, `scope` (`read` or `admin`, `sql` from 0022), `project_ids text[]` null for all, `last_used_at`, `expires_at`, timestamps | Scripts, CI and other frontends |
 
-Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log; 0023 the `(project_id, received_at, id)` index the realtime feed polls.
+Later migrations: 0016 `issues` and 0017 `events.issue_id` (see Errors); 0018 `web_vitals`, 0019 `rollup_vitals` (see Speed insights); 0020 a nullable `route` column on `events`, `sessions` and `rollup_daily` so reports group by route template; 0021 `rate_limits`; 0022 `projects.org_id` and `projects.sql_enabled`, `auth_member.project_ids` for roles limited to listed projects, the `sql` token scope, and the `query_runs` log; 0023 the `(project_id, received_at, id)` index the realtime feed polls; 0024 the `query` schema with the nine console views, the `analytics_reader` role and the `query_secret` that signs a query's project ids.
 
 - **Idempotency**: the event `id` (UUIDv7) goes into the existing `fingerprint` column, so the unique index `events_fingerprint_uidx` rejects retries. The key lives as long as the event does, which outlives any client retry window.
 - **Writes**: one multi-row `INSERT ... ON CONFLICT DO NOTHING RETURNING` per batch, then session and visitor upserts grouped per session. Today's batch handler loops one event at a time.
