@@ -66,6 +66,7 @@ const adapters = pgliteAdapters(database, clock);
 const signup = defineSignal({
   name: "client_no_input",
   weight: 60,
+  replayable: true,
   detect: (draft) => draft.event.name === "signup",
 });
 const engine = createEngine(

@@ -70,6 +70,7 @@ export type EventDraft = {
   enrichment: Enrichment;
   flags: Flags;
   bot: BotVerdict;
+  replay: boolean;
 };
 
 /**
@@ -120,5 +121,6 @@ export function createDraft(batch: BatchContext, event: WireEvent, index: number
     },
     flags: { localhost: false, preview: false, internal: false },
     bot: { score: 0, reasons: [] },
+    replay: false,
   };
 }

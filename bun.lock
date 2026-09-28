@@ -71,6 +71,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@remcostoeten/analytics-engine": "workspace:*",
+        "drizzle-orm": "0.45.3",
       },
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",

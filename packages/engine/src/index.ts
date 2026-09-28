@@ -26,13 +26,14 @@ export type {
   RequestFacts,
 } from "./draft";
 export { defaultEnrichers, forwardedHeaders } from "./enrichers";
+export { defaultSignals } from "./signals";
 export { engineError } from "./errors";
 export type { EngineError } from "./errors";
 export { createEngine } from "./pipeline";
 export type { Engine } from "./pipeline";
 export type * from "./ports";
 export { defaultStages } from "./stages";
-export { botScoreStage } from "./stages/bot-score";
+export { botScoreStage, scoreBot } from "./stages/bot-score";
 export { enrichStage } from "./stages/enrich";
 export { flagsStage } from "./stages/flags";
 export { parseEvent } from "./stages/parse";
