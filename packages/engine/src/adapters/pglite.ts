@@ -3,6 +3,8 @@ import { drizzle } from "drizzle-orm/pglite";
 
 import type { Clock, EventStore, ProjectStore, RateLimiter } from "../ports";
 import { drizzleLimiter, drizzleProjects, drizzleStore } from "./drizzle";
+import { accessOn } from "./drizzle-access";
+import type { Access } from "./drizzle-access";
 
 /**
  * @name pgliteAdapters
@@ -22,4 +24,16 @@ export function pgliteAdapters(
     projects: drizzleProjects(db),
     limiter: drizzleLimiter(db, clock),
   };
+}
+
+/**
+ * @name pgliteAccess
+ * @description The project, token and member stores on an in-process PGlite database, plus the
+ * Drizzle database itself for Better Auth. Migrate the database first.
+ *
+ * @example
+ * const access = pgliteAccess(new PGlite());
+ */
+export function pgliteAccess(client: PGlite): Access {
+  return accessOn(drizzle(client));
 }

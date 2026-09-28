@@ -1,5 +1,6 @@
 {
   "user": null,
   "session": null,
+  "role": null,
   "isAdmin": false
 }

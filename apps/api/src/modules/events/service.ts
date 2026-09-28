@@ -41,7 +41,8 @@ export function readBody(text: string): Result<unknown, EngineError> {
  * @description The events service: limits a batch to 50 events, reads the public key from
  * `X-Project-Key` or the `key` query parameter (which `sendBeacon` needs, as it cannot set
  * headers) or the secret key from `Authorization: Bearer`, and hands the batch to the engine,
- * which checks each event and answers `{ accepted, duplicates, rejected }`.
+ * which checks each event and answers `{ accepted, duplicates, rejected }`. With `adminSession`,
+ * the events and their visitor are stored as internal traffic.
  *
  * @example
  * const result = await ingestEvents(engine, body, request, new Date());
@@ -51,6 +52,7 @@ export async function ingestEvents(
   body: IngestBody,
   incoming: Request,
   receivedAt: Date,
+  adminSession = false,
 ): Promise<Result<IngestResult, EngineError>> {
   const { headers } = incoming;
   if (body.events.length > maxEventsPerBatch) {
@@ -64,7 +66,7 @@ export async function ingestEvents(
     },
     receivedAt: receivedAt.toISOString(),
     sentAt: body.sentAt,
-    request: { headers, adminSession: false },
+    request: { headers, adminSession },
     events: body.events,
   };
   return engine.ingest(request);

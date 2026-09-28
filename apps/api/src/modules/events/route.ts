@@ -12,6 +12,7 @@ export type EventsOptions = {
   logger: (requestId: string) => Logger;
   clock: () => Date;
   docsBase: string;
+  isAdmin: (headers: Headers) => Promise<boolean>;
 };
 
 /**
@@ -29,7 +30,14 @@ export function eventsModule(options: EventsOptions) {
     "/events",
     async ({ body, request, set, status }) => {
       const logger = options.logger(readRequestId(set.headers));
-      const result = await ingestEvents(options.engine(logger), body, request, options.clock());
+      const admin = await options.isAdmin(request.headers);
+      const result = await ingestEvents(
+        options.engine(logger),
+        body,
+        request,
+        options.clock(),
+        admin,
+      );
       if (result.ok) return status(202, result.value);
       if (result.error.cause) {
         logger.error("ingest failed", {

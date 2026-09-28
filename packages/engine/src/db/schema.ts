@@ -178,13 +178,15 @@ export const projects = pgTable("projects", {
   publicKey: text("public_key").notNull().unique(),
   secretKeyHash: text("secret_key_hash").notNull(),
   retentionDays: integer("retention_days").notNull().default(90),
+  orgId: text("org_id").references(() => authOrganization.id, { onDelete: "set null" }),
+  sqlEnabled: boolean("sql_enabled").notNull().default(true),
 });
 
 export const apiTokens = pgTable("api_tokens", {
   ...baseEntity(),
   name: text("name").notNull(),
   tokenHash: text("token_hash").notNull().unique(),
-  scope: text("scope", { enum: ["read", "admin"] }).notNull(),
+  scope: text("scope", { enum: ["read", "sql", "admin"] }).notNull(),
   projectIds: text("project_ids").array(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -326,7 +328,10 @@ export const authMember = pgTable("auth_member", {
   userId: text("user_id")
     .notNull()
     .references(() => authUser.id, { onDelete: "cascade" }),
-  role: text("role").notNull().default("viewer"),
+  role: text("role", { enum: ["owner", "admin", "analyst", "viewer"] })
+    .notNull()
+    .default("viewer"),
+  projectIds: text("project_ids").array(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -344,6 +349,23 @@ export const authInvitation = pgTable("auth_invitation", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const queryRuns = pgTable(
+  "query_runs",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    actorKind: text("actor_kind", { enum: ["user", "token"] }).notNull(),
+    actorId: text("actor_id").notNull(),
+    projectIds: text("project_ids").array().notNull(),
+    statement: text("statement").notNull(),
+    durationMs: integer("duration_ms"),
+    rowCount: integer("row_count"),
+    blocked: boolean("blocked").notNull().default(false),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("query_runs_actor_idx").on(table.actorKind, table.actorId, table.createdAt)],
+);
 
 export const schemaMigrations = pgTable("schema_migrations", {
   name: text("name").primaryKey(),

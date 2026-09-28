@@ -5,6 +5,7 @@
     "domain": "docs.remcostoeten.nl",
     "visibility": "public",
     "publicVisitorData": false,
+    "sqlEnabled": true,
     "allowedOrigins": [
       "https://docs.remcostoeten.nl"
     ],

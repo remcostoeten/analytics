@@ -6,6 +6,21 @@ import type { Logger } from "./logger";
 import type { ProjectStore } from "./project-store";
 import type { RateLimiter } from "./rate-limiter";
 
+export type {
+  KeyKind,
+  Membership,
+  MemberStore,
+  NewProject,
+  NewToken,
+  ProjectAdmin,
+  ProjectPatch,
+  ProjectRecord,
+  Role,
+  TokenRecord,
+  TokenScope,
+  TokenStore,
+  Visibility,
+} from "./access";
 export type { Clock } from "./clock";
 export type { EventStore, InsertOutcome } from "./event-store";
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";

@@ -3,6 +3,8 @@ import { drizzle } from "drizzle-orm/neon-http";
 
 import type { Clock, EventStore, ProjectStore, RateLimiter } from "../ports";
 import { drizzleLimiter, drizzleProjects, drizzleStore } from "./drizzle";
+import { accessOn } from "./drizzle-access";
+import type { Access } from "./drizzle-access";
 
 /**
  * @name postgresAdapters
@@ -22,4 +24,16 @@ export function postgresAdapters(
     projects: drizzleProjects(db),
     limiter: drizzleLimiter(db, clock),
   };
+}
+
+/**
+ * @name postgresAccess
+ * @description The project, token and member stores on Neon over HTTP, plus the Drizzle database
+ * itself for Better Auth.
+ *
+ * @example
+ * const access = postgresAccess(process.env.DATABASE_URL);
+ */
+export function postgresAccess(url: string): Access {
+  return accessOn(drizzle(neon(url)));
 }
