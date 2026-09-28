@@ -220,6 +220,17 @@ describe("delivery", () => {
 });
 
 describe("plugins", () => {
+  test("configured plugins are set up before the first automatic pageview", async () => {
+    const tag = definePlugin({
+      name: "tag",
+      setup: (client) => client.beforeSend((event) => ({ ...event, signals: 1 })),
+    });
+    const { analytics, transport } = client({ pageviews: true, plugins: [tag] });
+    await analytics.flush();
+    expect(sent(transport)[0]).toMatchObject({ name: "pageview", signals: 1 });
+    await analytics.shutdown();
+  });
+
   test("hooks run for pages, consent and hidden pages; use returns a remover", async () => {
     const seen: string[] = [];
     const probe = definePlugin({

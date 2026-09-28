@@ -13,3 +13,5 @@ coverage
 .internal
 .env*.local
 *.tsbuildinfo
+test-results
+playwright-report

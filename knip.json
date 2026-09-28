@@ -1,10 +1,26 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignoreWorkspaces": ["v1/**"],
-  "ignore": ["tools/oxlint/anti-slop/**"],
+  "ignoreWorkspaces": [
+    "v1/**"
+  ],
+  "ignore": [
+    "tools/oxlint/anti-slop/**"
+  ],
   "workspaces": {
     "apps/api": {
-      "entry": ["src/index.ts", "src/server.ts", "scripts/*.ts"]
+      "entry": [
+        "src/index.ts",
+        "src/server.ts",
+        "scripts/*.ts"
+      ]
+    },
+    "e2e": {
+      "entry": [
+        "serve.ts",
+        "playwright.config.ts",
+        "tests/*.spec.ts",
+        "site/app.ts"
+      ]
     }
   }
 }
