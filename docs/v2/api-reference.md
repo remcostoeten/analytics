@@ -412,6 +412,45 @@ Every read route also exists without the `/projects/:project` prefix. Without it
 - Signed-in people are the exception: when a site calls `identify(userId)`, visitors with the same `userId` are linked across projects. `/v2/people` is where "which project did they come in from" is answered, as `firstProject` and `firstSource`.
 - Subdomains of one site (`remcostoeten.nl` and `docs.remcostoeten.nl`) are best set up as one project with several hosts, so a visitor moving between them is one visitor; `breakdown/host` still separates them.
 
+`GET /v2/breakdown/project?period=7d` has a row per project with traffic in the range. `change` holds each metric's change against the previous range of the same length, null when it was zero. `speedScore` is the Real Experience Score over the range on all devices at p75, null under 20 samples. `openIssues` is null for projects whose visitor-level data the caller may not see. `metrics=` works as on any breakdown.
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "value": "remcostoeten.nl",
+      "visitors": 1840,
+      "pageviews": 5210,
+      "share": 0.72,
+      "name": "remcostoeten.nl",
+      "visibility": "public",
+      "change": { "visitors": 0.124, "pageviews": -0.031 },
+      "speedScore": 94,
+      "openIssues": 3
+    },
+    {
+      "value": "skriuw",
+      "visitors": 712,
+      "pageviews": 3380,
+      "share": 0.28,
+      "name": "Skriuw",
+      "visibility": "private",
+      "change": { "visitors": null, "pageviews": null },
+      "speedScore": null,
+      "openIssues": 0
+    }
+  ],
+  "dimension": "project",
+  "total": 2,
+  "nextCursor": null,
+  "previousRange": { "from": "2026-09-14T00:00:00.000Z", "to": "2026-09-21T00:00:00.000Z" },
+  "range": { "from": "2026-09-21T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
 `GET /v2/people/user_123`
 
 ```json

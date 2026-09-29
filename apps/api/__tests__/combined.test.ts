@@ -2,10 +2,10 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
 import {
-  BreakdownResponse,
   EventList,
   PeopleList,
   PersonResponse,
+  ProjectBreakdownResponse,
   StatsResponse,
 } from "@remcostoeten/analytics-contract";
 import {
@@ -162,6 +162,19 @@ beforeAll(async () => {
   await seed("beta", "b1", "vb", "sb1", "2026-09-24T08:00:00Z", "/notes");
   await seed("beta", "b2", "vb", "sb2", "2026-09-27T09:00:00Z", "/notes");
   await seed("closed", "c1", "vc", "sc1", "2026-09-25T08:00:00Z", "/secret");
+  await seed("alpha", "a0", "vo", "sa0", "2026-09-15T08:00:00Z", "/");
+  await database.query(
+    `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, path, device)
+     SELECT 'lcp-' || g, 'alpha', '2026-09-24T10:00:00Z', 'lcp', 2710, 'needs-improvement', '/', 'mobile'
+     FROM generate_series(1, 20) g`,
+  );
+  await database.query(
+    `INSERT INTO issues (project_id, fingerprint, title, status, first_seen, last_seen) VALUES
+      ('alpha', 'f1', 'TypeError', 'open', '2026-09-21T08:00:00Z', '2026-09-26T08:00:00Z'),
+      ('alpha', 'f2', 'RangeError', 'open', '2026-09-21T08:00:00Z', '2026-09-26T08:00:00Z'),
+      ('alpha', 'f3', 'SyntaxError', 'resolved', '2026-09-21T08:00:00Z', '2026-09-26T08:00:00Z'),
+      ('closed', 'f4', 'TypeError', 'open', '2026-09-25T08:00:00Z', '2026-09-25T08:00:00Z')`,
+  );
 });
 
 describe("aggregate reads across projects", () => {
@@ -187,13 +200,53 @@ describe("aggregate reads across projects", () => {
   });
 
   test("breakdown/project has one row per readable project", async () => {
-    const anonymous = await body(`/v2/breakdown/project?${week}`, BreakdownResponse);
+    const anonymous = await body(`/v2/breakdown/project?${week}`, ProjectBreakdownResponse);
     expect((anonymous.data as Json[]).map((row) => row.value)).toEqual(["alpha", "beta"]);
-    const everything = await body(`/v2/breakdown/project?${week}`, BreakdownResponse, admin);
+    const everything = await body(`/v2/breakdown/project?${week}`, ProjectBreakdownResponse, admin);
     expect((everything.data as Json[]).map((row) => row.value)).toEqual([
       "alpha",
       "beta",
       "closed",
+    ]);
+  });
+
+  test("breakdown/project adds change, speed score, open issues and visibility", async () => {
+    const anonymous = await body(`/v2/breakdown/project?${week}`, ProjectBreakdownResponse);
+    expect(anonymous.previousRange).toEqual({
+      from: "2026-09-12T00:00:00.000Z",
+      to: "2026-09-20T00:00:00.000Z",
+    });
+    expect(anonymous.data).toEqual([
+      {
+        value: "alpha",
+        visitors: 1,
+        pageviews: 2,
+        share: 0.5,
+        name: "alpha",
+        visibility: "public",
+        change: { visitors: 0, pageviews: 1 },
+        speedScore: 86,
+        openIssues: null,
+      },
+      {
+        value: "beta",
+        visitors: 1,
+        pageviews: 2,
+        share: 0.5,
+        name: "beta",
+        visibility: "public",
+        change: { visitors: null, pageviews: null },
+        speedScore: null,
+        openIssues: null,
+      },
+    ]);
+    const everything = await body(`/v2/breakdown/project?${week}`, ProjectBreakdownResponse, admin);
+    expect(
+      (everything.data as Json[]).map((row) => [row.value, row.visibility, row.openIssues]),
+    ).toEqual([
+      ["alpha", "public", 2],
+      ["beta", "public", 0],
+      ["closed", "private", 1],
     ]);
   });
 });

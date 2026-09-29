@@ -281,16 +281,22 @@ Filter keys are dimension names plus `prop:<key>` for event props and `trait:<ke
 ## Across projects
 
 ```ts
-export type ProjectSummary = {
-  projectId: ProjectID;
+export type ProjectBreakdownRow = {
+  value: ProjectID;
+  visitors?: number;
+  pageviews?: number;
+  share?: number;
   name: string;
   visibility: Visibility;
-  visitors: Compared;
-  pageviews: Compared;
+  change: { [metric: string]: Nullable<number> };
   speedScore: Nullable<number>;
-  openIssues: number;
+  openIssues: Nullable<number>;
 };
+```
 
+`visitors` and `pageviews` are the default metrics. With `metrics=`, a row carries the requested metrics instead, as on any breakdown, and `change` has one key per requested metric.
+
+```ts
 export type Person = {
   userId: UserID;
   traits: Props;

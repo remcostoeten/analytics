@@ -10371,10 +10371,303 @@
         "operationId": "getV2Timeseries"
       }
     },
+    "/v2/breakdown/project": {
+      "get": {
+        "summary": "One row per project",
+        "description": "Visitors and pageviews (or `metrics`), each metric's change against the previous range, name, visibility, the Real Experience Score (all devices, p75) and open issues, null without `detail` access. Only projects with traffic in the range.",
+        "tags": [
+          "All projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "data",
+                        "dimension",
+                        "total",
+                        "nextCursor",
+                        "previousRange",
+                        "range",
+                        "traffic",
+                        "filters"
+                      ],
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": {
+                              "type": "number"
+                            },
+                            "type": "object",
+                            "required": [
+                              "value",
+                              "name",
+                              "visibility",
+                              "change",
+                              "speedScore",
+                              "openIssues"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": "string"
+                              },
+                              "visitors": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "sessions": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "pageviews": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "events": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "bounceRate": {
+                                "minimum": 0,
+                                "maximum": 1,
+                                "type": "number"
+                              },
+                              "avgTimeMs": {
+                                "minimum": 0,
+                                "type": "number"
+                              },
+                              "timeOnPageMs": {
+                                "minimum": 0,
+                                "type": "number"
+                              },
+                              "scrollDepth": {
+                                "minimum": 0,
+                                "maximum": 1,
+                                "type": "number"
+                              },
+                              "pagesPerSession": {
+                                "minimum": 0,
+                                "type": "number"
+                              },
+                              "conversionRate": {
+                                "minimum": 0,
+                                "maximum": 1,
+                                "type": "number"
+                              },
+                              "share": {
+                                "minimum": 0,
+                                "maximum": 1,
+                                "type": "number"
+                              },
+                              "name": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "visibility": {
+                                "type": "string",
+                                "enum": [
+                                  "public",
+                                  "private"
+                                ]
+                              },
+                              "change": {
+                                "type": "object",
+                                "patternProperties": {
+                                  "^(.*)$": {
+                                    "type": [
+                                      "number",
+                                      "null"
+                                    ]
+                                  }
+                                }
+                              },
+                              "speedScore": {
+                                "minimum": 0,
+                                "maximum": 100,
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "openIssues": {
+                                "minimum": 0,
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "dimension": {
+                          "const": "project",
+                          "type": "string"
+                        },
+                        "total": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "nextCursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "previousRange": {
+                          "type": "object",
+                          "required": [
+                            "from",
+                            "to"
+                          ],
+                          "properties": {
+                            "from": {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            "to": {
+                              "format": "date-time",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "range": {
+                          "type": "object",
+                          "required": [
+                            "from",
+                            "to"
+                          ],
+                          "properties": {
+                            "from": {
+                              "format": "date-time",
+                              "type": "string"
+                            },
+                            "to": {
+                              "format": "date-time",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "traffic": {
+                          "type": "string",
+                          "enum": [
+                            "human",
+                            "bots",
+                            "internal",
+                            "all"
+                          ]
+                        },
+                        "filters": {
+                          "type": "object",
+                          "patternProperties": {
+                            "^(.*)$": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "description": "text/csv, application/json or application/sql download"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2BreakdownProject"
+      }
+    },
     "/v2/breakdown/{dimension}": {
       "get": {
         "summary": "Top values of a dimension across projects",
-        "description": "`breakdown/project` gives one row per project.",
+        "description": "`breakdown/project` has its own route with more columns.",
         "tags": [
           "All projects"
         ],
