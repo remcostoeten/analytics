@@ -353,6 +353,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/admin/jobs/rollup",
       "/v2/admin/metrics",
       "/v2/auth/session",
+      "/v2/breakdown/project",
       "/v2/breakdown/{dimension}",
       "/v2/events",
       "/v2/health",

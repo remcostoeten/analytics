@@ -12,6 +12,7 @@ import {
   PathsResponse,
   RetentionResponse,
   PeopleList,
+  ProjectBreakdownResponse,
   PersonResponse,
   RealtimeResponse,
   SessionList,
@@ -20,7 +21,7 @@ import {
   VisitorList,
 } from "@remcostoeten/analytics-contract";
 import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError } from "@remcostoeten/analytics-engine";
+import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import { Elysia, t } from "elysia";
@@ -51,10 +52,11 @@ import {
 } from "../speed/service";
 import type { SpeedScoped } from "../speed/service";
 import type { Listing } from "../reads/export";
+import { projectBreakdown } from "./service";
 import { breakdown, readScope, realtime, stats, timeseries } from "../reads/service";
 import type { Scoped as ReadScoped } from "../reads/service";
 
-type Scoped = { params: URLSearchParams; projects: string[] };
+type Scoped = { params: URLSearchParams; projects: string[]; records: ProjectRecord[] };
 
 const tags = ["All projects"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
@@ -77,15 +79,16 @@ async function readableProjects(
 ): Promise<Result<Scoped, EngineError>> {
   const listed = await deps.projects.list(null);
   if (!listed.ok) return listed;
-  const allowed = listed.value
-    .filter((project) => (detail ? canReadDetail(caller, project) : canRead(caller, project)))
-    .map((project) => project.id);
   const rest = new URLSearchParams(params);
   const wanted = rest.get(projectFilter);
   rest.delete(projectFilter);
-  if (!wanted) return ok({ params: rest, projects: allowed });
-  const names = new Set(wanted.split(",").map((name) => name.trim()));
-  return ok({ params: rest, projects: allowed.filter((id) => names.has(id)) });
+  const names = wanted ? new Set(wanted.split(",").map((name) => name.trim())) : null;
+  const records = listed.value.filter(
+    (project) =>
+      (detail ? canReadDetail(caller, project) : canRead(caller, project)) &&
+      (names === null || names.has(project.id)),
+  );
+  return ok({ params: rest, projects: records.map((project) => project.id), records });
 }
 
 /**
@@ -263,6 +266,36 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     )
     .get(
+      "/breakdown/project",
+      ({ request, caller, set }) =>
+        aggregateList(
+          request,
+          caller,
+          set,
+          "breakdown_project",
+          async ({ params, projects, records }) => {
+            const scope = readScope(params, projects, options.clock());
+            if (!scope.ok) return scope;
+            const detail = new Set(
+              records
+                .filter((project) => canReadDetail(caller, project))
+                .map((project) => project.id),
+            );
+            return projectBreakdown(options, scope.value, params, { records, detail });
+          },
+        ),
+      {
+        access: "public",
+        response: { 200: t.Union([ProjectBreakdownResponse, download]), ...responses },
+        detail: {
+          summary: "One row per project",
+          description:
+            "Visitors and pageviews (or `metrics`), each metric's change against the previous range, name, visibility, the Real Experience Score (all devices, p75) and open issues, null without `detail` access. Only projects with traffic in the range.",
+          tags,
+        },
+      },
+    )
+    .get(
       "/breakdown/:dimension",
       ({ request, caller, params: path, set }) =>
         aggregateList(
@@ -280,7 +313,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
         response: { 200: t.Union([BreakdownResponse, download]), ...responses },
         detail: {
           summary: "Top values of a dimension across projects",
-          description: "`breakdown/project` gives one row per project.",
+          description: "`breakdown/project` has its own route with more columns.",
           tags,
         },
       },

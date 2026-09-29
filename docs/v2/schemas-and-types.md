@@ -281,14 +281,16 @@ Filter keys are dimension names plus `prop:<key>` for event props and `trait:<ke
 ## Across projects
 
 ```ts
-export type ProjectSummary = {
-  projectId: ProjectID;
+export type ProjectBreakdownRow = {
+  value: ProjectID;
+  visitors: number;
+  pageviews: number;
+  share: number;
   name: string;
   visibility: Visibility;
-  visitors: Compared;
-  pageviews: Compared;
+  change: { [metric: string]: Nullable<number> };
   speedScore: Nullable<number>;
-  openIssues: number;
+  openIssues: Nullable<number>;
 };
 
 export type Person = {

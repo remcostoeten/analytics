@@ -2,7 +2,15 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Compared, Filters, Range, ValueCount } from "./common";
-import { DeviceType, EventName, Interval, Percentile, TrafficFilter, VitalRating } from "./enums";
+import {
+  DeviceType,
+  EventName,
+  Interval,
+  Percentile,
+  TrafficFilter,
+  Visibility,
+  VitalRating,
+} from "./enums";
 import { Count, Id, nullable, oneOf, Ratio, Timestamp } from "./schema";
 
 const Scope = {
@@ -80,6 +88,29 @@ export const BreakdownResponse = Type.Object({
   ...Scope,
 });
 export type BreakdownResponse = Static<typeof BreakdownResponse>;
+
+export const ProjectBreakdownRow = Type.Object(
+  {
+    ...BreakdownRow.properties,
+    name: Type.String({ minLength: 1 }),
+    visibility: Visibility,
+    change: Type.Record(Type.String(), nullable(Type.Number())),
+    speedScore: nullable(Type.Integer({ minimum: 0, maximum: 100 })),
+    openIssues: nullable(Count),
+  },
+  { additionalProperties: Type.Number() },
+);
+export type ProjectBreakdownRow = Static<typeof ProjectBreakdownRow>;
+
+export const ProjectBreakdownResponse = Type.Object({
+  data: Type.Array(ProjectBreakdownRow),
+  dimension: Type.Literal("project"),
+  total: Count,
+  nextCursor: nullable(Type.String()),
+  previousRange: Range,
+  ...Scope,
+});
+export type ProjectBreakdownResponse = Static<typeof ProjectBreakdownResponse>;
 
 export const VitalsRow = Type.Object({
   value: Type.String(),
