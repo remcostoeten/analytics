@@ -20,7 +20,8 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 | `GET /v2/projects/:project/issues`, `issues/:issue`, `issues/:issue/events`, `PATCH issues/:issue`, `GET /v2/issues` | Error tracking: errors grouped into issues by fingerprint at ingest, with counts, visitors, releases and regressions; lists and events at the `detail` level, status changes for admins; `filter[issue]=iss_<id>` on any breakdown |
 | `GET, POST /v2/projects/:project/error-rules`, `DELETE error-rules/:rule` | Admin error rules: ignore patterns on the message or stack, and mutes until a date or a count, listed as `mute_iss_<id>` |
 | `POST /v2/admin/jobs/rollup?days=` | Cron-secret job: rolls `web_vitals` into `rollup_vitals` and drops raw speed rows past 30 days |
-| `POST /v2/admin/jobs/alerts` | Cron-secret job: posts new issues and regressions to the alert webhook |
+| `POST /v2/admin/jobs/alerts` | Cron-secret job: queues new issues and regressions for each project's alert targets and sends the due ones by mail, webhook or Discord, retrying failures by the retry policy |
+| `GET, PUT /v2/projects/:project/alerts/targets`, `PUT, DELETE alerts/targets/:name`, `POST alerts/targets/:name/test`, `POST alerts/targets/:name/rotate`, `GET alerts/deliveries`, `GET /v2/admin/alerts/status` | Alerts for admins, present only when `alerts()` is in `analytics.config.ts`: a project's targets (`sync` replaces them all), a sample alert, a new webhook secret, the delivery history, and which channels are ready. See `docs/v2/alerts.md` |
 | `POST /v2/admin/jobs/cleanup` | Cron-secret job: deletes events and sessions past each project's retention |
 | `POST /v2/admin/jobs/crux` | Cron-secret job, weekly: compares each project's p75 with the Chrome UX Report and flags gaps over 25% |
 | `GET /v2/admin/metrics` | Admins: ingest counters and bots over 24 hours, each job's last run, and the Chrome UX Report checks |
@@ -50,8 +51,8 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |
-| `ALERT_WEBHOOK_URL` | For alerts | Where the alerts job posts new issues and regressions |
-| `ALERT_WEBHOOK_SECRET` | No | Signs each alert body as `x-analytics-signature: sha256=<hmac>` |
+| `MAIL_URL` | For mail alerts | The SMTP server, `smtps://user:password@host:465` or `smtp://...:587` (`STARTTLS`); read by `analytics.config.ts` |
+| `MAIL_FROM` | No | The sender of alert mail; defaults to `Analytics <remco@gmail.com>` |
 | `CRUX_API_KEY` | For the crux job | A Google API key with the Chrome UX Report API enabled |
 | `INTERNAL_PROJECT_SECRET` | No | A project's secret key; the API records its own `INTERNAL` errors there |
 

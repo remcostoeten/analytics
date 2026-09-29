@@ -15,6 +15,8 @@ export type Failure = {
 
 type FieldError = { path: string; message: string };
 
+type ValueErrorWithSummary = ValidationError["all"][number];
+
 /**
  * @name failure
  * @description Turns an `EngineError` into the API's error envelope and status from the contract's
@@ -42,12 +44,26 @@ export function failure(error: EngineError, headers: Headers, docsBase: string):
   };
 }
 
+function closestVariant(item: ValueErrorWithSummary): FieldError[] {
+  const variants = "errors" in item ? item.errors.map((variant) => [...variant]) : [];
+  const [closest] = [...variants].sort((a, b) => a.length - b.length);
+  const tied = variants.filter((variant) => variant.length === closest?.length).length > 1;
+  if (!closest || closest.length === 0 || tied) return [];
+  return closest.map((field) => ({ path: field.path, message: field.message }));
+}
+
 function fields(error: unknown): FieldError[] {
   if (!(error instanceof ValidationError)) return [];
-  return error.all.map((item) => ({
-    path: "path" in item ? String(item.path) : "",
-    message: item.summary ?? ("message" in item ? String(item.message) : "is invalid"),
-  }));
+  return error.all.flatMap((item) => {
+    const variant = closestVariant(item);
+    if (variant.length > 0) return variant;
+    return [
+      {
+        path: "path" in item ? String(item.path) : "",
+        message: item.summary ?? ("message" in item ? String(item.message) : "is invalid"),
+      },
+    ];
+  });
 }
 
 function describe(error: unknown) {

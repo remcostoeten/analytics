@@ -32,7 +32,11 @@ export type IgnoreRule = {
   createdAt: Date;
 };
 
-export type PendingAlert = { issue: IssueRecord; kind: "new" | "regression" };
+export type PendingAlert = {
+  issue: IssueRecord;
+  kind: "new" | "regression";
+  regressedAt: Date | null;
+};
 
 export type IssueEventRecord = {
   id: string;

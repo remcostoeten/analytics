@@ -1,0 +1,86 @@
+---
+title: Admin
+description: Manage alert targets and read stats from server code and scripts with an admin token.
+---
+
+`@remcostoeten/analytics/admin` is for server code, scripts and CI. It calls the API with an admin token; never ship it to a browser.
+
+```ts
+import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/admin";
+
+type Projects = "remcostoeten.nl" | "skriuw";
+
+const admin = createAdmin<Projects>({
+  endpoint: "https://api.remcostoeten.nl",
+  token: process.env.RA_ADMIN_TOKEN,
+});
+
+function isHttps(url: string | undefined): url is `https://${string}` {
+  return url?.startsWith("https://") ?? false;
+}
+
+const discordUrl = process.env.DISCORD_WEBHOOK_URL;
+if (!isHttps(discordUrl)) throw new Error("Set DISCORD_WEBHOOK_URL to the Discord webhook URL");
+
+const synced = await admin.alerts.sync("remcostoeten.nl", [
+  mail({ to: ["remco@gmail.com"] }),
+  discord({ url: discordUrl, on: ["issue.regression"] }),
+  webhook({ name: "ops", url: "https://ops.example.com/hooks/analytics" }),
+]);
+
+if (!synced.ok) console.error(synced.error.code, synced.error.message);
+else console.log(synced.value.secrets.ops);
+```
+
+Every method answers `{ ok: true, value }` or `{ ok: false, error }` and never throws. `error.code` is a code from the [error catalog](/docs/api/overview#errors), or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when the request did not get an answer from the API.
+
+## Alert targets
+
+A target is where one project's alerts go on one channel. The builders fill one in:
+
+| Builder | Takes |
+| --- | --- |
+| `mail({ to, name?, on?, enabled? })` | One to 20 addresses |
+| `webhook({ url, name?, on?, enabled? })` | An `https://` URL; the API signs each request |
+| `discord({ url, name?, on?, enabled? })` | A Discord webhook URL |
+
+`name` defaults to the channel, so one target per channel needs no name. `on` defaults to every issue event (`issue.new` and `issue.regression`) and `enabled` to `true`.
+
+| Method | Does |
+| --- | --- |
+| `alerts.sync(project, targets)` | Makes the project's targets match the list: adds, updates and removes; running it twice changes nothing. Answers `{ created, updated, removed, secrets }` |
+| `alerts.list(project)` | The targets with their `state`: `active`, `paused` or `failing`, and `stateReason` |
+| `alerts.set(project, target)` | Creates or replaces one target |
+| `alerts.remove(project, name)` | Removes one target and its history |
+| `alerts.test(project, name)` | Sends a sample alert now and answers `{ delivered, message }` with what the provider said |
+| `alerts.rotate(project, name)` | A new signing secret for a webhook target |
+| `alerts.deliveries(project, { status?, limit?, cursor? })` | The delivery history, newest first |
+| `alerts.status()` | Enabled channels, the mail transport, pending deliveries and failing targets |
+
+`secrets` holds the signing secret of each new webhook target. It is shown only in the answer to `sync`, `set` and `rotate`; store it where your receiver reads it, such as `RA_WEBHOOK_SECRET`.
+
+## What the editor catches
+
+| Mistake | Caught by |
+| --- | --- |
+| `createAdmin<Projects>` then `sync("remcostoten.nl", ...)` | Type error: not in `Projects` |
+| `on: ["issue.created"]` | Type error: offers `issue.new` and `issue.regression` |
+| `mail({ to: [] })` | Type error: at least one address |
+| `mail({ to: ["remco"] })` | Type error: `${string}@${string}.${string}` |
+| `webhook({ url: "http://..." })` | Type error: `https://` only |
+| Two targets with the same literal `name` | Type error on the list |
+| A mail target on a deployment without `mail()` | `VALIDATION_FAILED`: "mail is not enabled on this deployment" |
+
+## Reads
+
+The same client reads the stats routes, typed from the contract, for your own dashboard pages and server components:
+
+| Method | Route |
+| --- | --- |
+| `stats(project, { period?, from?, to?, traffic?, filter? })` | `GET /v2/projects/:project/stats` |
+| `timeseries(project, options)` | `GET /v2/projects/:project/timeseries` |
+| `breakdown(project, dimension, options)` | `GET /v2/projects/:project/breakdown/:dimension` |
+| `lifecycle(project, options)` | `GET /v2/projects/:project/lifecycle` |
+| `issues(project, { status?, limit?, cursor? })` | `GET /v2/projects/:project/issues` |
+
+`filter: { country: "NL" }` is sent as `filter[country]=NL`.

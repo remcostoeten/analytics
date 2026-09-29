@@ -30,6 +30,10 @@
 		"./proxy": {
 			"types": "./src/proxy/index.ts",
 			"default": "./src/proxy/index.ts"
+		},
+		"./admin": {
+			"types": "./src/admin/index.ts",
+			"default": "./src/admin/index.ts"
 		}
 	},
 	"files": [
@@ -60,6 +64,10 @@
 			"./proxy": {
 				"types": "./dist/proxy.d.mts",
 				"default": "./dist/proxy.mjs"
+			},
+			"./admin": {
+				"types": "./dist/admin.d.mts",
+				"default": "./dist/admin.mjs"
 			}
 		}
 	},

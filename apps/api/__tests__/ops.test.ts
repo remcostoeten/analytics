@@ -257,7 +257,7 @@ describe("jobs", () => {
       expect.objectContaining({
         job: "alerts",
         status: "failed",
-        message: "ALERT_WEBHOOK_URL is not set",
+        message: "Alerts are off: alerts() is not in analytics.config.ts",
       }),
     );
   });

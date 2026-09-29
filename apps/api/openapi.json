@@ -17758,8 +17758,8 @@
     },
     "/v2/admin/jobs/alerts": {
       "post": {
-        "summary": "Send issue alerts",
-        "description": "Posts new issues and regressions since the last run, up to 100, to `ALERT_WEBHOOK_URL`, signed with `ALERT_WEBHOOK_SECRET` as `x-analytics-signature: sha256=<hmac>`; `rowsWritten` is the number sent. Needs the cron secret.",
+        "summary": "Queue and send alerts",
+        "description": "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -18348,6 +18348,2396 @@
           }
         },
         "operationId": "getV2AdminMetrics"
+      }
+    },
+    "/v2/projects/{project}/alerts/targets": {
+      "get": {
+        "summary": "Alert targets",
+        "description": "The project's targets by name. `state` is `paused` when a target is disabled or its channel is off or not ready, `failing` when its last delivery failed, with the reason in `stateReason`.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "channel",
+                              "id",
+                              "project",
+                              "name",
+                              "on",
+                              "enabled",
+                              "state",
+                              "stateReason",
+                              "createdAt",
+                              "updatedAt",
+                              "to"
+                            ],
+                            "properties": {
+                              "channel": {
+                                "const": "mail",
+                                "type": "string"
+                              },
+                              "id": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "project": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                                "type": "string"
+                              },
+                              "on": {
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "issue.new",
+                                    "issue.regression"
+                                  ]
+                                }
+                              },
+                              "enabled": {
+                                "type": "boolean"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "active",
+                                  "paused",
+                                  "failing"
+                                ]
+                              },
+                              "stateReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "to": {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "uniqueItems": true,
+                                "type": "array",
+                                "items": {
+                                  "format": "email",
+                                  "maxLength": 254,
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "channel",
+                              "id",
+                              "project",
+                              "name",
+                              "on",
+                              "enabled",
+                              "state",
+                              "stateReason",
+                              "createdAt",
+                              "updatedAt",
+                              "url"
+                            ],
+                            "properties": {
+                              "channel": {
+                                "const": "webhook",
+                                "type": "string"
+                              },
+                              "id": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "project": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                                "type": "string"
+                              },
+                              "on": {
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "issue.new",
+                                    "issue.regression"
+                                  ]
+                                }
+                              },
+                              "enabled": {
+                                "type": "boolean"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "active",
+                                  "paused",
+                                  "failing"
+                                ]
+                              },
+                              "stateReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "url": {
+                                "format": "uri",
+                                "pattern": "^https://",
+                                "maxLength": 2048,
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "channel",
+                              "id",
+                              "project",
+                              "name",
+                              "on",
+                              "enabled",
+                              "state",
+                              "stateReason",
+                              "createdAt",
+                              "updatedAt",
+                              "url"
+                            ],
+                            "properties": {
+                              "channel": {
+                                "const": "discord",
+                                "type": "string"
+                              },
+                              "id": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "project": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                                "type": "string"
+                              },
+                              "on": {
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "issue.new",
+                                    "issue.regression"
+                                  ]
+                                }
+                              },
+                              "enabled": {
+                                "type": "boolean"
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "active",
+                                  "paused",
+                                  "failing"
+                                ]
+                              },
+                              "stateReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "url": {
+                                "format": "uri",
+                                "pattern": "^https://",
+                                "maxLength": 2048,
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectAlertsTargets"
+      },
+      "put": {
+        "summary": "Sync alert targets",
+        "description": "Makes the project's targets match the list: adds what is missing, updates what changed and removes what is not listed, so sending it twice changes nothing. `name` defaults to the channel, `on` to every issue event and `enabled` to true. `secrets` holds the signing secret of each new webhook target, shown only here and after `rotate`. A channel the deployment does not enable answers `VALIDATION_FAILED`.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "targets"
+                ],
+                "properties": {
+                  "targets": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "to"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "mail",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "to": {
+                              "minItems": 1,
+                              "maxItems": 20,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "format": "email",
+                                "maxLength": 254,
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "webhook",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "discord",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "targets"
+                ],
+                "properties": {
+                  "targets": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "to"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "mail",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "to": {
+                              "minItems": 1,
+                              "maxItems": 20,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "format": "email",
+                                "maxLength": 254,
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "webhook",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "discord",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "targets"
+                ],
+                "properties": {
+                  "targets": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "to"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "mail",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "to": {
+                              "minItems": 1,
+                              "maxItems": 20,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "format": "email",
+                                "maxLength": 254,
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "webhook",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "channel",
+                            "url"
+                          ],
+                          "properties": {
+                            "channel": {
+                              "const": "discord",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9][a-z0-9-]*$",
+                              "type": "string"
+                            },
+                            "on": {
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              }
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "url": {
+                              "format": "uri",
+                              "pattern": "^https://",
+                              "maxLength": 2048,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "created",
+                        "updated",
+                        "removed",
+                        "secrets"
+                      ],
+                      "properties": {
+                        "created": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "updated": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "removed": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "secrets": {
+                          "type": "object",
+                          "patternProperties": {
+                            "^(.*)$": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "putV2ProjectsByProjectAlertsTargets"
+      }
+    },
+    "/v2/projects/{project}/alerts/targets/{name}": {
+      "put": {
+        "summary": "Set one alert target",
+        "description": "Creates or replaces the target named in the path.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "to"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "mail",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "to": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "format": "email",
+                          "maxLength": 254,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "webhook",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "discord",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "to"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "mail",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "to": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "format": "email",
+                          "maxLength": 254,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "webhook",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "discord",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "to"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "mail",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "to": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "format": "email",
+                          "maxLength": 254,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "webhook",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "url"
+                    ],
+                    "properties": {
+                      "channel": {
+                        "const": "discord",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "type": "string"
+                      },
+                      "on": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "issue.new",
+                            "issue.regression"
+                          ]
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "maxLength": 2048,
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "created",
+                        "updated",
+                        "removed",
+                        "secrets"
+                      ],
+                      "properties": {
+                        "created": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "updated": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "removed": {
+                          "type": "array",
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          }
+                        },
+                        "secrets": {
+                          "type": "object",
+                          "patternProperties": {
+                            "^(.*)$": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "putV2ProjectsByProjectAlertsTargetsByName"
+      },
+      "delete": {
+        "summary": "Remove an alert target",
+        "description": "Removes the target and its delivery history.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Response for status 204",
+            "content": {
+              "type": "void"
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteV2ProjectsByProjectAlertsTargetsByName"
+      }
+    },
+    "/v2/projects/{project}/alerts/targets/{name}/test": {
+      "post": {
+        "summary": "Test an alert target",
+        "description": "Sends a sample alert to the target now, outside the queue, and answers whether the provider accepted it and what it said.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "channel",
+                        "delivered",
+                        "message"
+                      ],
+                      "properties": {
+                        "name": {
+                          "minLength": 1,
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9][a-z0-9-]*$",
+                          "type": "string"
+                        },
+                        "channel": {
+                          "type": "string",
+                          "enum": [
+                            "mail",
+                            "webhook",
+                            "discord"
+                          ]
+                        },
+                        "delivered": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2ProjectsByProjectAlertsTargetsByNameTest"
+      }
+    },
+    "/v2/projects/{project}/alerts/targets/{name}/rotate": {
+      "post": {
+        "summary": "Rotate a webhook secret",
+        "description": "Gives a webhook target a new signing secret, shown only in this answer. The old one stops working at once.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "secret"
+                      ],
+                      "properties": {
+                        "name": {
+                          "minLength": 1,
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9][a-z0-9-]*$",
+                          "type": "string"
+                        },
+                        "secret": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2ProjectsByProjectAlertsTargetsByNameRotate"
+      }
+    },
+    "/v2/projects/{project}/alerts/deliveries": {
+      "get": {
+        "summary": "Alert deliveries",
+        "description": "The delivery history, newest first: `pending` ones with their attempts, last error and next try, `sent` and `failed` ones. `status` narrows it; `limit` and `cursor` page it.",
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "target",
+                          "channel",
+                          "event",
+                          "subject",
+                          "status",
+                          "attempts",
+                          "nextAttemptAt",
+                          "lastError",
+                          "sentAt",
+                          "createdAt",
+                          "payload"
+                        ],
+                        "properties": {
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "target": {
+                            "minLength": 1,
+                            "maxLength": 40,
+                            "pattern": "^[a-z0-9][a-z0-9-]*$",
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "mail",
+                              "webhook",
+                              "discord"
+                            ]
+                          },
+                          "event": {
+                            "type": "string",
+                            "enum": [
+                              "issue.new",
+                              "issue.regression"
+                            ]
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "sent",
+                              "failed"
+                            ]
+                          },
+                          "attempts": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "nextAttemptAt": {
+                            "format": "date-time",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lastError": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "sentAt": {
+                            "format": "date-time",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "payload": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "project",
+                              "issue"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "enum": [
+                                  "issue.new",
+                                  "issue.regression"
+                                ]
+                              },
+                              "project": {
+                                "type": "string"
+                              },
+                              "issue": {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "culprit",
+                                  "level",
+                                  "count",
+                                  "firstSeen",
+                                  "lastSeen",
+                                  "lastRelease",
+                                  "url"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "culprit": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "level": {
+                                    "type": "string",
+                                    "enum": [
+                                      "error",
+                                      "warning"
+                                    ]
+                                  },
+                                  "count": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "firstSeen": {
+                                    "format": "date-time",
+                                    "type": "string"
+                                  },
+                                  "lastSeen": {
+                                    "format": "date-time",
+                                    "type": "string"
+                                  },
+                                  "lastRelease": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "url": {
+                                    "format": "uri",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectAlertsDeliveries"
+      }
+    },
+    "/v2/admin/alerts/status": {
+      "get": {
+        "summary": "Alerts status",
+        "description": "The enabled channels and whether each is ready, the mail transport without secrets, the number of pending deliveries and the targets whose last delivery failed.",
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "channels",
+                        "transport",
+                        "pending",
+                        "failing"
+                      ],
+                      "properties": {
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "ready",
+                              "problem"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "enum": [
+                                  "mail",
+                                  "webhook",
+                                  "discord"
+                                ]
+                              },
+                              "ready": {
+                                "type": "boolean"
+                              },
+                              "problem": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "transport": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "required": [
+                            "name",
+                            "host",
+                            "from"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "enum": [
+                                "smtp",
+                                "resend"
+                              ]
+                            },
+                            "host": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "from": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "pending": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "failing": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "project",
+                              "name",
+                              "channel",
+                              "reason"
+                            ],
+                            "properties": {
+                              "project": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                                "type": "string"
+                              },
+                              "channel": {
+                                "type": "string",
+                                "enum": [
+                                  "mail",
+                                  "webhook",
+                                  "discord"
+                                ]
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2AdminAlertsStatus"
       }
     }
   },

@@ -225,6 +225,7 @@ export function drizzleIssues(db: Database): IssueStore {
             row.alerted_at === null || row.alerted_at === undefined
               ? ("new" as const)
               : ("regression" as const),
+          regressedAt: optionalDate(row.regressed_at),
         }));
       }),
     markAlerted: (issues) =>

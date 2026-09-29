@@ -9,6 +9,7 @@ import type {
 } from "@remcostoeten/analytics-engine";
 import { ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
+import { runAlerts } from "@remcostoeten/analytics-engine/alerts";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { Elysia, t } from "elysia";
 
@@ -16,8 +17,7 @@ import type { AccessDeps } from "../../access/types";
 import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
-import { sendAlerts } from "./alerts";
-import type { AlertOptions } from "./alerts";
+import type { AlertsDeps } from "../alerts/service";
 import { checkCrux } from "./crux";
 import type { CruxOptions } from "./crux";
 
@@ -25,7 +25,7 @@ export type JobsOptions = {
   speed: SpeedStore;
   issues: IssueStore;
   ops: Nullable<OpsStore>;
-  alerts: Nullable<AlertOptions>;
+  alerts: Nullable<AlertsDeps>;
   crux: Nullable<CruxOptions>;
   clock: () => Date;
 };
@@ -53,8 +53,8 @@ function startOfDay(at: Date) {
  * @description Scheduled jobs behind the cron secret, each recorded in the job history:
  * `rollup?days=2` rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops
  * raw speed rows past 30 days; `cleanup` deletes events and sessions past each project's
- * retention, 50,000 of each per run; `alerts` posts new issues and regressions to the alert
- * webhook; `crux` compares each project's p75 with the Chrome UX Report.
+ * retention, 50,000 of each per run; `alerts` queues new issues and regressions and sends due
+ * deliveries to the alert targets; `crux` compares each project's p75 with the Chrome UX Report.
  *
  * @example
  * app.use(jobsModule(deps, { speed, issues, ops, alerts: null, crux: null, clock }, docsBase));
@@ -148,16 +148,28 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
       "/admin/jobs/alerts",
       ({ set }) =>
         run("alerts", set, async () => {
-          if (!options.alerts) return unset("ALERT_WEBHOOK_URL");
-          const result = await sendAlerts(options.issues, options.alerts, options.clock());
+          if (!options.alerts) {
+            return {
+              ok: false as const,
+              error: engineError(
+                "UNAVAILABLE",
+                "Alerts are off: alerts() is not in analytics.config.ts",
+              ),
+            };
+          }
+          const result = await runAlerts(
+            options.alerts.plugin,
+            { issues: options.issues, alerts: options.alerts.store, links: options.alerts.links },
+            options.clock(),
+          );
           return result.ok ? ok({ rowsWritten: result.value.sent }) : result;
         }),
       {
         ...route,
         detail: {
-          summary: "Send issue alerts",
+          summary: "Queue and send alerts",
           description:
-            "Posts new issues and regressions since the last run, up to 100, to `ALERT_WEBHOOK_URL`, signed with `ALERT_WEBHOOK_SECRET` as `x-analytics-signature: sha256=<hmac>`; `rowsWritten` is the number sent. Needs the cron secret.",
+            "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
           tags,
         },
       },

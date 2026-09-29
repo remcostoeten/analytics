@@ -105,9 +105,16 @@ const admin = createAdmin<Projects>({
   token: process.env.RA_ADMIN_TOKEN,
 });
 
+function isHttps(url: string | undefined): url is `https://${string}` {
+  return url?.startsWith("https://") ?? false;
+}
+
+const discordUrl = process.env.DISCORD_WEBHOOK_URL;
+if (!isHttps(discordUrl)) throw new Error("Set DISCORD_WEBHOOK_URL to the Discord webhook URL");
+
 const synced = await admin.alerts.sync("remcostoeten.nl", [
   mail({ to: ["remco@gmail.com"] }),
-  discord({ url: process.env.DISCORD_WEBHOOK_URL, on: ["issue.regression"] }),
+  discord({ url: discordUrl, on: ["issue.regression"] }),
   webhook({ name: "ops", url: "https://ops.example.com/hooks/analytics" }),
 ]);
 

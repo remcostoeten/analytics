@@ -12,6 +12,10 @@ import {
   webCryptoHasher,
 } from "@remcostoeten/analytics-engine/adapters/system";
 
+import { apiLinks } from "@remcostoeten/analytics-engine/alerts";
+import { findPlugin } from "@remcostoeten/analytics-engine/config";
+
+import config from "../analytics.config";
 import { createApp } from "./app";
 import { betterAuthSessions, createAuth } from "./auth/better-auth";
 import { candidatePaths, openGeo } from "./geo";
@@ -30,6 +34,8 @@ const geo = openGeo(
   candidatePaths("GeoLite2-ASN.mmdb", { ...where, explicit: process.env.GEOIP_ASN_PATH ?? null }),
 );
 const clock = systemClock();
+const apiUrl = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 3100}`;
+const alertsPlugin = findPlugin(config, "alerts");
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("Refusing to start: DATABASE_URL is not set.");
 const adapters = postgresAdapters(databaseUrl, clock);
@@ -44,7 +50,7 @@ const auth = createAuth({
   db: stores.db,
   members: stores.members,
   secret: authSecret || "insecure-development-auth-secret-change-me",
-  baseURL: process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 3100}`,
+  baseURL: apiUrl,
   github: {
     clientId: process.env.GITHUB_CLIENT_ID ?? "",
     clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
@@ -57,8 +63,6 @@ const settings = {
   ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
   rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
 };
-
-const alertUrl = process.env.ALERT_WEBHOOK_URL || null;
 
 function logger(requestId: string) {
   return jsonLogger((line) => console.log(line), { requestId });
@@ -111,8 +115,8 @@ export default createApp({
     perMinute: Number(process.env.QUERY_LIMIT ?? 30),
   },
   authHandler: auth.handler,
-  alerts: alertUrl
-    ? { url: alertUrl, secret: process.env.ALERT_WEBHOOK_SECRET || null, send: fetch }
+  alerts: alertsPlugin
+    ? { plugin: alertsPlugin, store: stores.alerts, links: apiLinks(apiUrl) }
     : null,
   internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
   ops: stores.ops,

@@ -3,6 +3,14 @@ import { join } from "node:path";
 
 import { PGlite } from "@electric-sql/pglite";
 import { createEngine } from "@remcostoeten/analytics-engine";
+import {
+  alerts,
+  apiLinks,
+  discord,
+  mail,
+  smtp,
+  webhook,
+} from "@remcostoeten/analytics-engine/alerts";
 import { fixedClock, memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
 import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
 import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
@@ -16,6 +24,7 @@ const target = join(import.meta.dir, "..", "openapi.json");
  * @name openapiDocument
  * @description The API's OpenAPI 3 document as formatted JSON, built from the route schemas
  * without a database: the stores are created on an empty in-memory PGlite and never queried.
+ * Alerts are on with every channel, so their routes are documented.
  *
  * @example
  * const json = await openapiDocument();
@@ -68,6 +77,13 @@ async function openapiDocument(): Promise<string> {
     },
     authHandler: null,
     ops: stores.ops,
+    alerts: {
+      plugin: alerts({
+        channels: [mail({ transport: smtp(undefined), from: "a@b.co" }), webhook(), discord()],
+      }),
+      store: stores.alerts,
+      links: apiLinks("https://api.remcostoeten.nl"),
+    },
   });
   const response = await app.handle(new Request("http://localhost/v2/openapi/json"));
   const document: unknown = await response.json();

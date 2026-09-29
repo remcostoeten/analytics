@@ -27,3 +27,25 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 | `withErrors(handler)` | Wraps a route handler and records anything it throws, then rethrows |
 
 Passing `request` forwards the visitor's IP and user agent, so the API can hash and enrich them. Events from one tick go out in one request, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. Any call can pass `groups: { company: "acme" }` in its options to put that event in groups. Options left out are read from the JSON in `RA_CONFIG`.
+
+## Alert webhooks
+
+A webhook [alert target](/docs/api/alerts) posts a signed `WebhookBody` to your app. `alertRoute` turns it into a route handler with one typed function per event; in Next.js it is the whole `route.ts`:
+
+```ts
+import { alertRoute } from "@remcostoeten/analytics/server";
+
+export const POST = alertRoute({
+  secret: process.env.RA_WEBHOOK_SECRET,
+  on: {
+    "issue.new": async (event) => notifyTeam(event.issue.title),
+    "issue.regression": async (event) => openTicket(event.issue),
+  },
+});
+```
+
+- It checks `x-analytics-signature`, the HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's secret, and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed. A request that fails gets `401` and no handler runs; an empty `secret` answers `500`.
+- `on` is typed per event, so `event.issue` autocompletes, and a handler for an unknown event is a type error. An event without a handler is acknowledged and ignored.
+- `verifyAlert(request, secret)` is the same check without the routing, for other frameworks. It answers the parsed body or an error with the code `NO_SECRET`, `BAD_SIGNATURE`, `STALE_TIMESTAMP` or `BAD_BODY`.
+
+The body is `{ v: 1, sentAt, events }`, where each event is `{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }`.
