@@ -340,15 +340,15 @@ Epic E4.6, branch feature/docs-site. Read the plan sections "SDK API shape", "Ac
 
 Waits on Remco approving decision 16.
 
-Delivers: the design in `docs/v2/alerts.md`: alert events, mail and webhook channels per project, the `MAIL_URL` transport (SMTP and Resend), the delivery outbox with retries, the channel routes and status route, the SDK's `/admin` entry with `createAdmin`, `mail` and `webhook`, and `verifyAlert` in `/server`. Replaces `ALERT_WEBHOOK_URL`. Done when a mail and a webhook channel receive a batch from the alerts job, a failing channel retries on schedule without holding back the other, and every row of "What the editor catches" has a type test.
+Delivers: the design in `docs/v2/alerts.md`: `defineConfig` with server plugins, the `alerts()` plugin with the optional mail, webhook and Discord channels, the `smtp()` (on `node:tls`) and `resend()` transports with no outside dependencies, `postJson` and `getJson` in the shared package, the delivery queue with the retry policy, the target routes and status route, the SDK's `/admin` module with `createAdmin`, `sync` and the target builders, and `alertRoute` and `verifyAlert` in `/server`. Replaces `ALERT_WEBHOOK_URL`. Done when a mail, a webhook and a Discord target receive a batch from the alerts job, a failing target retries by its policy without holding back the others, a config without `alerts()` has no alert routes, and every row of "What the editor catches" has a type test.
 
 ```text
-Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec, and its vocabulary is binding for names of types, files and routes. Also read the plan section "Errors" and the existing apps/api/src/modules/jobs/alerts.ts, which this replaces.
-1. Contract: packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
-2. Engine: migration 0029_add_alert_channels, the ports AlertStore and Mailer, packages/engine/src/alerts (events, queue-issues, dispatch, render-mail, sign-body, mail-url, drivers), the Drizzle alert store, the smtp (nodemailer) and resend mailers, and memory versions for tests. Drivers are registered on createEngine like stages.
-3. API: parse MAIL_URL and MAIL_FROM at startup with the error messages in the spec, the routes in the spec's Routes table with admin access, and the alerts job doing queue then dispatch. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site.
-4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, deliveries, and the mail and webhook builders with the narrowed types) and verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.
-5. Tests as listed in the spec's Tests section, including expectTypeOf tests for each row of "What the editor catches".
+Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec, and its vocabulary is binding for names of types, files and routes. Also read the plan section "Errors" and the existing apps/api/src/modules/jobs/alerts.ts, which this replaces. Add no outside dependencies.
+1. Shared and contract: postJson and getJson in packages/shared/src/http.ts; packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
+2. Engine: defineConfig and ServerPlugin; migration 0029_add_alert_targets; the AlertStore port and its Drizzle and memory versions; packages/engine/src/alerts with the plugin, queue, dispatch, retry policy, renderers, signing, the mail, webhook and Discord channels, and the smtp (node:tls) and resend (postJson) transports.
+3. API: apps/api/analytics.config.ts read at startup, the plugin's routes and the alerts job doing queue then dispatch, the status route. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site, including a page on retry settings.
+4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, rotate, deliveries, the read methods, and the mail, webhook and discord builders with the narrowed types) and alertRoute with verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.
+5. Tests as listed in the spec's Tests section, including the fake SMTP server and expectTypeOf tests for each row of "What the editor catches".
 ```
 
 ## Phase 5: retire 1.x

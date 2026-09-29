@@ -1,15 +1,16 @@
 # Alerts
 
-Proposal, Sep 29, 2026. Waits on Remco's approval (decision 16 in `plan.md`) before epic E4.7 builds it.
+Proposal, Sep 29, 2026, revised with Remco's answers the same day. Epic E4.7 builds it once decision 16 in `plan.md` is approved.
 
-Alerts tell people that something happened in a project: today a new issue or a regression, later a traffic spike or a speed drop. They go out through channels (mail and webhook first), set per project, while the credentials to send mail are set once per deployment. This replaces the single `ALERT_WEBHOOK_URL` from E4.4; nothing of it is deployed, so nothing migrates.
+Alerts tell people that something happened in a project: today a new issue or a regression, later a traffic spike or a speed drop. The API is a small core plus plugins, the way [Better Auth](https://better-auth.com/docs/introduction) is: `alerts()` is a plugin, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed. This replaces the single `ALERT_WEBHOOK_URL` from E4.4; nothing of it is deployed, so nothing migrates.
 
 ## Goals
 
-- Setting it up is two environment variables and one call or request per project.
+- Every feature is opt-in: no plugin listed means no routes, no jobs and no code running for it.
+- Nothing to install beyond the one package: every piece is a module of `@remcostoeten/analytics` or of the engine, and the engine sends mail and HTTP with what the runtime already has (`node:tls` and `fetch`), without outside dependencies.
 - Every name, option and result autocompletes, and a wrong value is a type error before it is a runtime error.
-- The API validates everything at the boundary and answers with a field path and a plain message.
-- Adding an event, a channel or a mail provider is a checklist of small, separate files, never an edit to a switch in the core.
+- The API validates at the boundary and answers with a field path and a plain message.
+- Adding an event, a channel or a mail transport is a checklist of small, separate files, never an edit to a switch in the core.
 - An agent reading any file can tell from its names what runs, when, and with what.
 
 ## Vocabulary
@@ -18,61 +19,84 @@ Every type, file and route uses these words and no synonyms.
 
 | Word | Means | Type |
 | --- | --- | --- |
+| plugin | An opt-in part of the API, listed in the config: `alerts()` now, later goals or email reports | `ServerPlugin` |
 | alert event | Something worth telling, with a typed payload: `issue.new`, `issue.regression` | `AlertEvent` |
-| channel | Where a project's alerts go: one mail recipient list or one webhook URL, subscribed to some events | `AlertChannel` |
-| channel kind | The kind of channel: `mail` or `webhook`; each kind has its own settings | `ChannelKind` |
-| channel driver | The engine code that sends a batch to one kind of channel | `ChannelDriver` |
-| transport | How mail leaves the deployment: SMTP or Resend. One per deployment, from `MAIL_URL` | `MailTransport` |
-| mailer | The port a transport implements: send one message | `Mailer` |
-| delivery | One alert event queued for one channel, with its attempts and outcome | `AlertDelivery` |
-| batch | The due deliveries of one channel, sent together as one mail or one webhook request | `DeliveryBatch` |
+| channel | A way to send alerts, enabled in the config: `mail()`, `webhook()`, `discord()` | `ChannelDriver` |
+| target | Where one project's alerts go on one channel: recipients, a URL, and the events it wants | `AlertTarget` |
+| transport | How mail leaves the deployment: `smtp(url)` or `resend(key)` | `MailTransport` |
+| delivery | One alert event queued for one target, with its attempts and outcome | `AlertDelivery` |
+| batch | The due deliveries of one target, sent together as one mail or one request | `DeliveryBatch` |
+| retry policy | How often and how long a failed delivery is tried again | `RetryPolicy` |
+
+A channel is what the deployment allows; a target is what a project uses it for.
 
 ## Using it
 
-### 1. The deployment: two variables
+### 1. The deployment: one config file
 
-The API reads the transport from one URL, the same way it reads `DATABASE_URL`. The scheme picks the provider.
-
-```bash
-MAIL_URL=smtps://remco%40gmail.com:abcdefghijklmnop@smtp.gmail.com:465
-MAIL_FROM="Analytics <remco@gmail.com>"
-```
-
-| Provider | `MAIL_URL` | Cost |
-| --- | --- | --- |
-| Gmail | `smtps://you%40gmail.com:<app password>@smtp.gmail.com:465` | free, about 500 a day |
-| Resend | `resend://re_123abc` | free tier, needs a verified domain |
-| Amazon SES | `smtp://<smtp user>:<smtp password>@email-smtp.eu-west-1.amazonaws.com:587` | per message |
-| Brevo | `smtp://<login>:<smtp key>@smtp-relay.brevo.com:587` | free tier |
-| Any mailbox | `smtps://<user>:<password>@<host>:465` or `smtp://...:587` | depends |
-
-- `smtps://` is TLS from the start (port 465); `smtp://` upgrades with STARTTLS (port 587) and refuses to send if the server does not offer it.
-- `@` and `:` inside a user or password are written as `%40` and `%3A`.
-- Without `MAIL_URL`, mail channels can still be created but stay paused, and the status route says why. Webhook channels need nothing from the environment.
-- The API parses both variables once at startup. A bad value never stops the API, since ingest must not depend on alerts: mail channels turn `paused` with the problem as the reason, the problem is logged once, and the status route shows it. The message names the variable, the problem and an example, never the value itself:
-
-```text
-MAIL_URL: the scheme "smpt" is not one of smtp, smtps, resend. Example: smtps://user%40gmail.com:app-password@smtp.gmail.com:465
-```
-
-`GET /v2/admin/alerts/status` shows what is configured without secrets:
-
-```json
-{
-  "data": {
-    "mail": { "transport": "smtp", "host": "smtp.gmail.com", "port": 465, "from": "Analytics <remco@gmail.com>", "problem": null },
-    "pendingDeliveries": 0,
-    "failingChannels": []
-  }
-}
-```
-
-### 2. A project's channels, in code
-
-The admin client is a new SDK entry, `@remcostoeten/analytics/admin`, for server code and scripts only. Its channel builders read like the SDK's plugins.
+`apps/api/analytics.config.ts` lists the plugins. Secrets stay in the environment; the config only reads them.
 
 ```ts
-import { createAdmin, mail, webhook } from "@remcostoeten/analytics/admin";
+import { defineConfig } from "@remcostoeten/analytics-engine/config";
+import { alerts, discord, mail, resend, smtp, webhook } from "@remcostoeten/analytics-engine/alerts";
+
+export default defineConfig({
+  plugins: [
+    alerts({
+      channels: [
+        mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <remco@gmail.com>" }),
+        webhook(),
+        discord(),
+      ],
+    }),
+  ],
+});
+```
+
+- Leave `alerts()` out and there are no alert routes and the alerts job reports that alerts are off.
+- Leave `mail()` out and a project that asks for a mail target gets `VALIDATION_FAILED`: "mail is not enabled on this deployment". The same holds for every channel.
+- `transport` takes `smtp(url)` or `resend(key)`. Swapping providers is one line.
+- An empty or malformed `MAIL_URL` never stops the API, since ingest must not depend on alerts: mail targets turn `paused` with the problem as the reason, and `GET /v2/admin/alerts/status` shows it.
+
+### 2. Mail transports
+
+| Provider | Config | Cost |
+| --- | --- | --- |
+| Gmail | `smtp("smtps://you%40gmail.com:<app password>@smtp.gmail.com:465")` | free, about 500 a day |
+| Any mailbox | `smtp("smtps://<user>:<password>@<host>:465")` or `smtp://...:587` | depends |
+| Amazon SES, Brevo | `smtp(...)` with their SMTP host and credentials | per message, or a free tier |
+| Resend | `resend(process.env.RESEND_API_KEY)` | free tier, needs a verified domain |
+
+- `smtp()` is our own client on `node:tls`, which Bun and Node both implement: it logs in, encrypts (TLS from the start on 465, `STARTTLS` on 587, and it refuses to send unencrypted), sends and quits. About 150 lines behind the `Mailer` port, tested against a scripted fake server.
+- `resend()` is one `fetch` call to Resend's HTTP API.
+- Gmail has an HTTP API too, but it needs Google OAuth; its SMTP server with an app password is the simple and free route.
+- `@` and `:` inside a user or password are written as `%40` and `%3A`.
+
+### 3. Retries
+
+Every channel retries a failed delivery, since a webhook or Discord can be down as well as a mail server. The default is written out here; the config only needs what differs.
+
+```ts
+alerts({
+  channels: [mail({ transport, from }), webhook({ retry: { maxAge: "1h" } })],
+  retry: { attempts: 5, backoff: "exponential", maxAge: "24h" },
+});
+```
+
+| Option | Default | Means |
+| --- | --- | --- |
+| `attempts` | `5` | Tries after the first failure; `0` turns retrying off |
+| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` retries on every job run (10 minutes) |
+| `maxAge` | `"24h"` | An alert older than this is not tried again and turns `failed`; a `Duration` like `"30m"`, `"6h"`, `"2d"` |
+
+A channel's own `retry` overrides the plugin's, key by key. The docs recommend a short `maxAge` for chat channels, where a late alert is noise, and more `attempts` for a webhook that feeds another system.
+
+### 4. A project's targets: `sync`
+
+The admin client is a module of the SDK package, `@remcostoeten/analytics/admin`, for server code and scripts. `sync` takes the whole list for a project and makes the stored targets match it: it adds what is missing, updates what changed and removes what is not listed, so running it twice changes nothing.
+
+```ts
+import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/admin";
 
 type Projects = "remcostoeten.nl" | "skriuw";
 
@@ -83,87 +107,54 @@ const admin = createAdmin<Projects>({
 
 const synced = await admin.alerts.sync("remcostoeten.nl", [
   mail({ to: ["remco@gmail.com"] }),
-  webhook({
-    name: "ops",
-    url: "https://ops.example.com/hooks/analytics",
-    on: ["issue.regression"],
-  }),
+  discord({ url: process.env.DISCORD_WEBHOOK_URL, on: ["issue.regression"] }),
+  webhook({ name: "ops", url: "https://ops.example.com/hooks/analytics" }),
 ]);
 
-if (!synced.ok) {
-  console.error(synced.error.code, synced.error.message);
-} else {
-  console.log(synced.value.created, synced.value.updated, synced.value.removed, synced.value.secrets.ops);
-}
+if (!synced.ok) console.error(synced.error.code, synced.error.message);
 ```
 
-- `sync` makes the project's channels match the list: it creates, updates and removes by `name`, so running it twice changes nothing. The list is the whole configuration, readable in one place.
-- `name` defaults to the kind, so one `mail()` and one `webhook()` need no names; two of the same kind need them, and a duplicate is a type error when the names are literals and a `VALIDATION_FAILED` otherwise.
-- `on` defaults to every issue event. `enabled` defaults to `true`.
-- The token needs the `admin` scope. `endpoint` and `token` fall back to `RA_CONFIG` and `RA_ADMIN_TOKEN`, like the server client.
-- Every method resolves to `{ ok: true, value }` or `{ ok: false, error }` with a code from the contract's error catalog, and never throws.
+- `name` defaults to the channel, so one target per channel needs no name.
+- `on` defaults to every issue event; `enabled` to `true`.
+- The result is `{ ok: true, value: { created, updated, removed, secrets } }` or `{ ok: false, error }` with a code from the contract's error catalog. Nothing throws. `secrets` holds the signing secret of each new webhook target, shown only here and after `rotate`.
+- `list`, `set`, `remove`, `test`, `rotate` and `deliveries` change or read one target; `test` sends a sample alert now and answers with what the provider said, so a wrong app password shows up during setup.
+- The same builders `mail`, `webhook` and `discord` exist in the engine (what a deployment allows) and in the admin client (what a project uses), with the same names on purpose: the first enables a channel, the second fills in a target on it.
 
-The other methods, for scripts that change one thing:
+### 5. The same over HTTP
 
-```ts
-await admin.alerts.list("remcostoeten.nl");
-await admin.alerts.set("remcostoeten.nl", mail({ to: ["remco@gmail.com", "ops@remcostoeten.nl"] }));
-await admin.alerts.remove("remcostoeten.nl", "ops");
-await admin.alerts.test("remcostoeten.nl", "mail");
-await admin.alerts.deliveries("remcostoeten.nl", { status: "failed" });
-```
-
-`test` sends a sample alert through that channel right away and answers with what the provider said, so a wrong app password shows up during setup, not at the first real issue:
-
-```json
-{ "ok": false, "error": { "code": "UNAVAILABLE", "message": "SMTP 535: Username and Password not accepted", "details": { "channel": "mail", "transport": "smtp" } } }
-```
-
-### 3. The same over HTTP
-
-Every client method is one route, so `curl`, the dashboard and other languages get the same behaviour.
+Every admin method is one route, so `curl`, a dashboard and other languages behave the same:
 
 ```bash
-curl -X PUT https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/channels \
+curl -X PUT https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
   -H "authorization: Bearer $RA_ADMIN_TOKEN" \
   -H "content-type: application/json" \
-  -d '{ "channels": [ { "kind": "mail", "name": "mail", "to": ["remco@gmail.com"] } ] }'
+  -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
 ```
 
-A wrong field answers with its path:
+A wrong field answers `VALIDATION_FAILED` with `details.path`, such as `/targets/0/to/0`.
 
-```json
-{
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "message": "channels[0].to[0] is not an email address",
-    "details": { "path": "/channels/0/to/0" },
-    "requestId": "req_01J...",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#alerts"
-  }
-}
-```
+### 6. Alerts in your own app
 
-### 4. Receiving webhooks
-
-A webhook channel posts a `WebhookBody` with two headers: `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex>`, the HMAC of `<timestamp>.<body>` with the channel's secret. The secret is shown once when the channel is created (in `sync`'s `secrets`, keyed by channel name) and again after `rotate`. The server entry verifies and types it in one call:
+A webhook target posts a signed `WebhookBody`. `alertRoute` in `/server` turns it into a route handler with one typed function per event; in Next.js it is the whole `route.ts`:
 
 ```ts
-import { verifyAlert } from "@remcostoeten/analytics/server";
+import { alertRoute } from "@remcostoeten/analytics/server";
 
-export async function POST(request: Request) {
-  const alert = await verifyAlert(request, process.env.RA_WEBHOOK_SECRET);
-  if (!alert.ok) return new Response(alert.error.message, { status: 401 });
-  for (const event of alert.value.events) {
-    if (event.name === "issue.regression") console.log(event.issue.title, event.issue.lastRelease);
-  }
-  return new Response(null, { status: 204 });
-}
+export const POST = alertRoute({
+  secret: process.env.RA_WEBHOOK_SECRET,
+  on: {
+    "issue.new": async (event) => notifyTeam(event.issue.title),
+    "issue.regression": async (event) => openTicket(event.issue),
+  },
+});
 ```
 
-`verifyAlert` rejects a wrong signature and a timestamp more than 5 minutes off, so a captured request cannot be replayed. Once the signature matches, the body is trusted to be a `WebhookBody`; the SDK carries no runtime schemas (decision 10). `event.name` narrows `event` to that event's payload, so `event.issue` autocompletes.
+- It checks `x-analytics-signature` (an HMAC of `<timestamp>.<body>`) and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed; a bad request gets `401` and none of the handlers run.
+- `on` is typed per event, so `event.issue` autocompletes; an event without a handler is acknowledged and ignored.
+- `verifyAlert(request, secret)` is the same check without the routing, for other frameworks.
+- The admin client also reads: `admin.stats`, `admin.breakdown`, `admin.issues`, `admin.lifecycle` and the other read routes, typed from the contract, for your own dashboard pages and server components.
 
-### 5. What the editor catches
+### 7. What the editor catches
 
 | Mistake | Caught by |
 | --- | --- |
@@ -172,103 +163,98 @@ export async function POST(request: Request) {
 | `mail({ to: [] })` | type error: at least one address |
 | `mail({ to: ["remco"] })` | type error: `${string}@${string}.${string}` |
 | `webhook({ url: "http://..." })` | type error: `https://` only |
-| `mail({ to: [...], url: "..." })` | type error: `url` is a webhook setting |
-| two `mail()` with the same literal `name` | type error on the list |
-| an address the type allows but the format rejects | `VALIDATION_FAILED` with the path |
-| `mail()` with no `MAIL_URL` on the API | channel saved with state `paused`, reason `MAIL_URL is not set` |
+| `retry: { maxAge: "24 hours" }` | type error: a `Duration` such as `"24h"` |
+| two targets with the same literal `name` | type error on the list |
+| a handler for an unknown event in `alertRoute` | type error |
+| a mail target on a deployment without `mail()` | `VALIDATION_FAILED`: "mail is not enabled on this deployment" |
+
+## Syntax: objects, not chains
+
+A chainable form was weighed for the config and for retries:
+
+```ts
+export default analytics()
+  .use(
+    alerts()
+      .channel(mail().transport(smtp(process.env.MAIL_URL)).from("Analytics <remco@gmail.com>"))
+      .channel(webhook().retry((policy) => policy.maxAge("1h")))
+      .retry((policy) => policy.attempts(5).backoff("exponential").maxAge("24h")),
+  );
+```
+
+The objects win here:
+
+- A config is data. An object shows every setting at once, and an agent or a reviewer reads it without following calls. A chain hides the defaults and raises questions an object cannot: does `.maxAge()` before `.attempts()` matter, and what does calling `.retry()` twice do?
+- Objects merge key by key, which is what a channel's `retry` overriding the plugin's needs; chains need a merge rule of their own.
+- Chains pay off when each call adds to the type, like Elysia's `.use()` or Zod. Nothing here grows a type; `satisfies` and literal unions give the same autocomplete on an object.
+- Objects need no builder functions per option, so there is less code to maintain and nothing to keep in step with the types.
+
+So the shape is functions that take one object, the same as `betterAuth({ plugins })`.
+
+## HTTP helper
+
+`fetch` is used in five places: the Resend transport, the webhook and Discord channels, the admin client and the existing CrUX job. They share one helper in `packages/shared/src/http.ts`, which the engine and the SDK both import:
+
+```ts
+const sent = await postJson(url, body, { headers, timeoutMs: 10_000 });
+if (!sent.ok) return sent;
+
+const read = await getJson(url, { headers });
+```
+
+- Both return `Result<{ status: number; body: Json }, HttpError>` and never throw; `HttpError` is `{ kind: "timeout" | "network" | "status"; status: Nullable<number>; message: string }`.
+- They time out after 10 seconds by default, send and parse JSON, and turn a non-2xx answer into `kind: "status"` with a short excerpt of the body.
+- They do not retry. Retrying is the delivery queue's job, so a failure is never retried twice over.
 
 ## How it works
 
 ### Layers
 
 ```text
-packages/contract   schemas and types: events, channel settings, deliveries, routes
+packages/shared     Result, http (postJson, getJson)
+packages/contract   schemas and types: events, targets, deliveries, routes
       │
-packages/engine     alerts core: queue, dispatch, render, drivers; ports Mailer and AlertStore
-      │             adapters: smtp and resend mailers, Drizzle alert store, memory versions for tests
+packages/engine     config (defineConfig), alerts plugin: queue, dispatch, render, channels,
+      │             transports (smtp on node:tls, resend on fetch), ports AlertStore and Mailer
       │
-apps/api            routes under /v2/projects/:project/alerts, the status route, the alerts job
+apps/api            analytics.config.ts, routes under /v2/projects/:project/alerts, the alerts job
       │
-packages/sdk        /admin (createAdmin, mail, webhook) and /server (verifyAlert), types only from contract
+packages/sdk        /admin (createAdmin, mail, webhook, discord), /server (alertRoute, verifyAlert)
 ```
 
-The contract is the single source of every shape: the API validates with it, OpenAPI is generated from it, and the SDK imports its types (decision 10: the SDK imports only types, so runtime validation happens once, in the API).
+The contract is the single source of every shape: the API validates with it, OpenAPI is generated from it, and the SDK imports its types (decision 10: the SDK carries no runtime schemas, so validation happens once, in the API).
 
 ### Flow
 
-Two steps, both in `POST /v2/admin/jobs/alerts`, which `jobs.yml` already calls every 10 minutes.
+Both steps run in `POST /v2/admin/jobs/alerts`, which `jobs.yml` already calls every 10 minutes.
 
-1. **Queue.** Producers turn what happened into alert events. For each event, one delivery per enabled channel of that project subscribed to it, inserted with `ON CONFLICT DO NOTHING` on `(channel_id, event_name, subject_id)`, so a retried run never queues twice. `subject_id` is the issue id for `issue.new`, and the issue id with its `regressed_at` for `issue.regression`, so every regression alerts once. The issue producer reads `pendingAlerts` and marks the issues as queued in the same transaction.
-2. **Dispatch.** Due deliveries are grouped per channel into a batch; the channel's driver sends the batch as one mail or one request. Success marks them `sent`. Failure keeps them `pending` with the error and the next attempt after 1, 5, 30, 120 and 720 minutes; after the fifth failure they turn `failed` and the channel shows in `failingChannels`. One failing channel never holds back another.
-
-The job answers per channel:
-
-```json
-{
-  "data": {
-    "queued": 3,
-    "channels": [
-      { "project": "remcostoeten.nl", "channel": "mail", "status": "sent", "deliveries": 3 },
-      { "project": "remcostoeten.nl", "channel": "ops", "status": "retrying", "deliveries": 1, "error": "HTTP 502", "nextAttemptAt": "2026-09-29T16:05:00.000Z" }
-    ]
-  }
-}
-```
+1. **Queue.** Producers turn what happened into alert events. For each event, one delivery per enabled target of that project subscribed to it, inserted with `ON CONFLICT DO NOTHING` on `(target_id, event_name, subject_id)`, so a retried run never queues twice. `subject_id` is the issue id for `issue.new` and the issue id with its `regressed_at` for `issue.regression`, so every regression alerts once.
+2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. Success marks them `sent`; failure keeps them `pending` with the error and the next attempt from the retry policy, until the policy runs out and they turn `failed`. One failing target never holds back another.
 
 ### Contract
 
-`packages/contract/src/alerts.ts`. Finite sets are literal unions, settings are keyed by kind, and the channel is a discriminated union on `kind`.
+`packages/contract/src/alerts.ts`: finite sets are literal unions, and a target is a discriminated union on `channel`.
 
 ```ts
 export const AlertEventName = oneOf(["issue.new", "issue.regression"]);
-export type AlertEventName = Static<typeof AlertEventName>;
-
-export const ChannelKind = oneOf(["mail", "webhook"]);
-export type ChannelKind = Static<typeof ChannelKind>;
-
-export const ChannelName = Type.String({ minLength: 1, maxLength: 40, pattern: "^[a-z0-9][a-z0-9-]*$" });
+export const ChannelName = oneOf(["mail", "webhook", "discord"]);
+export const TargetName = Type.String({ minLength: 1, maxLength: 40, pattern: "^[a-z0-9][a-z0-9-]*$" });
 export const EmailAddress = Type.String({ format: "email", maxLength: 254 });
 export const HttpsUrl = Type.String({ format: "uri", pattern: "^https://", maxLength: 2048 });
 
-export const MailSettings = Type.Object({
-  to: Type.Array(EmailAddress, { minItems: 1, maxItems: 20, uniqueItems: true }),
-});
-
-export const WebhookSettings = Type.Object({ url: HttpsUrl });
-
 const Subscription = Type.Array(AlertEventName, { minItems: 1, uniqueItems: true });
 
-const InputBase = {
-  name: Type.Optional(ChannelName),
+const TargetOptions = {
+  name: Type.Optional(TargetName),
   on: Type.Optional(Subscription),
   enabled: Type.Optional(Type.Boolean()),
 };
 
-export const ChannelInput = Type.Union([
-  Type.Object({ kind: Type.Literal("mail"), ...InputBase, ...MailSettings.properties }),
-  Type.Object({ kind: Type.Literal("webhook"), ...InputBase, ...WebhookSettings.properties }),
+export const TargetInput = Type.Union([
+  Type.Object({ channel: Type.Literal("mail"), ...TargetOptions, to: Type.Array(EmailAddress, { minItems: 1, maxItems: 20, uniqueItems: true }) }),
+  Type.Object({ channel: Type.Literal("webhook"), ...TargetOptions, url: HttpsUrl }),
+  Type.Object({ channel: Type.Literal("discord"), ...TargetOptions, url: HttpsUrl }),
 ]);
-export type ChannelInput = Static<typeof ChannelInput>;
-
-export const ChannelState = oneOf(["active", "paused", "failing"]);
-
-const StoredBase = {
-  id: Type.String(),
-  project: Type.String(),
-  name: ChannelName,
-  on: Subscription,
-  enabled: Type.Boolean(),
-  state: ChannelState,
-  stateReason: nullable(Type.String()),
-  createdAt: Timestamp,
-  updatedAt: Timestamp,
-};
-
-export const AlertChannel = Type.Union([
-  Type.Object({ kind: Type.Literal("mail"), ...StoredBase, ...MailSettings.properties }),
-  Type.Object({ kind: Type.Literal("webhook"), ...StoredBase, ...WebhookSettings.properties }),
-]);
-export type AlertChannel = Static<typeof AlertChannel>;
 
 export const IssueAlert = Type.Object({
   name: oneOf(["issue.new", "issue.regression"]),
@@ -287,105 +273,43 @@ export const IssueAlert = Type.Object({
 });
 
 export const AlertEvent = Type.Union([IssueAlert]);
-export type AlertEvent = Static<typeof AlertEvent>;
-
-export const WebhookBody = Type.Object({
-  v: Type.Literal(1),
-  sentAt: Timestamp,
-  events: Type.Array(AlertEvent),
-});
-export type WebhookBody = Static<typeof WebhookBody>;
+export const WebhookBody = Type.Object({ v: Type.Literal(1), sentAt: Timestamp, events: Type.Array(AlertEvent) });
 ```
 
-`ChannelInput` is what callers send: `name` defaults to the kind, `on` to every event, `enabled` to `true`. `AlertChannel` is what the API answers, with every default resolved.
+`AlertTarget`, what the API answers, is the same union with every default resolved plus `id`, `project`, `state` (`active`, `paused` or `failing`), `stateReason`, `createdAt` and `updatedAt`.
 
-The SDK narrows the schema types for the editor: `EmailAddress` becomes `${string}@${string}.${string}`, `HttpsUrl` becomes `https://${string}`, and `to` becomes a non-empty tuple. The schema stays the rule; the narrower types only catch mistakes earlier.
+The SDK narrows the schema types for the editor: `EmailAddress` becomes `${string}@${string}.${string}`, `HttpsUrl` becomes `https://${string}`, `to` becomes a non-empty tuple and durations become `${number}${"s" | "m" | "h" | "d"}`. The schema stays the rule; the narrower types catch mistakes earlier.
 
 ### Engine
 
-`packages/engine/src/alerts/`. Every function returns a `Result`; nothing in it knows SMTP, Resend or HTTP libraries, only the ports.
+`packages/engine/src/alerts/`. Every function returns a `Result`; the core knows only the ports, never SMTP or HTTP.
 
 ```ts
-export type AlertEvents = {
-  "issue.new": IssueAlert;
-  "issue.regression": IssueAlert;
+export type ServerPlugin = {
+  name: string;
+  routes: (app: RouteHost) => void;
+  jobs: { [name: string]: Job };
 };
 
-export type ChannelOf<Kind extends ChannelKind> = Extract<AlertChannel, { kind: Kind }>;
+export type RetryPolicy = { attempts: number; backoff: "exponential" | "fixed"; maxAge: Duration };
 
-export type AlertDelivery<Name extends AlertEventName = AlertEventName> = {
-  id: string;
-  channelId: string;
-  event: AlertEvents[Name];
-  attempts: number;
+export type ChannelDriver<Name extends ChannelName = ChannelName> = {
+  name: Name;
+  retry: Partial<RetryPolicy>;
+  ready: () => Result<null, EngineError>;
+  send: (batch: DeliveryBatch<Name>, links: AlertLinks) => Promise<Result<null, EngineError>>;
 };
 
-export type DeliveryBatch<Kind extends ChannelKind = ChannelKind> = {
-  channel: ChannelOf<Kind>;
-  deliveries: AlertDelivery[];
-};
-
-export type DriverContext = {
-  mailer: Nullable<Mailer>;
-  fetch: Fetcher;
-  links: AlertLinks;
-  clock: Clock;
-};
-
-export type ChannelDriver<Kind extends ChannelKind = ChannelKind> = {
-  kind: Kind;
-  ready: (context: DriverContext) => Result<null, EngineError>;
-  send: (batch: DeliveryBatch<Kind>, context: DriverContext) => Promise<Result<null, EngineError>>;
-};
-
-export function defineDriver<Kind extends ChannelKind>(driver: ChannelDriver<Kind>): ChannelDriver<Kind> {
-  return driver;
-}
-```
-
-```ts
-export type MailTransport = "smtp" | "resend";
-
-export type MailConfig =
-  | { transport: "smtp"; host: string; port: number; secure: boolean; user: string; password: string }
-  | { transport: "resend"; apiKey: string };
-
-export type MailMessage = {
-  from: string;
-  to: string[];
-  subject: string;
-  text: string;
-  html: string;
-};
-
-export type Mailer = {
-  transport: MailTransport;
+export type MailTransport = {
+  name: "smtp" | "resend";
   send: (message: MailMessage) => Promise<Result<null, EngineError>>;
 };
 
-export type AlertLinks = {
-  issue: (project: ProjectID, issueId: string) => string;
-};
-
-export type ChannelChanges = {
-  created: string[];
-  updated: string[];
-  removed: string[];
-  secrets: { [channel: string]: string };
-};
-
-export type DeliveryStatus = "pending" | "sent" | "failed";
-
-export type DeliveryOutcome =
-  | { id: string; status: "sent"; sentAt: Date }
-  | { id: string; status: "retry"; error: string; nextAttemptAt: Date }
-  | { id: string; status: "failed"; error: string };
-
 export type AlertStore = {
-  channels: (project: ProjectID) => Read<AlertChannel[]>;
-  replaceChannels: (project: ProjectID, channels: ChannelInput[]) => Read<ChannelChanges>;
-  saveChannel: (project: ProjectID, channel: ChannelInput) => Read<ChannelChanges>;
-  removeChannel: (project: ProjectID, name: string) => Read<boolean>;
+  targets: (project: ProjectID) => Read<AlertTarget[]>;
+  syncTargets: (project: ProjectID, targets: TargetInput[]) => Read<TargetChanges>;
+  saveTarget: (project: ProjectID, target: TargetInput) => Read<TargetChanges>;
+  removeTarget: (project: ProjectID, name: string) => Read<boolean>;
   rotateSecret: (project: ProjectID, name: string) => Read<string>;
   queue: (events: AlertEvent[]) => Read<{ queued: number }>;
   due: (now: Date, limit: number) => Read<DeliveryBatch[]>;
@@ -394,31 +318,21 @@ export type AlertStore = {
 };
 ```
 
-The jobs, one verb each:
-
 | Function | Does |
 | --- | --- |
+| `alerts(options)` | The plugin: its routes, the alerts job, and the channels it was given |
+| `mail(options)`, `webhook(options)`, `discord(options)` | Channel drivers |
+| `smtp(url)`, `resend(key)` | Mail transports |
 | `queueIssueAlerts(issues, alerts, now)` | Turns pending issues into alert events and queues their deliveries |
-| `dispatchAlerts(alerts, drivers, context, now)` | Sends due batches through their drivers and settles each outcome |
+| `dispatchAlerts(alerts, channels, now)` | Sends due batches and settles each outcome with the retry policy |
+| `nextAttempt(policy, attempts, createdAt, now)` | Pure: the next attempt time, or null when the policy ran out |
 | `renderMail(batch, links)` | Pure: a batch to `{ subject, text, html }` |
-| `signBody(body, secret, timestamp)` | Pure: the `sha256=<hex>` HMAC of `<timestamp>.<body>` |
-| `parseMailUrl(value)` | Pure: `MAIL_URL` to `Result<MailConfig, EngineError>` |
-
-The drivers are registered like stages and signals, so a deployment can add its own:
-
-```ts
-createEngine(ports, {
-  stages: defaultStages,
-  signals: defaultSignals,
-  enrichers: defaultEnrichers,
-  dimensions: [],
-  drivers: defaultDrivers,
-});
-```
+| `renderDiscord(batch, links)` | Pure: a batch to a Discord message |
+| `signBody(body, secret, timestamp)` | Pure: the `sha256=<hex>` value |
 
 ### Mail
 
-One mail per channel per run with every alert in it, newest first, in plain text and in HTML (dark neutral, no colours or icons). Links go to the API's issue route until the v2 dashboard exists; `AlertLinks` is the one place that builds them, so switching later is one change.
+One mail per target per run with every alert in it, newest first, in plain text and HTML (dark neutral, no colours or icons). Links go to the API's issue route until the v2 dashboard exists; `AlertLinks` is the one place that builds them.
 
 ```text
 Subject: [remcostoeten.nl] 2 new issues, 1 regression
@@ -434,14 +348,14 @@ REGRESSION  Failed to fetch
 
 ### Storage
 
-Migration `0029_add_alert_channels`, on the shared `baseEntity()` and `timestamps()` columns:
+Migration `0029_add_alert_targets`, on the shared `baseEntity()` and `timestamps()` columns:
 
 ```sql
-CREATE TABLE alert_channels (
+CREATE TABLE alert_targets (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   name text NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('mail', 'webhook')),
+  channel text NOT NULL,
   events text[] NOT NULL,
   settings jsonb NOT NULL,
   webhook_secret text,
@@ -453,7 +367,7 @@ CREATE TABLE alert_channels (
 
 CREATE TABLE alert_deliveries (
   id bigserial PRIMARY KEY,
-  channel_id text NOT NULL REFERENCES alert_channels (id) ON DELETE CASCADE,
+  target_id text NOT NULL REFERENCES alert_targets (id) ON DELETE CASCADE,
   event_name text NOT NULL,
   subject_id text NOT NULL,
   payload jsonb NOT NULL,
@@ -463,94 +377,98 @@ CREATE TABLE alert_deliveries (
   last_error text,
   sent_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (channel_id, event_name, subject_id)
+  UNIQUE (target_id, event_name, subject_id)
 );
 CREATE INDEX alert_deliveries_due_idx ON alert_deliveries (next_attempt_at) WHERE status = 'pending';
 ```
 
-- Mail credentials never reach the database; they live only in `MAIL_URL`.
-- A webhook secret is stored per channel, like GitHub and Stripe do: it only proves our requests to that receiver. It is generated by the API (`whsec_` plus 32 random bytes), shown once, and replaced by `rotate`.
+- `channel` is free text, not a check constraint, so a new channel needs no migration; the API only accepts channels the config enables.
+- Mail credentials never reach the database; they live only in the environment.
+- A webhook secret is stored per target, like GitHub and Stripe do: it only proves our requests to that receiver. It is generated by the API (`whsec_` plus 32 random bytes), shown once, and replaced by `rotate`.
 - `issues.alerted_at` keeps meaning "queued", so E4.4's column stays.
-- Sent deliveries are removed by the cleanup job after 30 days, failed ones after 90.
+- The cleanup job removes sent deliveries after 30 days and failed ones after 90.
 
 ### Routes
 
+Present only when `alerts()` is in the config.
+
 | Method | Path | Access | Does |
 | --- | --- | --- | --- |
-| GET | `/v2/projects/:project/alerts/channels` | admin | The project's channels |
-| PUT | `/v2/projects/:project/alerts/channels` | admin | Replace them all (`sync`) and answer the changes |
-| PUT | `/v2/projects/:project/alerts/channels/:name` | admin | Create or replace one (`set`) |
-| DELETE | `/v2/projects/:project/alerts/channels/:name` | admin | Remove one |
-| POST | `/v2/projects/:project/alerts/channels/:name/test` | admin | Send a sample alert now |
-| POST | `/v2/projects/:project/alerts/channels/:name/rotate` | admin | New webhook secret, shown once |
+| GET | `/v2/projects/:project/alerts/targets` | admin | The project's targets |
+| PUT | `/v2/projects/:project/alerts/targets` | admin | Replace them all (`sync`) and answer the changes |
+| PUT | `/v2/projects/:project/alerts/targets/:name` | admin | Create or replace one (`set`) |
+| DELETE | `/v2/projects/:project/alerts/targets/:name` | admin | Remove one |
+| POST | `/v2/projects/:project/alerts/targets/:name/test` | admin | Send a sample alert now |
+| POST | `/v2/projects/:project/alerts/targets/:name/rotate` | admin | New webhook secret, shown once |
 | GET | `/v2/projects/:project/alerts/deliveries` | admin | Delivery history, `status` filter, paged |
-| GET | `/v2/admin/alerts/status` | admin | Transport, pending count, failing channels |
+| GET | `/v2/admin/alerts/status` | admin | Enabled channels, the mail transport without secrets, pending count, failing targets |
 | POST | `/v2/admin/jobs/alerts` | cron secret | Queue and dispatch |
-
-`admin` is the existing level: owners, admins listed on the project, and `admin` tokens.
 
 ### Files
 
 ```text
+packages/shared/src/http.ts                 postJson, getJson
 packages/contract/src/alerts.ts
+packages/engine/src/config.ts               defineConfig, ServerPlugin
 packages/engine/src/alerts/
+├─ plugin.ts            alerts()
 ├─ events.ts            AlertEvents, the event map
 ├─ queue-issues.ts      queueIssueAlerts
-├─ dispatch.ts          dispatchAlerts, the retry schedule
+├─ dispatch.ts          dispatchAlerts
+├─ retry.ts             nextAttempt, the default policy
 ├─ render-mail.ts       renderMail
+├─ render-discord.ts    renderDiscord
 ├─ sign-body.ts         signBody
-├─ mail-url.ts          parseMailUrl
-├─ drivers/
-│  ├─ mail-driver.ts
-│  ├─ webhook-driver.ts
-│  └─ index.ts          defaultDrivers
+├─ channels/            mail.ts, webhook.ts, discord.ts
+├─ transports/          smtp.ts (node:tls), resend.ts (fetch)
 └─ index.ts
-packages/engine/src/ports/alerts.ts        AlertStore, Mailer, MailMessage
-packages/engine/src/adapters/smtp-mailer.ts
-packages/engine/src/adapters/resend-mailer.ts
+packages/engine/src/ports/alerts.ts          AlertStore
 packages/engine/src/adapters/drizzle-alerts.ts
-apps/api/src/modules/alerts/               route.ts, service.ts
-packages/sdk/src/admin/                    create-admin.ts, channels.ts, types.ts, index.ts
-packages/sdk/src/server/verify-alert.ts
+apps/api/analytics.config.ts
+apps/api/src/modules/alerts/                 route.ts, service.ts
+packages/sdk/src/admin/                      create-admin.ts, targets.ts, reads.ts, types.ts, index.ts
+packages/sdk/src/server/alert-route.ts       alertRoute, verifyAlert
 ```
-
-The SMTP mailer uses `nodemailer`, imported only in `smtp-mailer.ts`; the Resend mailer is a `fetch` call. The memory mailer and memory alert store live with the other memory adapters for tests.
 
 ## Extending
 
 **A new alert event**, such as `traffic.spike`:
 
 1. Add its schema to the `AlertEvent` union and its name to `AlertEventName` in the contract.
-2. Add it to `AlertEvents` in `events.ts`; the compiler then lists every renderer and switch that must handle it.
+2. Add it to `AlertEvents` in `events.ts`; the compiler then lists every renderer and `alertRoute` handler type that must handle it.
 3. Write a producer, `queue-traffic.ts`, and call it from the alerts job.
-4. Add its section to `renderMail` with a fixture test.
+4. Add its section to `renderMail` and `renderDiscord` with fixture tests.
 
-**A new channel kind**, such as `slack`:
+**A new channel**, such as `slack`:
 
-1. Add `slack` to `ChannelKind` and its settings schema to `ChannelInput` in the contract.
-2. Write `drivers/slack-driver.ts` with `defineDriver({ kind: "slack", ready, send })` and add it to `defaultDrivers`.
-3. Add a `slack()` builder to the admin entry.
+1. Add `slack` to `ChannelName` and its target schema to `TargetInput` in the contract.
+2. Write `channels/slack.ts` returning a `ChannelDriver<"slack">`, and a `renderSlack` beside the other renderers.
+3. Add a `slack()` builder to the admin client.
 
-**A new mail transport**, such as SES over HTTP:
-
-1. Add the scheme to `parseMailUrl` and its config to the `MailConfig` union.
-2. Write `adapters/ses-mailer.ts` implementing `Mailer`.
-3. Pick it in `apps/api/src/index.ts` where the mailer is built from the config.
+**A new mail transport**, such as SES over HTTP: write `transports/ses.ts` returning a `MailTransport`, using `postJson`. Nothing else changes; the config passes it to `mail({ transport: ses(...) })`.
 
 ## Tests
 
-- Engine: queue and dispatch against the memory store and memory mailer with a fixed clock, covering success, retry with each backoff step, the fifth failure, a failing channel beside a working one, and idempotent re-queueing.
-- `renderMail` and `signBody` against fixed expected output; `parseMailUrl` for every scheme and every error message.
-- API on PGlite: every route's access, validation paths, `sync` changes, `test` through the memory mailer, and the job's answer.
-- SDK: `createAdmin` against the API app in memory, and type tests (`expectTypeOf`) for every row of the table in "What the editor catches".
+- Engine: queue and dispatch against the memory store and a memory transport with a fixed clock, covering success, every retry step of both backoffs, `maxAge`, a channel's retry override, a failing target beside a working one, and idempotent re-queueing.
+- `smtp()` against a scripted fake SMTP server on a local socket: login, `STARTTLS`, refusing to send unencrypted, and each server error.
+- `nextAttempt`, `renderMail`, `renderDiscord` and `signBody` against fixed expected output.
+- API on PGlite: each route's access, validation paths, the "not enabled" answers, `sync` changes, `test` through the memory transport, and the job's answer; a config without `alerts()` has none of the routes.
+- SDK: `createAdmin` and `alertRoute` against the API app in memory, and type tests (`expectTypeOf`) for every row of "What the editor catches".
 
-## Out of scope for E4.7
+## Roadmap
 
-Slack and Discord channels, traffic and speed events, digest schedules (daily summaries), per-channel quiet hours, and per-project mail credentials. Each fits the extension checklists above.
+- **Resend by hand**: `admin.alerts.resend(deliveryId)` and `POST /v2/projects/:project/alerts/deliveries/:id/resend` send a `failed` delivery to its target again, for example after a webhook was down; one call to put behind a button on your own admin page.
+- Slack channel, traffic and speed events, daily digests, quiet hours per target.
+- React hooks over the admin client's reads.
 
-## Questions for Remco
+## Decided
 
-1. One transport per deployment (the recommendation), or per project too? Per project means storing mail credentials encrypted in the database.
-2. `sync` as the main method, with `set` and `remove` beside it, or only the single-channel methods?
-3. The new `/admin` entry in the SDK, or the admin client inside `/server`?
-4. The retry schedule: five attempts over about 15 hours, then `failed`.
+| Question | Answer |
+| --- | --- |
+| Mail provider per deployment or per project | Per deployment, in the config; credentials stay in the environment |
+| Outside dependencies | None: SMTP on `node:tls`, Resend on `fetch` |
+| Which channels | Mail, webhook and Discord, each optional |
+| How projects set targets | `sync`, with single-target methods beside it |
+| Admin client | A module of the SDK package: `@remcostoeten/analytics/admin` |
+| Retries | Configurable per plugin and per channel; default 5 attempts, exponential, 24 hours |
+| Syntax | Functions taking one object, not chains |
