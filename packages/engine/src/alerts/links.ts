@@ -14,7 +14,8 @@ export type AlertLinks = {
  * // "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42"
  */
 export function apiLinks(base: string): AlertLinks {
-  const root = base.replace(/\/+$/, "");
+  let root = base;
+  while (root.endsWith("/")) root = root.slice(0, -1);
   return {
     issue: (project, issue) =>
       `${root}/v2/projects/${encodeURIComponent(project)}/issues/${encodeURIComponent(issue)}`,

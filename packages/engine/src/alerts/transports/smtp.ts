@@ -39,8 +39,6 @@ const defaultTimeoutMs = 20_000;
 const lineWidth = 76;
 // A reply line: three digits, then "-" when more lines follow or a space on the last one.
 const replyLine = /^(\d{3})([- ])(.*)$/;
-// The address inside a From such as "Analytics <remco@gmail.com>", or the whole value.
-const angleAddress = /<([^>]+)>/;
 
 // Printable ASCII only, which a header may carry without encoding.
 const plainHeader = /^[\x20-\x7e]*$/;
@@ -171,7 +169,9 @@ async function command(wire: Wire, line: string, codes: number[], step = line.sp
 }
 
 function addressOf(value: string) {
-  return (angleAddress.exec(value)?.[1] ?? value).trim();
+  const start = value.lastIndexOf("<");
+  const end = value.indexOf(">", start);
+  return (start !== -1 && end > start ? value.slice(start + 1, end) : value).trim();
 }
 
 function base64(text: string) {
