@@ -2,7 +2,15 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Compared, Filters, Range, ValueCount } from "./common";
-import { DeviceType, EventName, Interval, Percentile, TrafficFilter, VitalRating } from "./enums";
+import {
+  DeviceType,
+  EventName,
+  Interval,
+  Percentile,
+  TrafficFilter,
+  Visibility,
+  VitalRating,
+} from "./enums";
 import { Count, Id, nullable, oneOf, Ratio, Timestamp } from "./schema";
 
 const Scope = {
@@ -81,6 +89,29 @@ export const BreakdownResponse = Type.Object({
 });
 export type BreakdownResponse = Static<typeof BreakdownResponse>;
 
+export const ProjectBreakdownRow = Type.Object(
+  {
+    ...BreakdownRow.properties,
+    name: Type.String({ minLength: 1 }),
+    visibility: Visibility,
+    change: Type.Record(Type.String(), nullable(Type.Number())),
+    speedScore: nullable(Type.Integer({ minimum: 0, maximum: 100 })),
+    openIssues: nullable(Count),
+  },
+  { additionalProperties: Type.Number() },
+);
+export type ProjectBreakdownRow = Static<typeof ProjectBreakdownRow>;
+
+export const ProjectBreakdownResponse = Type.Object({
+  data: Type.Array(ProjectBreakdownRow),
+  dimension: Type.Literal("project"),
+  total: Count,
+  nextCursor: nullable(Type.String()),
+  previousRange: Range,
+  ...Scope,
+});
+export type ProjectBreakdownResponse = Static<typeof ProjectBreakdownResponse>;
+
 export const VitalsRow = Type.Object({
   value: Type.String(),
   samples: Count,
@@ -149,6 +180,40 @@ export const RetentionResponse = Type.Object({
   ...Scope,
 });
 export type RetentionResponse = Static<typeof RetentionResponse>;
+
+export const LifecycleInterval = oneOf(["day", "week", "month"]);
+export type LifecycleInterval = Static<typeof LifecycleInterval>;
+
+export const LifecyclePeriod = Type.Object({
+  period: Timestamp,
+  new: Count,
+  returning: Count,
+  resurrected: Count,
+  dormant: Count,
+});
+export type LifecyclePeriod = Static<typeof LifecyclePeriod>;
+
+export const LifecycleResponse = Type.Object({
+  data: Type.Array(LifecyclePeriod),
+  interval: LifecycleInterval,
+  ...Scope,
+});
+export type LifecycleResponse = Static<typeof LifecycleResponse>;
+
+export const StickinessRow = Type.Object({
+  days: Type.Integer({ minimum: 1 }),
+  visitors: Count,
+  share: Ratio,
+});
+export type StickinessRow = Static<typeof StickinessRow>;
+
+export const StickinessResponse = Type.Object({
+  data: Type.Array(StickinessRow),
+  visitors: Count,
+  averageDays: Type.Number({ minimum: 0 }),
+  ...Scope,
+});
+export type StickinessResponse = Static<typeof StickinessResponse>;
 
 export const HeatmapMetric = oneOf(["visitors", "pageviews"]);
 export type HeatmapMetric = Static<typeof HeatmapMetric>;

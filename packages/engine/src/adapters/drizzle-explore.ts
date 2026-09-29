@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
-import type { MapLevel, ReadStore } from "../ports";
+import type { LifecycleInterval, MapLevel, ReadStore } from "../ports";
 import { scopedEvents, scopeParts } from "../reads/scope";
 import type { Database } from "./drizzle";
 import { attempt, numeric, rounded, selectRows, textual } from "./drizzle-rows";
@@ -21,6 +21,18 @@ function coordinate(value: unknown) {
   return value === null || value === undefined ? null : rounded(numeric(value), 2);
 }
 
+const dayMs = 86_400_000;
+
+function previousPeriodStart(date: Date, interval: LifecycleInterval) {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  if (interval === "month") return new Date(Date.UTC(year, month - 1, 1));
+  const day = Date.UTC(year, month, date.getUTCDate());
+  if (interval === "day") return new Date(day - dayMs);
+  const monday = day - ((date.getUTCDay() + 6) % 7) * dayMs;
+  return new Date(monday - 7 * dayMs);
+}
+
 function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
   return interval === "week"
     ? sql`((${later})::date - (${earlier})::date) / 7`
@@ -30,7 +42,8 @@ function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
 /**
  * @name exploreReads
  * @description The exploration reads of the `ReadStore`: page paths, retention cohorts, the
- * weekday and hour heatmap, and visitors per place for a map. Each reads `events` through the same
+ * lifecycle of visitors per period, how many days visitors were active, the weekday and hour
+ * heatmap, and visitors per place for a map. Each reads `events` through the same
  * scope as every other read.
  *
  * @example
@@ -38,7 +51,7 @@ function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
  */
 export function exploreReads(
   db: Database,
-): Pick<ReadStore, "paths" | "retention" | "heatmap" | "places"> {
+): Pick<ReadStore, "paths" | "retention" | "lifecycle" | "stickiness" | "heatmap" | "places"> {
   return {
     paths: (scope, page, direction) =>
       attempt("Could not read the paths", async () => {
@@ -97,6 +110,72 @@ export function exploreReads(
           cohorts.set(key, cohort);
         }
         return [...cohorts.values()];
+      }),
+    lifecycle: (scope, interval) =>
+      attempt("Could not read the lifecycle", async () => {
+        const unit = sql.raw(`'${interval}'`);
+        const step = sql.raw(`interval '1 ${interval}'`);
+        const earlier = { ...scope, from: previousPeriodStart(scope.from, interval) };
+        const rows = await selectRows(
+          db,
+          sql`WITH scoped AS (${scopedEvents(earlier, sql`1`, [])}),
+            active AS (
+              SELECT DISTINCT project_id, visitor_id, date_trunc(${unit}, ts AT TIME ZONE 'UTC') AS period
+              FROM scoped WHERE visitor_id IS NOT NULL
+            ),
+            firsts AS (
+              SELECT a.project_id, a.visitor_id, date_trunc(${unit}, (
+                SELECT min(e.ts) FROM events e
+                WHERE e.project_id = a.project_id AND e.visitor_id = a.visitor_id
+              ) AT TIME ZONE 'UTC') AS first
+              FROM (SELECT DISTINCT project_id, visitor_id FROM active) a
+            ),
+            marks AS (
+              SELECT project_id, visitor_id, period, true AS now, false AS before FROM active
+              UNION ALL
+              SELECT project_id, visitor_id, period + ${step}, false, true FROM active
+            ),
+            states AS (
+              SELECT project_id, visitor_id, period, bool_or(now) AS now, bool_or(before) AS before
+              FROM marks GROUP BY 1, 2, 3
+            ),
+            periods AS (
+              SELECT generate_series(
+                date_trunc(${unit}, ${scope.from.toISOString()}::timestamptz AT TIME ZONE 'UTC'),
+                date_trunc(${unit}, (${scope.to.toISOString()}::timestamptz AT TIME ZONE 'UTC') - interval '1 microsecond'),
+                ${step}
+              ) AS period
+            )
+            SELECT (p.period AT TIME ZONE 'UTC') AS period,
+              count(*) FILTER (WHERE s.now AND f.first = s.period) AS new,
+              count(*) FILTER (WHERE s.now AND s.before AND f.first < s.period) AS returning,
+              count(*) FILTER (WHERE s.now AND NOT s.before AND f.first < s.period) AS resurrected,
+              count(*) FILTER (WHERE NOT s.now AND s.before) AS dormant
+            FROM periods p
+            LEFT JOIN states s ON s.period = p.period
+            LEFT JOIN firsts f ON f.project_id = s.project_id AND f.visitor_id = s.visitor_id
+            GROUP BY p.period ORDER BY p.period`,
+        );
+        return rows.map((row) => ({
+          period: new Date(textual(row.period)),
+          new: numeric(row.new),
+          returning: numeric(row.returning),
+          resurrected: numeric(row.resurrected),
+          dormant: numeric(row.dormant),
+        }));
+      }),
+    stickiness: (scope) =>
+      attempt("Could not read the stickiness", async () => {
+        const rows = await selectRows(
+          db,
+          sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}),
+            days AS (
+              SELECT project_id, visitor_id, count(DISTINCT (ts AT TIME ZONE 'UTC')::date) AS days
+              FROM scoped WHERE visitor_id IS NOT NULL GROUP BY 1, 2
+            )
+            SELECT days, count(*) AS visitors FROM days GROUP BY 1 ORDER BY 1`,
+        );
+        return rows.map((row) => ({ days: numeric(row.days), visitors: numeric(row.visitors) }));
       }),
     heatmap: (scope, metric, timezone) =>
       attempt("Could not read the heatmap", async () => {

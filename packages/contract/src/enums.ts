@@ -93,6 +93,7 @@ export const builtInEvents = [
   "error",
   "not_found",
   "identify",
+  "group",
   "experiment_exposure",
 ] as const;
 export const BuiltInEvent = oneOf(builtInEvents);

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "api-and-interface-design": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/api-and-interface-design/SKILL.md",
+      "computedHash": "26f5a9e7abfd332d7a2e5887cf19bddd3393f47514c379b36bf227c1f15cdec4"
+    },
+    "api-design": {
+      "source": "wso2/agent-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/api-platform/skills/api-design/SKILL.md",
+      "computedHash": "7a83150bd092f14373c6c09d6bd6928e8f6cbb68062b95f009ee910ff7cb8a2a"
+    },
+    "auth-review": {
+      "source": "descope/skills",
+      "sourceType": "github",
+      "skillPath": "skills/auth-review/SKILL.md",
+      "computedHash": "0a8c214906c6199b49432a1f31f9ff331f94d07b1dc4d7a033c51486026c1aa0"
+    },
+    "elysiajs": {
+      "source": "elysiajs/skills",
+      "sourceType": "github",
+      "skillPath": "elysia/SKILL.md",
+      "computedHash": "55268e69a2c766ed67e56a0db57544f60cc52dba0c7f024a974baf965e525e1b"
+    }
+  }
+}

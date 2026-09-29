@@ -75,6 +75,18 @@ export type Cohort = {
   periods: { offset: number; visitors: number }[];
 };
 
+export type LifecycleInterval = "day" | "week" | "month";
+
+export type LifecyclePeriod = {
+  period: Date;
+  new: number;
+  returning: number;
+  resurrected: number;
+  dormant: number;
+};
+
+export type ActiveDays = { days: number; visitors: number };
+
 export type HeatMetric = "visitors" | "pageviews";
 
 export type HeatCell = { weekday: number; hour: number; value: number };
@@ -106,6 +118,8 @@ export type ReadStore = {
   realtime: (projectIds: ProjectID[], from: Date, to: Date) => Read<Realtime>;
   paths: (scope: ReadScope, page: string, direction: PathDirection) => Read<Paths>;
   retention: (scope: ReadScope, interval: "week" | "month") => Read<Cohort[]>;
+  lifecycle: (scope: ReadScope, interval: LifecycleInterval) => Read<LifecyclePeriod[]>;
+  stickiness: (scope: ReadScope) => Read<ActiveDays[]>;
   heatmap: (scope: ReadScope, metric: HeatMetric, timezone: string) => Read<HeatCell[]>;
   places: (
     scope: ReadScope,

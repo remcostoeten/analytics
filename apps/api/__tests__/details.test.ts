@@ -259,6 +259,7 @@ describe("GET /v2/projects/:project/events", () => {
           referrer: "https://news.ycombinator.com/",
         },
         props: { plan: "pro" },
+        groups: {},
         geo: {
           country: "NL",
           region: "Friesland",

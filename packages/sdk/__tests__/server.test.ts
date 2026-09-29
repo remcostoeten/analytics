@@ -100,6 +100,22 @@ describe("createServerAnalytics", () => {
     expect(message?.props).toMatchObject({ message: "slow provider", level: "warning" });
   });
 
+  test("group joins a group and groups on the context put any event in them", async () => {
+    const { calls, fetcher } = api();
+    const analytics = server(fetcher);
+    void analytics.group("company", "acme", { plan: "pro" }, { visitor: "visitor_1" });
+    void analytics.track("checkout", { revenue: 49 }, { groups: { company: "acme" } });
+    await analytics.flush();
+    const [group, checkout] = calls[0]?.body.events ?? [];
+    expect(group).toMatchObject({
+      name: "group",
+      visitor: "visitor_1",
+      props: { plan: "pro", groupType: "company", groupId: "acme" },
+      groups: { company: "acme" },
+    });
+    expect(checkout?.groups).toEqual({ company: "acme" });
+  });
+
   test("splits more than 50 events into several requests", async () => {
     const { calls, fetcher } = api();
     const analytics = server(fetcher);

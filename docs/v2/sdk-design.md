@@ -63,7 +63,9 @@ Config:
 | `strict` | `false` | `true` rejects event names that are not in `Events` at compile time |
 | `autostart` | `true` in browsers | `false` for tests or when the app decides when tracking may begin |
 
-The server client, `createServerAnalytics<Events>()`, has the same `track`, `identify`, `captureError`, `captureMessage`, `scope`, `flush` and `shutdown`, plus `withErrors(handler)`. Every server method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. The React entry has `AnalyticsProvider`, `useAnalytics()` returning the same typed client, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` for router adapters and `computeRoute`; the `./next` entry has the `Analytics` component that supplies routes.
+Groups (companies, workspaces, teams) come from the `groups<Groups>()` plugin: `set(type, id, traits?)` sends a `group` event and puts every later event in that group, read back as the `group:<type>` dimension. The core stays under its budget because the plugin is opt-in.
+
+The server client, `createServerAnalytics<Events>()`, has the same `track`, `identify`, `group`, `captureError`, `captureMessage`, `scope`, `flush` and `shutdown`, plus `withErrors(handler)`. Every server method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. The React entry has `AnalyticsProvider`, `useAnalytics()` returning the same typed client, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` for router adapters and `computeRoute`; the `./next` entry has the `Analytics` component that supplies routes.
 
 ## Usage
 
@@ -169,6 +171,8 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 
 export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
+
+The proposed `/admin` entry (alert channels, later projects and tokens) and `verifyAlert` in `/server` are specified in [alerts.md](alerts.md).
 
 ## Error tracking in code
 

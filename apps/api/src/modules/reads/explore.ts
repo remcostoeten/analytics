@@ -1,13 +1,16 @@
 import type {
   HeatmapResponse,
+  LifecycleResponse,
   MapResponse,
   PathsResponse,
   RetentionResponse,
+  StickinessResponse,
 } from "@remcostoeten/analytics-contract";
 import { engineError } from "@remcostoeten/analytics-engine";
 import type {
   EngineError,
   HeatMetric,
+  LifecycleInterval,
   MapLevel,
   PathDirection,
   ReadStore,
@@ -22,6 +25,7 @@ type Reply<Value> = Promise<Result<Value, EngineError>>;
 
 const directions = new Set<string>(["next", "previous"]);
 const retentionIntervals = new Set<string>(["week", "month"]);
+const lifecycleIntervals = new Set<string>(["day", "week", "month"]);
 const heatMetrics = new Set<string>(["visitors", "pageviews"]);
 const mapLevels = new Set<string>(["country", "region", "city"]);
 
@@ -118,6 +122,59 @@ export async function retention(
       };
     }),
     interval: interval as "week" | "month",
+    ...shared(scoped),
+  });
+}
+
+/**
+ * @name lifecycle
+ * @description Visitors per `day`, `week` (default, Monday start, UTC) or `month` of the range,
+ * split by how they relate to the period before: `new` (first seen ever in this period),
+ * `returning` (active in the period before too), `resurrected` (seen before, but not in the
+ * period before) and `dormant` (active in the period before, not in this one).
+ *
+ * @example
+ * await lifecycle(store, scoped, params);
+ */
+export async function lifecycle(
+  store: ReadStore,
+  scoped: Scoped,
+  params: URLSearchParams,
+): Reply<LifecycleResponse> {
+  const interval = params.get("interval") ?? "week";
+  if (!lifecycleIntervals.has(interval)) return invalid(`Unknown interval ${interval}`);
+  const found = await store.lifecycle(scoped.scope, interval as LifecycleInterval);
+  if (!found.ok) return found;
+  return ok({
+    data: found.value.map((row) => ({ ...row, period: row.period.toISOString() })),
+    interval: interval as LifecycleInterval,
+    ...shared(scoped),
+  });
+}
+
+/**
+ * @name stickiness
+ * @description How many visitors were active on 1, 2, 3 and more distinct UTC days in the range,
+ * with each count's share of all visitors and the average number of active days. Counts run
+ * from 1 to the most days any visitor was active, zero-filled.
+ *
+ * @example
+ * await stickiness(store, scoped);
+ */
+export async function stickiness(store: ReadStore, scoped: Scoped): Reply<StickinessResponse> {
+  const found = await store.stickiness(scoped.scope);
+  if (!found.ok) return found;
+  const counts = new Map(found.value.map((row) => [row.days, row.visitors]));
+  const visitors = found.value.reduce((sum, row) => sum + row.visitors, 0);
+  const activeDays = found.value.reduce((sum, row) => sum + row.days * row.visitors, 0);
+  const most = Math.max(0, ...found.value.map((row) => row.days));
+  return ok({
+    data: Array.from({ length: most }, (_, index) => {
+      const count = counts.get(index + 1) ?? 0;
+      return { days: index + 1, visitors: count, share: share(count, visitors) };
+    }),
+    visitors,
+    averageDays: visitors > 0 ? Math.round((activeDays / visitors) * 100) / 100 : 0,
     ...shared(scoped),
   });
 }

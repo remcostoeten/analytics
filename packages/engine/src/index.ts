@@ -28,7 +28,14 @@ export type {
   RequestFacts,
 } from "./draft";
 export { defaultEnrichers, forwardedHeaders } from "./enrichers";
-export { defaultDimensions, findDimension, propDimension, traitDimension } from "./dimensions";
+export {
+  defaultDimensions,
+  findDimension,
+  groupDimension,
+  propDimension,
+  traitDimension,
+} from "./dimensions";
+export { groupsKey, storedGroups } from "./groups";
 export { defaultSignals } from "./signals";
 export { engineError } from "./errors";
 export type { EngineError } from "./errors";
