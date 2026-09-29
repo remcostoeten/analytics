@@ -1,6 +1,6 @@
 # Epics and agent prompts
 
-Twenty epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
+Twenty-three epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
 
 ## How to use this
 
@@ -50,6 +50,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
 | E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
+| E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
@@ -333,6 +334,19 @@ Epic E4.6, branch feature/docs-site. Read the plan sections "SDK API shape", "Ac
 1. Export the OpenAPI document to apps/api/openapi.json with a script, and fail CI when it is stale.
 2. Add apps/docs on Fumadocs: MDX pages for the SDK (install, config, client methods, each plugin, react, next, server, proxy) and generated API reference pages from openapi.json.
 3. Add an auth overview page and a query page: the API URL and a token go in, SQL runs through POST /v2/query, results show as a table. No other dashboard views.
+```
+
+### E4.7 Alerts
+
+Delivers: the design in `docs/v2/alerts.md`: `defineConfig` with server plugins, the `alerts()` plugin with the optional mail, webhook and Discord channels, the `smtp()` (on `node:tls`) and `resend()` transports with no outside dependencies, `postJson` and `getJson` in the shared package, the delivery queue with the retry policy, the target routes and status route, the SDK's `/admin` module with `createAdmin`, `sync` and the target builders, and `alertRoute` and `verifyAlert` in `/server`. Replaces `ALERT_WEBHOOK_URL`. Done when a mail, a webhook and a Discord target receive a batch from the alerts job, a failing target retries by its policy without holding back the others, a config without `alerts()` has no alert routes, and every row of "What the editor catches" has a type test.
+
+```text
+Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec, and its vocabulary is binding for names of types, files and routes. Also read the plan section "Errors" and the existing apps/api/src/modules/jobs/alerts.ts, which this replaces. Add no outside dependencies.
+1. Shared and contract: postJson and getJson in packages/shared/src/http.ts; packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
+2. Engine: defineConfig and ServerPlugin; migration 0029_add_alert_targets; the AlertStore port and its Drizzle and memory versions; packages/engine/src/alerts with the plugin, queue, dispatch, retry policy, renderers, signing, the mail, webhook and Discord channels, and the smtp (node:tls) and resend (postJson) transports.
+3. API: apps/api/analytics.config.ts read at startup, the plugin's routes and the alerts job doing queue then dispatch, the status route. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site, including a page on retry settings.
+4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, rotate, deliveries, the read methods, and the mail, webhook and discord builders with the narrowed types) and alertRoute with verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.
+5. Tests as listed in the spec's Tests section, including the fake SMTP server and expectTypeOf tests for each row of "What the editor catches".
 ```
 
 ## Phase 5: retire 1.x
