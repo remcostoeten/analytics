@@ -50,7 +50,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
 | E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
-| E4.7 | Alerts: mail and webhook channels (waits on decision 16) | 4 | E4.4 | `feature/alerts` |
+| E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
@@ -337,8 +337,6 @@ Epic E4.6, branch feature/docs-site. Read the plan sections "SDK API shape", "Ac
 ```
 
 ### E4.7 Alerts
-
-Waits on Remco approving decision 16.
 
 Delivers: the design in `docs/v2/alerts.md`: `defineConfig` with server plugins, the `alerts()` plugin with the optional mail, webhook and Discord channels, the `smtp()` (on `node:tls`) and `resend()` transports with no outside dependencies, `postJson` and `getJson` in the shared package, the delivery queue with the retry policy, the target routes and status route, the SDK's `/admin` module with `createAdmin`, `sync` and the target builders, and `alertRoute` and `verifyAlert` in `/server`. Replaces `ALERT_WEBHOOK_URL`. Done when a mail, a webhook and a Discord target receive a batch from the alerts job, a failing target retries by its policy without holding back the others, a config without `alerts()` has no alert routes, and every row of "What the editor catches" has a type test.
 

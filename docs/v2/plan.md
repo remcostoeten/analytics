@@ -8,7 +8,7 @@ This tab is the plan. The API reference tab has every route with full examples, 
 
 ## Decisions needed
 
-Seven decisions are settled in the thread; the rest are open with a recommended default, and the whole plan assumes those defaults. A proposed decision waits on Remco before its epic starts. Changing one mostly affects the sections named in the last column.
+Seven decisions are settled in the thread; the rest are open with a recommended default, and the whole plan assumes those defaults. Changing one mostly affects the sections named in the last column.
 
 | # | Decision | Status | Choice | Affects |
 | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ Seven decisions are settled in the thread; the rest are open with a recommended 
 | 13 | Branching | Settled | Trunk on master: v1 in `v1/`, v2 at the root, epics squash-merge into master | Branching, Phases |
 | 14 | Who runs this | Settled | Models 1 and 2: you self-host, and others can self-host their own copy. A hosted service stays a note for later | Who runs this |
 | 15 | Roles and SQL access | Open, default | Better Auth organizations with owner, admin, analyst and viewer roles; SQL for owner, admin, analyst and sql-scoped tokens only, every run logged | Access and sign-in |
-| 16 | Alerts | Proposed | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
+| 16 | Alerts | Settled | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
 
 One open question is not a choice between options: Elysia on Vercel. Elysia documents a Vercel integration, but runtime, cold start and MMDB bundling need a short spike in phase 1 before the API commits to it.
 

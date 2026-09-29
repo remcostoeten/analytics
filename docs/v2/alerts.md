@@ -1,6 +1,6 @@
 # Alerts
 
-Proposal, Sep 29, 2026, revised with Remco's answers the same day. Epic E4.7 builds it once decision 16 in `plan.md` is approved.
+Approved by Remco on Sep 29, 2026 as decision 16 in `plan.md`. Epic E4.7 builds it.
 
 Alerts tell people that something happened in a project: today a new issue or a regression, later a traffic spike or a speed drop. The API is a small core plus plugins, the way [Better Auth](https://better-auth.com/docs/introduction) is: `alerts()` is a plugin, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed. This replaces the single `ALERT_WEBHOOK_URL` from E4.4; nothing of it is deployed, so nothing migrates.
 
