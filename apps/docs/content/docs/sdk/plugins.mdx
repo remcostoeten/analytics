@@ -19,6 +19,41 @@ Import from `@remcostoeten/analytics/plugins` and pass them in `plugins`, or add
 | `botSignals()` | Adds webdriver, headless and no-input bits to every event's `signals` |
 | `experiments({ id: variant })` | Registers `experiment:<id>` on every event and sends one `experiment_exposure` per experiment on each page load |
 | `notFound()` | `not_found` with the referrer on pages with `<meta name="ra-not-found">` |
+| `groups<Groups>()` | `group` when `set` joins a group, and puts every later event in the joined groups |
+
+## Groups
+
+Groups report on companies, workspaces or teams instead of only on people. Declare the group types and their traits once, and `set` autocompletes both:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { groups } from "@remcostoeten/analytics/plugins";
+import type { NoProps } from "@remcostoeten/analytics";
+
+type Groups = {
+  company: { plan: "free" | "pro"; seats: number };
+  team: NoProps;
+};
+
+export const workspace = groups<Groups>();
+
+export const analytics = createAnalytics<Events>({
+  project: "remcostoeten.nl",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [workspace],
+});
+
+workspace.set("company", "acme", { plan: "pro", seats: 12 });
+workspace.set("team", "design");
+workspace.leave("team");
+```
+
+- `set(type, id, traits?)` sends a `group` event with the traits plus `groupType` and `groupId`, and every later event carries `groups: { company: "acme" }`.
+- A type is a lowercase letter followed by up to 31 lowercase letters, digits or underscores; an id is up to 128 characters; an event is in at most 5 groups. `set` ignores anything outside these limits.
+- Groups live in memory and belong to the visitor that joined them: after `reset()` or a revoked consent, events carry them no more. Call `set` on every page load, where the signed-in user is known.
+- A type declared with `NoProps` takes no traits; without a `Groups` type, any type and traits are accepted.
+- Reports read them as the `group:<type>` dimension: `breakdown/group:company`, `filter[group:company]=acme`.
 
 ## Writing a plugin
 

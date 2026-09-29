@@ -16,6 +16,7 @@ import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
+import { groupsKey, storedGroups } from "../groups";
 import type { DetailStore, Keyset, Page } from "../ports";
 import { scopeParts } from "../reads/scope";
 import { defaultSignals } from "../signals";
@@ -37,6 +38,7 @@ const channels = new Set<string>([
 ]);
 const reasons = new Set<string>(defaultSignals.map((signal) => signal.name));
 const contextKeys = new Set([
+  groupsKey,
   "eventName",
   "screenSize",
   "viewport",
@@ -212,6 +214,7 @@ function eventRow(row: Row): EventRow {
     session: text(row.session_id) ?? "unknown",
     page: pageOf(row),
     props: props(row.meta),
+    groups: storedGroups(record(row.meta)),
     geo: geoOf(row),
     device: deviceOf(row),
     bot: { score: count(row.bot_score), reasons: botReasons(row.bot_reasons) },

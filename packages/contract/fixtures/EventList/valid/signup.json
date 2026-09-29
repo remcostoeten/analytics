@@ -15,6 +15,9 @@
       "props": {
         "plan": "pro"
       },
+      "groups": {
+        "company": "acme"
+      },
       "geo": {
         "country": "NL",
         "region": "Friesland",

@@ -4,6 +4,8 @@ export { engagement } from "./engagement";
 export { errors, scrub } from "./errors";
 export { experiments } from "./experiments";
 export { forms } from "./forms";
+export { groups } from "./groups";
+export type { Groups, TraitsArgs } from "./groups";
 export { ignoreSelf } from "./ignore-self";
 export { notFound } from "./not-found";
 export { outboundLinks } from "./outbound-links";

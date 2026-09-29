@@ -9,6 +9,7 @@ import {
   errors,
   experiments,
   forms,
+  groups,
   ignoreSelf,
   notFound,
   outboundLinks,
@@ -17,6 +18,7 @@ import {
   speedInsights,
   speedProps,
 } from "../src/plugins";
+import type { NoProps } from "../src";
 import type { SpeedOptions } from "../src/plugins";
 import { client, fresh, sent } from "./helpers";
 
@@ -399,6 +401,73 @@ describe("pageviews", () => {
     history.pushState(null, "", "/pricing");
     await analytics.flush();
     expect(sent(transport).map((event) => event.page.path)).toEqual(["/blog/rebuilding-analytics"]);
+    await analytics.shutdown();
+  });
+});
+
+describe("groups", () => {
+  type Workspaces = { company: { plan: "free" | "pro" }; team: NoProps };
+
+  test("announces a group with its traits and puts every later event in it", async () => {
+    const workspace = groups<Workspaces>();
+    const { analytics, transport } = client({ plugins: [workspace] });
+    workspace.set("company", "acme", { plan: "pro" });
+    workspace.set("team", "design");
+    analytics.track("signup");
+    workspace.leave("team");
+    analytics.track("upgrade");
+    await analytics.flush();
+    expect(sent(transport).map((event) => [event.name, event.props, event.groups])).toEqual([
+      ["group", { plan: "pro", groupType: "company", groupId: "acme" }, { company: "acme" }],
+      ["group", { groupType: "team", groupId: "design" }, { company: "acme", team: "design" }],
+      ["signup", {}, { company: "acme", team: "design" }],
+      ["upgrade", {}, { company: "acme" }],
+    ]);
+    await analytics.shutdown();
+  });
+
+  test("holds a group set before the client starts and sends it on setup", async () => {
+    const workspace = groups<Workspaces>();
+    workspace.set("company", "acme");
+    const { analytics, transport } = client({ plugins: [workspace] });
+    await analytics.flush();
+    expect(sent(transport).map((event) => [event.name, event.groups])).toEqual([
+      ["group", { company: "acme" }],
+    ]);
+    await analytics.shutdown();
+  });
+
+  test("drops the groups when the visitor resets or revokes consent", async () => {
+    const workspace = groups<Workspaces>();
+    const { analytics, transport } = client({ plugins: [workspace] });
+    workspace.set("company", "acme");
+    analytics.reset();
+    analytics.track("signup");
+    await analytics.flush();
+    workspace.set("company", "globex");
+    analytics.consent.revoke();
+    analytics.consent.grant();
+    analytics.track("upgrade");
+    await analytics.flush();
+    expect(sent(transport).map((event) => [event.name, event.groups])).toEqual([
+      ["group", { company: "acme" }],
+      ["signup", undefined],
+      ["upgrade", undefined],
+    ]);
+    await analytics.shutdown();
+  });
+
+  test("ignores invalid group types, empty ids and a sixth group", async () => {
+    const workspace = groups();
+    const { analytics, transport } = client({ plugins: [workspace] });
+    workspace.set("Company", "acme");
+    workspace.set("company", "");
+    for (const type of ["a", "b", "c", "d", "e", "f"]) workspace.set(type, "x".repeat(200));
+    await analytics.flush();
+    const last = sent(transport).at(-1);
+    expect(sent(transport)).toHaveLength(5);
+    expect(Object.keys(last?.groups ?? {})).toEqual(["a", "b", "c", "d", "e"]);
+    expect(last?.groups?.e).toHaveLength(128);
     await analytics.shutdown();
   });
 });

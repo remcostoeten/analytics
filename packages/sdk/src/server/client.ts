@@ -2,7 +2,7 @@ import type { IngestResult, WireContext, WireEvent } from "@remcostoeten/analyti
 
 import { buildEvent, limitProps } from "../core/build-event";
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
-import type { ErrorContext, EventMap, EventName, Props } from "../core/types";
+import type { ErrorContext, EventMap, EventName, GroupMap, Props } from "../core/types";
 import { uuidv7 } from "../core/uuid";
 import { eventsUrl, runtimeWaitUntil, visitorDetails } from "./forwarding";
 import type {
@@ -52,9 +52,10 @@ function failed(code: ServerErrorCode, message: string, count: number): ServerRe
  * const serverAnalytics = createServerAnalytics<Events>({ project: "remcostoeten.nl", secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
  * await serverAnalytics.track("checkout", { revenue: 49, currency: "EUR", orderId: "order_1" }, { request });
  */
-export function createServerAnalytics<Events extends EventMap = EventMap>(
-  options: ServerConfig = {},
-): ServerAnalytics<Events> {
+export function createServerAnalytics<
+  Events extends EventMap = EventMap,
+  Groups extends GroupMap = GroupMap,
+>(options: ServerConfig = {}): ServerAnalytics<Events, Groups> {
   const config = mergeConfig(parseConfig(readEnv(() => process.env.RA_CONFIG)), options);
   const request: Fetcher = config.fetch ?? ((url, init) => fetch(url, init));
   const warned = new Set<ServerErrorCode>();
@@ -138,7 +139,7 @@ export function createServerAnalytics<Events extends EventMap = EventMap>(
     if (visitor?.ip) wire.ip = visitor.ip;
     if (visitor?.userAgent) wire.ua = visitor.userAgent.slice(0, 2048);
     const now = Date.now();
-    return buildEvent({
+    const event = buildEvent({
       id: uuidv7(now),
       name,
       ts: new Date(now).toISOString(),
@@ -148,6 +149,8 @@ export function createServerAnalytics<Events extends EventMap = EventMap>(
       props: limitProps({ ...tags, ...props }, name === "error").props,
       context: wire,
     });
+    if (from.groups && Object.keys(from.groups).length > 0) event.groups = from.groups;
+    return event;
   }
 
   function enqueue(event: WireEvent, from: RequestContext) {
@@ -177,7 +180,7 @@ export function createServerAnalytics<Events extends EventMap = EventMap>(
     return enqueue(context("error", props, tags, from), from);
   }
 
-  function methods(tags: Props): ServerAnalytics<Events> {
+  function methods(tags: Props): ServerAnalytics<Events, Groups> {
     function track<Name extends EventName<Events>>(name: Name, ...args: ServerArgs<Events, Name>) {
       const [props = {}, from = {}] = args;
       return enqueue(context(name, props, tags, from), from);
@@ -204,6 +207,13 @@ export function createServerAnalytics<Events extends EventMap = EventMap>(
       track,
       identify: (userId, traits = {}, from = {}) =>
         enqueue(context("identify", { ...traits, userId }, tags, from), from),
+      group: (type, id, traits, from = {}) => {
+        const joined = { ...from, groups: { ...from.groups, [type]: id } };
+        return enqueue(
+          context("group", { ...traits, groupType: type, groupId: id }, tags, joined),
+          joined,
+        );
+      },
       captureError,
       captureMessage: (message, from = {}) => capture(message, "warning", from, tags, {}),
       scope: (more) => methods({ ...tags, ...more }),

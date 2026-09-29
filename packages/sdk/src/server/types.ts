@@ -1,4 +1,16 @@
-import type { ErrorContext, EventMap, EventName, FlushResult, NoProps, Props } from "../core/types";
+import type { WireGroups } from "@remcostoeten/analytics-contract";
+
+import type {
+  ErrorContext,
+  EventMap,
+  EventName,
+  FlushResult,
+  GroupMap,
+  GroupTraits,
+  GroupType,
+  NoProps,
+  Props,
+} from "../core/types";
 
 export type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 export type WaitUntil = (promise: Promise<unknown>) => void;
@@ -14,6 +26,7 @@ export type ServerConfig = {
 
 export type RequestContext = {
   request?: Request;
+  groups?: WireGroups;
   headers?: Headers;
   visitor?: string;
   session?: string;
@@ -49,18 +62,27 @@ export type Handler<Args extends unknown[]> = (
   ...args: Args
 ) => Response | Promise<Response>;
 
-export type ServerAnalytics<Events extends EventMap = EventMap> = {
+export type ServerAnalytics<
+  Events extends EventMap = EventMap,
+  Groups extends GroupMap = GroupMap,
+> = {
   track: <Name extends EventName<Events>>(
     name: Name,
     ...args: ServerArgs<Events, Name>
   ) => Promise<ServerResult>;
   identify: (userId: string, traits?: Props, context?: RequestContext) => Promise<ServerResult>;
+  group: <Type extends GroupType<Groups>>(
+    type: Type,
+    id: string,
+    traits?: GroupTraits<Groups, Type>,
+    context?: RequestContext,
+  ) => Promise<ServerResult>;
   captureError: (error: unknown, context?: ErrorContext & RequestContext) => Promise<ServerResult>;
   captureMessage: (
     message: string,
     context?: ErrorContext & RequestContext,
   ) => Promise<ServerResult>;
-  scope: (tags: Props) => ServerAnalytics<Events>;
+  scope: (tags: Props) => ServerAnalytics<Events, Groups>;
   withErrors: <Args extends unknown[]>(handler: Handler<Args>) => Handler<Args>;
   flush: () => Promise<ServerResult>;
   shutdown: () => Promise<ServerResult>;

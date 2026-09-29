@@ -3,6 +3,7 @@ import type { Static } from "@sinclair/typebox";
 
 import { BotVerdict, Device, Geo, Props, Source } from "./common";
 import { DeviceType, EventName } from "./enums";
+import { WireGroups } from "./events";
 import { Count, dataOf, Id, listOf, Milliseconds, nullable, Ratio, Timestamp, Url } from "./schema";
 
 export const ReadPage = Type.Object({
@@ -24,6 +25,7 @@ export const EventRow = Type.Object({
   session: Id,
   page: ReadPage,
   props: Props,
+  groups: WireGroups,
   geo: Geo,
   device: Device,
   bot: BotVerdict,
