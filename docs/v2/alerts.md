@@ -193,7 +193,7 @@ So the shape is functions that take one object, the same as `betterAuth({ plugin
 
 ## HTTP helper
 
-`fetch` is used in five places: the Resend transport, the webhook and Discord channels, the admin client and the existing CrUX job. They share one helper in `packages/shared/src/http.ts`, which the engine and the SDK both import:
+`fetch` is used in five places: the Resend transport, the webhook and Discord channels, the admin client and the existing CrUX job. They share the helpers in `packages/shared/src/http/` (built, see `packages/shared/README.md`), which the engine and the SDK both import:
 
 ```ts
 const sent = await postJson(url, body, { headers, timeoutMs: 10_000 });
@@ -202,8 +202,9 @@ if (!sent.ok) return sent;
 const read = await getJson(url, { headers });
 ```
 
-- Both return `Result<{ status: number; body: Json }, HttpError>` and never throw; `HttpError` is `{ kind: "timeout" | "network" | "status"; status: Nullable<number>; message: string }`.
-- They time out after 10 seconds by default, send and parse JSON, and turn a non-2xx answer into `kind: "status"` with a short excerpt of the body.
+- `request`, `getJson`, `postJson`, `putJson`, `patchJson` and `deleteJson` return `{ ok: true, value: { status, headers, body } }` or `{ ok: false, error }` and never throw. `error.kind` is `url`, `timeout`, `aborted`, `network`, `status`, `parse` or `schema`.
+- A `parse` option checks the answer and types the body; without it the body is `Json`.
+- They time out after 10 seconds by default and name the URL without its query string in errors.
 - They do not retry. Retrying is the delivery queue's job, so a failure is never retried twice over.
 
 ## How it works
@@ -211,7 +212,7 @@ const read = await getJson(url, { headers });
 ### Layers
 
 ```text
-packages/shared     Result, http (postJson, getJson)
+packages/shared     Result, http (request, getJson, postJson, putJson, patchJson, deleteJson)
 packages/contract   schemas and types: events, targets, deliveries, routes
       │
 packages/engine     config (defineConfig), alerts plugin: queue, dispatch, render, channels,
@@ -407,7 +408,7 @@ Present only when `alerts()` is in the config.
 ### Files
 
 ```text
-packages/shared/src/http.ts                 postJson, getJson
+packages/shared/src/http/                 built: request and the JSON verbs
 packages/contract/src/alerts.ts
 packages/engine/src/config.ts               defineConfig, ServerPlugin
 packages/engine/src/alerts/
