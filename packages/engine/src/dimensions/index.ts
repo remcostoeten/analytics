@@ -34,7 +34,7 @@ import { utmTermDimension } from "./utm-term";
 import { viewportDimension } from "./viewport";
 import { visitNumberDimension } from "./visit-number";
 import { visitorTypeDimension } from "./visitor-type";
-import { propDimension, traitDimension } from "./keyed";
+import { groupDimension, propDimension, traitDimension } from "./keyed";
 
 export const defaultDimensions: Dimension[] = [
   hostDimension,
@@ -78,8 +78,8 @@ const byName = new Map(defaultDimensions.map((dimension) => [dimension.name, dim
 
 /**
  * @name findDimension
- * @description Looks a dimension up by the name a route received: a registered one, `prop:<key>`
- * or `trait:<key>`. Returns null for anything else.
+ * @description Looks a dimension up by the name a route received: a registered one, `prop:<key>`,
+ * `trait:<key>` or `group:<type>`. Returns null for anything else.
  *
  * @example
  * findDimension("prop:plan");
@@ -87,7 +87,8 @@ const byName = new Map(defaultDimensions.map((dimension) => [dimension.name, dim
 export function findDimension(name: string): Dimension | null {
   if (name.startsWith("prop:")) return propDimension(name.slice(5));
   if (name.startsWith("trait:")) return traitDimension(name.slice(6));
+  if (name.startsWith("group:")) return groupDimension(name.slice(6));
   return byName.get(name) ?? null;
 }
 
-export { propDimension, traitDimension };
+export { groupDimension, propDimension, traitDimension };

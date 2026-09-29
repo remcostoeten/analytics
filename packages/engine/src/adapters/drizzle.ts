@@ -15,6 +15,7 @@ import {
   webVitals,
 } from "../db/schema";
 import type { EventDraft } from "../draft";
+import { groupsKey } from "../groups";
 import { engineError } from "../errors";
 import type { EventStore, ProjectStore, RateLimiter } from "../ports";
 import { vitalRow } from "../speed/vitals";
@@ -70,6 +71,7 @@ function legacyMeta(draft: EventDraft): Meta {
       browserVersion: enrichment.device?.browserVersion,
       os: enrichment.device?.os,
       osVersion: enrichment.device?.osVersion,
+      [groupsKey]: event.groups && Object.keys(event.groups).length > 0 ? event.groups : null,
     }),
   };
 }
