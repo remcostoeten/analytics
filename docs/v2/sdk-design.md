@@ -170,6 +170,8 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
 
+The proposed `/admin` entry (alert channels, later projects and tokens) and `verifyAlert` in `/server` are specified in [alerts.md](alerts.md).
+
 ## Error tracking in code
 
 The `errors` plugin catches what nobody caught; `captureError` and `captureMessage` are for what you catch yourself. Everything lands in the same issues.

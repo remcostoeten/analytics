@@ -1,6 +1,6 @@
 # Epics and agent prompts
 
-Twenty epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
+Twenty-three epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
 
 ## How to use this
 
@@ -50,6 +50,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
 | E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
+| E4.7 | Alerts: mail and webhook channels (waits on decision 16) | 4 | E4.4 | `feature/alerts` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
@@ -333,6 +334,21 @@ Epic E4.6, branch feature/docs-site. Read the plan sections "SDK API shape", "Ac
 1. Export the OpenAPI document to apps/api/openapi.json with a script, and fail CI when it is stale.
 2. Add apps/docs on Fumadocs: MDX pages for the SDK (install, config, client methods, each plugin, react, next, server, proxy) and generated API reference pages from openapi.json.
 3. Add an auth overview page and a query page: the API URL and a token go in, SQL runs through POST /v2/query, results show as a table. No other dashboard views.
+```
+
+### E4.7 Alerts
+
+Waits on Remco approving decision 16.
+
+Delivers: the design in `docs/v2/alerts.md`: alert events, mail and webhook channels per project, the `MAIL_URL` transport (SMTP and Resend), the delivery outbox with retries, the channel routes and status route, the SDK's `/admin` entry with `createAdmin`, `mail` and `webhook`, and `verifyAlert` in `/server`. Replaces `ALERT_WEBHOOK_URL`. Done when a mail and a webhook channel receive a batch from the alerts job, a failing channel retries on schedule without holding back the other, and every row of "What the editor catches" has a type test.
+
+```text
+Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec, and its vocabulary is binding for names of types, files and routes. Also read the plan section "Errors" and the existing apps/api/src/modules/jobs/alerts.ts, which this replaces.
+1. Contract: packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
+2. Engine: migration 0029_add_alert_channels, the ports AlertStore and Mailer, packages/engine/src/alerts (events, queue-issues, dispatch, render-mail, sign-body, mail-url, drivers), the Drizzle alert store, the smtp (nodemailer) and resend mailers, and memory versions for tests. Drivers are registered on createEngine like stages.
+3. API: parse MAIL_URL and MAIL_FROM at startup with the error messages in the spec, the routes in the spec's Routes table with admin access, and the alerts job doing queue then dispatch. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site.
+4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, deliveries, and the mail and webhook builders with the narrowed types) and verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.
+5. Tests as listed in the spec's Tests section, including expectTypeOf tests for each row of "What the editor catches".
 ```
 
 ## Phase 5: retire 1.x
