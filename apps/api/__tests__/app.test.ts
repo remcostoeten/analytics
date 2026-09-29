@@ -359,6 +359,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/health",
       "/v2/heatmap",
       "/v2/issues",
+      "/v2/lifecycle",
       "/v2/map",
       "/v2/paths",
       "/v2/people",
@@ -374,6 +375,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/issues/{issue}",
       "/v2/projects/{project}/issues/{issue}/events",
       "/v2/projects/{project}/keys",
+      "/v2/projects/{project}/lifecycle",
       "/v2/projects/{project}/map",
       "/v2/projects/{project}/paths",
       "/v2/projects/{project}/query",
@@ -387,6 +389,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/projects/{project}/speed/routes",
       "/v2/projects/{project}/speed/timeseries",
       "/v2/projects/{project}/stats",
+      "/v2/projects/{project}/stickiness",
       "/v2/projects/{project}/timeseries",
       "/v2/projects/{project}/visitors",
       "/v2/projects/{project}/visitors/{visitor}",
@@ -406,6 +409,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/speed/routes",
       "/v2/speed/timeseries",
       "/v2/stats",
+      "/v2/stickiness",
       "/v2/timeseries",
       "/v2/tokens",
       "/v2/tokens/{token}",
@@ -428,5 +432,46 @@ describe("GET /v2/openapi/json", () => {
       "events",
     ]);
     expect(document.components.schemas.WireEvent.properties.visitor).toBeDefined();
+  });
+});
+
+describe("groups", () => {
+  test("events sent in groups are stored and read back by group:<type>", async () => {
+    const [first, second] = ids("9");
+    const response = await post(
+      batch("9", [
+        { ...first, groups: { company: "acme", team: "design" } },
+        { ...second, groups: { company: "acme" } },
+      ]),
+    );
+    expect(await response.json()).toEqual({ accepted: 2, duplicates: 0, rejected: [] });
+    const range = "from=2026-09-28T00:00:00.000Z&to=2026-09-29T00:00:00.000Z";
+    const companies = await api.handle(
+      new Request(`http://localhost/v2/projects/site/breakdown/group:company?${range}`),
+    );
+    expect((await companies.json()).data).toEqual([
+      { value: "acme", visitors: 1, pageviews: 1, share: 1 },
+    ]);
+    const teams = await api.handle(
+      new Request(
+        `http://localhost/v2/projects/site/breakdown/group:team?${range}&filter[group:company]=acme`,
+      ),
+    );
+    expect((await teams.json()).data).toEqual([
+      { value: "design", visitors: 1, pageviews: 1, share: 1 },
+    ]);
+  });
+
+  test("more than five groups or a bad group type is rejected", async () => {
+    const [first, second] = ids("10");
+    const response = await post(
+      batch("10", [
+        { ...first, groups: { a: "1", b: "2", c: "3", d: "4", e: "5", f: "6" } },
+        { ...second, groups: { Company: "acme" } },
+      ]),
+    );
+    const result = await response.json();
+    expect(result.accepted).toBe(0);
+    expect(result.rejected.map((rejected: { index: number }) => rejected.index)).toEqual([0, 1]);
   });
 });

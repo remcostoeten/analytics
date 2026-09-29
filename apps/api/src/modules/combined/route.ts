@@ -11,6 +11,8 @@ import {
   MapResponse,
   PathsResponse,
   RetentionResponse,
+  LifecycleResponse,
+  StickinessResponse,
   PeopleList,
   ProjectBreakdownResponse,
   PersonResponse,
@@ -37,7 +39,7 @@ import {
   listVisitors,
   personDetail,
 } from "../details/service";
-import { heatmap, paths, places, retention } from "../reads/explore";
+import { heatmap, lifecycle, paths, places, retention, stickiness } from "../reads/explore";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "../reads/live";
@@ -94,7 +96,7 @@ async function readableProjects(
 /**
  * @name combinedModule
  * @description Every read route without the `/projects/:project` prefix: stats, timeseries,
- * breakdowns (with `project` as a dimension), paths, retention, heatmap, map, realtime, the
+ * breakdowns (with `project` as a dimension), paths, retention, lifecycle, stickiness, heatmap, map, realtime, the
  * live feed and speed over the projects the caller may read,
  * and events, visitors and sessions over the projects whose visitor-level data the caller may see.
  * `/people` and `/people/:userId` link identified users across projects and need a signed-in
@@ -428,6 +430,24 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       detail: {
         summary: "Returning visitors by cohort, across projects",
         description: "Each project's visitors counted separately.",
+        tags,
+      },
+    })
+    .get("/lifecycle", explore(lifecycle), {
+      access: "public",
+      response: { 200: LifecycleResponse, ...responses },
+      detail: {
+        summary: "Visitor lifecycle across projects",
+        description: "As the per-project route; each project's visitors counted separately.",
+        tags,
+      },
+    })
+    .get("/stickiness", explore(stickiness), {
+      access: "public",
+      response: { 200: StickinessResponse, ...responses },
+      detail: {
+        summary: "Visitors by days active, across projects",
+        description: "As the per-project route; each project's visitors counted separately.",
         tags,
       },
     })
