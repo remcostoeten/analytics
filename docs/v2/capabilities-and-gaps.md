@@ -76,7 +76,7 @@ PostHog is a product analytics suite rather than a web analytics tool, so much o
 | Stickiness | How many days per week or month people come back, to tell daily users from one-off visitors | None | Small | Built: `GET /stickiness`, active days over the range |
 | Cohorts | Saved groups such as "pro users who visited pricing twice", usable as a filter everywhere | None | Medium | Yes, as the saved segments epic |
 | Actions | Named events defined afterwards from existing data, such as "Clicked upgrade" = click on `upgrade-button`, so reports work on history | None | Small | Yes: definitions stored per project, applied at read time |
-| Group analytics | `group("company", id, traits)` so SaaS apps like Skriuw can report per company or workspace, not only per person | One `groups` field on events | Medium | Yes, if Skriuw or a client app needs it |
+| Group analytics | `group("company", id, traits)` so SaaS apps like Skriuw can report per company or workspace, not only per person | One `groups` field on events | Medium | Built: the `groups` plugin, `group()` on the server client, and the `group:<type>` dimension |
 | Saved insights and dashboards | Any breakdown, timeseries, funnel or SQL query saved and pinned to a custom dashboard | None | Medium | Yes: extends saved queries |
 | Experiments with statistics | Pick a goal; the API reports each variant's conversion, the uplift and the chance it is better (Bayesian) | None, exposures already exist | Medium | Yes, later |
 | Feature flags | Flags with a rollout percentage, evaluated by hashing the visitor id, and variants that feed experiments | A flags table and one SDK call | Medium | Maybe: useful with experiments, but a separate product to keep running |

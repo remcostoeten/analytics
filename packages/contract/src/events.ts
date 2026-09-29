@@ -42,6 +42,17 @@ export const WireContext = Type.Object({
 });
 export type WireContext = Static<typeof WireContext>;
 
+export const maxGroups = 5;
+
+export const GroupType = Type.String({ pattern: "^[a-z][a-z0-9_]{0,31}$" });
+export const GroupId = Type.String({ minLength: 1, maxLength: 128 });
+
+export const WireGroups = Type.Record(GroupType, GroupId, {
+  maxProperties: maxGroups,
+  additionalProperties: false,
+});
+export type WireGroups = Static<typeof WireGroups>;
+
 export const WireEvent = Type.Object({
   id: Type.String({ format: "uuid" }),
   name: EventName,
@@ -51,6 +62,7 @@ export const WireEvent = Type.Object({
   page: WirePage,
   props: Props,
   context: Type.Optional(WireContext),
+  groups: Type.Optional(WireGroups),
   signals: Type.Optional(Type.Integer({ minimum: 0 })),
 });
 export type WireEvent = Static<typeof WireEvent>;

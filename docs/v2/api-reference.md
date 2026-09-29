@@ -53,7 +53,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |
 | `limit`, `cursor` | up to 100; opaque cursor from the previous page | 20 |
 
-Dimensions for `breakdown` and `filter`: `host`, `page`, `route`, `entry_page`, `exit_page`, `referrer`, `referrer_domain`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `country`, `region`, `city`, `continent`, `timezone`, `device`, `browser`, `browser_version`, `os`, `os_version`, `screen`, `viewport`, `language`, `connection`, `visitor_type` (new or returning), `event`, `bot_reason`, `release`, plus `prop:<key>` for any event prop and `trait:<key>` for any visitor trait.
+Dimensions for `breakdown` and `filter`: `host`, `page`, `route`, `entry_page`, `exit_page`, `referrer`, `referrer_domain`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `country`, `region`, `city`, `continent`, `timezone`, `device`, `browser`, `browser_version`, `os`, `os_version`, `screen`, `viewport`, `language`, `connection`, `visitor_type` (new or returning), `event`, `bot_reason`, `release`, plus `prop:<key>` for any event prop, `trait:<key>` for any visitor trait and `group:<type>` for the group of that type an event was sent in (the SDK's `groups` plugin).
 
 Metrics, for `timeseries` and the `metrics=` list on `breakdown` (default `visitors,pageviews`): `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `time_on_page`, `scroll_depth`, `pages_per_session`, `conversion_rate` (share of sessions with the event in `filter[event]`; with this metric that filter defines the conversion instead of narrowing the rows, and a request without it answers `400`), plus `sum:prop.<key>` and `avg:prop.<key>` for numeric props such as revenue. `timeseries` also takes `compare=previous` to return the previous period alongside.
 
@@ -820,6 +820,7 @@ request
       "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
       "page": { "path": "/blog/rebuilding-analytics", "referrer": "https://news.ycombinator.com/" },
       "props": { "plan": "pro" },
+      "groups": { "company": "acme" },
       "geo": { "country": "NL", "region": "Friesland", "city": "Leeuwarden" },
       "device": { "type": "desktop", "browser": "Firefox", "browserVersion": "143", "os": "Linux" },
       "bot": { "score": 0, "reasons": [] },

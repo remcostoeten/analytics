@@ -13,6 +13,13 @@ export type PropsArgs<
     ? []
     : [props: Events[Name]];
 
+export type GroupMap = { [type: string]: Props };
+export type GroupType<Groups extends GroupMap> = Extract<keyof Groups, string>;
+export type GroupTraits<
+  Groups extends GroupMap,
+  Type extends GroupType<Groups>,
+> = string extends keyof Groups ? Props : Groups[Type];
+
 export type ConsentMode = "optional" | "required";
 export type ConsentStatus = "granted" | "denied" | "unset";
 export type Mode = "auto" | "development" | "production";

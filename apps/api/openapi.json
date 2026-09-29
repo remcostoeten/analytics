@@ -353,6 +353,7 @@
                               "session",
                               "page",
                               "props",
+                              "groups",
                               "geo",
                               "device",
                               "bot",
@@ -434,6 +435,18 @@
                                         "type": "null"
                                       }
                                     ]
+                                  }
+                                }
+                              },
+                              "groups": {
+                                "maxProperties": 5,
+                                "additionalProperties": false,
+                                "type": "object",
+                                "patternProperties": {
+                                  "^[a-z][a-z0-9_]{0,31}$": {
+                                    "minLength": 1,
+                                    "maxLength": 128,
+                                    "type": "string"
                                   }
                                 }
                               },
@@ -7953,6 +7966,7 @@
                               "session",
                               "page",
                               "props",
+                              "groups",
                               "geo",
                               "device",
                               "bot",
@@ -8034,6 +8048,18 @@
                                         "type": "null"
                                       }
                                     ]
+                                  }
+                                }
+                              },
+                              "groups": {
+                                "maxProperties": 5,
+                                "additionalProperties": false,
+                                "type": "object",
+                                "patternProperties": {
+                                  "^[a-z][a-z0-9_]{0,31}$": {
+                                    "minLength": 1,
+                                    "maxLength": 128,
+                                    "type": "string"
                                   }
                                 }
                               },
@@ -18469,6 +18495,18 @@
               },
               "ip": {
                 "maxLength": 2048,
+                "type": "string"
+              }
+            }
+          },
+          "groups": {
+            "maxProperties": 5,
+            "additionalProperties": false,
+            "type": "object",
+            "patternProperties": {
+              "^[a-z][a-z0-9_]{0,31}$": {
+                "minLength": 1,
+                "maxLength": 128,
                 "type": "string"
               }
             }
