@@ -9,6 +9,8 @@ import {
   MapResponse,
   PathsResponse,
   RetentionResponse,
+  LifecycleResponse,
+  StickinessResponse,
 } from "@remcostoeten/analytics-contract";
 import {
   createEngine,
@@ -302,6 +304,47 @@ describe("retention", () => {
       },
     ]);
     expect((await call(`/v2/projects/site/retention?${month}&interval=day`)).status).toBe(400);
+  });
+});
+
+describe("lifecycle", () => {
+  test("new, returning and dormant visitors per week, including the week before the range", async () => {
+    const weeks = await body(`/v2/projects/site/lifecycle?${month}`, LifecycleResponse);
+    expect(weeks.interval).toBe("week");
+    expect(weeks.data).toEqual([
+      { period: "2026-08-31T00:00:00.000Z", new: 0, returning: 0, resurrected: 0, dormant: 0 },
+      { period: "2026-09-07T00:00:00.000Z", new: 2, returning: 0, resurrected: 0, dormant: 0 },
+      { period: "2026-09-14T00:00:00.000Z", new: 1, returning: 1, resurrected: 0, dormant: 1 },
+      { period: "2026-09-21T00:00:00.000Z", new: 0, returning: 0, resurrected: 0, dormant: 2 },
+    ]);
+  });
+
+  test("a visitor back after a gap is resurrected, judged by their first visit ever", async () => {
+    const days = await body(
+      "/v2/projects/site/lifecycle?from=2026-09-15T00:00:00.000Z&to=2026-09-17T00:00:00.000Z&interval=day",
+      LifecycleResponse,
+    );
+    expect(days.data).toEqual([
+      { period: "2026-09-15T00:00:00.000Z", new: 0, returning: 0, resurrected: 1, dormant: 0 },
+      { period: "2026-09-16T00:00:00.000Z", new: 1, returning: 0, resurrected: 0, dormant: 1 },
+    ]);
+    expect((await call(`/v2/projects/site/lifecycle?${month}&interval=year`)).status).toBe(400);
+  });
+});
+
+describe("stickiness", () => {
+  test("visitors by distinct active days, zero-filled, with shares and the average", async () => {
+    const sticky = await body(`/v2/projects/site/stickiness?${month}`, StickinessResponse);
+    expect(sticky).toMatchObject({
+      data: [
+        { days: 1, visitors: 2, share: 0.667 },
+        { days: 2, visitors: 1, share: 0.333 },
+      ],
+      visitors: 3,
+      averageDays: 1.33,
+    });
+    const everywhere = await body(`/v2/stickiness?${month}`, StickinessResponse, admin);
+    expect(everywhere.visitors).toBe(4);
   });
 });
 

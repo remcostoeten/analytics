@@ -6,6 +6,8 @@ import {
   PathsResponse,
   RealtimeResponse,
   RetentionResponse,
+  LifecycleResponse,
+  StickinessResponse,
   StatsResponse,
   TimeseriesResponse,
 } from "@remcostoeten/analytics-contract";
@@ -18,7 +20,7 @@ import { canReadDetail } from "../../access/rules";
 import type { AccessDeps, Caller } from "../../access/types";
 import { access } from "../../plugins/access";
 import { errorResponses } from "../../plugins/error-responses";
-import { heatmap, paths, places, retention } from "./explore";
+import { heatmap, lifecycle, paths, places, retention, stickiness } from "./explore";
 import { download } from "./export";
 import type { Listing } from "./export";
 import { readGate } from "./guard";
@@ -34,7 +36,7 @@ const readResponses = { ...errorResponses, 429: errorResponses[400] };
 /**
  * @name readsModule
  * @description The aggregate reads under `/v2/projects/:project`: `stats`, `timeseries`,
- * `breakdown/:dimension`, `paths`, `retention`, `heatmap`, `map`, `realtime` and the live feed
+ * `breakdown/:dimension`, `paths`, `retention`, `lifecycle`, `stickiness`, `heatmap`, `map`, `realtime` and the live feed
  * `realtime/events`, all at the `project` level; the feed adds visitor and session ids only with
  * `detail` access. Public projects answer with
  * `Cache-Control: public, s-maxage=60`, private ones with `private, no-store`, and anonymous
@@ -187,6 +189,26 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
         summary: "Returning visitors by cohort",
         description:
           "Cohorts by the `week` or `month` of the first visit in the range, with the share returning in each later period.",
+        tags,
+      },
+    })
+    .get("/projects/:project/lifecycle", explore(lifecycle), {
+      access: "project",
+      response: { 200: LifecycleResponse, ...readResponses },
+      detail: {
+        summary: "New, returning, resurrected and dormant visitors",
+        description:
+          "Per `day`, `week` (default) or `month`: visitors first seen then, active in the period before too, back after a gap, and gone since the period before.",
+        tags,
+      },
+    })
+    .get("/projects/:project/stickiness", explore(stickiness), {
+      access: "project",
+      response: { 200: StickinessResponse, ...readResponses },
+      detail: {
+        summary: "Visitors by days active",
+        description:
+          "How many visitors were active on 1, 2, 3 and more distinct UTC days in the range, with shares and the average.",
         tags,
       },
     })

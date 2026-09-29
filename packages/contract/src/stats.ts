@@ -181,6 +181,40 @@ export const RetentionResponse = Type.Object({
 });
 export type RetentionResponse = Static<typeof RetentionResponse>;
 
+export const LifecycleInterval = oneOf(["day", "week", "month"]);
+export type LifecycleInterval = Static<typeof LifecycleInterval>;
+
+export const LifecyclePeriod = Type.Object({
+  period: Timestamp,
+  new: Count,
+  returning: Count,
+  resurrected: Count,
+  dormant: Count,
+});
+export type LifecyclePeriod = Static<typeof LifecyclePeriod>;
+
+export const LifecycleResponse = Type.Object({
+  data: Type.Array(LifecyclePeriod),
+  interval: LifecycleInterval,
+  ...Scope,
+});
+export type LifecycleResponse = Static<typeof LifecycleResponse>;
+
+export const StickinessRow = Type.Object({
+  days: Type.Integer({ minimum: 1 }),
+  visitors: Count,
+  share: Ratio,
+});
+export type StickinessRow = Static<typeof StickinessRow>;
+
+export const StickinessResponse = Type.Object({
+  data: Type.Array(StickinessRow),
+  visitors: Count,
+  averageDays: Type.Number({ minimum: 0 }),
+  ...Scope,
+});
+export type StickinessResponse = Static<typeof StickinessResponse>;
+
 export const HeatmapMetric = oneOf(["visitors", "pageviews"]);
 export type HeatmapMetric = Static<typeof HeatmapMetric>;
 

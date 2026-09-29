@@ -86,16 +86,20 @@ Added routes, all under `/v2/projects/:project` with the shared query parameters
 | GET | `/sessions` | detail | All sessions, newest first, with duration, pages, entry, exit, source, geo and device; filter and sort like visitors |
 | GET | `/paths?page=/pricing` | project | The pages visitors went to next from a page, or came from with `direction=previous`, with counts and drop-off |
 | GET | `/retention?interval=week` | project | Cohorts by first visit week or month and the share returning in each later period |
+| GET | `/lifecycle?interval=week` | project | Visitors per day, week or month split into new, returning, resurrected and dormant |
+| GET | `/stickiness` | project | How many visitors were active on 1, 2, 3 and more days in the range |
 | GET | `/heatmap` | project | Visitors or pageviews by weekday and hour of day, in the project's or a given timezone |
 | GET | `/map?level=city` | project | Visitor counts per country, region or city with coordinates for a map |
 | GET | `/realtime/events` | project | Incoming events for the live view, with the same filters: long-polling with `after`, or server-sent events with `Accept: text/event-stream`. Visitor and session ids need `detail` |
 
-### Paths, retention, heatmap and map
+### Paths, retention, lifecycle, stickiness, heatmap and map
 
-All four take the shared range, traffic and filter parameters, and answer without the project prefix across every project you may read.
+All six take the shared range, traffic and filter parameters, and answer without the project prefix across every project you may read.
 
 - `paths` follows the pageviews of `page` inside each session: `direction=next` (default) gives the page viewed right after it, `previous` the one right before. `dropOff` counts the views that ended the session, or for `previous`, started it. Shares are of `views`. `page` is the query parameter because `from` is the range start.
 - `retention` groups visitors by the `week` (default, Monday start, UTC) or `month` of their first visit in the range, and counts how many were active in each later period up to the end of the range. Offset 0 is the cohort itself.
+- `lifecycle` splits each `day`, `week` (default, Monday start, UTC) or `month` of the range: `new` visitors were first seen ever in that period, `returning` ones were also active in the period before, `resurrected` ones were seen before but not in the period before, and `dormant` ones were active in the period before and not in this one. The period before the range counts for the first period.
+- `stickiness` counts visitors by the number of distinct UTC days they were active in the range, from 1 to the most any visitor reached, with each count's share and the average.
 - `heatmap` has all 168 cells, weekday 1 (Monday) to 7 and hour 0 to 23, counting `metric=visitors` (default) or `pageviews` in `timezone` (IANA, default UTC).
 - `map` counts visitors per `level=country` (default), `region` or `city`, with the average of their geo lookup coordinates rounded to two decimals, paged like a breakdown.
 
@@ -134,6 +138,43 @@ All four take the shared range, traffic and filter parameters, and answer withou
     "from": "2026-08-31T00:00:00.000Z",
     "to": "2026-09-28T00:00:00.000Z"
   },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/lifecycle?interval=week&period=28d`
+
+```json
+200 OK
+{
+  "data": [
+    { "period": "2026-08-31T00:00:00.000Z", "new": 84, "returning": 12, "resurrected": 5, "dormant": 30 },
+    { "period": "2026-09-07T00:00:00.000Z", "new": 120, "returning": 22, "resurrected": 9, "dormant": 79 },
+    { "period": "2026-09-14T00:00:00.000Z", "new": 97, "returning": 31, "resurrected": 11, "dormant": 120 },
+    { "period": "2026-09-21T00:00:00.000Z", "new": 110, "returning": 26, "resurrected": 8, "dormant": 113 }
+  ],
+  "interval": "week",
+  "range": { "from": "2026-08-31T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
+  "traffic": "human",
+  "filters": {}
+}
+```
+
+`GET /v2/projects/remcostoeten.nl/stickiness?period=28d`
+
+```json
+200 OK
+{
+  "data": [
+    { "days": 1, "visitors": 402, "share": 0.812 },
+    { "days": 2, "visitors": 61, "share": 0.123 },
+    { "days": 3, "visitors": 19, "share": 0.038 },
+    { "days": 4, "visitors": 13, "share": 0.026 }
+  ],
+  "visitors": 495,
+  "averageDays": 1.28,
+  "range": { "from": "2026-08-31T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
   "traffic": "human",
   "filters": {}
 }

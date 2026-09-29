@@ -72,8 +72,8 @@ PostHog is a product analytics suite rather than a web analytics tool, so much o
 | PostHog feature | What it would be here | New data needed | Effort | Take it |
 | --- | --- | --- | --- | --- |
 | Funnels | Ordered steps (pages or events) with conversion and drop-off per step, within a visit or within N days | None | Medium | Yes, already a later epic |
-| Lifecycle | Visitors each week split into new, returning, resurrected (back after a gap) and dormant | None | Small | Yes: one query over `sessions` |
-| Stickiness | How many days per week or month people come back, to tell daily users from one-off visitors | None | Small | Yes: one query |
+| Lifecycle | Visitors each week split into new, returning, resurrected (back after a gap) and dormant | None | Small | Built: `GET /lifecycle`, per day, week or month |
+| Stickiness | How many days per week or month people come back, to tell daily users from one-off visitors | None | Small | Built: `GET /stickiness`, active days over the range |
 | Cohorts | Saved groups such as "pro users who visited pricing twice", usable as a filter everywhere | None | Medium | Yes, as the saved segments epic |
 | Actions | Named events defined afterwards from existing data, such as "Clicked upgrade" = click on `upgrade-button`, so reports work on history | None | Small | Yes: definitions stored per project, applied at read time |
 | Group analytics | `group("company", id, traits)` so SaaS apps like Skriuw can report per company or workspace, not only per person | One `groups` field on events | Medium | Yes, if Skriuw or a client app needs it |
@@ -87,7 +87,7 @@ PostHog is a product analytics suite rather than a web analytics tool, so much o
 | Session replay | Recording and replaying sessions | Full DOM recording | Large | No: conflicts with bundle size and privacy |
 | LLM observability, data warehouse, CDP destinations | Tracking AI calls, joining external data, piping events to other tools | Varies | Large | No, out of scope; webhooks cover simple forwarding |
 
-The cheapest wins are lifecycle, stickiness and actions: they are read-time features over data v2 already stores, so they need no SDK change and no migration.
+Lifecycle and stickiness are built. The next cheapest win is actions: a read-time feature over data v2 already stores, so it needs no SDK change and no migration.
 
 ## Sources
 
