@@ -4,6 +4,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
+		"./http": "./src/http/index.ts",
 		"./noop": "./src/noop.ts",
 		"./result": "./src/result.ts",
 		"./semantic": "./src/semantic.ts"
