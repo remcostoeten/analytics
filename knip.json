@@ -4,6 +4,7 @@
     "v1/**"
   ],
   "ignore": [
+    ".agents/**",
     "tools/oxlint/anti-slop/**"
   ],
   "workspaces": {
