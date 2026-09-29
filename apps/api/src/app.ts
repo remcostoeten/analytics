@@ -6,7 +6,8 @@ import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
 import { adminModule } from "./modules/admin/route";
-import type { AlertOptions } from "./modules/jobs/alerts";
+import { alertsModule } from "./modules/alerts/route";
+import type { AlertsDeps } from "./modules/alerts/service";
 import type { CruxOptions } from "./modules/jobs/crux";
 import { authModule } from "./modules/auth/route";
 import { combinedModule } from "./modules/combined/route";
@@ -42,7 +43,7 @@ export type AppOptions = {
   query: QueryOptions;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
   ops?: Nullable<OpsStore>;
-  alerts?: Nullable<AlertOptions>;
+  alerts?: Nullable<AlertsDeps>;
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
 };
@@ -56,7 +57,8 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, the reads and the SQL console. The engine is created per request so its log
+ * health, ingest, sign-in, projects, tokens, the reads, the SQL console and, with `alerts`, the
+ * alert routes. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
  *
@@ -124,5 +126,10 @@ export function createApp(options: AppOptions) {
         options.docsBase,
       ),
     )
-    .use(adminModule(options.access, { ops, clock: options.clock }, options.docsBase));
+    .use(adminModule(options.access, { ops, clock: options.clock }, options.docsBase))
+    .use(
+      options.alerts
+        ? alertsModule(options.access, options.alerts, options.clock, options.docsBase)
+        : new Elysia({ name: "alerts-off" }),
+    );
 }

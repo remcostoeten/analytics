@@ -59,7 +59,7 @@ jobs:
               -H "authorization: Bearer $CRON_SECRET" \
               "$API_URL/v2/admin/jobs/$job")
             echo "$job answered $code: $(cat response.json)"
-            if [ "$code" = "503" ] && grep -q "is not set" response.json; then
+            if [ "$code" = "503" ] && grep -qE "is not set|are off" response.json; then
               echo "::notice::$job is not configured on the API yet"
             elif [ "$code" != "200" ]; then
               status=1

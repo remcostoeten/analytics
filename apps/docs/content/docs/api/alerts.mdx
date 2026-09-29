@@ -1,0 +1,87 @@
+---
+title: Alerts
+description: Turn on alerts in the deployment config, pick the channels and the mail transport, and set a project's targets.
+---
+
+Alerts tell people that something happened in a project: today a new issue or a regression. `alerts()` is a plugin in the deployment's config, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed.
+
+| Word | Means |
+| --- | --- |
+| plugin | An opt-in part of the API, listed in the config: `alerts()` |
+| alert event | Something worth telling: `issue.new`, `issue.regression` |
+| channel | A way to send alerts, enabled in the config: `mail()`, `webhook()`, `discord()` |
+| target | Where one project's alerts go on one channel: recipients or a URL, and the events it wants |
+| transport | How mail leaves the deployment: `smtp(url)` or `resend(key)` |
+| delivery | One alert event queued for one target, with its attempts and outcome |
+| batch | The due deliveries of one target, sent together as one mail or one request |
+
+## The deployment config
+
+`apps/api/analytics.config.ts` lists the plugins and is read at startup. Secrets stay in the environment; the config only reads them.
+
+```ts
+import { alerts, discord, mail, smtp, webhook } from "@remcostoeten/analytics-engine/alerts";
+import { defineConfig } from "@remcostoeten/analytics-engine/config";
+
+export default defineConfig({
+  plugins: [
+    alerts({
+      channels: [
+        mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <remco@gmail.com>" }),
+        webhook(),
+        discord(),
+      ],
+    }),
+  ],
+});
+```
+
+- Leave `alerts()` out and there are no alert routes, and `POST /v2/admin/jobs/alerts` answers 503 with "Alerts are off".
+- Leave a channel out and a target on it answers `VALIDATION_FAILED`: "mail is not enabled on this deployment".
+- An empty or malformed `MAIL_URL` never stops the API: mail targets turn `paused` with the problem as the reason, and `GET /v2/admin/alerts/status` shows it.
+
+## Mail transports
+
+| Provider | Config |
+| --- | --- |
+| Gmail | `smtp("smtps://you%40gmail.com:<app password>@smtp.gmail.com:465")`, free, about 500 a day |
+| Any mailbox | `smtp("smtps://<user>:<password>@<host>:465")` or `smtp://...:587` |
+| Amazon SES, Brevo | `smtp(...)` with their SMTP host and credentials |
+| Resend | `resend(process.env.RESEND_API_KEY)`, needs a verified domain |
+
+`smtp()` speaks TLS from the start on `smtps://` and upgrades with `STARTTLS` on `smtp://`; a server without `STARTTLS` is refused, so mail is never sent unencrypted. `@` and `:` inside a user or password are written `%40` and `%3A`. Mail credentials never reach the database.
+
+## How alerts are sent
+
+`POST /v2/admin/jobs/alerts` runs every 10 minutes from the `jobs` workflow:
+
+1. **Queue.** New issues and regressions become alert events, up to 100 per run. Each gets one delivery per enabled target of its project that is subscribed to it, and a retried run never queues twice. Every regression alerts once.
+2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. A failure keeps them pending with the error and the next try from the [retry policy](/docs/api/alert-retries), until the policy runs out and they turn `failed`. One failing target never holds back another.
+
+Mail arrives as one message per target per run, newest alert first, in plain text and HTML. Discord gets one message with an embed per alert. A webhook gets a signed `WebhookBody`; see [alert webhooks](/docs/sdk/server#alert-webhooks) for checking it.
+
+## A project's targets
+
+Targets are set per project by an admin, over HTTP or with the [admin client](/docs/sdk/admin):
+
+```bash
+curl -X PUT https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
+  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
+```
+
+A wrong field answers `VALIDATION_FAILED` with the path of each field in `details.fields`, such as `/targets/0/to/0`.
+
+| Method | Path | Does |
+| --- | --- | --- |
+| GET | `/v2/projects/:project/alerts/targets` | The project's targets with their state |
+| PUT | `/v2/projects/:project/alerts/targets` | Replace them all (`sync`) and answer the changes |
+| PUT | `/v2/projects/:project/alerts/targets/:name` | Create or replace one |
+| DELETE | `/v2/projects/:project/alerts/targets/:name` | Remove one |
+| POST | `/v2/projects/:project/alerts/targets/:name/test` | Send a sample alert now |
+| POST | `/v2/projects/:project/alerts/targets/:name/rotate` | A new webhook secret, shown once |
+| GET | `/v2/projects/:project/alerts/deliveries` | Delivery history; `status`, `limit` and `cursor` |
+| GET | `/v2/admin/alerts/status` | Enabled channels, the mail transport without secrets, pending deliveries, failing targets |
+
+All of them need a project admin. A webhook target's secret is generated by the API (`whsec_` and 32 random bytes), shown only in the answer that created or rotated it, and stored per target to sign its requests.

@@ -3,5 +3,5 @@
 	"compilerOptions": {
 		"types": ["bun-types"]
 	},
-	"include": ["src/**/*.ts", "scripts/**/*.ts", "__tests__/**/*.ts"]
+	"include": ["analytics.config.ts", "src/**/*.ts", "scripts/**/*.ts", "__tests__/**/*.ts"]
 }

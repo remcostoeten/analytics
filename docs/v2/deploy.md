@@ -20,13 +20,14 @@ Run each once and keep the output:
 openssl rand -hex 32   # IP_HASH_SECRET
 openssl rand -hex 32   # BETTER_AUTH_SECRET
 openssl rand -hex 32   # CRON_SECRET
-openssl rand -hex 32   # ALERT_WEBHOOK_SECRET
 ```
+
+Webhook alert targets get their signing secret from the API when they are created, so there is no alert secret to generate here.
 
 ## 3. Migrate Neon
 
 1. GitHub, Settings, Environments, New environment `production`. Add the secret `DATABASE_URL` with the Neon connection string (the pooled one the v1 `ingestion` project uses).
-2. Actions, `migrate`, Run workflow, mode `dry-run`, baseline `0008_add_rollup_daily`. It lists what would change: 0000 to 0008 baselined, 0009 to 0028 to apply.
+2. Actions, `migrate`, Run workflow, mode `dry-run`, baseline `0008_add_rollup_daily`. It lists what would change: 0000 to 0008 baselined, 0009 to 0029 to apply.
 3. Run it again with mode `apply`.
 
 Every migration is additive, so v1 keeps working on the same database.
@@ -54,7 +55,8 @@ New project `analytics-api`, repository `remcostoeten/analytics`, root directory
 | `DASHBOARD_ORIGIN` | `https://analytics.remcostoeten.nl` (the dashboard or docs origin that signs in) |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
-| `ALERT_WEBHOOK_URL`, `ALERT_WEBHOOK_SECRET` | Optional: where issue alerts go, and the secret from step 2 |
+| `MAIL_URL` | Optional: the SMTP server for mail alerts, such as `smtps://you%40gmail.com:<app password>@smtp.gmail.com:465`; without it mail targets stay `paused` |
+| `MAIL_FROM` | Optional: the sender of alert mail, such as `Analytics <you@gmail.com>`; with Gmail it must be the account's own address |
 | `INTERNAL_PROJECT_SECRET` | Optional: the secret key of a project that should collect the API's own errors |
 | `CRUX_API_KEY` | Optional: a Google Cloud API key with the Chrome UX Report API enabled |
 
@@ -74,7 +76,9 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 | Daily 02:17 | `rollup`, then `cleanup` |
 | Mondays 04:43 | `crux` |
 
-Until both are set, the workflow only prints a notice. A job whose setting is missing on the API, such as alerts without `ALERT_WEBHOOK_URL`, is reported as a notice rather than a failure. Run any job by hand from Actions, `jobs`, Run workflow.
+Until both are set, the workflow only prints a notice. A job that is not configured on the API, such as `crux` without `CRUX_API_KEY` or `alerts` without `alerts()` in `apps/api/analytics.config.ts`, is reported as a notice rather than a failure.
+
+Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Discord channels. Each project sets its own targets with `PUT /v2/projects/:project/alerts/targets` or `admin.alerts.sync` from `@remcostoeten/analytics/admin`; `POST .../targets/:name/test` checks one at once, and `GET /v2/admin/alerts/status` shows whether mail is ready. To send mail through Resend instead of SMTP, change the transport in the config to `resend(process.env.RESEND_API_KEY)` and set `RESEND_API_KEY`. Run any job by hand from Actions, `jobs`, Run workflow.
 
 ## 8. First sign-in and token
 

@@ -42,6 +42,12 @@ A private project answers 404, not 403, to callers without access, so its name d
 | DELETE | `/v2/tokens/:token` | admin | Revoke a token |
 | GET | `/v2/admin/metrics` | admin | Ingest counters and job history |
 | POST | `/v2/admin/jobs/:job` | cron | Run `rollup`, `cleanup`, `alerts` or `crux`; each run is recorded in the job history |
+| GET, PUT | `/v2/projects/:project/alerts/targets` | admin | The project's alert targets; `PUT` replaces them all (`sync`). Only with `alerts()` in the config |
+| PUT, DELETE | `/v2/projects/:project/alerts/targets/:name` | admin | Create, replace or remove one target |
+| POST | `/v2/projects/:project/alerts/targets/:name/test` | admin | Send a sample alert now |
+| POST | `/v2/projects/:project/alerts/targets/:name/rotate` | admin | A new webhook signing secret, shown once |
+| GET | `/v2/projects/:project/alerts/deliveries` | admin | Delivery history, `status` filter, paged |
+| GET | `/v2/admin/alerts/status` | admin | Enabled channels, the mail transport without secrets, pending count, failing targets |
 
 ## Shared query parameters
 
@@ -1230,7 +1236,40 @@ POST /v2/projects/remcostoeten.nl/error-rules
 
 An ignore pattern matches new errors' message or stack as a case-insensitive substring and drops them before grouping. A mute sets the issue to `ignored` until the date passes or `count` more occurrences arrive, whichever comes first, then reopens it; it needs `until`, `count` or both. `GET` lists ignore patterns, then muted issues. Deleting a `mute_iss_` rule unmutes and reopens the issue.
 
-`POST /v2/admin/jobs/alerts` with the cron secret posts new issues and regressions since its last run, up to 100, to `ALERT_WEBHOOK_URL` as `{ type: "issues.alert", sentAt, alerts: [{ kind, project, issue }] }`, signed with `ALERT_WEBHOOK_SECRET` as `x-analytics-signature: sha256=<hex hmac of the body>`. A failed delivery answers 503 and keeps them pending. Without the URL it answers 503.
+### Alerts
+
+The routes below exist only when `alerts()` is in `apps/api/analytics.config.ts`; `docs/v2/alerts.md` is the design. All need a project admin.
+
+```text
+PUT /v2/projects/remcostoeten.nl/alerts/targets
+{ "targets": [
+  { "channel": "mail", "to": ["remco@gmail.com"] },
+  { "channel": "webhook", "name": "ops", "url": "https://ops.example.com/hooks/analytics" },
+  { "channel": "discord", "url": "https://discord.com/api/webhooks/1/abc", "on": ["issue.regression"] }
+] }
+
+200 OK
+{ "data": { "created": ["mail", "ops", "discord"], "updated": [], "removed": [], "secrets": { "ops": "whsec_9f86d0..." } } }
+
+GET /v2/projects/remcostoeten.nl/alerts/targets
+
+200 OK
+{ "data": [
+  { "id": "alt_4c1f...", "project": "remcostoeten.nl", "name": "ops", "channel": "webhook", "url": "https://ops.example.com/hooks/analytics",
+    "on": ["issue.new", "issue.regression"], "enabled": true, "state": "failing", "stateReason": "POST https://ops.example.com/hooks/analytics answered 502",
+    "createdAt": "2026-09-29T12:00:00.000Z", "updatedAt": "2026-09-29T12:00:00.000Z" }
+], "nextCursor": null }
+```
+
+- `name` defaults to the channel, `on` to every issue event and `enabled` to `true`. Sending the same list twice changes nothing. A channel the config does not enable, or two targets with one name, answer `VALIDATION_FAILED` with the field's path in `details.fields`, such as `/targets/0/to/0`.
+- `state` is `paused` when a target is disabled or its channel is off or not ready (an empty `MAIL_URL`, say), `failing` when its last delivery failed, else `active`.
+- `PUT .../targets/:name` creates or replaces one target, `DELETE` removes it with its history, `POST .../test` sends a sample alert now and answers `{ name, channel, delivered, message }` with what the provider said, and `POST .../rotate` answers `{ name, secret }` for a webhook target.
+- `GET .../deliveries?status=pending|sent|failed&limit=&cursor=` lists deliveries newest first with `attempts`, `lastError`, `nextAttemptAt`, `sentAt` and the event as `payload`.
+- `GET /v2/admin/alerts/status` answers `{ channels: [{ name, ready, problem }], transport: { name, host, from }, pending, failing: [{ project, name, channel, reason }] }`.
+
+`POST /v2/admin/jobs/alerts` with the cron secret first queues new issues and regressions, up to 100 per run, as one delivery per enabled target subscribed to the event, never twice for the same target, event and subject; then it sends every due delivery, one mail or request per target, and settles each by the retry policy (5 attempts after 1, 5, 30, 120 and 720 minutes, within 24 hours, unless the config says otherwise). `rowsWritten` is the number sent. Without `alerts()` in the config it answers 503 "Alerts are off".
+
+A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@remcostoeten/analytics/server` check both.
 
 ### Error codes
 

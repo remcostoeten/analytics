@@ -6,6 +6,8 @@ const dateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 // Matches any RFC 4122 UUID, including version 7.
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Matches a mail address with one @ and a dot in the domain, such as remco@gmail.com.
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isDateTime(value: string) {
   return dateTimePattern.test(value) && !Number.isNaN(Date.parse(value));
@@ -24,6 +26,7 @@ const formats: [string, (value: string) => boolean][] = [
   ["date", isDate],
   ["uuid", (value) => uuidPattern.test(value)],
   ["uri", isUri],
+  ["email", (value) => emailPattern.test(value)],
 ];
 
 /**

@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
-import { JobResult } from "@remcostoeten/analytics-contract";
 import {
   createEngine,
   defaultEnrichers,
@@ -16,12 +15,9 @@ import {
   migrationsDirectory,
   readMigrations,
 } from "@remcostoeten/analytics-engine/db/migration-files";
-import { Value } from "@sinclair/typebox/value";
 
 import { createApp } from "../src/app";
 import { openGeo } from "../src/geo";
-
-type Json = { [key: string]: unknown };
 
 const now = new Date("2026-09-27T16:40:00.000Z");
 const clock = fixedClock(now);
@@ -29,10 +25,7 @@ const database = new PGlite();
 const hasher = webCryptoHasher();
 const geo = openGeo([], []);
 const stores = pgliteAccess(database);
-const cron = { authorization: "Bearer cron-secret-for-tests" };
 const internalSecret = "sk_test_internal";
-const delivered: { url: string; init: RequestInit }[] = [];
-let webhookStatus = 200;
 
 const api = createApp({
   engine: (logger) =>
@@ -81,35 +74,8 @@ const api = createApp({
   authHandler: async () => {
     throw new Error("Session store exploded");
   },
-  alerts: {
-    url: "https://hooks.example.test/alerts",
-    secret: "whsec-for-tests",
-    send: async (url, init) => {
-      delivered.push({ url, init });
-      return new Response(null, { status: webhookStatus });
-    },
-  },
   internalSecret,
 });
-
-function job() {
-  return api.handle(
-    new Request("http://localhost/v2/admin/jobs/alerts", { method: "POST", headers: cron }),
-  );
-}
-
-async function sign(body: string) {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode("whsec-for-tests"),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
 beforeAll(async () => {
   const report = await runMigrations(
@@ -143,53 +109,5 @@ describe("internal errors", () => {
     expect(issues.rows).toEqual([
       { project_id: "internal", title: "Error: Session store exploded" },
     ]);
-  });
-});
-
-describe("POST /v2/admin/jobs/alerts", () => {
-  test("needs the cron secret", async () => {
-    const denied = await api.handle(
-      new Request("http://localhost/v2/admin/jobs/alerts", { method: "POST" }),
-    );
-    expect(denied.status).toBe(401);
-  });
-
-  test("a failed delivery keeps the alerts pending", async () => {
-    webhookStatus = 502;
-    expect((await job()).status).toBe(503);
-    webhookStatus = 200;
-    delivered.length = 0;
-  });
-
-  test("posts new issues once, signed, then nothing until a regression", async () => {
-    const response = await job();
-    expect(response.status).toBe(200);
-    const json: unknown = await response.json();
-    expect(Value.Check(JobResult, json)).toBe(true);
-    expect((json as { data: Json }).data).toMatchObject({
-      job: "alerts",
-      status: "ok",
-      rowsWritten: 1,
-    });
-    const [sent] = delivered;
-    if (!sent) throw new Error("nothing delivered");
-    expect(sent.url).toBe("https://hooks.example.test/alerts");
-    const payload = sent.init.body;
-    if (typeof payload !== "string") throw new Error("the body is not a string");
-    const headers = sent.init.headers as { [name: string]: string };
-    expect(headers["x-analytics-signature"]).toBe(`sha256=${await sign(payload)}`);
-    expect(JSON.parse(payload)).toMatchObject({
-      type: "issues.alert",
-      alerts: [
-        {
-          kind: "new",
-          project: "internal",
-          issue: { title: "Error: Session store exploded", count: 1 },
-        },
-      ],
-    });
-    const again = await job();
-    expect(((await again.json()) as { data: Json }).data).toMatchObject({ rowsWritten: 0 });
-    expect(delivered).toHaveLength(1);
   });
 });

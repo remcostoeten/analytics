@@ -8,6 +8,8 @@ import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 const botThreshold = 50;
 const topReasons = 5;
 const rateLimitDays = 1;
+const sentDays = 30;
+const failedDays = 90;
 
 function hourOf(at: Date) {
   const hour = new Date(at);
@@ -23,7 +25,8 @@ function nullableNumber(value: unknown) {
  * @name drizzleOps
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
  * ingest numbers since a moment, retention cleanup of events and sessions past each project's
- * `retention_days` in batches, and the Chrome UX Report checks.
+ * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
+ * and the Chrome UX Report checks.
  *
  * @example
  * await drizzleOps(db).metrics(new Date(Date.now() - 86_400_000));
@@ -146,7 +149,16 @@ export function drizzleOps(db: Database): OpsStore {
             WHERE window_start < ${at}::timestamptz - make_interval(days => ${rateLimitDays})
             RETURNING key`,
         );
-        return { rowsDeleted: events.length + sessions.length + limits.length };
+        const deliveries = await selectRows(
+          db,
+          sql`DELETE FROM alert_deliveries
+            WHERE (status = 'sent' AND created_at < ${at}::timestamptz - make_interval(days => ${sentDays}))
+              OR (status = 'failed' AND created_at < ${at}::timestamptz - make_interval(days => ${failedDays}))
+            RETURNING id`,
+        );
+        return {
+          rowsDeleted: events.length + sessions.length + limits.length + deliveries.length,
+        };
       }),
     checkTargets: () =>
       attempt("Could not read the projects to check", async () => {

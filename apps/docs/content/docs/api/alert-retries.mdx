@@ -1,0 +1,36 @@
+---
+title: Alert retries
+description: How often and for how long a failed alert delivery is tried again, and how to change it.
+---
+
+Every channel retries a failed delivery, since a webhook or Discord can be down as well as a mail server. Retrying is the delivery queue's job: each run of the alerts job sends what is due, so a failure is never retried twice over.
+
+```ts
+alerts({
+  channels: [mail({ transport, from }), webhook({ retry: { maxAge: "1h" } })],
+  retry: { attempts: 5, backoff: "exponential", maxAge: "24h" },
+});
+```
+
+| Option | Default | Means |
+| --- | --- | --- |
+| `attempts` | `5` | Tries after the first failure; `0` turns retrying off |
+| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` waits 10 minutes, one job run |
+| `maxAge` | `"24h"` | A delivery is not tried past this age and turns `failed`; a `Duration` such as `"30m"`, `"6h"` or `"2d"` |
+
+The config only needs what differs from the defaults. A channel's own `retry` overrides the plugin's, key by key, so `webhook({ retry: { maxAge: "1h" } })` above keeps 5 exponential attempts but gives up after an hour.
+
+`retry: { maxAge: "24 hours" }` is a type error: a `Duration` is a number followed by `s`, `m`, `h` or `d`.
+
+## Choosing values
+
+- **Chat channels** such as Discord: a short `maxAge`, like `"1h"`, since a late alert there is noise.
+- **Webhooks that feed another system**: more `attempts` and a longer `maxAge`, so a receiver that is down for a while still gets every alert.
+- **Mail**: the defaults. A wrong password or an unverified domain fails every try; `POST .../targets/:name/test` shows the provider's answer at once.
+
+## Watching failures
+
+- A target whose last delivery failed has `state: "failing"` and the error in `stateReason`.
+- `GET /v2/projects/:project/alerts/deliveries?status=pending` lists deliveries waiting for a retry with their `attempts`, `lastError` and `nextAttemptAt`; `status=failed` lists the ones that ran out.
+- `GET /v2/admin/alerts/status` counts pending deliveries and names the failing targets across projects.
+- The cleanup job removes sent deliveries after 30 days and failed ones after 90.

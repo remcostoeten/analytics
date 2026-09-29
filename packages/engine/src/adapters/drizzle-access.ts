@@ -10,6 +10,7 @@ import {
   projects,
 } from "../db/schema";
 import type {
+  AlertStore,
   Membership,
   MemberStore,
   ProjectAdmin,
@@ -33,6 +34,7 @@ import { webCryptoHasher } from "./system";
 
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
+import { drizzleAlerts } from "./drizzle-alerts";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
 import { drizzleIssues } from "./drizzle-issues";
@@ -265,6 +267,7 @@ export type Access = {
   speed: SpeedStore;
   issues: IssueStore;
   ops: OpsStore;
+  alerts: AlertStore;
 };
 
 /**
@@ -294,5 +297,6 @@ export function accessOn(db: Database, transact: Transact): Access {
     speed: drizzleSpeed(db),
     issues: drizzleIssues(db),
     ops: drizzleOps(db),
+    alerts: drizzleAlerts(db),
   };
 }

@@ -454,3 +454,41 @@ export const speedChecks = pgTable(
   },
   (table) => [primaryKey({ columns: [table.projectId, table.metric] })],
 );
+
+export const alertTargets = pgTable(
+  "alert_targets",
+  {
+    ...baseEntity(),
+    projectId: text("project_id").notNull(),
+    name: text("name").notNull(),
+    channel: text("channel").notNull(),
+    events: text("events").array().notNull(),
+    settings: jsonb("settings").notNull(),
+    webhookSecret: text("webhook_secret"),
+    enabled: boolean("enabled").notNull().default(true),
+  },
+  (table) => [unique().on(table.projectId, table.name)],
+);
+
+export const alertDeliveries = pgTable(
+  "alert_deliveries",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    targetId: text("target_id").notNull(),
+    eventName: text("event_name").notNull(),
+    subjectId: text("subject_id").notNull(),
+    payload: jsonb("payload").notNull(),
+    status: text("status", { enum: ["pending", "sent", "failed"] })
+      .notNull()
+      .default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.targetId, table.eventName, table.subjectId),
+    index("alert_deliveries_target_idx").on(table.targetId, table.createdAt),
+  ],
+);

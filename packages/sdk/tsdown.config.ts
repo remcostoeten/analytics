@@ -3,7 +3,7 @@ import type { UserConfig } from "tsdown";
 
 const shared: UserConfig = {
   format: "esm",
-  dts: true,
+  dts: { eager: true },
   sourcemap: true,
   minify: true,
   noExternal: [/^@remcostoeten\/analytics-shared/],
@@ -21,4 +21,5 @@ export default defineConfig([
   },
   { ...shared, entry: { server: "src/server/index.ts" }, clean: false },
   { ...shared, entry: { proxy: "src/proxy/index.ts" }, clean: false },
+  { ...shared, entry: { admin: "src/admin/index.ts" }, clean: false },
 ]);

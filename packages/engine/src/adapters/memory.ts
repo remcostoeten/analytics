@@ -16,6 +16,8 @@ import type {
 } from "../ports";
 import type { LogFields, LogLevel } from "../ports/logger";
 
+export { memoryAlerts } from "./memory-alerts";
+
 export const emptyRecord: GeoRecord = {
   geo: {
     country: null,

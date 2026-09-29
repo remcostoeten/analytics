@@ -21,6 +21,18 @@ export type {
   TokenStore,
   Visibility,
 } from "./access";
+export type {
+  AlertStore,
+  DeliveryBatch,
+  DeliveryOutcome,
+  DeliveryRecord,
+  FailingTarget,
+  QueuedEvent,
+  TargetChanges,
+  TargetRecord,
+  TargetSettings,
+  TargetSpec,
+} from "./alerts";
 export type { Clock } from "./clock";
 export type { DetailStore, Keyset, MarkedVisitor, Offset, Page } from "./details";
 export type {
