@@ -2,6 +2,8 @@
 
 Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
 
+`bun run deploy` runs steps 1, 2, 3, 5, 6 and 7 from your machine. It needs `gh` signed in and `VERCEL_TOKEN` from https://vercel.com/account/tokens. It pulls `DATABASE_URL` from the v1 `ingestion` project, generates the secrets into `.env.deploy` (gitignored, reused on rerun), migrates Neon with a dry run first, sets the GitHub `production` environment, creates `analytics-api` and `analytics-docs` with their variables and domains, and deploys `master`. Export `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` from step 4 before running it, or add them to `.env.deploy` and rerun; the same goes for the optional `MAIL_URL`, `MAIL_FROM`, `INTERNAL_PROJECT_SECRET` and `CRUX_API_KEY`.
+
 ## 1. Stop v1 building on every push
 
 In Vercel, for both `ingestion` and `v1.analytics`: Settings, Git, Ignored Build Step, "Run my Bash script":
