@@ -12,6 +12,7 @@ import type {
   onTTFB,
 } from "web-vitals/attribution";
 
+import { pagePath } from "../core/environment";
 import { definePlugin } from "../core/plugin-host";
 import type { Props } from "../core/types";
 
@@ -100,7 +101,7 @@ export function speedInsights(options: SpeedOptions = {}) {
       if (typeof window === "undefined" || (options.random ?? Math.random)() >= sampleRate) {
         return noop;
       }
-      const path = location.pathname;
+      const path = pagePath();
       const route = client.status().route;
       const connection =
         (navigator as Navigator & { connection?: Connection }).connection?.effectiveType ?? null;

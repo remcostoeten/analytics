@@ -1,5 +1,6 @@
 import { noop } from "@remcostoeten/analytics-shared/noop";
 
+import { pagePath } from "../core/environment";
 import { definePlugin } from "../core/plugin-host";
 
 /**
@@ -17,7 +18,7 @@ export function engagement() {
       if (typeof document === "undefined") return noop;
       let total = 0;
       let since: number | null = document.visibilityState === "visible" ? Date.now() : null;
-      let path = location.pathname;
+      let path = pagePath();
       function pause() {
         if (since !== null) total += Date.now() - since;
         since = null;
@@ -26,7 +27,7 @@ export function engagement() {
         pause();
         if (total > 0) client.record(path, "engagement", { ms: total });
         total = 0;
-        path = location.pathname;
+        path = pagePath();
       }
       function resume() {
         if (document.visibilityState === "visible") since ??= Date.now();
