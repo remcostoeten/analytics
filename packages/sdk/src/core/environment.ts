@@ -26,16 +26,16 @@ export function browserStore(name: "localStorage" | "sessionStorage"): Store | n
 
 /**
  * @name pagePath
- * @description The path of the current page: the path inside the hash for hash routers (`#/blog/x`
- * or `#!/blog/x`, without its query), else `location.pathname`, and `/` outside a browser.
+ * @description The path of the current page: the path inside the hash for hash routers (`#/blog/x`,
+ * without its query), else `location.pathname`, and `/` outside a browser.
  *
  * @example
  * pagePath(); // "/blog/x" on https://example.com/#/blog/x?tab=1
  */
 export function pagePath(): string {
   if (typeof location === "undefined") return "/";
-  // matches "#/path" or "#!/path" and captures the path up to a "?"
-  return /^#!?(\/[^?]*)/.exec(location.hash)?.[1] || location.pathname || "/";
+  // matches "#/path" and captures the path up to a "?"
+  return /^#(\/[^?]*)/.exec(location.hash)?.[1] ?? location.pathname;
 }
 
 /**

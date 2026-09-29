@@ -408,8 +408,8 @@ describe("pageviews", () => {
     history.replaceState(null, "", "/#/blog/rebuilding-analytics");
     const { analytics, transport } = client({ pageviews: true });
     history.pushState(null, "", "/#/pricing?plan=pro");
-    history.pushState(null, "", "/#!/about");
-    history.pushState(null, "", "/#!/about");
+    history.pushState(null, "", "/#/about");
+    history.pushState(null, "", "/#/about");
     await analytics.flush();
     expect(sent(transport).map((event) => event.page.path)).toEqual([
       "/blog/rebuilding-analytics",
