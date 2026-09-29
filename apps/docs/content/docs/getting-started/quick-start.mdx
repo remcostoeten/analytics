@@ -1,0 +1,119 @@
+---
+title: Quick start
+description: Create a project, install the SDK, route events through your own domain and check that they arrive.
+---
+
+This page takes a Next.js app from nothing to its first stored event. Other stacks follow the same steps; only step 4 differs, and the [Overview](/docs#what-it-runs-on) lists what each stack uses.
+
+## 1. Create a project
+
+A project is one site or app. Creating one needs an owner, or an admin or `admin` API token that is not limited to specific projects:
+
+```bash
+curl -X POST https://api.example.com/v2/projects \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"id":"example.com","name":"Example","domain":"example.com","allowedOrigins":["https://example.com"]}'
+```
+
+The response holds two keys:
+
+| Key | Prefix | Where it goes |
+| --- | --- | --- |
+| `publicKey` | `pk_` | The browser. It is safe to ship and only works from the project's `allowedOrigins` |
+| `secretKey` | `sk_` | Your server's environment. It is shown once and stored hashed; `POST /v2/projects/{project}/keys` rotates it |
+
+## 2. Install the SDK
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## 3. Configure it
+
+Put the browser options in one environment variable, and the secret in another that never reaches the browser:
+
+```bash
+NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+RA_SECRET=sk_...
+```
+
+Vite reads `VITE_RA_CONFIG` and Astro and SvelteKit read `PUBLIC_RA_CONFIG`, with the same JSON.
+
+## 4. Create the client
+
+`lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  pageviews: false,
+  plugins: [speedInsights(), errors()],
+});
+```
+
+`app/layout.tsx`:
+
+```tsx
+import type { ReactNode } from "react";
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { Analytics } from "@remcostoeten/analytics/next";
+import { analytics } from "@/lib/analytics";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <AnalyticsProvider client={analytics}>
+          <Analytics />
+          {children}
+        </AnalyticsProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+`<Analytics />` sends a pageview on every navigation with the route template, such as `/blog/[slug]`, which is why the client is created with `pageviews: false`.
+
+Without Next.js, the client alone is enough. Import `lib/analytics.ts` once from your entry file and leave `pageviews` on: it sends a pageview on load and on every `pushState` navigation.
+
+## 5. Serve `/_ra` from your own domain
+
+Browsers with ad blockers drop requests to third-party analytics hosts. A same-origin path avoids that. In the App Router, `app/%5Fra/route.ts` serves `/_ra` (a folder starting with `_` is private in Next.js, so the underscore is URL-encoded):
+
+```ts
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+export const POST = createProxy({
+  secret: process.env.RA_SECRET,
+  endpoint: "https://api.example.com",
+});
+```
+
+The proxy accepts only same-site `POST` requests up to 64 KB, adds the secret key and the visitor's IP and user agent, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
+
+## 6. Send an event and check it
+
+```ts
+analytics.track("signup", { plan: "pro" });
+```
+
+Open your site once with `?ra=debug` to see an `[ra]` line in the console for every event, every dropped event and every failed send. The browser remembers the setting. `analytics.status()` returns the queue size, consent, endpoint, route, last error and last send time.
+
+In development (`NODE_ENV` is `development` or `test`) the SDK logs events instead of sending them, unless an `endpoint` is set.
+
+The event shows up in the project's realtime view within a few seconds:
+
+```bash
+curl https://api.example.com/v2/projects/example.com/realtime/events \
+  -H "authorization: Bearer $RA_TOKEN"
+```
+
+## Next steps
+
+- Type your events once for the browser and the server: [Concepts](/docs/getting-started/concepts#events).
+- Track from route handlers, webhooks and jobs: [Server](/docs/sdk/server).
+- Add scroll depth, outbound links, forms and more: [Plugins](/docs/sdk/plugins).

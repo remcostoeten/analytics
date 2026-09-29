@@ -139,6 +139,26 @@ describe("react", () => {
     expect(pageviews.map((event) => event.page.route)).toEqual(["/blog/[slug]", "/blog/[slug]"]);
     expect(analytics.status().route).toBe("/blog/[slug]");
   });
+
+  test("useRoutePageviews counts a change of only the query when the path carries it", async () => {
+    const { analytics, transport } = client();
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    function show(path: string) {
+      return act(async () =>
+        root.render(
+          <AnalyticsProvider client={analytics}>
+            <Routed path={path} route="/products" />
+          </AnalyticsProvider>,
+        ),
+      );
+    }
+    await show("/products?page=1");
+    await show("/products?page=2");
+    await act(async () => root.unmount());
+    await analytics.flush();
+    expect(sent(transport).filter((event) => event.name === "pageview")).toHaveLength(2);
+  });
 });
 
 describe("computeRoute", () => {
@@ -153,6 +173,10 @@ describe("computeRoute", () => {
     ["/blog/caf%C3%A9", { slug: "café" }, "/blog/[slug]"],
     ["/about", {}, "/about"],
     ["/about", null, "/about"],
+    ["/files/a/b", { "*": "a/b" }, "/files/[...splat]"],
+    ["/files/a", { "*": "a" }, "/files/[...splat]"],
+    ["/en/files/a/b", { lang: "en", _splat: "a/b" }, "/[lang]/files/[...splat]"],
+    ["/files", { "*": "" }, "/files"],
   ])("computeRoute(%s)", (pathname, params, expected) => {
     expect(computeRoute(pathname, params)).toBe(expected);
   });

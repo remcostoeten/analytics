@@ -1,0 +1,59 @@
+---
+title: How it works
+description: What happens to an event between the browser and the database, and where each privacy guarantee comes from.
+---
+
+```text
+browser SDK ──▶ /_ra on your domain (proxy) ──▶ API /v2/events ──▶ engine ──▶ Postgres ──▶ reads, dashboard, SQL
+server SDK  ─────────────────────────────────▶ API /v2/events
+```
+
+## In the browser
+
+1. `analytics.track("signup", { plan: "pro" })` builds an event with a UUIDv7 id, the name, the time, the visitor and session ids, the page (path, route template, title, and the referrer on the first pageview) and props.
+2. Props are kept inside the limits: at most 25, flat primitive values, keys and strings up to 255 characters. Anything outside is shortened or left out, with an `RA_PROPS_LIMITED` warning in the console.
+3. `beforeSend` and plugins may change or drop the event. Consent and opt-out are checked here; a dropped event never leaves the browser.
+4. Events wait in a queue and go out together: after 20 events, after 5 seconds, or when the page is hidden. They are sent with `fetch` and `keepalive`, or with `sendBeacon` when the page is being left.
+5. A failed send retries after 1, 4 and 16 seconds. Events that are still unsent are saved and sent on the next page load.
+
+## At the proxy
+
+The browser posts to `/_ra` on your own domain, so ad blockers see a first-party request. The proxy:
+
+- accepts only `POST`, and only from the same site;
+- refuses bodies over 64 KB;
+- adds the project's secret key, so the key never reaches the browser;
+- adds the visitor's IP and user agent as `X-Visitor-IP` and `X-Visitor-UA`, because the API only sees your server's address;
+- returns the API's answer unchanged.
+
+Without a proxy the browser sends to the API directly with the public key, and the API only accepts it from the project's allowed origins.
+
+## In the API
+
+The engine runs every batch through the same steps:
+
+1. **Authorize.** A public key must come from an allowed origin; a secret key is trusted.
+2. **Rate limit.** Callers with a public key are limited per IP hash, 100 requests a minute by default (`INGEST_RATE_LIMIT`).
+3. **Parse.** Each event is checked against the contract. An invalid event is rejected by its index; the rest of the batch still goes through.
+4. **Enrich.** Country, region, city and network (ASN) from local MMDB lookups of the IP; browser, OS and device from the user agent; UTM tags and the channel from the URL and referrer.
+5. **Score bots.** Known crawlers and automation user agents, datacenter networks, inconsistent headers and the client's `botSignals` add weight to a score from 0 to 100. Events are never dropped for their score; reads filter at 50 and above.
+6. **Flag.** Events from localhost, preview deployments and signed-in admins are marked, so your own traffic is left out of reports.
+7. **Store.** Repeated event ids are counted as duplicates and skipped, the batch is written in one insert, and sessions and visitors are updated.
+
+The answer lists how many events were accepted, how many were duplicates, and which were rejected and why.
+
+## What is stored, and what is not
+
+| Stored | Not stored |
+| --- | --- |
+| A random visitor id from `localStorage` and a random session id from `sessionStorage` | Cookies of any kind for visitors |
+| `sha256(ip + sha256(secret + day))`, for rate limits and counting | The IP address |
+| Country, region, city and the city's approximate coordinates, from the IP lookup | A street-level location |
+| Path, route template, title and referrer | Query strings in error messages and breadcrumbs |
+| The props you send | Form field values: the `forms` plugin reads only the form's id and action |
+
+The IP hash uses a salt that changes every UTC day, so a hash cannot link a visitor across days.
+
+## Reading the data
+
+Every read goes through the API: headline numbers, timeseries, breakdowns, realtime, paths, retention, speed insights, issues and a read-only SQL console. A project is public by default, so its aggregates can be read without signing in; a private project answers only to its members and tokens. The [Auth overview](/docs/api/auth) lists who can call what.

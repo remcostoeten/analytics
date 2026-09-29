@@ -25,6 +25,20 @@ export function browserStore(name: "localStorage" | "sessionStorage"): Store | n
 }
 
 /**
+ * @name pagePath
+ * @description The path of the current page: the path inside the hash for hash routers (`#/blog/x`,
+ * without its query), else `location.pathname`, and `/` outside a browser.
+ *
+ * @example
+ * pagePath(); // "/blog/x" on https://example.com/#/blog/x?tab=1
+ */
+export function pagePath(): string {
+  if (typeof location === "undefined") return "/";
+  // matches "#/path" and captures the path up to a "?"
+  return /^#(\/[^?]*)/.exec(location.hash)?.[1] ?? location.pathname;
+}
+
+/**
  * @name pageFacts
  * @description The current path, the route template when an adapter supplied one, the title and,
  * on the first pageview only, the referrer.
@@ -35,7 +49,7 @@ export function browserStore(name: "localStorage" | "sessionStorage"): Store | n
 export function pageFacts(route: string | null, first: boolean): PageFacts {
   const browser = typeof document !== "undefined";
   return {
-    path: (browser && location.pathname) || "/",
+    path: pagePath(),
     route,
     title: (browser && document.title) || null,
     referrer: (browser && first && document.referrer) || null,
