@@ -51,7 +51,7 @@ analytics.track("newsletter_subscribed");
 
 ## Pageviews and routes
 
-A pageview records the path, the page title and, on the first pageview of a page load, the referrer. The core sends one on load and on every client-side navigation: `pushState`, `replaceState` to a new path, back and forward. Hash routers (`/#/pricing`) report the path inside the hash. A change of only an anchor (`#comments`) is not a new pageview.
+A pageview records the path, the page title and, on the first pageview of a page load, the referrer. The core sends one on load and on every client-side navigation: `pushState`, `replaceState` to a new path or query string, back and forward. Hash routers (`/#/pricing`) report the path inside the hash. A change of only an anchor (`#comments`) is not a new pageview.
 
 A **route** is the template behind a path: `/blog/[slug]` for `/blog/hello` and `/blog/world`. Reports can group by route, so every blog post adds up to one row. `<Analytics />` from `/next` sends routes automatically; with other routers, `useRoutePageviews` and `computeRoute` from `/react`, or `analytics.route("/blog/[slug]")`, set it. Without a route, reports group by path.
 
