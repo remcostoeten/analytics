@@ -1,0 +1,124 @@
+---
+title: Fix API errors
+description: Every error code the API returns, with its status, what causes it and how to fix it.
+---
+
+Every API error uses the same envelope, with a `code`, a `message`, an optional `details` object, a `requestId` and a `docs` link. This page lists each code from the error catalog in `packages/contract`, then the messages you meet most often and what to change.
+
+```json
+{
+  "error": {
+    "code": "FORBIDDEN_ORIGIN",
+    "message": "Origin https://www.example.com is not allowed for this project",
+    "requestId": "req_01J8Z3",
+    "docs": "https://api.example.com/v2/openapi#errors/FORBIDDEN_ORIGIN"
+  }
+}
+```
+
+## Error codes
+
+"Retried" says whether the browser client retries the batch. It retries 429 and every 5xx after 1, 4 and 16 seconds, and drops a batch on any other 4xx.
+
+| Status | Code | Retried | Cause | Fix |
+| --- | --- | --- | --- | --- |
+| 400 | `VALIDATION_FAILED` | No | The body, query or path does not match the schema, or the body is not JSON | Read `message` and `details.fields`, and correct the request |
+| 401 | `UNAUTHORIZED` | No | No credential, or an unknown key, token or cron secret | Send a valid key, API token or session |
+| 403 | `FORBIDDEN_ORIGIN` | No | A public key was used from an origin missing from the project's allowed origins | Add the exact origin, or send through the proxy |
+| 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
+| 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
+| 409 | `CONFLICT` | No | A project with this id already exists | Pick another id |
+| 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events | Send smaller batches |
+| 429 | `RATE_LIMITED` | Yes | A rate limit was hit | Wait for the number of seconds in `Retry-After` |
+| 500 | `INTERNAL` | Yes | An unexpected failure | Report the `requestId`; the API's log line carries the same id |
+| 503 | `UNAVAILABLE` | Yes | The database or a configured service is unreachable, or a job is not configured | Check the database and the service named in `message` |
+
+Every response carries the request id in `x-request-id` as well, and cross-origin callers can read it and `Retry-After`.
+
+## Ingest
+
+`POST /v2/events` answers these errors for the whole batch. A single bad event does not fail the batch: the API answers 202 and lists the event in `rejected` by index, with its own code and message.
+
+### 400 "The body is not valid JSON"
+
+The body could not be parsed. Send the envelope `{ "v": 1, "sentAt": "...", "events": [...] }` as JSON, with `text/plain` from a browser or `application/json` from a server.
+
+### 400 "The request does not match the schema"
+
+The envelope is wrong: `v` is not `1`, `sentAt` is not an ISO 8601 timestamp, or `events` is empty. `details.fields` lists each field.
+
+### 401 "A valid X-Project-Key or secret key is required"
+
+The request has no key, or the key matches no project. A browser sends the public key as `X-Project-Key` or `?key=`; a server sends `Authorization: Bearer sk_...`. A rotated key stops working at once. If both are sent, the API checks only the secret key.
+
+### 403 "Origin https://... is not allowed for this project"
+
+The request used the public key, and its `Origin` header is not in the project's `allowedOrigins`. "Origin (none)" means the request had no `Origin` header, which happens when server code or `curl` uses the public key. See [Fix proxy and origin errors](/docs/troubleshooting/proxy-and-cors).
+
+### 413 "The body is over 60 KB" or "A batch holds at most 50 events"
+
+Split the batch. The browser client sends at most 20 events per request, and the server client at most 50.
+
+### 429 "Too many requests"
+
+Requests with the public key are limited per project and per IP hash: 100 a minute by default, set with `INGEST_RATE_LIMIT` on the API. Requests with the secret key, from the proxy or the server client, are not rate limited.
+
+### 503 on ingest
+
+The database could not be reached. The browser client retries and then keeps up to 100 events in `localStorage` for the next page load. The server client returns `RA_INGEST_FAILED` with `HTTP 503` and does not retry.
+
+## Reads
+
+### 400 "Unknown period ...", "Unknown traffic ..." or "Send both from and to, or neither"
+
+`period` is one of `24h`, `7d`, `30d`, `90d`, `12mo` and `all`. `traffic` is one of `human`, `bots`, `internal` and `all`. `from` and `to` go together, as ISO 8601 timestamps with `from` before `to`. See [Overview](/docs/api/overview#shared-query-parameters).
+
+### 400 "Unknown filter dimension ..."
+
+A `filter[<dimension>]` names a dimension the API does not know. Speed reads accept only `filter[route]`, `filter[page]` and `filter[country]`, and answer "filter[...] is not available for speed" for any other filter.
+
+### 404 "Unknown dimension ..."
+
+`breakdown/:dimension` names a dimension the API does not know. Unlike an unknown filter, this answers 404.
+
+### 404 "Project not found"
+
+The project does not exist, or it is private and the caller cannot read it. A private project answers 404 rather than 403, so its name does not leak. Send an API token (`Authorization: Bearer at_...`) or a session cookie that covers the project. A bearer value that does not start with `at_`, such as a secret key, counts as no token.
+
+### 401 "Sign in or send an API token"
+
+A signed-out caller asked for something beyond public aggregates: visitor-level data, an admin route or SQL.
+
+### 401 "The API token is not valid" or "The API token has expired"
+
+The token is unknown, revoked or past its expiry. The API answers 401 instead of treating the call as anonymous, so a broken script fails. Create a new token with `POST /v2/tokens`.
+
+### 403 "Visitor-level data needs an analyst, admin or API token"
+
+Viewers see aggregates only. Visitor and session reads need an owner, admin or analyst whose role lists the project, or a token that lists it.
+
+### 403 "This needs a project admin" or "This needs an organization admin"
+
+Changing a project needs an owner, or an admin or `admin` token that lists the project. Creating projects and tokens needs an owner, or an admin or `admin` token that is not limited to specific projects.
+
+### 403 "You may not run SQL on this project"
+
+SQL needs an owner, or an admin or analyst who lists the project, or a token with the `sql` scope that lists it, while the project's `sqlEnabled` switch is on. See [SQL console](/docs/api/sql).
+
+### 429 "Too many reads; try again shortly"
+
+Anonymous reads are limited per IP hash: 120 a minute by default, set with `PUBLIC_READ_LIMIT`. Signed-in callers and API tokens are not limited here.
+
+### 429 "At most 30 queries a minute"
+
+The SQL console allows 30 queries a minute per user or token by default, set with `QUERY_LIMIT`.
+
+## Jobs
+
+### 401 "The cron secret is missing or wrong"
+
+`/v2/admin/jobs/*` accepts only `Authorization: Bearer <CRON_SECRET>`, and only when `CRON_SECRET` is set on the API.
+
+### 503 "... is not set" or "Alerts are off"
+
+The job needs something the API does not have: `CRUX_API_KEY` for the `crux` job, the operations store for `cleanup` and `crux`, or `alerts()` in `analytics.config.ts` for the `alerts` job.

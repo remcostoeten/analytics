@@ -120,7 +120,7 @@ analytics.track("signup", { plan: "pro" });
 
 Open your site once with `?ra=debug` to see an `[ra]` line in the console for every event, every dropped event and every failed send. The browser remembers the setting. `analytics.status()` returns the queue size, consent, endpoint, route, last error and last send time.
 
-In development (`NODE_ENV` is `development` or `test`) the SDK logs events instead of sending them, unless an `endpoint` is set.
+In development (`NODE_ENV` is `development` or `test`) the SDK sends nothing unless an `endpoint` is set. Add `?ra=debug` to the URL to print each event to the console.
 
 The event shows up in the project's realtime view within a few seconds:
 
