@@ -18,6 +18,7 @@ import type { EventDraft } from "../draft";
 import { groupsKey } from "../groups";
 import { engineError } from "../errors";
 import type { EventStore, ProjectStore, RateLimiter } from "../ports";
+import { serverVisitor } from "../reads/server-visitor";
 import { vitalRow } from "../speed/vitals";
 import type { VitalRow } from "../speed/vitals";
 
@@ -355,7 +356,7 @@ async function groupIssue(db: Database, group: EventDraft[]) {
   }
   if (dropped.length > 0) await db.delete(events).where(inArray(events.fingerprint, dropped));
   await db.execute(
-    sql`UPDATE issues SET visitors = (SELECT count(DISTINCT visitor_id) FROM events WHERE issue_id = ${id}) WHERE id = ${id}`,
+    sql`UPDATE issues SET visitors = (SELECT count(DISTINCT visitor_id) FROM events WHERE issue_id = ${id} AND visitor_id <> ${serverVisitor}) WHERE id = ${id}`,
   );
 }
 

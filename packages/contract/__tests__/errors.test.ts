@@ -22,6 +22,13 @@ describe("error catalog", () => {
     expect(documented).toEqual(catalogued);
   });
 
+  test("docs name every cause of FORBIDDEN and UNAVAILABLE", () => {
+    expect(errorCatalog.FORBIDDEN.docs).toContain("role");
+    for (const cause of ["database", "alerts", "CRUX_API_KEY", "SMTP", "Resend"]) {
+      expect(errorCatalog.UNAVAILABLE.docs).toContain(cause);
+    }
+  });
+
   test("marks only rate limits and server failures as retryable", () => {
     const retryable = errorCodes.filter((code) => errorCatalog[code].retryable);
     expect(retryable).toEqual(["RATE_LIMITED", "INTERNAL", "UNAVAILABLE"]);

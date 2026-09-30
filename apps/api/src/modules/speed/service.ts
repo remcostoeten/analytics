@@ -8,6 +8,7 @@ import {
   engineError,
   experienceScore,
   metricScore,
+  rawVitalsFrom,
   scoreRating,
   vitalRating,
 } from "@remcostoeten/analytics-engine";
@@ -94,7 +95,13 @@ export function readSpeedScope(
     filters[field] = value;
   }
   return ok({
-    scope: { projectIds, ...range.value, device: device as SpeedDevice, ...filters },
+    scope: {
+      projectIds,
+      ...range.value,
+      device: device as SpeedDevice,
+      ...filters,
+      rawFrom: rawVitalsFrom(now),
+    },
     range: range.value,
     percentile: percentile as Percentile,
   });

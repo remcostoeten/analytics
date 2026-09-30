@@ -40,6 +40,7 @@ const month = {
   route: null,
   path: null,
   country: null,
+  rawFrom: new Date("2026-08-29T00:00:00Z"),
 };
 
 let counter = 0;
@@ -254,5 +255,36 @@ describe("reads", () => {
       "SELECT count(*)::int AS n FROM web_vitals WHERE project_id = 'site'",
     );
     expect(left.rows).toEqual([{ n: 4 }]);
+  });
+
+  test("reads days before the raw window from the rollup and later days from raw rows", async () => {
+    const spanning = { ...month, rawFrom: new Date("2026-09-03T00:00:00Z") };
+    const summary = await speed.summary(spanning, 75);
+    const lcp = summary.ok ? summary.value.find((row) => row.metric === "lcp") : null;
+    expect(lcp).toEqual({
+      metric: "lcp",
+      samples: 24,
+      value: (3850 * 20 + 502.25 * 4) / 24,
+      good: 12,
+      needsImprovement: 8,
+      poor: 4,
+    });
+    const daily = await speed.daily(spanning, 75, "lcp");
+    expect(daily.ok ? daily.value.map(({ samples, value }) => ({ samples, value })) : null).toEqual(
+      [
+        { samples: 0, value: null },
+        { samples: 20, value: 3850 },
+        { samples: 4, value: 502.25 },
+      ],
+    );
+    const routes = await speed.routes(spanning, 75);
+    expect(routes.ok ? routes.value.filter((row) => row.metric === "lcp") : null).toEqual(
+      expect.arrayContaining([
+        { route: "/", metric: "lcp", samples: 20, value: 3850 },
+        { route: "/docs", metric: "lcp", samples: 4, value: 502.25 },
+      ]),
+    );
+    const byPage = await speed.summary({ ...spanning, path: "/docs" }, 75);
+    expect(byPage.ok ? byPage.value.map((row) => row.samples) : null).toEqual([4]);
   });
 });

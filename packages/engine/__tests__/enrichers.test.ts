@@ -39,10 +39,14 @@ describe("forwardedProxy", () => {
   test.each([
     ["untrusted keeps the request IP", false, { "x-visitor-ip": "2.2.2.2" }, "81.2.69.160"],
     ["trusted takes the forwarded header", true, { "x-visitor-ip": "2.2.2.2" }, "2.2.2.2"],
-    ["trusted without a forwarded IP keeps the request IP", true, {}, "81.2.69.160"],
   ])("%s", async (_, trusted, headers, expected) => {
     const enriched = await forwardedProxy.enrich(draft(headers, trusted), context);
     expect(enriched.client?.ip ?? draft(headers, trusted).enrichment.client.ip).toBe(expected);
+  });
+
+  test("trusted without forwarded details leaves the IP and user agent empty", async () => {
+    const enriched = await forwardedProxy.enrich(draft({ "user-agent": "node" }, true), context);
+    expect(enriched.client).toMatchObject({ ip: null, userAgent: null });
   });
 
   test("trusted prefers the event context over headers", async () => {
@@ -87,6 +91,16 @@ describe("geo", () => {
   ])("%s", async (_, headers, expected) => {
     const enriched = await geo.enrich(draft(headers), context);
     expect(enriched.geo).toMatchObject(expected);
+  });
+
+  test("a trusted request skips the edge headers, which describe the calling server", async () => {
+    const trusted = draft({ "x-forwarded-for": "", "x-vercel-ip-country": "US" }, true);
+    const withoutIp = {
+      ...trusted,
+      enrichment: { ...trusted.enrichment, client: { ...trusted.enrichment.client, ip: null } },
+    };
+    const enriched = await geo.enrich(withoutIp, context);
+    expect(enriched.geo).toMatchObject({ country: "NL", city: null, timezone: "Europe/Amsterdam" });
   });
 });
 

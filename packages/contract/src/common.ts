@@ -24,15 +24,24 @@ export const Filters = Type.Record(Type.String(), Type.String());
 export type Filters = Static<typeof Filters>;
 
 export const RangeQuery = Type.Object({
-  from: Type.Optional(Timestamp),
-  to: Type.Optional(Timestamp),
+  from: Type.Optional(
+    Type.String({ format: "date-time", description: "Start of the range; send with `to`." }),
+  ),
+  to: Type.Optional(
+    Type.String({ format: "date-time", description: "End of the range, exclusive." }),
+  ),
   period: Type.Optional(Period),
 });
 export type RangeQuery = Static<typeof RangeQuery>;
 
 export const FilterQuery = Type.Object({
   traffic: Type.Optional(TrafficFilter),
-  filter: Type.Optional(Filters),
+  filter: Type.Optional(
+    Type.Record(Type.String(), Type.String(), {
+      description:
+        "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+    }),
+  ),
 });
 export type FilterQuery = Static<typeof FilterQuery>;
 

@@ -57,6 +57,22 @@ import type { Listing } from "../reads/export";
 import { projectBreakdown } from "./service";
 import { breakdown, readScope, realtime, stats, timeseries } from "../reads/service";
 import type { Scoped as ReadScoped } from "../reads/service";
+import {
+  breakdownQuery,
+  eventsQuery,
+  heatmapQuery,
+  issuesQuery,
+  lifecycleQuery,
+  listQuery,
+  liveEventsQuery,
+  mapQuery,
+  pageQuery,
+  pathsQuery,
+  retentionQuery,
+  scopeQuery,
+  speedQuery,
+  timeseriesQuery,
+} from "../reads/query";
 
 type Scoped = { params: URLSearchParams; projects: string[]; records: ProjectRecord[] };
 
@@ -241,6 +257,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           return scope.ok ? stats(options.store, scope.value) : scope;
         }),
       {
+        query: scopeQuery,
         access: "public",
         response: { 200: StatsResponse, ...responses },
         detail: {
@@ -258,6 +275,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           return scope.ok ? timeseries(options.store, scope.value, params) : scope;
         }),
       {
+        query: timeseriesQuery,
         access: "public",
         response: { 200: TimeseriesResponse, ...responses },
         detail: {
@@ -287,6 +305,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           },
         ),
       {
+        query: breakdownQuery,
         access: "public",
         response: { 200: t.Union([ProjectBreakdownResponse, download]), ...responses },
         detail: {
@@ -311,6 +330,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           },
         ),
       {
+        query: breakdownQuery,
         access: "public",
         response: { 200: t.Union([BreakdownResponse, download]), ...responses },
         detail: {
@@ -343,6 +363,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           listEvents(options.details, params, projects, options.clock()),
         ),
       {
+        query: eventsQuery,
         access: "public",
         response: { 200: t.Union([EventList, download]), ...responses },
         detail: {
@@ -359,6 +380,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           listVisitors(options.details, params, projects, options.clock()),
         ),
       {
+        query: listQuery,
         access: "public",
         response: { 200: t.Union([VisitorList, download]), ...responses },
         detail: {
@@ -375,6 +397,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           listSessions(options.details, params, projects, options.clock()),
         ),
       {
+        query: listQuery,
         access: "public",
         response: { 200: t.Union([SessionList, download]), ...responses },
         detail: { summary: "Sessions across projects", description: "Newest first.", tags },
@@ -388,6 +411,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           return allowed.ok ? listPeople(options.details, params, projects) : allowed;
         }),
       {
+        query: pageQuery,
         access: "public",
         response: { 200: t.Union([PeopleList, download]), ...responses },
         detail: {
@@ -416,6 +440,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     )
     .get("/paths", exploreList("paths", paths), {
+      query: pathsQuery,
       access: "public",
       response: { 200: t.Union([PathsResponse, download]), ...responses },
       detail: {
@@ -425,6 +450,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/retention", explore(retention), {
+      query: retentionQuery,
       access: "public",
       response: { 200: RetentionResponse, ...responses },
       detail: {
@@ -434,6 +460,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/lifecycle", explore(lifecycle), {
+      query: lifecycleQuery,
       access: "public",
       response: { 200: LifecycleResponse, ...responses },
       detail: {
@@ -443,6 +470,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/stickiness", explore(stickiness), {
+      query: scopeQuery,
       access: "public",
       response: { 200: StickinessResponse, ...responses },
       detail: {
@@ -452,6 +480,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/heatmap", explore(heatmap), {
+      query: heatmapQuery,
       access: "public",
       response: { 200: HeatmapResponse, ...responses },
       detail: {
@@ -461,6 +490,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/map", exploreList("map", places), {
+      query: mapQuery,
       access: "public",
       response: { 200: t.Union([MapResponse, download]), ...responses },
       detail: {
@@ -503,6 +533,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           },
         ),
       {
+        query: liveEventsQuery,
         access: "public",
         response: { 200: t.Union([LiveEvents, eventStream]), ...responses },
         detail: {
@@ -514,11 +545,13 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     )
     .get("/speed", speedRead(speedSummary), {
+      query: speedQuery,
       access: "public",
       response: { 200: SpeedResponse, ...responses },
       detail: { summary: "Speed across projects", description: "As the per-project route.", tags },
     })
     .get("/speed/timeseries", speedRead(speedTimeseries), {
+      query: speedQuery,
       access: "public",
       response: { 200: SpeedTimeseries, ...responses },
       detail: {
@@ -528,6 +561,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/speed/routes", speedRead(speedRoutes), {
+      query: speedQuery,
       access: "public",
       response: { 200: SpeedRouteList, ...responses },
       detail: {
@@ -537,6 +571,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/speed/elements", speedRead(speedElements), {
+      query: speedQuery,
       access: "public",
       response: { 200: SpeedElementList, ...responses },
       detail: {
@@ -552,6 +587,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           listIssues(options.issues, params, projects),
         ),
       {
+        query: issuesQuery,
         access: "public",
         response: { 200: IssueList, ...responses },
         detail: {

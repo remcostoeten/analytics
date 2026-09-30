@@ -327,6 +327,128 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "Keep one event name.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -2736,6 +2858,70 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -3053,6 +3239,102 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ]
+            }
+          },
+          {
+            "name": "compare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "previous",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3268,6 +3550,126 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "Comma-separated metrics; default `visitors,pageviews`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
             }
           }
         ],
@@ -3704,6 +4106,138 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The page path to start from; required.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "next",
+                "previous"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3939,6 +4473,82 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month"
+              ]
+            }
           }
         ],
         "responses": {
@@ -4148,6 +4758,83 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ]
+            }
           }
         ],
         "responses": {
@@ -4346,6 +5033,70 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -4534,6 +5285,92 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "visitors",
+                "pageviews"
+              ]
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "An IANA timezone; default UTC.",
               "type": "string"
             }
           }
@@ -4729,6 +5566,129 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "country",
+                "region",
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
             }
           }
         ],
@@ -4971,6 +5931,67 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Events per poll, 1 to 100.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 100,
+                  "description": "Events per poll, 1 to 100.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The cursor of the last event seen.",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5167,6 +6188,132 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
               "type": "string"
             }
           }
@@ -5715,6 +6862,132 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5909,6 +7182,132 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6101,6 +7500,132 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6263,6 +7788,52 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "resolved",
+                "ignored"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
               "type": "string"
             }
           }
@@ -6911,6 +8482,39 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
               "type": "string"
             }
           }
@@ -7938,6 +9542,126 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "Keep one event name.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
           }
         ],
         "responses": {
@@ -8352,6 +10076,116 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
             }
           }
         ],
@@ -9215,6 +11049,52 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
           }
         ],
         "responses": {
@@ -9550,6 +11430,116 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
             }
           }
         ],
@@ -10017,6 +12007,52 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
           }
         ],
         "responses": {
@@ -10286,6 +12322,72 @@
         "description": "Summed over every readable project.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -10594,6 +12696,104 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month"
+              ]
+            }
+          },
+          {
+            "name": "compare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "previous",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -10791,6 +12991,128 @@
         "description": "Visitors and pageviews (or `metrics`), each metric's change against the previous range, name, visibility, the Real Experience Score (all devices, p75) and open issues, null without `detail` access. Only projects with traffic in the range.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "Comma-separated metrics; default `visitors,pageviews`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -11092,6 +13414,126 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "Comma-separated metrics; default `visitors,pageviews`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
             }
           }
         ],
@@ -11510,6 +13952,118 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -11701,6 +14255,118 @@
         "description": "Newest first.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -12149,6 +14815,54 @@
         "description": "One row per `userId` from `identify`, linked across projects.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -12651,6 +15365,140 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The page path to start from; required.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "next",
+                "previous"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -12876,6 +15724,84 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -13075,6 +16001,85 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -13263,6 +16268,72 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -13442,6 +16513,94 @@
         "description": "As the per-project route.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "visitors",
+                "pageviews"
+              ]
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "An IANA timezone; default UTC.",
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -13626,6 +16785,131 @@
         "description": "As the per-project route.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "country",
+                "region",
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json",
+                "sql"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -13858,6 +17142,69 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "traffic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "human",
+                "bots",
+                "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sent as `filter[<dimension>]=value`, or `!value` to exclude; repeatable across dimensions.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Events per poll, 1 to 100.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 100,
+                  "description": "Events per poll, 1 to 100.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The cursor of the last event seen.",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -14045,6 +17392,134 @@
         "description": "As the per-project route.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -14582,6 +18057,134 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -14766,6 +18369,134 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -14948,6 +18679,134 @@
         "tags": [
           "All projects"
         ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "Start of the range; send with `to`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "description": "End of the range, exclusive.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d",
+                "90d",
+                "12mo",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "`filter[route]`, `filter[page]` and `filter[country]`; a value, or `!value` to exclude.",
+              "type": "object",
+              "patternProperties": {
+                "^(.*)$": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "desktop",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "percentile",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "50",
+                "75",
+                "90",
+                "95",
+                "99"
+              ]
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lcp",
+                "inp",
+                "cls",
+                "fcp",
+                "ttfb"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -15101,6 +18960,54 @@
         "description": "Projects whose visitor-level data you may see, most recently seen first.",
         "tags": [
           "All projects"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "resolved",
+                "ignored"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "description": "Rows per page, 1 to 100 (default 20), or up to 1000 with `format`.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "description": "The opaque `nextCursor` of the previous page.",
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -17463,7 +21370,7 @@
     "/v2/admin/jobs/rollup": {
       "post": {
         "summary": "Roll up speed",
-        "description": "Writes daily p50 to p99 and rating counts per project, route, device and metric, and drops raw speed rows past 30 days. Needs the cron secret.",
+        "description": "Writes daily p50 to p99 and rating counts per project, route, device and metric, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day, which adds each reason once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -20807,11 +24714,15 @@
             }
           },
           "props": {
+            "maxProperties": 25,
+            "additionalProperties": false,
+            "description": "At most 25 flat props with keys up to 255 characters. String values are up to 255 characters, except `stack` and `breadcrumbs` on `error` events, which are up to 2048.",
             "type": "object",
             "patternProperties": {
-              "^(.*)$": {
+              "^[\\s\\S]{0,255}$": {
                 "anyOf": [
                   {
+                    "maxLength": 2048,
                     "type": "string"
                   },
                   {

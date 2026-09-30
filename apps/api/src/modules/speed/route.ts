@@ -21,6 +21,7 @@ import {
   speedTimeseries,
 } from "./service";
 import type { SpeedScoped } from "./service";
+import { speedQuery } from "../reads/query";
 
 const tags = ["Speed"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
@@ -57,6 +58,7 @@ export function speedModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
   return new Elysia({ name: "speed" })
     .use(access(deps, docsBase))
     .get("/projects/:project/speed", answer(speedSummary), {
+      query: speedQuery,
       access: "project",
       response: { 200: SpeedResponse, ...responses },
       detail: {
@@ -67,16 +69,19 @@ export function speedModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/speed/timeseries", answer(speedTimeseries), {
+      query: speedQuery,
       access: "project",
       response: { 200: SpeedTimeseries, ...responses },
       detail: { summary: "One metric per day", description: "`metric` is required.", tags },
     })
     .get("/projects/:project/speed/routes", answer(speedRoutes), {
+      query: speedQuery,
       access: "project",
       response: { 200: SpeedRouteList, ...responses },
       detail: { summary: "Speed per route", description: "Worst score first.", tags },
     })
     .get("/projects/:project/speed/elements", answer(speedElements), {
+      query: speedQuery,
       access: "project",
       response: { 200: SpeedElementList, ...responses },
       detail: {
