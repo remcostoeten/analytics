@@ -1,0 +1,61 @@
+---
+title: Duplicates and retries
+description: Why a retried or replayed event is stored once, and which size limits end a batch without a retry.
+---
+
+The browser client retries and replays batches, and a batch can arrive at the API more than once. This page explains how the event id keeps those repeats out of your data, which failures are retried, and what the body limits of the API and the proxy do to a batch.
+
+## Every event has an id from the browser
+
+The client gives each event a UUIDv7 when it builds it: a random id that starts with the creation time. The id travels with the event through every retry and replay, and the API stores it in a column with a unique index.
+
+The API drops repeats in two places:
+
+1. Within one batch, only the first event with a given id is kept.
+2. Across batches, the insert skips any id already stored.
+
+Both count as `duplicates` in the answer, `{ accepted, duplicates, rejected }`. There is no time window: an id is refused for as long as the first event with that id is stored. Sessions and visitors are updated only for events that were inserted, so a repeat does not add a pageview to a session.
+
+Two calls to `track` with the same name and props are two events with two ids, and both are stored. The id prevents repeated delivery of one event, not repeated actions. That is why a double-mounted React effect, for example, stores two pageviews; see [Single-page apps](/docs/edge-cases/single-page-apps#react-strictmode).
+
+## How a repeat happens
+
+- The API stored a batch, but the answer never reached the browser. The client sees a network error and retries the same events.
+- A batch failed, was saved in `localStorage`, and is sent again on the next page load after an earlier attempt did arrive.
+- Two tabs of the same site that load at the same moment can both read the same saved events from `localStorage` before either removes them, and both send them.
+
+## Which failures are retried
+
+| Answer | Browser client | Server client |
+| --- | --- | --- |
+| 202 | Done. Events listed in `rejected` failed validation and are not retried | Done. The first rejection is returned as `RA_INGEST_REJECTED` |
+| Network error, 429 or 5xx | Retried after 1, 4 and 16 seconds, then saved for the next page load | Not retried. The call resolves with `RA_INGEST_FAILED` |
+| Any other 4xx | Dropped | Not retried. The call resolves with `RA_INGEST_FAILED` |
+
+A 202 can hold rejected events next to accepted ones. The API checks each event on its own, so one invalid event is reported by its index and the rest of the batch is stored.
+
+The API answers 429 only to callers with a public key, when one IP hash sends more than 100 requests a minute to a project (`INGEST_RATE_LIMIT`), and it sets `Retry-After`. Requests through the proxy carry the secret key and are not rate limited.
+
+While the page is being hidden or closed, the browser client sends each batch once, without retries; see [Page unload](/docs/edge-cases/page-unload).
+
+## Size limits
+
+| Limit | Where | Value | Answer when exceeded |
+| --- | --- | --- | --- |
+| Body size | `POST /v2/events` | 60 KB | 413 `PAYLOAD_TOO_LARGE` |
+| Events per batch | `POST /v2/events` | 50 | 413 `PAYLOAD_TOO_LARGE` |
+| Body size | The `/_ra` proxy from `createProxy` | 64 KB | 413 `PAYLOAD_TOO_LARGE` |
+
+The browser client sends at most 20 events per batch and the server client at most 50, so the event count is not reached by the SDK. Neither client measures the body before sending.
+
+A single event is bounded by the props limits: at most 25 props, keys and string values up to 255 characters, and up to 2048 characters for `stack` and `breadcrumbs` on error events. A batch of 20 events that each use the full limits can still pass 60 KB.
+
+A 413 is a 4xx, so the browser client drops the batch without saving it. Nothing in the batch is stored, not even the events that would fit.
+
+The proxy allows 4 KB more than the API. A body between 60 and 64 KB passes the proxy and is refused by the API, and the proxy returns that 413 unchanged. The proxy's own limit applies only to bodies the API would refuse anyway.
+
+## What to do
+
+- Treat `duplicates` above zero as normal. It means a retry or replay arrived after the first delivery.
+- Keep props small, and put long text such as stack traces only on error events, where the larger limit applies.
+- Watch for `RA_INGEST_FAILED` with `HTTP 413` through `analytics.on("error", ...)` if you send large props.

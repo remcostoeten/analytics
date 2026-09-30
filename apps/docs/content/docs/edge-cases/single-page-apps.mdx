@@ -1,0 +1,62 @@
+---
+title: Single-page apps
+description: How client-side navigation turns into pageviews, and where the count can differ from what you expect.
+---
+
+In a single-page app the browser loads one document and the router changes the URL with the History API. This page explains how the SDK notices those changes, which ones count as a new pageview, and how route templates, framework adapters and React StrictMode change the result.
+
+## How navigations are detected
+
+The [`pageviews`](/docs/plugins/pageviews) plugin, on by default, replaces `history.pushState` and `history.replaceState` with versions that call the original and then check the URL. It also listens for `popstate`, which the browser fires on back, forward and hash changes. On `shutdown()` the plugin removes its replacements, so the originals on `History.prototype` apply again.
+
+Each check builds a URL from the page path and `location.search`, and compares it with the URL of the last pageview. Only a different URL sends a pageview. The client sends one more when it starts, for the page that loaded.
+
+## Which changes count
+
+| Change | New pageview |
+| --- | --- |
+| `pushState` to another path | Yes |
+| `replaceState` to another path | Yes |
+| `pushState` or `replaceState` that changes only the query string | Yes, because the query is part of the compared URL |
+| `pushState` or `replaceState` to the current URL | No |
+| Back or forward to another URL | Yes |
+| A change of only an anchor, such as `#comments` | No |
+| A hash router change from `/#/pricing` to `/#/about` | Yes |
+| A hash router change of only the query inside the hash, `/#/search?q=a` to `/#/search?q=b` | No |
+
+Hash routers report the path inside the hash, without the query that follows it in the hash. The query of the real URL, before the `#`, still counts.
+
+The query-string rule matters for search boxes and filters that write their state to the URL with `replaceState`. Each write with a new value is a new pageview. If that inflates your pageviews, create the client with `pageviews: false` and call `analytics.page()` yourself when you consider the page changed.
+
+## The title comes from the moment of the pageview
+
+The pageview reads `document.title` when it is built, which is directly after `pushState` or `replaceState` returns. A router that updates the title after it renders the new page gives that pageview the previous page's title. The path is not affected, because it is read from `location` after the URL changed.
+
+The referrer is sent only on the first pageview of a page load. Later pageviews in the same document carry no referrer, since the browser's `document.referrer` still describes how the document was opened. After `analytics.reset()` the next pageview carries it again.
+
+## Route templates and framework adapters
+
+A route template such as `/blog/[slug]` groups every blog post into one row. Once a template is set, with `analytics.route()` or through an adapter, the `pageviews` plugin stops sending, because an adapter sends pageviews itself.
+
+The [Next adapter](/docs/sdk/next) and `useRoutePageviews` from [`/react`](/docs/sdk/react) set the route and call `analytics.page()` in an effect whenever the path or route changes. The Next adapter passes the pathname with its query string, so a change of only the query is a new pageview there too. A change of only the hash is not, because Next's pathname and search params do not include it.
+
+Two consequences follow:
+
+- If the client is created without `pageviews: false`, the plugin sends a pageview when the client starts, before the adapter has set a route. The adapter then sends its own for the same page, so the first page of each visit is counted twice.
+- A route stays set until another one replaces it. Calling `analytics.route()` once by hand, outside an adapter, silences the plugin for the rest of the page's life and gives every later event that template. `reset()` does not clear it.
+
+`computeRoute` builds the template from the pathname and the router's params. When it cannot place every param in the path, it returns the pathname unchanged, and reports group that page by path.
+
+## React StrictMode
+
+In development, StrictMode mounts each component, unmounts it and mounts it again, which runs effects twice. `useRoutePageviews` and the Next adapter send their pageview from an effect and have no guard against a repeat, so each page shows two pageviews in development. Production builds run effects once.
+
+In development mode without an explicit `endpoint`, the client logs events to the console instead of sending them, so the doubles appear only in the log. With an `endpoint` set, both pageviews reach the API. They have different event ids, so the API stores both.
+
+The client itself is created once when `lib/analytics.ts` is first imported, outside any component, so StrictMode does not create a second client.
+
+## What to do
+
+- Use an adapter and `pageviews: false` together, never one without the other.
+- If filter or search state lives in the query string, decide whether each change is a page, and switch to manual `analytics.page()` calls if it is not.
+- Test pageview counts in a production build, not under StrictMode in development.
