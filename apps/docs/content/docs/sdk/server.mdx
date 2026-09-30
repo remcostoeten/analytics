@@ -26,7 +26,19 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 | `captureError(error, context?)` | Records a server error; `context` takes the error context and the request context (`request` or `headers`) in one object |
 | `withErrors(handler)` | Wraps a route handler and records anything it throws, then rethrows |
 
-Passing `request` forwards the visitor's IP and user agent, so the API can hash and enrich them. Events from one tick go out in one request, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. Any call can pass `groups: { company: "acme" }` in its options to put that event in groups. Options left out are read from the JSON in `RA_CONFIG`.
+| Option | Where | Does |
+| --- | --- | --- |
+| `secret`, `endpoint` | Client | The secret key (`sk_...`) and the API's base URL |
+| `release` | Client | Attached to every event |
+| `origin` | Client or call | The site's origin, such as `https://example.com`, sent as `Origin` when there is no `request` or `headers` to take it from. The API reads the host and the localhost and preview flags from it |
+| `fetch`, `waitUntil` | Client | A custom `fetch`, and a function that keeps the send alive after the response |
+| `request` or `headers` | Call | The incoming request, for the visitor's IP and user agent, the site's origin and the admin session cookie |
+| `visitor`, `session` | Call | The browser's ids, to join the event to its visit |
+| `path`, `groups`, `waitUntil` | Call | The page path (default: the request's path, or `/`), groups, and a per-call `waitUntil` |
+
+Passing `request` or `headers` forwards the visitor's IP and user agent, so the API can hash and enrich them. It also sends the site's origin as `Origin`, from `x-forwarded-host` and `x-forwarded-proto`, then `host`, then the request URL, and the admin session cookie `ra.session_token` (or `__Secure-ra.session_token`) and no other cookie, so a signed-in admin's events are internal. An `origin` on the call wins over the derived one, which wins over the client's `origin`. Without `request` or `headers` the event has no IP and no user agent, and the API does not use the calling server's own: such an event gets no IP hash, no location and no bot weight for them.
+
+Events from one tick go out together, in one request per origin and session cookie, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`; the entry exports that id as `serverVisitor`. Reads count those events in pageviews, events and breakdowns, but never as a visitor or a session. Any call can pass `groups: { company: "acme" }` in its options to put that event in groups. Options left out are read from the JSON in `RA_CONFIG`.
 
 ## Alert webhooks
 

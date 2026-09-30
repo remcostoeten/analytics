@@ -13,6 +13,8 @@ This guide moves browser events from the API's host to a path on your own site, 
 | Credential on the request to the API | Public key `pk_...` from the browser | Secret key `sk_...`, added by your server |
 | Origin check | The page's origin must be in the project's `allowedOrigins` | The proxy refuses cross-site requests itself |
 | Visitor IP and user agent | Read by the API from the browser's request | Forwarded by the proxy as `X-Visitor-IP` and `X-Visitor-UA` |
+| Host, localhost and preview flags | From the browser's `Origin` | From the `Origin` the proxy forwards, or the site's own origin when the browser sent none |
+| Signed-in admin marked internal | No: a cross-origin request carries no cookie | Yes: the proxy forwards the `ra.session_token` cookie and no other |
 | Ad blockers | Often blocked | A request to your own domain |
 
 The secret key sends events for the project from anywhere, so it stays on the server. Never put it in a `NEXT_PUBLIC_`, `PUBLIC_` or `VITE_` variable.
@@ -75,7 +77,7 @@ export async function handle(request: Request): Promise<Response> {
 NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
 ```
 
-Keep `key` set. The proxy does not need it, but the client warns with `RA_NO_KEY` when it is empty. If you serve the proxy on another path, set `endpoint` to that path.
+Keep `key` set. The proxy does not need it, but the client warns with `RA_NO_KEY` when it is empty. An empty key leaves the `key` query parameter out of the request. If you serve the proxy on another path, set `endpoint` to that path.
 
 ## 4. Check it
 
@@ -93,7 +95,7 @@ Keep `key` set. The proxy does not need it, but the client warns with `RA_NO_KEY
 | --- | --- |
 | `500` `INTERNAL`, "needs a secret and an endpoint" | `secret` or `endpoint` is empty on the server |
 | `401` `UNAUTHORIZED` | The API rejected the secret key; check for a rotated key |
-| `413` `PAYLOAD_TOO_LARGE` | The body is over 64 KB |
+| `413` `PAYLOAD_TOO_LARGE` | The body is over 60 KB |
 | `502` `UNAVAILABLE` | The proxy could not reach `endpoint` |
 
 ## 5. Optionally count blocked pageviews

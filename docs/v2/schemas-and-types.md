@@ -112,7 +112,7 @@ export type IngestResult = {
 };
 ```
 
-`context.ua` and `context.ip` are only honoured with a secret key (server SDK and proxy). `Props` is the storage shape; in application code the SDK's `Events` generic types each event's props.
+`context.ua` and `context.ip` are only honoured with a secret key (server SDK and proxy). On the wire, `props` is `WireProps`: at most 25 flat values, keys up to 255 characters, strings up to 255 characters (2048 for `stack` and `breadcrumbs` on `error` events); ingest rejects an event outside these limits with `VALIDATION_FAILED`. `Props` is the storage shape; in application code the SDK's `Events` generic types each event's props.
 
 ## Domain types: what the API returns
 

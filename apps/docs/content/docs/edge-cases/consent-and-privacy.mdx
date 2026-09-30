@@ -9,12 +9,12 @@ Consent is checked in the browser, before an event leaves it, and personal data 
 
 Every event passes the same checks in the browser, in this order:
 
-1. If the browser has opted out, the event is dropped.
+1. If the browser has opted out, or has Do Not Track or Global Privacy Control on, the event is dropped.
 2. Plugins and `beforeSend` may change or drop it.
 3. If the client has not started, or consent is required and no choice was made yet, the event is held in memory.
 4. Otherwise the consent state decides: the event is queued for sending, or dropped.
 
-A dropped event never leaves the browser. `analytics.on("drop", (event, reason) => ...)` reports each one with the reason `opt-out`, `consent` or `beforeSend`.
+A dropped event never leaves the browser. `analytics.on("drop", (event, reason) => ...)` reports each one with the reason `opt-out`, `dnt`, `consent` or `beforeSend`.
 
 Consent is not checked on the server. The API stores what it receives, so an event that should not be tracked has to be stopped in the browser.
 
@@ -22,7 +22,7 @@ Consent is not checked on the server. The API stores what it receives, so an eve
 
 With `consent: "optional"`, the default, events are sent before any choice, and the visitor and session ids are stored as usual.
 
-With `consent: "required"`, events wait in memory and nothing is sent. The visitor and session ids exist in memory, but the SDK does not write them, identify data, registered props or failed batches to storage. The waiting list has no size limit and lives only as long as the page. A visitor who leaves or reloads before choosing takes those events with them, and in a site where each click loads a new document, events from pages before the choice are never sent.
+With `consent: "required"`, events wait in memory and nothing is sent. The visitor and session ids exist in memory, but the SDK does not write them, identify data, registered props or failed batches to storage. The `__ra` key in `localStorage` is not written at all until sending is allowed, except for the visitor's own choices: consent, opt-out and the debug switch. 1.x keys are read at once so the visitor keeps its id, and moved into `__ra` and removed only once sending is allowed. The waiting list has no size limit and lives only as long as the page. A visitor who leaves or reloads before choosing takes those events with them, and in a site where each click loads a new document, events from pages before the choice are never sent.
 
 ## After `consent.grant()`
 
@@ -40,7 +40,7 @@ A later `consent.grant()` starts sending again with a new visitor id.
 
 `analytics.optOut()` is separate from consent and wins over it: while it is set, nothing is sent in any consent state. It drops held and queued events and saves the choice until `optIn()`. The [`ignoreSelf`](/docs/plugins/ignore-self) plugin calls these two from `?ra=ignore` and `?ra=track`.
 
-Choices made in one tab reach other open tabs of the site when they reload. Until then, those tabs send with the state they started with.
+Choices made in one tab apply to other open tabs of the site at once, through the browser's `storage` event. A tab that revokes consent or opts out stops the others from sending, and they drop their queues. Every write re-reads `__ra` and changes only its own fields, so a tab opened before the change cannot overwrite it.
 
 ## What never reaches the database
 
@@ -51,7 +51,7 @@ Choices made in one tab reach other open tabs of the site when they reload. Unti
 | The page's query string | The path is sent without it. Only `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content` are read from it |
 | Query strings, emails, long tokens and long numbers in errors | Removed from error messages, stacks and breadcrumbs |
 
-The `/_ra` proxy adds the visitor's IP to the request as `X-Visitor-IP`, because the API would otherwise see your server's address. The API treats it like any other visitor IP: it is looked up, hashed and dropped.
+The `/_ra` proxy adds the visitor's IP to the request as `X-Visitor-IP`, because the API would otherwise see your server's address. The API treats it like any other visitor IP: it is looked up, hashed and dropped. Of the cookies the browser sends to your site, the proxy passes on only the admin session `ra.session_token`, so a signed-in admin's events are marked internal; visitors have no cookie to pass on.
 
 The city lookup stores the city's approximate coordinates and postal code, not a street address.
 
@@ -75,4 +75,6 @@ export const analytics = createAnalytics({
 });
 ```
 
-The SDK does not read the browser's Do Not Track or Global Privacy Control settings. If you want to honour them, create the client with `consent: "required"` and call `consent.grant()` only when they are off.
+## Do Not Track and Global Privacy Control
+
+The SDK reads both when the client is created. When `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`, every event is dropped with the reason `dnt`, and nothing is written to storage except the visitor's own consent, opt-out and debug choices. `consent.grant()` does not override the signal. There is no option to turn this off.

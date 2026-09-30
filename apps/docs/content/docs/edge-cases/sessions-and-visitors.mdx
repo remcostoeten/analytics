@@ -34,7 +34,7 @@ The IP hash does change at 00:00 UTC, because its salt is the UTC date. Events f
 
 `localStorage` is shared by all tabs of a site, and `sessionStorage` belongs to one tab. Two tabs open at the same time are one visitor with two sessions, and a link opened in a new tab usually starts a new session there.
 
-Each tab reads the saved state once, when its client starts. A choice made in one tab, such as `consent.revoke()`, `optOut()` or `reset()`, reaches the other open tabs only when they reload. Until then they keep sending with the state they started with.
+Each tab reads the saved state when its client starts. Consent and opt-out choices, and the debug switch, reach the other open tabs at once through the browser's `storage` event: after `consent.revoke()` or `optOut()` in one tab, the others stop sending and drop their queues. Every write re-reads the saved state, so a tab opened earlier cannot overwrite the choice. A `reset()` in one tab reaches the other tabs only when they reload; until then they keep the visitor id they started with.
 
 ## Subdomains and several devices
 
@@ -56,4 +56,4 @@ The [server client](/docs/sdk/server) uses `server` as both visitor and session,
 
 `analytics.reset()` forgets the visitor id, the session, the user id and traits from `identify`, the props from `register`, and any saved failed batches. The next event gets a new visitor and a new session, and the next pageview carries the referrer again. Call it on logout, so the next person on a shared computer is a different visitor.
 
-Visitors who used SDK 1.x keep their id: on its first run the SDK reads the 1.x keys, `__analytics_visitor_id` among them, moves their values into `__ra` and removes them.
+Visitors who used SDK 1.x keep their id: on its first run the SDK reads the 1.x keys, `__analytics_visitor_id` among them. It moves their values into `__ra` and removes them on the first write that consent allows, so with `consent: "required"` they stay untouched until `consent.grant()`.

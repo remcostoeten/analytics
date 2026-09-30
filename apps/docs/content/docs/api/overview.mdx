@@ -23,6 +23,10 @@ Every route lives under `/v2`, for example `https://api.remcostoeten.nl/v2/healt
 | `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |
 | `limit`, `cursor` | up to 100; opaque cursor from the previous page | 20 |
 
+An unknown dimension answers `400 VALIDATION_FAILED`, in `breakdown/:dimension` and in `filter[<dimension>]` alike.
+
+Events the server client sends without a visitor or session share the id `server`. They count in `pageviews`, `events` and every breakdown of events, but never as a visitor or a session: visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists leave them out.
+
 ## Errors
 
 Every error uses one envelope:

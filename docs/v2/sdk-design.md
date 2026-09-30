@@ -39,12 +39,12 @@ export const analytics = createAnalytics<Events>({
 | `captureMessage(message, context?)` | `void` | Records a non-exception problem, level `warning` by default |
 | `scope(tags)` | `ScopedAnalytics<Events>` | A view of the same client that adds `tags` to everything it sends; scopes nest |
 | `use(plugin)` | `() => void` | Adds a plugin after creation and returns a function that removes it |
-| `consent.grant()`, `consent.revoke()`, `consent.status()` | `void`, `void`, `"granted" \| "denied" \| "unset"` | Consent, remembered across reloads; revoking clears stored identity |
-| `optOut()`, `optIn()`, `isOptedOut()` | `void`, `void`, `boolean` | Stop or resume all sending from this browser |
-| `reset()` | `void` | New visitor and session, cleared identity and registered props; call on logout |
+| `consent.grant()`, `consent.revoke()`, `consent.status()` | `void`, `void`, `"granted" \| "denied" \| "unset"` | Consent, remembered across reloads and applied to the site's other open tabs at once through the `storage` event; revoking clears stored identity |
+| `optOut()`, `optIn()`, `isOptedOut()` | `void`, `void`, `boolean` | Stop or resume all sending from this browser, in every open tab |
+| `reset()` | `void` | New visitor and session, cleared identity, registered props and route; call on logout |
 | `flush()` | `Promise<FlushResult>` | Sends everything queued now and reports accepted, duplicate and failed counts |
 | `shutdown()` | `Promise<void>` | Flushes, removes plugins and listeners; for tests and single-page app teardown |
-| `on("error" \| "send" \| "drop", handler)` | `() => void` | Listen to delivery problems, sends and dropped events |
+| `on("error" \| "send" \| "drop", handler)` | `() => void` | Listen to delivery problems (`RA_INGEST_FAILED`, and `RA_INGEST_REJECTED` for each event rejected inside a 202), sends, and dropped events with their reason (`opt-out`, `dnt`, `consent`, `beforeSend`) |
 | `status()` | `Status` | Queue size, consent, endpoint, last error, last successful send |
 
 Config:
@@ -57,11 +57,13 @@ Config:
 | `plugins` | `[]` | Plugins to start with; `pageviews` is always included unless `pageviews: false` |
 | `pageviews` | `true` | Automatic pageviews on load and navigation |
 | `mode` | `"auto"` | `"development"` logs and sends nothing unless `endpoint` is set explicitly; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` logs in the console; also switched on with `?ra=debug` |
+| `debug` | `false` | `[ra]` logs in the console; also switched on with `?ra=debug` and off with `?ra=nodebug`, which keeps the visitor id |
 | `release`, `environment` | none | Attached to every event and error |
 | `beforeSend` | none | `(event) => event \| null` to change or drop any event |
 | `strict` | `false` | `true` rejects event names that are not in `Events` at compile time |
 | `autostart` | `true` in browsers | `false` for tests or when the app decides when tracking may begin |
+
+Privacy and delivery rules the core applies without options: Do Not Track (`navigator.doNotTrack` is `"1"`) and Global Privacy Control drop every event with the reason `dnt` and store nothing. The `__ra` key is written only once sending is allowed, except the visitor's own consent, opt-out and debug choices, and every write re-reads it so a change made in another tab is never overwritten. Props are cut to 25, keys and strings to 255 characters (2048 for `stack` and `breadcrumbs` on `error` events), the limits ingest enforces too. Each batch body stays under 60 KB and a single event over it is dropped as a 413. A network error, 429 or 5xx retries after 1, 4 and 16 seconds, or after `Retry-After` capped at 16 seconds, and batches waiting for a retry are sent when the page unloads. An empty `key` leaves the `key` query parameter out.
 
 Groups (companies, workspaces, teams) come from the `groups<Groups>()` plugin: `set(type, id, traits?)` sends a `group` event and puts every later event in that group, read back as the `group:<type>` dimension. The core stays under its budget because the plugin is opt-in.
 
@@ -162,7 +164,7 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 });
 ```
 
-Passing `request` forwards the visitor's user agent and IP so the server event joins the browser session. `withErrors` captures anything the handler throws, rethrows it, and flushes through `waitUntil` so the response is never delayed.
+Passing `request` (or `headers`) forwards the visitor's user agent and IP, the site's origin as `Origin` and the admin session cookie `ra.session_token` alone. Without either, the event has no IP or user agent, and an `origin` option on the client or the call gives it a host. The event joins the browser's visit only when the call passes `visitor` and `session`; otherwise it uses the shared id `serverVisitor` (`server`), which reads count in events but never as a visitor or a session. `withErrors` captures anything the handler throws, rethrows it, and flushes through `waitUntil` so the response is never delayed.
 
 **Proxy**, the one line that gets events past ad blockers. In the Next App Router a folder starting with an underscore is private, so the folder is named %5Fra to serve /\_ra. `app/%5Fra/route.ts`:
 
@@ -171,6 +173,8 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 
 export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
+
+The proxy refuses bodies over 60 KB, adds the secret and the visitor's IP and user agent, and forwards the page's `Origin` (or the site's own origin) and the admin session cookie and no other cookie.
 
 The proposed `/admin` entry (alert channels, later projects and tokens) and `verifyAlert` in `/server` are specified in [alerts.md](alerts.md).
 

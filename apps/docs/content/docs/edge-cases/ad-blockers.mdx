@@ -24,13 +24,13 @@ A direct setup is the one filter lists are built to catch: a separate host that 
 
 ## What the proxy changes
 
-The proxy from `createProxy` runs on your server, receives the batch on the same origin and forwards it to `POST /v2/events`. It adds the project's secret key and the visitor's IP and user agent, and returns the API's answer unchanged. See [Proxy](/docs/sdk/proxy).
+The proxy from `createProxy` runs on your server, receives the batch on the same origin and forwards it to `POST /v2/events`. It adds the project's secret key and the visitor's IP and user agent, forwards the page's `Origin` and the admin session cookie, and returns the API's answer unchanged. See [Proxy](/docs/sdk/proxy).
 
 This has effects beyond blockers:
 
 - The public key is no longer checked against the project's allowed origins, because the API trusts the secret key.
 - The per-IP-hash rate limit of 100 requests a minute does not apply, since it covers public key callers only.
-- The proxy refuses methods other than `POST`, requests the browser marks as cross-site, and bodies over 64 KB, so other sites cannot send events through it.
+- The proxy refuses methods other than `POST`, requests the browser marks as cross-site, and bodies over 60 KB, so other sites cannot send events through it.
 
 Pick any path you like, as long as the client's `endpoint` matches it. The [Astro](/docs/frameworks/astro) and [SvelteKit](/docs/frameworks/svelte) setups use `/ra`; Astro does not route a file whose name starts with `_`.
 
@@ -40,7 +40,7 @@ The proxy avoids the rules filter lists already have. It does not make the reque
 
 - A list can add a rule for your domain and path, or a visitor can add one by hand.
 - A blocker that stops all script on the page stops the SDK with it.
-- Opt-out and consent are checked in the browser before anything is queued, and the proxy does not change that. A visitor who opted out sends nothing, through any path.
+- Opt-out, consent, Do Not Track and Global Privacy Control are checked in the browser before anything is queued, and the proxy does not change that. A visitor who opted out sends nothing, through any path.
 
 When the request is blocked, the browser reports a network error. The client retries after 1, 4 and 16 seconds, then saves the events in `localStorage` and tries again on the next page load, where the blocker stops them again. At most 100 saved events are kept, so a blocked visitor never builds up more than that. See [Duplicates and retries](/docs/edge-cases/duplicates-and-retries).
 
@@ -52,4 +52,4 @@ The gap between `page_request` events and pageviews estimates how many page load
 
 - Client-side navigations in a single-page app send pageviews without a page request, so compare page requests with the first pageview of each page load, not with all pageviews.
 - Crawlers load HTML too. The page counter forwards the visitor's user agent, so known crawlers score as bots and the default `traffic=human` filter leaves them out.
-- Visitors who opted out or did not give required consent also send no pageviews, and count as a gap the same way a blocked visitor does.
+- Visitors who opted out, did not give required consent, or have Do Not Track or Global Privacy Control on also send no pageviews, and count as a gap the same way a blocked visitor does.

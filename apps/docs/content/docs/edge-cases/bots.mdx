@@ -15,9 +15,9 @@ Each signal is a yes or no test on one event. The API adds the weights of the si
 | `ua_automation` | 100 | The user agent names an HTTP library, headless browser, test driver or scanner, or a request with the public key has no user agent | At ingest and on rescore |
 | `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` or Cloudflare's `cf-verified-bot` header is `1` or `true` | At ingest |
 | `client_webdriver` | 60 | The [`botSignals`](/docs/plugins/bot-signals) plugin saw `navigator.webdriver` | At ingest |
-| `session_velocity` | 50 | The session has at least 10 pageviews at more than 30 a minute, or at least 6 pageviews with near-identical gaps between them | By `bun run rescore` |
+| `session_velocity` | 50 | The session has at least 10 pageviews at more than 30 a minute, or at least 6 pageviews with near-identical gaps between them | By the daily rollup job and `bun run rescore` |
 | `asn_datacenter` | 40 | The IP belongs to a hosting network: AWS, Google Cloud, Azure, Hetzner, OVH, DigitalOcean, Linode, Vultr, Oracle, Alibaba, Tencent, Scaleway, Contabo, M247 or Datacamp | At ingest and on rescore |
-| `ip_fanout` | 40 | More than 20 visitor ids came from one IP hash to one project on one UTC day | By `bun run rescore` |
+| `ip_fanout` | 40 | More than 20 visitor ids came from one IP hash to one project on one UTC day | By the daily rollup job and `bun run rescore` |
 | `headers_inconsistent` | 30 | A Chromium 90+ user agent without `sec-ch-ua`, or a modern browser user agent without `sec-fetch-*` headers | At ingest |
 | `client_headless` | 25 | The plugin saw a zero-size window, no languages, or a Chrome user agent without `window.chrome` | At ingest |
 | `client_no_input` | 20 | The plugin saw no pointer, key, touch or scroll input, on a page that was never visible | At ingest |
@@ -37,9 +37,9 @@ One strong signal, such as a crawler user agent, puts an event at 100 by itself.
 
 The header checks and the missing user agent check describe a browser. Requests with the secret key come from a server, so `headers_inconsistent`, `headers_missing` and the empty user agent case of `ua_automation` are skipped for them.
 
-Through the `/_ra` proxy, the API takes the visitor's IP and user agent from the `X-Visitor-IP` and `X-Visitor-UA` headers the proxy adds, so `ua_crawler`, `ua_automation` and `asn_datacenter` judge the visitor, not your server. The proxy does not forward the browser's other headers.
+Through the `/_ra` proxy, the API takes the visitor's IP and user agent from the `X-Visitor-IP` and `X-Visitor-UA` headers the proxy adds, so `ua_crawler`, `ua_automation` and `asn_datacenter` judge the visitor, not your server. Of the browser's other headers, the proxy forwards only `Origin` and the admin session cookie.
 
-A server event sent without the incoming `request` or `headers` has no visitor to forward. The API then sees your server's own IP and user agent. If your server runs in one of the hosting networks above, `asn_datacenter` adds 40 to every such event, and an HTTP library in the user agent adds `ua_automation`.
+A server event sent without the incoming `request` or `headers` has no visitor to forward. The API then stores it without an IP and a user agent, instead of using your server's own, so `asn_datacenter` and `ua_automation` do not fire for it and the event gets no IP hash or location. The same applies to a proxied event when your host sets no IP header.
 
 ## Client signals only add weight
 
@@ -49,7 +49,7 @@ The `botSignals` plugin sets bits on each event in the browser. A bot can remove
 
 ## Session signals come later
 
-`session_velocity` and `ip_fanout` look at many events at once, which one ingest request cannot. The ingest stage never fires them. `bun run rescore` adds them over a range of UTC dates, raises each affected event's score by the signal's weight, and adds each reason only once, so running it twice over the same range changes nothing. Until someone runs it, events that only these signals would catch score as they did at ingest.
+`session_velocity` and `ip_fanout` look at many events at once, which one ingest request cannot. The ingest stage never fires them. The daily rollup job, `POST /v2/admin/jobs/rollup`, runs them over the previous UTC day, and `bun run rescore` runs them over any range of UTC dates. Both raise each affected event's score by the signal's weight and add each reason only once, so running them twice over the same range changes nothing. Until the job has run for a day, events that only these signals would catch score as they did at ingest. `session_velocity` skips the shared `server` visitor and session of the server client.
 
 ## Rescoring
 

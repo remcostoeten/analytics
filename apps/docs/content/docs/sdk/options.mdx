@@ -5,13 +5,13 @@ description: What createAnalytics accepts.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `project`, `key` | from the environment | Project slug and public key (`pk_...`) |
+| `project`, `key` | from the environment | Project slug and public key (`pk_...`). An empty `key` leaves the `key` query parameter out, which works only behind the proxy |
 | `endpoint` | `/_ra` | A same-origin path behind the proxy, or the API's `/v2/events` URL |
 | `consent` | `"optional"` | `"required"` holds everything until `consent.grant()` and then sends it |
 | `plugins` | `[]` | Plugins to start with |
 | `pageviews` | `true` | Automatic pageviews; set `false` when a router adapter sends them |
 | `mode` | `"auto"` | `"development"` logs instead of sending unless `endpoint` is set; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser |
+| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser and `?ra=nodebug` off again, keeping the visitor id |
 | `release` | none | Attached to every event, and used to tie errors to a deploy |
 | `environment` | none | Attached to errors |
 | `beforeSend` | none | `(event) => event \| null` to change or drop any event |

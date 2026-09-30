@@ -63,7 +63,7 @@ curl -G https://api.example.com/v2/projects/example.com/breakdown/page \
 ```
 
 - `metrics` picks the columns, comma-separated: `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth`, `conversion_rate`, and `sum:prop.<key>` or `avg:prop.<key>` for numeric props. `conversion_rate` needs a `filter[event]`.
-- `filter[<dimension>]=value` narrows the range, and `!value` excludes. Repeat it for several dimensions.
+- `filter[<dimension>]=value` narrows the range, and `!value` excludes. Repeat it for several dimensions. An unknown dimension, in the path or in a filter, answers `400 VALIDATION_FAILED`.
 - `limit` goes up to 100. Pass `nextCursor` back as `cursor` for the next page.
 
 To get every row as one file instead of pages, add `format=csv`, `format=json` or `format=sql`. The download holds up to 1 million rows:

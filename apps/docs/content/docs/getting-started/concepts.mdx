@@ -61,7 +61,7 @@ A **visitor** is a random id in `localStorage`, one per browser and site. A **se
 
 `analytics.identify(userId, traits)` links the visitor to your own user id, so one person on several devices can be seen as one user. Like every event it follows the consent rules below, and `consent.revoke()` forgets it.
 
-Events sent from the server use `server` as visitor and session, unless the call passes the browser's ids.
+Events sent from the server use `server` as visitor and session, unless the call passes the browser's ids. Reads count those events in pageviews, events and breakdowns, but never as a visitor or a session.
 
 ## Consent and opt-out
 
@@ -70,12 +70,12 @@ Events sent from the server use `server` as visitor and session, unless the call
 | `"optional"` (default) | Events are sent | Events are sent | Queued events are dropped, the identity is forgotten, nothing is sent |
 | `"required"` | Events are held in memory | Held events and new ones are sent | Held and queued events are dropped, the identity is forgotten, nothing is sent |
 
-The choice is remembered across page loads. Separately, `analytics.optOut()` stops all sending from this browser until `optIn()`.
+The choice is remembered across page loads and applies to the site's other open tabs at once. Separately, `analytics.optOut()` stops all sending from this browser until `optIn()`, and a browser with Do Not Track or Global Privacy Control on sends nothing.
 
 ## Your own traffic
 
 - Opening any tracked page with `?ra=ignore` (with the `ignoreSelf` plugin) stops that browser from sending anything; `?ra=track` undoes it.
-- Events sent while you are signed in to the dashboard as an owner or admin are stored as internal, and reports leave them out.
+- Events sent while you are signed in to the dashboard as an owner or admin are stored as internal, and reports leave them out. The API sees the session cookie only on events that come through the proxy or the server client; a browser sending to the API directly carries no cookie.
 - Events from localhost and preview deployments are marked as well.
 
 ## Bot scores

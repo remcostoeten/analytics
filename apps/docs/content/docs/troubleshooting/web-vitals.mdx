@@ -44,6 +44,14 @@ The API stores no speed sample for:
 - an unknown metric or rating, or a missing metric `id`;
 - a negative value, a CLS above 10, or a timing above 120 seconds.
 
-## Speed shows nothing for dates more than 30 days ago
+## Speed for dates more than 30 days ago is missing a filter or the elements
 
-The daily rollup job drops raw speed rows older than 30 days after writing daily percentiles, and the speed reads use the raw rows. For older dates, query the `daily_vitals` view in the [SQL console](/docs/api/sql), which holds daily percentiles and rating counts per route, device and metric.
+The daily rollup job drops raw speed rows older than 30 days after writing daily percentiles and rating counts per route, device and metric to `rollup_vitals`. The speed reads use the raw rows for the last 30 days and the rollup for older days, where a day's percentile is the mean of its per-route and per-device percentiles, weighted by samples.
+
+The rollup has no page, country or selector. For days older than 30 days:
+
+- a read with `filter[page]` or `filter[country]` answers from the raw rows only, so older days are empty;
+- `/speed/elements` covers the last 30 days only;
+- `/speed/routes` leaves out rolled-up samples without a route.
+
+Older days also show nothing when the rollup job has not rolled them up, even if their raw rows are still stored, because the reads take those days from the rollup only. Run `POST /v2/admin/jobs/rollup` with `days` (1 to 90) large enough to cover them.

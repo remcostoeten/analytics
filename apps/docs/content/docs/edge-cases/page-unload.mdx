@@ -24,17 +24,17 @@ The client never listens for `unload`.
 
 ## How a batch is sent while unloading
 
-In unloading mode each batch is sent once, with no retries, because the page may be gone before a retry would run.
+In unloading mode each batch is sent once, with no retries, because the page may be gone before a retry would run. Batches that were waiting between retries are sent in the same flush, also once.
 
 The default transport first hands the batch to `navigator.sendBeacon`. The browser queues a beacon and sends it after the page is gone, but gives no answer back. When `sendBeacon` accepts the batch, the SDK counts every event in it as accepted, and duplicates and rejections are never known for that batch.
 
 When `sendBeacon` is missing or refuses the batch, the transport falls back to `fetch` with `keepalive: true`, which also lets the request outlive the page.
 
-Both use a `text/plain` body with the public key in the `key` query parameter, because `sendBeacon` cannot set headers.
+Both use a `text/plain` body with the public key in the `key` query parameter, because `sendBeacon` cannot set headers. With an empty key the parameter is left out.
 
 ## Failed batches are saved for the next page load
 
-Outside unloading mode, a batch that fails with a network error, a 429 or a 5xx is retried after 1, 4 and 16 seconds with the same event ids. If it still fails, or if it failed in unloading mode, the events are saved in `localStorage`. At most the latest 100 saved events are kept.
+Outside unloading mode, a batch that fails with a network error, a 429 or a 5xx is retried after 1, 4 and 16 seconds with the same event ids. When the answer carries `Retry-After`, the client waits that long instead, up to 16 seconds. If it still fails, or if it failed in unloading mode, the events are saved in `localStorage`. At most the latest 100 saved events are kept.
 
 The next time the client starts on the same site, it moves the saved events back into the queue and sends them with the first batch. They keep their original timestamps. The API shifts every event's time by the gap between the batch's `sentAt` and the moment it arrived, which corrects the browser's clock without moving an old event to the present.
 
@@ -51,7 +51,6 @@ On restore the client, its queue and its plugins continue where they were. The c
 | Situation | What is lost |
 | --- | --- |
 | The browser or the tab process crashes | Everything in the queue that was not yet flushed, up to 5 seconds or 19 events |
-| The page closes while a batch waits between retries | That batch. It has left the queue, so the unload flush does not see it, and it is saved only after the last retry fails |
 | A beacon is queued but never delivered | The batch. The SDK already counted it as sent |
 | `localStorage` is unavailable or full | Failed batches, which then have nowhere to be saved |
 | More than 100 events fail before the next page load | The oldest ones beyond 100 |

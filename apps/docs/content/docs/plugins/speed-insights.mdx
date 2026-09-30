@@ -77,4 +77,4 @@ onLCP((metric) => analytics.track("web_vital", speedProps(metric, 1, null)));
 
 The API stores a `web_vital` event as a speed row unless it comes from bot, internal, localhost or preview traffic, names an unknown metric or rating, or holds an impossible value (negative, CLS above 10, a timing above 120 seconds). The row is keyed by the project and the metric `id`, so updates of INP and CLS replace earlier ones. Tablets count as mobile.
 
-The [SQL views](/docs/api/sql) `web_vitals` (one row per metric) and `daily_vitals` (daily percentiles) expose them. The rollup job keeps daily percentiles and rating counts per route, device and metric, and drops raw speed rows older than 30 days.
+The [SQL views](/docs/api/sql) `web_vitals` (one row per metric) and `daily_vitals` (daily percentiles) expose them. The rollup job keeps daily percentiles and rating counts per route, device and metric in `rollup_vitals`, and drops raw speed rows older than 30 days. The speed reads use the rollup for those older days, without the page, country and selector it does not keep.

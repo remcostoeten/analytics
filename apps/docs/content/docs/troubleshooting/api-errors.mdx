@@ -37,7 +37,7 @@ Every response carries the request id in `x-request-id` as well, and cross-origi
 
 ## Ingest
 
-`POST /v2/events` answers these errors for the whole batch. A single bad event does not fail the batch: the API answers 202 and lists the event in `rejected` by index, with its own code and message.
+`POST /v2/events` answers these errors for the whole batch. A single bad event does not fail the batch: the API answers 202 and lists the event in `rejected` by index, with its own code and message. An event outside the prop limits is rejected this way with `VALIDATION_FAILED`: more than 25 props, a key over 255 characters, or a string value over 255 characters (2048 for `stack` and `breadcrumbs` on `error` events).
 
 ### 400 "The body is not valid JSON"
 
@@ -57,7 +57,7 @@ The request used the public key, and its `Origin` header is not in the project's
 
 ### 413 "The body is over 60 KB" or "A batch holds at most 50 events"
 
-Split the batch. The browser client sends at most 20 events per request, and the server client at most 50.
+Split the batch. The browser client sends at most 20 events per request and keeps each body under 60 KB; the server client sends at most 50 and does not measure the body.
 
 ### 429 "Too many requests"
 
@@ -77,9 +77,9 @@ The database could not be reached. The browser client retries and then keeps up 
 
 A `filter[<dimension>]` names a dimension the API does not know. Speed reads accept only `filter[route]`, `filter[page]` and `filter[country]`, and answer "filter[...] is not available for speed" for any other filter.
 
-### 404 "Unknown dimension ..."
+### 400 "Unknown dimension ..."
 
-`breakdown/:dimension` names a dimension the API does not know. Unlike an unknown filter, this answers 404.
+`breakdown/:dimension` names a dimension the API does not know. It answers `400 VALIDATION_FAILED`, the same as an unknown `filter[<dimension>]`.
 
 ### 404 "Project not found"
 

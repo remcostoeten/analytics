@@ -26,7 +26,7 @@ curl -X PATCH https://api.example.com/v2/projects/example.com \
   -d '{"allowedOrigins":["https://example.com","https://www.example.com"]}'
 ```
 
-Requests through the proxy use the secret key, so the API does not check their origin.
+Requests through the proxy use the secret key, so the API does not check their origin against the list. It still reads the `Origin` the proxy forwards to set the event's host and the localhost and preview flags.
 
 ## 403 `FORBIDDEN_ORIGIN`: "Events must come from this site"
 
@@ -81,16 +81,16 @@ The proxy accepts only `POST`. The client always posts, so a 405 comes from some
 
 ## `/_ra` answers 413 `PAYLOAD_TOO_LARGE`
 
-The proxy refuses bodies over 64 KB with "The body is over 64 KB". The API refuses bodies over 60 KB with "The body is over 60 KB", so a body between 60 and 64 KB passes the proxy and fails at the API, and the proxy returns that answer.
+The proxy refuses bodies over 60 KB with "The body is over 60 KB", the same limit and message as the API.
 
-The client sends up to 20 events per request, and each event can hold 25 props of up to 255 characters, so batches of prop-heavy events can pass the limit. Send fewer or shorter props. The client drops a batch that gets 413.
+The browser client keeps each batch under 60 KB by sending fewer events per request, so a 413 from the current client means one event is over 60 KB on its own. The client drops that event without sending it and reports `RA_INGEST_FAILED` with `HTTP 413` through `on("error")`. A 413 on the network panel comes from another sender, such as an older client or your own code. Send fewer or shorter props.
 
 ## `/_ra` answers 502: "The analytics API could not be reached"
 
 The proxy's request to the API failed before any answer: a wrong host in `endpoint`, a DNS or TLS failure, or the API is down. The client retries and keeps the events for the next page load.
 
-## Every visitor gets the same location or counts as a data center
+## Proxied events have no location or IP hash
 
-The proxy forwards the visitor's IP from the first of `cf-connecting-ip`, `x-real-ip` and `x-forwarded-for` on the incoming request. If your host sets none of them, the API sees the proxy server's own address: every event gets the server's location, and the `asn_datacenter` bot signal adds 40 to its score when that address belongs to a hosting network.
+The proxy forwards the visitor's IP from the first of `cf-connecting-ip`, `x-real-ip` and `x-forwarded-for` on the incoming request. If your host sets none of them, the event has no IP. The API does not fall back to the proxy server's own address on a secret-key request, so the event gets no IP hash, no city and no network, and its country comes only from the browser's timezone. The edge location headers are skipped as well, because on a secret-key request they describe your server. A missing IP or user agent adds no bot weight.
 
 The server client has the same need: pass the incoming `request` or its `headers` to `track`. See [Server](/docs/sdk/server).

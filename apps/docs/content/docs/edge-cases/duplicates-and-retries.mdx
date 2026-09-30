@@ -28,15 +28,15 @@ Two calls to `track` with the same name and props are two events with two ids, a
 
 | Answer | Browser client | Server client |
 | --- | --- | --- |
-| 202 | Done. Events listed in `rejected` failed validation and are not retried | Done. The first rejection is returned as `RA_INGEST_REJECTED` |
-| Network error, 429 or 5xx | Retried after 1, 4 and 16 seconds, then saved for the next page load | Not retried. The call resolves with `RA_INGEST_FAILED` |
+| 202 | Done. Events listed in `rejected` failed validation and are not retried; each is reported through `on("error")` as `RA_INGEST_REJECTED` and logged in debug mode | Done. The first rejection is returned as `RA_INGEST_REJECTED` |
+| Network error, 429 or 5xx | Retried after 1, 4 and 16 seconds, or after `Retry-After` when the API sent one, capped at 16 seconds; then saved for the next page load | Not retried. The call resolves with `RA_INGEST_FAILED` |
 | Any other 4xx | Dropped | Not retried. The call resolves with `RA_INGEST_FAILED` |
 
 A 202 can hold rejected events next to accepted ones. The API checks each event on its own, so one invalid event is reported by its index and the rest of the batch is stored.
 
 The API answers 429 only to callers with a public key, when one IP hash sends more than 100 requests a minute to a project (`INGEST_RATE_LIMIT`), and it sets `Retry-After`. Requests through the proxy carry the secret key and are not rate limited.
 
-While the page is being hidden or closed, the browser client sends each batch once, without retries; see [Page unload](/docs/edge-cases/page-unload).
+While the page is being hidden or closed, the browser client sends each batch once, without retries, and batches waiting between retries go out with them. A batch sent with `sendBeacon` counts as accepted, because its answer cannot be read, so rejections in it are not seen; see [Page unload](/docs/edge-cases/page-unload).
 
 ## Size limits
 
@@ -44,18 +44,18 @@ While the page is being hidden or closed, the browser client sends each batch on
 | --- | --- | --- | --- |
 | Body size | `POST /v2/events` | 60 KB | 413 `PAYLOAD_TOO_LARGE` |
 | Events per batch | `POST /v2/events` | 50 | 413 `PAYLOAD_TOO_LARGE` |
-| Body size | The `/_ra` proxy from `createProxy` | 64 KB | 413 `PAYLOAD_TOO_LARGE` |
+| Body size | The `/_ra` proxy from `createProxy` | 60 KB | 413 `PAYLOAD_TOO_LARGE` |
 
-The browser client sends at most 20 events per batch and the server client at most 50, so the event count is not reached by the SDK. Neither client measures the body before sending.
+The browser client sends at most 20 events per batch and the server client at most 50, so the event count is not reached by the SDK.
 
-A single event is bounded by the props limits: at most 25 props, keys and string values up to 255 characters, and up to 2048 characters for `stack` and `breadcrumbs` on error events. A batch of 20 events that each use the full limits can still pass 60 KB.
+A single event is bounded by the props limits: at most 25 props, keys and string values up to 255 characters, and up to 2048 characters for `stack` and `breadcrumbs` on error events. The client cuts props to these limits, and the API rejects an event outside them with `VALIDATION_FAILED`. A batch of 20 events that each use the full limits can still pass 60 KB.
 
-A 413 is a 4xx, so the browser client drops the batch without saving it. Nothing in the batch is stored, not even the events that would fit.
+The browser client measures each batch before sending it. When the body would pass 60 KB, it sends fewer events and leaves the rest for the next batch. A single event that is over 60 KB on its own is dropped without being sent and reported as a failure with status 413. The server client does not measure the body, so a batch of large events gets a 413 from the API, and nothing in it is stored.
 
-The proxy allows 4 KB more than the API. A body between 60 and 64 KB passes the proxy and is refused by the API, and the proxy returns that 413 unchanged. The proxy's own limit applies only to bodies the API would refuse anyway.
+The proxy and the API share the 60 KB limit, so a body the proxy passes is not refused by the API for its size.
 
 ## What to do
 
 - Treat `duplicates` above zero as normal. It means a retry or replay arrived after the first delivery.
 - Keep props small, and put long text such as stack traces only on error events, where the larger limit applies.
-- Watch for `RA_INGEST_FAILED` with `HTTP 413` through `analytics.on("error", ...)` if you send large props.
+- Watch for `RA_INGEST_FAILED` with `HTTP 413` and for `RA_INGEST_REJECTED` through `analytics.on("error", ...)` if you send large props.

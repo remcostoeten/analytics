@@ -66,6 +66,8 @@ Props are one flat object. The SDK trims them before the event is queued:
 | String values up to 255 characters | Longer strings are cut at 255 |
 | `undefined` values | Left out |
 
+`stack` and `breadcrumbs` on `error` events may be up to 2048 characters. The API applies the same limits to events from any sender and rejects an event outside them with `VALIDATION_FAILED`, so events from the SDK always pass.
+
 In development mode the console shows `[ra] RA_PROPS_LIMITED` with the keys that were left out or cut. For values that belong on every event, such as an app version or an A/B bucket, call `analytics.register({ appVersion: "2.4.0" })` once instead of adding them to each call; registered props count toward the 25.
 
 ## 5. Count clicks without code

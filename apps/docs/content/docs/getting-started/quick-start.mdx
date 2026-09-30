@@ -110,7 +110,7 @@ export const POST = createProxy({
 });
 ```
 
-The proxy accepts only same-site `POST` requests up to 64 KB, adds the secret key and the visitor's IP and user agent, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
+The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
 
 ## 6. Send an event and check it
 

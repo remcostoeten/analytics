@@ -46,9 +46,9 @@ curl "https://api.example.com/v2/projects/example.com/breakdown/bot_reason?traff
 | `ua_automation` | 100 | A user agent naming a test driver, headless browser or HTTP library, such as `HeadlessChrome`, `Playwright` or `curl/`, or no user agent on a browser request |
 | `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` header, or `cf-verified-bot` from Cloudflare |
 | `client_webdriver` | 60 | `navigator.webdriver`, reported by the [botSignals plugin](/docs/plugins/bot-signals) |
-| `session_velocity` | 50 | More than 30 pageviews a minute or near-identical gaps between events, set after ingest |
+| `session_velocity` | 50 | More than 30 pageviews a minute or near-identical gaps between events, set by the daily rollup job for the previous UTC day |
 | `asn_datacenter` | 40 | An IP address on a hosting provider's network |
-| `ip_fanout` | 40 | More than 20 visitor ids from one IP hash in a day, set after ingest |
+| `ip_fanout` | 40 | More than 20 visitor ids from one IP hash in a day, set by the daily rollup job for the previous UTC day |
 | `headers_inconsistent` | 30 | A browser user agent without the headers that browser sends; skipped for the secret key |
 | `client_headless` | 25 | Headless hints from the botSignals plugin |
 | `client_no_input` | 20 | No input on a page that was never visible, from the botSignals plugin |
@@ -66,7 +66,7 @@ The API marks three kinds of traffic that `traffic=human` leaves out:
 | `preview` | The `Origin` is a Vercel preview host, or contains `-preview.` or `.preview.`, or starts with `preview-` or `staging-` |
 | `internal` | The event is from `localhost`, carries a signed-in owner's or admin's session cookie, or comes from a visitor marked internal |
 
-The `localhost` and `preview` flags come from the `Origin` header. The proxy and the server client send no `Origin` to the API, so a local development server that posts to its own `/_ra` counts as regular traffic. The proxy does not forward cookies either, so the session cookie only marks events sent to the API directly.
+The `localhost` and `preview` flags come from the `Origin` header. The proxy forwards the page's `Origin`, or the site's own origin when the browser sent none, so a local development server that posts to its own `/_ra` is flagged as localhost. The server client sends the origin of the `request` or `headers` you pass, or its `origin` option. The session cookie reaches the API only through the proxy or the server client, which forward `ra.session_token` and no other cookie. A browser sending to the API directly carries no cookie, so a signed-in admin's direct events are not marked internal.
 
 To keep development traffic out:
 
@@ -80,6 +80,10 @@ curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/VISITOR_I
   -H "content-type: application/json" \
   -d '{"isInternal":true}'
 ```
+
+## Server events raise pageviews but not visitors
+
+Events from the server client without a `visitor` and `session` share the id `server`. Reads count them in `pageviews`, `events` and breakdowns, but leave them out of visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists. Pass the browser's `visitor` and `session` to the server client to count an event with its visitor.
 
 ## Days and hours do not line up with your time zone
 

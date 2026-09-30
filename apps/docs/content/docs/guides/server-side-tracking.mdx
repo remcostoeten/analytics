@@ -36,7 +36,7 @@ Import this module only from server code. The SDK adds `/v2/events` to the endpo
 
 ## 3. Track from a route handler
 
-Pass the incoming `request`. The client forwards the visitor's IP and user agent, so the API can hash and enrich them, and uses the request's path as the page path.
+Pass the incoming `request`. The client forwards the visitor's IP and user agent, so the API can hash and enrich them, and uses the request's path as the page path. It also sends the site's origin, so the API flags localhost and preview hosts, and the admin session cookie alone, so a signed-in admin's events are internal.
 
 `app/api/checkout/route.ts`:
 
@@ -70,15 +70,21 @@ export async function subscribe(formData: FormData) {
 
 ## 5. Track from a job or webhook consumer
 
-Without a request there is no visitor to forward. Set `path` so the event is not credited to `/`, and await the call before the process exits: it resolves once the event is sent.
+Without a request there is no visitor to forward: the event has no IP and no user agent, and the API does not use your server's own, so it adds no location and no bot weight. Set `path` so the event is not credited to `/`, set `origin` to give it your site's host, and await the call before the process exits: it resolves once the event is sent.
 
 ```ts
 import { serverAnalytics } from "./server-analytics";
 
-await serverAnalytics.track("checkout", { revenue: 49, currency: "EUR" }, { path: "/jobs/renewals" });
+await serverAnalytics.track(
+  "checkout",
+  { revenue: 49, currency: "EUR" },
+  { path: "/jobs/renewals", origin: "https://example.com" },
+);
 ```
 
-For a batch, call `track` for each item and then `await serverAnalytics.flush()`. Events tracked in the same tick go out together, up to 50 per request.
+`origin` can also go in the `createServerAnalytics` options, for every event sent without a request.
+
+For a batch, call `track` for each item and then `await serverAnalytics.flush()`. Events tracked in the same tick go out together, up to 50 per request, with one request per origin and session cookie.
 
 ## 6. Keep the send alive after the response
 
@@ -116,4 +122,4 @@ The client also prints each code once to the console as `[ra] <code>: <message>`
 
 ## Visitors and sessions
 
-Server events use `server` as their visitor and session. To credit an event to a browser visitor, pass `visitor` and `session` in the call's options with that browser's ids. To put an event in a group, pass `groups: { company: "acme" }`.
+Server events use `server` as their visitor and session; `/server` exports the id as `serverVisitor`. Reads count those events in pageviews, events and breakdowns, but leave them out of visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness and the visitor, session and people lists. To credit an event to a browser visitor, pass `visitor` and `session` in the call's options with that browser's ids. To put an event in a group, pass `groups: { company: "acme" }`.

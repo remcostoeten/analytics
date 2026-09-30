@@ -68,6 +68,10 @@ Use this for a teammate's device or a test account whose events you still want t
 
 After `analytics.reset()` or cleared site data the browser gets a new visitor id, which is not marked. Mark the new id, or use `?ra=ignore` for browsers you control.
 
+## Signed-in admins
+
+Events that arrive with a signed-in owner's or admin's session cookie are stored as internal. The browser client sends without cookies, so this works only through the `/_ra` proxy, which forwards the `ra.session_token` cookie and no other, and only when the API sets that cookie for a domain your site shares (`AUTH_COOKIE_DOMAIN`). Events a browser sends to the API directly are not marked this way; use `?ra=ignore` or mark the visitor instead.
+
 ## Local and preview traffic
 
 You do not need to exclude development servers or preview deployments by hand:
@@ -76,4 +80,4 @@ You do not need to exclude development servers or preview deployments by hand:
 - The API reads the request's `Origin`. Events from `localhost`, loopback addresses, `.local` or `.localhost` hosts are stored as localhost and internal.
 - Events from Vercel preview hosts and hosts starting with `preview-` or `staging-` are stored as preview.
 
-`traffic=human` leaves all of these out, as it does bots. `createProxy` does not forward the browser's `Origin` to the API, so the localhost and preview marks apply only to events sent to the API directly. Behind the proxy, rely on development mode or `?ra=ignore`. In SQL, the `is_human`, `is_internal`, `is_localhost` and `is_preview` columns of the `events` view hold the same flags; see [Read your data](/docs/guides/read-your-data).
+`traffic=human` leaves all of these out, as it does bots. `createProxy` forwards the page's `Origin`, or the site's own origin when the browser sent none, so the marks apply behind the proxy too. The server client sends the origin of the `request` or `headers` you pass, or its `origin` option. In SQL, the `is_human`, `is_internal`, `is_localhost` and `is_preview` columns of the `events` view hold the same flags; see [Read your data](/docs/guides/read-your-data).
