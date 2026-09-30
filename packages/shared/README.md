@@ -1,12 +1,13 @@
 # @remcostoeten/analytics-shared
 
-Semantic types, `Result`, `noop` and the JSON HTTP helpers for every v2 package. Private: it is never published, and its `exports` point at `src/`, so there is no build step.
+Semantic types, `Result`, `noop`, the record helpers and the JSON HTTP helpers for every v2 package. Private: it is never published, and its `exports` point at `src/`, so there is no build step.
 
 | Import | Contains |
 | --- | --- |
 | `@remcostoeten/analytics-shared/semantic` | `ID`, `Timestamp`, `Day`, `Milliseconds`, `Nullable`, `Entity`, `CreateInput`, `UpdateInput` and the per-entity ids |
 | `@remcostoeten/analytics-shared/result` | `Result`, `ok`, `err` |
 | `@remcostoeten/analytics-shared/noop` | `noop`, for intentionally swallowed errors |
+| `@remcostoeten/analytics-shared/records` | `hasKeys` and `orNull`, for objects that may be empty |
 | `@remcostoeten/analytics-shared/http` | `request`, `getJson`, `postJson`, `putJson`, `patchJson`, `deleteJson` and their types |
 
 ## HTTP

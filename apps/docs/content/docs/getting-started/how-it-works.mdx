@@ -21,7 +21,7 @@ server SDK  ──────────────────────�
 The browser posts to `/_ra` on your own domain, so ad blockers see a first-party request. The proxy:
 
 - accepts only `POST`, and only from the same site;
-- refuses bodies over 64 KB;
+- refuses bodies over 60 KB;
 - adds the project's secret key, so the key never reaches the browser;
 - adds the visitor's IP and user agent as `X-Visitor-IP` and `X-Visitor-UA`, because the API only sees your server's address;
 - returns the API's answer unchanged.

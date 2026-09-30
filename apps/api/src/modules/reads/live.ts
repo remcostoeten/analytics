@@ -11,7 +11,7 @@ import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import { t } from "elysia";
 
-import { readFilters, readTraffic } from "./params";
+import { maxLimit, readFilters, readTraffic } from "./params";
 
 export type LiveOptions = { waitMs: number; streamMs: number };
 
@@ -20,7 +20,6 @@ type Wait = { ms: number; signal: AbortSignal | null };
 export const eventStream = t.Unsafe<Response>(t.Any({ description: "text/event-stream" }));
 
 const defaultLimit = 50;
-const maxLimit = 100;
 const devices = new Set<string>(["desktop", "mobile", "tablet", "bot", "unknown"]);
 
 function invalid<Value>(message: string): Result<Value, EngineError> {

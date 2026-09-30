@@ -1,3 +1,5 @@
+import { maxBodyBytes } from "@remcostoeten/analytics-contract/limits";
+
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
 import { eventsUrl, visitorDetails } from "../server/forwarding";
 import type { Fetcher } from "../server/types";
@@ -7,8 +9,6 @@ export type ProxyConfig = {
   endpoint?: string;
   fetch?: Fetcher;
 };
-
-const maxBody = 64 * 1024;
 
 function refuse(status: number, code: string, message: string) {
   return Response.json({ error: { code, message } }, { status });
@@ -33,7 +33,7 @@ function crossSite(request: Request) {
  * @description A fetch-standard `(request) => Response` handler for a same-origin path such as
  * `/_ra`, so ad blockers see a first-party request. It refuses other methods, cross-site requests
  * (by `Sec-Fetch-Site`, else by comparing `Origin` with the request's host) and bodies over
- * 64 KB, then forwards the body to `POST /v2/events` with the project secret and the visitor's IP
+ * 60 KB, then forwards the body to `POST /v2/events` with the project secret and the visitor's IP
  * and user agent as `X-Visitor-IP` and `X-Visitor-UA`, and returns the API's answer. Options missing here are read from the JSON in `RA_CONFIG`.
  *
  * @example
@@ -54,8 +54,8 @@ export function createProxy(options: ProxyConfig = {}): (request: Request) => Pr
       return refuse(403, "FORBIDDEN_ORIGIN", "Events must come from this site");
     }
     const body = await request.text();
-    if (new TextEncoder().encode(body).length > maxBody) {
-      return refuse(413, "PAYLOAD_TOO_LARGE", "The body is over 64 KB");
+    if (new TextEncoder().encode(body).length > maxBodyBytes) {
+      return refuse(413, "PAYLOAD_TOO_LARGE", `The body is over ${maxBodyBytes / 1024} KB`);
     }
     const visitor = visitorDetails(request.headers);
     const headers = new Headers({

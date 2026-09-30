@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { defineDimension } from "../define";
 
 // An issue id as the API shows it: "iss_" and the row id.
-const issueId = /^iss_(\d{1,18})$/;
+const issuePattern = /^iss_(\d{1,18})$/;
 
 /**
  * @name issueDimension
@@ -19,7 +19,7 @@ export const issueDimension = defineDimension({
   join: null,
   expression: () => sql.raw(`('iss_' || e.issue_id)`),
   matches: (value) => {
-    const id = issueId.exec(value)?.[1];
-    return id ? sql`e.issue_id = ${id}::bigint` : sql`false`;
+    const issueId = issuePattern.exec(value)?.[1];
+    return issueId ? sql`e.issue_id = ${issueId}::bigint` : sql`false`;
   },
 });

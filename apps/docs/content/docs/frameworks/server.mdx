@@ -151,7 +151,7 @@ The visitor's IP comes from `cf-connecting-ip`.
 
 ## The proxy
 
-`createProxy` returns a `(request) => Promise<Response>` handler. It accepts only same-site `POST` requests with bodies up to 64 KB, adds the secret key and the visitor's IP and user agent, forwards the body to `/v2/events` and returns the API's answer. The browser client's `endpoint` is the path you serve it on. See [Proxy](/docs/sdk/proxy).
+`createProxy` returns a `(request) => Promise<Response>` handler. It accepts only same-site `POST` requests with bodies up to 60 KB, adds the secret key and the visitor's IP and user agent, forwards the body to `/v2/events` and returns the API's answer. The browser client's `endpoint` is the path you serve it on. See [Proxy](/docs/sdk/proxy).
 
 ## Other languages
 

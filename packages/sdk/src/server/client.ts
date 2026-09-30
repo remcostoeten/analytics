@@ -1,4 +1,6 @@
 import type { IngestResult, WireContext, WireEvent } from "@remcostoeten/analytics-contract";
+import { maxEventsPerBatch } from "@remcostoeten/analytics-contract/limits";
+import { hasKeys } from "@remcostoeten/analytics-shared/records";
 
 import { buildEvent, limitProps } from "../core/build-event";
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
@@ -17,7 +19,6 @@ import type {
   ServerResult,
 } from "./types";
 
-const batchLimit = 50;
 const nothing: ServerResult = { ok: true, error: null, accepted: 0, duplicates: 0, failed: 0 };
 
 function pathOf(request: Request | undefined) {
@@ -101,8 +102,8 @@ export function createServerAnalytics<
     if (!config.endpoint) return failed("RA_NO_ENDPOINT", "endpoint is empty", events.length);
     const url = eventsUrl(config.endpoint);
     let total = nothing;
-    for (let start = 0; start < events.length; start += batchLimit) {
-      const result = await post(events.slice(start, start + batchLimit), config.secret, url);
+    for (let start = 0; start < events.length; start += maxEventsPerBatch) {
+      const result = await post(events.slice(start, start + maxEventsPerBatch), config.secret, url);
       const counts = {
         accepted: total.accepted + result.accepted,
         duplicates: total.duplicates + result.duplicates,
@@ -149,7 +150,7 @@ export function createServerAnalytics<
       props: limitProps({ ...tags, ...props }, name === "error").props,
       context: wire,
     });
-    if (from.groups && Object.keys(from.groups).length > 0) event.groups = from.groups;
+    if (from.groups && hasKeys(from.groups)) event.groups = from.groups;
     return event;
   }
 

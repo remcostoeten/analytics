@@ -6,6 +6,7 @@
 	"exports": {
 		"./http": "./src/http/index.ts",
 		"./noop": "./src/noop.ts",
+		"./records": "./src/records.ts",
 		"./result": "./src/result.ts",
 		"./semantic": "./src/semantic.ts"
 	},

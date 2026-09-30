@@ -65,7 +65,7 @@ describe("createProxy", () => {
         }),
       403,
     ],
-    ["a body over 64 KB", undefined, () => browserPost("x".repeat(70_000)), 413],
+    ["a body over 60 KB", undefined, () => browserPost("x".repeat(62_000)), 413],
   ])("refuses %s", async (_, options, request, status) => {
     const { calls, fetcher } = upstream();
     const proxy = createProxy(

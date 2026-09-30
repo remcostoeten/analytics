@@ -40,7 +40,7 @@ const filterNames: { [name: string]: "route" | "path" | "country" } = {
   "filter[country]": "country",
 };
 
-const minSamples = 20;
+export const minSamples = 20;
 
 function invalid<Value>(message: string): Result<Value, EngineError> {
   return err(engineError("VALIDATION_FAILED", message));

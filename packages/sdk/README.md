@@ -150,7 +150,7 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
 
-The proxy refuses other methods, cross-site requests and bodies over 64 KB, and forwards the visitor's IP and user agent with the secret. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.
+The proxy refuses other methods, cross-site requests and bodies over 60 KB, and forwards the visitor's IP and user agent with the secret. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.
 
 ## Migrating from 1.x
 
