@@ -1,0 +1,166 @@
+---
+title: Svelte
+description: Svelte with Vite, and SvelteKit with a same-origin proxy route and server-side tracking.
+---
+
+There is no Svelte adapter. The core client is created once in a module, and the default `pageviews` plugin follows client-side navigation, which in SvelteKit uses `pushState`.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Events
+
+`src/lib/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+## Svelte with Vite
+
+`.env` holds the browser options, with the public key only:
+
+```bash
+VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"https://api.example.com/v2/events"}'
+```
+
+`src/lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  plugins: [speedInsights(), errors()],
+});
+```
+
+Import it from `src/main.ts` so it starts with the app. A static build sends to the API directly; when a server on the same origin runs `createProxy`, use `/_ra` instead (see [Server](/docs/frameworks/server)).
+
+## SvelteKit
+
+`.env`:
+
+```bash
+PUBLIC_RA_KEY=pk_...
+RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
+```
+
+`RA_SECRET` has no `PUBLIC_` prefix, so SvelteKit keeps it out of browser code. These names are used on this page only; the SDK does not read them itself.
+
+`src/lib/analytics.ts`:
+
+```ts
+import { PUBLIC_RA_KEY } from "$env/static/public";
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  project: "example.com",
+  key: PUBLIC_RA_KEY,
+  endpoint: "/ra",
+  pageviews: false,
+  plugins: [speedInsights(), errors()],
+});
+```
+
+The client starts itself only where `window` exists, so this module is safe to import during server rendering and starts once in the browser.
+
+`src/routes/+layout.svelte` reports each navigation with SvelteKit's route id, such as `/blog/[slug]`, as the route template:
+
+```svelte
+<script lang="ts">
+  import { afterNavigate } from "$app/navigation";
+  import { analytics } from "$lib/analytics";
+
+  let { children } = $props();
+
+  afterNavigate((navigation) => {
+    analytics.route(navigation.to?.route.id ?? null);
+    analytics.page();
+  });
+</script>
+
+{@render children()}
+```
+
+`afterNavigate` runs after the first render and after every navigation, which is why the client is created with `pageviews: false`. Without this layout code, leave `pageviews` on and each pageview carries the path only.
+
+### Proxy route
+
+`src/routes/ra/+server.ts` serves `/ra` on your own domain, so ad blockers see a first-party request:
+
+```ts
+import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
+import { createProxy } from "@remcostoeten/analytics/proxy";
+import type { RequestHandler } from "./$types";
+
+const proxy = createProxy({ secret: RA_SECRET, endpoint: RA_ENDPOINT });
+
+export const POST: RequestHandler = ({ request }) => proxy(request);
+```
+
+Any same-origin path works; the client's `endpoint` has to match it. See [Proxy](/docs/sdk/proxy).
+
+### Server-side tracking
+
+`src/lib/server/analytics.ts`:
+
+```ts
+import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
+import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import type { Events } from "$lib/events";
+
+export const serverAnalytics = createServerAnalytics<Events>({
+  secret: RA_SECRET,
+  endpoint: RA_ENDPOINT,
+});
+```
+
+In a form action or `+server.ts`, pass the incoming `request` so the visitor's IP and user agent are forwarded:
+
+```ts
+import { serverAnalytics } from "$lib/server/analytics";
+import type { Actions } from "./$types";
+
+export const actions = {
+  default: async ({ request }) => {
+    await serverAnalytics.track("newsletter_subscribed", {}, { request });
+  },
+} satisfies Actions;
+```
+
+Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. See [Server](/docs/sdk/server).
+
+## Custom events
+
+```svelte
+<script lang="ts">
+  import { analytics } from "$lib/analytics";
+</script>
+
+<button onclick={() => analytics.track("signup", { plan: "pro" })}>Upgrade</button>
+```
+
+The `clicks()` plugin sends `click` events from `data-ra-click` attributes without code; see [Plugins](/docs/sdk/plugins).
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+With `consent: "required"`, events are held until `consent.grant()`. Call `identify` after sign-in and `reset` on logout. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out).

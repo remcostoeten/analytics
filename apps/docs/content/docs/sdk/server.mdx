@@ -23,7 +23,7 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 | `track(name, props?, options?)` | Sends a custom event |
 | `identify(userId, traits?, options?)` | Links a user to the visitor in `options` |
 | `group(type, id, traits?, options?)` | Sends a `group` event in that group; `createServerAnalytics<Events, Groups>` types `type` and `traits` |
-| `captureError(error, context?, options?)` | Records a server error |
+| `captureError(error, context?)` | Records a server error; `context` takes the error context and the request context (`request` or `headers`) in one object |
 | `withErrors(handler)` | Wraps a route handler and records anything it throws, then rethrows |
 
 Passing `request` forwards the visitor's IP and user agent, so the API can hash and enrich them. Events from one tick go out in one request, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. Any call can pass `groups: { company: "acme" }` in its options to put that event in groups. Options left out are read from the JSON in `RA_CONFIG`.

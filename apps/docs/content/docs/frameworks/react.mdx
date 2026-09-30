@@ -1,0 +1,124 @@
+---
+title: React
+description: React 19 with Vite and any router, with typed events and optional route templates.
+---
+
+React 19 apps outside Next.js use the core client and `/react`. The default `pageviews` plugin follows any router that navigates with `pushState`, so React Router, TanStack Router and hash routers need no extra code for pageviews. Route templates are optional and take one small component.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Keys and environment
+
+With Vite, `.env`:
+
+```bash
+VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+```
+
+Only the public key (`pk_...`) belongs in browser code. It works only from the project's `allowedOrigins`. The secret key (`sk_...`) stays on a server; see [Server](/docs/frameworks/server).
+
+The endpoint is `/_ra` when your host can run a `createProxy` handler on the same origin, which keeps ad blockers from dropping the requests. A static site with no server code sends to the API directly: set `endpoint` to `https://api.example.com/v2/events`.
+
+## Events
+
+`src/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+## Create the client
+
+`src/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  plugins: [speedInsights(), errors()],
+});
+```
+
+`src/main.tsx`:
+
+```tsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { analytics } from "./analytics";
+import { App } from "./app";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <AnalyticsProvider client={analytics}>
+      <App />
+    </AnalyticsProvider>
+  </StrictMode>,
+);
+```
+
+This sends a pageview on load and on every client-side navigation, with the path but no route template.
+
+## Custom events
+
+```tsx
+import { TrackClick, useAnalytics } from "@remcostoeten/analytics/react";
+import type { Events } from "./events";
+
+export function Pricing() {
+  const analytics = useAnalytics<Events>();
+  return (
+    <>
+      <button onClick={() => analytics.track("signup", { plan: "pro" })}>Upgrade</button>
+      <TrackClick name="newsletter_subscribed">
+        <button>Subscribe</button>
+      </TrackClick>
+    </>
+  );
+}
+```
+
+`useAnalytics` returns a client that does nothing outside a provider. `ErrorBoundary` records render errors below it with `captureError`. See [React](/docs/sdk/react).
+
+## Route templates
+
+A route template such as `/blog/[slug]` lets reports group every blog post into one row. `useRoutePageviews(path, route)` sends a pageview with the template whenever the path changes, and `computeRoute(pathname, params)` builds the template from the router's params. With React Router, render this inside the router, for example in the root layout route:
+
+```tsx
+import { useLocation, useParams } from "react-router";
+import { computeRoute, useRoutePageviews } from "@remcostoeten/analytics/react";
+
+export function RouteTracker() {
+  const { pathname, search } = useLocation();
+  const params = useParams();
+  useRoutePageviews(pathname + search, computeRoute(pathname, params));
+  return null;
+}
+```
+
+Then create the client with `pageviews: false`, so the default plugin does not send a first pageview without the template. `computeRoute` also understands the splat params of React Router (`*`) and TanStack Router (`_splat`).
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+With `consent: "required"`, events are held until `consent.grant()`. Call `identify` after sign-in and `reset` on logout. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out).
+
+## Server-side tracking
+
+A React app with its own API server tracks from there with `/server`. See [Server](/docs/frameworks/server).

@@ -1,0 +1,159 @@
+---
+title: Astro
+description: Astro with a client script for the browser, and endpoints for the proxy and server-side tracking.
+---
+
+There is no Astro adapter. The core client runs in a bundled client script, and pages without a client router get one pageview per page load. The proxy and server-side tracking run in on-demand endpoints, which need a server adapter.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Keys and environment
+
+`.env`:
+
+```bash
+PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/ra"}'
+RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
+```
+
+The client reads `PUBLIC_RA_CONFIG` from `import.meta.env`, which Astro exposes to browser code because of the `PUBLIC_` prefix. `RA_SECRET` has no prefix, so it stays on the server. `RA_SECRET` and `RA_ENDPOINT` are names used on this page; the SDK does not read them itself.
+
+A fully static site without a server adapter has no endpoint of its own: set `endpoint` to `https://api.example.com/v2/events` and skip the proxy section.
+
+## Create the client
+
+`src/lib/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+`src/lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { clicks, errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  plugins: [clicks(), speedInsights(), errors()],
+});
+```
+
+Import it from a `<script>` in the layout every page uses. Astro bundles the script and runs it in the browser only:
+
+```astro
+---
+const { title } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+    <script>
+      import "../lib/analytics";
+    </script>
+  </body>
+</html>
+```
+
+## Pageviews
+
+Each page load sends a pageview. With `<ClientRouter />`, navigation happens in the browser through `pushState`, which the default `pageviews` plugin follows.
+
+## Custom events
+
+In a client script:
+
+```astro
+<button id="upgrade">Upgrade</button>
+
+<script>
+  import { analytics } from "../lib/analytics";
+
+  document.querySelector("#upgrade")?.addEventListener("click", () => {
+    analytics.track("signup", { plan: "pro" });
+  });
+</script>
+```
+
+For static markup, the `clicks()` plugin in the client above sends a `click` event for any element with `data-ra-click`, plus its `data-ra-prop-*` attributes:
+
+```html
+<button data-ra-click="upgrade" data-ra-prop-plan="pro">Upgrade</button>
+```
+
+In a framework island (React, Vue, Svelte), import the same module and call `analytics.track`.
+
+## Proxy endpoint
+
+`src/pages/ra.ts` serves `/ra` on your own domain, so ad blockers see a first-party request. Astro does not route files whose name starts with `_`, so this page uses `/ra`; any same-origin path works as long as the client's `endpoint` matches.
+
+```ts
+import type { APIRoute } from "astro";
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+export const prerender = false;
+
+const proxy = createProxy({
+  secret: import.meta.env.RA_SECRET,
+  endpoint: import.meta.env.RA_ENDPOINT,
+});
+
+export const POST: APIRoute = ({ request }) => proxy(request);
+```
+
+`prerender = false` makes the endpoint run on demand in a site that is otherwise prerendered. See [Proxy](/docs/sdk/proxy).
+
+## Server-side tracking
+
+`src/lib/server-analytics.ts`:
+
+```ts
+import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import type { Events } from "./events";
+
+export const serverAnalytics = createServerAnalytics<Events>({
+  secret: import.meta.env.RA_SECRET,
+  endpoint: import.meta.env.RA_ENDPOINT,
+});
+```
+
+In an on-demand endpoint, pass the incoming `request` so the visitor's IP and user agent are forwarded:
+
+```ts
+import type { APIRoute } from "astro";
+import { serverAnalytics } from "../../lib/server-analytics";
+
+export const prerender = false;
+
+export const POST: APIRoute = async ({ request }) => {
+  await serverAnalytics.track("newsletter_subscribed", {}, { request });
+  return Response.json({ ok: true });
+};
+```
+
+Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. See [Server](/docs/sdk/server).
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+With `consent: "required"`, events are held until `consent.grant()`. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out).
