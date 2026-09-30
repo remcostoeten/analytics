@@ -1,0 +1,119 @@
+---
+title: Track custom events
+description: Declare your events once, send them from code or markup, and read them back per prop.
+---
+
+This guide adds a custom event, such as a signup or a checkout, to an app that already runs the SDK. If the client is not set up yet, start with the [Quick start](/docs/getting-started/quick-start).
+
+## 1. Declare your events
+
+List every custom event and its props in one type. The browser and server clients both check calls against it.
+
+`lib/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  checkout: { revenue: number; currency: string };
+  newsletter_subscribed: NoProps;
+};
+```
+
+Use `NoProps` for an event without props. Names are strings of 1 to 64 characters; the built-in events use snake_case, so custom names read best in the same style. The built-in names are listed under [Events](/docs/getting-started/concepts#events); do not reuse them for your own events.
+
+## 2. Type the client
+
+Pass the map to `createAnalytics`.
+
+`lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+});
+```
+
+In React, `useAnalytics<Events>()` from `/react` returns the same typed client from the provider. See [React](/docs/sdk/react).
+
+## 3. Send the event
+
+```ts
+import { analytics } from "@/lib/analytics";
+
+analytics.track("signup", { plan: "pro" });
+analytics.track("checkout", { revenue: 49, currency: "EUR" });
+analytics.track("newsletter_subscribed");
+```
+
+The type checks each call: `track("signup")` without `plan`, `track("signup", { plan: "team" })` and `track("newsletter_subscribed", { source: "footer" })` are type errors.
+
+## 4. Keep props inside the limits
+
+Props are one flat object. The SDK trims them before the event is queued:
+
+| Rule | What the SDK does |
+| --- | --- |
+| Values are strings, numbers, booleans or `null` | Objects and arrays are left out |
+| At most 25 props per event | Props after the 25th are left out |
+| Keys up to 255 characters | Longer keys are left out |
+| String values up to 255 characters | Longer strings are cut at 255 |
+| `undefined` values | Left out |
+
+In development mode the console shows `[ra] RA_PROPS_LIMITED` with the keys that were left out or cut. For values that belong on every event, such as an app version or an A/B bucket, call `analytics.register({ appVersion: "2.4.0" })` once instead of adding them to each call; registered props count toward the 25.
+
+## 5. Count clicks without code
+
+For buttons and links that only need a click count, the [`clicks`](/docs/plugins/clicks) plugin reads the markup instead.
+
+Add the plugin:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { clicks } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [clicks()],
+});
+```
+
+Mark the elements:
+
+```html
+<a href="/pricing" data-ra-click="pricing-cta" data-ra-prop-position="hero">See pricing</a>
+```
+
+A click sends a `click` event with `{ label: "pricing-cta", position: "hero" }`. Every value is a string, and each `data-ra-prop-*` name becomes a camelCase prop.
+
+In React, wrap one element in `TrackClick` to send a named event instead: `<TrackClick name="signup" props={{ plan: "pro" }}><button>Upgrade</button></TrackClick>`.
+
+## 6. Check that it arrives
+
+Open the site with `?ra=debug` and trigger the event. The console shows an `[ra] RA_EVENT` line with the event, or `RA_DROP` with the reason it was dropped. Then list the latest events:
+
+```bash
+curl https://api.example.com/v2/projects/example.com/realtime/events \
+  -H "authorization: Bearer $RA_TOKEN"
+```
+
+## 7. Report on a prop
+
+`prop:<key>` is a dimension. Filter on the event name and break down by the prop:
+
+```bash
+curl -G https://api.example.com/v2/projects/example.com/breakdown/prop:plan \
+  -H "authorization: Bearer $RA_TOKEN" \
+  --data-urlencode "filter[event]=signup" \
+  --data-urlencode "period=30d"
+```
+
+Numeric props can be summed or averaged with `metrics=sum:prop.revenue` or `avg:prop.revenue`. [Read your data](/docs/guides/read-your-data) covers tokens and the other read routes.

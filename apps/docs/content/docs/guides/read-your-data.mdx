@@ -1,0 +1,128 @@
+---
+title: Read your data
+description: Create an API token, fetch headline numbers and breakdowns over HTTP or from TypeScript, and run SQL.
+---
+
+This guide gets your numbers out of the API, for a script, a report or your own dashboard page. It covers the aggregate read routes and the SQL routes; the [API reference](/docs/reference) lists every route and field, and [API overview](/docs/api/overview) the shared parameters.
+
+## 1. Create a token
+
+A public project answers aggregate reads without a token, so skip this step if that is all you need. A private project, visitor-level reads and SQL need an API token.
+
+Creating one needs an owner, an admin whose role lists no projects, or an existing `admin` token that lists no projects. Send your session cookie from GitHub sign-in, or the token:
+
+```bash
+curl -X POST https://api.example.com/v2/tokens \
+  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"name":"weekly report","scope":"read","projectIds":["example.com"]}'
+```
+
+| Field | Values |
+| --- | --- |
+| `name` | 1 to 128 characters |
+| `scope` | `read` for reads, `sql` for SQL, `admin` for settings and alert targets |
+| `projectIds` | The projects it may use, or `null` for all |
+| `expiresAt` | An ISO 8601 timestamp, or `null` for no expiry |
+
+The token is in `data.token` in this response only; store it, for example as `RA_TOKEN`. `DELETE /v2/tokens/{token}` revokes it. [Auth overview](/docs/api/auth) explains which roles and scopes pass each access level.
+
+## 2. Fetch headline numbers
+
+```bash
+curl "https://api.example.com/v2/projects/example.com/stats?period=7d" \
+  -H "authorization: Bearer $RA_TOKEN"
+```
+
+The answer holds `visitors`, `sessions`, `pageviews`, `pagesPerSession`, `bounceRate` and `sessionDurationMs`, each as `{ value, previous, change }` against the 7 days before. `period` takes `24h`, `7d`, `30d`, `90d`, `12mo` or `all`; send `from` and `to` as ISO 8601 timestamps for any other range.
+
+## 3. Break down by a dimension
+
+`breakdown/{dimension}` answers the top values of one dimension, such as `page`, `referrer`, `country`, `browser`, `utm_source`, `event`, `prop:<key>` or `trait:<key>`:
+
+```bash
+curl -G https://api.example.com/v2/projects/example.com/breakdown/page \
+  -H "authorization: Bearer $RA_TOKEN" \
+  --data-urlencode "period=30d" \
+  --data-urlencode "limit=10" \
+  --data-urlencode "filter[country]=NL"
+```
+
+```json
+{
+  "data": [
+    { "value": "/", "visitors": 812, "pageviews": 1204, "bounceRate": 0.41, "avgTimeMs": 38000, "share": 0.63 }
+  ],
+  "dimension": "page",
+  "total": 57,
+  "nextCursor": "eyJvIjoxMH0",
+  "range": { "from": "2026-08-31T00:00:00.000Z", "to": "2026-09-30T00:00:00.000Z" },
+  "traffic": "human",
+  "filters": { "country": "NL" }
+}
+```
+
+- `metrics` picks the columns, comma-separated: `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth`, `conversion_rate`, and `sum:prop.<key>` or `avg:prop.<key>` for numeric props. `conversion_rate` needs a `filter[event]`.
+- `filter[<dimension>]=value` narrows the range, and `!value` excludes. Repeat it for several dimensions.
+- `limit` goes up to 100. Pass `nextCursor` back as `cursor` for the next page.
+
+To get every row as one file instead of pages, add `format=csv`, `format=json` or `format=sql`. The download holds up to 1 million rows:
+
+```bash
+curl -G https://api.example.com/v2/projects/example.com/breakdown/referrer_domain \
+  -H "authorization: Bearer $RA_TOKEN" \
+  --data-urlencode "period=90d" \
+  --data-urlencode "format=csv" \
+  -o referrers.csv
+```
+
+## 4. Read from TypeScript
+
+In server code and scripts, `createAdmin` from `/admin` calls the same routes with typed answers. A `read` token is enough for the read methods:
+
+```ts
+import { createAdmin } from "@remcostoeten/analytics/admin";
+
+const admin = createAdmin<"example.com">({
+  endpoint: "https://api.example.com",
+  token: process.env.RA_TOKEN,
+});
+
+const pages = await admin.breakdown("example.com", "page", {
+  period: "30d",
+  limit: 10,
+  filter: { country: "NL" },
+});
+
+if (pages.ok) console.table(pages.value.data);
+else console.error(pages.error.code, pages.error.message);
+```
+
+`stats`, `timeseries`, `lifecycle` and `issues` work the same way. See [Admin](/docs/sdk/admin#reads).
+
+## 5. Run SQL
+
+For questions the read routes do not answer, run one `SELECT` or `WITH` statement against the views in the `query` schema. This needs a token with the `sql` scope, or a signed-in owner, admin or analyst.
+
+1. Create a token as in step 1 with `"scope":"sql"`.
+2. List the views and their columns:
+
+   ```bash
+   curl https://api.example.com/v2/query/schema -H "authorization: Bearer $RA_SQL_TOKEN"
+   ```
+
+3. Run a query on one project. `:from`, `:to` and `:project` are bound from `params`:
+
+   ```bash
+   curl -X POST https://api.example.com/v2/projects/example.com/query \
+     -H "authorization: Bearer $RA_SQL_TOKEN" \
+     -H "content-type: application/json" \
+     -d '{
+       "sql": "SELECT props->>'"'"'plan'"'"' AS plan, count(*) AS signups FROM events WHERE name = '"'"'signup'"'"' AND is_human AND ts >= :from AND ts < :to GROUP BY plan ORDER BY signups DESC",
+       "params": { "from": "2026-09-01T00:00:00.000Z", "to": "2026-10-01T00:00:00.000Z" }
+     }'
+   ```
+
+   The answer is `{ columns, rows, rowCount, truncated, durationMs }`. `POST /v2/query` takes the same body and runs over every project the token may query, with `project_id` as a column.
+
+The [query page](/query) runs these routes from the browser: paste the API URL and the `sql` token, leave the project empty to query all of them, and pick the dates. Limits, saved queries and the other SQL routes are on the [SQL console](/docs/api/sql) page.

@@ -1,0 +1,98 @@
+---
+title: Identify signed-in users
+description: Link visitors to your own user ids, put them in companies or teams, forget them on logout, and gate it all on consent.
+---
+
+This guide connects anonymous visitors to the users of your app. It uses `identify` and `reset` on the [client](/docs/sdk/client), the [`groups`](/docs/plugins/groups) plugin for companies or teams, and the consent methods.
+
+## 1. Decide on a consent mode
+
+Identity follows the same consent rules as every other event, so settle this first.
+
+| `consent` | Before a choice | Use it when |
+| --- | --- | --- |
+| `"optional"` (default) | Events are sent | You do not need to ask first |
+| `"required"` | Events are held in memory, and no visitor or session id is written to storage | Your banner must be answered before anything is sent |
+
+`lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  consent: "required",
+});
+```
+
+## 2. Connect your consent banner
+
+Call `grant` or `revoke` from the banner's buttons. The choice is stored and read again on every page load.
+
+```ts
+import { analytics } from "@/lib/analytics";
+
+acceptButton.addEventListener("click", () => analytics.consent.grant());
+declineButton.addEventListener("click", () => analytics.consent.revoke());
+```
+
+- `grant()` sends the events held so far on this page, then everything after it. Held events live in memory, so events from a page that was left before the choice are gone.
+- `revoke()` drops held and queued events, forgets the visitor, the user id, the traits and the registered props, and sends nothing more.
+- `analytics.consent.status()` returns `granted`, `denied` or `unset`, which tells you whether to show the banner.
+
+## 3. Call `identify` after sign-in
+
+```ts
+analytics.identify("user_123", { plan: "pro" });
+```
+
+This sends an `identify` event with the traits and `userId` as props, which links the current visitor to `user_123`. Traits follow the usual prop limits: flat values, at most 25. Call it on sign-in and on page loads where the user is already signed in; with consent denied it sends nothing.
+
+Use your own stable id, not an email address, so no personal data ends up in the props.
+
+## 4. Add companies or teams
+
+If your app has workspaces or companies, add the `groups` plugin and join the group where the signed-in user is known:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import type { NoProps } from "@remcostoeten/analytics";
+import { groups } from "@remcostoeten/analytics/plugins";
+
+type WorkspaceGroups = {
+  company: { plan: "free" | "pro"; seats: number };
+  team: NoProps;
+};
+
+export const workspace = groups<WorkspaceGroups>();
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [workspace],
+});
+```
+
+```ts
+workspace.set("company", "acme", { plan: "pro", seats: 12 });
+```
+
+Every later event carries `{ company: "acme" }` in its `groups` field. Groups live in memory, so call `set` on every page load. An event carries at most 5 groups; the other limits are on the [groups](/docs/plugins/groups#limits) page.
+
+## 5. Call `reset` on logout
+
+```ts
+analytics.reset();
+```
+
+`reset` forgets the user id, the traits and the registered props, and starts a new visitor and session, so the next person on the same browser is not linked to the previous user. Joined groups stop being sent as well.
+
+## 6. Check the result
+
+Open the site with `?ra=debug`, sign in, and look for the `[ra] RA_EVENT: identify` line in the console. `analytics.status().consent` shows the stored choice.
+
+Identified users are listed by `GET /v2/people` and one person across projects by `GET /v2/people/{userId}`; both need a session or an API token, and visitor-level access to the projects they cover. Reports can break down by a trait with the `trait:<key>` dimension, such as `breakdown/trait:plan`.
