@@ -1,0 +1,83 @@
+---
+title: Concepts
+description: Projects, keys, events, pageviews, routes, visitors, sessions, consent and bot scores.
+---
+
+## Projects
+
+A project is one site or app: an id such as `example.com`, a domain, the origins allowed to send events, a retention period in days and a visibility. Projects are `public` by default, which means anyone can read their aggregates. A `private` project answers only to its members and tokens, and answers 404 to everyone else so its name does not leak.
+
+## Keys and tokens
+
+| Credential | Prefix | Used by | Can |
+| --- | --- | --- | --- |
+| Public key | `pk_` | The browser SDK | Send events, only from the project's allowed origins |
+| Secret key | `sk_` | The server SDK and the proxy | Send events from anywhere, with the visitor's IP and user agent forwarded |
+| API token | `at_` | Scripts, CI and other frontends | Read, administer or run SQL, depending on its scope |
+
+Secret keys and API tokens are shown once, when created or rotated, and stored hashed.
+
+## Events
+
+Every event has a `name` and optional flat `props`. List your custom events once in a type, and the browser and server clients check every call against it:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  checkout: { revenue: number; currency: string };
+  newsletter_subscribed: NoProps;
+};
+```
+
+```ts
+analytics.track("signup", { plan: "pro" });
+analytics.track("newsletter_subscribed");
+```
+
+`track("signup")` without `plan` is a type error. A name is any string up to 64 characters; the built-in names below are snake_case, and custom names read best in the same style.
+
+| Name | Sent by |
+| --- | --- |
+| `pageview` | The core, `<Analytics />` or `analytics.page()` |
+| `identify` | `analytics.identify()` |
+| `click`, `outbound_click`, `file_download`, `form_submit` | The `clicks`, `outboundLinks` and `forms` plugins |
+| `scroll_depth`, `engagement` | The `scrollDepth` and `engagement` plugins |
+| `web_vital` | The `speedInsights` plugin |
+| `error` | `captureError`, `captureMessage`, the `errors` plugin and `ErrorBoundary` |
+| `not_found`, `experiment_exposure` | The `notFound` and `experiments` plugins |
+| `page_request` | `createPageCounter` in server middleware |
+
+## Pageviews and routes
+
+A pageview records the path, the page title and, on the first pageview of a page load, the referrer. The core sends one on load and on every client-side navigation: `pushState`, `replaceState` to a new path, back and forward. Hash routers (`/#/pricing`) report the path inside the hash. A change of only an anchor (`#comments`) is not a new pageview.
+
+A **route** is the template behind a path: `/blog/[slug]` for `/blog/hello` and `/blog/world`. Reports can group by route, so every blog post adds up to one row. `<Analytics />` from `/next` sends routes automatically; with other routers, `useRoutePageviews` and `computeRoute` from `/react`, or `analytics.route("/blog/[slug]")`, set it. Without a route, reports group by path.
+
+## Visitors and sessions
+
+A **visitor** is a random id in `localStorage`, one per browser and site. A **session** is a random id in `sessionStorage` that ends after 30 minutes without events, and at the latest when the tab closes. No cookies are set. `analytics.reset()` starts a new visitor and session, which is what you call on logout.
+
+`analytics.identify(userId, traits)` links the visitor to your own user id, so one person on several devices can be seen as one user. Like every event it follows the consent rules below, and `consent.revoke()` forgets it.
+
+Events sent from the server use `server` as visitor and session, unless the call passes the browser's ids.
+
+## Consent and opt-out
+
+| `consent` option | Before a choice | After `consent.grant()` | After `consent.revoke()` |
+| --- | --- | --- | --- |
+| `"optional"` (default) | Events are sent | Events are sent | Queued events are dropped, the identity is forgotten, nothing is sent |
+| `"required"` | Events are held in memory | Held events and new ones are sent | Held and queued events are dropped, the identity is forgotten, nothing is sent |
+
+The choice is remembered across page loads. Separately, `analytics.optOut()` stops all sending from this browser until `optIn()`.
+
+## Your own traffic
+
+- Opening any tracked page with `?ra=ignore` (with the `ignoreSelf` plugin) stops that browser from sending anything; `?ra=track` undoes it.
+- Events sent while you are signed in to the dashboard as an owner or admin are stored as internal, and reports leave them out.
+- Events from localhost and preview deployments are marked as well.
+
+## Bot scores
+
+Every event gets a score from 0 (human) to 100 (bot), built from the user agent, the network, the request headers, the optional `botSignals` plugin and, later, the session's behaviour. Events are stored whatever their score, with the reasons, and reports count only events that score under 50. A rescore after tuning the weights changes past reports too.

@@ -1,5 +1,6 @@
 import { noop } from "@remcostoeten/analytics-shared/noop";
 
+import { pagePath } from "../core/environment";
 import { definePlugin } from "../core/plugin-host";
 
 /**
@@ -16,7 +17,7 @@ export function scrollDepth() {
     setup: (client) => {
       if (typeof window === "undefined") return noop;
       let deepest = 0;
-      let path = location.pathname;
+      let path = pagePath();
       function measure() {
         const room = document.documentElement.scrollHeight - innerHeight;
         const depth = room <= 0 ? 100 : Math.round((scrollY / room) * 100);
@@ -25,7 +26,7 @@ export function scrollDepth() {
       function report() {
         if (deepest > 0) client.record(path, "scroll_depth", { depth: deepest });
         deepest = 0;
-        path = location.pathname;
+        path = pagePath();
       }
       addEventListener("scroll", measure, { passive: true });
       const removers = [client.onPage(report), client.onHidden(report)];
