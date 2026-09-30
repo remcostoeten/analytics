@@ -24,16 +24,7 @@ export function visitorDetails(headers: Headers): VisitorDetails {
   };
 }
 
-/**
- * @name sessionCookie
- * @description The name of the API's admin session cookie, Better Auth's `session_token` under the
- * `ra` prefix. On HTTPS Better Auth adds the `__Secure-` prefix, which `adminSessionCookie` also
- * matches.
- *
- * @example
- * adminSessionCookie(request.headers.get("cookie"), sessionCookie);
- */
-export const sessionCookie = "ra.session_token";
+const sessionCookie = "ra.session_token";
 
 /**
  * @name adminSessionCookie

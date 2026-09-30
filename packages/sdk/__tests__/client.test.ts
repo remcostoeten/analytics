@@ -50,6 +50,19 @@ describe("track and page", () => {
     expect(second?.page.referrer).toBeUndefined();
   });
 
+  test("reset and route(null) clear the route", async () => {
+    const { analytics, transport } = client();
+    analytics.route("/blog/[slug]");
+    analytics.reset();
+    analytics.page();
+    analytics.route("/docs/[page]");
+    analytics.route(null);
+    analytics.page();
+    await analytics.flush();
+    expect(sent(transport).map((event) => event.page.route ?? null)).toEqual([null, null]);
+    expect(analytics.status().route).toBeNull();
+  });
+
   test("strips props outside the limits", async () => {
     const { analytics, transport } = client();
     const props: { [key: string]: unknown } = { nested: { a: 1 }, long: "x".repeat(300) };
@@ -128,7 +141,7 @@ describe("consent and opt-out", () => {
     const { analytics, transport } = client({ consent: "required" });
     analytics.track("early");
     expect(analytics.status().queued).toBe(1);
-    expect(localStorage.getItem("__ra")).not.toContain("visitor");
+    expect(localStorage.getItem("__ra")).toBeNull();
     analytics.consent.grant();
     await analytics.flush();
     expect(sent(transport).map((event) => event.name)).toEqual(["early"]);
@@ -160,6 +173,67 @@ describe("consent and opt-out", () => {
     await analytics.flush();
     expect(sent(transport).map((event) => event.name)).toEqual(["visible"]);
     expect(drops).toEqual(["opt-out"]);
+  });
+});
+
+describe("privacy signals and other tabs", () => {
+  test("Do Not Track and Global Privacy Control drop every event and store nothing", async () => {
+    for (const name of ["doNotTrack", "globalPrivacyControl"]) {
+      fresh();
+      Object.defineProperty(navigator, name, {
+        value: name === "doNotTrack" ? "1" : true,
+        configurable: true,
+      });
+      const { analytics, transport } = client();
+      const drops: string[] = [];
+      analytics.on("drop", (_, reason) => drops.push(reason));
+      analytics.track("hidden");
+      await analytics.flush();
+      Reflect.deleteProperty(navigator, name);
+      expect(sent(transport)).toEqual([]);
+      expect(drops).toEqual(["dnt"]);
+      expect(localStorage.getItem("__ra")).toBeNull();
+    }
+  });
+
+  test("a revoke in another tab stops this tab at once and is not overwritten", async () => {
+    const { analytics, transport } = client();
+    analytics.track("before");
+    const drops: string[] = [];
+    analytics.on("drop", (_, reason) => drops.push(reason));
+    localStorage.setItem("__ra", JSON.stringify({ consent: "denied" }));
+    dispatchEvent(new StorageEvent("storage", { key: "__ra" }));
+    analytics.track("after");
+    analytics.identify("user_1");
+    await analytics.flush();
+    expect(sent(transport)).toEqual([]);
+    expect(drops).toEqual(["consent", "consent"]);
+    expect(analytics.consent.status()).toBe("denied");
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toEqual({ consent: "denied" });
+  });
+
+  test("shutdown stops listening to other tabs", async () => {
+    const { analytics } = client();
+    await analytics.shutdown();
+    localStorage.setItem("__ra", JSON.stringify({ optOut: true }));
+    dispatchEvent(new StorageEvent("storage", { key: "__ra" }));
+    expect(analytics.isOptedOut()).toBe(false);
+  });
+
+  test("?ra=nodebug clears debug and keeps the visitor", async () => {
+    history.replaceState(null, "", "/?ra=debug");
+    const debugging = client();
+    debugging.analytics.track("first");
+    const visitor = JSON.parse(localStorage.getItem("__ra") ?? "{}").visitor;
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}").debug).toBe(true);
+    await debugging.analytics.shutdown();
+    history.replaceState(null, "", "/?ra=nodebug");
+    const quiet = client();
+    await quiet.analytics.shutdown();
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toMatchObject({
+      debug: false,
+      visitor,
+    });
   });
 });
 
@@ -205,6 +279,24 @@ describe("delivery", () => {
     expect(await analytics.flush()).toEqual({ accepted: 0, duplicates: 0, failed: 1 });
     expect(errors).toEqual(["RA_INGEST_FAILED HTTP 401"]);
     expect(analytics.status().lastError).toBe("HTTP 401");
+  });
+
+  test("events rejected inside a 202 are reported with their reason", async () => {
+    const { analytics, transport } = client({ debug: true });
+    const errors: string[] = [];
+    analytics.on("error", (code, detail) => errors.push(`${code} ${detail}`));
+    transport.respond({
+      ok: true,
+      result: {
+        accepted: 1,
+        duplicates: 0,
+        rejected: [{ index: 1, code: "VALIDATION_FAILED", message: "props.plan is too long" }],
+      },
+    });
+    analytics.track("kept");
+    analytics.track("rejected");
+    expect(await analytics.flush()).toEqual({ accepted: 1, duplicates: 0, failed: 1 });
+    expect(errors).toEqual(["RA_INGEST_REJECTED VALIDATION_FAILED: props.plan is too long"]);
   });
 
   test("shutdown flushes and stops plugins", async () => {

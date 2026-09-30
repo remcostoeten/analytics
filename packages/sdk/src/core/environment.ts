@@ -86,16 +86,33 @@ export function browserContext(release: string | undefined): WireContext {
 
 /**
  * @name debugFlag
- * @description Reads `?ra=debug` from the URL: true turns debug output on in this browser, false
- * leaves the stored choice alone.
+ * @description Reads the debug switch from the URL: `?ra=debug` gives true, which turns debug
+ * output on in this browser, `?ra=nodebug` gives false, which turns it off again without touching
+ * the visitor id, and anything else gives null, which leaves the stored choice alone.
  *
  * @example
- * if (debugFlag()) saved.write({ debug: true }, true);
+ * const flag = debugFlag();
+ * if (flag !== null) saved.write({ debug: flag }, true);
  */
-export function debugFlag(): boolean {
-  return (
-    typeof location !== "undefined" && new URLSearchParams(location.search).get("ra") === "debug"
-  );
+export function debugFlag(): boolean | null {
+  const flag =
+    typeof location === "undefined" ? null : new URLSearchParams(location.search).get("ra");
+  return flag === "debug" ? true : flag === "nodebug" ? false : null;
+}
+
+/**
+ * @name privacySignal
+ * @description True when the browser asks not to be tracked: Do Not Track (`doNotTrack` is "1")
+ * or Global Privacy Control (`globalPrivacyControl` is true). The client drops every event with
+ * the reason `dnt` while it is set. Takes the navigator so tests can pass a plain object.
+ *
+ * @example
+ * privacySignal(globalThis.navigator); // true with Do Not Track on
+ */
+export function privacySignal(
+  browser: { doNotTrack?: string | null; globalPrivacyControl?: boolean } | undefined,
+): boolean {
+  return browser?.doNotTrack === "1" || browser?.globalPrivacyControl === true;
 }
 
 /**
