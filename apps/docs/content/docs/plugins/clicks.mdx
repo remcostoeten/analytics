@@ -1,0 +1,57 @@
+---
+title: clicks
+description: A click event for elements marked with data-ra-click.
+---
+
+```ts
+import { clicks } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { clicks } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [clicks()],
+});
+```
+
+Mark the elements to count in the markup:
+
+```html
+<button data-ra-click="upgrade" data-ra-prop-plan="pro" data-ra-prop-billing-cycle="yearly">
+  Upgrade
+</button>
+```
+
+## Options
+
+`clicks()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `click` | `label` with the value of `data-ra-click`, plus one string prop per `data-ra-prop-*` attribute |
+
+The button above sends:
+
+```ts
+{ label: "upgrade", plan: "pro", billingCycle: "yearly" }
+```
+
+## Behaviour
+
+- One listener on `document`, in the capture phase. A click on a child of a marked element counts for the nearest marked ancestor.
+- Prop names follow the browser's `dataset` naming: the part after `data-ra-prop-` in camelCase, so `data-ra-prop-billing-cycle` becomes `billingCycle`.
+- Clicks on unmarked elements are ignored, and no text content is read.
+- The usual prop limits apply: at most 25 props, values cut at 255 characters.
+
+For React, `TrackClick` from [`/react`](/docs/sdk/react) wraps one element and sends a named event instead.
+
+## In reports
+
+`click` is an ordinary event: `breakdown/prop:label` with `filter[event]=click` counts clicks per label, and `prop:<key>` reads any other prop. Clicks appear among a visit's actions.

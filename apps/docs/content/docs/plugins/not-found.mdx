@@ -1,0 +1,47 @@
+---
+title: notFound
+description: A not_found event with the referrer on pages marked as not found.
+---
+
+```ts
+import { notFound } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { notFound } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [notFound()],
+});
+```
+
+Mark the 404 page with a meta tag:
+
+```html
+<meta name="ra-not-found" />
+```
+
+## Options
+
+`notFound()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `not_found` | `{ referrer: string \| null }`, `document.referrer`, or `null` when there is none |
+
+The event also carries the page path, so each broken URL shows up with where people came from.
+
+## Behaviour
+
+- The plugin looks for `meta[name=ra-not-found]` when it starts and again after every pageview. The tag's `content` is not read.
+- `document.referrer` is the page the browser loaded from. After a client-side navigation it still holds the referrer of the first page load.
+
+## In reports
+
+`breakdown/page` with `filter[event]=not_found` lists the broken paths, and `breakdown/prop:referrer` with the same filter lists the pages that link to them.

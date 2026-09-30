@@ -1,0 +1,42 @@
+---
+title: pageviews
+description: A pageview on load and on every client-side navigation. On by default.
+---
+
+```ts
+import { pageviews } from "@remcostoeten/analytics/plugins";
+```
+
+The client adds this plugin itself unless it is created with `pageviews: false`, so most apps never import it.
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+});
+```
+
+## Options
+
+`pageviews()` takes no options. The client option `pageviews: false` leaves it out.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `pageview` | None from the plugin. The event carries the page path, the title, the route template when one is set and, on the first pageview of a page load, the referrer |
+
+## Behaviour
+
+- One pageview when the client starts, then one after every `history.pushState`, every `history.replaceState` and every `popstate` (back, forward, and hash router changes).
+- The URL compared is the path plus the query string. A navigation to the same URL is skipped, so `replaceState` on the current path sends nothing, and so does a change of only an anchor hash (`#comments`).
+- Hash routers (`/#/pricing`) report the path inside the hash, without its query.
+- Nothing is sent while a route template is set, because a framework adapter such as [`<Analytics />`](/docs/sdk/next) sends pageviews itself. Create the client with `pageviews: false` in that case.
+- The plugin patches `history.pushState` and `history.replaceState` and restores them on `shutdown()`.
+
+## In reports
+
+Pageviews make up the `pageviews` metric and the `page`, `route`, `entry_page` and `exit_page` dimensions. Time on page is the gap to the session's next pageview. The [API overview](/docs/api/overview) lists the read routes.

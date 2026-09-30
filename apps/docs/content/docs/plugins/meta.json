@@ -1,4 +1,19 @@
 {
   "title": "Plugins",
-  "pages": []
+  "pages": [
+    "index",
+    "pageviews",
+    "speed-insights",
+    "scroll-depth",
+    "engagement",
+    "clicks",
+    "outbound-links",
+    "forms",
+    "errors",
+    "ignore-self",
+    "bot-signals",
+    "experiments",
+    "not-found",
+    "groups"
+  ]
 }

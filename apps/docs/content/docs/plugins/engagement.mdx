@@ -1,0 +1,40 @@
+---
+title: engagement
+description: The milliseconds each page was visible.
+---
+
+```ts
+import { engagement } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { engagement } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [engagement()],
+});
+```
+
+## Options
+
+`engagement()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `engagement` | `{ ms: number }`, the milliseconds the page was visible |
+
+## Behaviour
+
+- The clock runs only while `document.visibilityState` is `visible`. Time in a background tab does not count.
+- The total is sent when the next pageview happens or when the tab is hidden, then it starts again from 0. A total of 0 sends nothing.
+- The event is credited to the page that was viewed, not the page navigated to.
+
+## In reports
+
+`engagement` events are stored like any custom event: `filter[event]=engagement` with `metrics=avg:prop.ms` averages them. The `time_on_page` metric does not use them; it is the gap to the session's next pageview. `engagement` events are not listed among a visit's actions.

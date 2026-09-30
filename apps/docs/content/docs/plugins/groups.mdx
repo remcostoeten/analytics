@@ -1,0 +1,86 @@
+---
+title: groups
+description: Report on companies, workspaces or teams instead of only on people.
+---
+
+```ts
+import { groups } from "@remcostoeten/analytics/plugins";
+import type { Groups, TraitsArgs } from "@remcostoeten/analytics/plugins";
+```
+
+Declare the group types and their traits once, and `set` autocompletes both:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import type { NoProps } from "@remcostoeten/analytics";
+import { groups } from "@remcostoeten/analytics/plugins";
+
+type WorkspaceGroups = {
+  company: { plan: "free" | "pro"; seats: number };
+  team: NoProps;
+};
+
+export const workspace = groups<WorkspaceGroups>();
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [workspace],
+});
+
+workspace.set("company", "acme", { plan: "pro", seats: 12 });
+workspace.set("team", "design");
+workspace.leave("team");
+```
+
+## Options
+
+`groups<Map>()` takes no arguments. The type parameter maps each group type to its traits; a type declared with `NoProps` takes no traits. Without it, any type and traits are accepted.
+
+It returns the plugin with two methods:
+
+| Method | Does |
+| --- | --- |
+| `set(type, id, traits?)` | Joins a group, replacing the id of a group of the same type, and sends a `group` event |
+| `leave(type)` | Leaves the group of that type; later events no longer carry it. Sends nothing |
+
+`Groups<Map>` is the type of the returned object and `TraitsArgs<Map, Type>` the type of the optional traits argument.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Group type | A lowercase letter, then up to 31 lowercase letters, digits or underscores |
+| Group id | 1 to 128 characters; longer ids are cut at 128 |
+| Groups per event | 5 |
+
+`set` ignores a call with an invalid type, an empty id, or a sixth type while 5 are joined.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `group` | The traits, plus `groupType` and `groupId` |
+
+`workspace.set("company", "acme", { plan: "pro", seats: 12 })` sends:
+
+```ts
+{ plan: "pro", seats: 12, groupType: "company", groupId: "acme" }
+```
+
+Every later event, the `group` event included, carries the joined groups in its `groups` field:
+
+```ts
+{ company: "acme", team: "design" }
+```
+
+## Behaviour
+
+- Groups live in memory. Call `set` on every page load, where the signed-in user is known.
+- Groups belong to the visitor that joined them. After `reset()` or a revoked consent, events carry them no more.
+- `set` may be called before the client starts; the `group` events are sent once the plugin starts.
+
+## In reports
+
+Reports read groups as the `group:<type>` dimension, for breakdowns and filters: `breakdown/group:company`, `filter[group:company]=acme`. The traits are props of the `group` event, so `breakdown/prop:plan` with `filter[event]=group` reads them.
