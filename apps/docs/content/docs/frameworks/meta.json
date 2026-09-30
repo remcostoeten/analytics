@@ -1,4 +1,4 @@
 {
   "title": "Frameworks",
-  "pages": []
+  "pages": ["index", "nextjs", "react", "vanilla", "vue", "svelte", "astro", "server"]
 }

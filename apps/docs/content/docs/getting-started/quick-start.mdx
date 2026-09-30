@@ -54,27 +54,44 @@ export const analytics = createAnalytics({
 });
 ```
 
-`app/layout.tsx`:
+`app/providers.tsx`:
 
 ```tsx
+"use client";
+
 import type { ReactNode } from "react";
 import { AnalyticsProvider } from "@remcostoeten/analytics/react";
 import { Analytics } from "@remcostoeten/analytics/next";
 import { analytics } from "@/lib/analytics";
 
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <AnalyticsProvider client={analytics}>
+      <Analytics />
+      {children}
+    </AnalyticsProvider>
+  );
+}
+```
+
+`app/layout.tsx`:
+
+```tsx
+import type { ReactNode } from "react";
+import { Providers } from "./providers";
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AnalyticsProvider client={analytics}>
-          <Analytics />
-          {children}
-        </AnalyticsProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
 }
 ```
+
+The provider lives in a Client Component because the client holds functions, which a Server Component layout cannot pass as props.
 
 `<Analytics />` sends a pageview on every navigation with the route template, such as `/blog/[slug]`, which is why the client is created with `pageviews: false`.
 
@@ -116,4 +133,4 @@ curl https://api.example.com/v2/projects/example.com/realtime/events \
 
 - Type your events once for the browser and the server: [Concepts](/docs/getting-started/concepts#events).
 - Track from route handlers, webhooks and jobs: [Server](/docs/sdk/server).
-- Add scroll depth, outbound links, forms and more: [Plugins](/docs/sdk/plugins).
+- Add scroll depth, outbound links, forms and more: [Plugins](/docs/plugins).

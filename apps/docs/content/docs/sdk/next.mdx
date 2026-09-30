@@ -3,22 +3,43 @@ title: Next
 description: Pageviews with route templates in the App Router.
 ---
 
+`app/providers.tsx`:
+
 ```tsx
+"use client";
+
+import type { ReactNode } from "react";
 import { AnalyticsProvider } from "@remcostoeten/analytics/react";
 import { Analytics } from "@remcostoeten/analytics/next";
+import { analytics } from "@/lib/analytics";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <AnalyticsProvider client={analytics}>
+      <Analytics />
+      {children}
+    </AnalyticsProvider>
+  );
+}
+```
+
+`app/layout.tsx`:
+
+```tsx
+import type { ReactNode } from "react";
+import { Providers } from "./providers";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AnalyticsProvider client={analytics}>
-          <Analytics />
-          {children}
-        </AnalyticsProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
 }
 ```
+
+The provider lives in a Client Component because the client holds functions, which a Server Component layout cannot pass as props.
 
 `<Analytics />` sends each pageview with its route template, such as `/blog/[slug]`, so reports group by page type. Create the client with `pageviews: false` so pageviews are not sent twice.

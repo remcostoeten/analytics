@@ -1,0 +1,92 @@
+---
+title: Vanilla
+description: Plain TypeScript or JavaScript with a bundler such as Vite, esbuild or Rollup.
+---
+
+The core client has no framework dependency. Any setup that bundles ES modules can use it. There is no `<script src>` snippet and no CommonJS build, so a page without a bundler cannot load it.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Keys and environment
+
+Pass the options to `createAnalytics`, or put them in the environment as JSON. With Vite:
+
+```bash
+VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+```
+
+The client reads `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG` through literal `process.env` or `import.meta.env` access, the forms bundlers replace at build time. With another bundler, either define one of those or pass the options explicitly. Explicit options win.
+
+Only the public key (`pk_...`) goes in browser code. Use `/_ra` as the endpoint when a server on the same origin runs `createProxy` (see [Server](/docs/frameworks/server)), or the API's `https://api.example.com/v2/events` otherwise.
+
+## Create the client
+
+`src/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+`src/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { clicks, errors, outboundLinks } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [clicks(), outboundLinks(), errors()],
+});
+```
+
+Import it once from your entry file. The first import creates and starts the client; later imports get the same instance.
+
+```ts
+import "./analytics";
+```
+
+## Pageviews
+
+A pageview is sent on load and on every client-side navigation: `pushState`, `replaceState` to a new path, back and forward, and hash routes such as `#/pricing`. A multi-page site gets one pageview per page load. To send them yourself, create the client with `pageviews: false` and call `analytics.page()`. `analytics.route("/blog/[slug]")` sets the route template for the events that follow; once a route is set, the default plugin stops sending, so call `route` and then `page` on each navigation.
+
+## Custom events
+
+```ts
+import { analytics } from "./analytics";
+
+document.querySelector("#upgrade")?.addEventListener("click", () => {
+  analytics.track("signup", { plan: "pro" });
+});
+
+analytics.track("newsletter_subscribed");
+```
+
+With the `clicks()` plugin, markup can send `click` events without code:
+
+```html
+<button data-ra-click="upgrade" data-ra-prop-plan="pro">Upgrade</button>
+```
+
+See [Plugins](/docs/plugins) for the other plugins.
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+With `consent: "required"`, events are held until `consent.grant()`. To start later, for example after your consent banner has loaded, create the client with `autostart: false` and call `analytics.start()`. Events tracked before that are held and sent once it starts. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out) and [Client methods](/docs/sdk/client).

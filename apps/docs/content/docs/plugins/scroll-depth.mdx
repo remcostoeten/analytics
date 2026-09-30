@@ -1,0 +1,41 @@
+---
+title: scrollDepth
+description: The deepest point reached on each page, as a percentage.
+---
+
+```ts
+import { scrollDepth } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { scrollDepth } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [scrollDepth()],
+});
+```
+
+## Options
+
+`scrollDepth()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `scroll_depth` | `{ depth: number }`, a whole percentage from 1 to 100 |
+
+## Behaviour
+
+- Depth is the scroll position divided by the scrollable height of the document, rounded to a whole percentage and capped at 100. A page shorter than the window counts as 100 on its first scroll event.
+- The deepest value is sent when the next pageview happens or when the tab is hidden, then the count starts again from 0. A page with no scroll events sends nothing.
+- The event is credited to the page that was scrolled, not the page navigated to.
+- The scroll listener is passive.
+
+## In reports
+
+The `scroll_depth` metric averages these events as a share of the page, from 0 to 1: `breakdown/page?metrics=visitors,time_on_page,scroll_depth`. A visitor's visits list the deepest scroll per page. `scroll_depth` events are not listed among a visit's actions.

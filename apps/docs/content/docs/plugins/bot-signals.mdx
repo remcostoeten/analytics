@@ -1,0 +1,45 @@
+---
+title: botSignals
+description: Browser bot hints added to every event for the server's bot score.
+---
+
+```ts
+import { botSignals } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { botSignals } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [botSignals()],
+});
+```
+
+## Options
+
+`botSignals()` takes no options.
+
+## Sends
+
+No events of its own. It sets bits in the `signals` field of every event, through a `beforeSend` hook:
+
+| Bit | Name | Set when |
+| --- | --- | --- |
+| `1` | `webdriver` | `navigator.webdriver` is true |
+| `2` | `headless` | The outer window is 0 wide or 0 high, `navigator.languages` is empty, or the user agent says Chrome (not Edge or Opera) and `window.chrome` is missing |
+| `4` | `noInput` | No pointer, key, touch or scroll input has happened yet and the page has never been visible |
+
+`webdriver` and `headless` are checked once, when the client starts. `noInput` is checked for each event, so it clears as soon as the page becomes visible or receives input. Bits already set on an event are kept.
+
+## Behaviour
+
+- The listeners are passive and record only that input happened, never what it was.
+- These hints can be faked, so they only add weight on the server. They never mark an event as human.
+
+## In reports
+
+The API's default bot signals add these weights to the event's bot score, on top of its own server-side signals: `client_webdriver` 60, `client_headless` 25, `client_no_input` 20. An event scoring 50 or more is a bot, and the default `traffic=human` filter leaves it out. The signal names appear in the `bot_reason` dimension, so `breakdown/bot_reason?traffic=all` shows how often each one fired.

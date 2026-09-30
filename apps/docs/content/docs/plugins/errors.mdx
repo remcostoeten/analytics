@@ -1,0 +1,69 @@
+---
+title: errors
+description: Uncaught errors and unhandled rejections, with scrubbed breadcrumbs.
+---
+
+```ts
+import { errors, scrub } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  release: "1.4.0",
+  plugins: [errors()],
+});
+```
+
+## Options
+
+`errors()` takes no options.
+
+## Sends
+
+One `error` event per uncaught error or unhandled promise rejection, through `captureError`:
+
+| Prop | Type | Value |
+| --- | --- | --- |
+| `message` | `string` | The scrubbed message, cut at 255 characters |
+| `type` | `string` | The error's `name`, such as `TypeError` |
+| `stack` | `string` | The scrubbed stack, cut at 2048 characters; left out when the error has none |
+| `level` | `string` | `error` |
+| `breadcrumbs` | `string` | Up to 20 lines, oldest first, cut at 2048 characters in total |
+
+A rejection with a value that is not an `Error` is recorded as an `Error` whose message is that value as a string.
+
+## Breadcrumbs
+
+Each line reads `<Unix milliseconds> <kind> <message>`, with the message scrubbed and cut at 200 characters. Only the last 20 are kept.
+
+| Kind | Recorded when | Message |
+| --- | --- | --- |
+| `navigation` | A pageview happens | The path |
+| `click` | Any element is clicked | The tag name, such as `BUTTON` |
+| `fetch` | A `fetch` resolves with a status outside 200 to 299 | The status and the URL |
+| `event` | Any other event is sent | The event name |
+
+A `fetch` that rejects, such as a network error, adds no breadcrumb. The plugin wraps `window.fetch` to see responses and restores the original on `shutdown()`.
+
+## scrub
+
+`scrub(text)` is the function the plugin runs over every message, stack and breadcrumb. It drops query strings and replaces emails, tokens of 20 or more letters, digits, underscores or dashes, and runs of 6 or more digits with `[x]`:
+
+```ts
+import { scrub } from "@remcostoeten/analytics/plugins";
+
+scrub("GET /api/users?token=abc failed for ada@example.com");
+// "GET /api/users[x] failed for [x]"
+```
+
+Use it on your own text before passing it to `captureError` or `captureMessage`, which do not scrub in the browser.
+
+## In reports
+
+The API scrubs messages, stacks and breadcrumbs again before storing them, then groups errors into issues by type, normalised message and top in-app stack frame. Issues are read with `GET /v2/projects/:project/issues`, or through the [admin client](/docs/sdk/admin), and the `issues` [SQL view](/docs/api/sql) lists them. Set `release` in the client options so issues record the release they first and last appeared in.

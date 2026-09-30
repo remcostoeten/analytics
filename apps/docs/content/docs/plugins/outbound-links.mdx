@@ -1,0 +1,44 @@
+---
+title: outboundLinks
+description: Clicks on links to other hosts and on file downloads.
+---
+
+```ts
+import { outboundLinks } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { outboundLinks } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [outboundLinks()],
+});
+```
+
+## Options
+
+`outboundLinks()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `file_download` | `{ url: string, extension: string }` |
+| `outbound_click` | `{ url: string, host: string }` |
+
+`url` is the link's origin and path, without its query string or hash. `extension` is lowercase. `host` includes the port when the link has one.
+
+## Behaviour
+
+- One click listener on `document`, in the capture phase, for the nearest `a[href]` around the clicked element. Only `http:` and `https:` links count; `mailto:`, `tel:` and others are ignored.
+- A link whose path ends in one of these extensions sends `file_download`, whichever host it points to: `pdf`, `zip`, `gz`, `dmg`, `exe`, `msi`, `pkg`, `deb`, `rpm`, `csv`, `xls`, `xlsx`, `doc`, `docx`, `ppt`, `pptx`, `mp3`, `mp4`, `mov`, `epub`, `apk`. Matching ignores case.
+- Any other link to a host other than the current one sends `outbound_click`. A subdomain is another host.
+- The plugin never blocks or delays the navigation.
+
+## In reports
+
+`breakdown/prop:host` with `filter[event]=outbound_click` lists the sites people leave to; `breakdown/prop:url` with `filter[event]=file_download` lists downloads.

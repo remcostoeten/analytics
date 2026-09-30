@@ -1,0 +1,189 @@
+---
+title: Next.js
+description: App Router setup with route templates, a same-origin /_ra route and server-side tracking.
+---
+
+Next.js 15 or later with the App Router uses the core client, `/react` for the provider and hooks, `/next` for pageviews with route templates, `/proxy` for the `/_ra` route and `/server` in route handlers and server actions.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Keys and environment
+
+`.env.local`:
+
+```bash
+NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
+```
+
+| Variable | Read by | Holds |
+| --- | --- | --- |
+| `NEXT_PUBLIC_RA_CONFIG` | `createAnalytics` in the browser | JSON options: project, public key and endpoint |
+| `RA_SECRET` | Your `/_ra` route and server code | The secret key. It must never reach the browser, so it has no `NEXT_PUBLIC_` prefix |
+| `RA_ENDPOINT` | Your `/_ra` route and server code | The API's base URL; the SDK adds `/v2/events` |
+
+`RA_ENDPOINT` is a name used on this page, not one the SDK reads. `createProxy` and `createServerAnalytics` read JSON from `RA_CONFIG` for options you leave out, so `RA_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'` works as well.
+
+## Events
+
+`lib/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+## Create the client
+
+`lib/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  pageviews: false,
+  plugins: [speedInsights(), errors()],
+});
+```
+
+`pageviews: false` because `<Analytics />` sends the pageviews, each with its route template such as `/blog/[slug]`. The client starts only in the browser, so the module is safe to import from components that also render on the server.
+
+The client holds functions, so it cannot be passed as a prop from a Server Component. Render the provider from a Client Component instead.
+
+`app/providers.tsx`:
+
+```tsx
+"use client";
+
+import type { ReactNode } from "react";
+import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { Analytics } from "@remcostoeten/analytics/next";
+import { analytics } from "@/lib/analytics";
+
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <AnalyticsProvider client={analytics}>
+      <Analytics />
+      {children}
+    </AnalyticsProvider>
+  );
+}
+```
+
+`app/layout.tsx`:
+
+```tsx
+import type { ReactNode } from "react";
+import { Providers } from "./providers";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+`<Analytics />` wraps itself in `Suspense` because it reads `useSearchParams`, so static pages keep rendering on the server. It sends a pageview on every navigation, including a change of only the query string. See [Next](/docs/sdk/next).
+
+## Custom events
+
+In a Client Component, `useAnalytics<Events>()` returns the client from the provider, typed by your events:
+
+```tsx
+"use client";
+
+import { useAnalytics } from "@remcostoeten/analytics/react";
+import type { Events } from "@/lib/events";
+
+export function UpgradeButton() {
+  const analytics = useAnalytics<Events>();
+  return <button onClick={() => analytics.track("signup", { plan: "pro" })}>Upgrade</button>;
+}
+```
+
+`TrackClick` and `ErrorBoundary` from `/react` work the same way; see [React](/docs/sdk/react). Importing `analytics` from `@/lib/analytics` directly also works in any client code.
+
+## Serve `/_ra`
+
+`app/%5Fra/route.ts` serves `/_ra`. A folder starting with `_` is private in the App Router, so the underscore is URL-encoded:
+
+```ts
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+export const POST = createProxy({
+  secret: process.env.RA_SECRET,
+  endpoint: process.env.RA_ENDPOINT,
+});
+```
+
+The proxy accepts only same-site `POST` requests up to 64 KB, adds the secret key and the visitor's IP and user agent, and forwards the body to `/v2/events`. See [Proxy](/docs/sdk/proxy).
+
+## Server-side tracking
+
+`lib/server-analytics.ts`:
+
+```ts
+import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import type { Events } from "./events";
+
+export const serverAnalytics = createServerAnalytics<Events>({
+  secret: process.env.RA_SECRET,
+  endpoint: process.env.RA_ENDPOINT,
+});
+```
+
+In a route handler, pass the incoming `request` so the visitor's IP and user agent are forwarded. `withErrors` records anything the handler throws and rethrows it:
+
+```ts
+import { serverAnalytics } from "@/lib/server-analytics";
+
+export const POST = serverAnalytics.withErrors(async (request) => {
+  const result = await serverAnalytics.track("signup", { plan: "pro" }, { request });
+  if (!result.ok) console.warn(result.error.code);
+  return Response.json({ ok: true });
+});
+```
+
+A server action has no `request`, so pass the headers from `next/headers` instead:
+
+```ts
+"use server";
+
+import { headers } from "next/headers";
+import { serverAnalytics } from "@/lib/server-analytics";
+
+export async function subscribe(formData: FormData) {
+  await serverAnalytics.track("newsletter_subscribed", {}, { headers: await headers() });
+}
+```
+
+Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. On Vercel the send is kept alive after the response without extra code. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. See [Server](/docs/sdk/server).
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+Create the client with `consent: "required"` to hold every event until `consent.grant()`. Call `identify` after sign-in and `reset` on logout. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out).
+
+## Count blocked pageviews
+
+`createPageCounter` from `/proxy` counts HTML page loads on the server as `page_request` events, which the dashboard compares with pageviews to estimate how many visitors block the client. See [Proxy](/docs/sdk/proxy).

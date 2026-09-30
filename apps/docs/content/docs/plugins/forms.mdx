@@ -1,0 +1,43 @@
+---
+title: forms
+description: A form_submit event with the form id and the path it posts to.
+---
+
+```ts
+import { forms } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { forms } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [forms()],
+});
+```
+
+## Options
+
+`forms()` takes no options.
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `form_submit` | `{ form: string, action: string }` |
+
+- `form` is the form's `id`, else its `name` attribute, else an empty string.
+- `action` is the path of the form's `action` URL, or of the current page when the form has none. The host and query string are left out.
+
+## Behaviour
+
+- One `submit` listener on `document`, in the capture phase, so every form on the page counts, including forms added later.
+- Nothing from the fields is read: no values, names or counts.
+- The event is sent when the browser fires `submit`, whether or not your own handler then cancels it or the request fails. A form the browser's built-in validation blocks fires no `submit` and sends nothing.
+
+## In reports
+
+`breakdown/prop:form` with `filter[event]=form_submit` counts submissions per form.

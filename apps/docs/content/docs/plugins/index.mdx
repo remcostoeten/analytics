@@ -1,0 +1,70 @@
+---
+title: Overview
+description: Opt-in features, each in its own file so an app only ships what it uses.
+---
+
+Import plugins from `@remcostoeten/analytics/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`, which returns its remover. No plugin imports another, so each one adds only its own code to the bundle.
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, scrollDepth } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [scrollDepth()],
+});
+
+analytics.use(errors());
+```
+
+Every event a plugin sends goes through the same consent, opt-out and `beforeSend` checks as `track`. Plugins that read the page, such as `scrollDepth` or `clicks`, do nothing during server rendering.
+
+| Plugin | Sends |
+| --- | --- |
+| [`pageviews()`](/docs/plugins/pageviews) | `pageview` on load and on client-side navigation; on by default |
+| [`speedInsights(options?)`](/docs/plugins/speed-insights) | `web_vital` for LCP, INP, CLS, FCP and TTFB |
+| [`scrollDepth()`](/docs/plugins/scroll-depth) | `scroll_depth` with the deepest percentage reached on a page |
+| [`engagement()`](/docs/plugins/engagement) | `engagement` with the milliseconds a page was visible |
+| [`clicks()`](/docs/plugins/clicks) | `click` for elements with `data-ra-click` |
+| [`outboundLinks()`](/docs/plugins/outbound-links) | `outbound_click` for other hosts and `file_download` for files |
+| [`forms()`](/docs/plugins/forms) | `form_submit` with the form id and action path |
+| [`errors()`](/docs/plugins/errors) | `error` for uncaught errors and rejections, with breadcrumbs |
+| [`ignoreSelf()`](/docs/plugins/ignore-self) | Nothing; `?ra=ignore` opts this browser out |
+| [`botSignals()`](/docs/plugins/bot-signals) | Nothing of its own; adds bot hint bits to every event |
+| [`experiments(assigned)`](/docs/plugins/experiments) | `experiment_exposure` per experiment, and an `experiment:<id>` prop on every event |
+| [`notFound()`](/docs/plugins/not-found) | `not_found` with the referrer on pages marked as not found |
+| [`groups<Groups>()`](/docs/plugins/groups) | `group` when `set` joins a group, and the joined groups on every event |
+
+## Bundle budgets
+
+`bun run size` gzips each plugin bundled alone and fails the build above its budget: 0.6 KB per plugin, 0.7 KB for `errors` and 2.5 KB for `speedInsights`.
+
+## Writing a plugin
+
+```ts
+import { definePlugin } from "@remcostoeten/analytics";
+
+export function pageSeen() {
+  return definePlugin({
+    name: "page-seen",
+    setup: (client) => {
+      const remove = client.onPage(() => client.record(location.pathname, "page_seen", {}));
+      return remove;
+    },
+  });
+}
+```
+
+`setup` receives the client with every [client method](/docs/sdk/client) plus these, and returns its cleanup, which `shutdown()` and the remover from `use()` call:
+
+| Member | Does |
+| --- | --- |
+| `beforeSend(fn)` | Runs `fn` on every event before it is queued; return the event, changed or not, or `null` to drop it. Hooks run in registration order |
+| `onPage(fn)` | Runs `fn` after every pageview |
+| `onHidden(fn)` | Runs `fn` when the tab is hidden or the page is left, just before the queue is flushed |
+| `onConsent(fn)` | Runs `fn` with `granted` or `denied` when consent changes |
+| `record(path, name, props)` | Sends an event credited to `path` instead of the current page |
+
+Each hook returns its remover. Adding the same plugin object twice runs the previous cleanup first.

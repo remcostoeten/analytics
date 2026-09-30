@@ -1,0 +1,52 @@
+---
+title: experiments
+description: Tag every event with the visitor's experiment variants and record one exposure per page load.
+---
+
+```ts
+import { experiments } from "@remcostoeten/analytics/plugins";
+```
+
+The plugin does not assign variants. Pass the variants your own code or feature flag service picked:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { experiments } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [experiments({ hero: "b", pricing: "annual-first" })],
+});
+```
+
+## Options
+
+| Parameter | Type | Default | Does |
+| --- | --- | --- | --- |
+| `assigned` | `{ [experiment: string]: string }` | required | Each experiment id with the variant this visitor sees |
+
+## Sends
+
+| Event | Props |
+| --- | --- |
+| `experiment_exposure` | `{ experiment: string, variant: string }`, one per experiment |
+
+Every event sent after the plugin starts also carries one `experiment:<id>` prop per experiment. With the example above, a later `signup` carries:
+
+```ts
+{ "experiment:hero": "b", "experiment:pricing": "annual-first", plan: "pro" }
+```
+
+## Behaviour
+
+- Exposures are sent when the plugin starts: once per page load when it is passed in `plugins`, or when `analytics.use()` adds it.
+- The `experiment:<id>` props are added with `analytics.register()`, so they count toward the 25 props an event may carry, are remembered in `localStorage` across reloads when consent allows it, and are cleared by `reset()` and by revoking consent.
+- Because registered props are remembered, an experiment removed from `assigned` stays on events until `reset()`. Registering the same id again replaces its variant.
+
+## In reports
+
+The API records each exposure on the visitor, so a visitor's profile shows `experiments: { "hero": "b" }` and the `visitors` [SQL view](/docs/api/sql) has an `experiments` column. `breakdown/prop:variant` with `filter[event]=experiment_exposure` and `filter[prop:experiment]=hero` counts exposures per variant.
+
+The `prop:<key>` dimension accepts letters, digits, underscores, dots and dashes only, so the `experiment:<id>` props are read through SQL, for example `props->>'experiment:hero'` in the `events` view.

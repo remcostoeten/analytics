@@ -1,0 +1,41 @@
+---
+title: ignoreSelf
+description: Exclude your own browser with a query parameter.
+---
+
+```ts
+import { ignoreSelf } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { ignoreSelf } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [ignoreSelf()],
+});
+```
+
+## Options
+
+`ignoreSelf()` takes no options.
+
+## Sends
+
+Nothing. It reads the `ra` query parameter once, when the client starts:
+
+| URL | Does |
+| --- | --- |
+| `?ra=ignore` | Calls `analytics.optOut()`: this browser stops sending |
+| `?ra=track` | Calls `analytics.optIn()`: this browser sends again |
+
+Open any page that loads the client with `?ra=ignore` once per browser. The opt-out is kept in `localStorage`, so it lasts until `?ra=track` or until the site data is cleared, and it applies to this site only.
+
+`?ra=debug`, which logs every event to the console, is handled by the core and works without this plugin.
+
+## In reports
+
+Events from an opted-out browser are dropped before they are queued, so they never reach the API. To keep your own traffic but leave it out of reports instead, mark the visitor as internal with `PATCH /v2/projects/:project/visitors/:visitor`; the default `traffic=human` filter excludes internal traffic.

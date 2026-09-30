@@ -2,6 +2,8 @@
 
 Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
 
+`./setup-vercel.sh` at the repo root does steps 1, 2, 5, 6 and 7 in one run once step 4 is done: it creates both projects, sets their variables and domains, starts a deploy, sets the ignored build step on the v1 projects and, when `gh` is signed in, fills the GitHub `production` environment. It needs `VERCEL_TOKEN`, `DATABASE_URL`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, keeps the generated secrets in `.env.deploy`, and is safe to rerun. `./setup-vercel.sh --help` lists the optional variables.
+
 ## 1. Stop v1 building on every push
 
 In Vercel, for both `ingestion` and `v1.analytics`: Settings, Git, Ignored Build Step, "Run my Bash script":

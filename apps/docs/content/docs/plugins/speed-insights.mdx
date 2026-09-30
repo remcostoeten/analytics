@@ -1,0 +1,80 @@
+---
+title: speedInsights
+description: Real-user Core Web Vitals from the web-vitals attribution build.
+---
+
+```ts
+import { speedInsights, speedProps } from "@remcostoeten/analytics/plugins";
+import type { SpeedOptions } from "@remcostoeten/analytics/plugins";
+```
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { speedInsights } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [speedInsights({ sampleRate: 0.5 })],
+});
+```
+
+## Options
+
+`SpeedOptions`, all optional:
+
+| Option | Type | Default | Does |
+| --- | --- | --- | --- |
+| `sampleRate` | `number` | `1` | Share of page loads that measure, from 0 to 1. Decided once per page load |
+| `random` | `() => number` | `Math.random` | The number compared with `sampleRate`; a page load measures when it is below the rate |
+| `load` | `() => Promise<Vitals>` | `() => import("web-vitals/attribution")` | Loads the `onLCP`, `onINP`, `onCLS`, `onFCP` and `onTTFB` functions |
+
+`random` and `load` exist for tests; apps set `sampleRate` only.
+
+## Sends
+
+One `web_vital` event per metric:
+
+| Prop | Type | Value |
+| --- | --- | --- |
+| `metric` | `string` | `lcp`, `inp`, `cls`, `fcp` or `ttfb` |
+| `id` | `string` | The web-vitals metric id, so a later report of the same metric replaces the earlier one |
+| `value` | `number` | CLS rounded to 4 decimals, the others rounded to whole milliseconds |
+| `rating` | `string` | `good`, `needs-improvement` or `poor`, from web-vitals |
+| `navigationType` | `string` | The web-vitals navigation type, such as `navigate`, `reload` or `back-forward` |
+| `connection` | `string` or `null` | `navigator.connection.effectiveType`, such as `4g`, or `null` where the browser does not expose it |
+| `selector` | `string` or `null` | The attributed element: the LCP target, the INP interaction target or the largest CLS shift target; `null` for FCP and TTFB |
+| `sampleRate` | `number` | The `sampleRate` in effect |
+| `route` | `string` | The route template, only when one was set when the page loaded |
+
+## Behaviour
+
+- The plugin measures the hard navigation only. Every metric is credited to the path the page loaded with, even when it is sent after a client-side navigation.
+- `web-vitals/attribution` is loaded with a dynamic import, and only on page loads that are sampled in.
+- LCP, INP and CLS are reported on every change. The buffer keeps the latest value per metric id, so the final values are ready even when the page unloads without a visibility change.
+- Buffered metrics are sent together when the tab is hidden, when the next pageview happens, or when 6 metrics are waiting.
+
+## speedProps
+
+`speedProps(metric, sampleRate, connection)` is the function the plugin uses to turn a web-vitals metric into the props above, without `route`. It is exported for custom reporting:
+
+```ts
+import { onLCP } from "web-vitals/attribution";
+import { speedProps } from "@remcostoeten/analytics/plugins";
+import { analytics } from "./analytics";
+
+onLCP((metric) => analytics.track("web_vital", speedProps(metric, 1, null)));
+```
+
+| Parameter | Type | Does |
+| --- | --- | --- |
+| `metric` | An LCP, INP, CLS, FCP or TTFB metric with attribution | The measured metric |
+| `sampleRate` | `number` | Written to the `sampleRate` prop |
+| `connection` | `string` or `null` | Written to the `connection` prop |
+
+## In reports
+
+The API stores a `web_vital` event as a speed row unless it comes from bot, internal, localhost or preview traffic, names an unknown metric or rating, or holds an impossible value (negative, CLS above 10, a timing above 120 seconds). The row is keyed by the project and the metric `id`, so updates of INP and CLS replace earlier ones. Tablets count as mobile.
+
+The [SQL views](/docs/api/sql) `web_vitals` (one row per metric) and `daily_vitals` (daily percentiles) expose them. The rollup job keeps daily percentiles and rating counts per route, device and metric, and drops raw speed rows older than 30 days.

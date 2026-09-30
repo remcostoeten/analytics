@@ -15,16 +15,16 @@ It has three parts:
 
 ## What it runs on
 
-The browser core has no framework dependency. Anything that bundles ES modules can use it, and the framework entries add conveniences on top.
+The browser core has no framework dependency. Anything that bundles ES modules can use it, and the framework entries add conveniences on top. [Frameworks](/docs/frameworks) has a setup page per stack.
 
 | Stack | What you use |
 | --- | --- |
-| Next.js 15 or later | The core, `/react` and `/next` for route templates, `/proxy` for the `/_ra` route, `/server` in route handlers and server actions |
-| React 19 with any router | The core and `/react`. Pageviews follow `pushState` routers without extra code |
-| Vite, vanilla TypeScript or JavaScript | The core and plugins |
-| Vue, Svelte, SvelteKit, Solid, Astro, Preact | The core and plugins. There are no dedicated adapters |
-| Node, Bun, Deno, Vercel Functions, Cloudflare Workers | `/server` and `/proxy`, on any runtime with `fetch` and the standard `Request` and `Response` |
-| Any other language | `POST /v2/events` with a secret key, as described in the [API reference](/docs/reference) |
+| [Next.js 15 or later](/docs/frameworks/nextjs) | The core, `/react` and `/next` for route templates, `/proxy` for the `/_ra` route, `/server` in route handlers and server actions |
+| [React 19 with any router](/docs/frameworks/react) | The core and `/react`. Pageviews follow `pushState` routers without extra code |
+| [Vite, vanilla TypeScript or JavaScript](/docs/frameworks/vanilla) | The core and plugins |
+| [Vue](/docs/frameworks/vue), [Svelte, SvelteKit](/docs/frameworks/svelte), Solid, [Astro](/docs/frameworks/astro), Preact | The core and plugins. There are no dedicated adapters |
+| [Node, Bun, Deno, Vercel Functions, Cloudflare Workers](/docs/frameworks/server) | `/server` and `/proxy`, on any runtime with `fetch` and the standard `Request` and `Response` |
+| [Any other language](/docs/frameworks/server#other-languages) | `POST /v2/events` with a secret key, as described in the [API reference](/docs/reference) |
 
 There is no `<script src>` snippet and no CommonJS build.
 

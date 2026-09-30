@@ -1,0 +1,106 @@
+---
+title: Vue
+description: Vue 3 with Vite and Vue Router, using the core client and plugins.
+---
+
+There is no Vue adapter. The core client is created once in a module, and the default `pageviews` plugin follows Vue Router, which navigates with `pushState`, or with hash URLs in `createWebHashHistory`.
+
+## Install
+
+```bash
+npm install @remcostoeten/analytics
+```
+
+## Keys and environment
+
+`.env`:
+
+```bash
+VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+```
+
+Only the public key (`pk_...`) goes in browser code. Use `/_ra` when a server on the same origin runs `createProxy`, or `https://api.example.com/v2/events` for a static site. The secret key belongs on a server; see [Server](/docs/frameworks/server).
+
+## Create the client
+
+`src/events.ts`:
+
+```ts
+import type { NoProps } from "@remcostoeten/analytics";
+
+export type Events = {
+  signup: { plan: "free" | "pro" };
+  newsletter_subscribed: NoProps;
+};
+```
+
+`src/analytics.ts`:
+
+```ts
+import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import type { Events } from "./events";
+
+export const analytics = createAnalytics<Events>({
+  plugins: [speedInsights(), errors()],
+});
+```
+
+`src/main.ts`:
+
+```ts
+import { createApp } from "vue";
+import App from "./App.vue";
+import { analytics } from "./analytics";
+import { router } from "./router";
+
+const app = createApp(App);
+app.config.errorHandler = (error) => analytics.captureError(error);
+app.use(router).mount("#app");
+```
+
+The client starts itself only where `window` exists, so with server rendering the same module is safe to import on the server and starts in the browser.
+
+## Pageviews and route templates
+
+With the default plugin, every navigation sends a pageview with its path. To add the route template, turn the plugin off and report each navigation from the router:
+
+```ts
+import { createRouter, createWebHistory } from "vue-router";
+import { analytics } from "./analytics";
+import { routes } from "./routes";
+
+export const router = createRouter({ history: createWebHistory(), routes });
+
+router.afterEach((to, from, failure) => {
+  if (failure) return;
+  analytics.route(to.matched.at(-1)?.path ?? null);
+  analytics.page();
+});
+```
+
+Create the client with `pageviews: false` for this. The route is Vue Router's own pattern, such as `/blog/:slug`; reports group by whatever string you pass.
+
+## Custom events
+
+```vue
+<script setup lang="ts">
+import { analytics } from "@/analytics";
+</script>
+
+<template>
+  <button @click="analytics.track('signup', { plan: 'pro' })">Upgrade</button>
+</template>
+```
+
+`track` is typed by `Events`, so a wrong prop is a type error with `vue-tsc`. The `clicks()` plugin sends `click` events from `data-ra-click` attributes without code; see [Plugins](/docs/plugins).
+
+## Consent and identity
+
+```ts
+analytics.consent.grant();
+analytics.identify("user_123", { plan: "pro" });
+analytics.reset();
+```
+
+With `consent: "required"`, events are held until `consent.grant()`. Call `identify` after sign-in and `reset` on logout. See [Consent and opt-out](/docs/getting-started/concepts#consent-and-opt-out).
