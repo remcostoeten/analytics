@@ -4,7 +4,7 @@ import { IngestEnvelope } from "@remcostoeten/analytics-contract";
 import { Value } from "@sinclair/typebox/value";
 
 import { eventsUrl, visitorDetails } from "../src/server/forwarding";
-import { createServerAnalytics } from "../src/server/index";
+import { createServerAnalytics, serverVisitor } from "../src/server/index";
 import type { ServerConfig } from "../src/server/index";
 import { bodyText, withNativeRuntime } from "./native";
 
@@ -54,13 +54,18 @@ describe("createServerAnalytics", () => {
     const { calls, fetcher } = api();
     const analytics = server(fetcher, { release: "2026.09.28" });
     const first = analytics.track("checkout", { revenue: 49 }, { request: visitorRequest() });
-    const second = analytics.track("newsletter_subscribed");
+    const second = analytics.track(
+      "newsletter_subscribed",
+      {},
+      { origin: "https://remcostoeten.nl" },
+    );
     expect(await first).toEqual({ ok: true, error: null, accepted: 2, duplicates: 0, failed: 0 });
     expect(await second).toEqual(await first);
     expect(calls).toHaveLength(1);
     const [call] = calls;
     expect(call?.url).toBe("https://api.example.test/v2/events");
     expect(call?.headers.get("authorization")).toBe("Bearer sk_test");
+    expect(call?.headers.get("origin")).toBe("https://remcostoeten.nl");
     const [checkout, newsletter] = call?.body.events ?? [];
     expect(checkout).toMatchObject({
       name: "checkout",
@@ -191,6 +196,59 @@ describe("createServerAnalytics", () => {
     }
     expect(thrown).toBeInstanceOf(Error);
     expect(calls[0]?.body.events[0]?.props).toMatchObject({ message: "order failed" });
+  });
+
+  test("forwards the request's site origin and only the admin session cookie", async () => {
+    const { calls, fetcher } = api();
+    const request = new Request("http://localhost:3000/api/checkout", {
+      headers: {
+        "x-forwarded-host": "app-git-main-remco.vercel.app",
+        "x-forwarded-proto": "https",
+        cookie: "theme=dark; __Secure-ra.session_token=abc.def; other=1",
+      },
+    });
+    await server(fetcher, { origin: "https://remcostoeten.nl" }).track(
+      "checkout",
+      { revenue: 1 },
+      { request },
+    );
+    expect(calls[0]?.headers.get("origin")).toBe("https://app-git-main-remco.vercel.app");
+    expect(calls[0]?.headers.get("cookie")).toBe("__Secure-ra.session_token=abc.def");
+  });
+
+  test("sends the origin option without a request, and no cookie or visitor details", async () => {
+    const { calls, fetcher } = api();
+    await server(fetcher, { origin: "http://localhost:3000" }).track("newsletter_subscribed");
+    const [call] = calls;
+    expect(call?.headers.get("origin")).toBe("http://localhost:3000");
+    expect(call?.headers.get("cookie")).toBeNull();
+    expect(call?.headers.get("x-visitor-ip")).toBeNull();
+    expect(call?.headers.get("x-visitor-ua")).toBeNull();
+    expect(call?.body.events[0]?.context?.ip).toBeUndefined();
+    expect(call?.body.events[0]?.context?.ua).toBeUndefined();
+  });
+
+  test("keeps events from different sites or admins in separate requests", async () => {
+    const { calls, fetcher } = api();
+    const analytics = server(fetcher);
+    void analytics.track("checkout", { revenue: 1 }, { origin: "https://remcostoeten.nl" });
+    void analytics.track("checkout", { revenue: 2 }, { origin: "http://localhost:3000" });
+    void analytics.track("checkout", { revenue: 3 }, { origin: "https://remcostoeten.nl" });
+    expect((await analytics.flush()).accepted).toBe(3);
+    expect(calls.map((call) => [call.headers.get("origin"), call.body.events.length])).toEqual([
+      ["https://remcostoeten.nl", 2],
+      ["http://localhost:3000", 1],
+    ]);
+  });
+
+  test("events without a visitor or session use serverVisitor", async () => {
+    const { calls, fetcher } = api();
+    await server(fetcher).track("newsletter_subscribed");
+    expect(serverVisitor).toBe("server");
+    expect(calls[0]?.body.events[0]).toMatchObject({
+      visitor: serverVisitor,
+      session: serverVisitor,
+    });
   });
 
   test("reads RA_CONFIG under explicit options", async () => {
