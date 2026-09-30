@@ -4,7 +4,7 @@ set -euo pipefail
 team="${VERCEL_TEAM:-remcostoetens-projects}"
 repo="remcostoeten/analytics"
 api_project="${API_PROJECT:-analytics-api}"
-docs_project="${DOCS_PROJECT:-analytics-docs}"
+docs_project="${DOCS_PROJECT:-v2.analytics-docs}"
 api_domain="${API_DOMAIN:-api.remcostoeten.nl}"
 docs_domain="${DOCS_DOMAIN:-docs.analytics.remcostoeten.nl}"
 dashboard_origin="${DASHBOARD_ORIGIN:-https://analytics.remcostoeten.nl}"

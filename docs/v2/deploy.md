@@ -66,7 +66,7 @@ Add the domain `api.remcostoeten.nl`. Check `https://api.remcostoeten.nl/v2/heal
 
 ## 6. The docs site on Vercel
 
-New project `analytics-docs`, same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
+Project `v2.analytics-docs` (already created), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
 
 ## 7. Scheduled jobs
 
