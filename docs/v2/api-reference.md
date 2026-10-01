@@ -978,7 +978,7 @@ These counters come from Postgres, not instance memory, so they are correct acro
 
 ### Speed insights
 
-Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`. Raw speed rows are kept 30 days; days before that come from the daily rollup, where a day's percentile is the sample-weighted mean of its per-route and per-device percentiles. The rollup has no page, country or selector, so `filter[page]`, `filter[country]` and `/speed/elements` cover the last 30 days only, and `/speed/routes` leaves out rolled-up samples without a route.
+Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `environment=production|preview|all` (default production), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`. Raw speed rows are kept 30 days; days before that come from the daily rollup, where a day's percentile is the sample-weighted mean of its per-route and per-device percentiles. The rollup has no page, country or selector, so `filter[page]`, `filter[country]` and `/speed/elements` cover the last 30 days only, and `/speed/routes` leaves out rolled-up samples without a route. `/speed/timeseries` takes `interval=hour|day` (default day); hourly series cover at most 7 days and raw rows only. `/speed/routes` takes `group=route|path` (default route; `path` covers raw rows only) and `minShare` (default 0.005), which leaves out entries with under that share of the samples, as Vercel hides URLs under 0.5% of visits; `minShare=0` keeps them all. The rollup holds production rows only, so `environment=preview` covers the last 30 days.
 
 Each metric's percentile is scored 0 to 100 on a log-normal curve where the good threshold scores 90 and the poor threshold 50, and the score is LCP 30%, INP 30%, CLS 25% and FCP 15% of those (TTFB is shown, not scored); metrics without enough samples drop out and the weights of the rest are scaled up. With the values below, LCP 2710 ms scores 86, INP 140 ms 96, CLS 0.06 98 and FCP 1520 ms 96, so the score is 0.3 × 86 + 0.3 × 96 + 0.25 × 98 + 0.15 × 96 = 93.5, shown as 94.
 
@@ -1051,6 +1051,7 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
   },
   "percentile": 75,
   "device": "mobile",
+  "environment": "production",
   "range": {
     "from": "2026-08-28T00:00:00.000Z",
     "to": "2026-09-27T00:00:00.000Z"
@@ -1079,6 +1080,8 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
   "metric": "lcp",
   "percentile": 75,
   "device": "mobile",
+  "environment": "production",
+  "interval": "day",
   "range": {
     "from": "2026-09-25T00:00:00.000Z",
     "to": "2026-09-27T00:00:00.000Z"

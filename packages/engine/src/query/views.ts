@@ -180,6 +180,7 @@ export const queryViews: QueryView[] = [
       ["bot_score", "smallint", "0 to 100; 50 and up is a bot"],
       ["is_human", "boolean", "Not a bot and not internal"],
       ["is_internal", "boolean", "Your own traffic"],
+      ["is_preview", "boolean", "From a preview deployment"],
     ]),
   },
   {

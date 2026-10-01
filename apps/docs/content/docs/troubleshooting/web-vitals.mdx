@@ -34,13 +34,17 @@ The plugin measures the hard navigation only, and credits every metric to the pa
 
 When a visitor goes back or forward to a page the browser kept in its back/forward cache, `web-vitals` reports every metric again with a new id. The API stores each id as its own sample, with `navigationType` set to `back-forward-cache`. These are separate visits to the page, so they count as separate samples.
 
+## Preview deployments show no speed
+
+The speed reads show production by default. Add `environment=preview` for preview deployments only, or `environment=all` for both.
+
 ## The speed read shows `null` for a metric
 
 The speed reads show a value only for a metric with at least 20 samples in the range, after filters, and leave the others out of the score. `samples` in the response says how many there are. Widen the range, set `device=all`, or remove filters.
 
 The API stores no speed sample for:
 
-- events from bot, internal, localhost or preview traffic, whatever `traffic` a read asks for;
+- events from bot, internal or localhost traffic, whatever `traffic` a read asks for;
 - an unknown metric or rating, or a missing metric `id`;
 - a negative value, a CLS above 10, or a timing above 120 seconds.
 
@@ -48,10 +52,10 @@ The API stores no speed sample for:
 
 The daily rollup job drops raw speed rows older than 30 days after writing daily percentiles and rating counts per route, device and metric to `rollup_vitals`. The speed reads use the raw rows for the last 30 days and the rollup for older days, where a day's percentile is the mean of its per-route and per-device percentiles, weighted by samples.
 
-The rollup has no page, country or selector. For days older than 30 days:
+The rollup has no page, country, selector, hour or preview rows. For days older than 30 days:
 
-- a read with `filter[page]` or `filter[country]` answers from the raw rows only, so older days are empty;
-- `/speed/elements` covers the last 30 days only;
+- a read with `filter[page]`, `filter[country]` or `environment=preview` answers from the raw rows only, so older days are empty;
+- `/speed/elements`, `/speed/routes?group=path` and `/speed/timeseries?interval=hour` cover the last 30 days only;
 - `/speed/routes` leaves out rolled-up samples without a route.
 
 Older days also show nothing when the rollup job has not rolled them up, even if their raw rows are still stored, because the reads take those days from the rollup only. Run `POST /v2/admin/jobs/rollup` with `days` (1 to 90) large enough to cover them.

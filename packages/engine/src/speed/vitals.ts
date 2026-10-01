@@ -20,6 +20,7 @@ export type VitalRow = {
   sampleRate: number;
   navigationType: Nullable<string>;
   botScore: number;
+  isPreview: boolean;
 };
 
 const metrics = new Set<string>(["lcp", "inp", "cls", "fcp", "ttfb"]);
@@ -40,10 +41,10 @@ function device(draft: EventDraft) {
 /**
  * @name vitalRow
  * @description The `web_vitals` row for a `web_vital` event, or null when it should not count:
- * bots, internal, localhost and preview traffic, unknown metrics or ratings, and impossible
+ * bots, internal and localhost traffic, unknown metrics or ratings, and impossible
  * values (negative, CLS above 10, a timing above 120 s). The row id is the project plus the
  * web-vitals metric id, so a later report of the same INP or CLS replaces the earlier one.
- * Tablets count as mobile.
+ * Tablets count as mobile, and preview deployments are kept with `isPreview` set.
  *
  * @example
  * const row = vitalRow(draft);
@@ -51,7 +52,7 @@ function device(draft: EventDraft) {
 export function vitalRow(draft: EventDraft): VitalRow | null {
   const { event, flags } = draft;
   if (event.name !== "web_vital") return null;
-  if (draft.bot.score >= humanScore || flags.internal || flags.localhost || flags.preview) {
+  if (draft.bot.score >= humanScore || flags.internal || flags.localhost) {
     return null;
   }
   const props = event.props;
@@ -79,5 +80,6 @@ export function vitalRow(draft: EventDraft): VitalRow | null {
     sampleRate: sampleRate > 0 && sampleRate <= 1 ? sampleRate : 1,
     navigationType: text(props.navigationType),
     botScore: draft.bot.score,
+    isPreview: flags.preview,
   };
 }

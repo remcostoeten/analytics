@@ -63,9 +63,12 @@ export type {
   ElementStat,
   RouteStat,
   SpeedDevice,
+  SpeedEnvironment,
+  SpeedGroup,
+  SpeedInterval,
   SpeedScope,
   SpeedStore,
-  VitalDay,
+  VitalPoint,
   VitalStat,
 } from "./speed";
 export type {

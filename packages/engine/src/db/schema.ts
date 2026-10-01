@@ -257,6 +257,7 @@ export const webVitals = pgTable(
     navigationType: text("navigation_type"),
     botScore: smallint("bot_score").notNull().default(0),
     isInternal: boolean("is_internal").notNull().default(false),
+    isPreview: boolean("is_preview").notNull().default(false),
   },
   (table) => [
     index("web_vitals_project_metric_ts_idx").on(table.projectId, table.metric, table.ts),

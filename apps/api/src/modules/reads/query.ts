@@ -7,6 +7,9 @@ import {
   RangeQuery,
   RetentionInterval,
   SpeedDevice,
+  SpeedEnvironment,
+  SpeedGroup,
+  SpeedInterval,
   TimeseriesQuery,
   VitalMetric,
 } from "@remcostoeten/analytics-contract";
@@ -195,8 +198,9 @@ export const pageQuery = Type.Object(listFields);
 
 /**
  * @name speedQuery
- * @description The speed reads' query: the date range, `device`, `percentile`, `metric` where the
- * route needs one, the route, page and country filters, and paging.
+ * @description The speed reads' query: the date range, `device`, `environment`, `percentile`,
+ * `metric` where the route needs one, `interval` for the series, `group` and `minShare` for the
+ * routes, the route, page and country filters, and paging.
  *
  * @example
  * app.get("/projects/:project/speed", handler, { query: speedQuery });
@@ -206,6 +210,10 @@ export const speedQuery = Type.Composite([
   speedFilters,
   Type.Object({
     device: Type.Optional(SpeedDevice),
+    environment: Type.Optional(SpeedEnvironment),
+    interval: Type.Optional(SpeedInterval),
+    group: Type.Optional(SpeedGroup),
+    minShare: Type.Optional(Type.String({ pattern: "^(0(\\.\\d+)?|1(\\.0+)?)$" })),
     percentile: Type.Optional(oneOf(["50", "75", "90", "95", "99"])),
     metric: Type.Optional(VitalMetric),
     ...pageFields,

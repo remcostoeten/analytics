@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
-import type { RouteStat, SpeedScope, SpeedStore, VitalStat } from "../ports";
+import type { RouteStat, SpeedGroup, SpeedScope, SpeedStore, VitalStat } from "../ports";
 import type { VitalName } from "../speed/score";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
@@ -41,6 +41,9 @@ function where(scope: SpeedScope): SQL {
     sql`NOT w.is_internal`,
   ];
   if (scope.device !== "all") conditions.push(sql`w.device = ${scope.device}`);
+  if (scope.environment !== "all") {
+    conditions.push(scope.environment === "preview" ? sql`w.is_preview` : sql`NOT w.is_preview`);
+  }
   if (scope.route !== null) conditions.push(sql`w.route = ${scope.route}`);
   if (scope.path !== null) conditions.push(sql`w.path = ${scope.path}`);
   if (scope.country !== null) conditions.push(sql`w.country = ${scope.country}`);
@@ -48,7 +51,7 @@ function where(scope: SpeedScope): SQL {
 }
 
 function rolledWhere(scope: SpeedScope): SQL | null {
-  if (scope.path !== null || scope.country !== null) return null;
+  if (scope.path !== null || scope.country !== null || scope.environment === "preview") return null;
   const end = Math.min(scope.to.getTime(), scope.rawFrom.getTime());
   if (scope.from.getTime() >= end) return null;
   const conditions: SQL[] = [
@@ -82,6 +85,10 @@ function weigh(parts: Weighed[]): Weighed {
   };
 }
 
+function grouping(group: SpeedGroup) {
+  return group === "path" ? sql`w.path` : sql`COALESCE(w.route, w.path)`;
+}
+
 function percentileOf(percentile: number) {
   return sql`percentile_cont(${percentile / 100}::double precision) WITHIN GROUP (ORDER BY w.value)`;
 }
@@ -89,13 +96,15 @@ function percentileOf(percentile: number) {
 /**
  * @name drizzleSpeed
  * @description The `SpeedStore` on the `web_vitals` table: percentiles with `percentile_cont`,
- * rating counts, a zero-filled daily series, per-route values and the selectors behind slow
- * values, all over human traffic only; and the daily `rollup_vitals` job, which also drops raw
- * rows past the retention cut-off. Days before the scope's `rawFrom` come from `rollup_vitals`,
- * with each day's percentile averaged over its routes and devices weighted by samples, so ranges
- * older than the raw retention still answer. The rollup has no path, country or selector, so a
- * `path` or `country` filter and the elements read cover raw days only, and the routes read
- * leaves out rolled-up rows without a route.
+ * rating counts, a zero-filled hourly or daily series, values per route or per path and the
+ * selectors behind slow values, all over human traffic only and split by production and preview;
+ * and the daily `rollup_vitals` job, which rolls up production rows only and drops raw rows past
+ * the retention cut-off. Days before the scope's `rawFrom` come from `rollup_vitals`, with each
+ * day's percentile averaged over its routes and devices weighted by samples, so ranges older than
+ * the raw retention still answer. The rollup has no path, country, selector, hour or preview rows,
+ * so a `path` or `country` filter, the preview environment, the hourly series, grouping by path
+ * and the elements read cover raw days only, and the routes read leaves out rolled-up rows
+ * without a route.
  *
  * @example
  * await drizzleSpeed(db).summary(scope, 75);
@@ -147,43 +156,44 @@ export function drizzleSpeed(db: Database): SpeedStore {
           };
         });
       }),
-    daily: (scope, percentile, metric) =>
+    series: (scope, percentile, metric, interval) =>
       attempt("Could not read the speed timeseries", async () => {
-        const rolled = rolledWhere(scope);
+        const unit = sql.raw(`'${interval}'`);
+        const rolled = interval === "day" ? rolledWhere(scope) : null;
         const old = rolled
-          ? sql`UNION ALL SELECT (r.day::timestamp AT TIME ZONE 'UTC') AS day, sum(r.samples) AS samples,
+          ? sql`UNION ALL SELECT (r.day::timestamp AT TIME ZONE 'UTC') AS bucket, sum(r.samples) AS samples,
               ${rolledPercentile(percentile)} AS value
             FROM rollup_vitals r WHERE ${rolled} AND r.metric = ${metric} GROUP BY r.day`
           : sql``;
         const rows = await selectRows(
           db,
-          sql`SELECT (d.day AT TIME ZONE 'UTC') AS day, COALESCE(v.samples, 0) AS samples, v.value
+          sql`SELECT (d.bucket AT TIME ZONE 'UTC') AS bucket, COALESCE(v.samples, 0) AS samples, v.value
             FROM generate_series(
-              date_trunc('day', ${scope.from.toISOString()}::timestamptz, 'UTC') AT TIME ZONE 'UTC',
+              date_trunc(${unit}, ${scope.from.toISOString()}::timestamptz, 'UTC') AT TIME ZONE 'UTC',
               (${scope.to.toISOString()}::timestamptz AT TIME ZONE 'UTC') - interval '1 microsecond',
-              interval '1 day'
-            ) AS d(day)
+              ${sql.raw(`interval '1 ${interval}'`)}
+            ) AS d(bucket)
             LEFT JOIN (
-              SELECT date_trunc('day', w.ts, 'UTC') AS day, count(*) AS samples, ${percentileOf(percentile)} AS value
+              SELECT date_trunc(${unit}, w.ts, 'UTC') AS bucket, count(*) AS samples, ${percentileOf(percentile)} AS value
               FROM web_vitals w WHERE ${where(scope)} AND w.metric = ${metric} GROUP BY 1
               ${old}
-            ) v ON v.day = (d.day AT TIME ZONE 'UTC')
+            ) v ON v.bucket = (d.bucket AT TIME ZONE 'UTC')
             ORDER BY 1`,
         );
         return rows.map((row) => ({
-          day: new Date(textual(row.day)),
+          bucket: new Date(textual(row.bucket)),
           samples: numeric(row.samples),
           value: row.value === null || row.value === undefined ? null : numeric(row.value),
         }));
       }),
-    routes: (scope, percentile) =>
+    routes: (scope, percentile, group) =>
       attempt("Could not read the speed routes", async () => {
         const raw = await selectRows(
           db,
-          sql`SELECT COALESCE(w.route, w.path) AS route, w.metric, count(*) AS samples, ${percentileOf(percentile)} AS value
+          sql`SELECT ${grouping(group)} AS route, w.metric, count(*) AS samples, ${percentileOf(percentile)} AS value
             FROM web_vitals w WHERE ${where(scope)} GROUP BY 1, 2`,
         );
-        const rolled = rolledWhere(scope);
+        const rolled = group === "route" ? rolledWhere(scope) : null;
         const old = rolled
           ? await selectRows(
               db,
@@ -249,7 +259,7 @@ export function drizzleSpeed(db: Database): SpeedStore {
               count(*) FILTER (WHERE w.rating = 'poor')
             FROM web_vitals w
             WHERE w.ts >= ${from.toISOString()}::timestamptz AND w.ts < ${to.toISOString()}::timestamptz
-              AND w.bot_score < ${humanScore} AND NOT w.is_internal
+              AND w.bot_score < ${humanScore} AND NOT w.is_internal AND NOT w.is_preview
             GROUP BY 1, 2, 3, 4, 5
             ON CONFLICT (project_id, day, route, device, metric) DO UPDATE SET
               samples = excluded.samples, p50 = excluded.p50, p75 = excluded.p75, p90 = excluded.p90,
