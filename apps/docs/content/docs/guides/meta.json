@@ -6,6 +6,7 @@
     "proxy",
     "server-side-tracking",
     "exclude-your-traffic",
-    "read-your-data"
+    "read-your-data",
+    "self-host"
   ]
 }
