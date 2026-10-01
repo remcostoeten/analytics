@@ -114,6 +114,7 @@ export default createApp({
     limiter: adapters.limiter,
     perMinute: Number(process.env.QUERY_LIMIT ?? 30),
   },
+  annotations: stores.annotations,
   authHandler: auth.handler,
   alerts: alertsPlugin
     ? { plugin: alertsPlugin, store: stores.alerts, links: apiLinks(apiUrl) }

@@ -1,0 +1,4 @@
+{
+  "expectedPath": "/url",
+  "value": { "title": "Mirror", "date": "2026-10-01", "url": "ftp://example.com/file" }
+}

@@ -176,7 +176,7 @@ export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.
 
 The proxy refuses bodies over 60 KB, adds the secret and the visitor's IP and user agent, and forwards the page's `Origin` (or the site's own origin) and the admin session cookie and no other cookie.
 
-The proposed `/admin` entry (alert channels, later projects and tokens) and `verifyAlert` in `/server` are specified in [alerts.md](alerts.md).
+The `/admin` entry (alert targets, the read methods and annotations; later projects and tokens; annotations are in [api-reference.md](api-reference.md#annotations)) and `verifyAlert` in `/server` are specified in [alerts.md](alerts.md).
 
 ## Error tracking in code
 

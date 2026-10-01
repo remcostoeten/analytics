@@ -41,7 +41,7 @@ In priority order:
 1. Visitors, pages, traffic sources and realtime.
 2. Bot detection.
 3. Speed insights and error tracking.
-4. Annotations, to compare traffic around campaigns, posts and releases.
+4. Annotations: dated labels on the time series for releases, posts, content updates and incidents. Built in the API and the admin SDK; the v2 dashboard draws them.
 5. Search Console, for search queries and impressions next to traffic.
 6. Reliability, privacy and self-hosting.
 7. The v2 dashboard on the v2 API, last.

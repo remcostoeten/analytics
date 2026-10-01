@@ -2,7 +2,7 @@
 
 Sep 27, 2026, scope updated Oct 1, 2026
 
-v2 covers core web analytics, custom typed events, web vitals, error tracking, public dashboards and a documented read API. Its focus is reach, traffic sources and app performance (decision 17, [Product focus](plan.md#product-focus)). Next to Plausible, Umami, Fathom, PostHog and GA4, the gaps that matter for that focus are annotations, Search Console, saved segments and email reports. Goals, funnels, actions and experiment statistics are left out on purpose; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
+v2 covers core web analytics, custom typed events, web vitals, error tracking, public dashboards and a documented read API. Its focus is reach, traffic sources and app performance (decision 17, [Product focus](plan.md#product-focus)). Next to Plausible, Umami, Fathom, PostHog and GA4, the gaps that matter for that focus are Search Console, saved segments and email reports. Goals, funnels, actions and experiment statistics are left out on purpose; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
 
 ## What v2 tracks
 
@@ -41,7 +41,7 @@ Yes means the vendor's docs describe the feature; unverified means the research 
 | Web vitals | Yes, with a speed score per route | Unverified | Yes | Unverified | Yes | Unverified |
 | Session replay, heatmaps | No | Unverified | Yes | Unverified | Yes | Unverified |
 | Email reports and alerts | Alerts by mail, webhook and Discord; no email reports yet | Yes | Yes | Yes | Yes | Unverified |
-| Annotations | Planned | Yes | Yes | Yes | Yes | Yes |
+| Annotations | Yes, API and admin SDK; drawn by the v2 dashboard | Yes | Yes | Yes | Yes | Yes |
 | CSV export and import | Export as CSV, JSON or SQL; no import | Yes | Yes | Yes | Partial | Unverified |
 | Search Console | Planned | Yes | Unverified | Yes | Yes | Yes |
 | Saved segments | Per-request filters only | Yes | Yes | Yes | Yes | Yes |
@@ -52,12 +52,11 @@ Yes means the vendor's docs describe the feature; unverified means the research 
 
 In priority order, for the focus on reach, traffic sources and app performance. Each is one more resource in the API.
 
-1. **Annotations**: dated notes per project, such as a campaign, a post or a release, drawn on the time series so traffic before and after can be compared.
-2. **Search Console**: search queries, impressions, clicks and position per page next to traffic, from Google's API with a per-project connection.
-3. **Saved segments**: named filter sets reusable across reports and the public dashboard.
-4. **Email reports**: a weekly digest from the cron job, on the alerts channels.
+1. **Search Console**: search queries, impressions, clicks and position per page next to traffic, from Google's API with a per-project connection.
+2. **Saved segments**: named filter sets reusable across reports and the public dashboard.
+3. **Email reports**: a weekly digest from the cron job, on the alerts channels.
 
-Built since this comparison: file downloads and 404 pages (plugins), CSV export, retention, paths, lifecycle, stickiness, group analytics, alerts.
+Built since this comparison: file downloads and 404 pages (plugins), CSV export, retention, paths, lifecycle, stickiness, group analytics, alerts, annotations (dated labels for releases, posts, content updates and incidents; the dashboard draws them later).
 
 Left out on purpose: goals, funnels, actions and experiment statistics, because conversion optimization is not a goal for now; and session replay, heatmaps and feature flags, because they need a much larger client and much more stored data, and conflict with the bundle budget and the privacy stance. GA import is possible later but depends on an external API.
 

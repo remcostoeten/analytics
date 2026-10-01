@@ -1,6 +1,6 @@
 ---
 title: Admin
-description: Manage alert targets and read stats from server code and scripts with a token, using the `read` scope for the read methods and the `admin` scope for alert targets.
+description: Manage alert targets and annotations and read stats from server code and scripts with a token, using the `read` scope for the read methods and the `admin` scope for alert targets and annotation writes.
 ---
 
 `@remcostoeten/analytics/admin` is for server code, scripts and CI. It calls the API with a token; never ship it to a browser.
@@ -70,6 +70,52 @@ A target is where one project's alerts go on one channel. The builders fill one 
 | `webhook({ url: "http://..." })` | Type error: `https://` only |
 | Two targets with the same literal `name` | Type error on the list |
 | A mail target on a deployment without `mail()` | `VALIDATION_FAILED`: "mail is not enabled on this deployment" |
+| `annotations.create(project, { date: "1 October" })` | Type error: a `Date`, a calendar date or an ISO 8601 timestamp |
+| `annotations.create(project, { url: "ftp://..." })` | Type error: `http://` or `https://` only |
+| `annotations.create(project, { kind: "campaign" })` | Type error: `release`, `post`, `content`, `incident` or `other` |
+| `annotations.update(project, id, {})` | Type error: at least one change |
+| `endDate` before `date` | `VALIDATION_FAILED` at `/endDate` |
+
+## Annotations
+
+Annotations are dated labels on a project's time series, such as a release, a post, a content update or an incident. [Annotations](/docs/api/annotations) describes the data model.
+
+```ts
+const release = await admin.annotations.create("remcostoeten.nl", {
+  title: "v2.0 released",
+  date: new Date(),
+  kind: "release",
+  url: "https://github.com/remcostoeten/analytics/releases/tag/v2.0.0",
+});
+
+await admin.annotations.create("skriuw", {
+  title: "Posted on Hacker News",
+  date: "2026-10-03",
+  endDate: "2026-10-05",
+  kind: "post",
+});
+
+if (release.ok) {
+  await admin.annotations.update("remcostoeten.nl", release.value.id, {
+    note: "New onboarding flow",
+  });
+}
+
+const september = await admin.annotations.list("remcostoeten.nl", {
+  from: "2026-09-01T00:00:00Z",
+  to: "2026-10-01T00:00:00Z",
+});
+if (september.ok) console.table(september.value.data);
+```
+
+| Method | Does |
+| --- | --- |
+| `annotations.list(project, { period?, from?, to?, limit?, cursor? })` | The annotations that overlap the range, oldest first, with `nextCursor` |
+| `annotations.create(project, { title, date, endDate?, kind?, note?, url? })` | Adds one and answers it |
+| `annotations.update(project, id, changes)` | Changes the fields given; `null` clears `endDate`, `note` or `url` |
+| `annotations.remove(project, id)` | Deletes one |
+
+Dates are a `Date`, a calendar date such as `"2026-10-01"` (the start of that day in UTC) or an ISO 8601 timestamp. `list` works with a `read` token; the other methods need an `admin` token that lists the project.
 
 ## Reads
 

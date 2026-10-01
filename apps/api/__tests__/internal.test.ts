@@ -71,6 +71,7 @@ const api = createApp({
     limiter: pgliteAdapters(database, clock).limiter,
     perMinute: 30,
   },
+  annotations: stores.annotations,
   authHandler: async () => {
     throw new Error("Session store exploded");
   },

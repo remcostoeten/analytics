@@ -29,7 +29,7 @@ Webhook alert targets get their signing secret from the API when they are create
 ## 3. Migrate Neon
 
 1. GitHub, Settings, Environments, New environment `production`. Add the secret `DATABASE_URL` with the Neon connection string (the pooled one the v1 `ingestion` project uses).
-2. Actions, `migrate`, Run workflow, mode `dry-run`, baseline `0008_add_rollup_daily`. It lists what would change: 0000 to 0008 baselined, 0009 to 0030 to apply.
+2. Actions, `migrate`, Run workflow, mode `dry-run`, baseline `0008_add_rollup_daily`. It lists what would change: 0000 to 0008 baselined, 0009 to 0031 to apply.
 3. Run it again with mode `apply`.
 
 Every migration is additive, so v1 keeps working on the same database.

@@ -95,6 +95,7 @@ function app(limit = 1000) {
       limiter: pgliteAdapters(database, clock).limiter,
       perMinute: 30,
     },
+    annotations: pgliteAccess(database).annotations,
     authHandler: null,
   });
 }
@@ -366,6 +367,8 @@ describe("GET /v2/openapi/json", () => {
       "/v2/people/{userId}",
       "/v2/projects",
       "/v2/projects/{project}",
+      "/v2/projects/{project}/annotations",
+      "/v2/projects/{project}/annotations/{annotation}",
       "/v2/projects/{project}/breakdown/{dimension}",
       "/v2/projects/{project}/error-rules",
       "/v2/projects/{project}/error-rules/{rule}",

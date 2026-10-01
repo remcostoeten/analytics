@@ -85,6 +85,7 @@ const api = createApp({
     limiter: pgliteAdapters(database, clock).limiter,
     perMinute: 10,
   },
+  annotations: stores.annotations,
   authHandler: null,
 });
 

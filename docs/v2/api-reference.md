@@ -38,6 +38,9 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects/:project/visitors/:visitor` | detail | One visitor with traits and history summary |
 | PATCH | `/v2/projects/:project/visitors/:visitor` | admin | Mark as internal traffic |
 | GET | `/v2/projects/:project/sessions/:session/events` | detail | Every event in one session |
+| GET | `/v2/projects/:project/annotations` | project | Annotations that overlap the range, by date, paged |
+| POST | `/v2/projects/:project/annotations` | admin | Add an annotation |
+| PATCH, DELETE | `/v2/projects/:project/annotations/:annotation` | admin | Change or delete one annotation |
 | GET, POST | `/v2/tokens` | admin | List and create API tokens |
 | DELETE | `/v2/tokens/:token` | admin | Revoke a token |
 | GET | `/v2/admin/metrics` | admin | Ingest counters and job history |
@@ -533,7 +536,7 @@ Every read route also exists without the `/projects/:project` prefix. Without it
 }
 ```
 
-Still missing after this check, all planned as later epics: annotations, Search Console, saved segments and email reports. They fit the same model. Goals, funnels, actions and experiment statistics are not planned; see Product focus in [plan.md](plan.md#product-focus).
+Annotations are built (API and admin SDK; the dashboard draws them later). Still missing after this check, all planned as later epics: Search Console, saved segments and email reports. They fit the same model. Goals, funnels, actions and experiment statistics are not planned; see Product focus in [plan.md](plan.md#product-focus).
 
 ## Full examples
 
@@ -1290,6 +1293,33 @@ GET /v2/projects/remcostoeten.nl/alerts/targets
 `POST /v2/admin/jobs/alerts` with the cron secret first queues new issues and regressions, up to 100 per run, as one delivery per enabled target subscribed to the event, never twice for the same target, event and subject; then it sends every due delivery, one mail or request per target, and settles each by the retry policy (5 attempts after 1, 5, 30, 120 and 720 minutes, within 24 hours, unless the config says otherwise). `rowsWritten` is the number sent. Without `alerts()` in the config it answers 503 "Alerts are off".
 
 A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@remcostoeten/analytics/server` check both.
+
+### Annotations
+
+An annotation is a dated label on a project's time series: a release, a post, a content update, an incident or another event worth seeing next to the numbers. Ids read `ann_<uuid>`. Anyone who may read the project's numbers may list its annotations; only its admins add, change or delete them. A private project answers 404 to anyone else.
+
+```text
+POST /v2/projects/remcostoeten.nl/annotations
+{ "title": "v2.0 released", "date": "2026-10-01T09:30:00+02:00", "kind": "release",
+  "url": "https://github.com/remcostoeten/analytics/releases/tag/v2.0.0" }
+
+201 Created
+{ "data": { "id": "ann_0192f0c4-3b1e-7d2a-9c4f-1a2b3c4d5e6f", "project": "remcostoeten.nl", "title": "v2.0 released",
+  "date": "2026-10-01T07:30:00.000Z", "endDate": null, "kind": "release", "note": null,
+  "url": "https://github.com/remcostoeten/analytics/releases/tag/v2.0.0",
+  "createdAt": "2026-10-01T07:31:00.000Z", "updatedAt": "2026-10-01T07:31:00.000Z" } }
+
+GET /v2/projects/remcostoeten.nl/annotations?from=2026-09-01T00:00:00Z&to=2026-10-02T00:00:00Z
+
+200 OK
+{ "data": [ { "id": "ann_0192f0c4-...", "title": "v2.0 released", "date": "2026-10-01T07:30:00.000Z", ... } ], "nextCursor": null }
+```
+
+- `title` (1 to 120 characters) and `date` are required. `endDate` makes it a range and may not be before `date`. `kind` is `release`, `post`, `content`, `incident` or `other` (the default). `note` holds up to 2,000 characters and `url` an `http://` or `https://` URL of up to 2,048.
+- `date` and `endDate` take a calendar date such as `2026-10-01`, read as the start of that day in UTC, or an ISO 8601 timestamp with an offset. Answers are always UTC timestamps.
+- The list takes the read range (`from` and `to`, or `period`, default `30d`) and answers the annotations that overlap it, oldest first, paged with `limit` (1 to 100, default 20) and `cursor`. A range annotation is listed when any part of it falls inside.
+- `PATCH .../annotations/:annotation` changes the fields sent and leaves the rest; `null` clears `endDate`, `note` or `url`. An empty body answers `VALIDATION_FAILED`. `DELETE` answers 204.
+- An `endDate` before `date`, on create or after a change, answers `VALIDATION_FAILED` with `/endDate` in `details.fields`. An id from another project answers `NOT_FOUND`.
 
 ### Error codes
 

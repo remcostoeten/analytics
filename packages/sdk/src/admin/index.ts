@@ -1,3 +1,10 @@
+export type {
+  AnnotationChanges,
+  AnnotationDate,
+  AnnotationInput,
+  AnnotationsAdmin,
+  WebUrl,
+} from "./annotations";
 export { createAdmin } from "./create-admin";
 export type { Admin } from "./create-admin";
 export type {
