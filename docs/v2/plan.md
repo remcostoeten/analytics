@@ -637,7 +637,7 @@ The `errors` plugin and the server SDK's `captureError` send errors as ordinary 
 
 1. **Capture.** Browser: uncaught errors, unhandled rejections, and React boundary errors. Server: `captureError(error, { request })` in route handlers and jobs. Each carries message, type, stack, release, environment, URL and the last 20 breadcrumbs (navigations, clicks, `[ra]` events, failed fetches).
 2. **Scrub.** An enricher removes emails, tokens and long numbers from messages and URLs, and drops query strings except UTM tags. Nothing from form fields is captured.
-3. **Fingerprint.** Type plus normalised message plus the top in-app stack frame, with line numbers, ids and hashes removed. The same bug on a new deploy groups into the same issue.
+3. **Fingerprint.** Type plus normalised message plus the top in-app stack frame, with line numbers, ids and hashes (hex, Vite's 8 character base64url and Next's hex file names) removed, and function names of 3 characters or fewer left out as minified. The same bug on a new deploy groups into the same issue. Errors from bots and localhost are stored but not grouped.
 4. **Group.** An `issues` row per project and fingerprint with first seen, last seen, count, affected visitors, first and last release, and a status of `open`, `resolved` or `ignored`. A resolved issue that happens again reopens as a regression.
 5. **Source maps**, in a later phase: a build step uploads maps for a release with the project secret, and the API shows original file and line in stacks. Until then, stacks show bundled locations.
 6. **Sampling.** After 100 occurrences of one issue in a minute, only a count is stored, so an error loop cannot flood the database.

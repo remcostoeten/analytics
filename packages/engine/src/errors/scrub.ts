@@ -1,5 +1,5 @@
-// A query string: from "?" up to whitespace, "#", a quote or a closing bracket.
-const queryString = /\?([^\s#"'()]*)/g;
+// A query string: from "?" up to whitespace, "#", a quote, a bracket or the ":" before a line number.
+const queryString = /\?([^\s#"'():]*)/g;
 // An email address.
 const email = /(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.-]+/g;
 // A token: 20 or more word characters or dashes in a row.

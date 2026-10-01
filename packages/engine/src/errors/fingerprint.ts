@@ -10,8 +10,13 @@ const digit = /\d/;
 const number = /\d+(?:\.\d+)?/g;
 // A scheme and host at the start of a URL.
 const origin = /^[a-z][a-z0-9+.-]*:\/\/[^/]+/i;
-// A content hash before the extension, such as "-4f2a9c1b" or ".a1b2c3d4" in "page-4f2a9c1b.js".
-const fileHash = /[.-][0-9a-f]{6,}(?=\.[a-z]+$)/i;
+// A content hash before the extension: hex such as "-4f2a9c1b" or ".a1b2c3d4", an 8 character
+// base64url hash with a digit, an uppercase letter or "_" such as Vite's "-BxK3_q9Z", or a file
+// named by 16 or more hex digits such as Next's "a1b2c3d4e5f6a7b8".
+const fileHash =
+  /(?:[.-](?:[0-9a-fA-F]{6,}|(?=[\w-]{0,7}[0-9A-Z_])[\w-]{8})|(?<=\/)[0-9a-fA-F]{16,})(?=\.[a-z]+$)/;
+// A function name of 3 characters or fewer, which a minifier gives a new name on each build.
+const minified = 3;
 
 /**
  * @name normaliseMessage
@@ -42,6 +47,10 @@ export function normaliseFile(file: string): string {
   return path.replace(fileHash, "");
 }
 
+function functionName(name: string | null) {
+  return name && name.length > minified ? name : "?";
+}
+
 /**
  * @name topFrame
  * @description The first in-app frame, or the first frame when none is in-app.
@@ -56,7 +65,8 @@ export function topFrame(frames: Frame[]): Frame | null {
 /**
  * @name fingerprintParts
  * @description What groups an error into an issue: the error type, the normalised message and the
- * top in-app frame's file and function, without line numbers.
+ * top in-app frame's file and function, without line numbers. A function name of 3 characters or
+ * fewer counts as minified and is left out.
  *
  * @example
  * fingerprintParts("TypeError", "Item 4 not found", frames).join("\n");
@@ -66,6 +76,6 @@ export function fingerprintParts(type: string, message: string, frames: Frame[])
   return [
     type,
     normaliseMessage(message),
-    frame ? `${normaliseFile(frame.file)} ${frame.function ?? "?"}` : "",
+    frame ? `${normaliseFile(frame.file)} ${functionName(frame.function)}` : "",
   ];
 }

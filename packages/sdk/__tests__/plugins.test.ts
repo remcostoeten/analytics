@@ -238,6 +238,11 @@ describe("errors", () => {
     ["long tokens", "session abcabcabcabcabcabcabcabc expired", "session [x] expired"],
     ["long numbers", "order 12345678 missing", "order [x] missing"],
     ["short words", "Cannot read properties of undefined", "Cannot read properties of undefined"],
+    [
+      "a query string in a stack frame, keeping its line and column",
+      "at render (https://site.test/app.js?v=2:10:5)",
+      "at render (https://site.test/app.js[x]:10:5)",
+    ],
   ])("scrub removes %s", (_, input, expected) => {
     expect(scrub(input)).toBe(expected);
   });
@@ -274,6 +279,45 @@ describe("errors", () => {
       .map((line) => line.split(" ").slice(1).join(" "));
     expect(crumbs).toEqual(["event opened", "click BUTTON"]);
     await analytics.shutdown();
+  });
+
+  test("drops cross-origin script errors and sends thrown non-errors without a stack", async () => {
+    const { analytics, transport } = client({ plugins: [errors()] });
+    dispatchEvent(new ErrorEvent("error", { message: "Script error." }));
+    const rejection = new Event("unhandledrejection") as Event & { reason: unknown };
+    rejection.reason = "plain string";
+    dispatchEvent(rejection);
+    await analytics.flush();
+    const reported = sent(transport).filter((event) => event.name === "error");
+    expect(reported.map((event) => event.props.message)).toEqual(["plain string"]);
+    expect(reported[0]?.props).not.toHaveProperty("stack");
+    await analytics.shutdown();
+  });
+
+  test("keeps the newest breadcrumbs when the trail passes 2048 characters", async () => {
+    const original = window.fetch;
+    async function failing(...args: Parameters<typeof fetch>) {
+      const [input] = args;
+      const response = new Response("", { status: 500 });
+      const url = input instanceof Request ? input.url : input.toString();
+      Object.defineProperty(response, "url", { value: url });
+      return response;
+    }
+    window.fetch = Object.assign(failing, original);
+    const { analytics, transport } = client({ plugins: [errors()] });
+    for (let index = 0; index < 20; index += 1) {
+      await fetch(`https://api.example.test/${"page/".repeat(30)}request-${index}`);
+    }
+    dispatchEvent(new ErrorEvent("error", { error: new Error("late") }));
+    await analytics.flush();
+    const crumbs = String(
+      sent(transport).find((event) => event.name === "error")?.props.breadcrumbs,
+    );
+    expect(crumbs.length).toBeGreaterThan(1500);
+    expect(crumbs).toContain("request-19");
+    expect(crumbs).not.toContain("request-0\n");
+    await analytics.shutdown();
+    window.fetch = original;
   });
 
   test("records failed fetches as breadcrumbs and restores fetch on shutdown", async () => {

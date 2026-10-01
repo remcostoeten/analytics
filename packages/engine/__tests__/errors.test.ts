@@ -65,8 +65,11 @@ function error(props: { [key: string]: unknown }, visitor?: string) {
   };
 }
 
-function send(events: ReturnType<typeof error>[]) {
-  return engine.ingest({ ...browserRequest(browserHeaders.chrome), events });
+function send(
+  events: ReturnType<typeof error>[],
+  headers: { [name: string]: string } = browserHeaders.chrome,
+) {
+  return engine.ingest({ ...browserRequest(headers), events });
 }
 
 async function issueRows() {
@@ -151,6 +154,37 @@ describe("stacks from each browser", () => {
     expect(normaliseFile("https://site.test/assets/index.a1b2c3d4.js?v=1#x")).toBe(
       "/assets/index.js",
     );
+  });
+
+  test("fingerprint parts survive Vite and Next hashes and minified names across deploys", () => {
+    function parts(stack: string) {
+      return fingerprintParts("TypeError", "x is undefined", parseStack(stack));
+    }
+    expect(parts("TypeError\n    at t (https://site.test/assets/index-BxK3_q9Z.js:1:200)")).toEqual(
+      parts("TypeError\n    at Ue (https://site.test/assets/index-Dk2LmaPq.js:1:900)"),
+    );
+    expect(normaliseFile("https://site.test/_next/static/chunks/a1b2c3d4e5f6a7b8.js")).toBe(
+      "/_next/static/chunks/.js",
+    );
+    expect(normaliseFile("https://site.test/assets/post-template.js")).toBe(
+      "/assets/post-template.js",
+    );
+    expect(
+      parts("TypeError\n    at PostCard (https://site.test/assets/index-BxK3_q9Z.js:1:2)")[2],
+    ).toBe("/assets/index.js PostCard");
+  });
+
+  test("a query string in a stack frame keeps the frame's line and column", () => {
+    const scrubbed = scrubText(
+      "TypeError: x\n    at render (https://site.test/app.js?v=2:10:5)\n    at main (https://site.test/main.js:1:1)",
+    );
+    expect(parseStack(scrubbed).map((frame) => [frame.file, frame.line, frame.function])).toEqual([
+      ["https://site.test/app.js", 10, "render"],
+      ["https://site.test/main.js", 1, "main"],
+    ]);
+    expect(parseStack(scrubText("render@https://site.test/app.js?dpl=abc:10:5"))).toMatchObject([
+      { file: "https://site.test/app.js", line: 10, function: "render" },
+    ]);
   });
 
   test("scrubbing keeps UTM parameters and removes emails, tokens and long numbers", () => {
@@ -262,6 +296,18 @@ describe("grouping into issues", () => {
     expect(events.ok ? events.value.total : null).toBe(3);
   });
 
+  test("errors from bots are stored without an issue", async () => {
+    await send([error({ type: "BotError", message: "from a crawler", stack: chromeStack })], {
+      ...browserHeaders.chrome,
+      "x-vercel-bot": "1",
+    });
+    expect((await issueRows()).some((issue) => issue.title.startsWith("BotError"))).toBe(false);
+    const stored = await database.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM events WHERE meta->>'type' = 'BotError' AND issue_id IS NULL",
+    );
+    expect(stored.rows).toEqual([{ n: 1 }]);
+  });
+
   test("past 100 of one issue in a minute, only the count is stored", async () => {
     for (let round = 0; round < 3; round += 1) {
       await send(
@@ -318,6 +364,35 @@ describe("rules, mutes and alerts", () => {
       muteRemaining: null,
       mutedUntil: null,
     });
+  });
+
+  test("an ignored issue stays ignored, and a mute reopens once its date has passed", async () => {
+    await send([
+      error({ type: "IgnoredError", message: "ignored", stack: chromeStack }),
+      error({ type: "DatedError", message: "dated", stack: chromeStack }),
+    ]);
+    const listed = await issues.list([project.id], null, { limit: 50, offset: 0 });
+    const rows = listed.ok ? listed.value.rows : [];
+    const ignored = rows.find((issue) => issue.title.startsWith("IgnoredError"));
+    const dated = rows.find((issue) => issue.title.startsWith("DatedError"));
+    if (!ignored || !dated) throw new Error("issue not found");
+    await issues.setStatus(ignored, "ignored");
+    await issues.mute(dated, new Date(Date.now() + 60_000), null);
+    await database.query(
+      "UPDATE issues SET muted_until = now() - interval '1 minute' WHERE id = $1",
+      [dated.id.replace("iss_", "")],
+    );
+    await send([
+      error({ type: "IgnoredError", message: "ignored", stack: chromeStack }),
+      error({ type: "DatedError", message: "dated", stack: chromeStack }),
+    ]);
+    const stillIgnored = await issues.get([project.id], ignored.id);
+    expect(stillIgnored.ok ? stillIgnored.value : null).toMatchObject({
+      status: "ignored",
+      count: 2,
+    });
+    const reopened = await issues.get([project.id], dated.id);
+    expect(reopened.ok ? reopened.value : null).toMatchObject({ status: "open", mutedUntil: null });
   });
 
   test("alerts cover new issues once, and regressions again", async () => {
