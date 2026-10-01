@@ -8,7 +8,7 @@ This tab is the plan. The API reference tab has every route with full examples, 
 
 ## Decisions needed
 
-Seven decisions are settled in the thread; the rest are open with a recommended default, and the whole plan assumes those defaults. Changing one mostly affects the sections named in the last column.
+Rows marked Settled are decided; the rest are open with a recommended default, and the whole plan assumes those defaults. Changing one mostly affects the sections named in the last column.
 
 | # | Decision | Status | Choice | Affects |
 | --- | --- | --- | --- | --- |
@@ -28,8 +28,25 @@ Seven decisions are settled in the thread; the rest are open with a recommended 
 | 14 | Who runs this | Settled | Models 1 and 2: you self-host, and others can self-host their own copy. A hosted service stays a note for later | Who runs this |
 | 15 | Roles and SQL access | Open, default | Better Auth organizations with owner, admin, analyst and viewer roles; SQL for owner, admin, analyst and sql-scoped tokens only, every run logged | Access and sign-in |
 | 16 | Alerts | Settled | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
+| 17 | Product scope | Settled | v2 serves reach, traffic sources and app performance. Goals, funnels, actions and experiment statistics are not planned; what is already built stays. See [Product focus](#product-focus) | Product focus, Phases |
 
 One open question is not a choice between options: Elysia on Vercel. Elysia documents a Vercel integration, but runtime, cold start and MMDB bundling need a short spike in phase 1 before the API commits to it.
+
+## Product focus
+
+Settled on Oct 1, 2026 (decision 17). Analytics exists to bring more visitors to Remco's own apps and to show how far they reach, where the traffic comes from and how the apps perform. Conversion optimization is not a goal for now.
+
+In priority order:
+
+1. The v2 dashboard on the v2 API.
+2. Visitors, pages, traffic sources and realtime.
+3. Bot detection.
+4. Speed insights and error tracking.
+5. Annotations, to compare traffic around campaigns, posts and releases.
+6. Search Console, for search queries and impressions next to traffic.
+7. Reliability, privacy and self-hosting.
+
+Not planned: goals, funnels, actions (named events defined after the fact) and experiment statistics or A/B analysis. What already works stays and is documented as it is: the `experiments` plugin with its `experiment_exposure` event and `experiments` visitor field, the `conversion_rate` metric on `filter[event]`, and SQL over the `events` and `pageviews` views. [archive/conversion-scope.md](archive/conversion-scope.md) lists what was dropped and why.
 
 ## Starting point
 
@@ -402,7 +419,7 @@ The REST API is the base; these are thin layers on top of it, each a later epic 
 
 | Layer | What it gives you | Worth it |
 | --- | --- | --- |
-| Webhooks | Your URL gets a signed POST on events you pick: new issue, regression, traffic spike, speed drop, a goal reached | Yes, later: small, and the alerting in Errors already needs most of it |
+| Webhooks | Your URL gets a signed POST on events you pick: new issue, regression, traffic spike, speed drop | Yes, later: small, and the alerting in Errors already needs most of it |
 | MCP server | Claude and other AI tools can query your analytics directly ("which pages got slower this week?") through tools that call the same API with a read token | Yes, cheap: a thin wrapper over existing routes, and it fits how you already work |
 | Share links and embeds | A signed, read-only link or iframe for one project or one chart, even for a private project, with an expiry | Yes, later: covers "show a client their stats" without making the project public |
 | Badges | An SVG like "1.2k visitors this week" for READMEs, from a public project | Optional, very small |

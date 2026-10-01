@@ -53,7 +53,17 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
-After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
+After phase 5, later epics follow the product focus in the plan (decision 17), in this order: annotations to compare campaigns, posts and releases; Search Console; saved segments; email reports and metric alerts; webhooks; source maps; share links and embeds; an MCP server; and the Durable Object realtime hub if polling ever falls short. Lifecycle, stickiness and group analytics are already built. Goals, funnels, actions, experiment statistics, feature flags, click heatmaps and surveys are not planned; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
+
+## Priorities now
+
+Reach, traffic sources and app performance come first; conversion optimization is not a goal for now. Open work, in order:
+
+1. E4.5, the dashboard on the v2 API, once Remco's design is in. It covers visitors, pages, traffic sources, realtime, speed and issues.
+2. Bot detection: check the scores on real traffic with the release checklist in `docs/release-checklist.md`.
+3. Speed insights and error tracking: keep them on par with Vercel as they change.
+4. Annotations, then Search Console, as their own epics.
+5. Reliability, privacy and self-hosting: E5.1 retires 1.x and ships the self-host setup.
 
 ## Phase 0: foundations
 

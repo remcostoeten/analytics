@@ -533,7 +533,7 @@ Every read route also exists without the `/projects/:project` prefix. Without it
 }
 ```
 
-Still missing after this check, all planned as later epics: goals and funnels, annotations, saved segments, and email reports. They fit the same model and need no new data collection.
+Still missing after this check, all planned as later epics: annotations, Search Console, saved segments and email reports. They fit the same model. Goals, funnels, actions and experiment statistics are not planned; see Product focus in [plan.md](plan.md#product-focus).
 
 ## Full examples
 
