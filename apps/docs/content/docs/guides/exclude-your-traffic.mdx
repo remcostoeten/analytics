@@ -1,0 +1,83 @@
+---
+title: Exclude your own traffic
+description: Stop your own browsers from sending events, or keep them but leave them out of reports.
+---
+
+This guide keeps your own visits, your team's, and your test runs out of the numbers. There are two ways: stop a browser from sending anything, or keep its events and mark them as internal so reports skip them.
+
+| Way | Events reach the API | Undo |
+| --- | --- | --- |
+| `?ra=ignore` with the `ignoreSelf` plugin | No | `?ra=track` in the same browser |
+| Mark a visitor as internal | Yes, stored with `is_internal` | `PATCH` the visitor with `isInternal: false` |
+
+## Stop a browser from sending
+
+1. Add the [`ignoreSelf`](/docs/plugins/ignore-self) plugin.
+
+   `lib/analytics.ts`:
+
+   ```ts
+   import { createAnalytics } from "@remcostoeten/analytics";
+   import { ignoreSelf } from "@remcostoeten/analytics/plugins";
+
+   export const analytics = createAnalytics({
+     project: "example.com",
+     key: "pk_...",
+     endpoint: "/_ra",
+     plugins: [ignoreSelf()],
+   });
+   ```
+
+2. Deploy, then open any page of the site once with `?ra=ignore`, such as `https://example.com/?ra=ignore`, in each browser you use.
+
+3. Check it: `analytics.isOptedOut()` returns `true`, and with `?ra=debug` the console shows `[ra] RA_DROP` lines with `opt-out` as the reason.
+
+The opt-out is stored in `localStorage` for this site, so it lasts until you open a page with `?ra=track` or clear the site data. A private window or another browser starts without it.
+
+Without the plugin, the same switch is available in code: `analytics.optOut()` and `analytics.optIn()`, for example from a toggle on your own admin page.
+
+## Keep the events but leave them out of reports
+
+Use this for a teammate's device or a test account whose events you still want to inspect.
+
+1. Find the visitor id. In the browser to exclude, run this in the console:
+
+   ```js
+   JSON.parse(localStorage.getItem("__ra")).visitor;
+   ```
+
+   Or look it up in `GET /v2/projects/example.com/visitors`.
+
+2. Mark the visitor as internal. This needs an owner, an admin for the project, or an `admin` token that lists it:
+
+   ```bash
+   curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/0192f1c4-6a2e-7b3d-8c4f-1a2b3c4d5e6f \
+     -H "authorization: Bearer $RA_TOKEN" \
+     -H "content-type: application/json" \
+     -d '{"isInternal":true}'
+   ```
+
+   The answer lists how many of the visitor's past events and sessions were updated. Later events from that visitor are stored as internal too.
+
+3. Check a report. The default `traffic=human` leaves internal events out; `traffic=internal` shows only them:
+
+   ```bash
+   curl "https://api.example.com/v2/projects/example.com/stats?period=7d&traffic=internal" \
+     -H "authorization: Bearer $RA_TOKEN"
+   ```
+
+After `analytics.reset()` or cleared site data the browser gets a new visitor id, which is not marked. Mark the new id, or use `?ra=ignore` for browsers you control.
+
+## Signed-in admins
+
+Events that arrive with a signed-in owner's or admin's session cookie are stored as internal. The browser client sends without cookies, so this works only through the `/_ra` proxy, which forwards the `ra.session_token` cookie and no other, and only when the API sets that cookie for a domain your site shares (`AUTH_COOKIE_DOMAIN`). Events a browser sends to the API directly are not marked this way; use `?ra=ignore` or mark the visitor instead.
+
+## Local and preview traffic
+
+You do not need to exclude development servers or preview deployments by hand:
+
+- In development mode (`NODE_ENV` is `development` or `test`), the client sends nothing, and prints each event only when debug is on, unless an `endpoint` is set in the options or the config variable. See [Options](/docs/sdk/options).
+- The API reads the request's `Origin`. Events from `localhost`, loopback addresses, `.local` or `.localhost` hosts are stored as localhost and internal.
+- Events from Vercel preview hosts and hosts starting with `preview-` or `staging-` are stored as preview.
+
+`traffic=human` leaves all of these out, as it does bots. `createProxy` forwards the page's `Origin`, or the site's own origin when the browser sent none, so the marks apply behind the proxy too. The server client sends the origin of the `request` or `headers` you pass, or its `origin` option. In SQL, the `is_human`, `is_internal`, `is_localhost` and `is_preview` columns of the `events` view hold the same flags; see [Read your data](/docs/guides/read-your-data).

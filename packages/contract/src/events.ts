@@ -1,13 +1,17 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { Props } from "./common";
 import { EventName } from "./enums";
 import { ErrorCode } from "./errors";
 import { Count, nullable, Timestamp } from "./schema";
 
 export const maxEventsPerBatch = 50;
 export const maxBodyBytes = 60 * 1024;
+export const maxProps = 25;
+export const maxPropKeyLength = 255;
+export const maxPropValueLength = 255;
+export const maxLongPropValueLength = 2048;
+export const longPropKeys = ["stack", "breadcrumbs"] as const;
 
 const Text = Type.String({ maxLength: 2048 });
 const Identifier = Type.String({ minLength: 1, maxLength: 64 });
@@ -42,6 +46,37 @@ export const WireContext = Type.Object({
 });
 export type WireContext = Static<typeof WireContext>;
 
+export const WireProps = Type.Record(
+  Type.String({ pattern: `^[\\s\\S]{0,${maxPropKeyLength}}$` }),
+  Type.Union([
+    Type.String({ maxLength: maxLongPropValueLength }),
+    Type.Number(),
+    Type.Boolean(),
+    Type.Null(),
+  ]),
+  {
+    maxProperties: maxProps,
+    additionalProperties: false,
+    description: `At most ${maxProps} flat props with keys up to ${maxPropKeyLength} characters. String values are up to ${maxPropValueLength} characters, except \`stack\` and \`breadcrumbs\` on \`error\` events, which are up to ${maxLongPropValueLength}.`,
+  },
+);
+export type WireProps = Static<typeof WireProps>;
+
+/**
+ * @name propValueLimit
+ * @description The longest string value a prop may hold: 2048 characters for `stack` and
+ * `breadcrumbs` on `error` events, 255 for everything else. The SDK cuts values to it and ingest
+ * rejects an event over it.
+ *
+ * @example
+ * propValueLimit("error", "stack"); // 2048
+ * propValueLimit("pageview", "stack"); // 255
+ */
+export function propValueLimit(name: string, key: string) {
+  const long = longPropKeys.some((candidate) => candidate === key);
+  return name === "error" && long ? maxLongPropValueLength : maxPropValueLength;
+}
+
 export const maxGroups = 5;
 
 export const GroupType = Type.String({ pattern: "^[a-z][a-z0-9_]{0,31}$" });
@@ -60,7 +95,7 @@ export const WireEvent = Type.Object({
   visitor: Identifier,
   session: Identifier,
   page: WirePage,
-  props: Props,
+  props: WireProps,
   context: Type.Optional(WireContext),
   groups: Type.Optional(WireGroups),
   signals: Type.Optional(Type.Integer({ minimum: 0 })),

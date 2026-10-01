@@ -1,0 +1,103 @@
+---
+title: Send events through your own domain
+description: Serve /_ra from your site with createProxy so events are first-party requests that ad blockers let through.
+---
+
+This guide moves browser events from the API's host to a path on your own site, `/_ra`. Ad blockers drop requests to third-party analytics hosts; a same-origin path is a first-party request. It needs a server or function on the same origin as the site. A fully static site without one sends to the API directly, with the public key.
+
+## Public key or secret key
+
+| | Direct to the API | Through `/_ra` |
+| --- | --- | --- |
+| Browser `endpoint` | `https://api.example.com/v2/events` | `/_ra` (the default) |
+| Credential on the request to the API | Public key `pk_...` from the browser | Secret key `sk_...`, added by your server |
+| Origin check | The page's origin must be in the project's `allowedOrigins` | The proxy refuses cross-site requests itself |
+| Visitor IP and user agent | Read by the API from the browser's request | Forwarded by the proxy as `X-Visitor-IP` and `X-Visitor-UA` |
+| Host, localhost and preview flags | From the browser's `Origin` | From the `Origin` the proxy forwards, or the site's own origin when the browser sent none |
+| Signed-in admin marked internal | No: a cross-origin request carries no cookie | Yes: the proxy forwards the `ra.session_token` cookie and no other |
+| Ad blockers | Often blocked | A request to your own domain |
+
+The secret key sends events for the project from anywhere, so it stays on the server. Never put it in a `NEXT_PUBLIC_`, `PUBLIC_` or `VITE_` variable.
+
+## 1. Store the secret key
+
+The secret key is shown once, in the response that creates the project. If you no longer have it, rotate it with an `admin` token for the project; the answer holds the new key in `data.key`, and the old key stops working:
+
+```bash
+curl -X POST https://api.example.com/v2/projects/example.com/keys \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"kind":"secret"}'
+```
+
+Put it and the API's base URL in the server's environment:
+
+```bash
+RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
+```
+
+These two names are only a convention of these docs. `createProxy` reads the JSON in `RA_CONFIG` for options you leave out, so `RA_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'` works too.
+
+## 2. Add the route
+
+In the Next.js App Router, a folder starting with `_` is private, so the underscore is URL-encoded.
+
+`app/%5Fra/route.ts`:
+
+```ts
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+export const POST = createProxy({
+  secret: process.env.RA_SECRET,
+  endpoint: process.env.RA_ENDPOINT,
+});
+```
+
+`createProxy` returns a standard `(request: Request) => Promise<Response>` handler, so any runtime with `fetch`, `Request` and `Response` can serve it. In a hand-written fetch handler, route `/_ra` to it:
+
+```ts
+import { createProxy } from "@remcostoeten/analytics/proxy";
+
+const proxy = createProxy({ secret: process.env.RA_SECRET, endpoint: process.env.RA_ENDPOINT });
+
+export async function handle(request: Request): Promise<Response> {
+  if (new URL(request.url).pathname === "/_ra") return proxy(request);
+  return new Response("Not found", { status: 404 });
+}
+```
+
+[Server runtimes](/docs/frameworks/server) has complete examples for Bun, Deno, Vercel Functions and Cloudflare Workers, and [Astro](/docs/frameworks/astro) and [Svelte](/docs/frameworks/svelte) show their own route files. On Vercel Functions, `api/_ra.ts` is not routed because of the underscore; serve the proxy from another path and set `endpoint` to it.
+
+## 3. Point the client at it
+
+`/_ra` is the default `endpoint`, so a client without one already uses it. With the config variable:
+
+```bash
+NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+```
+
+Keep `key` set. The proxy does not need it, but the client warns with `RA_NO_KEY` when it is empty. An empty key leaves the `key` query parameter out of the request. If you serve the proxy on another path, set `endpoint` to that path.
+
+## 4. Check it
+
+1. Open the site with the browser's network panel. Events go to `POST /_ra?key=pk_...` and answer `202` with `{ "accepted": 1, "duplicates": 0, "rejected": [] }`.
+2. Check that the route refuses what it should:
+
+   ```bash
+   curl -i https://example.com/_ra
+   curl -i -X POST https://example.com/_ra -H "sec-fetch-site: cross-site" -d '{}'
+   ```
+
+   The first answers `405` and the second `403` with `FORBIDDEN_ORIGIN`.
+
+| Answer from `/_ra` | Cause |
+| --- | --- |
+| `500` `INTERNAL`, "needs a secret and an endpoint" | `secret` or `endpoint` is empty on the server |
+| `401` `UNAUTHORIZED` | The API rejected the secret key; check for a rotated key |
+| `413` `PAYLOAD_TOO_LARGE` | The body is over 60 KB |
+| `502` `UNAVAILABLE` | The proxy could not reach `endpoint` |
+
+## 5. Optionally count blocked pageviews
+
+With the proxy in place, `createPageCounter` from the same entry counts HTML page loads in middleware as `page_request` events. Comparing them with pageviews estimates how many visitors block the client. See [Proxy](/docs/sdk/proxy).

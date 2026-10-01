@@ -43,9 +43,10 @@ const result = await serverAnalytics.track("signup", { plan: "pro" }, { request 
 if (!result.ok) console.warn(result.error.code);
 ```
 
-- Passing the incoming `request`, or its `headers`, forwards the visitor's IP and user agent and uses the request's path as the page path.
-- Server events use `server` as visitor and session. Pass `visitor` and `session` from the browser to join them to the browser's events.
-- Events tracked in the same tick go out in one request. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws.
+- Passing the incoming `request`, or its `headers`, forwards the visitor's IP and user agent, the site's origin as `Origin` and the admin session cookie, and uses the request's path as the page path. The API flags localhost and preview hosts from the origin, and marks events from a signed-in owner or admin as internal.
+- Without a `request` or `headers`, the event has no IP and no user agent: the API does not use the calling server's own, so it gets no IP hash, no location and no bot weight for them. Set `origin` on the client or on the call to give such events a host.
+- Server events use `server` (exported as `serverVisitor`) as visitor and session. Reads count those events in pageviews, events and breakdowns, but never as a visitor or a session. Pass `visitor` and `session` from the browser to join them to the browser's events.
+- Events tracked in the same tick go out together, one request per origin and session cookie. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws.
 - `withErrors(handler)` wraps a `(request) => Response` handler, records anything it throws and rethrows it.
 
 See [Server](/docs/sdk/server) for every method.
@@ -151,7 +152,7 @@ The visitor's IP comes from `cf-connecting-ip`.
 
 ## The proxy
 
-`createProxy` returns a `(request) => Promise<Response>` handler. It accepts only same-site `POST` requests with bodies up to 64 KB, adds the secret key and the visitor's IP and user agent, forwards the body to `/v2/events` and returns the API's answer. The browser client's `endpoint` is the path you serve it on. See [Proxy](/docs/sdk/proxy).
+`createProxy` returns a `(request) => Promise<Response>` handler. It accepts only same-site `POST` requests with bodies up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, forwards the body to `/v2/events` and returns the API's answer. The browser client's `endpoint` is the path you serve it on. See [Proxy](/docs/sdk/proxy).
 
 ## Other languages
 
@@ -188,7 +189,7 @@ curl -X POST https://api.example.com/v2/events \
 | `name` | 1 to 64 characters |
 | `visitor`, `session` | 1 to 64 characters |
 | `page.path` | Required, up to 2048 characters; `route`, `title` and `referrer` are optional |
-| `props` | Required, flat: string, number, boolean or null values |
-| `context` | Optional. `ip` and `ua` forward the visitor's details and are used only with the secret key |
+| `props` | Required, flat: at most 25 string, number, boolean or null values, keys up to 255 characters, strings up to 255 characters (2048 for `stack` and `breadcrumbs` on `error` events) |
+| `context` | Optional. `ip` and `ua` forward the visitor's details and are used only with the secret key. Without them a secret-key event has no IP and no user agent |
 
-The answer is `202` with `{ "accepted": 1, "duplicates": 0, "rejected": [] }`; a rejected event is listed by its index while the rest are stored. The [API reference](/docs/reference) has the full schema and error codes.
+The answer is `202` with `{ "accepted": 1, "duplicates": 0, "rejected": [] }`; a rejected event, such as one over the prop limits, is listed by its index with `VALIDATION_FAILED` while the rest are stored. Send an `Origin` header with the site's origin to give the events a host. The [API reference](/docs/reference) has the full schema and error codes.

@@ -212,7 +212,7 @@ export async function breakdown(
   params: URLSearchParams,
 ): Promise<Result<BreakdownResponse, EngineError>> {
   const dimension = findDimension(name);
-  if (!dimension) return err(engineError("NOT_FOUND", `Unknown dimension ${name}`));
+  if (!dimension) return err(engineError("VALIDATION_FAILED", `Unknown dimension ${name}`));
   const metrics = readMetrics(
     params.get("metrics"),
     defaultMetrics[name] ?? ["visitors", "pageviews"],

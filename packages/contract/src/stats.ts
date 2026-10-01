@@ -57,7 +57,12 @@ export const TimeseriesResponse = Type.Object({
 export type TimeseriesResponse = Static<typeof TimeseriesResponse>;
 
 export const BreakdownQuery = Type.Object({
-  metrics: Type.Optional(Type.String({ minLength: 1 })),
+  metrics: Type.Optional(
+    Type.String({
+      minLength: 1,
+      description: "Comma-separated metrics; default `visitors,pageviews`.",
+    }),
+  ),
 });
 export type BreakdownQuery = Static<typeof BreakdownQuery>;
 

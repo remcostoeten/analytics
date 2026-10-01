@@ -17,7 +17,7 @@ const pluginDirectory = join(sdk, "src", "plugins");
 const pluginBudget = 0.6 * 1024;
 
 export const entryBudgets: Budget[] = [
-  { file: "index.mjs", limitBytes: 4.5 * 1024 },
+  { file: "index.mjs", limitBytes: 5 * 1024 },
   { file: "react.mjs", limitBytes: 1.5 * 1024 },
   { file: "next.mjs", limitBytes: 1 * 1024 },
 ];

@@ -141,6 +141,30 @@ describe("notFound", () => {
     expect(sent(plain.transport)).toEqual([]);
     await plain.analytics.shutdown();
   });
+
+  test("reports a page once with the default pageviews plugin, and again after navigating", async () => {
+    document.head.innerHTML = '<meta name="ra-not-found">';
+    const { analytics, transport } = client({ pageviews: true, plugins: [notFound()] });
+    history.pushState(null, "", "/missing-too");
+    analytics.page();
+    await analytics.flush();
+    expect(
+      sent(transport)
+        .filter((event) => event.name === "not_found")
+        .map((event) => event.page.path),
+    ).toEqual(["/blog/rebuilding-analytics", "/missing-too"]);
+    await analytics.shutdown();
+  });
+
+  test("reports a page once when an adapter sends the pageviews", async () => {
+    document.head.innerHTML = '<meta name="ra-not-found">';
+    const { analytics, transport } = client({ plugins: [notFound()] });
+    analytics.route("/[...missing]");
+    analytics.page();
+    await analytics.flush();
+    expect(sent(transport).map((event) => event.name)).toEqual(["not_found", "pageview"]);
+    await analytics.shutdown();
+  });
 });
 
 describe("ignoreSelf", () => {

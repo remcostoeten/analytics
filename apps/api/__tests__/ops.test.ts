@@ -204,6 +204,28 @@ describe("GET /v2/admin/metrics", () => {
 });
 
 describe("jobs", () => {
+  test("rollup runs the session bot signals over the previous UTC day, once", async () => {
+    for (let index = 0; index < 12; index += 1) {
+      await database.query(
+        `INSERT INTO events (project_id, type, name, ts, path, visitor_id, session_id, bot_score, bot_reasons)
+         VALUES ('alpha', 'pageview', 'pageview', $1, '/', 'fast', 'fast-session', 0, '{}')`,
+        [new Date(Date.parse("2026-09-26T10:00:00Z") + index * 700).toISOString()],
+      );
+    }
+    const first = await post("/admin/jobs/rollup");
+    expect(first.status).toBe(200);
+    const again = await post("/admin/jobs/rollup");
+    expect(again.status).toBe(200);
+    const rows = await database.query<{ bot_score: number; bot_reasons: string[] }>(
+      "SELECT DISTINCT bot_score, bot_reasons FROM events WHERE session_id = 'fast-session'",
+    );
+    expect(rows.rows).toEqual([{ bot_score: 50, bot_reasons: ["session_velocity"] }]);
+    const data = await metrics();
+    expect(data.jobs).toContainEqual(
+      expect.objectContaining({ job: "rollup", status: "ok", rowsWritten: 12 }),
+    );
+  });
+
   test("cleanup deletes events past the project's retention and is recorded", async () => {
     const response = await post("/admin/jobs/cleanup");
     expect(response.status).toBe(200);

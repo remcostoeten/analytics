@@ -1,4 +1,4 @@
-import { engineError } from "@remcostoeten/analytics-engine";
+import { engineError, rawVitalsFrom } from "@remcostoeten/analytics-engine";
 import type {
   CheckTarget,
   EngineError,
@@ -105,6 +105,7 @@ export async function checkCrux(
         route: null,
         path: null,
         country: null,
+        rawFrom: rawVitalsFrom(now),
       },
       75,
     );

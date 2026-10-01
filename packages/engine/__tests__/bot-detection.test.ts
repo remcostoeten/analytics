@@ -69,14 +69,19 @@ function event(session: string, visitor: string, offsetMs: number, signals = 0) 
   };
 }
 
+const secretKey = "sk_bot_detection";
+
 async function send(
   headers: { [name: string]: string },
   events: unknown[],
   ip = "81.2.69.160",
   run = engine(),
+  trusted = false,
 ) {
   const result = await run.ingest({
-    credentials: { publicKey: project.publicKey, secretKey: null },
+    credentials: trusted
+      ? { publicKey: null, secretKey }
+      : { publicKey: project.publicKey, secretKey: null },
     receivedAt: now.toISOString(),
     sentAt: now.toISOString(),
     request: {
@@ -107,8 +112,8 @@ beforeAll(async () => {
   });
   if (!report.ok) throw new Error(report.error.message);
   await database.query(
-    "INSERT INTO projects (id, name, domain, public_key, secret_key_hash) VALUES ($1, $1, $1, $2, 'unused')",
-    [project.id, project.publicKey],
+    "INSERT INTO projects (id, name, domain, public_key, secret_key_hash) VALUES ($1, $1, $1, $2, $3)",
+    [project.id, project.publicKey, await webCryptoHasher().sha256(secretKey)],
   );
 });
 
@@ -157,6 +162,36 @@ describe("fixture requests land on the expected side of 50", () => {
     const [row] = await session(id);
     expect((row?.bot_score ?? 0) >= 50).toBe(bot);
     expect(row?.device_type === "bot").toBe(bot);
+  });
+});
+
+describe("secret-key requests without forwarded visitor details", () => {
+  test("are neutral: the server's own IP and user agent add no weight", async () => {
+    await send(
+      { "user-agent": agents.curl },
+      [event("server-sent", "server-sent", 0)],
+      datacenter,
+      engine(),
+      true,
+    );
+    const [row] = await session("server-sent");
+    expect(row).toMatchObject({ bot_score: 0, bot_reasons: [] });
+    const stored = await database.query<{ ip_hash: string | null; asn: number | null }>(
+      "SELECT ip_hash, asn FROM events WHERE session_id = 'server-sent'",
+    );
+    expect(stored.rows).toEqual([{ ip_hash: null, asn: null }]);
+  });
+
+  test("still score the visitor details they forward", async () => {
+    await send(
+      { "user-agent": "node", "x-visitor-ua": agents.curl, "x-visitor-ip": datacenter },
+      [event("server-forwarded", "server-forwarded", 0)],
+      "81.2.69.160",
+      engine(),
+      true,
+    );
+    const [row] = await session("server-forwarded");
+    expect(row?.bot_reasons).toEqual(["ua_automation", "asn_datacenter"]);
   });
 });
 

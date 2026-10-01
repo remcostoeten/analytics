@@ -25,6 +25,7 @@ import {
   visitorDetail,
   visitorVisits,
 } from "./service";
+import { eventsQuery, listQuery, pageQuery } from "../reads/query";
 
 const tags = ["Visitor-level reads"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
@@ -51,6 +52,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listEvents(store, params, [id], options.clock()),
         ),
       {
+        query: eventsQuery,
         access: "detail",
         response: { 200: t.Union([EventList, download]), ...responses },
         detail: {
@@ -67,6 +69,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listVisitors(store, params, [id], options.clock()),
         ),
       {
+        query: listQuery,
         access: "detail",
         response: { 200: t.Union([VisitorList, download]), ...responses },
         detail: {
@@ -117,6 +120,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           visitorVisits(store, params, id, path.visitor),
         ),
       {
+        query: pageQuery,
         access: "detail",
         response: { 200: t.Union([VisitList, download]), ...responses },
         detail: {
@@ -134,6 +138,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listSessions(store, params, [id], options.clock()),
         ),
       {
+        query: listQuery,
         access: "detail",
         response: { 200: t.Union([SessionList, download]), ...responses },
         detail: {
@@ -150,6 +155,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           sessionTrail(store, params, id, path.session),
         ),
       {
+        query: pageQuery,
         access: "detail",
         response: { 200: t.Union([SessionEvents, download]), ...responses },
         detail: {

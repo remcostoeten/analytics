@@ -19,6 +19,7 @@ import type { SQL } from "drizzle-orm";
 import { groupsKey, storedGroups } from "../groups";
 import type { DetailStore, Keyset, Page } from "../ports";
 import { scopeParts } from "../reads/scope";
+import { notServer, serverVisitor } from "../reads/server-visitor";
 import { defaultSignals } from "../signals";
 import type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
@@ -304,7 +305,7 @@ export function drizzleDetails(db: Database): DetailStore {
             SELECT e.project_id, e.visitor_id, count(DISTINCT e.session_id) AS sessions,
               count(*) FILTER (WHERE e.type = 'pageview') AS pageviews, max(e.ts) AS last_ts,
               min(e.ts) AS first_ts
-            FROM events e ${joins} WHERE ${where} AND e.visitor_id IS NOT NULL
+            FROM events e ${joins} WHERE ${where} AND e.visitor_id IS NOT NULL AND ${notServer}
             GROUP BY e.project_id, e.visitor_id
           )`;
         const [totals] = await select(db, sql`${scoped} SELECT count(*) AS total FROM per`);
@@ -445,7 +446,7 @@ export function drizzleDetails(db: Database): DetailStore {
       attempt("Could not read sessions", async (): Promise<Page<SessionRow>> => {
         const { joins, where } = scopeParts(scope, []);
         const scoped = sql`WITH ids AS (
-            SELECT DISTINCT e.project_id, e.session_id FROM events e ${joins} WHERE ${where} AND e.session_id IS NOT NULL
+            SELECT DISTINCT e.project_id, e.session_id FROM events e ${joins} WHERE ${where} AND e.session_id IS NOT NULL AND ${notServer}
           ),
           per AS (
             SELECT e.project_id, e.session_id, min(e.ts) AS started_at, max(e.ts) AS last_event_at,
@@ -611,6 +612,7 @@ export function drizzleDetails(db: Database): DetailStore {
               v.meta->'identity'->>'userId' AS user_id
             FROM visitors v
             WHERE v.project_id IN ${projectList(projects)} AND v.meta->'identity'->>'userId' IS NOT NULL
+              AND v.fingerprint <> ${serverVisitor}
           ),
           per AS (
             SELECT user_id, min(first_seen) AS first_seen, max(last_seen) AS last_seen,
@@ -625,7 +627,7 @@ export function drizzleDetails(db: Database): DetailStore {
           sql`${identified} SELECT per.*, (
               SELECT count(DISTINCT e.project_id || ':' || e.session_id) FROM events e
               JOIN identified i ON i.project_id = e.project_id AND i.fingerprint = e.visitor_id
-              WHERE i.user_id = per.user_id AND e.session_id IS NOT NULL
+              WHERE i.user_id = per.user_id AND e.session_id IS NOT NULL AND ${notServer}
             ) AS visits
             FROM per ORDER BY per.last_seen DESC, per.user_id ASC LIMIT ${page.limit} OFFSET ${page.offset}`,
         );

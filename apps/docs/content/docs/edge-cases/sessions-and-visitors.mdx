@@ -1,0 +1,59 @@
+---
+title: Sessions and visitors
+description: What counts as a visitor and a session without cookies, and how tabs, midnight, devices and blocked storage change the count.
+---
+
+Visitor and session counts come from two random ids the browser keeps, not from cookies or the IP address. This page explains where those ids live, when they change, and the situations where one person counts as several visitors or sessions.
+
+## Two ids in browser storage
+
+| Id | Kept in | Lives until |
+| --- | --- | --- |
+| Visitor | `localStorage`, in the `__ra` entry | The site's storage is cleared, or `analytics.reset()` runs |
+| Session | `sessionStorage`, in the `__ra_session` entry | 30 minutes pass without an event, or the tab closes |
+
+Both are UUIDv7 values generated in the browser. The SDK sets no cookies for visitors.
+
+The session window slides. Every event, including plugin events such as `engagement` and `scroll_depth`, stores the current time with the session id. The next event after more than 30 idle minutes gets a new session id.
+
+The server stores the ids it receives and does not create or split sessions itself. A report's visitor count is the number of distinct visitor ids among the counted events, and its session count is the number of distinct session ids.
+
+## The IP hash is not an identity
+
+The API hashes the visitor's IP as `sha256(ip + sha256(secret + day))`, where the day is the UTC date the batch arrived. The hash is stored for the rate limit and for the `ip_fanout` bot signal, and the raw IP is dropped after the lookups.
+
+Visitor counts never use the hash. Many people behind one office or mobile network share an IP, and one person changes IP as they move, so an IP says little about who a visitor is. The salt changes every day, so the same IP gives a different hash tomorrow, and the hash cannot follow anyone across days.
+
+## Midnight
+
+A session is not split at midnight. Its id comes from the browser, which knows nothing about dates, so a session that starts at 23:50 and ends at 00:20 is one session with one id.
+
+The IP hash does change at 00:00 UTC, because its salt is the UTC date. Events from that session before and after midnight carry different hashes. Nothing counts visitors by hash, so this does not split the visitor.
+
+## Several tabs
+
+`localStorage` is shared by all tabs of a site, and `sessionStorage` belongs to one tab. Two tabs open at the same time are one visitor with two sessions, and a link opened in a new tab usually starts a new session there.
+
+Each tab reads the saved state when its client starts. Consent and opt-out choices, and the debug switch, reach the other open tabs at once through the browser's `storage` event: after `consent.revoke()` or `optOut()` in one tab, the others stop sending and drop their queues. Every write re-reads the saved state, so a tab opened earlier cannot overwrite the choice. A `reset()` in one tab reaches the other tabs only when they reload; until then they keep the visitor id they started with.
+
+## Subdomains and several devices
+
+Browser storage belongs to one origin. `example.com`, `www.example.com` and `docs.example.com` each have their own `localStorage`, so one person reading all three is three visitors.
+
+A phone and a laptop never share storage, so one person on both is two visitors with separate sessions. `analytics.identify(userId, traits)` links each device's visitor to your own user id. Visitor counts still count devices, while the [people read](/docs/reference/all-projects/get-v2-people) returns one row per user id across projects.
+
+## When storage is not available
+
+Some browsers and sandboxed iframes refuse access to storage, and storage can be full. The SDK then keeps both ids in memory for the life of the page. In a single-page app the visit keeps one visitor and one session until the tab closes. On a site where each click loads a new document, every page load is a new visitor with a new session.
+
+Private windows keep storage only until the window closes, so a returning visitor in a new private window is a new visitor.
+
+## Events from the server
+
+The [server client](/docs/sdk/server) uses `server` as both visitor and session, unless the call passes the browser's `visitor` and `session`. All server events without them share those two ids, so in reports they add up to one visitor and one session, and every `page_request` from `createPageCounter` joins that session.
+
+## Starting over
+
+`analytics.reset()` forgets the visitor id, the session, the user id and traits from `identify`, the props from `register`, and any saved failed batches. The next event gets a new visitor and a new session, and the next pageview carries the referrer again. Call it on logout, so the next person on a shared computer is a different visitor.
+
+Visitors who used SDK 1.x keep their id: on its first run the SDK reads the 1.x keys, `__analytics_visitor_id` among them. It moves their values into `__ra` and removes them on the first write that consent allows, so with `consent: "required"` they stay untouched until `consent.grant()`.

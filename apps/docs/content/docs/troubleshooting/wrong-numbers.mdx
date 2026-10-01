@@ -1,0 +1,96 @@
+---
+title: Fix unexpected numbers
+description: Causes of doubled or missing pageviews, bot and internal traffic in reports, and time zone differences.
+---
+
+Use this page when events arrive but the counts look wrong. If nothing arrives at all, start with [Find missing events](/docs/troubleshooting/no-events).
+
+## The first pageview of each visit is counted twice
+
+Check these causes:
+
+1. **A router adapter and the default `pageviews` plugin both run.** The plugin sends a pageview when the client starts, before the adapter sets the route, and the adapter then sends its own. Later navigations are counted once, because the plugin stops once a route is set. Create the client with `pageviews: false` when you use `<Analytics />` from `/next`, `useRoutePageviews`, or your own `analytics.route()` and `analytics.page()` calls.
+2. **`pageviews()` is in `plugins` while the `pageviews` option is still on.** The client then runs two copies of the plugin, and both send on start and on back and forward navigation. Use either the option or the plugin, not both.
+3. **The app creates more than one client.** Every `createAnalytics` call starts its own client with its own pageviews. Create the client once in its own module, such as `lib/analytics.ts`, and import it everywhere.
+
+## Every navigation is counted twice in development
+
+In development, React Strict Mode runs each effect twice, so `<Analytics />` and `useRoutePageviews` call `analytics.page()` twice per navigation. Production builds run effects once. The doubled pageviews reach the API only when development sends events, which happens when `endpoint` is set; see [Your own visits are counted](#your-own-visits-are-counted).
+
+## Pageviews are missing after client-side navigation
+
+- **`pageviews: false` without an adapter.** Nothing sends pageviews. Turn the option back on, or add the adapter.
+- **`<Analytics />` outside `AnalyticsProvider`.** `useAnalytics` returns a client that does nothing outside a provider. Render `<Analytics />` inside it.
+- **`analytics.route()` without `analytics.page()`.** Once a route is set, the default plugin stops sending, so your code has to call `page()` after every navigation.
+- **The router changes the URL without the History API.** The plugin follows `pushState`, `replaceState` and `popstate`. For anything else, call `analytics.page()` yourself.
+- **The URL did not change.** A repeat of the same URL and a change of only an anchor hash are skipped. A change of only the query string counts. Hash routers count only paths in the form `#/path`.
+
+See [pageviews](/docs/plugins/pageviews) and [Next](/docs/sdk/next).
+
+## Pageviews show paths instead of route templates
+
+A pageview carries a route template, such as `/blog/[slug]`, only when an adapter or your code calls `analytics.route()`. The default plugin sends the path alone. When the Next adapter cannot match the router's params to the path, it keeps the pathname as the route.
+
+## Bots show up in reports, or real visitors are missing
+
+The API stores every event with a bot score from 0 to 100 and drops none at ingest. Reads default to `traffic=human`, which leaves out a score of 50 or more. Find out which signals fire:
+
+```bash
+curl "https://api.example.com/v2/projects/example.com/breakdown/bot_reason?traffic=all" \
+  -H "authorization: Bearer $RA_TOKEN"
+```
+
+| Signal | Adds | Fires on |
+| --- | --- | --- |
+| `ua_crawler` | 100 | A user agent from the list of crawlers, preview fetchers, AI agents, SEO tools and uptime monitors |
+| `ua_automation` | 100 | A user agent naming a test driver, headless browser or HTTP library, such as `HeadlessChrome`, `Playwright` or `curl/`, or no user agent on a browser request |
+| `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` header, or `cf-verified-bot` from Cloudflare |
+| `client_webdriver` | 60 | `navigator.webdriver`, reported by the [botSignals plugin](/docs/plugins/bot-signals) |
+| `session_velocity` | 50 | More than 30 pageviews a minute or near-identical gaps between events, set by the daily rollup job for the previous UTC day |
+| `asn_datacenter` | 40 | An IP address on a hosting provider's network |
+| `ip_fanout` | 40 | More than 20 visitor ids from one IP hash in a day, set by the daily rollup job for the previous UTC day |
+| `headers_inconsistent` | 30 | A browser user agent without the headers that browser sends; skipped for the secret key |
+| `client_headless` | 25 | Headless hints from the botSignals plugin |
+| `client_no_input` | 20 | No input on a page that was never visible, from the botSignals plugin |
+| `headers_missing` | 15 | No `accept-language` header; skipped for the secret key |
+
+A real visitor becomes a bot only when signals add up to 50, for example a visitor on a hosting network (40) whose request also lacks browser headers (30). Your own tests with `curl`, Playwright or a headless browser score 100 and never count as human. To see what the default filter leaves out, read with `traffic=bots`.
+
+## Your own visits are counted
+
+The API marks three kinds of traffic that `traffic=human` leaves out:
+
+| Flag | Set when |
+| --- | --- |
+| `localhost` | The ingest request's `Origin` is `localhost`, a loopback address, or ends in `.local` or `.localhost` |
+| `preview` | The `Origin` is a Vercel preview host, or contains `-preview.` or `.preview.`, or starts with `preview-` or `staging-` |
+| `internal` | The event is from `localhost`, carries a signed-in owner's or admin's session cookie, or comes from a visitor marked internal |
+
+The `localhost` and `preview` flags come from the `Origin` header. The proxy forwards the page's `Origin`, or the site's own origin when the browser sent none, so a local development server that posts to its own `/_ra` is flagged as localhost. The server client sends the origin of the `request` or `headers` you pass, or its `origin` option. The session cookie reaches the API only through the proxy or the server client, which forward `ra.session_token` and no other cookie. A browser sending to the API directly carries no cookie, so a signed-in admin's direct events are not marked internal.
+
+To keep development traffic out:
+
+- Leave `endpoint` out of your development config. In development mode without an `endpoint`, the client does not send.
+- Add the [ignoreSelf plugin](/docs/plugins/ignore-self) and open the site once with `?ra=ignore` in each browser you use.
+- Mark your visitor as internal. The id is the `visitor` field of the `__ra` key in `localStorage`. The call updates that visitor's stored events and sessions, and later events from the visitor are internal too:
+
+```bash
+curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/VISITOR_ID \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"isInternal":true}'
+```
+
+## Server events raise pageviews but not visitors
+
+Events from the server client without a `visitor` and `session` share the id `server`. Reads count them in `pageviews`, `events` and breakdowns, but leave them out of visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists. Pass the browser's `visitor` and `session` to the server client to count an event with its visitor.
+
+## Days and hours do not line up with your time zone
+
+Reports use UTC. `timeseries` starts each hour, day, week and month bucket in UTC, and a `period` without `from` and `to` ends at the start of today in UTC. For a range in your own time zone, pass `from` and `to` as your local midnights converted to UTC. The `heatmap` read takes a `timezone` parameter with an IANA name, such as `Europe/Amsterdam`.
+
+Event times are corrected for the visitor's clock: the API shifts each timestamp by the gap between when the client says it sent the batch and when the API received it.
+
+## Today's numbers are missing or lag behind
+
+A `period` read ends at the start of today in UTC, and `24h` ends at the start of the current hour, so the running day or hour is left out. Pass `from` and `to` to include it, or read `realtime` for the last five minutes. Aggregate reads of a public project are also cached for 60 seconds.

@@ -26,4 +26,4 @@ description: Where each 1.x function went.
 | `flushOfflineQueue` | Automatic; `analytics.flush()` sends now |
 | CommonJS and ESM builds | ESM only |
 
-The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` move into the single `__ra` key on first load, so returning visitors keep their id.
+The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` are read on first load and move into the single `__ra` key once consent allows storing, so returning visitors keep their id.

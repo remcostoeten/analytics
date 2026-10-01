@@ -272,7 +272,8 @@ describe("GET /v2/projects/:project/breakdown/:dimension", () => {
     const csv = await get("/v2/projects/site/breakdown/country?period=7d", { accept: "text/csv" });
     expect(csv.headers.get("content-type")).toStartWith("text/csv");
     expect(await csv.text()).toBe("value,visitors,pageviews,share\nNL,2,3,0.667\nDE,1,1,0.333\n");
-    expect((await get("/v2/projects/site/breakdown/shoe_size")).status).toBe(404);
+    expect((await get("/v2/projects/site/breakdown/shoe_size")).status).toBe(400);
+    expect((await get("/v2/projects/site/stats?filter[shoe_size]=42")).status).toBe(400);
     expect((await get("/v2/projects/site/breakdown/page?metrics=likes")).status).toBe(400);
   });
 });

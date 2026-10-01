@@ -65,6 +65,10 @@ Metrics, for `timeseries` and the `metrics=` list on `breakdown` (default `visit
 
 Every list or breakdown route also answers `Accept: text/csv` with the same rows as CSV.
 
+An unknown dimension answers `400 VALIDATION_FAILED`, in the `breakdown/:dimension` path and in `filter[<dimension>]` alike.
+
+Events the server SDK sends without a visitor or session share the id `server`. They count in `pageviews`, `events` and every breakdown of events, but never as a visitor or a session: `visitors`, `sessions`, `bounce_rate`, `session_duration`, `pages_per_session`, `conversion_rate`, `paths`, `retention`, `lifecycle`, `stickiness`, the map's visitors and the visitor, session and people lists leave them out.
+
 ## Coverage check
 
 Everything the dashboard should be able to show, mapped to the route that answers it. The first table is covered by the routes above; the second lists routes added by this check.
@@ -550,7 +554,7 @@ X-Project-Key: pk_live_3f9c2a7d
 }
 ```
 
-The same batch sent again returns `{ "accepted": 0, "duplicates": 2, "rejected": [] }`. An event with a bad field is reported by index while the rest are stored:
+The same batch sent again returns `{ "accepted": 0, "duplicates": 2, "rejected": [] }`. An event with a bad field is reported by index while the rest are stored. Props follow the same limits the SDK applies: at most 25 flat string, number, boolean or null values, keys up to 255 characters, string values up to 255 characters, except `stack` and `breadcrumbs` on `error` events, which may be up to 2048. An event outside them is rejected with `VALIDATION_FAILED`:
 
 ```json
 202 Accepted
@@ -578,7 +582,7 @@ Retry-After: 30
 { "error": { "code": "RATE_LIMITED", "message": "Too many requests", "details": { "retryAfterSeconds": 30 } } }
 ```
 
-Browser requests are limited to 100 per minute per project and daily IP hash. A request with the secret key (`Authorization: Bearer sk_...`) is not rate-limited, may come from any origin, and is the only kind whose forwarded visitor details are used: `context.ip` and `context.ua` on an event, or the `X-Visitor-IP` and `X-Visitor-UA` headers a same-origin proxy adds. Without the secret key the IP comes from `cf-connecting-ip`, then `x-real-ip`, then the first `x-forwarded-for` entry, and the user agent from `User-Agent`.
+Browser requests are limited to 100 per minute per project and daily IP hash. A request with the secret key (`Authorization: Bearer sk_...`) is not rate-limited, may come from any origin, and is the only kind whose forwarded visitor details are used: `context.ip` and `context.ua` on an event, or the `X-Visitor-IP` and `X-Visitor-UA` headers a same-origin proxy adds. When a secret-key request forwards neither, the event has no IP and no user agent: the connection's own belong to the calling server, so they are not used for the IP hash, location, network or bot signals, and the edge location headers are skipped too. A missing IP or user agent on a secret-key request adds no bot weight. Without the secret key the IP comes from `cf-connecting-ip`, then `x-real-ip`, then the first `x-forwarded-for` entry, and the user agent from `User-Agent`.
 
 ### Health and docs
 
@@ -965,7 +969,7 @@ These counters come from Postgres, not instance memory, so they are correct acro
 
 `POST /v2/admin/jobs/cleanup` deletes events and sessions older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
-`POST /v2/admin/jobs/rollup?days=8` with the cron secret
+`POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
 
 ```json
 200 OK
@@ -974,7 +978,7 @@ These counters come from Postgres, not instance memory, so they are correct acro
 
 ### Speed insights
 
-Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`.
+Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`. Raw speed rows are kept 30 days; days before that come from the daily rollup, where a day's percentile is the sample-weighted mean of its per-route and per-device percentiles. The rollup has no page, country or selector, so `filter[page]`, `filter[country]` and `/speed/elements` cover the last 30 days only, and `/speed/routes` leaves out rolled-up samples without a route.
 
 Each metric's percentile is scored 0 to 100 on a log-normal curve where the good threshold scores 90 and the poor threshold 50, and the score is LCP 30%, INP 30%, CLS 25% and FCP 15% of those (TTFB is shown, not scored); metrics without enough samples drop out and the weights of the rest are scaled up. With the values below, LCP 2710 ms scores 86, INP 140 ms 96, CLS 0.06 98 and FCP 1520 ms 96, so the score is 0.3 × 86 + 0.3 × 96 + 0.25 × 98 + 0.15 × 96 = 93.5, shown as 94.
 
@@ -1137,7 +1141,7 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
 }
 ```
 
-`POST /v2/admin/jobs/rollup?days=2` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` (p50 to p99 and rating counts per project, day, route, device and metric) and drops raw speed rows older than 30 days.
+`POST /v2/admin/jobs/rollup?days=2` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` (p50 to p99 and rating counts per project, day, route, device and metric), drops raw speed rows older than 30 days, and runs the session bot signals over the previous UTC day.
 
 ### Issues
 
@@ -1278,10 +1282,10 @@ A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id
 | 400 | `VALIDATION_FAILED` | Body, query or path fails the schema; `details` lists each field |
 | 401 | `UNAUTHORIZED` | No or invalid session, token or key |
 | 403 | `FORBIDDEN_ORIGIN` | Public key used from an origin not in the project's list |
-| 403 | `FORBIDDEN` | Token scope does not allow the action |
+| 403 | `FORBIDDEN` | The token scope or the signed-in member's role does not allow the action |
 | 404 | `NOT_FOUND` | Unknown route, project, visitor or session, or a private project without access |
 | 409 | `CONFLICT` | Creating a project whose id exists |
 | 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events |
 | 429 | `RATE_LIMITED` | Per-IP-hash limit hit; `Retry-After` header set |
 | 500 | `INTERNAL` | Unexpected failure; the message never includes internals |
-| 503 | `UNAVAILABLE` | Database unreachable; ingest clients retry |
+| 503 | `UNAVAILABLE` | Database unreachable, or a feature the route needs is not configured: a job's store, alerts, `CRUX_API_KEY`, SMTP or Resend; ingest clients retry |

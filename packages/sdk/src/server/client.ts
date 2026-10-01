@@ -4,7 +4,13 @@ import { buildEvent, limitProps } from "../core/build-event";
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
 import type { ErrorContext, EventMap, EventName, GroupMap, Props } from "../core/types";
 import { uuidv7 } from "../core/uuid";
-import { eventsUrl, runtimeWaitUntil, visitorDetails } from "./forwarding";
+import {
+  adminSessionCookie,
+  eventsUrl,
+  runtimeWaitUntil,
+  siteOrigin,
+  visitorDetails,
+} from "./forwarding";
 import type {
   Fetcher,
   Handler,
@@ -17,6 +23,12 @@ import type {
   ServerResult,
 } from "./types";
 
+type Outgoing = {
+  origin: string | null;
+  cookie: string | null;
+  events: WireEvent[];
+};
+
 const batchLimit = 50;
 const nothing: ServerResult = { ok: true, error: null, accepted: 0, duplicates: 0, failed: 0 };
 
@@ -28,6 +40,17 @@ function pathOf(request: Request | undefined) {
     return "/";
   }
 }
+
+/**
+ * @name serverVisitor
+ * @description The visitor and session id of server events tracked without a `visitor` or
+ * `session` in their context. Every such event shares it, so reads leave it out of visitor and
+ * session counts.
+ *
+ * @example
+ * serverAnalytics.track("nightly_import"); // sent with visitor "server" and session "server"
+ */
+export const serverVisitor = "server";
 
 function describe(error: unknown) {
   return error instanceof Error
@@ -43,7 +66,11 @@ function failed(code: ServerErrorCode, message: string, count: number): ServerRe
  * @name createServerAnalytics
  * @description The server client for route handlers, jobs and webhooks. Events tracked in the
  * same tick go out together, authenticated with the project secret. Passing the incoming
- * `request` (or its `headers`) forwards the visitor's IP and user agent, and `waitUntil` from the
+ * `request` (or its `headers`) forwards the visitor's IP and user agent, the site's origin as
+ * `Origin` (so ingest can flag localhost and preview hosts) and the admin session cookie alone (so
+ * a signed-in admin's events are internal). Without either, no visitor details are sent, and the
+ * `origin` from the call or the options stands in for the site. Events without a `visitor` or
+ * `session` share the id in `serverVisitor`. `waitUntil` from the
  * options, the call or Vercel's runtime keeps the send alive after the response. Every method
  * resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Options missing
  * here are read from the JSON in `RA_CONFIG`.
@@ -59,7 +86,7 @@ export function createServerAnalytics<
   const config = mergeConfig(parseConfig(readEnv(() => process.env.RA_CONFIG)), options);
   const request: Fetcher = config.fetch ?? ((url, init) => fetch(url, init));
   const warned = new Set<ServerErrorCode>();
-  let pending: WireEvent[] = [];
+  let pending: Outgoing[] = [];
   let scheduled: Promise<ServerResult> | null = null;
 
   function warn(error: ServerError) {
@@ -68,11 +95,22 @@ export function createServerAnalytics<
     console.warn(`[ra] ${error.code}: ${error.message}`);
   }
 
-  async function post(events: WireEvent[], secret: string, url: string): Promise<ServerResult> {
+  async function post(
+    events: WireEvent[],
+    from: Outgoing,
+    secret: string,
+    url: string,
+  ): Promise<ServerResult> {
+    const headers = new Headers({
+      "content-type": "application/json",
+      authorization: `Bearer ${secret}`,
+    });
+    if (from.origin) headers.set("origin", from.origin);
+    if (from.cookie) headers.set("cookie", from.cookie);
     try {
       const response = await request(url, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${secret}` },
+        headers,
         body: JSON.stringify({ v: 1, sentAt: new Date().toISOString(), events }),
       });
       if (!response.ok) {
@@ -96,28 +134,32 @@ export function createServerAnalytics<
     }
   }
 
-  async function send(events: WireEvent[]): Promise<ServerResult> {
-    if (!config.secret) return failed("RA_NO_SECRET", "secret is empty", events.length);
-    if (!config.endpoint) return failed("RA_NO_ENDPOINT", "endpoint is empty", events.length);
+  async function send(batches: Outgoing[]): Promise<ServerResult> {
+    const count = batches.reduce((sum, batch) => sum + batch.events.length, 0);
+    if (!config.secret) return failed("RA_NO_SECRET", "secret is empty", count);
+    if (!config.endpoint) return failed("RA_NO_ENDPOINT", "endpoint is empty", count);
     const url = eventsUrl(config.endpoint);
     let total = nothing;
-    for (let start = 0; start < events.length; start += batchLimit) {
-      const result = await post(events.slice(start, start + batchLimit), config.secret, url);
-      const counts = {
-        accepted: total.accepted + result.accepted,
-        duplicates: total.duplicates + result.duplicates,
-        failed: total.failed + result.failed,
-      };
-      total = total.ok ? { ...result, ...counts } : { ...total, ...counts };
+    for (const batch of batches) {
+      for (let start = 0; start < batch.events.length; start += batchLimit) {
+        const events = batch.events.slice(start, start + batchLimit);
+        const result = await post(events, batch, config.secret, url);
+        const counts = {
+          accepted: total.accepted + result.accepted,
+          duplicates: total.duplicates + result.duplicates,
+          failed: total.failed + result.failed,
+        };
+        total = total.ok ? { ...result, ...counts } : { ...total, ...counts };
+      }
     }
     return total;
   }
 
   async function drain(): Promise<ServerResult> {
-    const events = pending;
+    const batches = pending;
     pending = [];
-    if (events.length === 0) return nothing;
-    const result = await send(events);
+    if (batches.length === 0) return nothing;
+    const result = await send(batches);
     if (result.error) warn(result.error);
     return result;
   }
@@ -143,8 +185,8 @@ export function createServerAnalytics<
       id: uuidv7(now),
       name,
       ts: new Date(now).toISOString(),
-      visitor: from.visitor ?? "server",
-      session: from.session ?? "server",
+      visitor: from.visitor ?? serverVisitor,
+      session: from.session ?? serverVisitor,
       page: { path: from.path ?? pathOf(from.request), route: null, title: null, referrer: null },
       props: limitProps({ ...tags, ...props }, name === "error").props,
       context: wire,
@@ -153,8 +195,19 @@ export function createServerAnalytics<
     return event;
   }
 
+  function outgoing(from: RequestContext) {
+    const headers = from.request?.headers ?? from.headers;
+    const derived = headers ? siteOrigin(headers, from.request?.url) : null;
+    const origin = from.origin ?? derived ?? config.origin ?? null;
+    const cookie = headers ? adminSessionCookie(headers.get("cookie")) : null;
+    return { origin, cookie };
+  }
+
   function enqueue(event: WireEvent, from: RequestContext) {
-    pending.push(event);
+    const { origin, cookie } = outgoing(from);
+    const batch = pending.find((found) => found.origin === origin && found.cookie === cookie);
+    if (batch) batch.events.push(event);
+    else pending.push({ origin, cookie, events: [event] });
     scheduled ??= Promise.resolve().then(() => {
       scheduled = null;
       return drain();

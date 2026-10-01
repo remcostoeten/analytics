@@ -34,7 +34,7 @@ Nothing. It reads the `ra` query parameter once, when the client starts:
 
 Open any page that loads the client with `?ra=ignore` once per browser. The opt-out is kept in `localStorage`, so it lasts until `?ra=track` or until the site data is cleared, and it applies to this site only.
 
-`?ra=debug`, which logs every event to the console, is handled by the core and works without this plugin.
+`?ra=debug`, which logs every event to the console, and `?ra=nodebug`, which turns that off again and keeps the visitor id, are handled by the core and work without this plugin.
 
 ## In reports
 

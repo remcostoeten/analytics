@@ -14,6 +14,7 @@ export type SpeedScope = {
   route: string | null;
   path: string | null;
   country: string | null;
+  rawFrom: Date;
 };
 
 export type VitalStat = {

@@ -212,7 +212,7 @@ The full method list, config options, usage in every environment, error tracking
 
 Entries:
 
-- `.` framework-free browser core: client, pre-init queue, batching, the `beacon` transport, identity, consent, and the `pageviews` plugin. Budget 4.5 KB min+gzip: the first build with the full API from the SDK design tab measured 4.35 KB, and Remco raised the budget from 2.5 KB on Sep 28 rather than move methods out of the core.
+- `.` framework-free browser core: client, pre-init queue, batching, the `beacon` transport, identity, consent, and the `pageviews` plugin. Budget 5 KB min+gzip: the first build with the full API from the SDK design tab measured 4.35 KB, and Remco raised the budget from 2.5 KB on Sep 28 rather than move methods out of the core, then to 5 KB on Sep 30 for cross-tab consent, Do Not Track, retry and body-size fixes.
 - `./plugins` one export per plugin: `speedInsights`, `scrollDepth`, `engagement`, `clicks`, `outboundLinks` (including file downloads), `forms`, `errors`, `notFound`, `ignoreSelf`, `botSignals`, `experiments`. Each under 0.6 KB except `speedInsights`, which lazy-loads `web-vitals` and has a 2.5 KB budget, and `errors` at 0.7 KB, which carries breadcrumbs and scrubbing.
 - `./react` `AnalyticsProvider client={analytics}`, `useAnalytics()`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` for router adapters, and `computeRoute`. Gets `"use client"`. Budget 1.5 KB.
 - `./next` the Next adapter `Analytics`, which supplies `route` from `usePathname` and `useParams`. A separate entry so `./react` never imports `next/navigation`; it shares a chunk with `./react`, so both use one React context. Gets `"use client"`. Budget 1 KB.
@@ -221,7 +221,7 @@ Entries:
 
 Build config: the browser client reads JSON from `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`, the server client and proxy from `RA_CONFIG`, each with literal `process.env` or `import.meta.env` access; explicit options win, except ones that are `undefined`.
 
-Other options: `mode` (`auto` reads `NODE_ENV`; development logs and sends nothing unless `endpoint` is set explicitly), `debug`, `route` for adapters, and `beforeSend`. Props are limited to 25 per event, with names, keys and values up to 255 characters and flat primitive values.
+Other options: `mode` (`auto` reads `NODE_ENV`; development logs and sends nothing unless `endpoint` is set explicitly), `debug`, `route` for adapters, and `beforeSend`. Props are limited to 25 per event, with names, keys and values up to 255 characters (2048 for `stack` and `breadcrumbs` on `error` events) and flat primitive values. The SDK cuts props to these limits, and ingest rejects an event outside them with `VALIDATION_FAILED`.
 
 What stays: no cookies, localStorage visitor id, sessionStorage session with a 30-minute sliding window, DNT and opt-out honoured, nothing persisted without consent. Storage keys move to one `__ra` JSON key; 2.0 reads the 1.x keys once and migrates them so visitors keep their id.
 
@@ -254,7 +254,7 @@ Every request is a batch, every event has a client-made UUIDv7 id that survives 
 - **`signals`** is a bitfield of client bot hints, described under Bot detection.
 - **Batching**: events queue in memory and flush after 5 seconds, at 20 events, or on `pagehide` and `visibilitychange` to hidden. Body limit 60 KB so it fits `sendBeacon`'s 64 KB.
 - **Content type**: `text/plain` with a JSON body. That is a CORS-safelisted type, so browsers skip the preflight `OPTIONS` request that `application/json` triggers cross-origin.
-- **Retries**: `fetch` with `keepalive` normally, `sendBeacon` only on unload. On a network error or 5xx, retry with backoff (1 s, 4 s, 16 s), then persist to the queue if consent allows. On 4xx, drop the batch. The same event ids are resent, so the server's unique index makes retries safe.
+- **Retries**: `fetch` with `keepalive` normally, `sendBeacon` only on unload. On a network error, 429 or 5xx, retry with backoff (1 s, 4 s, 16 s, or the server's `Retry-After` capped at 16 s), then persist to the queue if consent allows. Batches waiting between retries are sent once when the page unloads. The client keeps each body under 60 KB and drops a single event over it as a 413. On 4xx, drop the batch. The same event ids are resent, so the server's unique index makes retries safe.
 - **Server SDK**: `application/json` with `Authorization: Bearer sk_...`, same envelope, plus an optional `context.ua` and `context.ip` so server-side tracking can forward the original visitor's details.
 
 ## REST API
@@ -465,7 +465,7 @@ Your own visits should never count, on any device, without you having to find an
 v2 uses three layers, strongest first:
 
 1. **Ignore this browser.** Opening any tracked page with `?ra=ignore`, or pressing a button in the dashboard, sets a flag in that browser's storage. The SDK then sends nothing at all from that browser, on every project. `?ra=track` undoes it. This needs doing once per browser.
-2. **Signed-in admin is marked automatically.** Your dashboard session cookie is scoped to `.remcostoeten.nl`, so it also reaches the ingest endpoint on that domain. When the API sees a valid admin session on an incoming event, it stores the event with `is_internal = true` and marks that visitor id internal for good. Every device you have signed in on excludes itself. This only covers sites under `remcostoeten.nl`; other domains rely on layer 1.
+2. **Signed-in admin is marked automatically.** Your dashboard session cookie is scoped to `.remcostoeten.nl`, so the browser also sends it to sites on that domain. The browser client sends without credentials, so the cookie reaches ingest through the same-origin proxy and the server client, which forward `ra.session_token` and no other cookie. When the API sees a valid admin session on an incoming event, it stores the event with `is_internal = true` and marks that visitor id internal for good. Every device you have signed in on excludes itself. This only covers sites under `remcostoeten.nl`; other domains rely on layer 1.
 3. **Manual marking** stays as a fallback: `PATCH /v2/projects/:project/visitors/:visitor` with `{ isInternal: true }`.
 
 Layer 1 drops events before they are sent. Layers 2 and 3 keep them with `is_internal = true`, so the dashboard can offer an "include my traffic" toggle. `INTERNAL_IP_HASHES` is removed.
@@ -535,7 +535,7 @@ All four take `device=mobile|desktop|all`, `percentile=75|90|95|99` (default 75)
 | Test | Playwright fixture pages with known behaviour (an image that paints after 2 s, a button whose handler blocks for 300 ms, a banner that shifts the layout by a known amount) must produce values within 10% of the expected ones, in CI |
 | Cross-check | A weekly job compares each project's p75 with Google's Chrome UX Report for the same origin, where Google has data, and flags a gap over 25% in `/admin/metrics` |
 
-Built so far (E4.3): ingest writes human `web_vital` events to `web_vitals`, keeping the latest value per metric id and dropping impossible values; the score and the four read routes read the raw table; `POST /v2/admin/jobs/rollup` fills `rollup_vitals` and trims raw rows past 30 days. The `/vitals/<run>` Playwright fixture page shifts the layout at 300 ms, paints a late hero at 800 ms and has a button that blocks for 250 ms; the stored LCP, INP and CLS must land within 10% of what the browser's own observers measured on that page. `POST /v2/admin/jobs/crux`, run weekly with `CRUX_API_KEY`, compares each project's 28-day p75 of LCP, INP, CLS and FCP with the Chrome UX Report for its origin and flags a gap over 25% in `/v2/admin/metrics`. The dashboard speed view follows.
+Built so far (E4.3): ingest writes human `web_vital` events to `web_vitals`, keeping the latest value per metric id and dropping impossible values; the score and the four read routes read the raw table for the last 30 days and `rollup_vitals` for older days; `POST /v2/admin/jobs/rollup` fills `rollup_vitals`, trims raw rows past 30 days and runs the session bot signals over the previous UTC day. The `/vitals/<run>` Playwright fixture page shifts the layout at 300 ms, paints a late hero at 800 ms and has a button that blocks for 250 ms; the stored LCP, INP and CLS must land within 10% of what the browser's own observers measured on that page. `POST /v2/admin/jobs/crux`, run weekly with `CRUX_API_KEY`, compares each project's 28-day p75 of LCP, INP, CLS and FCP with the Chrome UX Report for its origin and flags a gap over 25% in `/v2/admin/metrics`. The dashboard speed view follows.
 
 The fixture tests and the Chrome UX Report comparison are what make this sturdy over time: a regression in collection shows up as a failed test or a flagged gap, not as numbers that quietly look strange.
 
@@ -548,7 +548,7 @@ How blocking works: Brave Shields, uBlock Origin and Firefox strict tracking pro
 v2 approach:
 
 1. **Same-origin proxy.** The SDK sends to a relative path such as `/_ra`, configurable per site. A small handler in the site forwards the batch to `POST /v2/events`. The browser sees a first-party request to a neutral path, which filter lists have no rule for. No CNAME is involved, so there is nothing to uncloak.
-2. **Proxy helpers in the SDK.** `@remcostoeten/analytics/proxy` exports a fetch-standard handler: `export const POST = createProxy({ secret })` in a Next route, and the same function for Hono, Elysia, Astro or a Cloudflare Worker. It adds the project's secret key and the visitor's IP and user agent as forwarded headers.
+2. **Proxy helpers in the SDK.** `@remcostoeten/analytics/proxy` exports a fetch-standard handler: `export const POST = createProxy({ secret })` in a Next route, and the same function for Hono, Elysia, Astro or a Cloudflare Worker. It adds the project's secret key and the visitor's IP and user agent as forwarded headers, forwards the page's `Origin` (or the site's own origin) so localhost and preview flags work, forwards the admin session cookie and no other cookie, and refuses bodies over 60 KB.
 3. **Trusted forwarding in the API.** The API only trusts forwarded IP and user-agent headers on requests that carry a valid project secret key. Without that, geo and the IP hash would describe the proxy's server instead of the visitor.
 4. **Neutral names.** Default path `/_ra`, no `analytics`, `track` or `collect` in any URL, header or query parameter the browser sends.
 5. **Measure it.** An optional server-side counter in the proxy helper counts HTML page requests. Comparing that with client pageviews gives an estimated blocked share per project, shown in the dashboard instead of guessed.
@@ -602,16 +602,16 @@ The SDK never throws into the host app and never breaks a page. Instead:
 
 | Situation | Production | `debug: true` |
 | --- | --- | --- |
-| Misconfiguration: missing key, bad endpoint | One `console.warn` per code, then silent | Same, plus the fix |
-| Event dropped for consent, opt-out, Do Not Track or ignore-self | Silent | `console.info` with the reason |
-| Server rejected events (4xx or `rejected[]`) | Silent | `console.warn` with the code, the field and the event |
-| Network failure, retrying | Silent | `console.debug` with the attempt number |
-| Each event sent | Silent | A collapsed `console.groupCollapsed("[ra] pageview /blog")` with the payload |
+| Misconfiguration, such as an empty key (`RA_NO_KEY`) | One `console.warn` per code, then silent | `console.warn` every time |
+| Event dropped for consent, opt-out, Do Not Track or Global Privacy Control (`dnt`), or `beforeSend` | Silent; `on("drop")` gets the event and the reason | `console.info` `RA_DROP` with the reason |
+| Events rejected inside a 202 (`rejected[]`) | Silent; `on("error")` gets `RA_INGEST_REJECTED` per event | `console.info` `RA_INGEST_REJECTED` with the code, the message and the event |
+| Batch failed: a 4xx, a 413 for an event over 60 KB, or the last retry | Silent; `on("error")` gets `RA_INGEST_FAILED` | `console.info` `RA_INGEST_FAILED` with the HTTP status |
+| Each event queued | Silent | `console.info` `RA_EVENT` with the event |
 
 - All SDK console output starts with `[ra]` and a code such as `RA_CONSENT_MISSING` or `RA_INGEST_REJECTED`, from the same catalog, so it is easy to filter in devtools.
 - `client.on("error", handler)` gives apps the same errors as values, for their own logging.
 - `client.status()` returns queue size, consent state, endpoint, last error and last successful send, useful when debugging a site.
-- Debug mode can be switched on without a deploy by adding `?ra=debug` to a URL, which sets a flag in that browser.
+- Debug mode can be switched on without a deploy by adding `?ra=debug` to a URL, which sets a flag in that browser, and off again with `?ra=nodebug`, which keeps the visitor id. The flag is stored even before consent, as the visitor's own choice.
 - The server SDK returns `{ ok, error }` from `track` and `flush` instead of throwing.
 
 ### Error tracking as a feature
@@ -676,7 +676,7 @@ The generic-program-rules skill governs all v2 code; where the Elysia skill disa
 | api-design skill | Generate the OpenAPI document from Elysia's schema plugin and run the skill's agent-readiness and OWASP review on it before phase 4 ships |
 | auth-review skill | Run it on the v2 API before the dashboard switches over, focused on the public, project and detail access levels, private projects returning 404, and the session cookie |
 
-Budgets enforced in CI, not just written down: SDK core 4.5 KB and each plugin 0.6 KB min+gzip via a size check script, and ingest p95 under 100 ms in a load test run before each ingest release.
+Budgets enforced in CI, not just written down: SDK core 5 KB and each plugin 0.6 KB min+gzip via a size check script, and ingest p95 under 100 ms in a load test run before each ingest release.
 
 ## Linting and formatting
 
@@ -719,7 +719,7 @@ Only the two published packages get a build step; internal packages are imported
 
 - **ESM only for SDK 2.0.** Every current bundler and Node 22+ load ESM, and dropping the CJS copy halves the package. It is a major version anyway.
 - **Task order**: `bun run --filter` already runs workspace scripts in dependency order. Turborepo is only worth adding if CI time becomes a problem, for its caching.
-- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 4.5 KB, `./react` 1.5 KB, `./next` 1 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
+- **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 5 KB, `./react` 1.5 KB, `./next` 1 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
 - **Releases**: Changesets. Each PR that changes a published package adds a changeset; merging to `master` opens a version PR; merging that publishes to npm from CI with provenance. This replaces today's manual `npm publish`.
 - **Migrations**: `scripts/migrate.ts` applies the numbered SQL files in order and records them in a `schema_migrations` table. It is run by hand against Neon, never on deploy, which keeps the repo rule of applying migrations manually while removing the copy-paste step.
 - **Deploys**: Vercel builds `apps/api` and `apps/dashboard` per PR as previews and on `master` as production. The legacy `apps/ingestion` project stays as it is until phase 5.

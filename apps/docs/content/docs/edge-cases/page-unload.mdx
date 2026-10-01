@@ -1,0 +1,63 @@
+---
+title: Page unload
+description: What happens to queued events when a visitor switches tabs, closes the page or returns with the back button.
+---
+
+The SDK sends events in batches, so at any moment some events are still in the browser. This page explains when those events leave, how the SDK sends them while the page goes away, and which events can still be lost.
+
+## Events wait in a queue
+
+Every event goes into an in-memory queue. The queue sends a batch when it holds 20 events, 5 seconds after the first event arrived, or when it is flushed. A flush sends everything in batches of 20.
+
+The queue is memory only. Events enter `localStorage` in one case: a batch that failed with an error worth retrying, described below.
+
+## The page is flushed when it is hidden
+
+The client listens for `visibilitychange` to `hidden` and for `pagehide`. Either one does two things, in this order:
+
+1. It runs the plugins' hidden hooks. The [`engagement`](/docs/plugins/engagement) plugin records its visible time here, and `scrollDepth` and `speedInsights` report here too, so their events join the flush.
+2. It flushes the queue in unloading mode.
+
+A tab switch, minimizing the window and locking a phone all make the page hidden, so the queue is flushed then, not only when the page closes. Closing a tab or following a link usually fires both events; the second flush finds an empty queue.
+
+The client never listens for `unload`.
+
+## How a batch is sent while unloading
+
+In unloading mode each batch is sent once, with no retries, because the page may be gone before a retry would run. Batches that were waiting between retries are sent in the same flush, also once.
+
+The default transport first hands the batch to `navigator.sendBeacon`. The browser queues a beacon and sends it after the page is gone, but gives no answer back. When `sendBeacon` accepts the batch, the SDK counts every event in it as accepted, and duplicates and rejections are never known for that batch.
+
+When `sendBeacon` is missing or refuses the batch, the transport falls back to `fetch` with `keepalive: true`, which also lets the request outlive the page.
+
+Both use a `text/plain` body with the public key in the `key` query parameter, because `sendBeacon` cannot set headers. With an empty key the parameter is left out.
+
+## Failed batches are saved for the next page load
+
+Outside unloading mode, a batch that fails with a network error, a 429 or a 5xx is retried after 1, 4 and 16 seconds with the same event ids. When the answer carries `Retry-After`, the client waits that long instead, up to 16 seconds. If it still fails, or if it failed in unloading mode, the events are saved in `localStorage`. At most the latest 100 saved events are kept.
+
+The next time the client starts on the same site, it moves the saved events back into the queue and sends them with the first batch. They keep their original timestamps. The API shifts every event's time by the gap between the batch's `sentAt` and the moment it arrived, which corrects the browser's clock without moving an old event to the present.
+
+A 4xx other than 429 means the API will never accept the batch, so it is dropped, not saved. Saving and replaying both require that consent and opt-out allow sending.
+
+## The back/forward cache
+
+Browsers can keep a page in memory when the visitor leaves and restore it on back or forward, without reloading. The client listens for `pagehide` rather than `unload`, so it does not stop the browser from caching the page.
+
+On restore the client, its queue and its plugins continue where they were. The client does not listen for `pageshow`, so a restored page does not send a new pageview on its own. The visit continues in the same session if it is within 30 minutes of the last event.
+
+## What can still be lost
+
+| Situation | What is lost |
+| --- | --- |
+| The browser or the tab process crashes | Everything in the queue that was not yet flushed, up to 5 seconds or 19 events |
+| A beacon is queued but never delivered | The batch. The SDK already counted it as sent |
+| `localStorage` is unavailable or full | Failed batches, which then have nowhere to be saved |
+| More than 100 events fail before the next page load | The oldest ones beyond 100 |
+| The visitor never comes back to the site | Saved events, which are only sent by a later page load |
+
+## What to do
+
+- Call `await analytics.flush()` before a navigation you start yourself when you need to know an event arrived, for example after a purchase and before redirecting to a payment page. It sends with `fetch`, so it resolves with the API's counts, or after the last retry when the API cannot be reached.
+- Send events that must never be lost from the server with the [server client](/docs/sdk/server) instead of the browser.
+- Use `analytics.status()` to see how many events are queued and when the last batch was sent.

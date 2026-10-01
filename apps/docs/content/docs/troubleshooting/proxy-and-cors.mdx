@@ -1,0 +1,96 @@
+---
+title: Fix proxy and origin errors
+description: What each refusal from the /_ra proxy or the API's origin check means, and how to fix it.
+---
+
+Use this page when requests to `/_ra`, or straight to the API with the public key, fail with 403, 404, 413, 5xx or a CORS message. The proxy's own refusals carry a `code` and a `message` but no `requestId`; anything else the proxy returns is the API's answer, passed through unchanged.
+
+## 403 `FORBIDDEN_ORIGIN`: "Origin ... is not allowed for this project"
+
+The API refused a request with the public key because its `Origin` header is not in the project's `allowedOrigins`. The check compares whole strings, so scheme, host and port must all match:
+
+| Page | Needs this entry |
+| --- | --- |
+| `https://example.com` | `https://example.com`, without a trailing slash or path |
+| `https://www.example.com` | `https://www.example.com`, as a separate entry |
+| `http://localhost:3000` | `http://localhost:3000`, if you send from local development |
+
+An empty list allows every origin. "Origin (none)" means the request had no `Origin` header, which happens when server code or `curl` uses the public key; servers should use the secret key instead.
+
+Replace the list with `PATCH /v2/projects/{project}`. The new list applies to the next request:
+
+```bash
+curl -X PATCH https://api.example.com/v2/projects/example.com \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"allowedOrigins":["https://example.com","https://www.example.com"]}'
+```
+
+Requests through the proxy use the secret key, so the API does not check their origin against the list. It still reads the `Origin` the proxy forwards to set the event's host and the localhost and preview flags.
+
+## 403 `FORBIDDEN_ORIGIN`: "Events must come from this site"
+
+The proxy refused a cross-site request. It reads `Sec-Fetch-Site` and refuses only `cross-site`, so pages on the same site, including other subdomains, pass. When the browser sends no `Sec-Fetch-Site`, the proxy compares the host in `Origin` with the request URL's host, `Host` and `X-Forwarded-Host`.
+
+- If a page on another domain posts to your `/_ra`, give that site its own proxy on its own domain.
+- If a reverse proxy in front of your app rewrites `Host`, make it set `X-Forwarded-Host` to the public host.
+
+## The console shows a CORS error
+
+The API answers every request that has an `Origin` header with `Access-Control-Allow-Origin: *`, error responses included, and answers preflight requests itself. The browser client sends `text/plain`, so browsers skip the preflight.
+
+A CORS error therefore means the response did not come from the API. Check that `endpoint` points at the API's `/v2/events` URL and not at a host that answers without CORS headers, such as a hosting error page. A same-origin `/_ra` path needs no CORS at all.
+
+## `/_ra` answers 404 from your framework
+
+The route does not exist at that path, so the framework answers with its own 404 page. The client drops batches that get a 4xx, so events sent in the meantime are lost.
+
+| Setup | Cause | Fix |
+| --- | --- | --- |
+| Next.js App Router | A folder starting with `_` is private, so `app/_ra/route.ts` is not routed | Name the folder `app/%5Fra/` |
+| Astro | Files whose name starts with `_` are not routed | Use `src/pages/ra.ts` and set `endpoint` to `/ra` |
+| Astro, prerendered site | The endpoint does not run on demand | Add `export const prerender = false` and a server adapter |
+| Vercel Functions | `api/_ra.ts` is not routed | Serve the proxy from another file, or use a rewrite |
+
+Whatever the path, the client's `endpoint` has to match it. See [Next.js](/docs/frameworks/nextjs#serve-_ra), [Astro](/docs/frameworks/astro#proxy-endpoint), [Svelte](/docs/frameworks/svelte) and [Server](/docs/frameworks/server).
+
+## `/_ra` answers 404 with "No route matches this path"
+
+This body comes from the API, so the proxy runs but posts to the wrong URL. The proxy adds `/v2/events` to its `endpoint` unless the value already ends with `/v2/events`. A value such as `https://api.example.com/v2` becomes `https://api.example.com/v2/v2/events`. Set `endpoint` to the API's base URL, `https://api.example.com`.
+
+## `/_ra` answers 500: "The analytics proxy needs a secret and an endpoint"
+
+`createProxy` has no secret or no endpoint, after merging its options with the JSON in `RA_CONFIG`. The SDK does not read `RA_SECRET` or `RA_ENDPOINT` itself, so check that the variable you pass is set in the environment where the route runs:
+
+```ts
+export const POST = createProxy({
+  secret: process.env.RA_SECRET,
+  endpoint: process.env.RA_ENDPOINT,
+});
+```
+
+Astro reads them from `import.meta.env` and Cloudflare Workers from the `env` argument of each request. The client retries a 500 and then keeps up to 100 events in `localStorage`, so they are sent on the next page load once the route works.
+
+## `/_ra` answers 401 `UNAUTHORIZED`
+
+The API refused the proxy's secret key. The key is wrong, belongs to another project, or was rotated with `POST /v2/projects/{project}/keys`; a rotated secret stops working at once. Put the current `sk_...` in the proxy's environment.
+
+## `/_ra` answers 405: "Only POST is accepted"
+
+The proxy accepts only `POST`. The client always posts, so a 405 comes from something else, such as opening `/_ra` in the address bar.
+
+## `/_ra` answers 413 `PAYLOAD_TOO_LARGE`
+
+The proxy refuses bodies over 60 KB with "The body is over 60 KB", the same limit and message as the API.
+
+The browser client keeps each batch under 60 KB by sending fewer events per request, so a 413 from the current client means one event is over 60 KB on its own. The client drops that event without sending it and reports `RA_INGEST_FAILED` with `HTTP 413` through `on("error")`. A 413 on the network panel comes from another sender, such as an older client or your own code. Send fewer or shorter props.
+
+## `/_ra` answers 502: "The analytics API could not be reached"
+
+The proxy's request to the API failed before any answer: a wrong host in `endpoint`, a DNS or TLS failure, or the API is down. The client retries and keeps the events for the next page load.
+
+## Proxied events have no location or IP hash
+
+The proxy forwards the visitor's IP from the first of `cf-connecting-ip`, `x-real-ip` and `x-forwarded-for` on the incoming request. If your host sets none of them, the event has no IP. The API does not fall back to the proxy server's own address on a secret-key request, so the event gets no IP hash, no city and no network, and its country comes only from the browser's timezone. The edge location headers are skipped as well, because on a secret-key request they describe your server. A missing IP or user agent adds no bot weight.
+
+The server client has the same need: pass the incoming `request` or its `headers` to `track`. See [Server](/docs/sdk/server).

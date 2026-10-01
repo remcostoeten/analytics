@@ -21,6 +21,7 @@ export type SavedStore = {
   read: () => Saved;
   write: (patch: Partial<Saved>, always?: boolean) => void;
   drop: (keys: (keyof Saved)[]) => void;
+  refresh: () => void;
 };
 
 const key = "__ra";
@@ -49,9 +50,6 @@ function legacy(store: Store): Saved {
   if (read("opt_out") === "true") saved.optOut = true;
   if (Object.keys(traits).length > 0) saved.traits = traits;
   if (Object.keys(experiments).length > 0) saved.experiments = experiments;
-  for (const name of Object.keys(store)) {
-    if (name.startsWith(legacyPrefix)) store.removeItem(name);
-  }
   return saved;
 }
 
@@ -59,29 +57,61 @@ function legacy(store: Store): Saved {
  * @name createSavedStore
  * @description Everything the SDK keeps across page loads, in one `__ra` JSON key. On the first
  * run it reads the 1.x keys (`__analytics_visitor_id`, `__analytics_opt_out`, the identity and
- * trait keys), carries them over so visitors keep their id, and removes them. Values are only
- * written while `allowed()` says so, which is how consent keeps identity out of storage; a write
- * with `always` records the consent or opt-out decision itself. Without storage, or when storage
- * throws, values live in memory for the page's lifetime.
+ * trait keys) so visitors keep their id, and moves them into `__ra` on the first write while
+ * `allowed()` says so. Nothing is written while `allowed()` is false, which is how consent keeps
+ * identity out of storage; a write with `always` records the visitor's own decision (`consent`,
+ * `optOut` or `debug`) and writes only the fields it was given. Every write re-reads `__ra` first,
+ * takes over the decisions another tab stored, and changes only its own fields, so a tab opened
+ * before a revoke in another tab cannot overwrite it; `refresh` does the same for a `storage`
+ * event. Without storage, or when storage throws, values live in memory for the page's lifetime.
  *
  * @example
  * const saved = createSavedStore(window.localStorage, () => true);
- * saved.write({ optOut: true });
+ * saved.write({ optOut: true }, true);
  */
 export function createSavedStore(store: Store | null, allowed: () => boolean): SavedStore {
-  let memory: Saved = {};
+  function stored() {
+    try {
+      return store?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const first = stored();
+  let memory: Saved = first ? parse<Saved>(first, {}) : {};
+  let unsaved: Saved = {};
   try {
-    const raw = store?.getItem(key);
-    memory = raw ? parse<Saved>(raw, {}) : store ? legacy(store) : {};
-    if (!raw) store?.setItem(key, JSON.stringify(memory));
+    if (!first && store) memory = unsaved = legacy(store);
   } catch {
     noop();
   }
 
-  function persist(always = false) {
-    if (!always && !allowed()) return;
+  function refresh() {
+    const text = stored();
+    if (!text) return;
+    const { consent, optOut, debug } = parse<Saved>(text, {});
+    memory = { ...memory, consent, optOut, debug };
+  }
+
+  function commit(patch: Partial<Saved>, gone: (keyof Saved)[], always = false) {
+    refresh();
+    memory = { ...memory, ...patch };
+    unsaved = { ...unsaved, ...patch };
+    for (const name of gone) {
+      delete memory[name];
+      delete unsaved[name];
+    }
+    const open = allowed();
+    if (!always && !open) return;
+    const next: Saved = { ...parse<Saved>(stored(), {}), ...(open ? unsaved : patch) };
+    for (const name of gone) delete next[name];
     try {
-      store?.setItem(key, JSON.stringify(memory));
+      store?.setItem(key, JSON.stringify(next));
+      if (!open) return;
+      unsaved = {};
+      for (const name of Object.keys(store ?? {})) {
+        if (name.startsWith(legacyPrefix)) store?.removeItem(name);
+      }
     } catch {
       noop();
     }
@@ -89,15 +119,8 @@ export function createSavedStore(store: Store | null, allowed: () => boolean): S
 
   return {
     read: () => memory,
-    write: (patch, always) => {
-      memory = { ...memory, ...patch };
-      persist(always);
-    },
-    drop: (keys) => {
-      const next = { ...memory };
-      for (const name of keys) delete next[name];
-      memory = next;
-      persist();
-    },
+    write: (patch, always) => commit(patch, [], always),
+    drop: (keys) => commit({}, keys),
+    refresh,
   };
 }

@@ -20,6 +20,7 @@ export type ServerConfig = {
   secret?: string;
   endpoint?: string;
   release?: string;
+  origin?: string;
   fetch?: Fetcher;
   waitUntil?: WaitUntil;
 };
@@ -31,6 +32,7 @@ export type RequestContext = {
   visitor?: string;
   session?: string;
   path?: string;
+  origin?: string;
   waitUntil?: WaitUntil;
 };
 

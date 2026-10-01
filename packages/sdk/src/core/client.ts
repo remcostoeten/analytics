@@ -4,7 +4,14 @@ import { pageviews } from "../plugins/pageviews";
 import { beacon } from "../transports/beacon";
 import { buildEvent, limitProps } from "./build-event";
 import { browserConfig, mergeConfig } from "./config";
-import { browserContext, browserStore, debugFlag, pageFacts, resolveMode } from "./environment";
+import {
+  browserContext,
+  browserStore,
+  debugFlag,
+  pageFacts,
+  privacySignal,
+  resolveMode,
+} from "./environment";
 import { createIdentity } from "./identity";
 import { createLog } from "./logger";
 import { createPluginHost } from "./plugin-host";
@@ -39,8 +46,9 @@ function describe(error: unknown) {
 /**
  * @name createAnalytics
  * @description Creates the browser client. It queues events in memory and sends them in batches,
- * keeps a visitor id in `localStorage` and a session in `sessionStorage`, honours consent and
- * opt-out, and runs plugins, with `pageviews` on by default. Calls made before `start()` or,
+ * keeps a visitor id in `localStorage` and a session in `sessionStorage`, honours consent,
+ * opt-out, Do Not Track and Global Privacy Control, follows consent and opt-out changes made in
+ * other tabs, and runs plugins, with `pageviews` on by default. Calls made before `start()` or,
  * with `consent: "required"`, before `consent.grant()` are held and replayed. In development mode
  * without an explicit `endpoint` it logs events instead of sending them. Options missing here are
  * read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`.
@@ -61,6 +69,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
   const quiet = mode === "development" && !config.endpoint;
   const listeners: Registry = { error: new Set(), send: new Set(), drop: new Set() };
   const host = createPluginHost();
+  const dnt = privacySignal(globalThis.navigator);
   const saved = createSavedStore(browserStore("localStorage"), allowed);
   const identity = createIdentity(saved, browserStore("sessionStorage"), now, allowed);
   const log = createLog(() => config.debug === true || saved.read().debug === true, console);
@@ -81,19 +90,26 @@ export function createAnalytics<Events extends EventMap = EventMap>(
       const timer = setTimeout(run, ms);
       return () => clearTimeout(timer);
     },
-    onSend: (envelope) => {
+    onSend: (envelope, result) => {
       lastSend = new Date(now()).toISOString();
+      for (const item of result.rejected) {
+        report("RA_INGEST_REJECTED", `${item.code}: ${item.message}`, envelope.events[item.index]);
+      }
       for (const handler of listeners.send) handler(envelope);
     },
-    onFailure: (events, status) => {
+    onFailure: (_, status) => {
       lastError = `HTTP ${status}`;
-      log.info("RA_INGEST_FAILED", `${events.length} events, ${lastError}`);
-      for (const handler of listeners.error) handler("RA_INGEST_FAILED", lastError);
+      report("RA_INGEST_FAILED", lastError);
     },
     persist: (events) => {
       saved.write({ queue: [...(saved.read().queue ?? []), ...events].slice(-maxSaved) });
     },
   });
+
+  function report(code: string, detail: string, event?: WireEvent) {
+    log.info(code, detail, event);
+    for (const handler of listeners.error) handler(code, detail);
+  }
 
   function consentStatus(): ConsentStatus {
     return saved.read().consent ?? "unset";
@@ -103,8 +119,12 @@ export function createAnalytics<Events extends EventMap = EventMap>(
     return saved.read().optOut === true;
   }
 
+  function blocked() {
+    return optedOut() ? "opt-out" : dnt ? "dnt" : null;
+  }
+
   function allowed() {
-    if (optedOut()) return false;
+    if (blocked()) return false;
     const status = consentStatus();
     return config.consent === "required" ? status === "granted" : status !== "denied";
   }
@@ -119,7 +139,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
   }
 
   function deliver(event: WireEvent) {
-    if (!allowed()) return drop(event, optedOut() ? "opt-out" : "consent");
+    if (!allowed()) return drop(event, blocked() ?? "consent");
     log.info(quiet ? "RA_DEV_EVENT" : "RA_EVENT", event.name, event);
     if (!quiet) queue.add(event);
   }
@@ -149,7 +169,8 @@ export function createAnalytics<Events extends EventMap = EventMap>(
       props: limited.props,
       context: browserContext(config.release),
     });
-    if (optedOut()) return drop(event, "opt-out");
+    const reason = blocked();
+    if (reason) return drop(event, reason);
     const kept = host.apply(event);
     const final = kept && config.beforeSend ? config.beforeSend(kept) : kept;
     if (!final) return drop(event, "beforeSend");
@@ -225,14 +246,12 @@ export function createAnalytics<Events extends EventMap = EventMap>(
         held = [];
         queue.clear();
       },
-      optIn: () => {
-        saved.drop(["optOut"]);
-        saved.write({}, true);
-      },
+      optIn: () => saved.write({ optOut: false }, true),
       isOptedOut: optedOut,
       reset: () => {
         forgetIdentity();
         firstPage = true;
+        route = null;
       },
       flush: () => queue.flush(),
       shutdown: async () => {
@@ -294,7 +313,8 @@ export function createAnalytics<Events extends EventMap = EventMap>(
   function start() {
     if (started) return;
     started = true;
-    if (debugFlag()) saved.write({ debug: true }, true);
+    const flag = debugFlag();
+    saved.write(flag === null ? {} : { debug: flag }, flag !== null);
     const leftover = saved.read().queue ?? [];
     if (leftover.length > 0 && allowed()) {
       saved.drop(["queue"]);
@@ -309,11 +329,18 @@ export function createAnalytics<Events extends EventMap = EventMap>(
       function onVisibility() {
         if (document.visibilityState === "hidden") hidden();
       }
+      function onStorage() {
+        saved.refresh();
+        if (!allowed()) queue.clear();
+        release();
+      }
       document.addEventListener("visibilitychange", onVisibility);
       addEventListener("pagehide", hidden);
+      addEventListener("storage", onStorage);
       removers.push(() => {
         document.removeEventListener("visibilitychange", onVisibility);
         removeEventListener("pagehide", hidden);
+        removeEventListener("storage", onStorage);
       });
     }
     if (!config.key) log.warn("RA_NO_KEY", "key is empty");

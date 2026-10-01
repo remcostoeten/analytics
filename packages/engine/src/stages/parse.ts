@@ -1,4 +1,4 @@
-import { WireEvent } from "@remcostoeten/analytics-contract";
+import { propValueLimit, WireEvent } from "@remcostoeten/analytics-contract";
 import type { WireEvent as Event } from "@remcostoeten/analytics-contract";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
@@ -15,16 +15,30 @@ function location(path: string) {
     .join("");
 }
 
+function longProp(event: Event) {
+  return Object.entries(event.props).find(
+    ([key, value]) => typeof value === "string" && value.length > propValueLimit(event.name, key),
+  );
+}
+
 /**
  * @name parseEvent
  * @description The parse stage: checks one raw event of a batch against the contract's
- * `WireEvent`, so a bad event is rejected by index while the rest of the batch is stored.
+ * `WireEvent`, including the prop limits the SDK applies (count, key length and each string
+ * value's length for the event's name), so a bad event is rejected by index while the rest of the
+ * batch is stored.
  *
  * @example
  * parseEvent({ name: "" }, 1); // err VALIDATION_FAILED "events[1].id: Expected required property"
  */
 export function parseEvent(raw: unknown, index: number): Result<Event, EngineError> {
-  if (Value.Check(WireEvent, raw)) return ok(raw);
+  if (Value.Check(WireEvent, raw)) {
+    const long = longProp(raw);
+    if (!long) return ok(raw);
+    const [key] = long;
+    const message = `events[${index}].props.${key}: Expected string length less or equal to ${propValueLimit(raw.name, key)}`;
+    return err({ ...engineError("VALIDATION_FAILED", message), details: { index } });
+  }
   const [first] = Value.Errors(WireEvent, raw);
   const message = first
     ? `events[${index}]${location(first.path)}: ${first.message}`
