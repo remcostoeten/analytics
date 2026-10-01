@@ -53,6 +53,7 @@ export type {
   Paths,
   Place,
   PlacesPage,
+  Environment,
   ReadFilter,
   ReadScope,
   ReadStore,

@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { BotReason, Channel, DeviceType, Period, TrafficFilter } from "./enums";
+import { BotReason, Channel, DeviceType, Environment, Period, TrafficFilter } from "./enums";
 import { Count, nullable, Timestamp } from "./schema";
 
 export const PropValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]);
@@ -36,6 +36,7 @@ export type RangeQuery = Static<typeof RangeQuery>;
 
 export const FilterQuery = Type.Object({
   traffic: Type.Optional(TrafficFilter),
+  environment: Type.Optional(Environment),
   filter: Type.Optional(
     Type.Record(Type.String(), Type.String(), {
       description:

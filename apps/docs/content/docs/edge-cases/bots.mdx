@@ -27,7 +27,7 @@ The crawler list names bots one by one, such as `Googlebot`, `GPTBot` and `Uptim
 
 ## Stored, never dropped
 
-Events are stored whatever their score. Reads decide what to count: the default `traffic=human` filter counts events that score under 50 and are not internal, localhost or preview traffic. `traffic=bots` shows the events at 50 or above, and `traffic=all` shows everything.
+Events are stored whatever their score. Reads decide what to count: the default `traffic=human` filter counts events that score under 50 and are not internal or localhost traffic, and the default `environment=production` leaves preview deployments out. `traffic=bots` shows the events at 50 or above, and `traffic=all` shows everything.
 
 Keeping the events has two reasons. A score can be wrong in either direction, and a stored event can be scored again after a signal is fixed. And an event dropped at ingest cannot be counted, so bot traffic to your site would stay invisible.
 

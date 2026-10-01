@@ -379,6 +379,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -2910,6 +2923,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -2936,6 +2962,7 @@
                     "previousRange",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -3127,6 +3154,14 @@
                         "all"
                       ]
                     },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
                     "filters": {
                       "type": "object",
                       "patternProperties": {
@@ -3291,6 +3326,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -3350,6 +3398,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -3428,6 +3477,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -3603,6 +3660,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -3689,6 +3759,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -3794,6 +3865,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -4158,6 +4237,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -4259,6 +4351,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -4353,6 +4446,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -4525,6 +4626,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -4563,6 +4677,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -4643,6 +4758,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -4810,6 +4933,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -4849,6 +4985,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -4918,6 +5055,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -5085,6 +5230,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -5112,6 +5270,7 @@
                     "averageDays",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -5172,6 +5331,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -5339,6 +5506,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -5388,6 +5568,7 @@
                     "timezone",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -5452,6 +5633,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -5619,6 +5808,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -5708,6 +5910,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -5811,6 +6014,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -5942,6 +6153,19 @@
                 "human",
                 "bots",
                 "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
                 "all"
               ]
             }
@@ -9804,6 +10028,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -10334,6 +10571,19 @@
                 "human",
                 "bots",
                 "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
                 "all"
               ]
             }
@@ -11693,6 +11943,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -12585,6 +12848,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -12611,6 +12887,7 @@
                     "previousRange",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -12802,6 +13079,14 @@
                         "all"
                       ]
                     },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
                     "filters": {
                       "type": "object",
                       "patternProperties": {
@@ -12958,6 +13243,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -13017,6 +13315,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -13095,6 +13394,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -13254,6 +13561,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -13341,6 +13661,7 @@
                         "previousRange",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -13505,6 +13826,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -13677,6 +14006,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -13763,6 +14105,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -13868,6 +14211,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -14214,6 +14565,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -14513,6 +14877,19 @@
                 "human",
                 "bots",
                 "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
                 "all"
               ]
             }
@@ -15627,6 +16004,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -15728,6 +16118,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -15822,6 +16213,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -15986,6 +16385,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -16024,6 +16436,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -16104,6 +16517,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -16263,6 +16684,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -16302,6 +16736,7 @@
                     "interval",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -16371,6 +16806,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -16530,6 +16973,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -16557,6 +17013,7 @@
                     "averageDays",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -16617,6 +17074,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -16776,6 +17241,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -16825,6 +17303,7 @@
                     "timezone",
                     "range",
                     "traffic",
+                    "environment",
                     "filters"
                   ],
                   "properties": {
@@ -16889,6 +17368,14 @@
                         "human",
                         "bots",
                         "internal",
+                        "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
                         "all"
                       ]
                     },
@@ -17048,6 +17535,19 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
             "name": "filter",
             "in": "query",
             "required": false,
@@ -17137,6 +17637,7 @@
                         "nextCursor",
                         "range",
                         "traffic",
+                        "environment",
                         "filters"
                       ],
                       "properties": {
@@ -17240,6 +17741,14 @@
                             "human",
                             "bots",
                             "internal",
+                            "all"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "production",
+                            "preview",
                             "all"
                           ]
                         },
@@ -17363,6 +17872,19 @@
                 "human",
                 "bots",
                 "internal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
                 "all"
               ]
             }

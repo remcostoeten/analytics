@@ -5,6 +5,7 @@ import type { Dimension } from "../define";
 import type { EngineError } from "../errors";
 
 export type Traffic = "human" | "bots" | "internal" | "all";
+export type Environment = "production" | "preview" | "all";
 export type Interval = "hour" | "day" | "week" | "month";
 
 export type ReadFilter = {
@@ -18,6 +19,7 @@ export type ReadScope = {
   from: Date;
   to: Date;
   traffic: Traffic;
+  environment: Environment;
   filters: ReadFilter[];
 };
 

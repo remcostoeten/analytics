@@ -167,6 +167,7 @@ describe("GET /v2/projects/:project/stats", () => {
       range: { from: "2026-09-20T00:00:00.000Z", to: "2026-09-27T00:00:00.000Z" },
       previousRange: { from: "2026-09-13T00:00:00.000Z", to: "2026-09-20T00:00:00.000Z" },
       traffic: "human",
+      environment: "production",
       filters: {},
     });
   });
@@ -183,6 +184,7 @@ describe("GET /v2/projects/:project/stats", () => {
 
   test("bad parameters are VALIDATION_FAILED", async () => {
     expect((await get("/v2/projects/site/stats?period=3w")).status).toBe(400);
+    expect((await get("/v2/projects/site/stats?environment=staging")).status).toBe(400);
     expect((await get("/v2/projects/site/stats?from=2026-09-01T00:00:00Z")).status).toBe(400);
     expect((await get("/v2/projects/site/stats?traffic=robots")).status).toBe(400);
     expect((await get("/v2/projects/site/stats?filter[shoe_size]=42")).status).toBe(400);
