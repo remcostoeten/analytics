@@ -87,6 +87,7 @@ describe("admin types", () => {
   test("alertRoute handlers get the event narrowed by name", () => {
     expectTypeOf<AlertEventOf<"issue.new">["name"]>().toEqualTypeOf<"issue.new">();
     expectTypeOf<AlertEventOf<"issue.regression">["issue"]["title"]>().toEqualTypeOf<string>();
-    expectTypeOf<AlertEventName>().toEqualTypeOf<"issue.new" | "issue.regression">();
+    expectTypeOf<AlertEventOf<"speed.drop">["speed"]["score"]>().toEqualTypeOf<number>();
+    expectTypeOf<AlertEventName>().toEqualTypeOf<"issue.new" | "issue.regression" | "speed.drop">();
   });
 });

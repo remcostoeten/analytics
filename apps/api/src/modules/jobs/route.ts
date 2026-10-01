@@ -173,7 +173,12 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
           }
           const result = await runAlerts(
             options.alerts.plugin,
-            { issues: options.issues, alerts: options.alerts.store, links: options.alerts.links },
+            {
+              issues: options.issues,
+              speed: options.speed,
+              alerts: options.alerts.store,
+              links: options.alerts.links,
+            },
             options.clock(),
           );
           return result.ok ? ok({ rowsWritten: result.value.sent }) : result;
@@ -183,7 +188,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Queue and send alerts",
           description:
-            "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
+            "Queues new issues and regressions, up to 100 per run, and speed drops (yesterday's Real Experience Score against the 7 days before it), as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
           tags,
         },
       },

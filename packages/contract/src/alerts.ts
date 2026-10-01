@@ -1,10 +1,13 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { IssueLevel } from "./enums";
+import { IssueLevel, VitalMetric, VitalRating } from "./enums";
 import { Count, dataOf, listOf, nullable, oneOf, Timestamp } from "./schema";
 
-export const AlertEventName = oneOf(["issue.new", "issue.regression"]);
+export const IssueAlertName = oneOf(["issue.new", "issue.regression"]);
+export type IssueAlertName = Static<typeof IssueAlertName>;
+
+export const AlertEventName = oneOf(["issue.new", "issue.regression", "speed.drop"]);
 export type AlertEventName = Static<typeof AlertEventName>;
 
 export const ChannelName = oneOf(["mail", "webhook", "discord"]);
@@ -114,7 +117,7 @@ export const TargetTest = dataOf(
 export type TargetTest = Static<typeof TargetTest>;
 
 export const IssueAlert = Type.Object({
-  name: AlertEventName,
+  name: IssueAlertName,
   project: Type.String(),
   issue: Type.Object({
     id: Type.String(),
@@ -130,7 +133,25 @@ export const IssueAlert = Type.Object({
 });
 export type IssueAlert = Static<typeof IssueAlert>;
 
-export const AlertEvent = Type.Union([IssueAlert]);
+const Score = Type.Integer({ minimum: 0, maximum: 100 });
+
+export const SpeedAlert = Type.Object({
+  name: Type.Literal("speed.drop"),
+  project: Type.String(),
+  speed: Type.Object({
+    score: Score,
+    previous: Score,
+    rating: VitalRating,
+    worst: nullable(VitalMetric),
+    samples: Count,
+    from: Timestamp,
+    to: Timestamp,
+    url: Type.String({ format: "uri" }),
+  }),
+});
+export type SpeedAlert = Static<typeof SpeedAlert>;
+
+export const AlertEvent = Type.Union([IssueAlert, SpeedAlert]);
 export type AlertEvent = Static<typeof AlertEvent>;
 
 export const WebhookBody = Type.Object({

@@ -3,12 +3,12 @@ title: Alerts
 description: Turn on alerts in the deployment config, pick the channels and the mail transport, and set a project's targets.
 ---
 
-Alerts tell people that something happened in a project: today a new issue or a regression. `alerts()` is a plugin in the deployment's config, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed.
+Alerts tell people that something happened in a project: a new issue, a regression, or a drop in the Real Experience Score. `alerts()` is a plugin in the deployment's config, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed.
 
 | Word | Means |
 | --- | --- |
 | plugin | An opt-in part of the API, listed in the config: `alerts()` |
-| alert event | Something worth telling: `issue.new`, `issue.regression` |
+| alert event | Something worth telling: `issue.new`, `issue.regression`, `speed.drop` |
 | channel | A way to send alerts, enabled in the config: `mail()`, `webhook()`, `discord()` |
 | target | Where one project's alerts go on one channel: recipients or a URL, and the events it wants |
 | transport | How mail leaves the deployment: `smtp(url)` or `resend(key)` |
@@ -59,6 +59,14 @@ export default defineConfig({
 2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. A failure keeps them pending with the error and the next try from the [retry policy](/docs/api/alert-retries), until the policy runs out and they turn `failed`. One failing target never holds back another.
 
 Mail arrives as one message per target per run, newest alert first, in plain text and HTML. Discord gets one message with an embed per alert. A webhook gets a signed `WebhookBody`; see [alert webhooks](/docs/sdk/server#alert-webhooks) for checking it.
+
+## Speed drops
+
+`speed.drop` is opt-in per target. Each alerts run compares yesterday's Real Experience Score (UTC day, production traffic, all devices, p75, metrics with at least 20 samples) with the 7 days before it, for every project with a target subscribed to it, and fires when the score fell 10 points or more to under 90. A drop alerts once per project and day. Change the numbers in the config:
+
+```ts
+alerts({ channels, speedDrop: { points: 15, below: 85, baselineDays: 14 } });
+```
 
 ## A project's targets
 

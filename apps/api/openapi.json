@@ -22086,7 +22086,7 @@
     "/v2/admin/jobs/alerts": {
       "post": {
         "summary": "Queue and send alerts",
-        "description": "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
+        "description": "Queues new issues and regressions, up to 100 per run, and speed drops (yesterday's Real Experience Score against the 7 days before it), as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -22752,7 +22752,8 @@
                                   "type": "string",
                                   "enum": [
                                     "issue.new",
-                                    "issue.regression"
+                                    "issue.regression",
+                                    "speed.drop"
                                   ]
                                 }
                               },
@@ -22836,7 +22837,8 @@
                                   "type": "string",
                                   "enum": [
                                     "issue.new",
-                                    "issue.regression"
+                                    "issue.regression",
+                                    "speed.drop"
                                   ]
                                 }
                               },
@@ -22915,7 +22917,8 @@
                                   "type": "string",
                                   "enum": [
                                     "issue.new",
-                                    "issue.regression"
+                                    "issue.regression",
+                                    "speed.drop"
                                   ]
                                 }
                               },
@@ -23095,7 +23098,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23140,7 +23144,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23180,7 +23185,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23238,7 +23244,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23283,7 +23290,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23323,7 +23331,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23381,7 +23390,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23426,7 +23436,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23466,7 +23477,8 @@
                                 "type": "string",
                                 "enum": [
                                   "issue.new",
-                                  "issue.regression"
+                                  "issue.regression",
+                                  "speed.drop"
                                 ]
                               }
                             },
@@ -23685,7 +23697,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23730,7 +23743,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23770,7 +23784,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23816,7 +23831,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23861,7 +23877,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23901,7 +23918,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23947,7 +23965,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -23992,7 +24011,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -24032,7 +24052,8 @@
                           "type": "string",
                           "enum": [
                             "issue.new",
-                            "issue.regression"
+                            "issue.regression",
+                            "speed.drop"
                           ]
                         }
                       },
@@ -24652,7 +24673,8 @@
                             "type": "string",
                             "enum": [
                               "issue.new",
-                              "issue.regression"
+                              "issue.regression",
+                              "speed.drop"
                             ]
                           },
                           "subject": {
@@ -24695,81 +24717,164 @@
                             "type": "string"
                           },
                           "payload": {
-                            "type": "object",
-                            "required": [
-                              "name",
-                              "project",
-                              "issue"
-                            ],
-                            "properties": {
-                              "name": {
-                                "type": "string",
-                                "enum": [
-                                  "issue.new",
-                                  "issue.regression"
-                                ]
-                              },
-                              "project": {
-                                "type": "string"
-                              },
-                              "issue": {
+                            "anyOf": [
+                              {
                                 "type": "object",
                                 "required": [
-                                  "id",
-                                  "title",
-                                  "culprit",
-                                  "level",
-                                  "count",
-                                  "firstSeen",
-                                  "lastSeen",
-                                  "lastRelease",
-                                  "url"
+                                  "name",
+                                  "project",
+                                  "issue"
                                 ],
                                 "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "title": {
-                                    "type": "string"
-                                  },
-                                  "culprit": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
-                                  },
-                                  "level": {
+                                  "name": {
                                     "type": "string",
                                     "enum": [
-                                      "error",
-                                      "warning"
+                                      "issue.new",
+                                      "issue.regression"
                                     ]
                                   },
-                                  "count": {
-                                    "minimum": 0,
-                                    "type": "integer"
-                                  },
-                                  "firstSeen": {
-                                    "format": "date-time",
+                                  "project": {
                                     "type": "string"
                                   },
-                                  "lastSeen": {
-                                    "format": "date-time",
+                                  "issue": {
+                                    "type": "object",
+                                    "required": [
+                                      "id",
+                                      "title",
+                                      "culprit",
+                                      "level",
+                                      "count",
+                                      "firstSeen",
+                                      "lastSeen",
+                                      "lastRelease",
+                                      "url"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "title": {
+                                        "type": "string"
+                                      },
+                                      "culprit": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "level": {
+                                        "type": "string",
+                                        "enum": [
+                                          "error",
+                                          "warning"
+                                        ]
+                                      },
+                                      "count": {
+                                        "minimum": 0,
+                                        "type": "integer"
+                                      },
+                                      "firstSeen": {
+                                        "format": "date-time",
+                                        "type": "string"
+                                      },
+                                      "lastSeen": {
+                                        "format": "date-time",
+                                        "type": "string"
+                                      },
+                                      "lastRelease": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "url": {
+                                        "format": "uri",
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "project",
+                                  "speed"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "const": "speed.drop",
                                     "type": "string"
                                   },
-                                  "lastRelease": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
-                                  },
-                                  "url": {
-                                    "format": "uri",
+                                  "project": {
                                     "type": "string"
+                                  },
+                                  "speed": {
+                                    "type": "object",
+                                    "required": [
+                                      "score",
+                                      "previous",
+                                      "rating",
+                                      "worst",
+                                      "samples",
+                                      "from",
+                                      "to",
+                                      "url"
+                                    ],
+                                    "properties": {
+                                      "score": {
+                                        "minimum": 0,
+                                        "maximum": 100,
+                                        "type": "integer"
+                                      },
+                                      "previous": {
+                                        "minimum": 0,
+                                        "maximum": 100,
+                                        "type": "integer"
+                                      },
+                                      "rating": {
+                                        "type": "string",
+                                        "enum": [
+                                          "good",
+                                          "needs-improvement",
+                                          "poor"
+                                        ]
+                                      },
+                                      "worst": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "lcp",
+                                          "inp",
+                                          "cls",
+                                          "fcp",
+                                          "ttfb"
+                                        ]
+                                      },
+                                      "samples": {
+                                        "minimum": 0,
+                                        "type": "integer"
+                                      },
+                                      "from": {
+                                        "format": "date-time",
+                                        "type": "string"
+                                      },
+                                      "to": {
+                                        "format": "date-time",
+                                        "type": "string"
+                                      },
+                                      "url": {
+                                        "format": "uri",
+                                        "type": "string"
+                                      }
+                                    }
                                   }
                                 }
                               }
-                            }
+                            ]
                           }
                         }
                       }

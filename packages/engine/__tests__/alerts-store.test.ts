@@ -86,6 +86,18 @@ describe("drizzleAlerts", () => {
     ]);
   });
 
+  test("subscribed lists projects with an enabled target for the event on an enabled channel", async () => {
+    expect(await store.subscribed("issue.new", ["mail", "webhook"])).toEqual({
+      ok: true,
+      value: [project],
+    });
+    expect(await store.subscribed("issue.new", [])).toEqual({ ok: true, value: [] });
+    expect(await store.subscribed("speed.drop", ["mail", "webhook"])).toEqual({
+      ok: true,
+      value: [],
+    });
+  });
+
   test("queue adds one delivery per subscribed target and never twice", async () => {
     const queued = await store.queue(
       [event("iss_1"), event("iss_2", "issue.regression")],
