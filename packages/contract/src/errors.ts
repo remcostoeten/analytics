@@ -50,7 +50,7 @@ export const errorCatalog = {
     status: 403,
     retryable: false,
     level: "info",
-    docs: "The token scope does not allow the action.",
+    docs: "The token scope or the signed-in member's role does not allow the action.",
   },
   NOT_FOUND: {
     status: 404,
@@ -86,7 +86,7 @@ export const errorCatalog = {
     status: 503,
     retryable: true,
     level: "error",
-    docs: "The database is unreachable; ingest clients retry.",
+    docs: "The database is unreachable, or a feature the route needs is not configured: a job's store, alerts, CRUX_API_KEY, SMTP or Resend; ingest clients retry.",
   },
 } as const satisfies { [Code in ErrorCode]: ErrorSpec };
 

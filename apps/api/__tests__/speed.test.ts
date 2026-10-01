@@ -107,7 +107,15 @@ async function vitals(
   metric: string,
   value: number,
   count: number,
-  extra: { route?: string; device?: string; selector?: string; day?: string } = {},
+  extra: {
+    route?: string;
+    device?: string;
+    selector?: string;
+    day?: string;
+    hour?: string;
+    path?: string;
+    preview?: boolean;
+  } = {},
 ) {
   const rating =
     metric === "lcp"
@@ -118,12 +126,12 @@ async function vitals(
           : "poor"
       : "good";
   await database.query(
-    `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, route, path, device, selector)
-     SELECT $1 || g, $2, $3::timestamptz, $4, $5, $6, $7, $7, $8, $9 FROM generate_series(1, $10) g`,
+    `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, route, path, device, selector, is_preview)
+     SELECT $1 || g, $2, $3::timestamptz, $4, $5, $6, $7, $11, $8, $9, $12 FROM generate_series(1, $10) g`,
     [
-      `${project}-${metric}-${value}-${extra.route ?? "/"}-${extra.device ?? "mobile"}-`,
+      `${project}-${metric}-${value}-${extra.route ?? "/"}-${extra.path ?? ""}-${extra.device ?? "mobile"}-${extra.preview ? "preview" : ""}-`,
       project,
-      `${extra.day ?? "2026-09-24"}T10:00:00Z`,
+      `${extra.day ?? "2026-09-24"}T${extra.hour ?? "10"}:00:00Z`,
       metric,
       value,
       rating,
@@ -131,6 +139,8 @@ async function vitals(
       extra.device ?? "mobile",
       extra.selector ?? null,
       count,
+      extra.path ?? extra.route ?? "/",
+      extra.preview ?? false,
     ],
   );
 }
@@ -194,8 +204,23 @@ describe("GET /v2/projects/:project/speed", () => {
       },
       percentile: 75,
       device: "mobile",
+      environment: "production",
       traffic: "human",
     });
+  });
+
+  test("environment splits production and preview", async () => {
+    await vitals("alpha", "lcp", 3000, 20, { route: "/preview", preview: true });
+    async function samples(environment: string) {
+      const speed = await body(
+        `/v2/projects/alpha/speed?${week}&device=mobile&filter[route]=/preview&environment=${environment}`,
+        SpeedResponse,
+      );
+      return ((speed.data as Json).metrics as Json).lcp;
+    }
+    expect(await samples("production")).toMatchObject({ samples: 0, value: null });
+    expect(await samples("preview")).toMatchObject({ samples: 20, value: 3000 });
+    expect(await samples("all")).toMatchObject({ samples: 20 });
   });
 
   test("hides values under 20 samples", async () => {
@@ -211,6 +236,7 @@ describe("GET /v2/projects/:project/speed", () => {
   test("checks its parameters and the project's visibility", async () => {
     expect((await call(`/v2/projects/alpha/speed?${week}&percentile=80`)).status).toBe(400);
     expect((await call(`/v2/projects/alpha/speed?${week}&device=watch`)).status).toBe(400);
+    expect((await call(`/v2/projects/alpha/speed?${week}&environment=staging`)).status).toBe(400);
     expect((await call(`/v2/projects/alpha/speed?${week}&filter[host]=x`)).status).toBe(400);
     expect((await call(`/v2/projects/closed/speed?${week}`)).status).toBe(404);
     await body(`/v2/projects/closed/speed?${week}`, SpeedResponse, admin);
@@ -240,6 +266,52 @@ describe("speed routes, series and elements", () => {
       { bucket: "2026-09-25T00:00:00.000Z", value: null, samples: 0 },
     ]);
     expect((await call(`/v2/projects/alpha/speed/timeseries?${week}`)).status).toBe(400);
+  });
+
+  test("one metric per hour, over at most 7 days", async () => {
+    await vitals("alpha", "ttfb", 300, 20, { route: "/hourly", day: "2026-09-25", hour: "07" });
+    const series = await body(
+      `/v2/projects/alpha/speed/timeseries?from=2026-09-25T00:00:00.000Z&to=2026-09-26T00:00:00.000Z&metric=ttfb&interval=hour&filter[route]=/hourly`,
+      SpeedTimeseries,
+    );
+    expect(series).toMatchObject({ interval: "hour", environment: "production" });
+    const filled = (series.data as Json[]).filter((point) => point.samples !== 0);
+    expect(filled).toEqual([{ bucket: "2026-09-25T07:00:00.000Z", value: 300, samples: 20 }]);
+    expect((series.data as Json[]).length).toBe(24);
+    expect(
+      (await call(`/v2/projects/alpha/speed/timeseries?${week}&metric=lcp&interval=hour`)).status,
+    ).toBe(400);
+    expect(
+      (await call(`/v2/projects/alpha/speed/timeseries?${week}&metric=lcp&interval=week`)).status,
+    ).toBe(400);
+  });
+
+  test("routes by path, with rare entries hidden unless minShare=0", async () => {
+    await vitals("alpha", "inp", 80, 999, { route: "/blog/[slug]", path: "/blog/busy" });
+    await vitals("alpha", "inp", 80, 1, { route: "/blog/[slug]", path: "/blog/rare" });
+    const range = "from=2026-09-24T00:00:00.000Z&to=2026-09-25T00:00:00.000Z";
+    async function paths(query: string) {
+      const routes = await body(
+        `/v2/projects/alpha/speed/routes?${range}&device=mobile&group=path&${query}`,
+        SpeedRouteList,
+      );
+      return (routes.data as Json[])
+        .map((row) => row.route)
+        .filter((route) => {
+          return typeof route === "string" && route.startsWith("/blog/");
+        });
+    }
+    expect(await paths("minShare=0.005")).toEqual(["/blog/busy"]);
+    const all = await paths("minShare=0");
+    expect(all).toHaveLength(2);
+    expect(all).toEqual(expect.arrayContaining(["/blog/busy", "/blog/rare"]));
+    const byRoute = await body(
+      `/v2/projects/alpha/speed/routes?${range}&device=mobile`,
+      SpeedRouteList,
+    );
+    expect((byRoute.data as Json[]).map((row) => row.route)).toContain("/blog/[slug]");
+    expect((await call(`/v2/projects/alpha/speed/routes?${week}&group=host`)).status).toBe(400);
+    expect((await call(`/v2/projects/alpha/speed/routes?${week}&minShare=2`)).status).toBe(400);
   });
 
   test("the selectors behind slow values", async () => {
@@ -284,7 +356,7 @@ describe("POST /v2/admin/jobs/rollup", () => {
       status: "ok",
       startDay: "2026-08-29",
       days: 30,
-      rowsWritten: 8,
+      rowsWritten: 10,
       rowsDeleted: 0,
     });
   });

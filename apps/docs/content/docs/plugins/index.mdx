@@ -63,7 +63,7 @@ export function pageSeen() {
 | --- | --- |
 | `beforeSend(fn)` | Runs `fn` on every event before it is queued; return the event, changed or not, or `null` to drop it. Hooks run in registration order |
 | `onPage(fn)` | Runs `fn` after every pageview |
-| `onHidden(fn)` | Runs `fn` when the tab is hidden or the page is left, just before the queue is flushed |
+| `onHidden(fn)` | Runs `fn` when the tab is hidden or the page is left, before the queue is flushed |
 | `onConsent(fn)` | Runs `fn` with `granted` or `denied` when consent changes |
 | `record(path, name, props)` | Sends an event credited to `path` instead of the current page |
 

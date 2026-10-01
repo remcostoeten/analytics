@@ -131,7 +131,7 @@ export const POST = createProxy({
 });
 ```
 
-The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key and the visitor's IP and user agent, and forwards the body to `/v2/events`. See [Proxy](/docs/sdk/proxy).
+The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and forwards the body to `/v2/events`. See [Proxy](/docs/sdk/proxy).
 
 ## Server-side tracking
 
@@ -186,4 +186,4 @@ Create the client with `consent: "required"` to hold every event until `consent.
 
 ## Count blocked pageviews
 
-`createPageCounter` from `/proxy` counts HTML page loads on the server as `page_request` events, which the dashboard compares with pageviews to estimate how many visitors block the client. See [Proxy](/docs/sdk/proxy).
+`createPageCounter` from `/proxy` counts HTML page loads on the server as `page_request` events. Comparing them with pageviews estimates how many visitors block the client; no report computes that share yet, so compare the two counts in a breakdown or with SQL. See [Proxy](/docs/sdk/proxy).

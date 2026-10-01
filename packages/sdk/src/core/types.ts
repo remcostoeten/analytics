@@ -33,7 +33,7 @@ export type Envelope = {
 
 export type SendResult =
   | { ok: true; result: IngestResult }
-  | { ok: false; retry: boolean; status: number };
+  | { ok: false; retry: boolean; status: number; after?: number };
 
 export type Transport = {
   send: (envelope: Envelope, unloading: boolean) => Promise<SendResult>;

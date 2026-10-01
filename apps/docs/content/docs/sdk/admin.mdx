@@ -1,9 +1,9 @@
 ---
 title: Admin
-description: Manage alert targets and read stats from server code and scripts with an admin token.
+description: Manage alert targets and read stats from server code and scripts with a token, using the `read` scope for the read methods and the `admin` scope for alert targets.
 ---
 
-`@remcostoeten/analytics/admin` is for server code, scripts and CI. It calls the API with an admin token; never ship it to a browser.
+`@remcostoeten/analytics/admin` is for server code, scripts and CI. It calls the API with a token; never ship it to a browser.
 
 ```ts
 import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/admin";
@@ -44,7 +44,7 @@ A target is where one project's alerts go on one channel. The builders fill one 
 | `webhook({ url, name?, on?, enabled? })` | An `https://` URL; the API signs each request |
 | `discord({ url, name?, on?, enabled? })` | A Discord webhook URL |
 
-`name` defaults to the channel, so one target per channel needs no name. `on` defaults to every issue event (`issue.new` and `issue.regression`) and `enabled` to `true`.
+`name` defaults to the channel, so one target per channel needs no name. `on` defaults to every issue event (`issue.new` and `issue.regression`) and `enabled` to `true`. `speed.drop` is opt-in: list it in `on` to hear when yesterday's Real Experience Score fell 10 points or more, to under 90, against the 7 days before.
 
 | Method | Does |
 | --- | --- |

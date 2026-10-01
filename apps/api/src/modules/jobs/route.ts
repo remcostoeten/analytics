@@ -1,5 +1,5 @@
 import { JobResult } from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
+import { engineError, rawVitalDays } from "@remcostoeten/analytics-engine";
 import type {
   EngineError,
   IssueStore,
@@ -40,7 +40,6 @@ type Outcome = {
 };
 
 const dayMs = 24 * 60 * 60 * 1000;
-const rawDays = 30;
 const maxDays = 90;
 const cleanupBatch = 50_000;
 
@@ -51,8 +50,9 @@ function startOfDay(at: Date) {
 /**
  * @name jobsModule
  * @description Scheduled jobs behind the cron secret, each recorded in the job history:
- * `rollup?days=2` rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops
- * raw speed rows past 30 days; `cleanup` deletes events and sessions past each project's
+ * `rollup?days=2` rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops
+ * raw speed rows past 30 days and runs the session layer of bot detection over the previous UTC
+ * day; `cleanup` deletes events and sessions past each project's
  * retention, 50,000 of each per run; `alerts` queues new issues and regressions and sends due
  * deliveries to the alert targets; `crux` compares each project's p75 with the Chrome UX Report.
  *
@@ -88,6 +88,13 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
     return Promise.resolve({ ok: false, error: engineError("UNAVAILABLE", `${name} is not set`) });
   }
 
+  async function scoreYesterday(now: Date): Promise<Result<number, EngineError>> {
+    if (!options.ops) return ok(0);
+    const to = startOfDay(now);
+    const scored = await options.ops.scoreSessions(new Date(to.getTime() - dayMs), to);
+    return scored.ok ? ok(scored.value.velocity + scored.value.fanout) : scored;
+  }
+
   const route = { access: "cron" as const, response: { 200: JobResult, ...errorResponses } };
   const tags = ["Jobs"];
 
@@ -110,10 +117,17 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
           const result = await options.speed.rollup(
             from,
             to,
-            new Date(now.getTime() - rawDays * dayMs),
+            new Date(now.getTime() - rawVitalDays * dayMs),
           );
           if (!result.ok) return result;
-          return ok({ startDay: from.toISOString().slice(0, 10), days, ...result.value });
+          const scored = await scoreYesterday(now);
+          if (!scored.ok) return scored;
+          return ok({
+            startDay: from.toISOString().slice(0, 10),
+            days,
+            rowsWritten: result.value.rowsWritten + scored.value,
+            rowsDeleted: result.value.rowsDeleted,
+          });
         });
       },
       {
@@ -122,7 +136,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Roll up speed",
           description:
-            "Writes daily p50 to p99 and rating counts per project, route, device and metric, and drops raw speed rows past 30 days. Needs the cron secret.",
+            "Writes daily p50 to p99 and rating counts per project, route, device and metric, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day, which adds each reason once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
           tags,
         },
       },
@@ -159,7 +173,12 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
           }
           const result = await runAlerts(
             options.alerts.plugin,
-            { issues: options.issues, alerts: options.alerts.store, links: options.alerts.links },
+            {
+              issues: options.issues,
+              speed: options.speed,
+              alerts: options.alerts.store,
+              links: options.alerts.links,
+            },
             options.clock(),
           );
           return result.ok ? ok({ rowsWritten: result.value.sent }) : result;
@@ -169,7 +188,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Queue and send alerts",
           description:
-            "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
+            "Queues new issues and regressions, up to 100 per run, and speed drops (yesterday's Real Experience Score against the 7 days before it), as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
           tags,
         },
       },

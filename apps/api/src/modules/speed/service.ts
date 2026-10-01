@@ -8,12 +8,16 @@ import {
   engineError,
   experienceScore,
   metricScore,
+  rawVitalsFrom,
   scoreRating,
   vitalRating,
 } from "@remcostoeten/analytics-engine";
 import type {
   EngineError,
   SpeedDevice,
+  SpeedEnvironment,
+  SpeedGroup,
+  SpeedInterval,
   SpeedScope,
   SpeedStore,
   VitalName,
@@ -33,6 +37,11 @@ type Reply<Value> = Promise<Result<Value, EngineError>>;
 
 const names: VitalName[] = ["lcp", "inp", "cls", "fcp", "ttfb"];
 const devices = new Set<string>(["mobile", "desktop", "all"]);
+const environments = new Set<string>(["production", "preview", "all"]);
+const intervals = new Set<string>(["hour", "day"]);
+const groups = new Set<string>(["route", "path"]);
+const maxHourlyMs = 7 * 24 * 60 * 60 * 1000;
+const defaultShare = 0.005;
 const percentiles = new Set<number>([50, 75, 90, 95, 99]);
 const filterNames: { [name: string]: "route" | "path" | "country" } = {
   "filter[route]": "route",
@@ -65,8 +74,9 @@ function isVital(name: string): name is VitalName {
 /**
  * @name readSpeedScope
  * @description The speed parameters: the date range, `device` (`mobile`, which includes tablets,
- * `desktop` or `all`, the default), `percentile` (50, 75, 90, 95 or 99, default 75) and the
- * `filter[route]`, `filter[page]` and `filter[country]` filters; other filters answer 400.
+ * `desktop` or `all`, the default), `environment` (`production`, the default, `preview` or
+ * `all`), `percentile` (50, 75, 90, 95 or 99, default 75) and the `filter[route]`,
+ * `filter[page]` and `filter[country]` filters; other filters answer 400.
  *
  * @example
  * readSpeedScope(params, ["remcostoeten.nl"], new Date());
@@ -80,6 +90,9 @@ export function readSpeedScope(
   if (!range.ok) return range;
   const device = params.get("device") ?? "all";
   if (!devices.has(device)) return invalid(`Unknown device ${device}`);
+  const environment = params.get("environment") ?? "production";
+  if (!environments.has(environment))
+    return invalid("environment must be production, preview or all");
   const percentile = Number(params.get("percentile") ?? 75);
   if (!percentiles.has(percentile)) return invalid("percentile must be 50, 75, 90, 95 or 99");
   const filters: { route: string | null; path: string | null; country: string | null } = {
@@ -94,7 +107,14 @@ export function readSpeedScope(
     filters[field] = value;
   }
   return ok({
-    scope: { projectIds, ...range.value, device: device as SpeedDevice, ...filters },
+    scope: {
+      projectIds,
+      ...range.value,
+      device: device as SpeedDevice,
+      environment: environment as SpeedEnvironment,
+      ...filters,
+      rawFrom: rawVitalsFrom(now),
+    },
     range: range.value,
     percentile: percentile as Percentile,
   });
@@ -152,6 +172,7 @@ export async function speedSummary(store: SpeedStore, scoped: SpeedScoped): Repl
     },
     percentile: scoped.percentile,
     device: scoped.scope.device,
+    environment: scoped.scope.environment,
     range: iso(scoped.range),
     traffic: "human",
   });
@@ -159,7 +180,8 @@ export async function speedSummary(store: SpeedStore, scoped: SpeedScoped): Repl
 
 /**
  * @name speedTimeseries
- * @description One metric's percentile per UTC day, null on days under 20 samples.
+ * @description One metric's percentile per UTC hour or day (`interval`, default `day`), null in
+ * buckets under 20 samples. Hourly series cover at most 7 days and only the raw retention window.
  *
  * @example
  * await speedTimeseries(store, scoped, params);
@@ -171,25 +193,41 @@ export async function speedTimeseries(
 ): Reply<SpeedTimeseries> {
   const metric = params.get("metric");
   if (!metric || !isVital(metric)) return invalid("metric must be lcp, inp, cls, fcp or ttfb");
-  const found = await store.daily(scoped.scope, scoped.percentile, metric);
+  const interval = params.get("interval") ?? "day";
+  if (!intervals.has(interval)) return invalid("interval must be hour or day");
+  const span = scoped.range.to.getTime() - scoped.range.from.getTime();
+  if (interval === "hour" && span > maxHourlyMs) {
+    return invalid("interval=hour covers at most 7 days");
+  }
+  const found = await store.series(
+    scoped.scope,
+    scoped.percentile,
+    metric,
+    interval as SpeedInterval,
+  );
   if (!found.ok) return found;
   return ok({
-    data: found.value.map((day) => ({
-      bucket: day.day.toISOString(),
-      value: day.value !== null && day.samples >= minSamples ? round(day.value, metric) : null,
-      samples: day.samples,
+    data: found.value.map((point) => ({
+      bucket: point.bucket.toISOString(),
+      value:
+        point.value !== null && point.samples >= minSamples ? round(point.value, metric) : null,
+      samples: point.samples,
     })),
     metric,
     percentile: scoped.percentile,
     device: scoped.scope.device,
+    environment: scoped.scope.environment,
+    interval: interval as SpeedInterval,
     range: iso(scoped.range),
   });
 }
 
 /**
  * @name speedRoutes
- * @description Every route with its score and metric values, worst score first, routes without
- * a score last; values under 20 samples are null.
+ * @description Every route, or every path with `group=path`, with its score and metric values,
+ * worst score first, entries without a score last; values under 20 samples are null. Entries
+ * with under `minShare` of the samples (default 0.005, so 0.5%) are left out; `minShare=0`
+ * keeps them all.
  *
  * @example
  * await speedRoutes(store, scoped, params);
@@ -201,7 +239,13 @@ export async function speedRoutes(
 ): Reply<SpeedRouteList> {
   const page = readPage(params);
   if (!page.ok) return page;
-  const found = await store.routes(scoped.scope, scoped.percentile);
+  const group = params.get("group") ?? "route";
+  if (!groups.has(group)) return invalid("group must be route or path");
+  const minShare = Number(params.get("minShare") ?? defaultShare);
+  if (!Number.isFinite(minShare) || minShare < 0 || minShare > 1) {
+    return invalid("minShare must be a number from 0 to 1");
+  }
+  const found = await store.routes(scoped.scope, scoped.percentile, group as SpeedGroup);
   if (!found.ok) return found;
   const byRoute = new Map<string, Map<VitalName, { samples: number; value: number }>>();
   for (const stat of found.value) {
@@ -234,14 +278,16 @@ export async function speedRoutes(
       ttfb: value("ttfb"),
     };
   });
-  rows.sort(
+  const total = rows.reduce((sum, row) => sum + row.samples, 0);
+  const shown = rows.filter((row) => total === 0 || row.samples / total >= minShare);
+  shown.sort(
     (left, right) =>
       (left.score ?? 101) - (right.score ?? 101) ||
       right.samples - left.samples ||
       left.route.localeCompare(right.route),
   );
-  const slice = rows.slice(page.value.offset, page.value.offset + page.value.limit);
-  return ok({ data: slice, nextCursor: nextCursor(page.value.offset, slice.length, rows.length) });
+  const slice = shown.slice(page.value.offset, page.value.offset + page.value.limit);
+  return ok({ data: slice, nextCursor: nextCursor(page.value.offset, slice.length, shown.length) });
 }
 
 /**

@@ -2,11 +2,13 @@ import type { IssueID, ProjectID } from "@remcostoeten/analytics-shared/semantic
 
 export type AlertLinks = {
   issue: (project: ProjectID, issue: IssueID) => string;
+  speed: (project: ProjectID) => string;
 };
 
 /**
  * @name apiLinks
- * @description The links alerts point to, on the API's issue route until the v2 dashboard exists.
+ * @description The links alerts point to, on the API's issue and speed routes until the v2
+ * dashboard exists.
  * The one place alert links are built.
  *
  * @example
@@ -19,5 +21,6 @@ export function apiLinks(base: string): AlertLinks {
   return {
     issue: (project, issue) =>
       `${root}/v2/projects/${encodeURIComponent(project)}/issues/${encodeURIComponent(issue)}`,
+    speed: (project) => `${root}/v2/projects/${encodeURIComponent(project)}/speed`,
   };
 }

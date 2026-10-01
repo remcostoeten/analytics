@@ -134,6 +134,15 @@ export function memoryAlerts(
       stored.targets[index] = { ...found, secret, updatedAt: clock.now() };
       return ok(secret);
     },
+    subscribed: async (event, channels) => {
+      const projects = stored.targets
+        .filter(
+          (target) =>
+            target.enabled && target.on.includes(event) && channels.includes(target.channel),
+        )
+        .map((target) => target.projectId);
+      return ok([...new Set(projects)].sort());
+    },
     queue: async (events, channels, now) => {
       let queued = 0;
       for (const { event, subject } of events) {

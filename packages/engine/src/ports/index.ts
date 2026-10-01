@@ -53,6 +53,7 @@ export type {
   Paths,
   Place,
   PlacesPage,
+  Environment,
   ReadFilter,
   ReadScope,
   ReadStore,
@@ -63,9 +64,12 @@ export type {
   ElementStat,
   RouteStat,
   SpeedDevice,
+  SpeedEnvironment,
+  SpeedGroup,
+  SpeedInterval,
   SpeedScope,
   SpeedStore,
-  VitalDay,
+  VitalPoint,
   VitalStat,
 } from "./speed";
 export type {

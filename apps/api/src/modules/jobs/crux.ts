@@ -1,4 +1,4 @@
-import { engineError } from "@remcostoeten/analytics-engine";
+import { engineError, rawVitalsFrom } from "@remcostoeten/analytics-engine";
 import type {
   CheckTarget,
   EngineError,
@@ -103,9 +103,11 @@ export async function checkCrux(
         from: new Date(now.getTime() - windowDays * dayMs),
         to: now,
         device: "all",
+        environment: "production",
         route: null,
         path: null,
         country: null,
+        rawFrom: rawVitalsFrom(now),
       },
       75,
     );

@@ -1,0 +1,66 @@
+---
+title: Bots
+description: How each event gets a bot score, why nothing is dropped for it, and when a score changes after the event was stored.
+---
+
+Crawlers, uptime monitors, scrapers and test runners load pages and run JavaScript like visitors do. This page explains how the API scores each event, why bot traffic is stored instead of dropped, and how scores change later through a rescore.
+
+## A score from weighted signals
+
+Each signal is a yes or no test on one event. The API adds the weights of the signals that fire, caps the total at 100, and stores the names of those signals as the event's reasons.
+
+| Signal | Weight | Fires when | Checked |
+| --- | --- | --- | --- |
+| `ua_crawler` | 100 | The user agent is on a named list of search crawlers, link preview fetchers, AI agents, SEO tools, feed readers and uptime monitors | At ingest and on rescore |
+| `ua_automation` | 100 | The user agent names an HTTP library, headless browser, test driver or scanner, or a request with the public key has no user agent | At ingest and on rescore |
+| `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` or Cloudflare's `cf-verified-bot` header is `1` or `true` | At ingest |
+| `client_webdriver` | 60 | The [`botSignals`](/docs/plugins/bot-signals) plugin saw `navigator.webdriver` | At ingest |
+| `session_velocity` | 50 | The session has at least 10 pageviews at more than 30 a minute, or at least 6 pageviews with near-identical gaps between them | By the daily rollup job and `bun run rescore` |
+| `asn_datacenter` | 40 | The IP belongs to a hosting network: AWS, Google Cloud, Azure, Hetzner, OVH, DigitalOcean, Linode, Vultr, Oracle, Alibaba, Tencent, Scaleway, Contabo, M247 or Datacamp | At ingest and on rescore |
+| `ip_fanout` | 40 | More than 20 visitor ids came from one IP hash to one project on one UTC day | By the daily rollup job and `bun run rescore` |
+| `headers_inconsistent` | 30 | A Chromium 90+ user agent without `sec-ch-ua`, or a modern browser user agent without `sec-fetch-*` headers | At ingest |
+| `client_headless` | 25 | The plugin saw a zero-size window, no languages, or a Chrome user agent without `window.chrome` | At ingest |
+| `client_no_input` | 20 | The plugin saw no pointer, key, touch or scroll input, on a page that was never visible | At ingest |
+| `headers_missing` | 15 | No `accept-language` header | At ingest |
+
+The crawler list names bots one by one, such as `Googlebot`, `GPTBot` and `UptimeRobot`, rather than matching the word `bot`, because that word also appears in real browsers and apps.
+
+## Stored, never dropped
+
+Events are stored whatever their score. Reads decide what to count: the default `traffic=human` filter counts events that score under 50 and are not internal or localhost traffic, and the default `environment=production` leaves preview deployments out. `traffic=bots` shows the events at 50 or above, and `traffic=all` shows everything.
+
+Keeping the events has two reasons. A score can be wrong in either direction, and a stored event can be scored again after a signal is fixed. And an event dropped at ingest cannot be counted, so bot traffic to your site would stay invisible.
+
+One strong signal, such as a crawler user agent, puts an event at 100 by itself. The weaker signals need company: a hosting network (40) alone stays under 50, and a hosting network with a missing `accept-language` (15) crosses it.
+
+## Signals that depend on how the event arrived
+
+The header checks and the missing user agent check describe a browser. Requests with the secret key come from a server, so `headers_inconsistent`, `headers_missing` and the empty user agent case of `ua_automation` are skipped for them.
+
+Through the `/_ra` proxy, the API takes the visitor's IP and user agent from the `X-Visitor-IP` and `X-Visitor-UA` headers the proxy adds, so `ua_crawler`, `ua_automation` and `asn_datacenter` judge the visitor, not your server. Of the browser's other headers, the proxy forwards only `Origin` and the admin session cookie.
+
+A server event sent without the incoming `request` or `headers` has no visitor to forward. The API then stores it without an IP and a user agent, instead of using your server's own, so `asn_datacenter` and `ua_automation` do not fire for it and the event gets no IP hash or location. The same applies to a proxied event when your host sets no IP header.
+
+## Client signals only add weight
+
+The `botSignals` plugin sets bits on each event in the browser. A bot can remove them, so they can raise a score but never lower one. Without the plugin, the three `client_*` signals never fire and the other signals still apply.
+
+`client_no_input` is not set for a page that was visible at any point, so a visitor who reads without touching anything is not marked.
+
+## Session signals come later
+
+`session_velocity` and `ip_fanout` look at many events at once, which one ingest request cannot. The ingest stage never fires them. The daily rollup job, `POST /v2/admin/jobs/rollup`, runs them over the previous UTC day, and `bun run rescore` runs them over any range of UTC dates. Both raise each affected event's score by the signal's weight and add each reason only once, so running them twice over the same range changes nothing. Until the job has run for a day, events that only these signals would catch score as they did at ingest. `session_velocity` skips the shared `server` visitor and session of the server client.
+
+## Rescoring
+
+`bun run rescore --from 2026-09-01 --to 2026-09-28` from the repository root runs the scoring again over stored events in the database at `DATABASE_URL`. `--dry-run` counts what would change without writing.
+
+A stored event keeps its user agent and network, so `ua_crawler`, `ua_automation` and `asn_datacenter` are tested again with the current lists. Request headers and client bits are not stored, so the other signals keep the reasons the event had and count at their current weight. A rescore therefore picks up a new crawler name or a changed weight, but cannot add `headers_missing` to an old event.
+
+Events from v1 carry a score without reasons and are skipped unless `--include-legacy` is passed. After a rescore, each session's score is set to the highest score of its events, so reports for past dates change too.
+
+## What to do
+
+- Add the `botSignals` plugin if automated browsers with ordinary user agents reach your site.
+- Pass `request` or `headers` to server events that represent a visitor, so they are scored as the visitor.
+- Check `traffic=bots` when your human numbers drop suddenly. A new false positive shows up there with its reason.

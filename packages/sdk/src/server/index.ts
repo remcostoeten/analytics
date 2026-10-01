@@ -1,4 +1,4 @@
-export { createServerAnalytics } from "./client";
+export { createServerAnalytics, serverVisitor } from "./client";
 export { visitorDetails } from "./forwarding";
 export type {
   Fetcher,

@@ -110,7 +110,7 @@ export const POST = createProxy({
 });
 ```
 
-The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key and the visitor's IP and user agent, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
+The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
 
 ## 6. Send an event and check it
 
@@ -120,7 +120,7 @@ analytics.track("signup", { plan: "pro" });
 
 Open your site once with `?ra=debug` to see an `[ra]` line in the console for every event, every dropped event and every failed send. The browser remembers the setting. `analytics.status()` returns the queue size, consent, endpoint, route, last error and last send time.
 
-In development (`NODE_ENV` is `development` or `test`) the SDK logs events instead of sending them, unless an `endpoint` is set.
+In development (`NODE_ENV` is `development` or `test`) the SDK sends nothing unless an `endpoint` is set. Add `?ra=debug` to the URL to print each event to the console.
 
 The event shows up in the project's realtime view within a few seconds:
 

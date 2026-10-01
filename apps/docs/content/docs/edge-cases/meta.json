@@ -1,4 +1,12 @@
 {
   "title": "Edge cases",
-  "pages": []
+  "pages": [
+    "single-page-apps",
+    "page-unload",
+    "duplicates-and-retries",
+    "ad-blockers",
+    "sessions-and-visitors",
+    "consent-and-privacy",
+    "bots"
+  ]
 }

@@ -1,4 +1,11 @@
 {
   "title": "Guides",
-  "pages": []
+  "pages": [
+    "custom-events",
+    "identify-users",
+    "proxy",
+    "server-side-tracking",
+    "exclude-your-traffic",
+    "read-your-data"
+  ]
 }

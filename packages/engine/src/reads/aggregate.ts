@@ -14,7 +14,7 @@ const builtIn: { [Name in BuiltInMetric]: SQL } = {
   events: sql`ea.events`,
   bounce_rate: sql`COALESCE(sm.bounce, 0)`,
   session_duration: sql`COALESCE(sm.duration, 0)`,
-  pages_per_session: sql`CASE WHEN ea.sessions > 0 THEN ea.pageviews::numeric / ea.sessions ELSE 0 END`,
+  pages_per_session: sql`CASE WHEN ea.sessions > 0 THEN ea.session_pageviews::numeric / ea.sessions ELSE 0 END`,
   time_on_page: sql`COALESCE(pm.stay, 0)`,
   scroll_depth: sql`COALESCE(ea.scroll, 0)`,
   conversion_rate: sql`CASE WHEN ea.sessions > 0 THEN ea.converted::numeric / ea.sessions ELSE 0 END`,
@@ -58,6 +58,7 @@ export function aggregateQuery(metrics: Metric[]): SQL {
     event_agg AS (
       SELECT k, count(DISTINCT visitor_id) AS visitors, count(DISTINCT session_id) AS sessions,
         count(*) FILTER (WHERE type = 'pageview') AS pageviews,
+        count(*) FILTER (WHERE type = 'pageview' AND session_id IS NOT NULL) AS session_pageviews,
         count(*) FILTER (WHERE type <> 'pageview') AS events,
         avg(CASE WHEN COALESCE(name, meta->>'eventName') = 'scroll_depth' AND jsonb_typeof(meta->'depth') = 'number'
           THEN LEAST((meta->>'depth')::numeric / 100, 1) END) AS scroll,

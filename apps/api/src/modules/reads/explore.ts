@@ -41,6 +41,7 @@ function shared(scoped: Scoped) {
   return {
     range: { from: scoped.range.from.toISOString(), to: scoped.range.to.toISOString() },
     traffic: scoped.scope.traffic,
+    environment: scoped.scope.environment,
     filters: scoped.echo,
   };
 }

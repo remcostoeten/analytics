@@ -1,4 +1,4 @@
 {
   "title": "Troubleshooting",
-  "pages": []
+  "pages": ["no-events", "api-errors", "proxy-and-cors", "wrong-numbers", "web-vitals"]
 }

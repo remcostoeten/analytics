@@ -1,0 +1,106 @@
+---
+title: Find missing events
+description: Work out where an event stops between the browser and the reports, starting from what you see.
+---
+
+Use this page when a pageview or a `track` call does not show up in the API's reads. Each section starts from what the network tab or the API response shows, then gives the cause and the fix.
+
+## You do not know where the event stops
+
+Open any page of your site once with `?ra=debug`. The browser stores the setting in the `__ra` key in `localStorage`, and the console prints an `[ra]` line for each step:
+
+| Line | Means |
+| --- | --- |
+| `RA_EVENT` | The event was queued for sending |
+| `RA_DEV_EVENT` | Development mode: the event was logged and not sent |
+| `RA_DROP` | The event was dropped, with the reason `opt-out`, `dnt`, `consent` or `beforeSend` |
+| `RA_INGEST_FAILED` | A batch failed, with `HTTP <status>` |
+| `RA_INGEST_REJECTED` | The API accepted the batch but rejected this event, with its code and message |
+| `RA_NO_KEY` | The client started with an empty `key`; printed without debug too |
+| `RA_PROPS_LIMITED` | In development mode, a prop was left out or cut; printed without debug too |
+
+To switch debug off, open a page with `?ra=nodebug`. The visitor id, consent and opt-out stay as they are.
+
+`analytics.status()` returns the client's state without debug:
+
+| Field | Holds |
+| --- | --- |
+| `queued` | Events waiting to be sent, including events held until `start()` or `consent.grant()` |
+| `consent` | `granted`, `denied` or `unset` |
+| `endpoint` | The URL the client posts to |
+| `route` | The route template an adapter set, or `null` |
+| `lastError` | `HTTP <status>` of the last failed batch, or `null`. `HTTP 0` means no response arrived |
+| `lastSend` | When the last batch was accepted, or `null` |
+
+To watch problems in code, subscribe with `analytics.on("error", (code, detail) => ...)` and `analytics.on("drop", (event, reason) => ...)`. See [Client methods](/docs/sdk/client).
+
+## No request appears in the network tab
+
+Check these causes in order:
+
+1. **The batch has not gone out yet.** The client sends after 5 seconds, at 20 events, or when the tab is hidden. Wait 5 seconds or call `analytics.flush()`.
+2. **The client runs in development mode.** When `NODE_ENV` is `development` or `test` and no `endpoint` is set, in the options or in the config variable, the client keeps events local. Set `endpoint`, or create the client with `mode: "production"`. See [Options](/docs/sdk/options).
+3. **The client has not started.** A client created with `autostart: false` sends nothing until `start()`. The client starts only where `window` exists, so a module imported only on the server never sends.
+4. **Consent is missing.** With `consent: "required"`, events are held until `consent.grant()`; `status().queued` grows while they wait. After `consent.revoke()`, events are dropped with the reason `consent`.
+5. **The browser opted out.** `optOut()`, or `?ra=ignore` with the [ignoreSelf plugin](/docs/plugins/ignore-self), drops every event with the reason `opt-out`. Open the site with `?ra=track` or call `optIn()`.
+6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console, and turn the setting off in the browser you test with.
+7. **`beforeSend` returned `null`.** A `beforeSend` option or a plugin hook dropped the event; `RA_DROP` shows the reason `beforeSend`.
+
+Batches sent while the page unloads go out with `sendBeacon`. The client counts them as accepted without reading the response, so a failed beacon does not show in `status()`.
+
+## The request fails without a status
+
+`lastError` is `HTTP 0`, and the network tab shows the request as blocked or failed.
+
+- If the endpoint is on another host, an ad blocker may block it. Serve the endpoint from your own domain with the [proxy](/docs/sdk/proxy).
+- If the endpoint host is wrong or the API is down, the request cannot connect. Check the `endpoint` value in `status()`.
+
+The client retries a network error, a 429 and any 5xx after 1, 4 and 16 seconds with the same event ids, or after the `Retry-After` the API sent, up to 16 seconds. After that, it keeps up to 100 unsent events in `localStorage` and sends them on the next page load.
+
+## The API answers 4xx
+
+The client drops a batch that gets any 4xx except 429 and does not retry it. Open the response body in the network tab: it holds an error `code` and a `message`.
+
+| Status | Code | Usual cause for ingest |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | The public key is empty or unknown, or the proxy's secret key is wrong or was rotated |
+| 403 | `FORBIDDEN_ORIGIN` | The page's origin is not in the project's `allowedOrigins`, or the proxy refused a cross-site request |
+| 404 | `NOT_FOUND` or none | The endpoint path does not exist |
+| 413 | `PAYLOAD_TOO_LARGE` | The body is over 60 KB or holds more than 50 events. The browser client keeps its batches under 60 KB, and drops a single event over 60 KB without sending it, reported as `HTTP 413` |
+| 429 | `RATE_LIMITED` | More than 100 requests a minute (the default) from one IP address with the public key |
+
+A 404 usually means the endpoint is wrong. The browser client posts to `endpoint` exactly as given, so it needs a same-origin path such as `/_ra` or the full `https://api.example.com/v2/events`. The proxy and the server client take the API's base URL and add `/v2/events` themselves.
+
+An empty `key` usually means the config variable was not read. The client reads `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG` through literal `process.env` or `import.meta.env` access, and ignores a value that is not valid JSON. An empty key leaves the `key` parameter out of the request, so the API answers 401 to a direct send. Through the proxy the key does not matter, because the proxy authenticates with the secret key.
+
+[Fix API errors](/docs/troubleshooting/api-errors) lists every code, and [Fix proxy and origin errors](/docs/troubleshooting/proxy-and-cors) covers 401, 403, 404 and 413 from the proxy.
+
+## The API answers 202 but the event is missing
+
+1. **The event was rejected.** A 202 answers `{ accepted, duplicates, rejected }`. Each entry in `rejected` has the event's `index`, a `code` and a `message` such as `events[0].name: ...`; the rest of the batch is stored. The browser client reports each rejected event through `on("error")` as `RA_INGEST_REJECTED`, logs it in debug mode, and `flush()` resolves to a `failed` count. Batches sent with `sendBeacon` while the page unloads are not read, so their rejections are not reported. The server client returns `RA_INGEST_REJECTED` with the first rejection.
+2. **The event is a duplicate.** `duplicates` counts events whose id was already stored. Retries reuse ids, so a duplicate means the first send was stored.
+3. **The report filters it out.** Reads default to `traffic=human`, which leaves out events with a bot score of 50 or more and internal, localhost and preview traffic. A page on `localhost` that sends to the API directly, a `curl` request (its `curl/` user agent scores 100) and a Playwright or headless browser run all fall outside it. Add `traffic=all` to the read.
+4. **The date range ends before today.** Without `from` and `to`, the `period` ends at the start of today in UTC, and `24h` ends at the start of the current hour. Events from today are missing from `stats` and `timeseries` until you pass `from` and `to`.
+5. **The read is cached.** Aggregate reads of a public project are cached for 60 seconds.
+
+If the event arrived without some of its props, the client left them out. Props are limited to 25 per event, with flat string, number, boolean or `null` values, keys up to 255 characters and strings cut at 255 characters (2048 for `stack` and `breadcrumbs` on `error` events). Only development mode warns about it, with `RA_PROPS_LIMITED`. The API enforces the same limits, so an event from another sender that is outside them is rejected with `VALIDATION_FAILED`.
+
+## Query the events that arrived
+
+The live feed answers the last five minutes. Add `traffic=all` so bot, internal and localhost events show as well:
+
+```bash
+curl "https://api.example.com/v2/projects/example.com/realtime/events?traffic=all" \
+  -H "authorization: Bearer $RA_TOKEN"
+```
+
+`$RA_TOKEN` is an API token (`at_...`). The secret key (`sk_...`) only sends events: the API treats any other bearer value as no token, so a private project answers 404. See [Auth overview](/docs/api/auth).
+
+With a token that has the `sql` scope, the [SQL console](/docs/api/sql) shows why events were scored or flagged:
+
+```bash
+curl -X POST https://api.example.com/v2/projects/example.com/query \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"sql":"SELECT received_at, name, path, bot_score, bot_reasons, is_internal, is_localhost, is_preview FROM events ORDER BY received_at DESC LIMIT 20"}'
+```

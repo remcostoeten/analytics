@@ -11,6 +11,6 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
 
-The proxy refuses other methods, cross-site requests and bodies over 60 KB, and forwards the visitor's IP and user agent with the secret key.
+The proxy refuses other methods, cross-site requests and bodies over 60 KB, the API's own limit. It forwards the body with the secret key, the visitor's IP and user agent, the page's `Origin` and the admin session cookie. When the browser sent no `Origin`, the proxy sends the site's own origin, from `X-Forwarded-Host` and `X-Forwarded-Proto`, then `Host`, then the request URL. The API reads the host from it and flags localhost and preview traffic. Of the browser's cookies only `ra.session_token` (or `__Secure-ra.session_token`) is forwarded, so events from a signed-in owner or admin are stored as internal. The browser sends that cookie to your site only when the API sets it for a shared parent domain with `AUTH_COOKIE_DOMAIN`, such as `.example.com`.
 
 `createPageCounter` counts HTML page loads in middleware as `page_request` events. Comparing them with pageviews estimates how many visitors block the client.

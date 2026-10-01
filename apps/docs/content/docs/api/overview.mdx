@@ -19,9 +19,14 @@ Every route lives under `/v2`, for example `https://api.remcostoeten.nl/v2/healt
 | --- | --- | --- |
 | `from`, `to` | ISO 8601 timestamps | last 30 days |
 | `period` | `24h`, `7d`, `30d`, `90d`, `12mo`, `all`; ignored when `from` and `to` are set | `30d` |
-| `traffic` | `human` (bot score under 50, no internal, localhost or preview), `all` | `human` |
+| `traffic` | `human` (bot score under 50, no internal or localhost), `bots` (bot score 50 or more), `internal` (visitors marked internal), `all` | `human` |
+| `environment` | `production` (no preview deployments), `preview` (preview deployments only), `all`; applies on top of `traffic` | `production` |
 | `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |
 | `limit`, `cursor` | up to 100; opaque cursor from the previous page | 20 |
+
+An unknown dimension answers `400 VALIDATION_FAILED`, in `breakdown/:dimension` and in `filter[<dimension>]` alike.
+
+Events the server client sends without a visitor or session share the id `server`. They count in `pageviews`, `events` and every breakdown of events, but never as a visitor or a session: visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists leave them out.
 
 ## Errors
 

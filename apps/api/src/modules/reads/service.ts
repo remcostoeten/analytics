@@ -18,6 +18,7 @@ import {
   readMetrics,
   readPage,
   readRange,
+  readEnvironment,
   readTraffic,
 } from "./params";
 import type { Range } from "./params";
@@ -101,10 +102,18 @@ export function readScope(
   if (!range.ok) return range;
   const traffic = readTraffic(params);
   if (!traffic.ok) return traffic;
+  const environment = readEnvironment(params);
+  if (!environment.ok) return environment;
   const filters = readFilters(params);
   if (!filters.ok) return filters;
   return ok({
-    scope: { projectIds, ...range.value, traffic: traffic.value, filters: filters.value.filters },
+    scope: {
+      projectIds,
+      ...range.value,
+      traffic: traffic.value,
+      environment: environment.value,
+      filters: filters.value.filters,
+    },
     range: range.value,
     echo: filters.value.echo,
   });
@@ -143,6 +152,7 @@ export async function stats(
     range: iso(scoped.range),
     previousRange: iso(before),
     traffic: scoped.scope.traffic,
+    environment: scoped.scope.environment,
     filters: scoped.echo,
   });
 }
@@ -175,6 +185,7 @@ export async function timeseries(
     interval: interval.value,
     range: iso(scoped.range),
     traffic: scoped.scope.traffic,
+    environment: scoped.scope.environment,
     filters: scoped.echo,
   };
   const points = current.value.map((point) => ({
@@ -212,7 +223,7 @@ export async function breakdown(
   params: URLSearchParams,
 ): Promise<Result<BreakdownResponse, EngineError>> {
   const dimension = findDimension(name);
-  if (!dimension) return err(engineError("NOT_FOUND", `Unknown dimension ${name}`));
+  if (!dimension) return err(engineError("VALIDATION_FAILED", `Unknown dimension ${name}`));
   const metrics = readMetrics(
     params.get("metrics"),
     defaultMetrics[name] ?? ["visitors", "pageviews"],
@@ -241,6 +252,7 @@ export async function breakdown(
     nextCursor: nextCursor(page.value.offset, rows.length, total),
     range: iso(scoped.range),
     traffic: scoped.scope.traffic,
+    environment: scoped.scope.environment,
     filters: scoped.echo,
   });
 }

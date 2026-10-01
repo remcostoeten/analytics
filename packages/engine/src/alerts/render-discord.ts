@@ -1,7 +1,7 @@
 import type { AlertEvent, ChannelName } from "@remcostoeten/analytics-contract";
 
 import type { DeliveryBatch } from "../ports/alerts";
-import { alertLabels, newestFirst } from "./events";
+import { alertDetail, alertLabels, alertTime, alertTitle, alertUrl, newestFirst } from "./events";
 import { alertSubject } from "./render-mail";
 
 export type DiscordEmbed = {
@@ -26,16 +26,11 @@ function clip(text: string, length: number) {
 }
 
 function embed(event: AlertEvent): DiscordEmbed {
-  const lines = [
-    event.issue.culprit,
-    `${event.issue.count} ${event.issue.count === 1 ? "time" : "times"}`,
-    event.issue.lastRelease ? `release ${event.issue.lastRelease}` : null,
-  ].filter((line) => line !== null);
   return {
-    title: clip(`${alertLabels[event.name].tag}  ${event.issue.title}`, maxTitle),
-    url: event.issue.url,
-    description: clip(lines.join(" · "), maxDescription),
-    timestamp: event.issue.lastSeen,
+    title: clip(`${alertLabels[event.name].tag}  ${alertTitle(event)}`, maxTitle),
+    url: alertUrl(event),
+    description: clip(alertDetail(event), maxDescription),
+    timestamp: alertTime(event),
   };
 }
 

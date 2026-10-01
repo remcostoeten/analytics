@@ -4,6 +4,7 @@ import type { SQL } from "drizzle-orm";
 import type { Database } from "../adapters/drizzle";
 import { events, sessions } from "../db/schema";
 import type { Signal } from "../define";
+import { serverVisitor } from "../reads/server-visitor";
 import { ipFanout, sessionVelocity } from "../signals";
 
 export type Range = {
@@ -34,6 +35,7 @@ function fastSessions(range: Range): SQL {
         EXTRACT(EPOCH FROM ts - LAG(ts) OVER (PARTITION BY project_id, session_id ORDER BY ts)) * 1000 AS gap
       FROM events
       WHERE name = 'pageview' AND session_id IS NOT NULL AND ${inRange(range)}
+        AND visitor_id IS DISTINCT FROM ${serverVisitor} AND session_id <> ${serverVisitor}
     ) AS pageviews
     GROUP BY project_id, session_id
     HAVING (
@@ -115,7 +117,7 @@ export async function syncSessionScores(db: Database, range: Range): Promise<voi
  * @name scoreSessions
  * @description The session layer of bot detection, run by the daily job over a time range. It adds
  * `session_velocity` to every event of a session with more than 30 pageviews a minute or
- * near-identical gaps between pageviews, adds `ip_fanout` to events in the range from an IP hash
+ * near-identical gaps between pageviews (never the shared server visitor or session), adds `ip_fanout` to events in the range from an IP hash
  * that showed more than 20 visitor ids over its whole UTC day, and updates the sessions'
  * `bot_score`. A reason is added
  * once, so rerunning over the same range changes nothing.

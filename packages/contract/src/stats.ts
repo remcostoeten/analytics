@@ -4,6 +4,7 @@ import type { Static } from "@sinclair/typebox";
 import { Compared, Filters, Range, ValueCount } from "./common";
 import {
   DeviceType,
+  Environment,
   EventName,
   Interval,
   Percentile,
@@ -16,6 +17,7 @@ import { Count, Id, nullable, oneOf, Ratio, Timestamp } from "./schema";
 const Scope = {
   range: Range,
   traffic: TrafficFilter,
+  environment: Environment,
   filters: Filters,
 };
 
@@ -57,7 +59,12 @@ export const TimeseriesResponse = Type.Object({
 export type TimeseriesResponse = Static<typeof TimeseriesResponse>;
 
 export const BreakdownQuery = Type.Object({
-  metrics: Type.Optional(Type.String({ minLength: 1 })),
+  metrics: Type.Optional(
+    Type.String({
+      minLength: 1,
+      description: "Comma-separated metrics; default `visitors,pageviews`.",
+    }),
+  ),
 });
 export type BreakdownQuery = Static<typeof BreakdownQuery>;
 

@@ -49,6 +49,7 @@ export type OpsStore = {
   recordJob: (run: JobRunRecord) => Read<null>;
   metrics: (since: Date) => Read<OpsMetrics>;
   cleanup: (now: Date, batch: number) => Read<{ rowsDeleted: number }>;
+  scoreSessions: (from: Date, to: Date) => Read<{ velocity: number; fanout: number }>;
   checkTargets: () => Read<CheckTarget[]>;
   saveChecks: (checks: SpeedCheck[]) => Read<null>;
 };

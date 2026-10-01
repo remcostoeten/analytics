@@ -1,0 +1,61 @@
+---
+title: Fix missing web vitals
+description: Why web_vital events or speed values are missing, and what to change.
+---
+
+Use this page when the [speedInsights plugin](/docs/plugins/speed-insights) is set up but the speed reads show no values, or only some metrics.
+
+## No `web_vital` events arrive
+
+1. **The plugin is not in `plugins`.** Speed Insights is not on by default. Add `speedInsights()` to the client's `plugins`.
+2. **The page load was sampled out.** With `sampleRate: 0.1`, one page load in ten measures. The choice is made once, when the client starts. Use the default of `1` while you test.
+3. **The page closed before `web-vitals` loaded.** The plugin loads the `web-vitals` attribution build with a dynamic import, and starts measuring once it arrives. A visitor who leaves before that sends no metrics.
+4. **The event itself did not go out.** `web_vital` events follow the same rules as every other event: development mode, consent, opt-out and `beforeSend` apply. See [Find missing events](/docs/troubleshooting/no-events).
+
+With `?ra=debug`, each metric the plugin sends shows in the console as an `RA_EVENT` line for `web_vital`.
+
+## Some metrics never arrive
+
+These limits come from the `web-vitals` library the plugin uses:
+
+| Metric | Not reported when |
+| --- | --- |
+| CLS | The browser is not Chromium-based, or the page loaded in a background tab |
+| INP | The visitor never interacts with the page |
+| LCP, FCP | The page loaded in a background tab |
+
+LCP, INP and CLS change while the visitor stays on the page, so the plugin holds them and sends them together when the tab is hidden, at the next pageview, or once 6 metrics are waiting. Expect them after the visitor switches tabs or leaves, not right after load.
+
+## Metrics are credited to the wrong page
+
+The plugin measures the hard navigation only, and credits every metric to the path the page loaded with, even when it is sent after a client-side navigation. Pages reached by client-side navigation get no metrics of their own.
+
+## A page load reports its metrics twice
+
+When a visitor goes back or forward to a page the browser kept in its back/forward cache, `web-vitals` reports every metric again with a new id. The API stores each id as its own sample, with `navigationType` set to `back-forward-cache`. These are separate visits to the page, so they count as separate samples.
+
+## Preview deployments show no speed
+
+The speed reads show production by default. Add `environment=preview` for preview deployments only, or `environment=all` for both.
+
+## The speed read shows `null` for a metric
+
+The speed reads show a value only for a metric with at least 20 samples in the range, after filters, and leave the others out of the score. `samples` in the response says how many there are. Widen the range, set `device=all`, or remove filters.
+
+The API stores no speed sample for:
+
+- events from bot, internal or localhost traffic, whatever `traffic` a read asks for;
+- an unknown metric or rating, or a missing metric `id`;
+- a negative value, a CLS above 10, or a timing above 120 seconds.
+
+## Speed for dates more than 30 days ago is missing a filter or the elements
+
+The daily rollup job drops raw speed rows older than 30 days after writing daily percentiles and rating counts per route, device and metric to `rollup_vitals`. The speed reads use the raw rows for the last 30 days and the rollup for older days, where a day's percentile is the mean of its per-route and per-device percentiles, weighted by samples.
+
+The rollup has no page, country, selector, hour or preview rows. For days older than 30 days:
+
+- a read with `filter[page]`, `filter[country]` or `environment=preview` answers from the raw rows only, so older days are empty;
+- `/speed/elements`, `/speed/routes?group=path` and `/speed/timeseries?interval=hour` cover the last 30 days only;
+- `/speed/routes` leaves out rolled-up samples without a route.
+
+Older days also show nothing when the rollup job has not rolled them up, even if their raw rows are still stored, because the reads take those days from the rollup only. Run `POST /v2/admin/jobs/rollup` with `days` (1 to 90) large enough to cover them.

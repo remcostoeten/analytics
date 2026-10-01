@@ -1,0 +1,125 @@
+---
+title: Track events from the server
+description: Send events from route handlers, server actions, webhooks and jobs with createServerAnalytics and the secret key.
+---
+
+This guide sends events that happen on your server, such as a completed payment or a webhook from another service, where no browser is involved or where the browser cannot be trusted to report it. It uses `createServerAnalytics` from `/server`; every method is listed on the [Server](/docs/sdk/server) reference page.
+
+## 1. Store the secret key
+
+The server client authenticates with the project's secret key, the same one the proxy uses. Put it and the API's base URL in the server's environment:
+
+```bash
+RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
+```
+
+If you do not have the secret key, [Send events through your own domain](/docs/guides/proxy#1-store-the-secret-key) shows how to rotate it.
+
+## 2. Create the server client
+
+Type it with the same `Events` map as the browser client, so both sides agree on names and props.
+
+`lib/server-analytics.ts`:
+
+```ts
+import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import type { Events } from "./events";
+
+export const serverAnalytics = createServerAnalytics<Events>({
+  secret: process.env.RA_SECRET,
+  endpoint: process.env.RA_ENDPOINT,
+});
+```
+
+Import this module only from server code. The SDK adds `/v2/events` to the endpoint.
+
+## 3. Track from a route handler
+
+Pass the incoming `request`. The client forwards the visitor's IP and user agent, so the API can hash and enrich them, and uses the request's path as the page path. It also sends the site's origin, so the API flags localhost and preview hosts, and the admin session cookie alone, so a signed-in admin's events are internal.
+
+`app/api/checkout/route.ts`:
+
+```ts
+import { serverAnalytics } from "@/lib/server-analytics";
+
+export const POST = serverAnalytics.withErrors(async (request) => {
+  const order = await createOrder(request);
+  await serverAnalytics.track("checkout", { revenue: order.total, currency: "EUR" }, { request });
+  return Response.json({ id: order.id });
+});
+```
+
+`withErrors` records anything the handler throws as an `error` event and rethrows it, so your framework still answers with its own error response.
+
+## 4. Track from a server action
+
+A Next.js server action has no `request`. Pass the headers instead:
+
+```ts
+"use server";
+
+import { headers } from "next/headers";
+import { serverAnalytics } from "@/lib/server-analytics";
+
+export async function subscribe(formData: FormData) {
+  await saveSubscriber(formData);
+  await serverAnalytics.track("newsletter_subscribed", {}, { headers: await headers() });
+}
+```
+
+## 5. Track from a job or webhook consumer
+
+Without a request there is no visitor to forward: the event has no IP and no user agent, and the API does not use your server's own, so it adds no location and no bot weight. Set `path` so the event is not credited to `/`, set `origin` to give it your site's host, and await the call before the process exits: it resolves once the event is sent.
+
+```ts
+import { serverAnalytics } from "./server-analytics";
+
+await serverAnalytics.track(
+  "checkout",
+  { revenue: 49, currency: "EUR" },
+  { path: "/jobs/renewals", origin: "https://example.com" },
+);
+```
+
+`origin` can also go in the `createServerAnalytics` options, for every event sent without a request.
+
+For a batch, call `track` for each item and then `await serverAnalytics.flush()`. Events tracked in the same tick go out together, up to 50 per request, with one request per origin and session cookie.
+
+## 6. Keep the send alive after the response
+
+Serverless runtimes can stop a function once it has answered. To answer without awaiting the send, give the client a `waitUntil`:
+
+| Runtime | What to do |
+| --- | --- |
+| Vercel | Nothing. The client reads `waitUntil` from Vercel's request context |
+| Cloudflare Workers | Pass `waitUntil: (promise) => ctx.waitUntil(promise)` in the options or in the call's third argument |
+| Long-running servers (Node, Bun, Deno) | Nothing. The process stays up, so the send finishes |
+
+```ts
+void serverAnalytics.track("checkout", { revenue: 49, currency: "EUR" }, { request, waitUntil: (promise) => ctx.waitUntil(promise) });
+```
+
+[Server runtimes](/docs/frameworks/server#cloudflare-workers) has a complete Worker.
+
+## 7. Check the result
+
+Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Log the error code when `ok` is `false`:
+
+```ts
+const result = await serverAnalytics.track("signup", { plan: "pro" }, { request });
+if (!result.ok) console.warn(result.error.code, result.error.message);
+```
+
+| `error.code` | Cause |
+| --- | --- |
+| `RA_NO_SECRET` | `secret` is empty; check the environment variable in this runtime |
+| `RA_NO_ENDPOINT` | `endpoint` is empty |
+| `RA_INGEST_FAILED` | The API answered with an error status, or could not be reached; the message holds the status or the network error |
+| `RA_INGEST_REJECTED` | The API stored the batch but rejected at least one event; the message holds the first event's code |
+
+The client also prints each code once to the console as `[ra] <code>: <message>`.
+
+## Visitors and sessions
+
+Server events use `server` as their visitor and session; `/server` exports the id as `serverVisitor`. Reads count those events in pageviews, events and breakdowns, but leave them out of visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness and the visitor, session and people lists. To credit an event to a browser visitor, pass `visitor` and `session` in the call's options with that browser's ids. To put an event in a group, pass `groups: { company: "acme" }`.

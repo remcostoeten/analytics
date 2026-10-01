@@ -1,4 +1,5 @@
 import type { BreakdownRow, ProjectBreakdownResponse } from "@remcostoeten/analytics-contract";
+import { rawVitalsFrom } from "@remcostoeten/analytics-engine";
 import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
 import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
 import { ok } from "@remcostoeten/analytics-shared/result";
@@ -11,7 +12,7 @@ import { breakdown } from "../reads/service";
 import type { Scoped } from "../reads/service";
 import { speedSummary } from "../speed/service";
 
-type ProjectStores = Pick<ReadsOptions, "store" | "speed" | "issues">;
+type ProjectStores = Pick<ReadsOptions, "store" | "speed" | "issues" | "clock">;
 
 export type ProjectAccess = {
   records: ProjectRecord[];
@@ -74,7 +75,16 @@ async function extras(
 ): Promise<Result<Extras, EngineError>> {
   const [speed, issues] = await Promise.all([
     speedSummary(stores.speed, {
-      scope: { projectIds: [id], ...range, device: "all", route: null, path: null, country: null },
+      scope: {
+        projectIds: [id],
+        ...range,
+        device: "all",
+        environment: "production",
+        route: null,
+        path: null,
+        country: null,
+        rawFrom: rawVitalsFrom(stores.clock()),
+      },
       range,
       percentile: 75,
     }),

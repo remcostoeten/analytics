@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { maxBodyBytes as contractMaxBodyBytes } from "@remcostoeten/analytics-contract";
 import type { WireEvent } from "@remcostoeten/analytics-contract";
 
 import { limitProps } from "../src/core/build-event";
+import { debugFlag, privacySignal } from "../src/core/environment";
 import { createIdentity } from "../src/core/identity";
-import { createQueue } from "../src/core/queue";
+import { createQueue, maxBodyBytes } from "../src/core/queue";
 import { createSavedStore } from "../src/core/storage";
 import type { SendResult } from "../src/core/types";
 import { uuidv7 } from "../src/core/uuid";
-import { beacon, ingestUrl } from "../src/transports/beacon";
+import { beacon, ingestUrl, retryAfter } from "../src/transports/beacon";
 import { fresh } from "./helpers";
 
 beforeEach(fresh);
@@ -65,6 +67,7 @@ describe("createSavedStore", () => {
       traits: { plan: "pro" },
       experiments: { hero: "b" },
     });
+    saved.write({});
     expect(Object.keys(localStorage).filter((key) => key.startsWith("__analytics"))).toEqual([]);
     expect(JSON.parse(localStorage.getItem("__ra") ?? "{}").visitor).toBe("legacy-visitor");
   });
@@ -73,9 +76,56 @@ describe("createSavedStore", () => {
     const saved = createSavedStore(localStorage, () => false);
     saved.write({ visitor: "v" });
     expect(saved.read().visitor).toBe("v");
-    expect(localStorage.getItem("__ra")).toBe("{}");
+    expect(localStorage.getItem("__ra")).toBeNull();
     saved.write({ consent: "denied" }, true);
-    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}").consent).toBe("denied");
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toEqual({ consent: "denied" });
+  });
+
+  test("reads the 1.x keys before consent but moves them only once allowed", () => {
+    localStorage.setItem("__analytics_visitor_id", "legacy-visitor");
+    let allowed = false;
+    const saved = createSavedStore(localStorage, () => allowed);
+    saved.write({});
+    expect(saved.read().visitor).toBe("legacy-visitor");
+    expect(localStorage.getItem("__ra")).toBeNull();
+    expect(localStorage.getItem("__analytics_visitor_id")).toBe("legacy-visitor");
+    allowed = true;
+    saved.write({ consent: "granted" });
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toEqual({
+      visitor: "legacy-visitor",
+      consent: "granted",
+    });
+    expect(localStorage.getItem("__analytics_visitor_id")).toBeNull();
+  });
+
+  test("a tab opened before a revoke elsewhere keeps the denial and writes nothing", () => {
+    function tab() {
+      const saved = createSavedStore(localStorage, () => saved.read().consent !== "denied");
+      return saved;
+    }
+    const stale = tab();
+    stale.write({ visitor: "v" });
+    const other = tab();
+    other.drop(["visitor"]);
+    other.write({ consent: "denied" }, true);
+    stale.write({ userId: "user_1" });
+    expect(stale.read().consent).toBe("denied");
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toEqual({ consent: "denied" });
+  });
+
+  test("a write changes only its own fields and refresh takes over another tab's decisions", () => {
+    const first = createSavedStore(localStorage, () => true);
+    const second = createSavedStore(localStorage, () => true);
+    first.write({ visitor: "v", debug: true }, true);
+    second.write({ userId: "user_1" });
+    expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toEqual({
+      visitor: "v",
+      debug: true,
+      userId: "user_1",
+    });
+    second.write({ optOut: true }, true);
+    first.refresh();
+    expect(first.read()).toMatchObject({ optOut: true, debug: true });
   });
 
   test("survives storage that throws", () => {
@@ -156,6 +206,7 @@ function scripted(results: SendResult[]) {
 function queueWith(results: SendResult[]) {
   const waits: number[] = [];
   const persisted: string[] = [];
+  const failures: number[] = [];
   const scheduled: (() => void)[] = [];
   const { calls, transport } = scripted(results);
   const queue = createQueue({
@@ -169,10 +220,10 @@ function queueWith(results: SendResult[]) {
       return () => undefined;
     },
     onSend: () => undefined,
-    onFailure: () => undefined,
+    onFailure: (_, status) => failures.push(status),
     persist: (events) => persisted.push(...events.map((item) => item.id)),
   });
-  return { queue, calls, waits, persisted, scheduled };
+  return { queue, calls, waits, persisted, scheduled, failures };
 }
 
 describe("createQueue", () => {
@@ -210,6 +261,59 @@ describe("createQueue", () => {
     expect(persisted).toEqual([]);
   });
 
+  test("waits for Retry-After, capped at 16 seconds", async () => {
+    const { queue, waits } = queueWith([
+      { ok: false, retry: true, status: 429, after: 2500 },
+      { ok: false, retry: true, status: 429, after: 120_000 },
+    ]);
+    queue.add(event("a"));
+    expect(await queue.flush()).toEqual({ accepted: 1, duplicates: 0, failed: 0 });
+    expect(waits).toEqual([2500, 16_000]);
+  });
+
+  test("keeps each body under the API's limit and drops a single event over it", async () => {
+    expect(maxBodyBytes).toBe(contractMaxBodyBytes);
+    const { queue, calls, failures } = queueWith([]);
+    function big(id: string, size: number): WireEvent {
+      return { ...event(id), props: { blob: "x".repeat(size) } };
+    }
+    for (let index = 0; index < 6; index += 1) queue.add(big(`e${index}`, 25_000));
+    queue.add(big("huge", maxBodyBytes));
+    expect(await queue.flush()).toEqual({ accepted: 6, duplicates: 0, failed: 1 });
+    expect(calls.map((call) => call.ids.length)).toEqual([2, 2, 2]);
+    expect(calls.flatMap((call) => call.ids)).not.toContain("huge");
+    expect(failures).toEqual([413]);
+  });
+
+  test("an unload during a retry backoff sends the waiting batch and cancels its retry", async () => {
+    const { calls, transport } = scripted([{ ok: false, retry: true, status: 503 }]);
+    const persisted: string[] = [];
+    let resume: () => void = () => undefined;
+    const queue = createQueue({
+      transport,
+      now: () => Date.UTC(2026, 8, 27),
+      wait: () =>
+        new Promise((resolve) => {
+          resume = resolve;
+        }),
+      schedule: () => () => undefined,
+      onSend: () => undefined,
+      onFailure: () => undefined,
+      persist: (events) => persisted.push(...events.map((item) => item.id)),
+    });
+    queue.add(event("a"));
+    const first = queue.flush();
+    await Bun.sleep(0);
+    await queue.flush(true);
+    resume();
+    await first;
+    expect(calls).toEqual([
+      { ids: ["a"], unloading: false },
+      { ids: ["a"], unloading: true },
+    ]);
+    expect(persisted).toEqual([]);
+  });
+
   test("while unloading a batch is sent once", async () => {
     const { queue, calls, waits } = queueWith([{ ok: false, retry: true, status: 0 }]);
     queue.add(event("a"));
@@ -222,7 +326,8 @@ describe("createQueue", () => {
 describe("beacon", () => {
   const envelope = { v: 1 as const, sentAt: "2026-09-27T16:40:00.000Z", events: [event("a")] };
 
-  test("puts the key in the URL", () => {
+  test("puts the key in the URL and leaves it out when empty", () => {
+    expect(ingestUrl("/_ra", "")).toBe("/_ra");
     expect(ingestUrl("/_ra", "pk live")).toBe("/_ra?key=pk%20live");
     expect(ingestUrl("https://api.example.test/v2/events?x=1", "pk")).toBe(
       "https://api.example.test/v2/events?x=1&key=pk",
@@ -269,6 +374,26 @@ describe("beacon", () => {
     expect(await transport.send(envelope, false)).toEqual({ ok: false, retry, status });
   });
 
+  test("reads Retry-After as seconds or an HTTP date", async () => {
+    const now = Date.parse("2026-09-30T12:00:00Z");
+    expect(retryAfter("7", now)).toBe(7000);
+    expect(retryAfter("Wed, 30 Sep 2026 12:01:00 GMT", now)).toBe(60_000);
+    expect(retryAfter("Wed, 30 Sep 2026 11:00:00 GMT", now)).toBeUndefined();
+    expect(retryAfter("soon", now)).toBeUndefined();
+    expect(retryAfter(null, now)).toBeUndefined();
+    const transport = beacon({
+      endpoint: "/_ra",
+      key: "pk",
+      fetch: async () => new Response("{}", { status: 429, headers: { "retry-after": "30" } }),
+    });
+    expect(await transport.send(envelope, false)).toEqual({
+      ok: false,
+      retry: true,
+      status: 429,
+      after: 30_000,
+    });
+  });
+
   test("a network error is retryable", async () => {
     const transport = beacon({
       endpoint: "/_ra",
@@ -305,5 +430,25 @@ describe("beacon", () => {
     });
     await refusing.send(envelope, true);
     expect(fetched).toBe(1);
+  });
+});
+
+describe("environment", () => {
+  test("?ra=debug turns debug on, ?ra=nodebug off, anything else leaves it", () => {
+    history.replaceState(null, "", "/?ra=debug");
+    expect(debugFlag()).toBe(true);
+    history.replaceState(null, "", "/?ra=nodebug");
+    expect(debugFlag()).toBe(false);
+    history.replaceState(null, "", "/");
+    expect(debugFlag()).toBeNull();
+  });
+
+  test.each([
+    ["Do Not Track", { doNotTrack: "1" }, true],
+    ["Global Privacy Control", { globalPrivacyControl: true }, true],
+    ["neither", { doNotTrack: "unspecified", globalPrivacyControl: false }, false],
+    ["no navigator", undefined, false],
+  ])("privacySignal with %s", (_, browser, expected) => {
+    expect(privacySignal(browser)).toBe(expected);
   });
 });

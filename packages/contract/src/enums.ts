@@ -12,6 +12,9 @@ export type DeviceType = Static<typeof DeviceType>;
 export const TrafficFilter = oneOf(["human", "bots", "internal", "all"]);
 export type TrafficFilter = Static<typeof TrafficFilter>;
 
+export const Environment = oneOf(["production", "preview", "all"]);
+export type Environment = Static<typeof Environment>;
+
 export const Interval = oneOf(["hour", "day", "week", "month"]);
 export type Interval = Static<typeof Interval>;
 

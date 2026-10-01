@@ -24,6 +24,7 @@ import {
   listIssues,
   updateIssue,
 } from "./service";
+import { issuesQuery, pagingQuery } from "../reads/query";
 
 const tags = ["Issues"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
@@ -50,6 +51,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
           listIssues(store, params, [id]),
         ),
       {
+        query: issuesQuery,
         access: "detail",
         response: { 200: IssueList, ...responses },
         detail: {
@@ -78,6 +80,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
           issueEvents(store, [id], path.issue, params),
         ),
       {
+        query: pagingQuery,
         access: "detail",
         response: { 200: IssueEventList, ...responses },
         detail: {

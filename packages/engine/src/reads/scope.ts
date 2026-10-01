@@ -2,14 +2,15 @@ import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 import type { Dimension, DimensionJoin } from "../define";
-import type { ReadFilter, ReadScope, Traffic } from "../ports";
+import type { Environment, ReadFilter, ReadScope, Traffic } from "../ports";
+import { countedSession, countedVisitor } from "./server-visitor";
 
 const humanScore = 50;
 
 /**
  * @name trafficCondition
  * @description The one definition of each traffic filter: `human` is a bot score under 50 and not
- * internal, localhost or preview traffic; `bots` is 50 or more; `internal` is the owner's own.
+ * internal or localhost traffic; `bots` is 50 or more; `internal` is the owner's own.
  *
  * @example
  * trafficCondition("human");
@@ -18,7 +19,22 @@ function trafficCondition(traffic: Traffic): SQL {
   if (traffic === "bots") return sql`e.bot_score >= ${humanScore}`;
   if (traffic === "internal") return sql`COALESCE(e.is_internal, false)`;
   if (traffic === "all") return sql`true`;
-  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false) AND NOT COALESCE(e.is_preview, false)`;
+  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false)`;
+}
+
+/**
+ * @name environmentCondition
+ * @description The deployment filter, applied on top of the traffic filter: `production` leaves
+ * preview deployments out, `preview` keeps only them, `all` keeps both.
+ *
+ * @example
+ * environmentCondition("production");
+ */
+function environmentCondition(environment: Environment): SQL {
+  if (environment === "all") return sql`true`;
+  return environment === "preview"
+    ? sql`COALESCE(e.is_preview, false)`
+    : sql`NOT COALESCE(e.is_preview, false)`;
 }
 
 function filterCondition(filter: ReadFilter, scope: ReadScope): SQL {
@@ -47,7 +63,7 @@ function joins(needed: Set<DimensionJoin>): SQL {
 /**
  * @name scopeParts
  * @description The joins and `WHERE` condition for the events one read covers: the projects, the
- * half-open range `[from, to)`, the traffic filter and every dimension filter. Sessions and
+ * half-open range `[from, to)`, the traffic and environment filters and every dimension filter. Sessions and
  * visitors are joined only when a dimension needs them.
  *
  * @example
@@ -73,6 +89,7 @@ export function scopeParts(
     sql`e.ts >= ${scope.from.toISOString()}::timestamptz`,
     sql`e.ts < ${scope.to.toISOString()}::timestamptz`,
     trafficCondition(scope.traffic),
+    environmentCondition(scope.environment),
     ...scope.filters.map((filter) => filterCondition(filter, scope)),
   ];
   return { joins: joins(needed), where: sql.join(conditions, sql` AND `) };
@@ -81,7 +98,9 @@ export function scopeParts(
 /**
  * @name scopedEvents
  * @description The events one read covers, as a `SELECT` for a `scoped` CTE, with each row's
- * group `key` and, given a `conversion` condition, whether the row's session converted.
+ * group `key` and, given a `conversion` condition, whether the row's session converted. The shared
+ * server visitor's events keep their row with a null `visitor_id` and `session_id`, so they count as
+ * events but never as a visitor or a session.
  *
  * @example
  * sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}) SELECT count(*) FROM scoped`;
@@ -94,9 +113,9 @@ export function scopedEvents(
 ): SQL {
   const { joins: joined, where } = scopeParts(scope, keyDimensions);
   const converted = conversion
-    ? sql`COALESCE(bool_or(${conversion}) OVER (PARTITION BY e.project_id, e.session_id), false)`
+    ? sql`COALESCE(bool_or(${conversion}) OVER (PARTITION BY e.project_id, ${countedSession}), false)`
     : sql`false`;
-  return sql`SELECT ${key} AS k, e.id, e.project_id, e.visitor_id, e.session_id, e.type, e.name, e.ts, e.meta, e.path, e.country, ${converted} AS converted FROM events e ${joined} WHERE ${where}`;
+  return sql`SELECT ${key} AS k, e.id, e.project_id, ${countedVisitor} AS visitor_id, ${countedSession} AS session_id, e.type, e.name, e.ts, e.meta, e.path, e.country, ${converted} AS converted FROM events e ${joined} WHERE ${where}`;
 }
 
 /**

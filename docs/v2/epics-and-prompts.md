@@ -53,7 +53,18 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
-After phase 5, these become their own epics: goals and funnels, annotations, saved segments, email reports, source maps, webhooks, an MCP server, share links and embeds, the Durable Object realtime hub if polling ever falls short, and from PostHog: lifecycle, stickiness, actions, group analytics, saved dashboards, experiment statistics, metric alerts, and possibly feature flags, click heatmaps and surveys (see Capabilities and gaps).
+After phase 5, later epics follow the product focus in the plan (decision 17), in this order: annotations to compare campaigns, posts and releases; Search Console; saved segments; email reports and metric alerts; webhooks; source maps; share links and embeds; an MCP server; and the Durable Object realtime hub if polling ever falls short. Lifecycle, stickiness and group analytics are already built. Goals, funnels, actions, experiment statistics, feature flags, click heatmaps and surveys are not planned; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
+
+## Priorities now
+
+Reach, traffic sources and app performance come first; conversion optimization is not a goal for now. Open work, in order:
+
+1. Visitors, pages, traffic sources and realtime: keep these reads complete and correct in the API.
+2. Bot detection: check the scores on real traffic with the release checklist in `docs/release-checklist.md`.
+3. Speed insights and error tracking: keep them on par with Vercel as they change.
+4. Annotations, then Search Console, as their own epics.
+5. Reliability, privacy and self-hosting: E5.1 retires 1.x and ships the self-host setup.
+6. E4.5, the dashboard on the v2 API, last, once Remco's design is in.
 
 ## Phase 0: foundations
 
@@ -207,7 +218,7 @@ Epic E2.4, branch feature/api-ingest. Needs E1.1's go decision. Read the plan se
 
 ### E3.1 SDK 2.0 core
 
-Delivers: `createAnalytics<Events>()` with `track`, `page`, `identify`, `register`, `error`, `consent`, `optOut`, `reset`, `flush`, `shutdown`, `on`, `status`; the pre-init queue; in-memory batching; the `beacon` transport; identity and session; one `__ra` storage key with migration from the 1.x keys; `mode` and debug output. Done when unit tests cover each method and the contract fixtures match what the client sends, and the core is under 4.5 KB min+gzip.
+Delivers: `createAnalytics<Events>()` with `track`, `page`, `identify`, `register`, `error`, `consent`, `optOut`, `reset`, `flush`, `shutdown`, `on`, `status`; the pre-init queue; in-memory batching; the `beacon` transport; identity and session; one `__ra` storage key with migration from the 1.x keys; `mode` and debug output. Done when unit tests cover each method and the contract fixtures match what the client sends, and the core is under 5 KB min+gzip.
 
 ```text
 Epic E3.1, branch feature/sdk-2-core. The SDK design tab is the spec for the public API, config, typing and file layout; follow it exactly. Read the plan sections "SDK API shape", "Event envelope and transport", "Engine and modules" (SDK plugin part), "Errors" (What developers see), and "Lessons from Vercel".

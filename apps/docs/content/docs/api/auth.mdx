@@ -60,7 +60,7 @@ Sign-in goes through the API, so every frontend shares one access check.
 
 Signed out, the same route answers `{ "user": null, "session": null, "role": null, "isAdmin": false }`.
 
-Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic, so your own visits never count.
+Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic, and `traffic=human` leaves them out. The browser client sends without cookies, so the cookie arrives only through the `/_ra` proxy or the server client given the incoming `request` or `headers`; both forward `ra.session_token` (or `__Secure-ra.session_token`) and no other cookie. The site's domain receives that cookie only when `AUTH_COOKIE_DOMAIN` sets it for a shared parent domain. A browser sending to the API directly is not marked internal this way.
 
 ## API tokens
 

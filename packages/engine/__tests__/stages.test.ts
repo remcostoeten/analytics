@@ -67,6 +67,46 @@ describe("parseEvent", () => {
     ["a bad id", { ...valid, id: "nope" }, "events[3].id: Expected string to match 'uuid' format"],
     ["a missing page", withoutPage, "events[3].page: Expected required property"],
     ["not an object", "pageview", "events[3]: Expected object"],
+    [
+      "26 props",
+      { ...valid, props: Object.fromEntries(Array.from({ length: 26 }, (_, i) => [`p${i}`, i])) },
+      "events[3].props: Expected object to have no more than 25 properties",
+    ],
+    [
+      "25 props",
+      { ...valid, props: Object.fromEntries(Array.from({ length: 25 }, (_, i) => [`p${i}`, i])) },
+      null,
+    ],
+    [
+      "a prop key over 255 characters",
+      { ...valid, props: { ["k".repeat(256)]: 1 } },
+      `events[3].props.${"k".repeat(256)}: Unexpected property`,
+    ],
+    [
+      "a nested prop value",
+      { ...valid, props: { plan: { tier: "pro" } } },
+      "events[3].props.plan: Expected union value",
+    ],
+    [
+      "a string prop over 255 characters",
+      { ...valid, props: { plan: "p".repeat(256) } },
+      "events[3].props.plan: Expected string length less or equal to 255",
+    ],
+    [
+      "a stack over 255 characters on a pageview",
+      { ...valid, props: { stack: "s".repeat(256) } },
+      "events[3].props.stack: Expected string length less or equal to 255",
+    ],
+    [
+      "a stack up to 2048 characters on an error",
+      { ...valid, name: "error", props: { stack: "s".repeat(2048) } },
+      null,
+    ],
+    [
+      "a stack over 2048 characters on an error",
+      { ...valid, name: "error", props: { stack: "s".repeat(2049) } },
+      "events[3].props.stack: Expected union value",
+    ],
   ])("%s", (_, raw, message) => {
     const result = parseEvent(raw, 3);
     if (message === null) expect(result.ok).toBe(true);

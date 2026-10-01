@@ -23,13 +23,14 @@ type Seed = {
   botScore?: number;
   botReasons?: string[];
   internal?: boolean;
+  preview?: boolean;
   meta?: { [key: string]: string | number };
 };
 
 async function seed(event: Seed) {
   await database.query(
-    `INSERT INTO events (project_id, type, name, ts, path, country, visitor_id, session_id, bot_score, bot_reasons, is_internal, fingerprint, meta)
-     VALUES ('site', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+    `INSERT INTO events (project_id, type, name, ts, path, country, visitor_id, session_id, bot_score, bot_reasons, is_internal, fingerprint, meta, is_preview)
+     VALUES ('site', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
     [
       event.type ?? "pageview",
       event.name ?? event.type ?? "pageview",
@@ -43,6 +44,7 @@ async function seed(event: Seed) {
       event.internal ?? false,
       event.id,
       JSON.stringify(event.meta ?? {}),
+      event.preview ?? false,
     ],
   );
 }
@@ -65,6 +67,7 @@ const week: ReadScope = {
   from: new Date("2026-09-20T00:00:00.000Z"),
   to: new Date("2026-09-27T00:00:00.000Z"),
   traffic: "human",
+  environment: "production",
   filters: [],
 };
 
@@ -133,6 +136,14 @@ beforeAll(async () => {
     internal: true,
   });
   await seed({ id: "e8", visitor: "old", session: "s6", ts: "2026-09-15T08:00:00Z" });
+  await seed({
+    id: "e9",
+    visitor: "tester",
+    session: "s7",
+    ts: "2026-09-24T09:00:00Z",
+    path: "/new",
+    preview: true,
+  });
 });
 
 describe("drizzleReads", () => {
@@ -148,6 +159,14 @@ describe("drizzleReads", () => {
     expect(value(await reads.headline({ ...week, traffic: "bots" })).visitors).toBe(1);
     expect(value(await reads.headline({ ...week, traffic: "internal" })).visitors).toBe(1);
     expect(value(await reads.headline({ ...week, traffic: "all" })).visitors).toBe(4);
+  });
+
+  test("environment leaves preview deployments out, keeps only them, or keeps both", async () => {
+    expect(value(await reads.headline({ ...week, environment: "preview" })).visitors).toBe(1);
+    expect(value(await reads.headline({ ...week, environment: "all" })).visitors).toBe(3);
+    expect(
+      value(await reads.headline({ ...week, traffic: "all", environment: "all" })).visitors,
+    ).toBe(5);
   });
 
   test("filters include, exclude and join sessions and visitors", async () => {

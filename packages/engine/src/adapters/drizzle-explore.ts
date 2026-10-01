@@ -3,6 +3,7 @@ import type { SQL } from "drizzle-orm";
 
 import type { LifecycleInterval, MapLevel, ReadStore } from "../ports";
 import { scopedEvents, scopeParts } from "../reads/scope";
+import { countedVisitor } from "../reads/server-visitor";
 import type { Database } from "./drizzle";
 import { attempt, numeric, rounded, selectRows, textual } from "./drizzle-rows";
 import type { Row } from "./drizzle-rows";
@@ -202,13 +203,13 @@ export function exploreReads(
         const { joins, where } = scopeParts(scope, []);
         const columns = placeColumns[level];
         const keys = sql.raw(columns.map((column) => `e.${column}`).join(", "));
-        const grouped = sql`SELECT ${keys}, count(DISTINCT e.visitor_id) AS visitors,
+        const grouped = sql`SELECT ${keys}, count(DISTINCT ${countedVisitor}) AS visitors,
             avg(e.latitude) AS latitude, avg(e.longitude) AS longitude
           FROM events e ${joins} WHERE ${where} AND e.country IS NOT NULL GROUP BY ${keys}`;
         const [counts] = await selectRows(
           db,
           sql`SELECT (SELECT count(*) FROM (${grouped}) g) AS total,
-            (SELECT count(DISTINCT e.visitor_id) FROM events e ${joins} WHERE ${where}) AS visitors`,
+            (SELECT count(DISTINCT ${countedVisitor}) FROM events e ${joins} WHERE ${where}) AS visitors`,
         );
         const order = sql.raw(columns.map((column) => `g.${column} ASC NULLS LAST`).join(", "));
         const rows = await selectRows(

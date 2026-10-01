@@ -37,9 +37,11 @@ const month = {
   from: new Date("2026-09-01T00:00:00Z"),
   to: new Date("2026-09-04T00:00:00Z"),
   device: "all" as const,
+  environment: "production" as const,
   route: null,
   path: null,
   country: null,
+  rawFrom: new Date("2026-08-29T00:00:00Z"),
 };
 
 let counter = 0;
@@ -69,22 +71,27 @@ async function seed(
     route?: string;
     device?: string;
     day?: string;
+    hour?: string;
     selector?: string;
+    path?: string;
+    preview?: boolean;
   }[],
 ) {
   for (const [index, row] of rows.entries()) {
     await database.query(
-      `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, route, path, device, selector)
-       VALUES ($1, 'site', $2, $3, $4, $5, $6, $6, $7, $8)`,
+      `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, route, path, device, selector, is_preview)
+       VALUES ($1, 'site', $2, $3, $4, $5, $6, $9, $7, $8, $10)`,
       [
-        `seed-${row.metric}-${index}-${row.value}`,
-        `${row.day ?? "2026-09-02"}T10:00:00Z`,
+        `seed-${row.metric}-${index}-${row.value}-${row.preview ? "preview" : "production"}`,
+        `${row.day ?? "2026-09-02"}T${row.hour ?? "10"}:00:00Z`,
         row.metric,
         row.value,
         row.rating ?? vitalRating(row.metric as "lcp", row.value),
         row.route ?? "/",
         row.device ?? "mobile",
         row.selector ?? null,
+        row.path ?? row.route ?? "/",
+        row.preview ?? false,
       ],
     );
   }
@@ -217,14 +224,14 @@ describe("reads", () => {
   });
 
   test("routes, the daily series and the selectors behind slow values", async () => {
-    const routes = await speed.routes(month, 75);
+    const routes = await speed.routes(month, 75, "route");
     expect(routes.ok ? routes.value.filter((row) => row.metric === "lcp") : null).toEqual(
       expect.arrayContaining([
         { route: "/", metric: "lcp", samples: 20, value: 3850 },
         { route: "/docs", metric: "lcp", samples: 4, value: 502.25 },
       ]),
     );
-    const daily = await speed.daily(month, 75, "lcp");
+    const daily = await speed.series(month, 75, "lcp", "day");
     expect(daily.ok ? daily.value.map((day) => day.samples) : null).toEqual([0, 20, 4]);
     const elements = await speed.elements(month, 75, "lcp", 5, { limit: 10, offset: 0 });
     expect(elements).toEqual({
@@ -254,5 +261,114 @@ describe("reads", () => {
       "SELECT count(*)::int AS n FROM web_vitals WHERE project_id = 'site'",
     );
     expect(left.rows).toEqual([{ n: 4 }]);
+  });
+
+  test("reads days before the raw window from the rollup and later days from raw rows", async () => {
+    const spanning = { ...month, rawFrom: new Date("2026-09-03T00:00:00Z") };
+    const summary = await speed.summary(spanning, 75);
+    const lcp = summary.ok ? summary.value.find((row) => row.metric === "lcp") : null;
+    expect(lcp).toEqual({
+      metric: "lcp",
+      samples: 24,
+      value: (3850 * 20 + 502.25 * 4) / 24,
+      good: 12,
+      needsImprovement: 8,
+      poor: 4,
+    });
+    const daily = await speed.series(spanning, 75, "lcp", "day");
+    expect(daily.ok ? daily.value.map(({ samples, value }) => ({ samples, value })) : null).toEqual(
+      [
+        { samples: 0, value: null },
+        { samples: 20, value: 3850 },
+        { samples: 4, value: 502.25 },
+      ],
+    );
+    const routes = await speed.routes(spanning, 75, "route");
+    expect(routes.ok ? routes.value.filter((row) => row.metric === "lcp") : null).toEqual(
+      expect.arrayContaining([
+        { route: "/", metric: "lcp", samples: 20, value: 3850 },
+        { route: "/docs", metric: "lcp", samples: 4, value: 502.25 },
+      ]),
+    );
+    const byPage = await speed.summary({ ...spanning, path: "/docs" }, 75);
+    expect(byPage.ok ? byPage.value.map((row) => row.samples) : null).toEqual([4]);
+  });
+});
+
+describe("environments, hours and paths", () => {
+  const week = {
+    ...month,
+    from: new Date("2026-09-10T00:00:00Z"),
+    to: new Date("2026-09-11T00:00:00Z"),
+  };
+
+  beforeAll(async () => {
+    await seed([
+      ...Array.from({ length: 4 }, (_, index) => ({
+        metric: "ttfb",
+        value: 100 + index,
+        day: "2026-09-10",
+        hour: "08",
+        route: "/blog/[slug]",
+        path: index < 3 ? "/blog/one" : "/blog/two",
+      })),
+      ...Array.from({ length: 2 }, (_, index) => ({
+        metric: "ttfb",
+        value: 900 + index,
+        day: "2026-09-10",
+        hour: "14",
+        route: "/blog/[slug]",
+        path: "/blog/one",
+        preview: true,
+      })),
+    ]);
+  });
+
+  test("production, preview and all split on the preview flag", async () => {
+    async function samples(environment: "production" | "preview" | "all") {
+      const result = await speed.summary({ ...week, environment }, 75);
+      return result.ok ? result.value.map((row) => row.samples) : null;
+    }
+    expect(await samples("production")).toEqual([4]);
+    expect(await samples("preview")).toEqual([2]);
+    expect(await samples("all")).toEqual([6]);
+  });
+
+  test("the hourly series buckets by UTC hour", async () => {
+    const result = await speed.series({ ...week, environment: "all" }, 75, "ttfb", "hour");
+    expect(result.ok ? result.value.length : null).toBe(24);
+    const filled = result.ok
+      ? result.value
+          .filter((point) => point.samples > 0)
+          .map((point) => ({ hour: point.bucket.getUTCHours(), samples: point.samples }))
+      : null;
+    expect(filled).toEqual([
+      { hour: 8, samples: 4 },
+      { hour: 14, samples: 2 },
+    ]);
+  });
+
+  test("routes group by route template or by path", async () => {
+    const byRoute = await speed.routes(week, 75, "route");
+    expect(byRoute.ok ? byRoute.value.map((row) => [row.route, row.samples]) : null).toEqual([
+      ["/blog/[slug]", 4],
+    ]);
+    const byPath = await speed.routes(week, 75, "path");
+    const paths = byPath.ok ? byPath.value.map((row) => [row.route, row.samples]) : null;
+    expect(paths).toHaveLength(2);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        ["/blog/one", 3],
+        ["/blog/two", 1],
+      ]),
+    );
+  });
+
+  test("the rollup leaves preview rows out", async () => {
+    await speed.rollup(week.from, week.to, new Date("2026-09-03T00:00:00Z"));
+    const rolled = await database.query<{ samples: number }>(
+      "SELECT sum(samples)::int AS samples FROM rollup_vitals WHERE project_id = 'site' AND metric = 'ttfb' AND day = '2026-09-10'",
+    );
+    expect(rolled.rows).toEqual([{ samples: 4 }]);
   });
 });

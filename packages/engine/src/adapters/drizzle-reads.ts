@@ -111,7 +111,14 @@ export function drizzleReads(db: Database): ReadStore {
       }),
     realtime: (projectIds, from, to) =>
       attempt("Could not read realtime", async () => {
-        const scope: ReadScope = { projectIds, from, to, traffic: "human", filters: [] };
+        const scope: ReadScope = {
+          projectIds,
+          from,
+          to,
+          traffic: "human",
+          environment: "production",
+          filters: [],
+        };
         const scoped = sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])})`;
         const [totals] = await selectRows(
           db,

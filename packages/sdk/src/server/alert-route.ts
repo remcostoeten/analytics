@@ -25,6 +25,7 @@ const encoder = new TextEncoder();
 const knownEvents = {
   "issue.new": true,
   "issue.regression": true,
+  "speed.drop": true,
 } satisfies { [Name in AlertEventName]: true };
 // "sha256=" followed by 64 lowercase hex digits, the HMAC-SHA256 of "<timestamp>.<body>".
 const signaturePattern = /^sha256=([0-9a-f]{64})$/;
@@ -51,8 +52,16 @@ function hexBytes(hex: string) {
 
 function readEvent(value: Json): AlertEvent | null {
   if (!isRecord(value) || typeof value.name !== "string" || !isKnownEvent(value.name)) return null;
-  if (typeof value.project !== "string" || !isRecord(value.issue)) return null;
-  if (typeof value.issue.id !== "string" || typeof value.issue.title !== "string") return null;
+  if (typeof value.project !== "string") return null;
+  if (value.name === "speed.drop") {
+    if (!isRecord(value.speed) || typeof value.speed.score !== "number") return null;
+  } else if (
+    !isRecord(value.issue) ||
+    typeof value.issue.id !== "string" ||
+    typeof value.issue.title !== "string"
+  ) {
+    return null;
+  }
   // The body is signed by the API, which checks every event against the contract first.
   return value as AlertEvent;
 }
@@ -128,7 +137,7 @@ async function dispatch<Name extends AlertEventName>(
   event: AlertEvent,
   on: AlertHandlers,
 ) {
-  await on[name]?.({ ...event, name });
+  await on[name]?.(event as AlertEventOf<Name>);
 }
 
 /**

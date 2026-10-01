@@ -1,6 +1,7 @@
 import { ok } from "@remcostoeten/analytics-shared/result";
 import { sql } from "drizzle-orm";
 
+import { scoreSessions } from "../jobs/session-signals";
 import type { JobName, OpsStore, SpeedCheck } from "../ports";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
@@ -26,7 +27,7 @@ function nullableNumber(value: unknown) {
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
  * ingest numbers since a moment, retention cleanup of events and sessions past each project's
  * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
- * and the Chrome UX Report checks.
+ * the session layer of bot detection over a range, and the Chrome UX Report checks.
  *
  * @example
  * await drizzleOps(db).metrics(new Date(Date.now() - 86_400_000));
@@ -124,6 +125,8 @@ export function drizzleOps(db: Database): OpsStore {
           })),
         };
       }),
+    scoreSessions: (from, to) =>
+      attempt("Could not score the sessions", () => scoreSessions(db, { from, to }, false)),
     cleanup: (now, batch) =>
       attempt("Could not clean up expired rows", async () => {
         const at = now.toISOString();

@@ -19,8 +19,8 @@ Every type, file and route uses these words and no synonyms.
 
 | Word | Means | Type |
 | --- | --- | --- |
-| plugin | An opt-in part of the API, listed in the config: `alerts()` now, later goals or email reports | `ServerPlugin` |
-| alert event | Something worth telling, with a typed payload: `issue.new`, `issue.regression` | `AlertEvent` |
+| plugin | An opt-in part of the API, listed in the config: `alerts()` now, later email reports | `ServerPlugin` |
+| alert event | Something worth telling, with a typed payload: `issue.new`, `issue.regression`, `speed.drop` | `AlertEvent` |
 | channel | A way to send alerts, enabled in the config: `mail()`, `webhook()`, `discord()` | `ChannelDriver` |
 | target | Where one project's alerts go on one channel: recipients, a URL, and the events it wants | `AlertTarget` |
 | transport | How mail leaves the deployment: `smtp(url)` or `resend(key)` | `MailTransport` |
@@ -236,15 +236,36 @@ The contract is the single source of every shape: the API validates with it, Ope
 
 Both steps run in `POST /v2/admin/jobs/alerts`, which `jobs.yml` already calls every 10 minutes.
 
-1. **Queue.** Producers turn what happened into alert events. For each event, one delivery per enabled target of that project subscribed to it, inserted with `ON CONFLICT DO NOTHING` on `(target_id, event_name, subject_id)`, so a retried run never queues twice. `subject_id` is the issue id for `issue.new` and the issue id with its `regressed_at` for `issue.regression`, so every regression alerts once.
+1. **Queue.** Producers turn what happened into alert events. For each event, one delivery per enabled target of that project subscribed to it, inserted with `ON CONFLICT DO NOTHING` on `(target_id, event_name, subject_id)`, so a retried run never queues twice. `subject_id` is the issue id for `issue.new`, the issue id with its `regressed_at` for `issue.regression`, so every regression alerts once, and the project with the UTC day for `speed.drop`, so a drop alerts once a day.
 2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. Success marks them `sent`; failure keeps them `pending` with the error and the next attempt from the retry policy, until the policy runs out and they turn `failed`. One failing target never holds back another.
+
+### Speed drops
+
+`speed.drop` is opt-in: a target gets it only when its `on` lists it. Each alerts run compares yesterday's Real Experience Score (UTC day, production, all devices, p75, metrics with at least 20 samples) with the 7 days before it, for every project with a target subscribed to it. It fires when the score fell by 10 points or more to under 90; `alerts({ speedDrop: { points, below, baselineDays } })` changes those numbers. The payload holds both scores, the rating, the metric whose score fell most, the sample count, the window and a link to the speed read.
+
+```json
+{
+  "name": "speed.drop",
+  "project": "remcostoeten.nl",
+  "speed": {
+    "score": 78,
+    "previous": 90,
+    "rating": "needs-improvement",
+    "worst": "lcp",
+    "samples": 1240,
+    "from": "2026-09-28T00:00:00.000Z",
+    "to": "2026-09-29T00:00:00.000Z",
+    "url": "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed"
+  }
+}
+```
 
 ### Contract
 
 `packages/contract/src/alerts.ts`: finite sets are literal unions, and a target is a discriminated union on `channel`.
 
 ```ts
-export const AlertEventName = oneOf(["issue.new", "issue.regression"]);
+export const AlertEventName = oneOf(["issue.new", "issue.regression", "speed.drop"]);
 export const ChannelName = oneOf(["mail", "webhook", "discord"]);
 export const TargetName = Type.String({ minLength: 1, maxLength: 40, pattern: "^[a-z0-9][a-z0-9-]*$" });
 export const EmailAddress = Type.String({ format: "email", maxLength: 254 });
@@ -466,7 +487,7 @@ packages/sdk/src/server/alert-route.ts       alertRoute, verifyAlert
 ## Roadmap
 
 - **Resend by hand**: `admin.alerts.resend(deliveryId)` and `POST /v2/projects/:project/alerts/deliveries/:id/resend` send a `failed` delivery to its target again, for example after a webhook was down; one call to put behind a button on your own admin page.
-- Slack channel, traffic and speed events, daily digests, quiet hours per target.
+- Slack channel, traffic events, daily digests, quiet hours per target.
 - React hooks over the admin client's reads.
 
 ## Decided

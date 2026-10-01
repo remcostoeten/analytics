@@ -27,6 +27,17 @@ import { readGate } from "./guard";
 import type { ReadsOptions, Set } from "./guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "./live";
 import { breakdown, readScope, realtime, stats, timeseries } from "./service";
+import {
+  breakdownQuery,
+  heatmapQuery,
+  lifecycleQuery,
+  liveEventsQuery,
+  mapQuery,
+  pathsQuery,
+  retentionQuery,
+  scopeQuery,
+  timeseriesQuery,
+} from "./query";
 
 const tags = ["Reads"];
 
@@ -102,6 +113,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           return scope.ok ? stats(options.store, scope.value) : scope;
         }),
       {
+        query: scopeQuery,
         access: "project",
         response: { 200: StatsResponse, ...readResponses },
         detail: {
@@ -120,6 +132,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           return scope.ok ? timeseries(options.store, scope.value, params) : scope;
         }),
       {
+        query: timeseriesQuery,
         access: "project",
         response: { 200: TimeseriesResponse, ...readResponses },
         detail: {
@@ -146,6 +159,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           },
         ),
       {
+        query: breakdownQuery,
         access: "project",
         response: { 200: t.Union([BreakdownResponse, download]), ...readResponses },
         detail: {
@@ -173,6 +187,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     )
     .get("/projects/:project/paths", exploreList("paths", paths), {
+      query: pathsQuery,
       access: "project",
       response: { 200: t.Union([PathsResponse, download]), ...readResponses },
       detail: {
@@ -183,6 +198,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/retention", explore(retention), {
+      query: retentionQuery,
       access: "project",
       response: { 200: RetentionResponse, ...readResponses },
       detail: {
@@ -193,6 +209,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/lifecycle", explore(lifecycle), {
+      query: lifecycleQuery,
       access: "project",
       response: { 200: LifecycleResponse, ...readResponses },
       detail: {
@@ -203,6 +220,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/stickiness", explore(stickiness), {
+      query: scopeQuery,
       access: "project",
       response: { 200: StickinessResponse, ...readResponses },
       detail: {
@@ -213,6 +231,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/heatmap", explore(heatmap), {
+      query: heatmapQuery,
       access: "project",
       response: { 200: HeatmapResponse, ...readResponses },
       detail: {
@@ -223,6 +242,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/map", exploreList("map", places), {
+      query: mapQuery,
       access: "project",
       response: { 200: t.Union([MapResponse, download]), ...readResponses },
       detail: {
@@ -256,6 +276,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           },
         ),
       {
+        query: liveEventsQuery,
         access: "project",
         response: { 200: t.Union([LiveEvents, eventStream]), ...readResponses },
         detail: {

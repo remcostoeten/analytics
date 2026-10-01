@@ -16,7 +16,7 @@ import type {
   TargetRecord,
   TargetSpec,
 } from "@remcostoeten/analytics-engine";
-import { alertEventNames } from "@remcostoeten/analytics-engine/alerts";
+import { defaultAlertEvents } from "@remcostoeten/analytics-engine/alerts";
 import type { AlertLinks, AlertsPlugin } from "@remcostoeten/analytics-engine/alerts";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
@@ -45,7 +45,7 @@ function invalid(path: string, message: string) {
 function toSpec(input: TargetInput): TargetSpec {
   const base = {
     name: input.name ?? input.channel,
-    on: input.on ?? [...alertEventNames],
+    on: input.on ?? [...defaultAlertEvents],
     enabled: input.enabled ?? true,
   };
   if (input.channel === "mail") return { ...base, channel: "mail", settings: { to: input.to } };

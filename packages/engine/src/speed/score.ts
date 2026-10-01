@@ -105,3 +105,23 @@ export function scoreRating(score: number): VitalRating {
   if (score >= 90) return "good";
   return score >= 50 ? "needs-improvement" : "poor";
 }
+
+/**
+ * @name statsScore
+ * @description The Real Experience Score of per-metric percentile values, each scored only with at
+ * least `minSamples` samples, plus the score of each metric. Null when no scored metric has
+ * enough samples.
+ *
+ * @example
+ * statsScore([{ metric: "lcp", samples: 40, value: 2500 }], 20); // { score: 90, scores: { lcp: 90 } }
+ */
+export function statsScore(
+  stats: { metric: VitalName; samples: number; value: number }[],
+  minSamples: number,
+): { score: number | null; scores: { [Name in VitalName]?: number | null } } {
+  const scores: { [Name in VitalName]?: number | null } = {};
+  for (const stat of stats) {
+    scores[stat.metric] = stat.samples >= minSamples ? metricScore(stat.metric, stat.value) : null;
+  }
+  return { score: experienceScore(scores), scores };
+}

@@ -58,27 +58,29 @@ NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_live_...","endpoin
 | `captureError(error, context?)`, `captureMessage(message, context?)` | Records an error or a warning with tags, level and fingerprint |
 | `scope(tags)` | The same client, adding `tags` to everything it sends |
 | `use(plugin)` | Adds a plugin and returns its remover |
-| `consent.grant()`, `consent.revoke()`, `consent.status()` | Consent, remembered across reloads |
+| `consent.grant()`, `consent.revoke()`, `consent.status()` | Consent, remembered across reloads and applied to other open tabs at once |
 | `optOut()`, `optIn()`, `isOptedOut()` | Stops or resumes all sending from this browser |
-| `reset()` | New visitor and session; call on logout |
+| `reset()` | New visitor and session, and clears the route; call on logout |
 | `flush()`, `shutdown()` | Sends the queue now; `shutdown` also removes plugins and listeners |
-| `on("error" \| "send" \| "drop", handler)` | Delivery problems, sends and dropped events |
+| `on("error" \| "send" \| "drop", handler)` | Delivery problems (`RA_INGEST_FAILED`, and `RA_INGEST_REJECTED` for each event rejected inside a 202), sends and dropped events |
 | `status()` | Queue size, consent, endpoint, route, last error and last send |
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `project`, `key` | from the environment | Project slug and public key |
+| `project`, `key` | from the environment | Project slug and public key; an empty key leaves the `key` query parameter out |
 | `endpoint` | `/_ra` | A same-origin path behind the proxy, or the API's `/v2/events` URL |
 | `consent` | `"optional"` | `"required"` holds everything until `consent.grant()` and then sends it |
 | `plugins` | `[]` | Plugins to start with |
 | `pageviews` | `true` | Automatic pageviews |
 | `mode` | `"auto"` | `"development"` logs instead of sending unless `endpoint` is set; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser |
+| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser, `?ra=nodebug` off again without touching the visitor id |
 | `release` | none | Attached to every event |
 | `beforeSend` | none | `(event) => event \| null` to change or drop any event |
 | `autostart` | `true` in browsers | `false` to call `start()` yourself |
 
-Events are batched (20 events or 5 seconds), sent with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. Failed sends retry after 1, 4 and 16 seconds, and events still unsent are kept for the next page load. Visitors are a random id in `localStorage` and sessions a random id in `sessionStorage`; no cookies are set.
+Events are batched (20 events or 5 seconds, with each body kept under the API's 60 KB limit), sent with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. A single event over 60 KB is dropped and reported as a 413 failure. A network error, 429 or 5xx retries after 1, 4 and 16 seconds, or after `Retry-After` capped at 16 seconds; batches waiting for a retry are sent when the page is hidden, and events still unsent are kept for the next page load. Visitors are a random id in `localStorage` and sessions a random id in `sessionStorage`; no cookies are set.
+
+Do Not Track and Global Privacy Control are honoured: every event is dropped with the reason `dnt` and nothing is stored. The `__ra` key is written only once sending is allowed, except for the visitor's own consent, opt-out and debug choices, and a consent or opt-out change in one tab applies to the site's other tabs at once.
 
 ## Plugins
 
@@ -138,7 +140,7 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 });
 ```
 
-Passing `request` forwards the visitor's IP and user agent. Events from one tick go out in one request, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. Options left out are read from the JSON in `RA_CONFIG`.
+Passing `request` or `headers` forwards the visitor's IP and user agent, the site's origin as `Origin` (so ingest flags localhost and preview hosts) and the admin session cookie `ra.session_token` alone (so a signed-in admin's events are internal). Without either, no IP or user agent is sent and the API does not use the server's own; an `origin` option on the client or the call gives such events a host. Events from one tick go out together, one request per origin and session cookie, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` (exported as `serverVisitor`) as visitor and session unless the call passes `visitor` and `session`; reads count them in pageviews, events and breakdowns but never as a visitor or a session. Options left out are read from the JSON in `RA_CONFIG`.
 
 ## Proxy
 
@@ -150,7 +152,7 @@ import { createProxy } from "@remcostoeten/analytics/proxy";
 export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
 ```
 
-The proxy refuses other methods, cross-site requests and bodies over 60 KB, and forwards the visitor's IP and user agent with the secret. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.
+The proxy refuses other methods, cross-site requests and bodies over 60 KB, the API's own limit. It forwards the body with the secret, the visitor's IP and user agent, the page's `Origin` (or the site's own origin when the browser sent none) and the admin session cookie `ra.session_token` and no other cookie, so proxied events get their host, localhost and preview flags, and a signed-in admin's events are internal. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.
 
 ## Migrating from 1.x
 
@@ -178,7 +180,7 @@ The proxy refuses other methods, cross-site requests and bodies over 60 KB, and 
 | `flushOfflineQueue` | Automatic; `analytics.flush()` sends now |
 | CommonJS and ESM builds | ESM only |
 
-The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` move into the single `__ra` key on first load, so returning visitors keep their id.
+The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` are read on first load and move into the single `__ra` key once consent allows storing, so returning visitors keep their id.
 
 ## Development
 
@@ -186,5 +188,5 @@ The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` 
 | --- | --- |
 | `bun run build` | tsdown into `dist/`: one ESM file with types per entry; `./react` and `./next` share one chunk so they use the same React context |
 | `bun test` | Unit tests with happy-dom, and Bun's own `Request` for the server and proxy tests; every sent envelope is checked against the contract's `IngestEnvelope` |
-| `bun run size` (repo root) | Fails above the budgets: core 4.5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB |
+| `bun run size` (repo root) | Fails above the budgets: core 5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB |
 | `bun run test:e2e` (repo root) | Playwright against the built SDK, the API on PGlite and the proxy; see `e2e/README.md` |

@@ -65,7 +65,7 @@ describe("createProxy", () => {
         }),
       403,
     ],
-    ["a body over 60 KB", undefined, () => browserPost("x".repeat(62_000)), 413],
+    ["a body over the API's 60 KB", undefined, () => browserPost("x".repeat(62_000)), 413],
   ])("refuses %s", async (_, options, request, status) => {
     const { calls, fetcher } = upstream();
     const proxy = createProxy(
@@ -73,6 +73,62 @@ describe("createProxy", () => {
     );
     expect((await proxy(request())).status).toBe(status);
     expect(calls).toHaveLength(0);
+  });
+
+  test("forwards the page's Origin and only the admin session cookie", async () => {
+    const { calls, fetcher } = upstream();
+    const proxy = createProxy({
+      secret: "sk_test",
+      endpoint: "https://api.example.test",
+      fetch: fetcher,
+    });
+    const request = browserPost(envelope, "http://localhost:3000");
+    const local = new Request("http://localhost:3000/_ra", {
+      method: "POST",
+      body: envelope,
+      headers: {
+        ...Object.fromEntries(request.headers),
+        cookie: "theme=dark; ra.session_token=abc.def; ra.session_token_extra=x; sid=1",
+      },
+    });
+    expect((await proxy(local)).status).toBe(202);
+    expect(calls[0]?.headers.get("origin")).toBe("http://localhost:3000");
+    expect(calls[0]?.headers.get("cookie")).toBe("ra.session_token=abc.def");
+  });
+
+  test("derives the origin from the site when the browser sent none, and sends no other cookies", async () => {
+    const { calls, fetcher } = upstream();
+    const proxy = createProxy({
+      secret: "sk_test",
+      endpoint: "https://api.example.test",
+      fetch: fetcher,
+    });
+    const request = new Request("http://localhost:3000/_ra", {
+      method: "POST",
+      body: envelope,
+      headers: {
+        "x-forwarded-host": "remcostoeten.nl",
+        "x-forwarded-proto": "https",
+        cookie: "sid=1",
+      },
+    });
+    expect((await proxy(request)).status).toBe(202);
+    expect(calls[0]?.headers.get("origin")).toBe("https://remcostoeten.nl");
+    expect(calls[0]?.headers.get("cookie")).toBeNull();
+  });
+
+  test("answers 413 with the API's limit in the message", async () => {
+    const { fetcher } = upstream();
+    const proxy = createProxy({
+      secret: "sk_test",
+      endpoint: "https://api.example.test",
+      fetch: fetcher,
+    });
+    const response = await proxy(browserPost("x".repeat(61_441)));
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({
+      error: { code: "PAYLOAD_TOO_LARGE", message: "The body is over 60 KB" },
+    });
   });
 
   test("accepts an origin that matches the forwarded host behind a reverse proxy", async () => {
