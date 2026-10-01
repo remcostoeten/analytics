@@ -8,8 +8,21 @@ import { Count, listOf, nullable, oneOf, Ratio, Timestamp } from "./schema";
 export const SpeedDevice = oneOf(["mobile", "desktop", "all"]);
 export type SpeedDevice = Static<typeof SpeedDevice>;
 
+export const SpeedEnvironment = oneOf(["production", "preview", "all"]);
+export type SpeedEnvironment = Static<typeof SpeedEnvironment>;
+
+export const SpeedInterval = oneOf(["hour", "day"]);
+export type SpeedInterval = Static<typeof SpeedInterval>;
+
+export const SpeedGroup = oneOf(["route", "path"]);
+export type SpeedGroup = Static<typeof SpeedGroup>;
+
 export const SpeedQuery = Type.Object({
   device: Type.Optional(SpeedDevice),
+  environment: Type.Optional(SpeedEnvironment),
+  interval: Type.Optional(SpeedInterval),
+  group: Type.Optional(SpeedGroup),
+  minShare: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
   percentile: Type.Optional(Percentile),
   metric: Type.Optional(VitalMetric),
 });
@@ -41,6 +54,7 @@ export const SpeedResponse = Type.Object({
   }),
   percentile: Percentile,
   device: SpeedDevice,
+  environment: SpeedEnvironment,
   range: Range,
   traffic: TrafficFilter,
 });
@@ -90,6 +104,8 @@ export const SpeedTimeseries = Type.Object({
   metric: VitalMetric,
   percentile: Percentile,
   device: SpeedDevice,
+  environment: SpeedEnvironment,
+  interval: SpeedInterval,
   range: Range,
 });
 export type SpeedTimeseries = Static<typeof SpeedTimeseries>;

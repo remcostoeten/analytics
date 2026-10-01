@@ -79,6 +79,7 @@ async function extras(
         projectIds: [id],
         ...range,
         device: "all",
+        environment: "production",
         route: null,
         path: null,
         country: null,

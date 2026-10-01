@@ -102,6 +102,7 @@ export async function checkCrux(
         from: new Date(now.getTime() - windowDays * dayMs),
         to: now,
         device: "all",
+        environment: "production",
         route: null,
         path: null,
         country: null,

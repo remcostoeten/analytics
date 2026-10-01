@@ -6255,6 +6255,52 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
+            }
+          },
+          {
             "name": "percentile",
             "in": "query",
             "required": false,
@@ -6329,6 +6375,7 @@
                     "data",
                     "percentile",
                     "device",
+                    "environment",
                     "range",
                     "traffic"
                   ],
@@ -6732,6 +6779,14 @@
                         "all"
                       ]
                     },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
                     "range": {
                       "type": "object",
                       "required": [
@@ -6927,6 +6982,52 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
+            }
+          },
+          {
             "name": "percentile",
             "in": "query",
             "required": false,
@@ -7002,6 +7103,8 @@
                     "metric",
                     "percentile",
                     "device",
+                    "environment",
+                    "interval",
                     "range"
                   ],
                   "properties": {
@@ -7059,6 +7162,21 @@
                         "mobile",
                         "desktop",
                         "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
+                    "interval": {
+                      "type": "string",
+                      "enum": [
+                        "hour",
+                        "day"
                       ]
                     },
                     "range": {
@@ -7244,6 +7362,52 @@
                 "desktop",
                 "all"
               ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
             }
           },
           {
@@ -7562,6 +7726,52 @@
                 "desktop",
                 "all"
               ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
             }
           },
           {
@@ -17458,6 +17668,52 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
+            }
+          },
+          {
             "name": "percentile",
             "in": "query",
             "required": false,
@@ -17532,6 +17788,7 @@
                     "data",
                     "percentile",
                     "device",
+                    "environment",
                     "range",
                     "traffic"
                   ],
@@ -17935,6 +18192,14 @@
                         "all"
                       ]
                     },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
                     "range": {
                       "type": "object",
                       "required": [
@@ -18122,6 +18387,52 @@
             }
           },
           {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
+            }
+          },
+          {
             "name": "percentile",
             "in": "query",
             "required": false,
@@ -18197,6 +18508,8 @@
                     "metric",
                     "percentile",
                     "device",
+                    "environment",
+                    "interval",
                     "range"
                   ],
                   "properties": {
@@ -18254,6 +18567,21 @@
                         "mobile",
                         "desktop",
                         "all"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "production",
+                        "preview",
+                        "all"
+                      ]
+                    },
+                    "interval": {
+                      "type": "string",
+                      "enum": [
+                        "hour",
+                        "day"
                       ]
                     },
                     "range": {
@@ -18431,6 +18759,52 @@
                 "desktop",
                 "all"
               ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
             }
           },
           {
@@ -18741,6 +19115,52 @@
                 "desktop",
                 "all"
               ]
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "production",
+                "preview",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day"
+              ]
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "route",
+                "path"
+              ]
+            }
+          },
+          {
+            "name": "minShare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^(0(\\.\\d+)?|1(\\.0+)?)$",
+              "type": "string"
             }
           },
           {
