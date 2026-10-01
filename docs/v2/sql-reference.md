@@ -103,7 +103,7 @@ Identified users across projects.
 
 ### web\_vitals, issues, daily, daily\_vitals
 
-- `web_vitals`: one row per measured metric: `vital_id`, `project_id`, `session_id`, `ts`, `metric`, `value`, `rating`, `route`, `path`, `device`, `country`, `connection`, `selector`, `sample_rate`, `navigation_type`, `bot_score`, `is_human`, `is_internal`.
+- `web_vitals`: one row per measured metric: `vital_id`, `project_id`, `session_id`, `ts`, `metric`, `value`, `rating`, `route`, `path`, `device`, `country`, `connection`, `selector`, `sample_rate`, `navigation_type`, `bot_score`, `is_human`, `is_internal`, `is_preview`.
 - `issues`: one row per grouped error: `issue_id`, `project_id`, `fingerprint`, `title`, `culprit`, `level`, `status`, `count`, `visitors`, `first_seen`, `last_seen`, `first_release`, `last_release`, `resolved_at`.
 - `daily`: the pre-aggregated `rollup_daily` (`project_id`, `day`, `dimension`, `value`, `visitors`, `sessions`, `pageviews`, `events`), fast for long ranges.
 - `daily_vitals`: the pre-aggregated `rollup_vitals` with p50 to p99 per day, route, device and metric.

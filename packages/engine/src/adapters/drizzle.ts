@@ -271,6 +271,12 @@ async function markInternal(db: Database, group: EventDraft[]) {
     .where(
       sql`${sessions.projectId} = ${first.projectId} AND ${sessions.sessionId} = ${first.event.session}`,
     );
+  await db
+    .update(webVitals)
+    .set({ isInternal: true })
+    .where(
+      sql`${webVitals.projectId} = ${first.projectId} AND ${webVitals.sessionId} = ${first.event.session}`,
+    );
 }
 
 function describe(error: unknown) {

@@ -367,6 +367,22 @@ describe("speedInsights", () => {
     await analytics.shutdown();
   });
 
+  test("credits metrics to the loaded page's route after a client-side navigation", async () => {
+    const load = loader(([lcp]) => lcp?.(metric("LCP", 1800, {})));
+    const { analytics, transport } = client({ plugins: [speedInsights({ load })] });
+    analytics.route("/blog/[slug]");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    history.pushState(null, "", "/pricing");
+    analytics.route("/pricing");
+    analytics.page();
+    await analytics.flush();
+    const vitals = sent(transport).filter((event) => event.name === "web_vital");
+    expect(vitals.map((event) => [event.page.path, event.props.route])).toEqual([
+      ["/blog/rebuilding-analytics", "/blog/[slug]"],
+    ]);
+    await analytics.shutdown();
+  });
+
   test("keeps only the latest report per metric id and asks for every change", async () => {
     const options: unknown[] = [];
     const load: SpeedOptions["load"] = async () => {

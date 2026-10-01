@@ -979,7 +979,7 @@ request
 
 These counters come from Postgres, not instance memory, so they are correct across serverless instances. `ingest` counts requests to `/v2/events` per hour; `bots` counts stored events scored 50 or more; `jobs` holds each job's last run; `speedChecks` holds the last Chrome UX Report comparison per project and metric, where `gap` is `|ours - crux| / crux` and a gap over 0.25 is `flagged`. `ours` is null under 20 samples and `crux` is null when Google has no data for the origin.
 
-`POST /v2/admin/jobs/cleanup` deletes events and sessions older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
+`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
 `POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
 

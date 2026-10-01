@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
 
+import { drizzleDetails } from "../src/adapters/drizzle-details";
+import { drizzleOps } from "../src/adapters/drizzle-ops";
 import { drizzleSpeed } from "../src/adapters/drizzle-speed";
 import { fixedClock, memoryGeo, memoryLogger } from "../src/adapters/memory";
 import { pgliteAdapters } from "../src/adapters/pglite";
@@ -10,6 +12,7 @@ import { runMigrations } from "../src/db/migrate";
 import { migrationsDirectory, readMigrations } from "../src/db/migration-files";
 import { defaultEnrichers } from "../src/enrichers";
 import { createEngine } from "../src/pipeline";
+import { syncSessionScores } from "../src/jobs";
 import { defaultSignals } from "../src/signals";
 import { experienceScore, metricScore, scoreRating, vitalRating } from "../src/speed/score";
 import { defaultStages } from "../src/stages";
@@ -177,6 +180,46 @@ describe("ingest", () => {
         device: "desktop",
       },
     ]);
+  });
+
+  test("stores the path without its query and works out the rating from the value", async () => {
+    const event = vital({ metric: "lcp", id: "v5-lcp-query", value: 5000, rating: "good" });
+    await send(
+      [{ ...event, page: { ...event.page, path: "/checkout?token=abc#pay" } }],
+      browserHeaders.chrome,
+    );
+    const rows = await database.query<{ path: string; rating: string }>(
+      "SELECT path, rating FROM web_vitals WHERE id LIKE '%v5-lcp-query'",
+    );
+    expect(rows.rows).toEqual([{ path: "/checkout", rating: "poor" }]);
+  });
+
+  test("a later bot score or internal mark reaches the session's speed rows", async () => {
+    const event = vital({ metric: "lcp", id: "v5-lcp-later", value: 1200 });
+    await send(
+      [{ ...event, session: "session-later", visitor: "visitor-later" }],
+      browserHeaders.chrome,
+    );
+    const db = drizzle(database);
+    await database.query("UPDATE events SET bot_score = 80 WHERE session_id = 'session-later'");
+    await syncSessionScores(db, { from: new Date("2026-01-01"), to: new Date("2027-01-01") });
+    await drizzleDetails(db).markVisitor(project.id, "visitor-later", true);
+    const rows = await database.query<{ bot_score: number; is_internal: boolean }>(
+      "SELECT bot_score, is_internal FROM web_vitals WHERE id LIKE '%v5-lcp-later'",
+    );
+    expect(rows.rows).toEqual([{ bot_score: 80, is_internal: true }]);
+  });
+
+  test("cleanup deletes speed rows past the project's retention", async () => {
+    await database.query(
+      `INSERT INTO web_vitals (id, project_id, ts, metric, value, rating, path, device)
+       VALUES ('expired-vital', $1, '2025-01-01T00:00:00Z', 'lcp', 900, 'good', '/', 'mobile')`,
+      [project.id],
+    );
+    const cleaned = await drizzleOps(drizzle(database)).cleanup(now, 1000);
+    expect(cleaned.ok).toBe(true);
+    const rows = await database.query("SELECT id FROM web_vitals WHERE id = 'expired-vital'");
+    expect(rows.rows).toEqual([]);
   });
 
   test("bots never reach the speed table", async () => {

@@ -1,6 +1,7 @@
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 
 import type { EventDraft } from "../draft";
+import { vitalRating } from "./score";
 import type { VitalName, VitalRating } from "./score";
 
 export type VitalRow = {
@@ -28,6 +29,7 @@ const ratings = new Set<string>(["good", "needs-improvement", "poor"]);
 const humanScore = 50;
 const maxTimingMs = 120_000;
 const maxShift = 10;
+const pathSuffix = /[?#].*$/;
 
 function text(value: unknown): Nullable<string> {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -44,7 +46,9 @@ function device(draft: EventDraft) {
  * bots, internal and localhost traffic, unknown metrics or ratings, and impossible
  * values (negative, CLS above 10, a timing above 120 s). The row id is the project plus the
  * web-vitals metric id, so a later report of the same INP or CLS replaces the earlier one.
- * Tablets count as mobile, and preview deployments are kept with `isPreview` set.
+ * Tablets count as mobile, and preview deployments are kept with `isPreview` set. The path loses
+ * any query string or fragment, and the rating is worked out from the value here rather than
+ * taken from the client.
  *
  * @example
  * const row = vitalRow(draft);
@@ -70,9 +74,9 @@ export function vitalRow(draft: EventDraft): VitalRow | null {
     ts: new Date(draft.ts),
     metric: metric as VitalName,
     value,
-    rating: rating as VitalRating,
+    rating: vitalRating(metric as VitalName, value),
     route: text(props.route) ?? event.page.route ?? null,
-    path: event.page.path,
+    path: event.page.path.replace(pathSuffix, "") || "/",
     device: device(draft),
     country: draft.enrichment.geo?.country ?? null,
     connection: text(props.connection),

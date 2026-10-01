@@ -92,7 +92,8 @@ async function apply(db: Database, signal: Signal, target: SQL, dryRun: boolean)
 /**
  * @name syncSessionScores
  * @description Sets the `bot_score` of every session with events in the range to the highest score
- * of its events, so a rescore that lowers events lowers their sessions too.
+ * of its events, so a rescore that lowers events lowers their sessions too, and copies it onto the
+ * session's `web_vitals` rows so speed reads leave out sessions found to be bots later.
  *
  * @example
  * await syncSessionScores(db, { from, to });
@@ -111,6 +112,13 @@ export async function syncSessionScores(db: Database, range: Range): Promise<voi
         SELECT project_id, session_id FROM events WHERE session_id IS NOT NULL AND ${inRange(range)}
       )`,
     );
+  await db.execute(sql`UPDATE web_vitals w SET bot_score = s.bot_score
+    FROM sessions s
+    WHERE s.project_id = w.project_id AND s.session_id = w.session_id
+      AND w.bot_score IS DISTINCT FROM s.bot_score
+      AND (w.project_id, w.session_id) IN (
+        SELECT project_id, session_id FROM events WHERE session_id IS NOT NULL AND ${inRange(range)}
+      )`);
 }
 
 /**
