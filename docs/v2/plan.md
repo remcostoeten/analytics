@@ -38,13 +38,13 @@ Settled on Oct 1, 2026 (decision 17). Analytics exists to bring more visitors to
 
 In priority order:
 
-1. The v2 dashboard on the v2 API.
-2. Visitors, pages, traffic sources and realtime.
-3. Bot detection.
-4. Speed insights and error tracking.
-5. Annotations, to compare traffic around campaigns, posts and releases.
-6. Search Console, for search queries and impressions next to traffic.
-7. Reliability, privacy and self-hosting.
+1. Visitors, pages, traffic sources and realtime.
+2. Bot detection.
+3. Speed insights and error tracking.
+4. Annotations, to compare traffic around campaigns, posts and releases.
+5. Search Console, for search queries and impressions next to traffic.
+6. Reliability, privacy and self-hosting.
+7. The v2 dashboard on the v2 API, last.
 
 Not planned: goals, funnels, actions (named events defined after the fact) and experiment statistics or A/B analysis. What already works stays and is documented as it is: the `experiments` plugin with its `experiment_exposure` event and `experiments` visitor field, the `conversion_rate` metric on `filter[event]`, and SQL over the `events` and `pageviews` views. [archive/conversion-scope.md](archive/conversion-scope.md) lists what was dropped and why.
 

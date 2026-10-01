@@ -6,7 +6,7 @@ The plan listed goals, funnels, actions and experiment statistics as later epics
 
 ## Decision
 
-v2 serves reach, traffic sources and app performance. In order: the v2 dashboard; visitors, pages, traffic sources and realtime; bot detection; speed insights and error tracking; annotations to compare campaigns, posts and releases; Search Console; reliability, privacy and self-hosting. Goals, funnels, actions and experiment statistics are not planned. What is already built stays.
+v2 serves reach, traffic sources and app performance. In order: visitors, pages, traffic sources and realtime; bot detection; speed insights and error tracking; annotations to compare campaigns, posts and releases; Search Console; reliability, privacy and self-hosting; the v2 dashboard last. Goals, funnels, actions and experiment statistics are not planned. What is already built stays.
 
 ## Status
 

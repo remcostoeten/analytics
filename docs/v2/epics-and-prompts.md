@@ -59,11 +59,12 @@ After phase 5, later epics follow the product focus in the plan (decision 17), i
 
 Reach, traffic sources and app performance come first; conversion optimization is not a goal for now. Open work, in order:
 
-1. E4.5, the dashboard on the v2 API, once Remco's design is in. It covers visitors, pages, traffic sources, realtime, speed and issues.
+1. Visitors, pages, traffic sources and realtime: keep these reads complete and correct in the API.
 2. Bot detection: check the scores on real traffic with the release checklist in `docs/release-checklist.md`.
 3. Speed insights and error tracking: keep them on par with Vercel as they change.
 4. Annotations, then Search Console, as their own epics.
 5. Reliability, privacy and self-hosting: E5.1 retires 1.x and ships the self-host setup.
+6. E4.5, the dashboard on the v2 API, last, once Remco's design is in.
 
 ## Phase 0: foundations
 
