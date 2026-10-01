@@ -19,7 +19,7 @@ Every type, file and route uses these words and no synonyms.
 
 | Word | Means | Type |
 | --- | --- | --- |
-| plugin | An opt-in part of the API, listed in the config: `alerts()` now, later goals or email reports | `ServerPlugin` |
+| plugin | An opt-in part of the API, listed in the config: `alerts()` now, later email reports | `ServerPlugin` |
 | alert event | Something worth telling, with a typed payload: `issue.new`, `issue.regression`, `speed.drop` | `AlertEvent` |
 | channel | A way to send alerts, enabled in the config: `mail()`, `webhook()`, `discord()` | `ChannelDriver` |
 | target | Where one project's alerts go on one channel: recipients, a URL, and the events it wants | `AlertTarget` |
