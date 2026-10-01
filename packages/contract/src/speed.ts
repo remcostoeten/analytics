@@ -2,14 +2,14 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Range } from "./common";
-import { Percentile, TrafficFilter, VitalMetric, VitalRating } from "./enums";
+import { Environment, Percentile, TrafficFilter, VitalMetric, VitalRating } from "./enums";
 import { Count, listOf, nullable, oneOf, Ratio, Timestamp } from "./schema";
 
 export const SpeedDevice = oneOf(["mobile", "desktop", "all"]);
 export type SpeedDevice = Static<typeof SpeedDevice>;
 
-export const SpeedEnvironment = oneOf(["production", "preview", "all"]);
-export type SpeedEnvironment = Static<typeof SpeedEnvironment>;
+export const SpeedEnvironment = Environment;
+export type SpeedEnvironment = Environment;
 
 export const SpeedInterval = oneOf(["hour", "day"]);
 export type SpeedInterval = Static<typeof SpeedInterval>;

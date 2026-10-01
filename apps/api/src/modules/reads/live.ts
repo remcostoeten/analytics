@@ -11,7 +11,7 @@ import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import { t } from "elysia";
 
-import { readFilters, readTraffic } from "./params";
+import { readEnvironment, readFilters, readTraffic } from "./params";
 
 export type LiveOptions = { waitMs: number; streamMs: number };
 
@@ -73,6 +73,8 @@ export function liveQuery(
 ): Result<FeedQuery, EngineError> {
   const traffic = readTraffic(params);
   if (!traffic.ok) return traffic;
+  const environment = readEnvironment(params);
+  if (!environment.ok) return environment;
   const filters = readFilters(params);
   if (!filters.ok) return filters;
   const limit = Number(params.get("limit") ?? defaultLimit);
@@ -82,7 +84,12 @@ export function liveQuery(
   const after = readCursor(params.get("after") ?? lastEventId);
   if (!after.ok) return after;
   return ok({
-    scope: { projectIds, traffic: traffic.value, filters: filters.value.filters },
+    scope: {
+      projectIds,
+      traffic: traffic.value,
+      environment: environment.value,
+      filters: filters.value.filters,
+    },
     after: after.value,
     limit,
   });

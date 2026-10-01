@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 import type { Dimension, DimensionJoin } from "../define";
-import type { ReadFilter, ReadScope, Traffic } from "../ports";
+import type { Environment, ReadFilter, ReadScope, Traffic } from "../ports";
 import { countedSession, countedVisitor } from "./server-visitor";
 
 const humanScore = 50;
@@ -10,7 +10,7 @@ const humanScore = 50;
 /**
  * @name trafficCondition
  * @description The one definition of each traffic filter: `human` is a bot score under 50 and not
- * internal, localhost or preview traffic; `bots` is 50 or more; `internal` is the owner's own.
+ * internal or localhost traffic; `bots` is 50 or more; `internal` is the owner's own.
  *
  * @example
  * trafficCondition("human");
@@ -19,7 +19,22 @@ function trafficCondition(traffic: Traffic): SQL {
   if (traffic === "bots") return sql`e.bot_score >= ${humanScore}`;
   if (traffic === "internal") return sql`COALESCE(e.is_internal, false)`;
   if (traffic === "all") return sql`true`;
-  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false) AND NOT COALESCE(e.is_preview, false)`;
+  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false)`;
+}
+
+/**
+ * @name environmentCondition
+ * @description The deployment filter, applied on top of the traffic filter: `production` leaves
+ * preview deployments out, `preview` keeps only them, `all` keeps both.
+ *
+ * @example
+ * environmentCondition("production");
+ */
+function environmentCondition(environment: Environment): SQL {
+  if (environment === "all") return sql`true`;
+  return environment === "preview"
+    ? sql`COALESCE(e.is_preview, false)`
+    : sql`NOT COALESCE(e.is_preview, false)`;
 }
 
 function filterCondition(filter: ReadFilter, scope: ReadScope): SQL {
@@ -48,7 +63,7 @@ function joins(needed: Set<DimensionJoin>): SQL {
 /**
  * @name scopeParts
  * @description The joins and `WHERE` condition for the events one read covers: the projects, the
- * half-open range `[from, to)`, the traffic filter and every dimension filter. Sessions and
+ * half-open range `[from, to)`, the traffic and environment filters and every dimension filter. Sessions and
  * visitors are joined only when a dimension needs them.
  *
  * @example
@@ -74,6 +89,7 @@ export function scopeParts(
     sql`e.ts >= ${scope.from.toISOString()}::timestamptz`,
     sql`e.ts < ${scope.to.toISOString()}::timestamptz`,
     trafficCondition(scope.traffic),
+    environmentCondition(scope.environment),
     ...scope.filters.map((filter) => filterCondition(filter, scope)),
   ];
   return { joins: joins(needed), where: sql.join(conditions, sql` AND `) };

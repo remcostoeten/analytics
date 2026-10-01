@@ -55,7 +55,8 @@ A private project answers 404, not 403, to callers without access, so its name d
 | --- | --- | --- |
 | `from`, `to` | ISO 8601 timestamps | last 30 days |
 | `period` | `24h`, `7d`, `30d`, `90d`, `12mo`, `all`; ignored when `from` and `to` are set | `30d` |
-| `traffic` | `human` (bot score under 50, no internal, localhost or preview), `all` | `human` |
+| `traffic` | `human` (bot score under 50, no internal or localhost), `all` | `human` |
+| `environment` | `production` (no preview deployments), `preview` (preview deployments only), `all` | `production` |
 | `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |
 | `limit`, `cursor` | up to 100; opaque cursor from the previous page | 20 |
 
@@ -149,6 +150,7 @@ All six take the shared range, traffic and filter parameters, and answer without
     "to": "2026-09-28T00:00:00.000Z"
   },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -167,6 +169,7 @@ All six take the shared range, traffic and filter parameters, and answer without
   "interval": "week",
   "range": { "from": "2026-08-31T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -186,6 +189,7 @@ All six take the shared range, traffic and filter parameters, and answer without
   "averageDays": 1.28,
   "range": { "from": "2026-08-31T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -250,6 +254,7 @@ All six take the shared range, traffic and filter parameters, and answer without
     "to": "2026-09-28T00:00:00.000Z"
   },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -283,6 +288,7 @@ All six take the shared range, traffic and filter parameters, and answer without
     "to": "2026-09-28T00:00:00.000Z"
   },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -320,6 +326,7 @@ All six take the shared range, traffic and filter parameters, and answer without
     "to": "2026-09-28T00:00:00.000Z"
   },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -498,6 +505,7 @@ Every read route also exists without the `/projects/:project` prefix. Without it
   "previousRange": { "from": "2026-09-14T00:00:00.000Z", "to": "2026-09-21T00:00:00.000Z" },
   "range": { "from": "2026-09-21T00:00:00.000Z", "to": "2026-09-28T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -734,6 +742,7 @@ request
   "range": { "from": "2026-09-20T00:00:00.000Z", "to": "2026-09-27T00:00:00.000Z" },
   "previousRange": { "from": "2026-09-13T00:00:00.000Z", "to": "2026-09-20T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -756,6 +765,7 @@ request
   "interval": "day",
   "range": { "from": "2026-09-20T00:00:00.000Z", "to": "2026-09-27T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": { "country": "NL" }
 }
 ```
@@ -775,6 +785,7 @@ request
   "nextCursor": "eyJvIjozfQ",
   "range": { "from": "2026-09-20T00:00:00.000Z", "to": "2026-09-27T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -795,6 +806,7 @@ request
   "nextCursor": null,
   "range": { "from": "2026-08-28T00:00:00.000Z", "to": "2026-09-27T00:00:00.000Z" },
   "traffic": "human",
+  "environment": "production",
   "filters": {}
 }
 ```
@@ -1056,7 +1068,8 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
     "from": "2026-08-28T00:00:00.000Z",
     "to": "2026-09-27T00:00:00.000Z"
   },
-  "traffic": "human"
+  "traffic": "human",
+  "environment": "production"
 }
 ```
 

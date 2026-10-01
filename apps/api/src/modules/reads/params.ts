@@ -2,6 +2,7 @@ import { engineError, findDimension } from "@remcostoeten/analytics-engine";
 import type {
   BuiltInMetric,
   EngineError,
+  Environment,
   Interval,
   Metric,
   ReadFilter,
@@ -18,6 +19,7 @@ const hourMs = 60 * 60 * 1000;
 const dayMs = 24 * hourMs;
 const periods = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 } as const;
 const traffics = new Set<string>(["human", "bots", "internal", "all"]);
+const environments = new Set<string>(["production", "preview", "all"]);
 const intervals = new Set<string>(["hour", "day", "week", "month"]);
 const builtIns: { [name: string]: BuiltInMetric } = {
   visitors: "visitors",
@@ -107,6 +109,21 @@ export function previousRange(range: Range): Range {
 export function readTraffic(params: URLSearchParams): Result<Traffic, EngineError> {
   const traffic = params.get("traffic") ?? "human";
   return traffics.has(traffic) ? ok(traffic as Traffic) : invalid(`Unknown traffic ${traffic}`);
+}
+
+/**
+ * @name readEnvironment
+ * @description The `environment` parameter: `production` (the default) leaves preview
+ * deployments out, `preview` keeps only them, `all` keeps both.
+ *
+ * @example
+ * readEnvironment(params); // ok("production")
+ */
+export function readEnvironment(params: URLSearchParams): Result<Environment, EngineError> {
+  const environment = params.get("environment") ?? "production";
+  return environments.has(environment)
+    ? ok(environment as Environment)
+    : invalid("environment must be production, preview or all");
 }
 
 /**

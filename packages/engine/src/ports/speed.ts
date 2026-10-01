@@ -3,10 +3,11 @@ import type { ProjectID } from "@remcostoeten/analytics-shared/semantic";
 
 import type { EngineError } from "../errors";
 import type { VitalName } from "../speed/score";
+import type { Environment } from "./reads";
 
 export type SpeedDevice = "mobile" | "desktop" | "all";
 
-export type SpeedEnvironment = "production" | "preview" | "all";
+export type SpeedEnvironment = Environment;
 
 export type SpeedInterval = "hour" | "day";
 

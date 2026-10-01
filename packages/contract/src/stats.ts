@@ -4,6 +4,7 @@ import type { Static } from "@sinclair/typebox";
 import { Compared, Filters, Range, ValueCount } from "./common";
 import {
   DeviceType,
+  Environment,
   EventName,
   Interval,
   Percentile,
@@ -16,6 +17,7 @@ import { Count, Id, nullable, oneOf, Ratio, Timestamp } from "./schema";
 const Scope = {
   range: Range,
   traffic: TrafficFilter,
+  environment: Environment,
   filters: Filters,
 };
 

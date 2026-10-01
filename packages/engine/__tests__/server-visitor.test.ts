@@ -56,6 +56,7 @@ const week: ReadScope = {
   from: new Date("2026-09-20T00:00:00.000Z"),
   to: new Date("2026-09-27T00:00:00.000Z"),
   traffic: "human",
+  environment: "production",
   filters: [],
 };
 

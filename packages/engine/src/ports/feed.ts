@@ -20,7 +20,7 @@ export type LiveEvent = {
 export type FeedPage = { events: LiveEvent[]; cursor: FeedCursor };
 
 export type FeedQuery = {
-  scope: Pick<ReadScope, "projectIds" | "traffic" | "filters">;
+  scope: Pick<ReadScope, "projectIds" | "traffic" | "environment" | "filters">;
   after: FeedCursor | null;
   limit: number;
 };
