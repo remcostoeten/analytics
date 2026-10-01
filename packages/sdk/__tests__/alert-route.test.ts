@@ -10,7 +10,7 @@ withNativeRuntime();
 const secret = "whsec_test";
 const encoder = new TextEncoder();
 
-function issueEvent(name: AlertEvent["name"], id: string): AlertEvent {
+function issueEvent(name: "issue.new" | "issue.regression", id: string): AlertEvent {
   return {
     name,
     project: "remcostoeten.nl",
@@ -28,10 +28,25 @@ function issueEvent(name: AlertEvent["name"], id: string): AlertEvent {
   };
 }
 
+const speedDrop: AlertEvent = {
+  name: "speed.drop",
+  project: "remcostoeten.nl",
+  speed: {
+    score: 78,
+    previous: 90,
+    rating: "needs-improvement",
+    worst: "lcp",
+    samples: 40,
+    from: "2026-09-28T00:00:00.000Z",
+    to: "2026-09-29T00:00:00.000Z",
+    url: "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+  },
+};
+
 const body: WebhookBody = {
   v: 1,
   sentAt: "2026-09-29T10:00:00.000Z",
-  events: [issueEvent("issue.new", "iss_42"), issueEvent("issue.regression", "iss_17")],
+  events: [issueEvent("issue.new", "iss_42"), issueEvent("issue.regression", "iss_17"), speedDrop],
 };
 
 async function signBody(text: string, key: string, timestamp: number) {
@@ -123,12 +138,15 @@ describe("alertRoute", () => {
         "issue.regression": async (event) => {
           seen.push(`regression ${event.issue.id}`);
         },
+        "speed.drop": (event) => {
+          seen.push(`slower ${event.speed.previous} to ${event.speed.score}`);
+        },
       },
     });
     const response = await route(await signed());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
-    expect(seen).toEqual(["new iss_42", "regression iss_17"]);
+    expect(seen).toEqual(["new iss_42", "regression iss_17", "slower 90 to 78"]);
   });
 
   test("acknowledges an event without a handler", async () => {

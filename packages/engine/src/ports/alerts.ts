@@ -91,6 +91,7 @@ export type AlertStore = {
   saveTarget: (project: ProjectID, target: TargetSpec) => Read<TargetChanges>;
   removeTarget: (project: ProjectID, name: string) => Read<boolean>;
   rotateSecret: (project: ProjectID, name: string) => Read<Nullable<string>>;
+  subscribed: (event: AlertEventName, channels: ChannelName[]) => Read<ProjectID[]>;
   queue: (events: QueuedEvent[], channels: ChannelName[], now: Date) => Read<{ queued: number }>;
   due: (now: Date, limit: number) => Read<DeliveryBatch[]>;
   settle: (outcomes: DeliveryOutcome[]) => Read<null>;

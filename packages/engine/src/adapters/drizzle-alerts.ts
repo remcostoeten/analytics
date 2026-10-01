@@ -4,6 +4,7 @@ import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semanti
 import { Value } from "@sinclair/typebox/value";
 import { sql } from "drizzle-orm";
 
+import { alertEventNames } from "../alerts/events";
 import { webhookSecret } from "../alerts/sign-body";
 import type {
   AlertStore,
@@ -18,7 +19,7 @@ import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 import type { Row } from "./drizzle-rows";
 
 const channelNames = new Set<string>(["mail", "webhook", "discord"]);
-const eventNames = new Set<string>(["issue.new", "issue.regression"]);
+const eventNames = new Set<string>(alertEventNames);
 const statuses = new Set<string>(["pending", "sent", "failed"]);
 
 const latestAttempt = sql`LEFT JOIN LATERAL (
@@ -236,6 +237,20 @@ export function drizzleAlerts(db: Database, newSecret: () => string = webhookSec
             WHERE project_id = ${project} AND name = ${name} AND channel = 'webhook' RETURNING id`,
         );
         return updated.length > 0 ? secret : null;
+      }),
+    subscribed: (event, channels) =>
+      attempt("Could not read the subscribed projects", async () => {
+        if (channels.length === 0) return [];
+        const rows = await selectRows(
+          db,
+          sql`SELECT DISTINCT project_id FROM alert_targets
+            WHERE enabled AND ${event} = ANY(events) AND channel IN (${sql.join(
+              channels.map((channel) => sql`${channel}`),
+              sql`, `,
+            )})
+            ORDER BY project_id`,
+        );
+        return rows.map((row) => textual(row.project_id));
       }),
     queue: (events, channels, now) =>
       attempt("Could not queue the alerts", async () => {

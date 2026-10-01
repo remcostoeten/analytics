@@ -15,7 +15,9 @@ import {
   mail,
   mergeRetry,
   nextAttempt,
+  defaultSpeedDrop,
   queueIssueAlerts,
+  queueSpeedAlerts,
   renderDiscord,
   renderMail,
   resend,
@@ -31,7 +33,10 @@ import type {
   IssueRecord,
   IssueStore,
   PendingAlert,
+  SpeedScope,
+  SpeedStore,
   TargetSpec,
+  VitalStat,
 } from "../src/ports";
 
 const project = "remcostoeten.nl";
@@ -98,6 +103,36 @@ function issueStore(pending: PendingAlert[]): IssueStore & { marked: string[] } 
   };
 }
 
+function vitals(lcp: number, samples = 40): VitalStat[] {
+  const base = { samples, good: samples, needsImprovement: 0, poor: 0 };
+  return [
+    { metric: "lcp", value: lcp, ...base },
+    { metric: "inp", value: 200, ...base },
+    { metric: "cls", value: 0.1, ...base },
+    { metric: "fcp", value: 1800, ...base },
+  ];
+}
+
+function speedStore(
+  yesterday: VitalStat[],
+  before: VitalStat[],
+): SpeedStore & { scopes: SpeedScope[] } {
+  const scopes: SpeedScope[] = [];
+  return {
+    scopes,
+    summary: async (scope) => {
+      scopes.push(scope);
+      return ok(scope.from.toISOString() === "2026-09-28T00:00:00.000Z" ? yesterday : before);
+    },
+    series: unused,
+    routes: unused,
+    elements: unused,
+    rollup: unused,
+  };
+}
+
+const quietSpeed = speedStore([], []);
+
 function memoryTransport(results: ("ok" | "fail")[] = []): MailTransport & { sent: MailMessage[] } {
   const sent: MailMessage[] = [];
   return {
@@ -136,6 +171,13 @@ const hookTarget: TargetSpec = {
   on: ["issue.new", "issue.regression"],
   enabled: true,
   settings: { url: "https://ops.example.com/hooks/analytics" },
+};
+const speedTarget: TargetSpec = {
+  name: "speed",
+  channel: "mail",
+  on: ["speed.drop"],
+  enabled: true,
+  settings: { to: ["remco@gmail.com"] },
 };
 const discordTarget: TargetSpec = {
   name: "discord",
@@ -290,7 +332,11 @@ describe("queue and dispatch", () => {
       ],
     });
     const issues = issueStore([newIssue(42), regression(17, at(-30))]);
-    const run = await runAlerts(plugin, { issues, alerts: store, links }, created);
+    const run = await runAlerts(
+      plugin,
+      { issues, speed: quietSpeed, alerts: store, links },
+      created,
+    );
     expect(run).toEqual({ ok: true, value: { queued: 5, sent: 5, retrying: 0, failed: 0 } });
     expect(transport.sent).toHaveLength(1);
     expect(transport.sent[0]).toMatchObject({
@@ -314,7 +360,11 @@ describe("queue and dispatch", () => {
     expect(chat.calls).toHaveLength(1);
     expect(JSON.parse(bodyText(chat.calls[0]?.init)).embeds).toHaveLength(1);
 
-    const again = await runAlerts(plugin, { issues, alerts: store, links }, at(1));
+    const again = await runAlerts(
+      plugin,
+      { issues, speed: quietSpeed, alerts: store, links },
+      at(1),
+    );
     expect(again).toEqual({ ok: true, value: { queued: 0, sent: 0, retrying: 0, failed: 0 } });
     const requeued = await store.queue(
       [{ event: store.held.deliveries[0]?.event ?? unused(), subject: "iss_42" }],
@@ -445,6 +495,92 @@ describe("queue and dispatch", () => {
       `iss_17@${at(-30).toISOString()}`,
       `iss_17@${at(-5).toISOString()}`,
     ]);
+  });
+});
+
+describe("speed drops", () => {
+  const options = { links, channels: ["mail" as const], now: created, drop: defaultSpeedDrop };
+
+  test("queues a drop of 10 points or more to under 90 once per project and day", async () => {
+    const store = memoryAlerts(fixedClock(created));
+    await store.syncTargets(project, [speedTarget, mailTarget]);
+    const speed = speedStore(vitals(4000), vitals(2500));
+    const first = await queueSpeedAlerts(speed, store, options);
+    expect(first).toEqual({ ok: true, value: { queued: 1, events: 1 } });
+    expect(speed.scopes.map((scope) => [scope.from.toISOString(), scope.to.toISOString()])).toEqual(
+      [
+        ["2026-09-28T00:00:00.000Z", "2026-09-29T00:00:00.000Z"],
+        ["2026-09-21T00:00:00.000Z", "2026-09-28T00:00:00.000Z"],
+      ],
+    );
+    expect(speed.scopes[0]).toMatchObject({ environment: "production", device: "all" });
+    expect(store.held.deliveries.map((delivery) => [delivery.subject, delivery.event])).toEqual([
+      [
+        `${project}@2026-09-28`,
+        {
+          name: "speed.drop",
+          project,
+          speed: {
+            score: 78,
+            previous: 90,
+            rating: "needs-improvement",
+            worst: "lcp",
+            samples: 40,
+            from: "2026-09-28T00:00:00.000Z",
+            to: "2026-09-29T00:00:00.000Z",
+            url: "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+          },
+        },
+      ],
+    ]);
+    const again = await queueSpeedAlerts(speed, store, options);
+    expect(again).toEqual({ ok: true, value: { queued: 0, events: 1 } });
+  });
+
+  test("small drops, scores still good, thin samples and unsubscribed projects stay quiet", async () => {
+    const store = memoryAlerts(fixedClock(created));
+    await store.syncTargets(project, [speedTarget]);
+    const small = await queueSpeedAlerts(speedStore(vitals(3000), vitals(2500)), store, options);
+    expect(small).toEqual({ ok: true, value: { queued: 0, events: 0 } });
+    const thin = await queueSpeedAlerts(speedStore(vitals(4000, 5), vitals(2500)), store, options);
+    expect(thin).toEqual({ ok: true, value: { queued: 0, events: 0 } });
+    const loose = await queueSpeedAlerts(speedStore(vitals(4000), vitals(2500)), store, {
+      ...options,
+      drop: { ...defaultSpeedDrop, points: 20 },
+    });
+    expect(loose).toEqual({ ok: true, value: { queued: 0, events: 0 } });
+    const other = memoryAlerts(fixedClock(created));
+    await other.syncTargets(project, [mailTarget]);
+    const speed = speedStore(vitals(4000), vitals(2500));
+    expect(await queueSpeedAlerts(speed, other, options)).toEqual({
+      ok: true,
+      value: { queued: 0, events: 0 },
+    });
+    expect(speed.scopes).toEqual([]);
+  });
+
+  test("a speed drop renders in mail next to issues", async () => {
+    const store = memoryAlerts(fixedClock(created));
+    await store.syncTargets(project, [{ ...speedTarget, on: ["speed.drop", "issue.new"] }]);
+    await queueIssueAlerts(issueStore([newIssue(42)]), store, {
+      links,
+      channels: ["mail"],
+      now: created,
+    });
+    await queueSpeedAlerts(speedStore(vitals(4000), vitals(2500)), store, options);
+    const due = await store.due(at(1), 100);
+    if (!due.ok || !due.value[0]) throw new Error("nothing due");
+    const rendered = renderMail(due.value[0]);
+    expect(rendered.subject).toBe("[remcostoeten.nl] 1 new issue, 1 speed drop");
+    expect(rendered.text).toContain(
+      [
+        "SLOWER      Real Experience Score 90 to 78",
+        "            needs improvement · LCP fell most · 40 samples",
+        "            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+      ].join("\n"),
+    );
+    const embeds = renderDiscord(due.value[0]).embeds;
+    expect(embeds.map((embed) => embed.title)).toContain("SLOWER  Real Experience Score 90 to 78");
   });
 });
 

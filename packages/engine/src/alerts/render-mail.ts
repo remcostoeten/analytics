@@ -1,7 +1,14 @@
 import type { AlertEvent, ChannelName } from "@remcostoeten/analytics-contract";
 
 import type { DeliveryBatch } from "../ports/alerts";
-import { alertEventNames, alertLabels, newestFirst } from "./events";
+import {
+  alertDetail,
+  alertEventNames,
+  alertLabels,
+  alertTitle,
+  alertUrl,
+  newestFirst,
+} from "./events";
 
 export type RenderedMail = { subject: string; text: string; html: string };
 
@@ -16,21 +23,6 @@ const escapes: { [char: string]: string } = {
 
 function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, (char) => escapes[char] ?? char);
-}
-
-function times(count: number) {
-  return count === 1 ? "once" : `${count} times`;
-}
-
-function detail(event: AlertEvent) {
-  const release = event.issue.lastRelease;
-  const parts = [event.issue.culprit, times(event.issue.count)];
-  if (event.name === "issue.regression") {
-    parts.push(release ? `resolved, seen again in ${release}` : "resolved, seen again");
-  } else if (release) {
-    parts.push(`release ${release}`);
-  }
-  return parts.filter((part) => part !== null).join(" · ");
 }
 
 function counts(events: AlertEvent[]) {
@@ -51,14 +43,14 @@ function projectsOf(events: AlertEvent[]) {
 function textBlock(event: AlertEvent) {
   const indent = " ".repeat(tagWidth);
   return [
-    `${alertLabels[event.name].tag.padEnd(tagWidth)}${event.issue.title}`,
-    `${indent}${detail(event)}`,
-    `${indent}${event.issue.url}`,
+    `${alertLabels[event.name].tag.padEnd(tagWidth)}${alertTitle(event)}`,
+    `${indent}${alertDetail(event)}`,
+    `${indent}${alertUrl(event)}`,
   ].join("\n");
 }
 
 function htmlRow(event: AlertEvent) {
-  return `<tr><td style="padding:12px 16px 12px 0;vertical-align:top;color:#a3a3a3;font-size:11px;letter-spacing:0.08em;white-space:nowrap">${alertLabels[event.name].tag}</td><td style="padding:12px 0;border-top:1px solid #262626"><a href="${escapeHtml(event.issue.url)}" style="color:#fafafa;text-decoration:none;font-weight:600">${escapeHtml(event.issue.title)}</a><div style="color:#a3a3a3;font-size:13px;margin-top:4px">${escapeHtml(detail(event))}</div></td></tr>`;
+  return `<tr><td style="padding:12px 16px 12px 0;vertical-align:top;color:#a3a3a3;font-size:11px;letter-spacing:0.08em;white-space:nowrap">${alertLabels[event.name].tag}</td><td style="padding:12px 0;border-top:1px solid #262626"><a href="${escapeHtml(alertUrl(event))}" style="color:#fafafa;text-decoration:none;font-weight:600">${escapeHtml(alertTitle(event))}</a><div style="color:#a3a3a3;font-size:13px;margin-top:4px">${escapeHtml(alertDetail(event))}</div></td></tr>`;
 }
 
 /**

@@ -52,12 +52,13 @@ export const POST = alertRoute({
   on: {
     "issue.new": async (event) => notifyTeam(event.issue.title),
     "issue.regression": async (event) => openTicket(event.issue),
+    "speed.drop": async (event) => notifyTeam(`Speed ${event.speed.previous} to ${event.speed.score}`),
   },
 });
 ```
 
 - It checks `x-analytics-signature`, the HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's secret, and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed. A request that fails gets `401` and no handler runs; an empty `secret` answers `500`.
-- `on` is typed per event, so `event.issue` autocompletes, and a handler for an unknown event is a type error. An event without a handler is acknowledged and ignored.
+- `on` is typed per event, so `event.issue` and `event.speed` autocomplete, and a handler for an unknown event is a type error. An event without a handler is acknowledged and ignored.
 - `verifyAlert(request, secret)` is the same check without the routing, for other frameworks. It answers the parsed body or an error with the code `NO_SECRET`, `BAD_SIGNATURE`, `STALE_TIMESTAMP` or `BAD_BODY`.
 
 The body is `{ v: 1, sentAt, events }`, where each event is `{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }`.
