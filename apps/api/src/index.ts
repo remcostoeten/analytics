@@ -122,4 +122,5 @@ export default createApp({
   internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
   ops: stores.ops,
   crux: process.env.CRUX_API_KEY ? { key: process.env.CRUX_API_KEY, send: fetch } : null,
+  commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
 });

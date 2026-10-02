@@ -477,4 +477,20 @@ describe("groups", () => {
     expect(result.accepted).toBe(0);
     expect(result.rejected.map((rejected: { index: number }) => rejected.index)).toEqual([0, 1]);
   });
+
+  test("GET / serves the landing page with links to the health and docs routes", async () => {
+    const response = await app().handle(new Request("http://localhost/"));
+    const body = await response.text();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(response.headers.get("x-request-id")).toStartWith("req_");
+    expect(body).toContain('href="/v2/health"');
+    expect(body).toContain('href="/v2/openapi"');
+  });
+
+  test("an unknown path outside /v2 still answers with the error envelope", async () => {
+    const response = await app().handle(new Request("http://localhost/nope"));
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toMatchObject({ code: "NOT_FOUND" });
+  });
 });
