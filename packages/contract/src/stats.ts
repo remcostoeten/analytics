@@ -247,8 +247,25 @@ export const MapPlace = Type.Object({
   country: Type.String({ minLength: 2, maxLength: 2 }),
   region: nullable(Type.String()),
   city: nullable(Type.String()),
+  id: nullable(
+    Type.Integer({
+      minimum: 1,
+      description: "GeoNames id of the region or city; null at country level or when unknown.",
+    }),
+  ),
+  name: nullable(
+    Type.String({
+      description: "Display name in `locale`, then English, then the stored value.",
+    }),
+  ),
   latitude: nullable(Type.Number({ minimum: -90, maximum: 90 })),
   longitude: nullable(Type.Number({ minimum: -180, maximum: 180 })),
+  accuracyKm: nullable(
+    Type.Integer({
+      minimum: 0,
+      description: "Average radius in km around the coordinates the visitors are likely within.",
+    }),
+  ),
   visitors: Count,
   share: Ratio,
 });

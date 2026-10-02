@@ -67,7 +67,7 @@ function app(limit = 1000) {
     clock: () => clock.now(),
     dashboardOrigin: "https://dashboard.example.test",
     docsBase,
-    geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+    geo: geo.status,
     access: {
       ...pgliteAccess(database),
       sessions: async () => null,
@@ -331,6 +331,7 @@ describe("GET /v2/health", () => {
     expect([first.coldStart, second.coldStart]).toEqual([true, false]);
     expect([first.ipHeader, second.ipHeader]).toEqual([null, "cf-connecting-ip"]);
     expect(first.geo.city).toEndWith("GeoIP2-City-Test.mmdb");
+    expect(first.geo.builtAt).toBe("2026-02-04T22:49:29.000Z");
   });
 });
 

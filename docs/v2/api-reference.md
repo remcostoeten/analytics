@@ -115,7 +115,7 @@ All six take the shared range, traffic and filter parameters, and answer without
 - `lifecycle` splits each `day`, `week` (default, Monday start, UTC) or `month` of the range: `new` visitors were first seen ever in that period, `returning` ones were also active in the period before, `resurrected` ones were seen before but not in the period before, and `dormant` ones were active in the period before and not in this one. The period before the range counts for the first period.
 - `stickiness` counts visitors by the number of distinct UTC days they were active in the range, from 1 to the most any visitor reached, with each count's share and the average.
 - `heatmap` has all 168 cells, weekday 1 (Monday) to 7 and hour 0 to 23, counting `metric=visitors` (default) or `pageviews` in `timezone` (IANA, default UTC).
-- `map` counts visitors per `level=country` (default), `region` or `city`, with the average of their geo lookup coordinates rounded to two decimals, paged like a breakdown.
+- `map` counts visitors per `level=country` (default), `region` or `city`, with the average of their geo lookup coordinates rounded to two decimals and their average `accuracyKm`, paged like a breakdown. Rows are grouped by the stored names, so v1 rows and v2 rows for one city stay one row. `id` is the GeoNames id of the region or city (null at country level and for places only edge headers named), a stable key for the dashboard. `name` is the place's name in `locale` (`en` by default, or `de`, `es`, `fr`, `ja`, `pt-BR`, `ru`, `zh-CN`), falling back to English, then to the stored value. `region` stays the ISO code and `city` the English name, the values `filter[region]` and `filter[city]` take. The `city` breakdown groups by name alone, so same-named cities in different countries share a row there; `map?level=city` keeps them apart.
 
 `GET /v2/projects/remcostoeten.nl/paths?page=/pricing&period=28d`
 
@@ -304,19 +304,25 @@ All six take the shared range, traffic and filter parameters, and answer without
   "data": [
     {
       "country": "NL",
-      "region": "Noord-Holland",
+      "region": "NH",
       "city": "Amsterdam",
+      "id": 2759794,
+      "name": "Amsterdam",
       "latitude": 52.37,
       "longitude": 4.9,
+      "accuracyKm": 20,
       "visitors": 64,
       "share": 0.213
     },
     {
       "country": "US",
-      "region": "California",
+      "region": "CA",
       "city": "San Francisco",
+      "id": 5391959,
+      "name": "San Francisco",
       "latitude": 37.77,
       "longitude": -122.42,
+      "accuracyKm": 10,
       "visitors": 31,
       "share": 0.103
     }

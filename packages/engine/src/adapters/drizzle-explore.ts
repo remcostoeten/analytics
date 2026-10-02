@@ -8,14 +8,32 @@ import type { Database } from "./drizzle";
 import { attempt, numeric, rounded, selectRows, textual } from "./drizzle-rows";
 import type { Row } from "./drizzle-rows";
 
-const placeColumns: { [level in MapLevel]: string[] } = {
-  country: ["country"],
-  region: ["country", "region"],
-  city: ["country", "region", "city"],
+type PlaceLevel = { columns: string[]; id: SQL; join: SQL };
+
+const placeLevels: { [level in MapLevel]: PlaceLevel } = {
+  country: {
+    columns: ["country"],
+    id: sql`NULL::integer`,
+    join: sql`p.kind = 'country' AND p.country = g.country`,
+  },
+  region: {
+    columns: ["country", "region"],
+    id: sql`max(e.region_id)`,
+    join: sql`p.id = g.place_id`,
+  },
+  city: {
+    columns: ["country", "region", "city"],
+    id: sql`max(e.city_id)`,
+    join: sql`p.id = g.place_id`,
+  },
 };
 
 function nullableText(value: unknown) {
   return value === null || value === undefined ? null : textual(value);
+}
+
+function nullableNumber(value: unknown) {
+  return value === null || value === undefined ? null : numeric(value);
 }
 
 function coordinate(value: unknown) {
@@ -44,8 +62,8 @@ function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
  * @name exploreReads
  * @description The exploration reads of the `ReadStore`: page paths, retention cohorts, the
  * lifecycle of visitors per period, how many days visitors were active, the weekday and hour
- * heatmap, and visitors per place for a map. Each reads `events` through the same
- * scope as every other read.
+ * heatmap, and visitors per place for a map, named in the requested locale from `geo_places`.
+ * Each reads `events` through the same scope as every other read.
  *
  * @example
  * const reads = { ...exploreReads(db) };
@@ -198,13 +216,15 @@ export function exploreReads(
           value: numeric(row.value),
         }));
       }),
-    places: (scope, level, page) =>
+    places: (scope, level, locale, page) =>
       attempt("Could not read the map", async () => {
         const { joins, where } = scopeParts(scope, []);
-        const columns = placeColumns[level];
+        const { columns, id, join } = placeLevels[level];
         const keys = sql.raw(columns.map((column) => `e.${column}`).join(", "));
+        const stored = sql.raw(`g.${columns.at(-1) ?? "country"}`);
         const grouped = sql`SELECT ${keys}, count(DISTINCT ${countedVisitor}) AS visitors,
-            avg(e.latitude) AS latitude, avg(e.longitude) AS longitude
+            avg(e.latitude) AS latitude, avg(e.longitude) AS longitude,
+            round(avg(e.accuracy_km)) AS accuracy_km, ${id} AS place_id
           FROM events e ${joins} WHERE ${where} AND e.country IS NOT NULL GROUP BY ${keys}`;
         const [counts] = await selectRows(
           db,
@@ -214,7 +234,9 @@ export function exploreReads(
         const order = sql.raw(columns.map((column) => `g.${column} ASC NULLS LAST`).join(", "));
         const rows = await selectRows(
           db,
-          sql`SELECT * FROM (${grouped}) g ORDER BY g.visitors DESC, ${order}
+          sql`SELECT g.*, coalesce(p.names->>${locale}, p.names->>'en', ${stored}) AS name
+            FROM (${grouped}) g LEFT JOIN geo_places p ON ${join}
+            ORDER BY g.visitors DESC, ${order}
             LIMIT ${page.limit} OFFSET ${page.offset}`,
         );
         return {
@@ -222,8 +244,11 @@ export function exploreReads(
             country: textual(row.country),
             region: nullableText(row.region),
             city: nullableText(row.city),
+            id: nullableNumber(row.place_id),
+            name: nullableText(row.name),
             latitude: coordinate(row.latitude),
             longitude: coordinate(row.longitude),
+            accuracyKm: nullableNumber(row.accuracy_km),
             visitors: numeric(row.visitors),
           })),
           total: numeric(counts?.total),

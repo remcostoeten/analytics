@@ -13,9 +13,20 @@ import { utm } from "../src/enrichers/utm";
 import { emptyLocation } from "../src/utilities/edge-geo";
 import { batchContext, browserEvents, memoryPorts, settings } from "./batch";
 
+const england = { id: 6269131, kind: "region", country: "GB", names: { en: "England" } } as const;
+const londonPlace = { id: 2643743, kind: "city", country: "GB", names: { en: "London" } } as const;
 const london = {
-  geo: { ...emptyLocation, country: "GB", city: "London", timezone: "Europe/London" },
+  geo: {
+    ...emptyLocation,
+    country: "GB",
+    region: "ENG",
+    regionId: england.id,
+    city: "London",
+    cityId: londonPlace.id,
+    timezone: "Europe/London",
+  },
   network: { asn: 16509, asOrg: "AMAZON-02" },
+  places: [england, londonPlace],
 };
 const context: StageContext = {
   ports: { ...memoryPorts(), geo: memoryGeo(new Map([["81.2.69.160", london]])) },
@@ -101,6 +112,12 @@ describe("geo", () => {
     };
     const enriched = await geo.enrich(withoutIp, context);
     expect(enriched.geo).toMatchObject({ country: "NL", city: null, timezone: "Europe/Amsterdam" });
+  });
+
+  test("keeps the names of the places the location ends up with", async () => {
+    expect((await geo.enrich(draft(), context)).places).toEqual([england, londonPlace]);
+    const edgeRegion = await geo.enrich(draft({ "x-vercel-ip-country-region": "LND" }), context);
+    expect(edgeRegion.places).toEqual([england, londonPlace]);
   });
 });
 

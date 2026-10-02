@@ -1,3 +1,4 @@
+import { geoLocales } from "@remcostoeten/analytics-contract";
 import type {
   HeatmapResponse,
   LifecycleResponse,
@@ -31,6 +32,10 @@ const mapLevels = new Set<string>(["country", "region", "city"]);
 
 function invalid(message: string) {
   return err(engineError("VALIDATION_FAILED", message));
+}
+
+function geoLocale(value: string) {
+  return geoLocales.find((locale) => locale === value) ?? null;
 }
 
 function share(part: number, whole: number) {
@@ -215,8 +220,9 @@ export async function heatmap(
 /**
  * @name places
  * @description Visitors per country, region or city (`level`, default country), with the
- * average coordinates of their lookups rounded to two decimals, and each place's share of the
- * range's visitors, paged with a cursor.
+ * average coordinates of their lookups rounded to two decimals, the average accuracy radius,
+ * the GeoNames id, the name in `locale` (default en), and each place's share of the range's
+ * visitors, paged with a cursor.
  *
  * @example
  * await places(store, scoped, params);
@@ -228,9 +234,11 @@ export async function places(
 ): Reply<MapResponse> {
   const level = params.get("level") ?? "country";
   if (!mapLevels.has(level)) return invalid(`Unknown level ${level}`);
+  const locale = geoLocale(params.get("locale") ?? "en");
+  if (!locale) return invalid(`Unknown locale ${params.get("locale")}`);
   const page = readPage(params);
   if (!page.ok) return page;
-  const found = await store.places(scoped.scope, level as MapLevel, page.value);
+  const found = await store.places(scoped.scope, level as MapLevel, locale, page.value);
   if (!found.ok) return found;
   const { rows, total, scopeVisitors } = found.value;
   return ok({

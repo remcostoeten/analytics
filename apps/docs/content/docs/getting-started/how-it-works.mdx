@@ -37,7 +37,7 @@ The engine runs every batch through the same steps:
 1. **Authorize.** A public key must come from an allowed origin; a secret key is trusted.
 2. **Rate limit.** Callers with a public key are limited per IP hash, 100 requests a minute by default (`INGEST_RATE_LIMIT`).
 3. **Parse.** Each event is checked against the contract, prop limits included. An invalid event is rejected by its index; the rest of the batch still goes through.
-4. **Enrich.** Country, region, city and network (ASN) from local MMDB lookups of the IP; browser, OS and device from the user agent; UTM tags and the channel from the URL and referrer.
+4. **Enrich.** Country, region, city, their GeoNames ids and the lookup's accuracy radius, and network (ASN) from local MMDB lookups of the IP; browser, OS and device from the user agent; UTM tags and the channel from the URL and referrer.
 5. **Score bots.** Known crawlers and automation user agents, datacenter networks, inconsistent headers and the client's `botSignals` add weight to a score from 0 to 100. Events are never dropped for their score; reads filter at 50 and above.
 6. **Flag.** Events from localhost, preview deployments and signed-in admins are marked, so your own traffic is left out of reports. The host comes from the request's `Origin`, and a signed-in admin is recognised by the session cookie, which only the proxy and the server client forward; a browser sending to the API directly carries no cookie.
 7. **Store.** Repeated event ids are counted as duplicates and skipped, the batch is written in one insert, and sessions and visitors are updated.

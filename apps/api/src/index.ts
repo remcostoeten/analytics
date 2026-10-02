@@ -18,7 +18,7 @@ import { findPlugin } from "@remcostoeten/analytics-engine/config";
 import config from "../analytics.config";
 import { createApp } from "./app";
 import { betterAuthSessions, createAuth } from "./auth/better-auth";
-import { candidatePaths, openGeo } from "./geo";
+import { candidatePaths, openGeo, staleGeo } from "./geo";
 
 const production = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
 const ipSecret = process.env.IP_HASH_SECRET ?? "";
@@ -34,6 +34,11 @@ const geo = openGeo(
   candidatePaths("GeoLite2-ASN.mmdb", { ...where, explicit: process.env.GEOIP_ASN_PATH ?? null }),
 );
 const clock = systemClock();
+if (!geo.status.city) console.warn("[api] No MaxMind City database found; geo columns stay empty.");
+if (staleGeo(geo.status, clock.now()))
+  console.warn(
+    `[api] The MaxMind City database was built ${geo.status.builtAt}; redeploy to refresh it.`,
+  );
 const apiUrl = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 3100}`;
 const alertsPlugin = findPlugin(config, "alerts");
 const databaseUrl = process.env.DATABASE_URL;
@@ -84,7 +89,7 @@ export default createApp({
   clock: () => clock.now(),
   dashboardOrigin,
   docsBase: process.env.DOCS_BASE ?? "https://api.analytics.remcostoeten.nl/v2/openapi",
-  geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  geo: geo.status,
   access: {
     projects: stores.projects,
     tokens: stores.tokens,

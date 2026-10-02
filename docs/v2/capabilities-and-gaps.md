@@ -9,7 +9,7 @@ v2 covers core web analytics, custom typed events, web vitals, error tracking, p
 | Source | What is recorded | On by default |
 | --- | --- | --- |
 | Core | Pageviews including SPA navigation, referrer, UTM tags, entry and exit page, visitor and session, country, region, city, device, browser, OS, screen, language, timezone | Yes |
-| Server-side enrichment | Geo from MaxMind, ASN and network, daily-rotating IP hash, bot score with reasons, internal, localhost and preview flags | Yes |
+| Server-side enrichment | Geo from MaxMind with GeoNames ids, accuracy radius and place names in 8 languages, ASN and network, daily-rotating IP hash, bot score with reasons, internal, localhost and preview flags | Yes |
 | `speedInsights` plugin | LCP, INP, CLS, FCP, TTFB per page | Opt-in |
 | `scrollDepth` plugin | Maximum scroll depth per page | Opt-in |
 | `engagement` plugin | Visible time on page | Opt-in |

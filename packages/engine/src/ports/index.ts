@@ -114,7 +114,7 @@ export type {
   OpsStore,
   SpeedCheck,
 } from "./ops";
-export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
+export type { GeoLookup, GeoPlace, GeoRecord, Location, PlaceKind, PlaceNames } from "./geo-lookup";
 export type { Hasher } from "./hasher";
 export type { LogEntry, LogFields, Logger, LogLevel } from "./logger";
 export type { ProjectAccess, ProjectStore } from "./project-store";

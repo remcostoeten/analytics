@@ -8,11 +8,14 @@ const unknownCloudflareCountries = new Set(["XX", "T1"]);
 export const emptyLocation: Location = {
   country: null,
   region: null,
+  regionId: null,
   city: null,
+  cityId: null,
   postalCode: null,
   timezone: null,
   latitude: null,
   longitude: null,
+  accuracyKm: null,
   continent: null,
 };
 
@@ -37,11 +40,14 @@ function vercelLocation(headers: HeaderBag): Nullable<Location> {
   return {
     country,
     region: decoded(headers.get("x-vercel-ip-country-region")),
+    regionId: null,
     city: decoded(headers.get("x-vercel-ip-city")),
+    cityId: null,
     postalCode: headers.get("x-vercel-ip-postal-code"),
     timezone: headers.get("x-vercel-ip-timezone"),
     latitude: coordinate(headers.get("x-vercel-ip-latitude")),
     longitude: coordinate(headers.get("x-vercel-ip-longitude")),
+    accuracyKm: null,
     continent: headers.get("x-vercel-ip-continent"),
   };
 }
@@ -52,11 +58,14 @@ function cloudflareLocation(headers: HeaderBag): Nullable<Location> {
   return {
     country,
     region: decoded(headers.get("cf-region-code") ?? headers.get("cf-region")),
+    regionId: null,
     city: decoded(headers.get("cf-ipcity")),
+    cityId: null,
     postalCode: headers.get("cf-postal-code"),
     timezone: headers.get("cf-timezone"),
     latitude: coordinate(headers.get("cf-iplatitude")),
     longitude: coordinate(headers.get("cf-iplongitude")),
+    accuracyKm: null,
     continent: headers.get("cf-ipcontinent"),
   };
 }
@@ -73,9 +82,24 @@ export function edgeLocation(headers: HeaderBag): Location {
   return vercelLocation(headers) ?? cloudflareLocation(headers) ?? emptyLocation;
 }
 
+function region(location: Location) {
+  return { region: location.region, regionId: location.regionId };
+}
+
+function city(location: Location) {
+  return { city: location.city, cityId: location.cityId };
+}
+
+function coordinates(location: Location) {
+  const { latitude, longitude, accuracyKm } = location;
+  return { latitude, longitude, accuracyKm };
+}
+
 /**
  * @name mergeLocation
- * @description Fills every empty field of `base` from `fallback`.
+ * @description Fills every empty field of `base` from `fallback`. A region and its id, a city and
+ * its id, and the coordinates with their accuracy radius are taken as a whole from one side, so
+ * an id never labels a place named by the other source.
  *
  * @example
  * mergeLocation({ ...emptyLocation, city: "Utrecht" }, { ...emptyLocation, country: "NL" });
@@ -83,12 +107,11 @@ export function edgeLocation(headers: HeaderBag): Location {
 export function mergeLocation(base: Location, fallback: Location): Location {
   return {
     country: base.country ?? fallback.country,
-    region: base.region ?? fallback.region,
-    city: base.city ?? fallback.city,
+    ...(base.region === null ? region(fallback) : region(base)),
+    ...(base.city === null ? city(fallback) : city(base)),
     postalCode: base.postalCode ?? fallback.postalCode,
     timezone: base.timezone ?? fallback.timezone,
-    latitude: base.latitude ?? fallback.latitude,
-    longitude: base.longitude ?? fallback.longitude,
+    ...(base.latitude === null ? coordinates(fallback) : coordinates(base)),
     continent: base.continent ?? fallback.continent,
   };
 }

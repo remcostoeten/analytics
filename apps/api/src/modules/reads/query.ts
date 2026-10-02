@@ -1,6 +1,7 @@
 import {
   BreakdownQuery,
   FilterQuery,
+  GeoLocale,
   IssueStatus,
   LifecycleInterval,
   oneOf,
@@ -133,14 +134,19 @@ export const heatmapQuery = Type.Composite([
 
 /**
  * @name mapQuery
- * @description `scopeQuery` plus the map `level`, paging and `format`.
+ * @description `scopeQuery` plus the map `level`, the `locale` of place names, paging and
+ * `format`.
  *
  * @example
  * app.get("/projects/:project/map", handler, { query: mapQuery });
  */
 export const mapQuery = Type.Composite([
   scopeQuery,
-  Type.Object({ level: Type.Optional(oneOf(["country", "region", "city"])), ...listFields }),
+  Type.Object({
+    level: Type.Optional(oneOf(["country", "region", "city"])),
+    locale: Type.Optional(GeoLocale),
+    ...listFields,
+  }),
 ]);
 
 /**

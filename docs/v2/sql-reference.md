@@ -29,7 +29,7 @@ One row per event: pageviews, custom events, clicks, errors.
 | `referrer`, `referrer_domain`, `channel` | text | Where the visitor came from |
 | `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` | text | Campaign tags |
 | `country`, `region`, `city`, `continent`, `timezone` | text | From the IP address |
-| `latitude`, `longitude` | double | City centre |
+| `latitude`, `longitude` | double | Approximate location; see `accuracy_km` |
 | `device`, `browser`, `browser_version`, `os`, `os_version` | text | From the user agent |
 | `screen`, `viewport`, `language`, `connection` | text | From the browser |
 | `asn`, `as_org` | integer, text | Network |
@@ -38,6 +38,8 @@ One row per event: pageviews, custom events, clicks, errors.
 | `bot_score`, `bot_reasons` | smallint, text\[\] | Bot scoring |
 | `is_human`, `is_internal`, `is_localhost`, `is_preview` | boolean | Traffic flags |
 | `issue_id` | bigint | For errors, the issue it was grouped into |
+| `region_id`, `city_id` | integer | GeoNames ids of the region and city, stable when MaxMind renames a place; null on v1 rows and when the name came from edge headers |
+| `accuracy_km` | integer | MaxMind's radius around the coordinates the visitor is likely within |
 
 ### pageviews
 

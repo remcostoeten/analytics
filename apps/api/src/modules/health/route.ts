@@ -2,12 +2,13 @@ import { Health } from "@remcostoeten/analytics-contract";
 import { Type } from "@sinclair/typebox";
 import { Elysia } from "elysia";
 
+import type { GeoStatus } from "../../geo";
 import { ipHeader } from "../../ip-header";
 
 export type HealthOptions = {
   version: string;
   clock: () => Date;
-  geo: { city: string | null; asn: string | null; loadMs: number };
+  geo: GeoStatus;
 };
 
 const HealthDetails = Type.Composite([
@@ -21,6 +22,7 @@ const HealthDetails = Type.Composite([
       city: Type.Union([Type.String(), Type.Null()]),
       asn: Type.Union([Type.String(), Type.Null()]),
       loadMs: Type.Number(),
+      builtAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
     }),
   }),
 ]);
@@ -28,7 +30,8 @@ const HealthDetails = Type.Composite([
 /**
  * @name healthModule
  * @description `GET /v2/health`: `{ ok, version, time }` plus the runtime, whether this was the
- * instance's first request, which header carried the caller's IP, and which MaxMind files loaded.
+ * instance's first request, which header carried the caller's IP, which MaxMind files loaded and
+ * when MaxMind built the City database.
  *
  * @example
  * new Elysia({ prefix: "/v2" }).use(healthModule({ version, clock: () => new Date(), geo }));

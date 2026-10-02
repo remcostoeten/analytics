@@ -2,19 +2,25 @@
   "data": [
     {
       "country": "NL",
-      "region": "Noord-Holland",
+      "region": "NH",
       "city": "Amsterdam",
+      "id": 2759794,
+      "name": "Amsterdam",
       "latitude": 52.37,
       "longitude": 4.9,
+      "accuracyKm": 20,
       "visitors": 64,
       "share": 0.213
     },
     {
       "country": "US",
-      "region": "California",
+      "region": "CA",
       "city": "San Francisco",
+      "id": 5391959,
+      "name": "San Francisco",
       "latitude": 37.77,
       "longitude": -122.42,
+      "accuracyKm": 10,
       "visitors": 31,
       "share": 0.103
     }

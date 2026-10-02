@@ -17,6 +17,7 @@ describe("edgeLocation", () => {
         "x-vercel-ip-continent": "EU",
       },
       {
+        ...emptyLocation,
         country: "NL",
         region: "UT",
         city: "'s-Hertogenbosch",
@@ -53,5 +54,29 @@ describe("mergeLocation", () => {
         { ...emptyLocation, city: "Amsterdam", timezone: "Europe/Amsterdam" },
       ),
     ).toEqual({ ...emptyLocation, city: "Utrecht", country: "NL", timezone: "Europe/Amsterdam" });
+  });
+
+  test("keeps a city with its id, and coordinates with their accuracy", () => {
+    const edge = { ...emptyLocation, city: "Amsterdam", latitude: 52.37, longitude: 4.89 };
+    const lookedUp = {
+      ...emptyLocation,
+      region: "UT",
+      regionId: 2745909,
+      city: "Utrecht",
+      cityId: 2745912,
+      latitude: 52.09,
+      longitude: 5.12,
+      accuracyKm: 20,
+    };
+    expect(mergeLocation(edge, lookedUp)).toEqual({
+      ...emptyLocation,
+      region: "UT",
+      regionId: 2745909,
+      city: "Amsterdam",
+      cityId: null,
+      latitude: 52.37,
+      longitude: 4.89,
+      accuracyKm: null,
+    });
   });
 });

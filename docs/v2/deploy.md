@@ -61,6 +61,9 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 | `MAIL_FROM` | Optional: the sender of alert mail, such as `Analytics <you@gmail.com>`; with Gmail it must be the account's own address |
 | `INTERNAL_PROJECT_SECRET` | Optional: the secret key of a project that should collect the API's own errors |
 | `CRUX_API_KEY` | Optional: a Google Cloud API key with the Chrome UX Report API enabled |
+| `MAXMIND_ACCOUNT_ID`, `MAXMIND_LICENSE_KEY` | Optional: a free GeoLite account at maxmind.com, so the build downloads the databases from MaxMind instead of the P3TERX GitHub mirror |
+
+The build downloads GeoLite2 City and ASN, and only a new deployment picks up a newer file. Under Settings, Git, Deploy Hooks, create a hook for `master` and store its URL as the secret `API_DEPLOY_HOOK` on the GitHub `production` environment: the `geo-refresh` workflow calls it every Wednesday at 05:37 UTC, after MaxMind's Tuesday release. `/v2/health` shows `geo.builtAt`, and the API logs a warning at startup once the City database is more than 14 days old.
 
 Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true`.
 

@@ -25,7 +25,8 @@
         "postalCode": null,
         "timezone": null,
         "latitude": null,
-        "longitude": null
+        "longitude": null,
+        "accuracyKm": null
       },
       "device": {
         "type": "desktop",

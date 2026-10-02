@@ -15,21 +15,14 @@ import type {
   RateLimiter,
 } from "../ports";
 import type { LogFields, LogLevel } from "../ports/logger";
+import { emptyLocation } from "../utilities/edge-geo";
 
 export { memoryAlerts } from "./memory-alerts";
 
 export const emptyRecord: GeoRecord = {
-  geo: {
-    country: null,
-    region: null,
-    city: null,
-    postalCode: null,
-    timezone: null,
-    latitude: null,
-    longitude: null,
-    continent: null,
-  },
+  geo: emptyLocation,
   network: { asn: null, asOrg: null },
+  places: [],
 };
 
 /**

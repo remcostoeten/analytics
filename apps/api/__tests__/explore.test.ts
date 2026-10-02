@@ -72,7 +72,7 @@ const api = createApp({
   clock: () => clock.now(),
   dashboardOrigin: null,
   docsBase: "https://api.example.test/v2/openapi",
-  geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  geo: geo.status,
   access: {
     ...stores,
     sessions: async () => null,
@@ -195,6 +195,14 @@ beforeAll(async () => {
     },
   ];
   for (const event of history) await seed(event);
+  await database.query(
+    "UPDATE events SET city_id = 2759794, accuracy_km = 5 WHERE city = 'Amsterdam'",
+  );
+  await database.query(
+    `INSERT INTO geo_places (id, kind, country, names) VALUES
+      (2750405, 'country', 'NL', '{"en": "Netherlands", "de": "Niederlande"}'),
+      (2759794, 'city', 'NL', '{"en": "Amsterdam", "ja": "アムステルダム"}')`,
+  );
   await database.query(
     `INSERT INTO events (project_id, type, name, ts, received_at, path, host, visitor_id, session_id, fingerprint, meta)
      VALUES ('site', 'custom', 'signup', '2026-09-15T10:00:30Z', '2026-09-15T10:00:30Z', '/', 'site.test', 'v1', 's3', 'signup1', '{}')`,
@@ -398,8 +406,11 @@ describe("map", () => {
         country: "NL",
         region: "Noord-Holland",
         city: "Amsterdam",
+        id: 2759794,
+        name: "Amsterdam",
         latitude: 52.37,
         longitude: 4.9,
+        accuracyKm: 5,
         visitors: 1,
         share: 0.333,
       },
@@ -407,8 +418,11 @@ describe("map", () => {
         country: "NL",
         region: "Utrecht",
         city: "Utrecht",
+        id: null,
+        name: "Utrecht",
         latitude: 52.09,
         longitude: 5.12,
+        accuracyKm: null,
         visitors: 1,
         share: 0.333,
       },
@@ -416,6 +430,21 @@ describe("map", () => {
     expect(places.total).toBe(3);
     expect(places.nextCursor).not.toBeNull();
     expect((await call(`/v2/projects/site/map?${month}&level=street`)).status).toBe(400);
+  });
+
+  test("names places in the requested locale, falling back to English and the stored value", async () => {
+    const cities = await body(`/v2/projects/site/map?${month}&level=city&locale=ja`, MapResponse);
+    expect((cities.data as Json[]).map((place) => place.name)).toEqual([
+      "アムステルダム",
+      "Utrecht",
+      "New York",
+    ]);
+    const countries = await body(`/v2/projects/site/map?${month}&locale=de`, MapResponse);
+    expect(countries.data).toMatchObject([
+      { country: "NL", id: null, name: "Niederlande" },
+      { country: "US", id: null, name: "US" },
+    ]);
+    expect((await call(`/v2/projects/site/map?${month}&locale=xx`)).status).toBe(400);
   });
 
   test("across projects only counts readable ones", async () => {
@@ -516,10 +545,10 @@ describe("exports", () => {
     expect(response.headers.get("content-type")).toStartWith("text/csv");
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="map.csv"');
     expect((await response.text()).split("\n")).toEqual([
-      "country,region,city,latitude,longitude,visitors,share",
-      "NL,Noord-Holland,Amsterdam,52.37,4.9,1,0.333",
-      "NL,Utrecht,Utrecht,52.09,5.12,1,0.333",
-      "US,New York,New York,40.71,-74.01,1,0.333",
+      "country,region,city,id,name,latitude,longitude,accuracyKm,visitors,share",
+      "NL,Noord-Holland,Amsterdam,2759794,Amsterdam,52.37,4.9,5,1,0.333",
+      "NL,Utrecht,Utrecht,,Utrecht,52.09,5.12,,1,0.333",
+      "US,New York,New York,,New York,40.71,-74.01,,1,0.333",
       "",
     ]);
     const events = await call(`/v2/events?${month}`, { ...admin, accept: "text/csv" });

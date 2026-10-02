@@ -48,19 +48,65 @@ describe("maxmindGeo", () => {
       geo: {
         country: "GB",
         region: "ENG",
+        regionId: 6269131,
         city: "London",
+        cityId: 2643743,
         postalCode: null,
         timezone: "Europe/London",
         latitude: 51.5142,
         longitude: -0.0931,
+        accuracyKm: 100,
         continent: "EU",
       },
       network: { asn: null, asOrg: null },
+      places: [
+        {
+          id: 2635167,
+          kind: "country",
+          country: "GB",
+          names: {
+            en: "United Kingdom",
+            de: "Vereinigtes Königreich",
+            es: "Reino Unido",
+            fr: "Royaume-Uni",
+            ja: "イギリス",
+            "pt-BR": "Reino Unido",
+            ru: "Великобритания",
+            "zh-CN": "英国",
+          },
+        },
+        {
+          id: 6269131,
+          kind: "region",
+          country: "GB",
+          names: { en: "England", es: "Inglaterra", fr: "Angleterre", "pt-BR": "Inglaterra" },
+        },
+        {
+          id: 2643743,
+          kind: "city",
+          country: "GB",
+          names: {
+            en: "London",
+            de: "London",
+            es: "Londres",
+            fr: "Londres",
+            ja: "ロンドン",
+            "pt-BR": "Londres",
+            ru: "Лондон",
+          },
+        },
+      ],
     });
   });
 
-  test("returns nulls for an unknown address", () => {
-    expect(geo.lookup("10.0.0.1").geo.country).toBeNull();
+  test("reports when MaxMind built the database", () => {
+    expect(geo.builtAt).toBe("2026-02-04T22:49:29.000Z");
+  });
+
+  test("returns nulls and no places for an unknown address", () => {
+    const record = geo.lookup("10.0.0.1");
+    expect(record.geo.country).toBeNull();
+    expect(record.places).toEqual([]);
   });
 
   test("returns nulls for a malformed address", () => {

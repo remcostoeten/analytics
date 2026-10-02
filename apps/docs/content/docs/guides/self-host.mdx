@@ -61,7 +61,7 @@ Generate the three secrets once with `openssl rand -hex 32`, then set:
 
 ## 5. Run the API
 
-The API is an Elysia app in `apps/api`. `bun run --cwd apps/api build` downloads the GeoLite2 City and ASN files into `apps/api/data`, which country, city and network lookups need.
+The API is an Elysia app in `apps/api`. `bun run --cwd apps/api build` downloads the GeoLite2 City and ASN files into `apps/api/data`, which country, city and network lookups need. With `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` from a free GeoLite account it downloads them from MaxMind; otherwise from a public GitHub mirror. MaxMind updates the files twice a week, so rebuild at least weekly: `/v2/health` shows when the loaded City database was built, in `geo.builtAt`.
 
 - **On Vercel:** create a project with root directory `apps/api`. `apps/api/vercel.json` sets the Bun runtime, the build command and the GeoLite2 files.
 - **On any Bun host:** run the build, then `bun apps/api/src/server.ts`. It listens on `PORT`, 3100 by default.

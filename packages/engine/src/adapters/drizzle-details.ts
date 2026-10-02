@@ -63,7 +63,7 @@ const topPages = 5;
 const eventColumns =
   sql.raw(`e.id AS row_id, e.fingerprint, e.name, e.type, e.meta, e.ts, e.visitor_id, e.session_id,
   e.path, e.route, e.referrer, e.referrer_domain, e.channel, e.country, e.region, e.city, e.postal_code, e.timezone,
-  e.latitude, e.longitude, e.device_type, e.lang, e.bot_score, e.bot_reasons, e.is_internal, e.host`);
+  e.latitude, e.longitude, e.accuracy_km, e.device_type, e.lang, e.bot_score, e.bot_reasons, e.is_internal, e.host`);
 
 async function select(db: Database, query: SQL): Promise<Row[]> {
   const result: unknown = await db.execute(query);
@@ -163,6 +163,7 @@ function geoOf(row: Row) {
     timezone: text(row.timezone),
     latitude: decimal(row.latitude),
     longitude: decimal(row.longitude),
+    accuracyKm: decimal(row.accuracy_km),
   };
 }
 

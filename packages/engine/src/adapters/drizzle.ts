@@ -9,6 +9,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   errorRules,
   events,
+  geoPlaces,
   projects,
   rateLimits,
   sessions,
@@ -106,9 +107,12 @@ function toEventRow(draft: EventDraft): EventRow {
     sessionId: event.session,
     country: geo?.country ?? null,
     region: geo?.region ?? null,
+    regionId: geo?.regionId ?? null,
     city: geo?.city ?? null,
+    cityId: geo?.cityId ?? null,
     latitude: geo?.latitude ?? null,
     longitude: geo?.longitude ?? null,
+    accuracyKm: geo?.accuracyKm ?? null,
     timezone: geo?.timezone ?? null,
     postalCode: geo?.postalCode ?? null,
     continent: geo?.continent ?? null,
@@ -434,6 +438,26 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
     });
 }
 
+async function upsertPlaces(db: Database, drafts: EventDraft[]) {
+  const places = new Map(
+    drafts.flatMap((draft) => draft.enrichment.places).map((place) => [place.id, place]),
+  );
+  if (places.size === 0) return;
+  await db
+    .insert(geoPlaces)
+    .values([...places.values()])
+    .onConflictDoUpdate({
+      target: geoPlaces.id,
+      set: {
+        kind: sql`excluded.kind`,
+        country: sql`excluded.country`,
+        names: sql`excluded.names`,
+        updatedAt: sql`now()`,
+      },
+      setWhere: sql`${geoPlaces.names} IS DISTINCT FROM excluded.names OR ${geoPlaces.country} IS DISTINCT FROM excluded.country`,
+    });
+}
+
 /**
  * @name drizzleStore
  * @description An `EventStore` on any Drizzle Postgres database. Events go in one multi-row insert
@@ -441,6 +465,8 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
  * `type`, `meta` and `device_type` values the v1 dashboard reads. Sessions and visitors are
  * upserted once per session; a visitor marked internal makes that session's new events internal.
  * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
+ * The MaxMind city and region of newly stored events go to `geo_places` with their names, which
+ * are only rewritten when MaxMind renamed the place.
  * Newly stored `error` events are grouped into `issues` by fingerprint, except those from bots and
  * localhost, which are stored without an issue: counts, visitors, releases
  * and a resolved issue reopening as a regression; a muted issue reopens once its date passes or
@@ -466,10 +492,9 @@ export function drizzleStore(db: Database): EventStore {
             (draft) => draft.issue && inserted.has(draft.event.id) && countsAsIssue(draft),
           ),
         );
-        await upsertVitals(
-          db,
-          drafts.filter((draft) => inserted.has(draft.event.id)),
-        );
+        const stored = drafts.filter((draft) => inserted.has(draft.event.id));
+        await upsertVitals(db, stored);
+        await upsertPlaces(db, stored);
         const ids = drafts.map((draft) => draft.event.id);
         return ok({
           inserted: ids.filter((id) => inserted.has(id)),

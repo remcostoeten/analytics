@@ -63,6 +63,7 @@ function replayDraft(row: StoredRow): EventDraft {
     enrichment: {
       client: { ip: null, userAgent: row.ua, ipHash: null },
       geo: null,
+      places: [],
       network: { asn: row.asn, asOrg: row.asOrg },
       device: null,
       source: null,

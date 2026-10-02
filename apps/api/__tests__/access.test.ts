@@ -75,7 +75,7 @@ const api = createApp({
   clock: () => clock.now(),
   dashboardOrigin: "https://dashboard.example.test",
   docsBase,
-  geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  geo: geo.status,
   access: deps,
   reads: {
     store: pgliteAccess(database).reads,

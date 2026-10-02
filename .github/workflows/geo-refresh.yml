@@ -1,0 +1,28 @@
+name: geo-refresh
+
+on:
+  schedule:
+    - cron: "37 5 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: geo-refresh
+  cancel-in-progress: false
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      DEPLOY_HOOK: ${{ secrets.API_DEPLOY_HOOK }}
+    steps:
+      - name: Skip until the deploy hook is configured
+        if: env.DEPLOY_HOOK == ''
+        run: echo "::notice::Set the API_DEPLOY_HOOK secret on the production environment to refresh the MaxMind databases weekly."
+      - name: Redeploy the API, which downloads the latest MaxMind databases
+        if: env.DEPLOY_HOOK != ''
+        run: curl -fsS -X POST "$DEPLOY_HOOK"

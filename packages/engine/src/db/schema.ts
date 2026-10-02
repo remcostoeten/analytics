@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   bigserial,
@@ -49,9 +50,12 @@ export const events = pgTable(
     sessionId: text("session_id"),
     country: text("country"),
     region: text("region"),
+    regionId: integer("region_id"),
     city: text("city"),
+    cityId: integer("city_id"),
     latitude: doublePrecision("latitude"),
     longitude: doublePrecision("longitude"),
+    accuracyKm: integer("accuracy_km"),
     timezone: text("timezone"),
     postalCode: text("postal_code"),
     continent: text("continent"),
@@ -401,6 +405,22 @@ export const querySecret = pgTable("query_secret", {
   id: boolean("id").primaryKey().default(true),
   secret: text("secret").notNull(),
 });
+
+export const geoPlaces = pgTable(
+  "geo_places",
+  {
+    id: integer("id").primaryKey(),
+    kind: text("kind").notNull(),
+    country: text("country").notNull(),
+    names: jsonb("names").notNull(),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("geo_places_country_uidx")
+      .on(table.country)
+      .where(sql`kind = 'country'`),
+  ],
+);
 
 export const schemaMigrations = pgTable("schema_migrations", {
   name: text("name").primaryKey(),

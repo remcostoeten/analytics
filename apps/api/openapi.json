@@ -118,7 +118,8 @@
                       "required": [
                         "city",
                         "asn",
-                        "loadMs"
+                        "loadMs",
+                        "builtAt"
                       ],
                       "properties": {
                         "city": {
@@ -135,6 +136,13 @@
                         },
                         "loadMs": {
                           "type": "number"
+                        },
+                        "builtAt": {
+                          "format": "date-time",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       }
                     }
@@ -594,7 +602,8 @@
                                   "postalCode",
                                   "timezone",
                                   "latitude",
-                                  "longitude"
+                                  "longitude",
+                                  "accuracyKm"
                                 ],
                                 "properties": {
                                   "country": {
@@ -642,6 +651,13 @@
                                     "maximum": 180,
                                     "type": [
                                       "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "accuracyKm": {
+                                    "minimum": 0,
+                                    "type": [
+                                      "integer",
                                       "null"
                                     ]
                                   }
@@ -5848,6 +5864,24 @@
             }
           },
           {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "de",
+                "es",
+                "fr",
+                "ja",
+                "pt-BR",
+                "ru",
+                "zh-CN"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -5922,8 +5956,11 @@
                               "country",
                               "region",
                               "city",
+                              "id",
+                              "name",
                               "latitude",
                               "longitude",
+                              "accuracyKm",
                               "visitors",
                               "share"
                             ],
@@ -5945,6 +5982,21 @@
                                   "null"
                                 ]
                               },
+                              "id": {
+                                "minimum": 1,
+                                "description": "GeoNames id of the region or city; null at country level or when unknown.",
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "description": "Display name in `locale`, then English, then the stored value.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "latitude": {
                                 "minimum": -90,
                                 "maximum": 90,
@@ -5958,6 +6010,14 @@
                                 "maximum": 180,
                                 "type": [
                                   "number",
+                                  "null"
+                                ]
+                              },
+                              "accuracyKm": {
+                                "minimum": 0,
+                                "description": "Average radius in km around the coordinates the visitors are likely within.",
+                                "type": [
+                                  "integer",
                                   "null"
                                 ]
                               },
@@ -10243,7 +10303,8 @@
                                   "postalCode",
                                   "timezone",
                                   "latitude",
-                                  "longitude"
+                                  "longitude",
+                                  "accuracyKm"
                                 ],
                                 "properties": {
                                   "country": {
@@ -10291,6 +10352,13 @@
                                     "maximum": 180,
                                     "type": [
                                       "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "accuracyKm": {
+                                    "minimum": 0,
+                                    "type": [
+                                      "integer",
                                       "null"
                                     ]
                                   }
@@ -11009,7 +11077,8 @@
                             "postalCode",
                             "timezone",
                             "latitude",
-                            "longitude"
+                            "longitude",
+                            "accuracyKm"
                           ],
                           "properties": {
                             "country": {
@@ -11057,6 +11126,13 @@
                               "maximum": 180,
                               "type": [
                                 "number",
+                                "null"
+                              ]
+                            },
+                            "accuracyKm": {
+                              "minimum": 0,
+                              "type": [
+                                "integer",
                                 "null"
                               ]
                             }
@@ -12191,7 +12267,8 @@
                                   "postalCode",
                                   "timezone",
                                   "latitude",
-                                  "longitude"
+                                  "longitude",
+                                  "accuracyKm"
                                 ],
                                 "properties": {
                                   "country": {
@@ -12239,6 +12316,13 @@
                                     "maximum": 180,
                                     "type": [
                                       "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "accuracyKm": {
+                                    "minimum": 0,
+                                    "type": [
+                                      "integer",
                                       "null"
                                     ]
                                   }
@@ -15130,7 +15214,8 @@
                                   "postalCode",
                                   "timezone",
                                   "latitude",
-                                  "longitude"
+                                  "longitude",
+                                  "accuracyKm"
                                 ],
                                 "properties": {
                                   "country": {
@@ -15178,6 +15263,13 @@
                                     "maximum": 180,
                                     "type": [
                                       "number",
+                                      "null"
+                                    ]
+                                  },
+                                  "accuracyKm": {
+                                    "minimum": 0,
+                                    "type": [
+                                      "integer",
                                       "null"
                                     ]
                                   }
@@ -17575,6 +17667,24 @@
             }
           },
           {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "de",
+                "es",
+                "fr",
+                "ja",
+                "pt-BR",
+                "ru",
+                "zh-CN"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -17649,8 +17759,11 @@
                               "country",
                               "region",
                               "city",
+                              "id",
+                              "name",
                               "latitude",
                               "longitude",
+                              "accuracyKm",
                               "visitors",
                               "share"
                             ],
@@ -17672,6 +17785,21 @@
                                   "null"
                                 ]
                               },
+                              "id": {
+                                "minimum": 1,
+                                "description": "GeoNames id of the region or city; null at country level or when unknown.",
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "name": {
+                                "description": "Display name in `locale`, then English, then the stored value.",
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "latitude": {
                                 "minimum": -90,
                                 "maximum": 90,
@@ -17685,6 +17813,14 @@
                                 "maximum": 180,
                                 "type": [
                                   "number",
+                                  "null"
+                                ]
+                              },
+                              "accuracyKm": {
+                                "minimum": 0,
+                                "description": "Average radius in km around the coordinates the visitors are likely within.",
+                                "type": [
+                                  "integer",
                                   "null"
                                 ]
                               },

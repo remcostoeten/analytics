@@ -6,7 +6,7 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 
 | Route | Does |
 | --- | --- |
-| `GET /v2/health` | `{ ok, version, time }` plus the runtime, a cold-start flag, the header the caller's IP came from, and which MaxMind files loaded |
+| `GET /v2/health` | `{ ok, version, time }` plus the runtime, a cold-start flag, the header the caller's IP came from, which MaxMind files loaded and when MaxMind built the City database (`geo.builtAt`) |
 | `POST /v2/events` | Ingest through the engine: `text/plain` or `application/json`, at most 60 KB and 50 events, `X-Project-Key` from an allowed origin or `Authorization: Bearer sk_...` |
 | `GET /v2/openapi`, `/v2/openapi/json` | Interactive docs and the OpenAPI 3 document |
 | `GET /v2/auth/session`, `/v2/auth/*` | The current session, role and `isAdmin`; every other path is Better Auth: GitHub sign-in, callback, sign-out, organization routes |
@@ -14,7 +14,7 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 | `GET, POST /v2/tokens`, `DELETE /v2/tokens/:token` | API tokens for organization admins; a token's value is returned once and stored hashed |
 | `GET /v2/projects/:project/stats`, `timeseries`, `breakdown/:dimension`, `realtime` | Aggregate reads with the shared `period`, `from`/`to`, `traffic` and `filter[...]` parameters; dimensions come from the engine's registry in `packages/engine/src/dimensions/`. `breakdown` pages with `limit` and `cursor` |
 | `format=csv\|json\|sql` on every list and breakdown route | The whole list as one streamed download, up to 1 million rows; `Accept: text/csv` also gives CSV |
-| `GET /v2/projects/:project/paths`, `retention`, `heatmap`, `map` | Page paths (`page`, `direction`), weekly or monthly retention cohorts, the weekday and hour heatmap in a `timezone`, and visitors per country, region or city with coordinates |
+| `GET /v2/projects/:project/paths`, `retention`, `heatmap`, `map` | Page paths (`page`, `direction`), weekly or monthly retention cohorts, the weekday and hour heatmap in a `timezone`, and visitors per country, region or city with coordinates, accuracy, GeoNames id and a name in `locale` |
 | `GET /v2/projects/:project/realtime/events` | The live feed through the engine's `RealtimeFeed` port: long-polls with `after` (25 s wait, a check every 2 s) or streams server-sent events for `Accept: text/event-stream`, resuming from `Last-Event-ID`. Visitor and session ids need `detail` access |
 | `GET /v2/projects/:project/speed`, `speed/timeseries`, `speed/routes`, `speed/elements`, and the same under `/v2/speed` | Speed insights from `web_vitals`: the Real Experience Score and per-metric percentiles by `device` and `percentile`, per day, per route worst first, and the selectors behind slow values; values under 20 samples are null |
 | `GET /v2/projects/:project/issues`, `issues/:issue`, `issues/:issue/events`, `PATCH issues/:issue`, `GET /v2/issues` | Error tracking: errors grouped into issues by fingerprint at ingest, with counts, visitors, releases and regressions; lists and events at the `detail` level, status changes for admins; `filter[issue]=iss_<id>` on any breakdown |
@@ -52,6 +52,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.analytics.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |
+| `MAXMIND_ACCOUNT_ID`, `MAXMIND_LICENSE_KEY` | No | Build time: download GeoLite2 from MaxMind instead of the P3TERX mirror |
 | `MAIL_URL` | For mail alerts | The SMTP server, `smtps://user:password@host:465` or `smtp://...:587` (`STARTTLS`); read by `analytics.config.ts` |
 | `MAIL_FROM` | No | The sender of alert mail; defaults to `Analytics <remco@gmail.com>` |
 | `CRUX_API_KEY` | For the crux job | A Google API key with the Chrome UX Report API enabled |
@@ -60,6 +61,6 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 ## Commands
 
 - `bun run dev` serves on port 3100.
-- `bun run build` downloads the GeoLite2 City and ASN files into `data/`.
+- `bun run build` downloads the GeoLite2 City and ASN files into `data/`, from MaxMind when `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY` are set and from the P3TERX mirror otherwise. A file under 7 days old is kept; when a download fails, an existing file is kept with a warning.
 - `bun test` runs the integration tests through `app.handle` on PGlite, including a check that `openapi.json` matches the routes.
 - `bun run openapi` writes the OpenAPI document to `openapi.json`; the docs site reads it and the `openapi` workflow fails a pull request that breaks it.

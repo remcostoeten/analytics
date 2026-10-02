@@ -58,6 +58,10 @@ export type TokenScope = Static<typeof TokenScope>;
 export const Role = oneOf(["owner", "admin", "analyst", "viewer"]);
 export type Role = Static<typeof Role>;
 
+export const geoLocales = ["en", "de", "es", "fr", "ja", "pt-BR", "ru", "zh-CN"] as const;
+export const GeoLocale = oneOf(geoLocales);
+export type GeoLocale = Static<typeof GeoLocale>;
+
 export const Channel = oneOf([
   "direct",
   "search",

@@ -126,6 +126,7 @@ export type Geo = {
   timezone: Nullable<string>;
   latitude: Nullable<number>;
   longitude: Nullable<number>;
+  accuracyKm: Nullable<number>;
 };
 
 export type Device = {

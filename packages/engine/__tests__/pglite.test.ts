@@ -38,6 +38,13 @@ type EventRow = {
   is_internal: boolean;
 };
 
+type PlaceRow = {
+  id: number;
+  kind: string;
+  country: string;
+  names: { [locale: string]: string };
+};
+
 type SessionRow = {
   session_id: string;
   entry_path: string;
@@ -163,6 +170,25 @@ describe("engine on PGlite", () => {
         is_internal: false,
       },
     ]);
+  });
+
+  test("stores the place ids and accuracy, and names the places once", async () => {
+    const located = await database.query<{
+      region_id: number;
+      city_id: number;
+      accuracy_km: number;
+    }>("SELECT DISTINCT region_id, city_id, accuracy_km FROM events WHERE country = 'GB'");
+    expect(located.rows).toEqual([{ region_id: 6269131, city_id: 2643743, accuracy_km: 100 }]);
+
+    const places = await database.query<PlaceRow>(
+      "SELECT id, kind, country, names FROM geo_places ORDER BY id",
+    );
+    expect(places.rows.map(({ id, kind, country }) => ({ id, kind, country }))).toEqual([
+      { id: 2635167, kind: "country", country: "GB" },
+      { id: 2643743, kind: "city", country: "GB" },
+      { id: 6269131, kind: "region", country: "GB" },
+    ]);
+    expect(places.rows[1]?.names).toMatchObject({ en: "London", es: "Londres" });
   });
 
   test("keeps a visitor internal once an admin session marks it", async () => {

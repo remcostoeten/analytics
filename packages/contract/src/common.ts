@@ -63,6 +63,7 @@ export const Geo = Type.Object({
   timezone: nullable(Type.String()),
   latitude: nullable(Type.Number({ minimum: -90, maximum: 90 })),
   longitude: nullable(Type.Number({ minimum: -180, maximum: 180 })),
+  accuracyKm: nullable(Type.Integer({ minimum: 0 })),
 });
 export type Geo = Static<typeof Geo>;
 

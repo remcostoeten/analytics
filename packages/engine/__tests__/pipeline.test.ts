@@ -10,6 +10,7 @@ import { createEngine } from "../src/pipeline";
 import { botScoreStage } from "../src/stages/bot-score";
 import { enrichStage } from "../src/stages/enrich";
 import { flagsStage } from "../src/stages/flags";
+import { emptyLocation } from "../src/utilities/edge-geo";
 import {
   batchContext,
   browserEvents,
@@ -130,16 +131,7 @@ describe("enrich and bot score stages", () => {
   const country = defineEnricher({
     name: "country",
     enrich: () => ({
-      geo: {
-        country: "GB",
-        region: null,
-        city: null,
-        postalCode: null,
-        timezone: null,
-        latitude: null,
-        longitude: null,
-        continent: null,
-      },
+      geo: { ...emptyLocation, country: "GB" },
     }),
   });
   const override = defineEnricher({

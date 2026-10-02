@@ -101,7 +101,7 @@ function build(plugin: Nullable<AlertsPlugin>) {
     clock: () => clock.now(),
     dashboardOrigin: null,
     docsBase: "https://api.example.test/v2/openapi",
-    geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+    geo: geo.status,
     access: {
       ...stores,
       sessions: async () => null,

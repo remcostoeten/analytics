@@ -47,7 +47,7 @@ async function openapiDocument(): Promise<string> {
     clock: () => clock.now(),
     dashboardOrigin: null,
     docsBase: "https://api.analytics.remcostoeten.nl/v2/openapi",
-    geo: { city: null, asn: null, loadMs: 0 },
+    geo: { city: null, asn: null, loadMs: 0, builtAt: null },
     access: {
       ...stores,
       sessions: async () => null,

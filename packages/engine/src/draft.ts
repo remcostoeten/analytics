@@ -2,7 +2,7 @@ import type { BotVerdict, Device, Source, WireEvent } from "@remcostoeten/analyt
 import type { Nullable, ProjectID, Timestamp } from "@remcostoeten/analytics-shared/semantic";
 
 import type { IssueDraft } from "./errors/stage";
-import type { Location } from "./ports";
+import type { GeoPlace, Location } from "./ports";
 import { clientIp } from "./utilities/client-ip";
 import type { HeaderBag } from "./utilities/client-ip";
 import { hostOf } from "./utilities/hosts";
@@ -47,6 +47,7 @@ export type Client = {
 export type Enrichment = {
   client: Client;
   geo: Nullable<Location>;
+  places: GeoPlace[];
   network: Nullable<Network>;
   device: Nullable<Device>;
   source: Nullable<Source>;
@@ -117,6 +118,7 @@ export function createDraft(batch: BatchContext, event: WireEvent, index: number
         ipHash: null,
       },
       geo: null,
+      places: [],
       network: null,
       device: null,
       source: null,

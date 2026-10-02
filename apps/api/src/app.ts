@@ -5,6 +5,7 @@ import { Elysia } from "elysia";
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
+import type { GeoStatus } from "./geo";
 import { adminModule } from "./modules/admin/route";
 import { alertsModule } from "./modules/alerts/route";
 import { annotationsModule } from "./modules/annotations/route";
@@ -38,7 +39,7 @@ export type AppOptions = {
   clock: () => Date;
   dashboardOrigin: Nullable<string>;
   docsBase: string;
-  geo: { city: string | null; asn: string | null; loadMs: number };
+  geo: GeoStatus;
   access: AccessDeps;
   reads: ReadsOptions;
   query: QueryOptions;

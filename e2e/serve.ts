@@ -160,7 +160,7 @@ const api = createApp({
   clock: () => clock.now(),
   dashboardOrigin: null,
   docsBase: "http://localhost/v2/openapi",
-  geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
+  geo: geo.status,
   access: {
     ...pgliteAccess(database),
     sessions: async () => null,

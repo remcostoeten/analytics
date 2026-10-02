@@ -23,6 +23,7 @@ export type TokenID = ID;
 export type UserID = ID;
 
 export type CountryCode = string;
+export type GeonameID = number;
 export type Path = string;
 export type Route = string;
 export type Selector = string;

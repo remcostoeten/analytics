@@ -124,7 +124,7 @@ describe("the shared server visitor", () => {
     expect(lifecycle.reduce((sum, period) => sum + period.new, 0)).toBe(1);
     const paths = value(await reads.paths(week, "/", "next"));
     expect(paths).toEqual({ views: 1, dropOff: 0, steps: [{ path: "/pricing", count: 1 }] });
-    const places = value(await reads.places(week, "country", { limit: 10, offset: 0 }));
+    const places = value(await reads.places(week, "country", "en", { limit: 10, offset: 0 }));
     expect(places.scopeVisitors).toBe(1);
     expect(places.rows.map((row) => row.visitors)).toEqual([1]);
   });

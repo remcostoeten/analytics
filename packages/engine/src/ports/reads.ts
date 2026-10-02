@@ -1,5 +1,6 @@
+import type { GeoLocale } from "@remcostoeten/analytics-contract";
 import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { GeonameID, ProjectID } from "@remcostoeten/analytics-shared/semantic";
 
 import type { Dimension } from "../define";
 import type { EngineError } from "../errors";
@@ -99,8 +100,11 @@ export type Place = {
   country: string;
   region: string | null;
   city: string | null;
+  id: GeonameID | null;
+  name: string | null;
   latitude: number | null;
   longitude: number | null;
+  accuracyKm: number | null;
   visitors: number;
 };
 
@@ -126,6 +130,7 @@ export type ReadStore = {
   places: (
     scope: ReadScope,
     level: MapLevel,
+    locale: GeoLocale,
     page: { limit: number; offset: number },
   ) => Read<PlacesPage>;
 };

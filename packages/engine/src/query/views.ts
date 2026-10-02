@@ -32,8 +32,8 @@ const eventColumns: Row[] = [
   ["city", "text", "From the IP address"],
   ["continent", "text", "From the IP address"],
   ["timezone", "text", "From the IP address"],
-  ["latitude", "double precision", "City centre"],
-  ["longitude", "double precision", "City centre"],
+  ["latitude", "double precision", "Approximate, see accuracy_km"],
+  ["longitude", "double precision", "Approximate, see accuracy_km"],
   ["device", "text", "desktop, mobile, tablet, bot or unknown"],
   ["browser", "text", "From the user agent"],
   ["browser_version", "text", "From the user agent"],
@@ -54,6 +54,9 @@ const eventColumns: Row[] = [
   ["is_localhost", "boolean", "Sent from localhost"],
   ["is_preview", "boolean", "Sent from a preview deployment"],
   ["issue_id", "bigint", "For errors, the issue it was grouped into"],
+  ["region_id", "integer", "GeoNames id of the region, stable across renames"],
+  ["city_id", "integer", "GeoNames id of the city, stable across renames"],
+  ["accuracy_km", "integer", "Radius around the coordinates the visitor is likely within"],
 ];
 
 /**

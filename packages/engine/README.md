@@ -19,7 +19,7 @@ Each adapter has its own export path, so a host only bundles what it uses.
 | --- | --- |
 | `@remcostoeten/analytics-engine/adapters/memory` | Every port in memory, for tests |
 | `@remcostoeten/analytics-engine/adapters/system` | `systemClock`, `webCryptoHasher` and `jsonLogger` (one JSON line per entry) |
-| `@remcostoeten/analytics-engine/adapters/maxmind` | `maxmindGeo(city, asn)` over MMDB file contents |
+| `@remcostoeten/analytics-engine/adapters/maxmind` | `maxmindGeo(city, asn)` over MMDB file contents: location, GeoNames ids, accuracy radius, place names and the database's `builtAt` |
 | `@remcostoeten/analytics-engine/adapters/pglite` | `EventStore` and `RateLimiter` on PGlite |
 | `@remcostoeten/analytics-engine/adapters/postgres` | `EventStore` and `RateLimiter` on Neon over HTTP |
 
