@@ -47,7 +47,7 @@ Keep the client id and a new client secret.
 
 ## 5. The API on Vercel
 
-Project `v2.ingestion` (already created; connect it to the repository `remcostoeten/analytics` under Settings, Git), root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files. Environment variables for Production:
+Project `v2.ingestion` (already created; connect it to the repository `remcostoeten/analytics` under Settings, Git), root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files through a `builds` entry on `@vercel/backends`, so the Build and Development Settings in the dashboard do not apply to this project; the root directory and environment variables still do. Environment variables for Production:
 
 | Variable | Value |
 | --- | --- |
