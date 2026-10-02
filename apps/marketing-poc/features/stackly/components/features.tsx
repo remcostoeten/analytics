@@ -8,6 +8,8 @@ import {
   ToolbarFigure,
 } from "./feature-figures";
 import { Dim, Eyebrow, Heading } from "./primitives";
+import { Reveal } from "./reveal";
+import { Tilt } from "./tilt";
 
 function Figure({ figure }: { figure: Feature["figure"] }) {
   if (figure === "timeline") return <TimelineFigure />;
@@ -17,38 +19,47 @@ function Figure({ figure }: { figure: Feature["figure"] }) {
   return <StackFigure />;
 }
 
-function Card({ feature }: { feature: Feature }) {
+function Card({ feature, index }: { feature: Feature; index: number }) {
   const tall = feature.figure === "toolbar";
   return (
-    <li
-      className={`card lift reveal flex flex-col border border-line-strong bg-ink-deep ${tall ? "lg:col-start-2 lg:row-span-2 lg:row-start-1" : ""}`}
-    >
-      <div className={`figure-zoom relative overflow-hidden ${tall ? "flex-1" : "h-[270px]"}`}>
-        <Figure figure={feature.figure} />
-      </div>
-      <div className="px-5 pt-3 pb-6">
-        <p className="text-[13px] text-paper">{feature.name}</p>
-        <p className="mt-1.5 text-[11.5px] leading-[1.6] text-fog">{feature.note}</p>
-      </div>
+    <li className={tall ? "lg:col-start-2 lg:row-span-2 lg:row-start-1" : ""}>
+      <Reveal delay={index * 80} className="h-full">
+        <Tilt
+          className="card lift flex h-full flex-col border border-line-strong bg-ink-deep"
+          strength={3}
+        >
+          <div
+            className={`relative overflow-hidden ${tall ? "min-h-[560px] flex-1" : "h-[270px]"}`}
+          >
+            <Figure figure={feature.figure} />
+          </div>
+          <div className="px-5 pt-3 pb-6">
+            <p className="text-[13px] text-paper">{feature.name}</p>
+            <p className="mt-1.5 text-[11.5px] leading-[1.6] text-fog">{feature.note}</p>
+          </div>
+        </Tilt>
+      </Reveal>
     </li>
   );
 }
 
 export function Features() {
   return (
-    <section className="px-8 py-24">
+    <section id="build" className="px-8 py-24">
       <div className="mx-auto max-w-[1180px]">
-        <Eyebrow centered>Our features</Eyebrow>
-        <div className="mt-3">
-          <Heading centered size="md">
-            <Dim>Plan in minutes.</Dim> Adjust in seconds. <Dim>Ship</Dim>
-            <br />
-            with confidence <Dim>at any scale.</Dim>
-          </Heading>
-        </div>
+        <Reveal>
+          <Eyebrow centered>Our features</Eyebrow>
+          <div className="mt-3">
+            <Heading centered size="md">
+              <Dim>Plan in minutes.</Dim> Adjust in seconds. <Dim>Ship</Dim>
+              <br />
+              with confidence <Dim>at any scale.</Dim>
+            </Heading>
+          </div>
+        </Reveal>
         <ul className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2">
-          {features.map((feature) => (
-            <Card key={feature.name} feature={feature} />
+          {features.map((feature, index) => (
+            <Card key={feature.name} feature={feature} index={index} />
           ))}
         </ul>
       </div>

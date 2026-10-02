@@ -1,8 +1,8 @@
-import { awards } from "../content";
+import { ActivityTicker } from "./activity-ticker";
 import { HeroSurface } from "./hero-surface";
-import { Laurel } from "./laurel";
 import { Button } from "./primitives";
 import { TaskBoard } from "./task-board";
+import { Tilt } from "./tilt";
 
 const titleLines = [
   { text: "Turn Scattered Tasks", delay: "[--delay:0ms]" },
@@ -13,7 +13,7 @@ const titleLines = [
 export function Hero() {
   return (
     <HeroSurface>
-      <div className="relative grid gap-12 px-8 pt-28 pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
+      <div className="relative grid gap-12 px-8 pt-24 pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
         <div className="flex flex-col pl-6">
           <h1 className="hero-title font-display text-[56px] leading-[0.98] tracking-[-0.01em] text-white md:text-[64px] lg:text-[72px]">
             {titleLines.map((line) => (
@@ -31,15 +31,17 @@ export function Hero() {
             <Button tone="metal">Start for free</Button>
             <Button tone="dark">Watch demo</Button>
           </div>
-          <div className="rise mt-auto flex flex-wrap gap-6 pt-28 [--delay:800ms]">
-            {awards.map((award) => (
-              <Laurel key={award.title} {...award} />
-            ))}
+          <div className="rise mt-auto pt-28 [--delay:800ms]">
+            <ActivityTicker />
           </div>
         </div>
-        <div className="slide-in h-[640px] lg:-mr-8 lg:-mb-10 lg:translate-x-6">
+        <Tilt
+          className="slide-in relative h-[640px] lg:-mr-8 lg:-mb-10 lg:translate-x-6"
+          strength={4}
+          glare={false}
+        >
           <TaskBoard />
-        </div>
+        </Tilt>
       </div>
     </HeroSurface>
   );

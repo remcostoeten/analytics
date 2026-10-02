@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Magnetic } from "./magnetic";
+
 type EyebrowProps = {
   children: ReactNode;
   centered?: boolean;
@@ -27,17 +29,17 @@ type ButtonProps = {
 };
 
 export function Button({ children, tone = "dark", arrow = false, small = false }: ButtonProps) {
-  const base = `arrow-nudge eyebrow inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${small ? "h-8 px-3.5" : "h-10 px-7"}`;
+  const base = `arrow-nudge eyebrow inline-flex items-center justify-center gap-2 whitespace-nowrap ${small ? "h-8 px-3.5" : "h-10 px-7"}`;
   const tones = {
-    metal: "metal text-ink hover:brightness-105",
+    metal: "metal text-ink",
     dark: "border border-line-strong bg-ink-raised text-mist hover:border-fog hover:text-paper",
     ghost: "border border-line bg-transparent text-mist hover:border-fog hover:text-paper",
   };
   return (
-    <button type="button" className={`${base} ${tones[tone]}`}>
+    <Magnetic className={`${base} ${tones[tone]}`}>
       <span>{children}</span>
       {arrow ? <span aria-hidden>›</span> : null}
-    </button>
+    </Magnetic>
   );
 }
 
@@ -76,9 +78,9 @@ export function Window({ children, title }: WindowProps) {
     <div className="overflow-hidden rounded-sm border border-line-strong bg-ink-raised shadow-[0_30px_80px_rgb(0_0_0/0.6)]">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-line px-4 py-3">
         <span className="flex gap-1.5">
-          <i className="size-1.5 rounded-full bg-line-strong" />
-          <i className="size-1.5 rounded-full bg-line-strong" />
-          <i className="size-1.5 rounded-full bg-line-strong" />
+          <i className="size-1.5 rounded-full bg-line-strong transition-colors hover:bg-[#ff5f57]" />
+          <i className="size-1.5 rounded-full bg-line-strong transition-colors hover:bg-[#febc2e]" />
+          <i className="size-1.5 rounded-full bg-line-strong transition-colors hover:bg-[#28c840]" />
         </span>
         <span className="eyebrow text-fog">{title}</span>
         <span className="justify-self-end font-display text-lg text-ember">V</span>
@@ -106,29 +108,11 @@ export function Mark({ size = 16 }: { size?: number }) {
 
 export function Logo() {
   return (
-    <span className="flex items-center gap-2 text-paper">
-      <Mark />
+    <span className="group flex items-center gap-2 text-paper">
+      <span className="transition-transform duration-500 group-hover:rotate-180">
+        <Mark />
+      </span>
       <span className="font-display text-xl">Stackly</span>
     </span>
-  );
-}
-
-type CalloutProps = {
-  label: string;
-  children: string;
-  className?: string;
-};
-
-export function Callout({ label, children, className = "" }: CalloutProps) {
-  return (
-    <div className={className}>
-      <p className="flex items-center gap-2 text-[11px] font-medium tracking-[0.08em] text-ember uppercase">
-        <span className="text-[8px]" aria-hidden>
-          ▶
-        </span>
-        {label}
-      </p>
-      <p className="mono mt-4 max-w-[260px] text-[12px] leading-[1.75] text-mist">{children}</p>
-    </div>
   );
 }

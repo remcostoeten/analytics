@@ -15,6 +15,12 @@
         "scripts/*.ts"
       ]
     },
+    "apps/marketing-poc": {
+      "entry": [
+        "scripts/*.ts",
+        "scripts/*.tsx"
+      ]
+    },
     "e2e": {
       "entry": [
         "tests/*.spec.ts",

@@ -9,6 +9,7 @@ import {
   HowItWorks,
   Nav,
   Platform,
+  ScrollProgress,
 } from "@/features/stackly/components";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="px-0 py-0 xl:px-16 xl:py-16">
+      <ScrollProgress />
       <div className="frame mx-auto max-w-[1440px]">
         <Nav />
         <main>

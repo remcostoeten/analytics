@@ -9,3 +9,5 @@ bun run --cwd apps/marketing-poc dev
 ```
 
 Runs on port 3300.
+
+`bun run build` writes the static export to `out/`. `bun run bundle` then renders `/stackly` with react-dom and bundles its client code with Bun into `out/standalone/`, a single `index.html` plus `app.js` that hydrates anywhere, including the claude.ai artifact used for review.

@@ -24,9 +24,9 @@ export type Customer = {
 };
 
 export const navSteps = [
-  { label: "Build", index: "01" },
-  { label: "Ship", index: "02" },
-  { label: "Track", index: "03" },
+  { label: "Build", index: "01", target: "build" },
+  { label: "Ship", index: "02", target: "ship" },
+  { label: "Track", index: "03", target: "track" },
 ] as const;
 
 export const navLinks = [
@@ -86,17 +86,21 @@ export const tickets: Ticket[] = [
 
 export const taskCount = 15;
 
+export const incomingTickets: Ticket[] = [
+  {
+    id: "TICKET-1101",
+    title: "Rate limiter returns 500 instead of 429 under load",
+    status: "backlog",
+  },
+  { id: "TICKET-1102", title: "Invoice PDF renders blank logo on Safari", status: "backlog" },
+  { id: "TICKET-1103", title: "Onboarding email sent twice for SSO signups", status: "backlog" },
+];
+
 export const ticketGroups: { status: TicketStatus; label: string }[] = [
   { status: "backlog", label: "Backlog" },
   { status: "todo", label: "Todo" },
   { status: "in-progress", label: "In Progress" },
 ];
-
-export const awards = [
-  { title: "Winner", note: "Best project management platform", year: "2026" },
-  { title: "Best AI", note: "Workflow automation for teams", year: "2026" },
-  { title: "Top rated", note: "Enterprise task management software", year: "2026" },
-] as const;
 
 export const customers: Customer[] = [
   { name: "ramp", weight: "bold" },
@@ -166,4 +170,12 @@ export const footerColumns = [
   { title: "Product", links: ["Build", "Ship", "Track", "Pricing", "Changelog"] },
   { title: "Company", links: ["About", "Careers", "Blog", "Press"] },
   { title: "Resources", links: ["Docs", "API", "Status", "Security"] },
+] as const;
+
+export const activityFeed = [
+  { id: "TICKET-1036", event: "moved to In Progress by merge of feat/messaging", when: "just now" },
+  { id: "TICKET-1029", event: "checks passed on PR #418", when: "14s ago" },
+  { id: "TICKET-1101", event: "created from Sentry alert", when: "40s ago" },
+  { id: "TICKET-1038", event: "assigned to Ben Barlow", when: "1m ago" },
+  { id: "TICKET-1100", event: "estimate changed to 3 points", when: "2m ago" },
 ] as const;

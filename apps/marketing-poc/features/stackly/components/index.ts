@@ -6,3 +6,4 @@ export { Hero } from "./hero";
 export { HowItWorks } from "./how-it-works";
 export { Nav } from "./nav";
 export { Platform } from "./platform";
+export { ScrollProgress } from "./scroll-progress";

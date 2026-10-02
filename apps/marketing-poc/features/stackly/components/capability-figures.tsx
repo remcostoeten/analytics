@@ -46,14 +46,16 @@ function NodeBox({
   y,
   label,
   hot = false,
+  delay = 0,
 }: {
   x: number;
   y: number;
   label: string;
   hot?: boolean;
+  delay?: number;
 }) {
   return (
-    <g>
+    <g className="node" style={{ animationDelay: `${delay}ms` }}>
       <rect
         x={x}
         y={y}
@@ -77,6 +79,65 @@ function NodeBox({
   );
 }
 
+function Flow({
+  d,
+  duration = "2.4s",
+  begin = "0s",
+}: {
+  d: string;
+  duration?: string;
+  begin?: string;
+}) {
+  return (
+    <>
+      <path d={d} stroke="#3a3a3f" strokeWidth="0.6" fill="none" />
+      <path
+        d={d}
+        stroke="#e8742b"
+        strokeWidth="0.8"
+        fill="none"
+        strokeDasharray="6 60"
+        strokeLinecap="round"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          from="66"
+          to="0"
+          dur={duration}
+          begin={begin}
+          repeatCount="indefinite"
+        />
+      </path>
+    </>
+  );
+}
+
+function Ping({ cx, cy, begin = "0s" }: { cx: number; cy: number; begin?: string }) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r="1.6" fill="#e8742b" />
+      <circle cx={cx} cy={cy} r="1.6" fill="none" stroke="#e8742b" strokeWidth="0.6">
+        <animate
+          attributeName="r"
+          from="1.6"
+          to="12"
+          dur="2.2s"
+          begin={begin}
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          from="0.9"
+          to="0"
+          dur="2.2s"
+          begin={begin}
+          repeatCount="indefinite"
+        />
+      </circle>
+    </g>
+  );
+}
+
 export function DependencyFigure() {
   return (
     <svg viewBox="0 0 220 120" className="h-full w-full" aria-hidden>
@@ -89,14 +150,23 @@ export function DependencyFigure() {
           <circle cx="1" cy="1" r="0.6" fill="#e8742b" />
         </pattern>
       </defs>
-      <circle cx="30" cy="80" r="40" fill="url(#dep-cloud)" />
-      <circle cx="30" cy="80" r="36" fill="url(#dep-dots)" opacity="0.45" />
-      <g stroke="#d9d9de" strokeWidth="0.6" fill="none">
-        <path d="M60 60 H88 V24 H132" />
-        <path d="M88 60 H132" />
-        <path d="M88 60 V96 H112" />
-        <path d="M176 24 V60 H180" />
-      </g>
+      <circle cx="30" cy="80" r="40" fill="url(#dep-cloud)">
+        <animate attributeName="r" values="36;44;36" dur="5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="30" cy="80" r="36" fill="url(#dep-dots)" opacity="0.45">
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="0 30 80"
+          to="360 30 80"
+          dur="40s"
+          repeatCount="indefinite"
+        />
+      </circle>
+      <Flow d="M60 60 H88 V24 H132" begin="0s" />
+      <Flow d="M88 60 H132" begin="0.6s" />
+      <Flow d="M88 60 V96 H112" begin="1.2s" />
+      <Flow d="M176 24 V60 H180" begin="1.8s" />
       <g fill="#e8742b">
         <circle cx="60" cy="60" r="1.4" />
         <circle cx="132" cy="24" r="1.4" />
@@ -104,11 +174,11 @@ export function DependencyFigure() {
         <circle cx="112" cy="96" r="1.4" />
         <circle cx="176" cy="24" r="1.4" />
       </g>
-      <NodeBox x={132} y={18.5} label="SPRINT-23" />
-      <NodeBox x={88} y={54.5} label="SPRINT-24" />
-      <NodeBox x={112} y={90.5} label="SPRINT-25" />
+      <NodeBox x={132} y={18.5} label="SPRINT-23" delay={0} />
+      <NodeBox x={88} y={54.5} label="SPRINT-24" delay={600} />
+      <NodeBox x={112} y={90.5} label="SPRINT-25" delay={1200} />
       <NodeBox x={16} y={54.5} label="ISSUE-48" hot />
-      <NodeBox x={176} y={54.5} label="TASK-2041" hot />
+      <NodeBox x={176} y={54.5} label="TASK-2041" hot delay={1800} />
     </svg>
   );
 }
@@ -119,13 +189,32 @@ export function TeamMapFigure() {
       {mapPoints.map(([x, y]) => (
         <circle key={`${x}-${y}`} cx={x * 2.1} cy={y * 1.4} r="0.9" fill="#3a3a3f" />
       ))}
+      <Ping cx={60} cy={62} begin="0s" />
+      <Ping cx={128} cy={46} begin="0.7s" />
+      <Ping cx={178} cy={70} begin="1.4s" />
       <g transform="translate(118 68)" fill="none" stroke="#e8742b" strokeWidth="0.7">
-        <path d="M0 0 L2 10 L5 7 L8 12 L10 11 L7 6 L11 5 Z" />
+        <path d="M0 0 L2 10 L5 7 L8 12 L10 11 L7 6 L11 5 Z">
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 0;6 -4;0 0"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        </path>
       </g>
       <g transform="translate(166 60)" fill="none" stroke="#e8742b" strokeWidth="0.7">
-        <path d="M0 0 L2 10 L5 7 L8 12 L10 11 L7 6 L11 5 Z" />
+        <path d="M0 0 L2 10 L5 7 L8 12 L10 11 L7 6 L11 5 Z">
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 0;-5 5;0 0"
+            dur="5s"
+            repeatCount="indefinite"
+          />
+        </path>
       </g>
-      <g>
+      <g className="float-svg">
         <rect
           x="48"
           y="28"
@@ -135,7 +224,16 @@ export function TeamMapFigure() {
           stroke="#3a3a3f"
           strokeWidth="0.6"
         />
-        <circle cx="58" cy="39" r="4" fill="none" stroke="#e8742b" strokeWidth="0.8" />
+        <circle cx="58" cy="39" r="4" fill="none" stroke="#e8742b" strokeWidth="0.8">
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 58 39"
+            to="360 58 39"
+            dur="6s"
+            repeatCount="indefinite"
+          />
+        </circle>
         <path d="M58 33v2m0 8v2m-6-6h2m8 0h2" stroke="#e8742b" strokeWidth="0.8" />
         <text
           x="66"
@@ -147,7 +245,9 @@ export function TeamMapFigure() {
         >
           REPLAY VERIFICATION
         </text>
-        <rect x="66" y="40" width="18" height="4" fill="#3a3a3f" />
+        <rect x="66" y="40" width="18" height="4" fill="#3a3a3f">
+          <animate attributeName="width" values="4;44;4" dur="3s" repeatCount="indefinite" />
+        </rect>
       </g>
       <g>
         <rect
@@ -195,23 +295,43 @@ export function RelationshipFigure() {
         </mask>
       </defs>
       <rect width="220" height="120" fill="url(#rel-dots)" mask="url(#rel-mask)" opacity="0.6" />
-      <g stroke="#e8742b" strokeWidth="0.5" fill="none" opacity="0.8">
-        {leaves.map(([x, y]) => (
-          <path key={`${x}-${y}`} d={`M110 18 L${x + 22} ${y}`} />
-        ))}
+      {leaves.map(([x, y], index) => (
+        <Flow
+          key={`${x}-${y}`}
+          d={`M110 18 L${x + 22} ${y}`}
+          duration="1.8s"
+          begin={`${index * 0.45}s`}
+        />
+      ))}
+      <g>
+        <rect x="88" y="12.5" width="44" height="11" fill="#e8742b">
+          <animate attributeName="opacity" values="1;0.6;1" dur="1.2s" repeatCount="indefinite" />
+        </rect>
+        <text
+          x="110"
+          y="20"
+          textAnchor="middle"
+          fontFamily="monospace"
+          fontSize="4.6"
+          fill="#0a0a0b"
+        >
+          BLOCKED
+        </text>
       </g>
-      <NodeBox x={88} y={12.5} label="BLOCKED" hot />
-      {leaves.map(([x, y, label]) => (
-        <NodeBox key={label} x={x} y={y - 5.5} label={label} hot />
+      {leaves.map(([x, y, label], index) => (
+        <NodeBox key={label} x={x} y={y - 5.5} label={label} hot delay={index * 450} />
       ))}
     </svg>
   );
 }
 
 const capacity = [34, 46, 72, 40, 52, 44, 36, 30] as const;
+const capacityAlt = [40, 38, 66, 52, 44, 58, 30, 42] as const;
 
 export function WorkloadFigure() {
-  const points = capacity.map((value, index) => [30 + index * 22, 100 - value - 10] as const);
+  function points(values: readonly number[]) {
+    return values.map((value, index) => `${30 + index * 22},${90 - value}`).join(" ");
+  }
   return (
     <svg viewBox="0 0 220 120" className="h-full w-full" aria-hidden>
       <defs>
@@ -250,7 +370,22 @@ export function WorkloadFigure() {
             width="12"
             height={value}
             fill={index === 2 ? "url(#hot-bar)" : "#2a2a2e"}
-          />
+          >
+            <animate
+              attributeName="y"
+              values={`${100 - value};${100 - (capacityAlt[index] ?? value)};${100 - value}`}
+              dur="6s"
+              begin={`${index * 0.2}s`}
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="height"
+              values={`${value};${capacityAlt[index] ?? value};${value}`}
+              dur="6s"
+              begin={`${index * 0.2}s`}
+              repeatCount="indefinite"
+            />
+          </rect>
           {Array.from({ length: 6 }, (_, line) => (
             <line
               key={line}
@@ -274,14 +409,32 @@ export function WorkloadFigure() {
           </text>
         </g>
       ))}
-      <polyline
-        points={points.map(([x, y]) => `${x},${y}`).join(" ")}
-        fill="none"
-        stroke="#e8742b"
-        strokeWidth="0.8"
-      />
-      {points.map(([x, y]) => (
-        <circle key={x} cx={x} cy={y} r="1.6" fill="#0a0a0b" stroke="#e8742b" strokeWidth="0.8" />
+      <polyline points={points(capacity)} fill="none" stroke="#e8742b" strokeWidth="0.8">
+        <animate
+          attributeName="points"
+          values={`${points(capacity)};${points(capacityAlt)};${points(capacity)}`}
+          dur="6s"
+          repeatCount="indefinite"
+        />
+      </polyline>
+      {capacity.map((value, index) => (
+        <circle
+          key={index}
+          cx={30 + index * 22}
+          cy={90 - value}
+          r="1.6"
+          fill="#0a0a0b"
+          stroke="#e8742b"
+          strokeWidth="0.8"
+        >
+          <animate
+            attributeName="cy"
+            values={`${90 - value};${90 - (capacityAlt[index] ?? value)};${90 - value}`}
+            dur="6s"
+            begin={`${index * 0.2}s`}
+            repeatCount="indefinite"
+          />
+        </circle>
       ))}
     </svg>
   );
