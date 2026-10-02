@@ -3,9 +3,11 @@ import { noop } from "@remcostoeten/analytics-shared/noop";
 import { definePlugin } from "../core/plugin-host";
 
 const maxCrumbs = 20;
-// Query strings, then emails, then tokens of 20 or more word characters, then runs of 6 or more digits.
+const maxTrail = 2048;
+// Query strings up to the ":" of a line number, then emails, then tokens of 20 or more word
+// characters, then runs of 6 or more digits.
 const sensitive =
-  /\?[^\s#]*|(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.]+|(?<![\w-])[\w-]{20,}(?![\w-])|\d{6,}/g;
+  /\?[^\s#:)]*|(?<![\w.+-])[\w.+-]+@[\w-]+\.[\w.]+|(?<![\w-])[\w-]{20,}(?![\w-])|\d{6,}/g;
 
 /**
  * @name scrub
@@ -23,8 +25,10 @@ export function scrub(text: string): string {
  * @name errors
  * @description Captures uncaught errors and unhandled promise rejections with the last 20
  * breadcrumbs, one line each (Unix milliseconds, kind, message): navigations, clicks, failed
- * fetches and sent events. Messages, stacks and breadcrumbs are scrubbed of query strings,
- * emails, tokens and long numbers first.
+ * fetches and sent events, keeping the newest when they pass 2048 characters. Messages, stacks and
+ * breadcrumbs are scrubbed of query strings, emails, tokens and long numbers first. A thrown value
+ * that is not an `Error` is sent without a stack. An error event with neither an error nor a line
+ * number, the cross-origin "Script error.", is dropped, as it carries nothing to fix.
  *
  * @example
  * createAnalytics({ ...config, plugins: [errors()] });
@@ -40,15 +44,22 @@ export function errors() {
         if (trail.length > maxCrumbs) trail.shift();
       }
       function report(error: unknown) {
-        const source = error instanceof Error ? error : new Error(String(error));
-        const copy = new Error(scrub(source.message));
-        copy.name = source.name;
-        copy.stack = scrub(source.stack ?? "");
-        client.captureError(copy, { tags: { breadcrumbs: trail.join("\n") } });
+        const copy =
+          error instanceof Error
+            ? Object.assign(new Error(scrub(error.message)), {
+                name: error.name,
+                stack: scrub(error.stack ?? ""),
+              })
+            : scrub(String(error));
+        client.captureError(copy, { tags: { breadcrumbs: trail.join("\n").slice(-maxTrail) } });
       }
       const controller = new AbortController();
       const { signal } = controller;
-      window.addEventListener("error", (event) => report(event.error ?? event.message), { signal });
+      window.addEventListener(
+        "error",
+        (event) => (event.error || event.lineno) && report(event.error ?? event.message),
+        { signal },
+      );
       window.addEventListener("unhandledrejection", (event) => report(event.reason), { signal });
       window.addEventListener(
         "click",

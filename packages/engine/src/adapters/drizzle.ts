@@ -40,6 +40,10 @@ function isBot(draft: EventDraft) {
   return draft.bot.score >= botThreshold;
 }
 
+function countsAsIssue(draft: EventDraft) {
+  return !isBot(draft) && !draft.flags.localhost;
+}
+
 function legacyDevice(draft: EventDraft) {
   if (!draft.enrichment.client.userAgent) return "unknown";
   if (isBot(draft)) return "bot";
@@ -431,7 +435,8 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
  * `type`, `meta` and `device_type` values the v1 dashboard reads. Sessions and visitors are
  * upserted once per session; a visitor marked internal makes that session's new events internal.
  * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
- * Newly stored `error` events are grouped into `issues` by fingerprint: counts, visitors, releases
+ * Newly stored `error` events are grouped into `issues` by fingerprint, except those from bots and
+ * localhost, which are stored without an issue: counts, visitors, releases
  * and a resolved issue reopening as a regression; a muted issue reopens once its date passes or
  * its count runs out; events matching a project's ignore rule are dropped uncounted; past 100 of
  * one issue in a minute, only the count is kept and the events are dropped.
@@ -451,7 +456,9 @@ export function drizzleStore(db: Database): EventStore {
         const inserted = new Set(rows.map((row) => row.id));
         await groupIssues(
           db,
-          drafts.filter((draft) => draft.issue && inserted.has(draft.event.id)),
+          drafts.filter(
+            (draft) => draft.issue && inserted.has(draft.event.id) && countsAsIssue(draft),
+          ),
         );
         await upsertVitals(
           db,

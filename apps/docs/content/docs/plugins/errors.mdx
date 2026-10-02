@@ -34,9 +34,11 @@ One `error` event per uncaught error or unhandled promise rejection, through `ca
 | `type` | `string` | The error's `name`, such as `TypeError` |
 | `stack` | `string` | The scrubbed stack, cut at 2048 characters; left out when the error has none |
 | `level` | `string` | `error` |
-| `breadcrumbs` | `string` | Up to 20 lines, oldest first, cut at 2048 characters in total |
+| `breadcrumbs` | `string` | Up to 20 lines, oldest first; past 2048 characters in total the oldest are cut |
 
-A rejection with a value that is not an `Error` is recorded as an `Error` whose message is that value as a string.
+A rejection with a value that is not an `Error` is recorded as an `Error` whose message is that value as a string, with no stack.
+
+An error event with neither an error object nor a line number is not sent. That is the `Script error.` browsers report for a script from another origin without CORS headers, which hides the message and the stack, so it would only group every such error into one issue nobody can fix. Serve those scripts with `crossorigin="anonymous"` and an `Access-Control-Allow-Origin` header to see their errors.
 
 ## Breadcrumbs
 
@@ -53,7 +55,7 @@ A `fetch` that rejects, such as a network error, adds no breadcrumb. The plugin 
 
 ## scrub
 
-`scrub(text)` is the function the plugin runs over every message, stack and breadcrumb. It drops query strings and replaces emails, tokens of 20 or more letters, digits, underscores or dashes, and runs of 6 or more digits with `[x]`:
+`scrub(text)` is the function the plugin runs over every message, stack and breadcrumb. It drops query strings, up to the `:` before a stack frame's line number, and replaces emails, tokens of 20 or more letters, digits, underscores or dashes, and runs of 6 or more digits with `[x]`:
 
 ```ts
 import { scrub } from "@remcostoeten/analytics/plugins";
@@ -66,4 +68,4 @@ Use it on your own text before passing it to `captureError` or `captureMessage`,
 
 ## In reports
 
-The API scrubs messages, stacks and breadcrumbs again before storing them, then groups errors into issues by type, normalised message and top in-app stack frame. Issues are read with `GET /v2/projects/:project/issues`, or through the [admin client](/docs/sdk/admin), and the `issues` [SQL view](/docs/api/sql) lists them. Set `release` in the client options so issues record the release they first and last appeared in.
+The API scrubs messages, stacks and breadcrumbs again before storing them, then groups errors into issues by type, normalised message and top in-app stack frame. The frame's file is compared without its content hash, so a new deploy keeps the same issue, and a function name of 3 characters or fewer counts as minified and is left out. Errors from bots (a bot score of 50 or more) and from localhost are stored but not grouped into issues, so they open no issue and send no alert. Issues are read with `GET /v2/projects/:project/issues`, or through the [admin client](/docs/sdk/admin), and the `issues` [SQL view](/docs/api/sql) lists them. Set `release` in the client options so issues record the release they first and last appeared in.
