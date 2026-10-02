@@ -3,7 +3,7 @@ title: Overview
 description: Base URL, conventions, shared parameters and errors.
 ---
 
-Every route lives under `/v2`, for example `https://api.remcostoeten.nl/v2/health`. The live OpenAPI document is served at `/v2/openapi/json`, with interactive docs at `/v2/openapi`; the [API reference](/docs/reference) on this site is generated from the same document.
+Every route lives under `/v2`, for example `https://api.analytics.remcostoeten.nl/v2/health`. The live OpenAPI document is served at `/v2/openapi/json`, with interactive docs at `/v2/openapi`; the [API reference](/docs/reference) on this site is generated from the same document.
 
 ## Conventions
 
@@ -39,7 +39,7 @@ Every error uses one envelope:
     "message": "The request does not match the schema",
     "details": { "fields": [{ "path": "/period", "message": "Expected union value" }] },
     "requestId": "req_01J8Z3",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/VALIDATION_FAILED"
+    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/VALIDATION_FAILED"
   }
 }
 ```

@@ -83,7 +83,7 @@ export function siteOrigin(headers: Headers, url?: string): string | null {
  * `/v2/events`.
  *
  * @example
- * eventsUrl("https://api.remcostoeten.nl/"); // "https://api.remcostoeten.nl/v2/events"
+ * eventsUrl("https://api.analytics.remcostoeten.nl/"); // "https://api.analytics.remcostoeten.nl/v2/events"
  */
 export function eventsUrl(endpoint: string): string {
   let base = endpoint;

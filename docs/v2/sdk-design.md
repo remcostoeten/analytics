@@ -154,7 +154,7 @@ import type { Events } from "./events";
 export const serverAnalytics = createServerAnalytics<Events>({
   project: "remcostoeten.nl",
   secret: env.RA_SECRET,
-  endpoint: "https://api.remcostoeten.nl",
+  endpoint: "https://api.analytics.remcostoeten.nl",
 });
 
 export const POST = serverAnalytics.withErrors(async (request) => {
@@ -171,7 +171,7 @@ Passing `request` (or `headers`) forwards the visitor's user agent and IP, the s
 ```ts
 import { createProxy } from "@remcostoeten/analytics/proxy";
 
-export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
 
 The proxy refuses bodies over 60 KB, adds the secret and the visitor's IP and user agent, and forwards the page's `Origin` (or the site's own origin) and the admin session cookie and no other cookie.

@@ -130,7 +130,7 @@ import { createServerAnalytics } from "@remcostoeten/analytics/server";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   secret: process.env.RA_SECRET,
-  endpoint: "https://api.remcostoeten.nl",
+  endpoint: "https://api.analytics.remcostoeten.nl",
 });
 
 export const POST = serverAnalytics.withErrors(async (request) => {
@@ -149,7 +149,7 @@ A same-origin path gets events past ad blockers. In the Next App Router, `app/%5
 ```ts
 import { createProxy } from "@remcostoeten/analytics/proxy";
 
-export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
 
 The proxy refuses other methods, cross-site requests and bodies over 60 KB, the API's own limit. It forwards the body with the secret, the visitor's IP and user agent, the page's `Origin` (or the site's own origin when the browser sent none) and the admin session cookie `ra.session_token` and no other cookie, so proxied events get their host, localhost and preview flags, and a signed-in admin's events are internal. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.

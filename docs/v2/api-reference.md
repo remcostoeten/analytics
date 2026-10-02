@@ -548,7 +548,7 @@ One request and its complete response for every route. Field names are camelCase
 
 ```http
 POST /v2/events HTTP/1.1
-Host: api.remcostoeten.nl
+Host: api.analytics.remcostoeten.nl
 Origin: https://remcostoeten.nl
 Content-Type: text/plain;charset=UTF-8
 X-Project-Key: pk_live_3f9c2a7d

@@ -23,7 +23,7 @@ function issueEvent(name: "issue.new" | "issue.regression", id: string): AlertEv
       firstSeen: "2026-09-28T10:00:00.000Z",
       lastSeen: "2026-09-29T10:00:00.000Z",
       lastRelease: "1.4.2",
-      url: `https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/${id}`,
+      url: `https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/${id}`,
     },
   };
 }
@@ -39,7 +39,7 @@ const speedDrop: AlertEvent = {
     samples: 40,
     from: "2026-09-28T00:00:00.000Z",
     to: "2026-09-29T00:00:00.000Z",
-    url: "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+    url: "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
   },
 };
 

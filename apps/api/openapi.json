@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://api.remcostoeten.nl",
+      "url": "https://api.analytics.remcostoeten.nl",
       "description": "Production"
     }
   ],

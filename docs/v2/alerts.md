@@ -101,7 +101,7 @@ import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/adm
 type Projects = "remcostoeten.nl" | "skriuw";
 
 const admin = createAdmin<Projects>({
-  endpoint: "https://api.remcostoeten.nl",
+  endpoint: "https://api.analytics.remcostoeten.nl",
   token: process.env.RA_ADMIN_TOKEN,
 });
 
@@ -132,7 +132,7 @@ if (!synced.ok) console.error(synced.error.code, synced.error.message);
 Every admin method is one route, so `curl`, a dashboard and other languages behave the same:
 
 ```bash
-curl -X PUT https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
+curl -X PUT https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
   -H "authorization: Bearer $RA_ADMIN_TOKEN" \
   -H "content-type: application/json" \
   -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
@@ -255,7 +255,7 @@ Both steps run in `POST /v2/admin/jobs/alerts`, which `jobs.yml` already calls e
     "samples": 1240,
     "from": "2026-09-28T00:00:00.000Z",
     "to": "2026-09-29T00:00:00.000Z",
-    "url": "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed"
+    "url": "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/speed"
   }
 }
 ```
@@ -368,11 +368,11 @@ Subject: [remcostoeten.nl] 2 new issues, 1 regression
 
 NEW         TypeError: Cannot read properties of undefined (reading 'map')
             app/blog/[slug]/page.tsx · 14 times · release 1.4.2
-            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42
+            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42
 
 REGRESSION  Failed to fetch
             app/api/views/route.ts · 7 times · resolved, seen again in 1.4.2
-            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17
+            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17
 ```
 
 ### Storage

@@ -42,7 +42,7 @@ import type {
 const project = "remcostoeten.nl";
 const created = new Date("2026-09-29T12:00:00.000Z");
 const minute = 60_000;
-const links = apiLinks("https://api.remcostoeten.nl/");
+const links = apiLinks("https://api.analytics.remcostoeten.nl/");
 
 function at(minutes: number) {
   return new Date(created.getTime() + minutes * minute);
@@ -268,15 +268,15 @@ describe("renderers and signing", () => {
       [
         "NEW         TypeError: Cannot read properties of undefined (reading 'map') 43",
         "            app/blog/[slug]/page.tsx · 14 times · release 1.4.2",
-        "            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_43",
+        "            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_43",
         "",
         "NEW         TypeError: Cannot read properties of undefined (reading 'map') 42",
         "            app/blog/[slug]/page.tsx · 14 times · release 1.4.2",
-        "            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42",
+        "            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42",
         "",
         "REGRESSION  TypeError: Cannot read properties of undefined (reading 'map') 17",
         "            app/blog/[slug]/page.tsx · 14 times · resolved, seen again in 1.4.2",
-        "            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17",
+        "            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17",
         "",
       ].join("\n"),
     );
@@ -290,9 +290,9 @@ describe("renderers and signing", () => {
     expect(message.content).toBe(alertSubject(await batch()));
     expect(message.allowed_mentions).toEqual({ parse: [] });
     expect(message.embeds.map((embed) => embed.url)).toEqual([
-      "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_43",
-      "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42",
-      "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17",
+      "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_43",
+      "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_42",
+      "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/iss_17",
     ]);
     expect(message.embeds[0]).toMatchObject({
       title: "NEW  TypeError: Cannot read properties of undefined (reading 'map') 43",
@@ -528,7 +528,7 @@ describe("speed drops", () => {
             samples: 40,
             from: "2026-09-28T00:00:00.000Z",
             to: "2026-09-29T00:00:00.000Z",
-            url: "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+            url: "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
           },
         },
       ],
@@ -576,7 +576,7 @@ describe("speed drops", () => {
       [
         "SLOWER      Real Experience Score 90 to 78",
         "            needs improvement · LCP fell most · 40 samples",
-        "            https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
+        "            https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/speed",
       ].join("\n"),
     );
     const embeds = renderDiscord(due.value[0]).embeds;

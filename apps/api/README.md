@@ -43,13 +43,13 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `IP_HASH_SECRET` | Yes in production | At least 32 characters; production refuses to start without it (`openssl rand -hex 32`) |
 | `DASHBOARD_ORIGIN` | No | The one origin that gets CORS with credentials, and Better Auth's trusted origin |
 | `BETTER_AUTH_SECRET` | Yes in production | At least 32 characters; signs session cookies; production refuses to start without it |
-| `API_URL` | Yes in production | The API's public URL, such as `https://api.remcostoeten.nl`, for the GitHub callback |
+| `API_URL` | Yes in production | The API's public URL, such as `https://api.analytics.remcostoeten.nl`, for the GitHub callback |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | For sign-in | The GitHub OAuth app, with callback `${API_URL}/v2/auth/callback/github` |
 | `AUTH_COOKIE_DOMAIN` | In production | `.remcostoeten.nl`, so the dashboard and every tracked subdomain receive the session cookie |
 | `CRON_SECRET` | For jobs | `Authorization: Bearer` value for `cron` routes |
 | `PUBLIC_READ_LIMIT` | No | Anonymous reads per minute per daily IP hash; defaults to 120 |
 | `QUERY_LIMIT` | No | SQL console queries per minute per user or token; defaults to 30 |
-| `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.remcostoeten.nl/v2/openapi` |
+| `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.analytics.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |
 | `MAIL_URL` | For mail alerts | The SMTP server, `smtps://user:password@host:465` or `smtp://...:587` (`STARTTLS`); read by `analytics.config.ts` |

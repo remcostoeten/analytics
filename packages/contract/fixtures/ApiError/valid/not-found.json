@@ -3,6 +3,6 @@
     "code": "NOT_FOUND",
     "message": "Project not found",
     "requestId": "req_01J8ZB4K2P",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/NOT_FOUND"
+    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/NOT_FOUND"
   }
 }

@@ -7,6 +7,6 @@
       "project": "remcostoeten.nl"
     },
     "requestId": "req_01J8ZB4K2M",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/FORBIDDEN_ORIGIN"
+    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/FORBIDDEN_ORIGIN"
   }
 }

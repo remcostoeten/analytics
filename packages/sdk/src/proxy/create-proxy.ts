@@ -40,7 +40,7 @@ function crossSite(request: Request) {
  * API's answer. Options missing here are read from the JSON in `RA_CONFIG`.
  *
  * @example
- * export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+ * export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
  */
 export function createProxy(options: ProxyConfig = {}): (request: Request) => Promise<Response> {
   const config = mergeConfig(parseConfig(readEnv(() => process.env.RA_CONFIG)), options);

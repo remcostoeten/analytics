@@ -25,7 +25,7 @@ export function isPageRequest(request: Request): boolean {
  * visitors whose pageviews were blocked. Returns null for requests that are not page loads.
  *
  * @example
- * const countPage = createPageCounter({ secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+ * const countPage = createPageCounter({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
  * countPage(request, event.waitUntil);
  */
 export function createPageCounter(

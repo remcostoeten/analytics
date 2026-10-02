@@ -100,7 +100,7 @@ function trusted<Body>(body: Json): Result<Body, string> {
  * never throws. `Projects` limits the project ids the methods accept.
  *
  * @example
- * const admin = createAdmin<"remcostoeten.nl" | "skriuw">({ endpoint: "https://api.remcostoeten.nl", token: process.env.RA_ADMIN_TOKEN });
+ * const admin = createAdmin<"remcostoeten.nl" | "skriuw">({ endpoint: "https://api.analytics.remcostoeten.nl", token: process.env.RA_ADMIN_TOKEN });
  * const synced = await admin.alerts.sync("remcostoeten.nl", [mail({ to: ["remco@gmail.com"] })]);
  * if (!synced.ok) console.error(synced.error.code, synced.error.message);
  */

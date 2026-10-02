@@ -77,7 +77,7 @@ function failed(code: ServerErrorCode, message: string, count: number): ServerRe
  * here are read from the JSON in `RA_CONFIG`.
  *
  * @example
- * const serverAnalytics = createServerAnalytics<Events>({ project: "remcostoeten.nl", secret: env.RA_SECRET, endpoint: "https://api.remcostoeten.nl" });
+ * const serverAnalytics = createServerAnalytics<Events>({ project: "remcostoeten.nl", secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
  * await serverAnalytics.track("checkout", { revenue: 49, currency: "EUR", orderId: "order_1" }, { request });
  */
 export function createServerAnalytics<

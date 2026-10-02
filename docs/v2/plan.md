@@ -321,7 +321,7 @@ How the dashboard signs you in:
 
 So yes, sign-in needs API routes. Putting them in the API rather than the dashboard means every frontend, including a future public embed, goes through one access check. Better Auth has a documented Elysia integration (`.mount(auth.handler)`) and brings the GitHub provider and session storage, so there is no hand-written OAuth. The dashboard's current OAuth routes retire in phase 4.
 
-The cookie needs the API and dashboard on subdomains of one site, for example `api.remcostoeten.nl` and `analytics.remcostoeten.nl`. If they ever live on different sites, the dashboard switches to an API token held server-side.
+The cookie needs the API and dashboard on subdomains of one site, for example `api.analytics.remcostoeten.nl` and `analytics.remcostoeten.nl`. If they ever live on different sites, the dashboard switches to an API token held server-side.
 
 ### Roles
 
@@ -610,7 +610,7 @@ API errors always use the same envelope, now with a request id and a docs link:
     "message": "Origin https://example.com is not allowed for this project",
     "details": { "origin": "https://example.com", "project": "remcostoeten.nl" },
     "requestId": "req_01J8ZB4K2M",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/FORBIDDEN_ORIGIN"
+    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/FORBIDDEN_ORIGIN"
   }
 }
 ```

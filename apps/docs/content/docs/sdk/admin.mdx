@@ -11,7 +11,7 @@ import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/adm
 type Projects = "remcostoeten.nl" | "skriuw";
 
 const admin = createAdmin<Projects>({
-  endpoint: "https://api.remcostoeten.nl",
+  endpoint: "https://api.analytics.remcostoeten.nl",
   token: process.env.RA_ADMIN_TOKEN,
 });
 

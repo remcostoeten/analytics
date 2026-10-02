@@ -43,7 +43,7 @@ async function allowed(members: MemberStore, login: unknown) {
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
- * const auth = createAuth({ db, members, secret, baseURL: "https://api.remcostoeten.nl", github, cookieDomain: ".remcostoeten.nl", trustedOrigins, secure: true });
+ * const auth = createAuth({ db, members, secret, baseURL: "https://api.analytics.remcostoeten.nl", github, cookieDomain: ".remcostoeten.nl", trustedOrigins, secure: true });
  */
 export function createAuth(options: AuthOptions) {
   const { members } = options;

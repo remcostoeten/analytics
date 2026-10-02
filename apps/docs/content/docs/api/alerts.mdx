@@ -73,7 +73,7 @@ alerts({ channels, speedDrop: { points: 15, below: 85, baselineDays: 14 } });
 Targets are set per project by an admin, over HTTP or with the [admin client](/docs/sdk/admin):
 
 ```bash
-curl -X PUT https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
+curl -X PUT https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
   -H "authorization: Bearer $RA_ADMIN_TOKEN" \
   -H "content-type: application/json" \
   -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
