@@ -192,6 +192,8 @@ p { margin: 0; }
 .step-n { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-strong); font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--panel); }
 .step-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .step-body p { color: var(--muted); font-size: 14px; padding-top: 5px; }
+.inline { color: var(--text); text-decoration: underline; text-decoration-color: var(--ghost); text-underline-offset: 3px; }
+.inline:hover { text-decoration-color: var(--text); }
 .snippet { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 0 6px 0 16px; min-height: 46px; }
 .snippet pre { flex: 1; margin: 0; padding: 12px 0; font-size: 13px; overflow-x: auto; color: var(--text); }
 .copy { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 6px; border: 0; background: transparent; color: var(--faint); cursor: pointer; transition: color .15s, background .15s; }
@@ -354,11 +356,12 @@ export function landingPage(view: Landing): string {
 <body>
 <header class="bar">
 <div class="wrap">
-<a class="brand" href="/">${mark}<span>analytics</span><span class="slash">/</span><span class="repo">api</span></a>
+<a class="brand" href="/">${mark}<span>spoar</span><span class="slash">/</span><span class="repo">api</span></a>
 <nav class="nav">
 <a href="#routes">Routes</a>
 <a class="wide" href="${escape(view.links.guide)}">Guides</a>
 <a href="${escape(view.links.docs)}">Reference</a>
+<a class="wide" href="${escape(view.links.npm)}">npm</a>
 <a class="wide" href="${escape(view.links.source)}">GitHub</a>
 </nav>
 </div>
@@ -391,11 +394,12 @@ ${facts.map((fact) => `<div class="fact"><span class="glyph">${icon(fact.icon)}<
 </section>
 
 <section>
-<div class="section-head"><div><p class="kicker">Quick start</p><h2>Try it from a terminal</h2></div></div>
+<div class="section-head"><div><p class="kicker">Quick start</p><h2>Get started</h2></div></div>
 <div class="steps">
-<div class="step"><span class="step-n">1</span><div class="step-body"><p>Check that the API is up and which version it runs.</p>${snippet(`curl ${view.links.health}`)}</div></div>
-<div class="step"><span class="step-n">2</span><div class="step-body"><p>Read the headline numbers of a public project for the last seven days.</p>${snippet(`curl "${view.baseUrl}/v2/projects/remcostoeten.nl/stats?period=7d"`)}</div></div>
-<div class="step"><span class="step-n">3</span><div class="step-body"><p>Fetch the OpenAPI document to generate a client.</p>${snippet(`curl ${view.links.openapi}`)}</div></div>
+<div class="step"><span class="step-n">1</span><div class="step-body"><p>Install the browser and server SDK, <a class="inline" href="${escape(view.links.npm)}">@spoar/sdk</a>.</p>${snippet("npm install @spoar/sdk")}</div></div>
+<div class="step"><span class="step-n">2</span><div class="step-body"><p>Check that the API is up and which version it runs.</p>${snippet(`curl ${view.links.health}`)}</div></div>
+<div class="step"><span class="step-n">3</span><div class="step-body"><p>Read the headline numbers of a public project for the last seven days.</p>${snippet(`curl "${view.baseUrl}/v2/projects/remcostoeten.nl/stats?period=7d"`)}</div></div>
+<div class="step"><span class="step-n">4</span><div class="step-body"><p>Fetch the OpenAPI document to generate a client.</p>${snippet(`curl ${view.links.openapi}`)}</div></div>
 </div>
 </section>
 
@@ -414,7 +418,7 @@ ${view.groups.map(groupBlock).join("\n")}
 
 <footer>
 <div class="wrap">
-<span>Analytics API v${escape(view.version)} on ${escape(view.runtime)}</span>
+<span>${escape(view.name)} v${escape(view.version)} on ${escape(view.runtime)}</span>
 <span><a href="${escape(view.links.source)}">Source</a> · Rendered <time datetime="${escape(view.time)}">${escape(view.time)}</time></span>
 </div>
 </footer>

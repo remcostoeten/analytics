@@ -60,7 +60,7 @@ describe("landing", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("text/html");
       const html = await response.text();
-      expect(html).toContain("<title>Analytics API</title>");
+      expect(html).toContain("<title>Spoar API</title>");
       expect(html).toContain('/projects/<span class="param">:project</span>/stats');
       expect(html).toContain("Headline <code>numbers</code>");
       expect(html).toContain("https://api.example.test/v2/openapi");
@@ -74,14 +74,17 @@ describe("landing", () => {
     expect(response.headers.get("content-type")).toBe("application/json");
     expect(response.headers.get("vary")).toBe("Accept");
     const body = (await response.json()) as {
+      name: string;
       version: string;
       status: string;
-      links: { health: string };
+      links: { health: string; npm: string };
       groups: { name: string; routes: { path: string }[] }[];
     };
     expect(body.version).toBe("2.0.0-test");
     expect(body.status).toBe("ok");
+    expect(body.name).toBe("Spoar API");
     expect(body.links.health).toBe("https://api.example.test/v2/health");
+    expect(body.links.npm).toBe("https://www.npmjs.com/package/@spoar/sdk");
     expect(body.groups.map((group) => group.name)).toEqual(["Reads", "System"]);
   });
 });

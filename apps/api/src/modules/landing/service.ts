@@ -19,7 +19,14 @@ export type Landing = {
   time: Timestamp;
   runtime: string;
   baseUrl: string;
-  links: { docs: string; openapi: string; health: string; guide: string; source: string };
+  links: {
+    docs: string;
+    openapi: string;
+    health: string;
+    guide: string;
+    npm: string;
+    source: string;
+  };
   groups: RouteGroup[];
 };
 
@@ -74,7 +81,7 @@ export function landing(input: {
   groups: RouteGroup[];
 }): Landing {
   return {
-    name: "Analytics API",
+    name: "Spoar API",
     version: input.version,
     status: "ok",
     time: input.time,
@@ -85,6 +92,7 @@ export function landing(input: {
       openapi: `${input.baseUrl}/v2/openapi/json`,
       health: `${input.baseUrl}/v2/health`,
       guide: "https://docs.analytics.remcostoeten.nl",
+      npm: "https://www.npmjs.com/package/@spoar/sdk",
       source: "https://github.com/remcostoeten/analytics",
     },
     groups: input.groups,
