@@ -39,7 +39,7 @@ export function Capabilities() {
                 </span>
                 {capability.name}
               </p>
-              <div className="my-6 h-[150px]">
+              <div className="figure-zoom my-6 h-[150px]">
                 <Figure figure={capability.figure} />
               </div>
               <p className="mt-auto text-[11.5px] leading-[1.6] text-fog">{capability.note}</p>

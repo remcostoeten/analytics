@@ -11,7 +11,7 @@ export function Nav() {
             <button
               type="button"
               key={step.label}
-              className="tab-fade eyebrow flex w-40 items-center justify-between px-3 py-2 text-mist hover:text-paper"
+              className="tab tab-fade eyebrow flex w-40 items-center justify-between px-3 py-2 text-mist hover:text-paper"
             >
               <span>{step.label}</span>
               <span className="text-fog/70">{step.index}</span>

@@ -27,7 +27,7 @@ type ButtonProps = {
 };
 
 export function Button({ children, tone = "dark", arrow = false, small = false }: ButtonProps) {
-  const base = `eyebrow inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${small ? "h-8 px-3.5" : "h-10 px-7"}`;
+  const base = `arrow-nudge eyebrow inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors ${small ? "h-8 px-3.5" : "h-10 px-7"}`;
   const tones = {
     metal: "metal text-ink hover:brightness-105",
     dark: "border border-line-strong bg-ink-raised text-mist hover:border-fog hover:text-paper",
@@ -35,7 +35,7 @@ export function Button({ children, tone = "dark", arrow = false, small = false }
   };
   return (
     <button type="button" className={`${base} ${tones[tone]}`}>
-      {children}
+      <span>{children}</span>
       {arrow ? <span aria-hidden>›</span> : null}
     </button>
   );

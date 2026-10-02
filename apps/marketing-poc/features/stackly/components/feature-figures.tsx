@@ -45,7 +45,7 @@ export function FocusFigure() {
       {ghosts.map((ghost) => (
         <div
           key={ghost}
-          className="absolute right-[-30px] left-16 rounded-sm border border-line-strong bg-ink-panel px-4 py-3"
+          className="ghost absolute right-[-30px] left-16 rounded-sm border border-line-strong bg-ink-panel px-4 py-3"
           style={{
             top: 56 + ghost * 14,
             opacity: 1 - ghost * 0.22,
@@ -144,7 +144,7 @@ export function ToolbarFigure() {
         {toolbarIcons.map((icon, index) => (
           <span
             key={icon}
-            className={`flex size-11 items-center justify-center rounded-lg ${index === 1 ? "bg-ink-panel text-paper shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]" : "text-fog"}`}
+            className={`tool flex size-11 items-center justify-center rounded-lg ${index === 1 ? "bg-ink-panel text-paper shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]" : "text-fog"}`}
           >
             <Icon name={icon} size={18} />
           </span>
@@ -170,7 +170,7 @@ export function StackFigure() {
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-0">
       <div className="dust dust-right pointer-events-none absolute inset-0" />
-      <div className="relative -translate-y-2">
+      <div className="float relative -translate-y-2">
         <Slab>
           <span className="flex size-10 items-center justify-center rounded-full border border-mist/40">
             <Icon name="compass" size={18} />
@@ -181,7 +181,7 @@ export function StackFigure() {
         <span>⌃⌃</span>
         <span>⌄⌄</span>
       </div>
-      <div className="relative -translate-y-12">
+      <div className="float float-late relative -translate-y-12">
         <Slab>
           <Icon name="group" size={20} />
         </Slab>

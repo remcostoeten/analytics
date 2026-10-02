@@ -21,9 +21,9 @@ function Card({ feature }: { feature: Feature }) {
   const tall = feature.figure === "toolbar";
   return (
     <li
-      className={`flex flex-col border border-line-strong bg-ink-deep ${tall ? "lg:col-start-2 lg:row-span-2 lg:row-start-1" : ""}`}
+      className={`card lift reveal flex flex-col border border-line-strong bg-ink-deep ${tall ? "lg:col-start-2 lg:row-span-2 lg:row-start-1" : ""}`}
     >
-      <div className={`relative overflow-hidden ${tall ? "flex-1" : "h-[270px]"}`}>
+      <div className={`figure-zoom relative overflow-hidden ${tall ? "flex-1" : "h-[270px]"}`}>
         <Figure figure={feature.figure} />
       </div>
       <div className="px-5 pt-3 pb-6">

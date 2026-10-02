@@ -22,7 +22,7 @@ export function Customers() {
           <button
             type="button"
             key={customer.name}
-            className="flex h-[90px] items-center justify-center gap-2 border-line-strong text-fog/80 transition-colors not-last:border-r hover:text-paper max-md:nth-[2n]:border-r-0 max-md:not-nth-last-[-n+2]:border-b md:not-nth-last-[-n+5]:border-b md:nth-[5n]:border-r-0"
+            className="logo-cell flex h-[90px] items-center justify-center gap-2 border-line-strong text-fog/80 not-last:border-r max-md:nth-[2n]:border-r-0 max-md:not-nth-last-[-n+2]:border-b md:not-nth-last-[-n+5]:border-b md:nth-[5n]:border-r-0"
           >
             <span className="flex size-5 items-center justify-center rounded-[3px] bg-current/40">
               <span className="size-2 rounded-[1px] bg-ink" />

@@ -27,17 +27,17 @@ export function HowItWorks() {
           </Callout>
           <Window title="Evolution™ · Secure">
             <div className="relative h-[330px] bg-ink-deep">
-              <div className="absolute inset-0">
+              <div className="hands-live absolute inset-0">
                 <Hands />
               </div>
-              <div className="corner-marks absolute top-[26%] right-[14%] px-3 py-2">
+              <div className="corner-marks float absolute top-[26%] right-[14%] px-3 py-2">
                 <p className="eyebrow flex items-center gap-1.5 text-ember">
                   <Icon name="scan" size={10} />
                   Address verification
                 </p>
                 <p className="mt-1 text-[10px] text-mist">742 Evergreen Terrace, Springfield</p>
               </div>
-              <div className="corner-marks absolute bottom-[18%] left-[8%] flex items-center gap-5 px-3 py-2">
+              <div className="corner-marks float float-late absolute bottom-[18%] left-[8%] flex items-center gap-5 px-3 py-2">
                 <span>
                   <p className="eyebrow flex items-center gap-1.5 text-ember">
                     <span className="text-[7px]">▶</span>
@@ -49,7 +49,7 @@ export function HowItWorks() {
               </div>
             </div>
             <p className="mono border-t border-line px-4 py-3 text-[11px] tracking-wide text-fog">
-              Facial Match: <span className="font-medium text-leaf">ON</span>
+              Facial Match: <span className="blink font-medium text-leaf">ON</span>
               <span className="mx-3">·</span>
               Document Auth: <span className="font-medium text-leaf">ON</span>
             </p>
