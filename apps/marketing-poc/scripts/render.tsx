@@ -1,15 +1,17 @@
 import { renderToString } from "react-dom/server";
 
-import Page from "@/app/stackly/page";
+import StacklyPage from "@/app/stackly/page";
+import TerminalPage from "@/app/terminal/page";
 
+const variant = process.argv[4] === "terminal" ? "terminal" : "stackly";
 const css = await Bun.file(process.argv[2]!).text();
-const body = renderToString(<Page />);
+const body = renderToString(variant === "terminal" ? <TerminalPage /> : <StacklyPage />);
 const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Stackly Landing</title>
+<title>${variant === "terminal" ? "Stackly Terminal" : "Stackly Landing"}</title>
 <meta name="description" content="Turn scattered tasks into shipped software." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,7 +20,7 @@ const html = `<!doctype html>
 </head>
 <body class="min-h-screen">
 <div class="copper-grain"></div>
-<div id="root">${body}</div>
+<div id="root" data-variant="${variant}">${body}</div>
 <script src="app.js" defer></script>
 </body>
 </html>`;

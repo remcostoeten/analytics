@@ -3,8 +3,13 @@ import Link from "next/link";
 const landings = [
   {
     href: "/stackly",
-    name: "Stackly",
-    note: "Project management landing, dark with an orange accent, task board hero.",
+    name: "Stackly · variant A",
+    note: "Reference replica: dark, orange accent, live task board hero.",
+  },
+  {
+    href: "/terminal",
+    name: "Stackly · variant B",
+    note: "Editorial brutalist: typing terminal, crosshair cursor, scroll-driven board, ledger index.",
   },
 ] as const;
 

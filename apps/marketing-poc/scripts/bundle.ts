@@ -6,5 +6,6 @@ const [css] = Array.from(new Bun.Glob("_next/static/chunks/*.css").scanSync({ cw
 if (!css) throw new Error("Run next build first: no stylesheet in out/");
 
 await $`bun build ${app}/scripts/client.tsx --target browser --production --outfile ${outDir}/app.js`;
-await $`bun ${app}/scripts/render.tsx ${app}/out/${css} ${outDir}/index.html`;
+await $`bun ${app}/scripts/render.tsx ${app}/out/${css} ${outDir}/index.html stackly`;
+await $`bun ${app}/scripts/render.tsx ${app}/out/${css} ${outDir}/terminal.html terminal`;
 console.log(`Standalone page in ${outDir}`);

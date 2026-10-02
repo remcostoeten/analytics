@@ -1,6 +1,8 @@
 import { hydrateRoot } from "react-dom/client";
 
-import Page from "@/app/stackly/page";
+import StacklyPage from "@/app/stackly/page";
+import TerminalPage from "@/app/terminal/page";
 
 const root = document.getElementById("root");
-if (root) hydrateRoot(root, <Page />);
+const variant = root?.getAttribute("data-variant");
+if (root) hydrateRoot(root, variant === "terminal" ? <TerminalPage /> : <StacklyPage />);
