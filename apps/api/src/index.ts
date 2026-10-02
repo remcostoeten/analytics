@@ -83,7 +83,7 @@ export default createApp({
   logger,
   clock: () => clock.now(),
   dashboardOrigin,
-  docsBase: process.env.DOCS_BASE ?? "https://api.remcostoeten.nl/v2/openapi",
+  docsBase: process.env.DOCS_BASE ?? "https://api.analytics.remcostoeten.nl/v2/openapi",
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
   access: {
     projects: stores.projects,

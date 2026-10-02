@@ -23,7 +23,7 @@ type ValueErrorWithSummary = ValidationError["all"][number];
  * catalog, with the request id and a docs link. For `RATE_LIMITED` it also sets `Retry-After`.
  *
  * @example
- * const { status, body } = failure(error, set.headers, "https://api.remcostoeten.nl/v2/openapi");
+ * const { status, body } = failure(error, set.headers, "https://api.analytics.remcostoeten.nl/v2/openapi");
  */
 export function failure(error: EngineError, headers: Headers, docsBase: string): Failure {
   const retryAfter = error.details?.retryAfterSeconds;

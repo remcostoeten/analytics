@@ -40,20 +40,20 @@ GitHub, Settings, Developer settings, OAuth Apps, New:
 
 | Field | Value |
 | --- | --- |
-| Homepage URL | `https://api.remcostoeten.nl` |
-| Authorization callback URL | `https://api.remcostoeten.nl/v2/auth/callback/github` |
+| Homepage URL | `https://api.analytics.remcostoeten.nl` |
+| Authorization callback URL | `https://api.analytics.remcostoeten.nl/v2/auth/callback/github` |
 
 Keep the client id and a new client secret.
 
 ## 5. The API on Vercel
 
-New project `analytics-api`, repository `remcostoeten/analytics`, root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files. Environment variables for Production:
+Project `v2.ingestion` (already created; connect it to the repository `remcostoeten/analytics` under Settings, Git), root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files. Environment variables for Production:
 
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | The Neon connection string |
 | `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET` | From step 2 |
-| `API_URL` | `https://api.remcostoeten.nl` |
+| `API_URL` | `https://api.analytics.remcostoeten.nl` |
 | `DASHBOARD_ORIGIN` | `https://analytics.remcostoeten.nl` (the dashboard or docs origin that signs in) |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
@@ -62,15 +62,15 @@ New project `analytics-api`, repository `remcostoeten/analytics`, root directory
 | `INTERNAL_PROJECT_SECRET` | Optional: the secret key of a project that should collect the API's own errors |
 | `CRUX_API_KEY` | Optional: a Google Cloud API key with the Chrome UX Report API enabled |
 
-Add the domain `api.remcostoeten.nl`. Check `https://api.remcostoeten.nl/v2/health` answers `ok: true`.
+Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true`.
 
 ## 6. The docs site on Vercel
 
-Project `v2.analytics-docs` (already created), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
+Project `v2.analytics.docs` (already created, with `docs.analytics.remcostoeten.nl`), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.analytics.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
 
 ## 7. Scheduled jobs
 
-GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https://api.remcostoeten.nl`) and the secret `CRON_SECRET` from step 2. The `jobs` workflow then runs:
+GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https://api.analytics.remcostoeten.nl`) and the secret `CRON_SECRET` from step 2. The `jobs` workflow then runs:
 
 | When (UTC) | Job |
 | --- | --- |
@@ -84,7 +84,7 @@ Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Disco
 
 ## 8. First sign-in and token
 
-Sign-in is a `POST` that answers with the GitHub URL. Open `https://api.remcostoeten.nl/v2/health`, then run this in that tab's console:
+Sign-in is a `POST` that answers with the GitHub URL. Open `https://api.analytics.remcostoeten.nl/v2/health`, then run this in that tab's console:
 
 ```js
 const response = await fetch("/v2/auth/sign-in/social", {

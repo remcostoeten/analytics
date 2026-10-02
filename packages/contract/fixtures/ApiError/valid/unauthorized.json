@@ -3,6 +3,6 @@
     "code": "UNAUTHORIZED",
     "message": "Sign in or use a token with read scope",
     "requestId": "req_01J8ZB4K2Q",
-    "docs": "https://api.remcostoeten.nl/v2/openapi#errors/UNAUTHORIZED"
+    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/UNAUTHORIZED"
   }
 }

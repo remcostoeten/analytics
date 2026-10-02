@@ -52,7 +52,7 @@ All are **owner** steps, from `docs/v2/deploy.md`:
 2. Generate `IP_HASH_SECRET`, `BETTER_AUTH_SECRET` and `CRON_SECRET`.
 3. Run the `migrate` workflow, dry run first.
 4. Create the GitHub OAuth app.
-5. Create the `analytics-api` Vercel project with the variables in step 5, including `MAIL_URL` and `MAIL_FROM` for mail alerts.
+5. Set up the `v2.ingestion` Vercel project with the variables in step 5, including `MAIL_URL` and `MAIL_FROM` for mail alerts.
 6. Set `API_URL` and `CRON_SECRET` on the GitHub `production` environment so the `jobs` workflow runs.
 7. Sign in once and create a token.
 8. Run the browser matrix in `docs/release-checklist.md`, and the bot checks in [bot-readiness.md](bot-readiness.md) once real traffic arrives.

@@ -78,7 +78,7 @@ export function alertTitle(event: AlertEvent): string {
  * @description Where an alert event links to: the issue, or the project's speed read.
  *
  * @example
- * alertUrl(event); // "https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/speed"
+ * alertUrl(event); // "https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/speed"
  */
 export function alertUrl(event: AlertEvent): string {
   return event.name === "speed.drop" ? event.speed.url : event.issue.url;

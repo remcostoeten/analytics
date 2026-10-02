@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Run read-only SQL against your projects with an API token.",
 };
 
-const endpoint = process.env.NEXT_PUBLIC_API_URL ?? "https://api.remcostoeten.nl";
+const endpoint = process.env.NEXT_PUBLIC_API_URL ?? "https://api.analytics.remcostoeten.nl";
 
 export default function QueryPage() {
   return (

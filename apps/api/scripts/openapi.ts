@@ -46,7 +46,7 @@ async function openapiDocument(): Promise<string> {
     logger: () => memoryLogger(),
     clock: () => clock.now(),
     dashboardOrigin: null,
-    docsBase: "https://api.remcostoeten.nl/v2/openapi",
+    docsBase: "https://api.analytics.remcostoeten.nl/v2/openapi",
     geo: { city: null, asn: null, loadMs: 0 },
     access: {
       ...stores,
@@ -83,7 +83,7 @@ async function openapiDocument(): Promise<string> {
         channels: [mail({ transport: smtp(undefined), from: "a@b.co" }), webhook(), discord()],
       }),
       store: stores.alerts,
-      links: apiLinks("https://api.remcostoeten.nl"),
+      links: apiLinks("https://api.analytics.remcostoeten.nl"),
     },
   });
   const response = await app.handle(new Request("http://localhost/v2/openapi/json"));

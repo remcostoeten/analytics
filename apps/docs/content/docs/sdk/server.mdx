@@ -8,7 +8,7 @@ import { createServerAnalytics } from "@remcostoeten/analytics/server";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   secret: process.env.RA_SECRET,
-  endpoint: "https://api.remcostoeten.nl",
+  endpoint: "https://api.analytics.remcostoeten.nl",
 });
 
 export const POST = serverAnalytics.withErrors(async (request) => {

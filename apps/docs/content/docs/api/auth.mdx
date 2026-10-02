@@ -67,6 +67,6 @@ Events sent with a signed-in owner's or admin's session cookie are stored as int
 Create a token with `POST /v2/tokens` as an owner or admin, list them with `GET /v2/tokens` and revoke one with `DELETE /v2/tokens/:token`. The response to the create call is the only time the token's value is shown.
 
 ```bash
-curl https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/stats?period=7d \
+curl https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/stats?period=7d \
   -H "authorization: Bearer $RA_TOKEN"
 ```

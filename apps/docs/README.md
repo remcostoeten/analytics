@@ -12,4 +12,4 @@ Hand-written pages live in `content/docs` (`index.mdx`, `sdk/`, `api/`). `conten
 
 | Variable | Default | Does |
 | --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | `https://api.remcostoeten.nl` | The API URL the query page starts with |
+| `NEXT_PUBLIC_API_URL` | `https://api.analytics.remcostoeten.nl` | The API URL the query page starts with |

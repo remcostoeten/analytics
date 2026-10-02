@@ -46,7 +46,7 @@ function event(id: string, name: "issue.new" | "issue.regression" = "issue.new")
         firstSeen: "2026-09-29T10:00:00.000Z",
         lastSeen: "2026-09-29T11:00:00.000Z",
         lastRelease: null,
-        url: `https://api.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/${id}`,
+        url: `https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/issues/${id}`,
       },
     },
   };
