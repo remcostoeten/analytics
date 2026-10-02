@@ -23,7 +23,7 @@ export type HealthView = {
   geo: { city: Nullable<string>; asn: Nullable<string>; loadMs: number };
 };
 
-export type HistoryWeek = { week: Timestamp; total: number };
+export type HistoryWeek = { week: Timestamp; total: number; days: number[] };
 
 export type History = { repo: string; weeks: HistoryWeek[]; total: number };
 
@@ -74,12 +74,15 @@ export function routeGroups(routes: ApiRoute[], tags: ApiTag[]): RouteGroup[] {
 }
 
 const CommitActivity = Type.Array(
-  Type.Object({ total: Type.Number(), week: Type.Number() }, { additionalProperties: true }),
+  Type.Object(
+    { total: Type.Number(), week: Type.Number(), days: Type.Array(Type.Number()) },
+    { additionalProperties: true },
+  ),
 );
 
 /**
  * @name fetchHistory
- * @description Reads the last 52 weeks of commits from GitHub's commit activity endpoint. GitHub
+ * @description Reads the last 52 weeks of commits per day from GitHub's commit activity endpoint. GitHub
  * answers 202 while it computes the statistics; that, any other failure and a malformed body
  * give `null`, so the page renders without the chart.
  *
@@ -98,6 +101,7 @@ export async function fetchHistory(source: HistorySource): Promise<Nullable<Hist
     const weeks = body.map((item) => ({
       week: new Date(item.week * 1000).toISOString(),
       total: item.total,
+      days: item.days,
     }));
     return { repo: source.repo, weeks, total: weeks.reduce((sum, w) => sum + w.total, 0) };
   } catch {

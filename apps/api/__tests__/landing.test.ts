@@ -111,8 +111,8 @@ describe("landing", () => {
     expect(await fetchHistory({ repo: "example/repo", send: github(200, activity) })).toEqual({
       repo: "example/repo",
       weeks: [
-        { week: "2025-09-21T00:00:00.000Z", total: 3 },
-        { week: "2025-09-28T00:00:00.000Z", total: 0 },
+        { week: "2025-09-21T00:00:00.000Z", total: 3, days: [0, 1, 0, 0, 2, 0, 0] },
+        { week: "2025-09-28T00:00:00.000Z", total: 0, days: [0, 0, 0, 0, 0, 0, 0] },
       ],
       total: 3,
     });

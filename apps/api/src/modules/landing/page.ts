@@ -80,11 +80,22 @@ h2 { margin: 0; font-size: 13px; font-weight: 500; text-transform: uppercase; le
 .pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--text); animation: pulse 2.4s cubic-bezier(.2,.6,.4,1) infinite; }
 @keyframes pulse { to { transform: scale(3.2); opacity: 0; } }
 
-.chart { padding: 10px var(--gutter) 18px; border-top: 1px solid var(--line); }
-.chart svg { display: block; width: 100%; height: 140px; }
-.chart rect { fill: var(--ghost); transition: fill .12s; }
-.chart rect:hover { fill: var(--text); }
-.chart .axis { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 8px; }
+.chart { padding: 14px var(--gutter) 16px; border-top: 1px solid var(--line); }
+.chart .grid { overflow-x: auto; }
+.chart svg { display: block; }
+.chart text { font-family: var(--mono); font-size: 10px; fill: var(--faint); }
+.chart rect { transition: stroke .12s; stroke: transparent; stroke-width: 1; }
+.chart rect:hover { stroke: var(--text); }
+.chart .l0, .chart i.l0 { fill: #141416; background: #141416; }
+.chart .l1, .chart i.l1 { fill: #35353b; background: #35353b; }
+.chart .l2, .chart i.l2 { fill: #6b6b74; background: #6b6b74; }
+.chart .l3, .chart i.l3 { fill: #a8a8b0; background: #a8a8b0; }
+.chart .l4, .chart i.l4 { fill: #f2f2f2; background: #f2f2f2; }
+.chart .axis { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 10px; }
+.chart .legend { display: inline-flex; align-items: center; gap: 3px; }
+.chart .legend i { width: 10px; height: 10px; border-radius: 2px; }
+.chart .legend i:first-of-type { margin-left: 4px; }
+.chart .legend i:last-of-type { margin-right: 4px; }
 .chart .none { font-family: var(--mono); font-size: 12px; color: var(--faint); padding: 24px 0 14px; }
 
 .group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 18px var(--gutter) 8px; border-top: 1px solid var(--line); }
@@ -138,22 +149,64 @@ function healthCells(health: HealthView) {
   return cells.map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join("");
 }
 
+const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function level(count: number, max: number) {
+  if (count === 0) return 0;
+  const share = count / max;
+  if (share > 0.75) return 4;
+  if (share > 0.5) return 3;
+  if (share > 0.25) return 2;
+  return 1;
+}
+
 function historyChart(history: History) {
-  const width = 1040;
-  const height = 140;
+  const cell = 12;
   const gap = 3;
-  const step = width / history.weeks.length;
-  const max = Math.max(1, ...history.weeks.map((week) => week.total));
-  const bars = history.weeks
-    .map((week, index) => {
-      const h = Math.max(week.total > 0 ? 2 : 0, (week.total / max) * (height - 4));
-      const label = `${week.total} commit${week.total === 1 ? "" : "s"}, week of ${week.week.slice(0, 10)}`;
-      return `<rect x="${(index * step).toFixed(1)}" y="${(height - h).toFixed(1)}" width="${(step - gap).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5"><title>${escape(label)}</title></rect>`;
+  const left = 30;
+  const top = 18;
+  const columns = history.weeks.length;
+  const width = left + columns * (cell + gap);
+  const height = top + 7 * (cell + gap);
+  const max = Math.max(1, ...history.weeks.flatMap((week) => week.days));
+  const months: string[] = [];
+  let lastMonth = -1;
+  const cells = history.weeks
+    .flatMap((week, column) => {
+      const start = new Date(week.week);
+      const month = start.getUTCMonth();
+      if (month !== lastMonth && (column === 0 || start.getUTCDate() <= 7)) {
+        lastMonth = month;
+        months.push(
+          `<text x="${left + column * (cell + gap)}" y="11">${monthNames[month] ?? ""}</text>`,
+        );
+      }
+      return week.days.map((count, row) => {
+        const date = new Date(start.getTime() + row * 86_400_000).toISOString().slice(0, 10);
+        const label = `${count} commit${count === 1 ? "" : "s"} on ${date}`;
+        return `<rect class="l${level(count, max)}" x="${left + column * (cell + gap)}" y="${top + row * (cell + gap)}" width="${cell}" height="${cell}" rx="2"><title>${escape(label)}</title></rect>`;
+      });
     })
     .join("");
-  const first = history.weeks[0]?.week.slice(0, 10) ?? "";
-  const last = history.weeks.at(-1)?.week.slice(0, 10) ?? "";
-  return `<div class="chart"><svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Commits per week for the last year">${bars}</svg><div class="axis"><span>${escape(first)}</span><span>peak ${max}/week</span><span>${escape(last)}</span></div></div>`;
+  const days = [1, 3, 5]
+    .map((row) => `<text x="0" y="${top + row * (cell + gap) + cell - 2}">${dayNames[row]}</text>`)
+    .join("");
+  const legend = [0, 1, 2, 3, 4].map((step) => `<i class="l${step}"></i>`).join("");
+  return `<div class="chart"><div class="grid"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Commits per day for the last year">${months.join("")}${days}${cells}</svg></div><div class="axis"><span>${history.total} commits in the last year</span><span class="legend">less ${legend} more</span></div></div>`;
 }
 
 function routeItem(route: RouteEntry) {
@@ -172,7 +225,7 @@ function groupBlock(group: RouteGroup) {
 /**
  * @name landingPage
  * @description Renders the API landing page as one HTML document: the health details, the
- * commits per week for the last year when they loaded, and every documented route by tag.
+ * commits per day for the last year when they loaded, and every documented route by tag.
  *
  * @example
  * const html = landingPage(landing({ baseUrl, health, groups, history }));
