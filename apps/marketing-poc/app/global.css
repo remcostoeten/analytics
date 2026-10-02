@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #09090b;
+  --color-ink-raised: #111113;
+  --color-ink-panel: #141416;
+  --color-line: #232326;
+  --color-line-strong: #2e2e32;
+  --color-fog: #8a8a90;
+  --color-mist: #c9c9ce;
+  --color-paper: #f4f3ef;
+  --color-ember: #e5742b;
+  --color-ember-dim: #9a4d1b;
+  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.dot-grid {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.16) 0.8px, transparent 0.9px);
+  background-size: 9px 9px;
+}
+
+.dot-fade {
+  mask-image: linear-gradient(to bottom, black 0%, rgb(0 0 0 / 0.6) 40%, transparent 100%);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.frame-vignette {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgb(229 116 43 / 0.08), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgb(229 116 43 / 0.06), transparent 50%);
+}

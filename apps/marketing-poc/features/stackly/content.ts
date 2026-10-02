@@ -1,0 +1,167 @@
+export type TicketStatus = "backlog" | "todo" | "in-progress";
+
+export type Ticket = {
+  id: string;
+  title: string;
+  status: TicketStatus;
+};
+
+export type Capability = {
+  name: string;
+  note: string;
+  figure: "dependencies" | "map" | "relationships" | "workload";
+};
+
+export type Feature = {
+  name: string;
+  note: string;
+  figure: "timeline" | "terrain" | "focus" | "cards" | "toolbar" | "stack";
+};
+
+export const navSteps = [
+  { label: "Build", index: "01" },
+  { label: "Ship", index: "02" },
+  { label: "Track", index: "03" },
+] as const;
+
+export const navLinks = [
+  { label: "Docs", badge: null },
+  { label: "Blog", badge: null },
+  { label: "Careers", badge: "24" },
+  { label: "Book a call", badge: null },
+] as const;
+
+export const tickets: Ticket[] = [
+  {
+    id: "TICKET-1042",
+    title: "API authentication fails intermittently in production",
+    status: "backlog",
+  },
+  {
+    id: "TICKET-1041",
+    title: "Dashboard loading time exceeds 3s on mobile devices",
+    status: "backlog",
+  },
+  {
+    id: "TICKET-1040",
+    title: "User session timeout not respecting user settings",
+    status: "backlog",
+  },
+  {
+    id: "TICKET-1033",
+    title: "Cross-site scripting vulnerability in form submissions",
+    status: "backlog",
+  },
+  {
+    id: "TICKET-1038",
+    title: "Payment processing webhook fails for international transactions",
+    status: "todo",
+  },
+  {
+    id: "TICKET-1100",
+    title: "Analytics report generation takes too long to complete",
+    status: "todo",
+  },
+  {
+    id: "TICKET-1034",
+    title: "Search functionality fails with special characters",
+    status: "todo",
+  },
+  {
+    id: "TICKET-1036",
+    title: "In-app messaging feature not delivering messages reliably",
+    status: "in-progress",
+  },
+  {
+    id: "TICKET-1029",
+    title: "Export to CSV drops rows with unicode in the title",
+    status: "in-progress",
+  },
+];
+
+export const ticketGroups: { status: TicketStatus; label: string }[] = [
+  { status: "backlog", label: "Backlog" },
+  { status: "todo", label: "Todo" },
+  { status: "in-progress", label: "In Progress" },
+];
+
+export const awards = [
+  { title: "Winner", note: "Best project management platform", year: "2026" },
+  { title: "Best AI", note: "Workflow automation for teams", year: "2026" },
+  { title: "Top rated", note: "Enterprise task management software", year: "2026" },
+] as const;
+
+export const customers = [
+  "ramp",
+  "evil",
+  "zade",
+  "charact",
+  "goodfire",
+  "incept",
+  "arc",
+  "browser",
+  "premia",
+  "standard",
+] as const;
+
+export const capabilities: Capability[] = [
+  {
+    name: "Dependency Mapping",
+    note: "Visualize how tickets connect across projects, dev branches, and releases.",
+    figure: "dependencies",
+  },
+  {
+    name: "Global Team Activity",
+    note: "Track distributed teams in real time: see who is active, where, and on what.",
+    figure: "map",
+  },
+  {
+    name: "Task Relationships",
+    note: "See how one blocked ticket ripples across every dependent task downstream.",
+    figure: "relationships",
+  },
+  {
+    name: "Workload Balance",
+    note: "Compare capacity across teams so no one's sprint is silently overloaded.",
+    figure: "workload",
+  },
+];
+
+export const features: Feature[] = [
+  {
+    name: "Timeline View",
+    note: "See every task laid out by owner and due date, updated as work moves.",
+    figure: "timeline",
+  },
+  {
+    name: "Terrain",
+    note: "",
+    figure: "terrain",
+  },
+  {
+    name: "Focus Mode",
+    note: "Mute every ping and notification while you work, resume the moment you are ready.",
+    figure: "focus",
+  },
+  {
+    name: "Task Cards, Simplified",
+    note: "Every card shows exactly what is next, who owns it, and when it is ready to go.",
+    figure: "cards",
+  },
+  {
+    name: "One Toolbar, Every Action",
+    note: "Import tasks, mark them done, leave notes, and check insights, all without switching screens.",
+    figure: "toolbar",
+  },
+  {
+    name: "Connects To Your Stack",
+    note: "Sync automatically with the code repos, docs, and chat tools your team relies on.",
+    figure: "stack",
+  },
+];
+
+export const footerColumns = [
+  { title: "Product", links: ["Build", "Ship", "Track", "Pricing", "Changelog"] },
+  { title: "Company", links: ["About", "Careers", "Blog", "Press"] },
+  { title: "Resources", links: ["Docs", "API", "Status", "Security"] },
+] as const;

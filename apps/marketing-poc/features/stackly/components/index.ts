@@ -1,0 +1,8 @@
+export { Capabilities } from "./capabilities";
+export { Customers } from "./customers";
+export { Features } from "./features";
+export { Footer } from "./footer";
+export { Hero } from "./hero";
+export { HowItWorks } from "./how-it-works";
+export { Nav } from "./nav";
+export { Platform } from "./platform";

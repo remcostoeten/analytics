@@ -1,0 +1,31 @@
+import Link from "next/link";
+
+const landings = [
+  {
+    href: "/stackly",
+    name: "Stackly",
+    note: "Project management landing, dark with an orange accent, task board hero.",
+  },
+] as const;
+
+export default function Page() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-24">
+      <p className="eyebrow text-fog">Marketing POC</p>
+      <h1 className="font-display mt-3 text-4xl">Landing pages under test</h1>
+      <ul className="mt-10 divide-y divide-line border-y border-line">
+        {landings.map((landing) => (
+          <li key={landing.href}>
+            <Link
+              href={landing.href}
+              className="flex items-baseline justify-between gap-6 py-5 hover:bg-ink-raised"
+            >
+              <span className="text-lg">{landing.name}</span>
+              <span className="max-w-sm text-right text-sm text-fog">{landing.note}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </main>
+  );
+}
