@@ -7,7 +7,7 @@ import {
   IssueResponse,
   UpdatedIssue,
   UpdateIssue,
-} from "@remcostoeten/analytics-contract";
+} from "@spoar/contract";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

@@ -8,12 +8,12 @@ import type {
   VisitList,
   VisitorDetail,
   VisitorList,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { DetailStore, EngineError, Keyset } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { DetailStore, EngineError, Keyset } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { limitCap, nextCursor, readPage } from "../reads/params";
 import { readScope } from "../reads/service";

@@ -8,7 +8,7 @@ There is no Svelte adapter. The core client is created once in a module, and the
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Events
@@ -16,7 +16,7 @@ npm install @remcostoeten/analytics
 `src/lib/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -35,8 +35,8 @@ VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"https://api.
 `src/lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -62,8 +62,8 @@ RA_ENDPOINT=https://api.example.com
 
 ```ts
 import { PUBLIC_RA_KEY } from "$env/static/public";
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -103,7 +103,7 @@ The client starts itself only where `window` exists, so this module is safe to i
 
 ```ts
 import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 import type { RequestHandler } from "./$types";
 
 const proxy = createProxy({ secret: RA_SECRET, endpoint: RA_ENDPOINT });
@@ -119,7 +119,7 @@ Any same-origin path works; the client's `endpoint` has to match it. See [Proxy]
 
 ```ts
 import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "$lib/events";
 
 export const serverAnalytics = createServerAnalytics<Events>({

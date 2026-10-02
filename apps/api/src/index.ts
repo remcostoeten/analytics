@@ -4,16 +4,12 @@ import {
   defaultSignals,
   defaultStages,
   ipSecretProblem,
-} from "@remcostoeten/analytics-engine";
-import { postgresAccess, postgresAdapters } from "@remcostoeten/analytics-engine/adapters/postgres";
-import {
-  jsonLogger,
-  systemClock,
-  webCryptoHasher,
-} from "@remcostoeten/analytics-engine/adapters/system";
+} from "@spoar/engine";
+import { postgresAccess, postgresAdapters } from "@spoar/engine/adapters/postgres";
+import { jsonLogger, systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
 
-import { apiLinks } from "@remcostoeten/analytics-engine/alerts";
-import { findPlugin } from "@remcostoeten/analytics-engine/config";
+import { apiLinks } from "@spoar/engine/alerts";
+import { findPlugin } from "@spoar/engine/config";
 
 import config from "../analytics.config";
 import { createApp } from "./app";

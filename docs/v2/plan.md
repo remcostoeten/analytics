@@ -2,7 +2,7 @@
 
 Sep 27, 2026 · @Remco
 
-Rebuild the SDK as `@remcostoeten/analytics@2` on a versioned contract, `POST /v2/events`, served by a new Elysia API built on one reusable engine. The API also owns reads, sign-in, OpenAPI docs, bot scoring, speed insights and error tracking. Projects stay public by default and can be made private. The Hono ingestion keeps serving `/e` for 1.x clients until they are gone.
+Rebuild the SDK as Spoar (`@spoar/sdk`) on a versioned contract, `POST /v2/events`, served by a new Elysia API built on one reusable engine. The API also owns reads, sign-in, OpenAPI docs, bot scoring, speed insights and error tracking. Projects stay public by default and can be made private. The Hono ingestion keeps serving `/e` for 1.x clients until they are gone.
 
 This tab is the plan. The API reference tab has every route with full examples, Capabilities and gaps compares v2 with other tools, and Epics and prompts splits the work into agent-sized tasks.
 
@@ -16,7 +16,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 2 | Project visibility | Settled | Projects are `public` by default, like the dashboard today, and can be switched to `private` | Access and sign-in |
 | 3 | Lint baseline | Settled | The Skriuw lint rulebook, Oxlint 1.85.0 and oxfmt 0.70.0 | Linting and formatting |
 | 4 | Where the new API lives | Open, default | Elysia service in `apps/api` for ingest, reads and sign-in, on the shared engine. Fallback if the Vercel spike fails: `/v2` routes on Hono with oRPC | Architecture, Phases |
-| 5 | Package name | Open, default | `@remcostoeten/analytics@2.0.0` on the same name, ESM only | SDK API shape, Build |
+| 5 | Package name | Settled | New brand Spoar: the SDK ships as `@spoar/sdk`, ESM only. 1.x stays on `@remcostoeten/analytics` | SDK API shape, Build |
 | 6 | What a project is | Open, default | A config row owned by you: visibility, origins, keys, retention. Not a tenant | Storage, REST API |
 | 7 | Visitor-level data on public projects | Open, default | Admin-only unless a project turns on `publicVisitorData`; default off | Access and sign-in |
 | 8 | Admin sign-in | Open, default | GitHub OAuth in the API through Better Auth with the `dashboard_users` allowlist and an admin-only session cookie. Reads the repo's no-cookies rule as covering tracked visitors only | Access and sign-in |
@@ -102,10 +102,10 @@ analytics/
 │  ├─ dashboard/           existing Next app; moves to the API in phase 4
 │  └─ ingestion/           existing legacy deploy shell; removed in phase 5
 ├─ packages/
-│  ├─ contract/            new: @remcostoeten/analytics-contract
+│  ├─ contract/            new: @spoar/contract
 │  │  └─ src/             events.ts, errors.ts, projects.ts, stats.ts, visitors.ts, issues.ts
 │  ├─ shared/              new: semantic types, Result, noop; private
-│  ├─ engine/              new: @remcostoeten/analytics-engine; private until stable
+│  ├─ engine/              new: @spoar/engine; private until stable
 │  │  └─ src/
 │  │     ├─ define.ts       defineStage, defineSignal, defineEnricher, defineDimension
 │  │     ├─ pipeline.ts     the fixed stage order
@@ -113,7 +113,7 @@ analytics/
 │  │     ├─ ports/          EventStore, GeoLookup, RateLimiter, Hasher, Clock, Logger
 │  │     ├─ adapters/       postgres, pglite, memory, maxmind
 │  │     └─ db/             schema.ts and numbered SQL migrations
-│  ├─ sdk/                 @remcostoeten/analytics, rewritten for 2.0
+│  ├─ sdk/                 @spoar/sdk, rewritten for 2.0
 │  │  └─ src/
 │  │     ├─ core/           client, queue, identity, storage, consent
 │  │     ├─ plugins/        pageviews, web-vitals, scroll-depth, errors, ignore-self, ...
@@ -565,7 +565,7 @@ How blocking works: Brave Shields, uBlock Origin and Firefox strict tracking pro
 v2 approach:
 
 1. **Same-origin proxy.** The SDK sends to a relative path such as `/_ra`, configurable per site. A small handler in the site forwards the batch to `POST /v2/events`. The browser sees a first-party request to a neutral path, which filter lists have no rule for. No CNAME is involved, so there is nothing to uncloak.
-2. **Proxy helpers in the SDK.** `@remcostoeten/analytics/proxy` exports a fetch-standard handler: `export const POST = createProxy({ secret })` in a Next route, and the same function for Hono, Elysia, Astro or a Cloudflare Worker. It adds the project's secret key and the visitor's IP and user agent as forwarded headers, forwards the page's `Origin` (or the site's own origin) so localhost and preview flags work, forwards the admin session cookie and no other cookie, and refuses bodies over 60 KB.
+2. **Proxy helpers in the SDK.** `@spoar/sdk/proxy` exports a fetch-standard handler: `export const POST = createProxy({ secret })` in a Next route, and the same function for Hono, Elysia, Astro or a Cloudflare Worker. It adds the project's secret key and the visitor's IP and user agent as forwarded headers, forwards the page's `Origin` (or the site's own origin) so localhost and preview flags work, forwards the admin session cookie and no other cookie, and refuses bodies over 60 KB.
 3. **Trusted forwarding in the API.** The API only trusts forwarded IP and user-agent headers on requests that carry a valid project secret key. Without that, geo and the IP hash would describe the proxy's server instead of the visitor.
 4. **Neutral names.** Default path `/_ra`, no `analytics`, `track` or `collect` in any URL, header or query parameter the browser sends.
 5. **Measure it.** An optional server-side counter in the proxy helper counts HTML page requests. Comparing that with client pageviews gives an estimated blocked share per project, shown in the dashboard instead of guessed.

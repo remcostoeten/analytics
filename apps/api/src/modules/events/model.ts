@@ -1,4 +1,4 @@
-import { IngestResult, Timestamp } from "@remcostoeten/analytics-contract";
+import { IngestResult, Timestamp } from "@spoar/contract";
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 

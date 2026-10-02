@@ -1,8 +1,8 @@
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { engineError } from "@spoar/engine";
+import type { EngineError } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { AccessDeps, Caller, SignedIn } from "./types";
 

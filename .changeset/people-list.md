@@ -1,5 +1,5 @@
 ---
-"@remcostoeten/analytics-contract": minor
+"@spoar/contract": minor
 ---
 
 `PersonRow` and `PeopleList` for `GET /v2/people`, one row per identified user across projects.

@@ -6,7 +6,7 @@ description: A same-origin ingest path that ad blockers do not block.
 In the Next App Router, `app/%5Fra/route.ts` serves `/_ra`:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```

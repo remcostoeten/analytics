@@ -1,4 +1,4 @@
-import { clientIp, engineError, hashIp } from "@remcostoeten/analytics-engine";
+import { clientIp, engineError, hashIp } from "@spoar/engine";
 import type {
   DetailStore,
   EngineError,
@@ -9,8 +9,8 @@ import type {
   RealtimeFeed,
   SpeedStore,
   IssueStore,
-} from "@remcostoeten/analytics-engine";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import type { Result } from "@spoar/shared/result";
 
 import type { Caller } from "../../access/types";
 import { failure } from "../../plugins/error-handler";

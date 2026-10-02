@@ -4,13 +4,13 @@ import type {
   PublicProject,
   UpdatedProject,
   UpdateProject,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError, ProjectRecord, Visibility } from "@remcostoeten/analytics-engine";
-import { organizationId } from "@remcostoeten/analytics-engine/adapters/access";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { EngineError, ProjectRecord, Visibility } from "@spoar/engine";
+import { organizationId } from "@spoar/engine/adapters/access";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { canAdmin, isListed } from "../../access/rules";
 import { randomSecret } from "../../access/secrets";

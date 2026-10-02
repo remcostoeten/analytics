@@ -3,11 +3,11 @@ title: Overview
 description: Opt-in features, each in its own file so an app only ships what it uses.
 ---
 
-Import plugins from `@remcostoeten/analytics/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`, which returns its remover. No plugin imports another, so each one adds only its own code to the bundle.
+Import plugins from `@spoar/sdk/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`, which returns its remover. No plugin imports another, so each one adds only its own code to the bundle.
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, scrollDepth } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, scrollDepth } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",
@@ -44,7 +44,7 @@ Every event a plugin sends goes through the same consent, opt-out and `beforeSen
 ## Writing a plugin
 
 ```ts
-import { definePlugin } from "@remcostoeten/analytics";
+import { definePlugin } from "@spoar/sdk";
 
 export function pageSeen() {
   return definePlugin({

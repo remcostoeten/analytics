@@ -101,7 +101,7 @@ A fork of the repository can use the `jobs` GitHub workflow: set the `API_URL` v
 Behind the [proxy](/docs/guides/proxy), set the proxy's `endpoint` to your API and its `secret` to the project's secret key. Without the proxy, set the client's `endpoint` to your API's `/v2/events` URL:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
+import { createAnalytics } from "@spoar/sdk";
 
 const analytics = createAnalytics({
   project: "my-site",

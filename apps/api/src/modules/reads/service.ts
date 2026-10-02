@@ -3,11 +3,11 @@ import type {
   RealtimeResponse,
   StatsResponse,
   TimeseriesResponse,
-} from "@remcostoeten/analytics-contract";
-import { engineError, findDimension } from "@remcostoeten/analytics-engine";
-import type { EngineError, Metric, ReadScope, ReadStore } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/contract";
+import { engineError, findDimension } from "@spoar/engine";
+import type { EngineError, Metric, ReadScope, ReadStore } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import {
   nextCursor,

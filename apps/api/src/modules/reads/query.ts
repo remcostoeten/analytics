@@ -12,7 +12,7 @@ import {
   SpeedInterval,
   TimeseriesQuery,
   VitalMetric,
-} from "@remcostoeten/analytics-contract";
+} from "@spoar/contract";
 import { Type } from "@sinclair/typebox";
 import { t } from "elysia";
 

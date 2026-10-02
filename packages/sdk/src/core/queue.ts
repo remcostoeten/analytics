@@ -1,4 +1,4 @@
-import type { IngestResult, WireEvent } from "@remcostoeten/analytics-contract";
+import type { IngestResult, WireEvent } from "@spoar/contract";
 
 import type { Envelope, FlushResult, SendResult, Transport } from "./types";
 

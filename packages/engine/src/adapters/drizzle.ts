@@ -1,7 +1,7 @@
-import type { Props } from "@remcostoeten/analytics-contract";
-import { hasKeys, orNull } from "@remcostoeten/analytics-shared/records";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Props } from "@spoar/contract";
+import { hasKeys, orNull } from "@spoar/shared/records";
+import { err, ok } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 import { eq, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";

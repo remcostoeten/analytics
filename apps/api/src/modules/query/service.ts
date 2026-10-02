@@ -8,8 +8,8 @@ import type {
   SavedQueryList,
   SavedQueryResponse,
   UpdateSavedQuery,
-} from "@remcostoeten/analytics-contract";
-import { engineError, prepareQuery, queryViews } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError, prepareQuery, queryViews } from "@spoar/engine";
 import type {
   EngineError,
   QueryActor,
@@ -18,9 +18,9 @@ import type {
   RateLimiter,
   SavedQuery,
   SavedQueryStore,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import type { Caller } from "../../access/types";
 import { toCsv } from "../reads/csv";

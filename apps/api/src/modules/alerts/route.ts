@@ -8,9 +8,9 @@ import {
   TargetInput,
   TargetName,
   TargetTest,
-} from "@remcostoeten/analytics-contract";
-import type { EngineError } from "@remcostoeten/analytics-engine";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/contract";
+import type { EngineError } from "@spoar/engine";
+import type { Result } from "@spoar/shared/result";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

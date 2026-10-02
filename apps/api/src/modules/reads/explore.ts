@@ -5,8 +5,8 @@ import type {
   PathsResponse,
   RetentionResponse,
   StickinessResponse,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
 import type {
   EngineError,
   HeatMetric,
@@ -14,9 +14,9 @@ import type {
   MapLevel,
   PathDirection,
   ReadStore,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import { nextCursor, readPage } from "./params";
 import type { Scoped } from "./service";

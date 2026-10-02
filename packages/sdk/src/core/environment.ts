@@ -1,4 +1,4 @@
-import type { WireContext } from "@remcostoeten/analytics-contract";
+import type { WireContext } from "@spoar/contract";
 
 import type { PageFacts } from "./build-event";
 import { readEnv } from "./config";

@@ -1,16 +1,10 @@
-import { JobResult } from "@remcostoeten/analytics-contract";
-import { engineError, rawVitalDays } from "@remcostoeten/analytics-engine";
-import type {
-  EngineError,
-  IssueStore,
-  JobName,
-  OpsStore,
-  SpeedStore,
-} from "@remcostoeten/analytics-engine";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import { runAlerts } from "@remcostoeten/analytics-engine/alerts";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { JobResult } from "@spoar/contract";
+import { engineError, rawVitalDays } from "@spoar/engine";
+import type { EngineError, IssueStore, JobName, OpsStore, SpeedStore } from "@spoar/engine";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import { runAlerts } from "@spoar/engine/alerts";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

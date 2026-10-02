@@ -1,7 +1,7 @@
-import type { AlertEvent, AlertEventName, WebhookBody } from "@remcostoeten/analytics-contract";
-import type { Json } from "@remcostoeten/analytics-shared/http";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { AlertEvent, AlertEventName, WebhookBody } from "@spoar/contract";
+import type { Json } from "@spoar/shared/http";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 export type AlertEventOf<Name extends AlertEventName> = AlertEvent & { name: Name };
 

@@ -4,13 +4,13 @@ description: Add the SDK, list your events once, and send the first one.
 ---
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 `events.ts` lists every custom event once, for the browser and the server:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -21,8 +21,8 @@ export type Events = {
 `analytics.ts` creates the client:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -48,11 +48,11 @@ NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_...","endpoint":"/
 
 | Import | Contains |
 | --- | --- |
-| `@remcostoeten/analytics` | `createAnalytics`, `definePlugin` and the types |
-| `@remcostoeten/analytics/plugins` | Every plugin, each in its own file |
-| `@remcostoeten/analytics/react` | `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews`, `computeRoute` |
-| `@remcostoeten/analytics/next` | `<Analytics />`, the App Router route adapter |
-| `@remcostoeten/analytics/server` | `createServerAnalytics` for route handlers and server actions |
-| `@remcostoeten/analytics/proxy` | `createProxy` and `createPageCounter` |
+| `@spoar/sdk` | `createAnalytics`, `definePlugin` and the types |
+| `@spoar/sdk/plugins` | Every plugin, each in its own file |
+| `@spoar/sdk/react` | `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews`, `computeRoute` |
+| `@spoar/sdk/next` | `<Analytics />`, the App Router route adapter |
+| `@spoar/sdk/server` | `createServerAnalytics` for route handlers and server actions |
+| `@spoar/sdk/proxy` | `createProxy` and `createPageCounter` |
 
 Size budgets, gzipped: core 5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB (`errors` 0.7 KB, `speedInsights` 2.5 KB).

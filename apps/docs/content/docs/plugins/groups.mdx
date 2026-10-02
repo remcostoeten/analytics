@@ -4,16 +4,16 @@ description: Report on companies, workspaces or teams instead of only on people.
 ---
 
 ```ts
-import { groups } from "@remcostoeten/analytics/plugins";
-import type { Groups, TraitsArgs } from "@remcostoeten/analytics/plugins";
+import { groups } from "@spoar/sdk/plugins";
+import type { Groups, TraitsArgs } from "@spoar/sdk/plugins";
 ```
 
 Declare the group types and their traits once, and `set` autocompletes both:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import type { NoProps } from "@remcostoeten/analytics";
-import { groups } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import type { NoProps } from "@spoar/sdk";
+import { groups } from "@spoar/sdk/plugins";
 
 type WorkspaceGroups = {
   company: { plan: "free" | "pro"; seats: number };

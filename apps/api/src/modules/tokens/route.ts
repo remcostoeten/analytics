@@ -1,5 +1,5 @@
-import { CreatedToken, CreateToken, TokenList } from "@remcostoeten/analytics-contract";
-import type { EngineError } from "@remcostoeten/analytics-engine";
+import { CreatedToken, CreateToken, TokenList } from "@spoar/contract";
+import type { EngineError } from "@spoar/engine";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

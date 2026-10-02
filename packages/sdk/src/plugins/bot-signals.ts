@@ -1,5 +1,5 @@
-import { clientSignals } from "@remcostoeten/analytics-contract/signals";
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { clientSignals } from "@spoar/contract/signals";
+import { noop } from "@spoar/shared/noop";
 
 import { definePlugin } from "../core/plugin-host";
 

@@ -36,8 +36,8 @@ const specifierPattern = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)["']([^"']+)
  * dynamic `import()` calls.
  *
  * @example
- * importSpecifiers('import { ok } from "@remcostoeten/analytics-shared/result";');
- * // ["@remcostoeten/analytics-shared/result"]
+ * importSpecifiers('import { ok } from "@spoar/shared/result";');
+ * // ["@spoar/shared/result"]
  */
 export function importSpecifiers(content: string) {
   return Array.from(content.matchAll(specifierPattern), ([, specifier]) => specifier ?? "");

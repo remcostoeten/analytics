@@ -4,14 +4,14 @@ description: Tag every event with the visitor's experiment variants and record o
 ---
 
 ```ts
-import { experiments } from "@remcostoeten/analytics/plugins";
+import { experiments } from "@spoar/sdk/plugins";
 ```
 
 The plugin does not assign variants. Pass the variants your own code or feature flag service picked:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { experiments } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { experiments } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",

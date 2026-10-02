@@ -1,5 +1,5 @@
-import type { HttpError } from "@remcostoeten/analytics-shared/http";
-import { err } from "@remcostoeten/analytics-shared/result";
+import type { HttpError } from "@spoar/shared/http";
+import { err } from "@spoar/shared/result";
 
 import { engineError } from "../../errors";
 

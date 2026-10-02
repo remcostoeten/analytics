@@ -1,23 +1,15 @@
 import { join } from "node:path";
 
 import { PGlite } from "@electric-sql/pglite";
-import { createApp } from "@remcostoeten/analytics-api/app";
-import { openGeo } from "@remcostoeten/analytics-api/geo";
-import {
-  createEngine,
-  defaultEnrichers,
-  defaultSignals,
-  defaultStages,
-} from "@remcostoeten/analytics-engine";
-import { memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
-import { systemClock, webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
-import { createProxy } from "@remcostoeten/analytics-sdk/proxy";
+import { createApp } from "@spoar/api/app";
+import { openGeo } from "@spoar/api/geo";
+import { createEngine, defaultEnrichers, defaultSignals, defaultStages } from "@spoar/engine";
+import { memoryLogger } from "@spoar/engine/adapters/memory";
+import { pgliteAccess, pgliteAdapters } from "@spoar/engine/adapters/pglite";
+import { systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
+import { createProxy } from "@spoar/sdk/proxy";
 
 import { apiPort, blockMs, lcpAt, publicKey, secretKey, shiftAt, sitePort } from "./ports";
 

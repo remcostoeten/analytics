@@ -1,5 +1,5 @@
-import { AuthSession } from "@remcostoeten/analytics-contract";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { AuthSession } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
 import { isSignedInAdmin } from "../../access/rules";

@@ -1,4 +1,4 @@
-import type { WireContext, WireEvent } from "@remcostoeten/analytics-contract";
+import type { WireContext, WireEvent } from "@spoar/contract";
 
 import type { Props } from "./types";
 
