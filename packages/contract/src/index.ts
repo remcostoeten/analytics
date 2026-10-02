@@ -1,4 +1,5 @@
 export * from "./alerts";
+export * from "./annotations";
 export * from "./common";
 export * from "./enums";
 export * from "./errors";

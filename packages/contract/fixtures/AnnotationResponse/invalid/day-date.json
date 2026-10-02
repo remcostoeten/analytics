@@ -1,0 +1,17 @@
+{
+  "expectedPath": "/data/date",
+  "value": {
+    "data": {
+      "id": "ann_1",
+      "project": "skriuw",
+      "title": "API outage",
+      "date": "2026-09-30",
+      "endDate": null,
+      "kind": "incident",
+      "note": null,
+      "url": null,
+      "createdAt": "2026-09-30T17:00:00.000Z",
+      "updatedAt": "2026-09-30T17:00:00.000Z"
+    }
+  }
+}

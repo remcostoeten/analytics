@@ -1,4 +1,4 @@
-import type { Engine, Logger, OpsStore } from "@remcostoeten/analytics-engine";
+import type { AnnotationStore, Engine, Logger, OpsStore } from "@remcostoeten/analytics-engine";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { Elysia } from "elysia";
 
@@ -7,6 +7,7 @@ import { isSignedInAdmin } from "./access/rules";
 import type { AccessDeps } from "./access/types";
 import { adminModule } from "./modules/admin/route";
 import { alertsModule } from "./modules/alerts/route";
+import { annotationsModule } from "./modules/annotations/route";
 import type { AlertsDeps } from "./modules/alerts/service";
 import type { CruxOptions } from "./modules/jobs/crux";
 import { authModule } from "./modules/auth/route";
@@ -41,6 +42,7 @@ export type AppOptions = {
   access: AccessDeps;
   reads: ReadsOptions;
   query: QueryOptions;
+  annotations: AnnotationStore;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
   ops?: Nullable<OpsStore>;
   alerts?: Nullable<AlertsDeps>;
@@ -57,7 +59,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, the reads, the SQL console and, with `alerts`, the
+ * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console and, with `alerts`, the
  * alert routes. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
@@ -111,6 +113,7 @@ export function createApp(options: AppOptions) {
     .use(issuesModule(options.access, options.reads, options.docsBase))
     .use(detailsModule(options.access, options.reads, options.docsBase))
     .use(combinedModule(options.access, options.reads, options.docsBase))
+    .use(annotationsModule(options.access, options.reads, options.annotations, options.docsBase))
     .use(queryModule(options.access, options.query, options.docsBase))
     .use(
       jobsModule(

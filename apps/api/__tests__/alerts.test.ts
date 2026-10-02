@@ -129,6 +129,7 @@ function build(plugin: Nullable<AlertsPlugin>) {
       limiter: pgliteAdapters(database, clock).limiter,
       perMinute: 30,
     },
+    annotations: stores.annotations,
     authHandler: null,
     ops: stores.ops,
     alerts: plugin ? { plugin, store: stores.alerts, links } : null,

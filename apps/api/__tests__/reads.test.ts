@@ -81,6 +81,7 @@ function app(publicLimit: number) {
       limiter: pgliteAdapters(database, clock).limiter,
       perMinute: 30,
     },
+    annotations: stores.annotations,
     authHandler: null,
   });
 }

@@ -59,6 +59,7 @@ export type NavigationType = "navigate" | "reload" | "back-forward" | "back-forw
 export type IssueStatus = "open" | "resolved" | "ignored";
 export type IssueLevel = "error" | "warning";
 export type TokenScope = "read" | "admin";
+export type AnnotationKind = "release" | "post" | "content" | "incident" | "other";
 export type BotReason =
   | "ua_crawler" | "ua_automation" | "edge_verified_bot" | "asn_datacenter"
   | "headers_inconsistent" | "headers_missing" | "client_webdriver" | "client_headless"
@@ -257,6 +258,16 @@ export type ApiToken = Entity & {
   projectIds: Nullable<ProjectID[]>;
   lastUsedAt: Nullable<Timestamp>;
   expiresAt: Nullable<Timestamp>;
+};
+
+export type Annotation = Entity & {
+  project: ProjectID;
+  title: string;
+  date: Timestamp;
+  endDate: Nullable<Timestamp>;
+  kind: AnnotationKind;
+  note: Nullable<string>;
+  url: Nullable<string>;
 };
 ```
 

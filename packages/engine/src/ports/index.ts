@@ -73,6 +73,14 @@ export type {
   VitalStat,
 } from "./speed";
 export type {
+  AnnotationKind,
+  AnnotationPatch,
+  AnnotationRecord,
+  AnnotationStore,
+  AnnotationWindow,
+  NewAnnotation,
+} from "./annotations";
+export type {
   IgnoreRule,
   IssueEventRecord,
   IssueRecord,

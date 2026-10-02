@@ -11,6 +11,7 @@ import {
 } from "../db/schema";
 import type {
   AlertStore,
+  AnnotationStore,
   Membership,
   MemberStore,
   ProjectAdmin,
@@ -35,6 +36,7 @@ import { webCryptoHasher } from "./system";
 export type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 import { drizzleAlerts } from "./drizzle-alerts";
+import { drizzleAnnotations } from "./drizzle-annotations";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
 import { drizzleIssues } from "./drizzle-issues";
@@ -264,6 +266,7 @@ export type Access = {
   queries: QueryRunner;
   queryLog: QueryLog;
   savedQueries: SavedQueryStore;
+  annotations: AnnotationStore;
   speed: SpeedStore;
   issues: IssueStore;
   ops: OpsStore;
@@ -294,6 +297,7 @@ export function accessOn(db: Database, transact: Transact): Access {
     }),
     queryLog: drizzleQueryLog(db),
     savedQueries: drizzleSavedQueries(db),
+    annotations: drizzleAnnotations(db),
     speed: drizzleSpeed(db),
     issues: drizzleIssues(db),
     ops: drizzleOps(db),

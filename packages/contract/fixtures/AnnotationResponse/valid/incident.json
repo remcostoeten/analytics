@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "ann_0192f0c4-3b1e-7d2a-9c4f-1a2b3c4d5e6f",
+    "project": "skriuw",
+    "title": "API outage",
+    "date": "2026-09-30T14:00:00.000Z",
+    "endDate": "2026-09-30T16:15:00.000Z",
+    "kind": "incident",
+    "note": "Database failover; ingest kept running.",
+    "url": null,
+    "createdAt": "2026-09-30T17:00:00.000Z",
+    "updatedAt": "2026-09-30T17:00:00.000Z"
+  }
+}

@@ -237,3 +237,13 @@ export const issuesQuery = Type.Object({ status: Type.Optional(IssueStatus), ...
  * app.get("/projects/:project/issues/:issue/events", handler, { query: pagingQuery });
  */
 export const pagingQuery = Type.Object(pageFields);
+
+/**
+ * @name annotationsQuery
+ * @description The annotation list's query: the read range (`from` and `to`, or `period`) and
+ * paging.
+ *
+ * @example
+ * app.get("/projects/:project/annotations", handler, { query: annotationsQuery });
+ */
+export const annotationsQuery = Type.Composite([RangeQuery, Type.Object(pageFields)]);

@@ -5,6 +5,8 @@ import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 
+import { annotationsAdmin } from "./annotations";
+import type { AnnotationsAdmin } from "./annotations";
 import { readsAdmin } from "./reads";
 import type { ReadsAdmin } from "./reads";
 import { alertsAdmin } from "./targets";
@@ -13,6 +15,7 @@ import type { AdminCall, AdminError, AdminErrorCode, AdminOptions, AdminResult }
 
 export type Admin<Projects extends string> = ReadsAdmin<Projects> & {
   alerts: AlertsAdmin<Projects>;
+  annotations: AnnotationsAdmin<Projects>;
 };
 
 type JsonRecord = { [key: string]: Json };
@@ -90,7 +93,7 @@ function trusted<Body>(body: Json): Result<Body, string> {
 /**
  * @name createAdmin
  * @description The admin client for server code and scripts: `admin.alerts` manages a project's
- * alert targets and the read methods (`stats`, `timeseries`, `breakdown`, `lifecycle`, `issues`)
+ * alert targets, `admin.annotations` its dated labels on the time series, and the read methods (`stats`, `timeseries`, `breakdown`, `lifecycle`, `issues`)
  * read its numbers, each over one API route with the admin token. Every method resolves to
  * `{ ok: true, value }` or `{ ok: false, error }`, where `error.code` is a code from the contract's
  * error catalog or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE`, and
@@ -130,5 +133,9 @@ export function createAdmin<Projects extends string = string>(
     return answer.ok ? ok(answer.value.body) : err(adminError(answer.error));
   }
 
-  return { ...readsAdmin<Projects>(send), alerts: alertsAdmin<Projects>(send) };
+  return {
+    ...readsAdmin<Projects>(send),
+    alerts: alertsAdmin<Projects>(send),
+    annotations: annotationsAdmin<Projects>(send),
+  };
 }

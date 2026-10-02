@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "id": "ann_0192f0c4-3b1e-7d2a-9c4f-1a2b3c4d5e6f",
+      "project": "skriuw",
+      "title": "v2.0 released",
+      "date": "2026-10-01T09:30:00.000Z",
+      "endDate": null,
+      "kind": "release",
+      "note": null,
+      "url": "https://github.com/remcostoeten/skriuw/releases/tag/v2.0.0",
+      "createdAt": "2026-10-01T09:31:00.000Z",
+      "updatedAt": "2026-10-01T09:31:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import type { Annotation } from "@remcostoeten/analytics-contract";
+
 import { createAdmin, discord, mail, webhook } from "../src/admin/index";
 import type { AdminOptions } from "../src/admin/index";
 import { bodyText, withNativeRuntime } from "./native";
@@ -139,6 +141,105 @@ describe("admin.alerts", () => {
     expect(JSON.parse(api.calls[2]?.body ?? "")).toEqual({
       channel: "mail",
       to: ["remco@gmail.com"],
+    });
+  });
+});
+
+describe("admin.annotations", () => {
+  const stored: Annotation = {
+    id: "ann_1",
+    project: "skriuw",
+    title: "v2.0 released",
+    date: "2026-10-01T09:30:00.000Z",
+    endDate: null,
+    kind: "release",
+    note: null,
+    url: "https://github.com/remcostoeten/skriuw/releases/tag/v2.0.0",
+    createdAt: "2026-10-01T09:31:00.000Z",
+    updatedAt: "2026-10-01T09:31:00.000Z",
+  };
+
+  test("create, update, list and remove call their routes", async () => {
+    const api = fakeApi((call) => {
+      if (call.method === "DELETE") return { status: 204 };
+      if (call.method === "GET") return { status: 200, body: { data: [stored], nextCursor: null } };
+      return { status: call.method === "POST" ? 201 : 200, body: { data: stored } };
+    });
+    const annotations = admin(api.fetcher).annotations;
+    expect(
+      await annotations.create("skriuw", {
+        title: "v2.0 released",
+        date: new Date("2026-10-01T09:30:00.000Z"),
+        kind: "release",
+        url: "https://github.com/remcostoeten/skriuw/releases/tag/v2.0.0",
+      }),
+    ).toEqual({ ok: true, value: stored });
+    expect(
+      await annotations.update("skriuw", "ann_1", { endDate: null, note: "Rolled out" }),
+    ).toEqual({ ok: true, value: stored });
+    expect(
+      await annotations.list("skriuw", {
+        from: "2026-09-01T00:00:00Z",
+        to: "2026-10-02T00:00:00Z",
+      }),
+    ).toEqual({
+      ok: true,
+      value: { data: [stored], nextCursor: null },
+    });
+    expect(await annotations.remove("skriuw", "ann_1")).toEqual({ ok: true, value: null });
+    expect(
+      api.calls.map((call) => [
+        call.method,
+        decodeURIComponent(`${call.url.pathname}${call.url.search}`),
+        call.body ? JSON.parse(call.body) : null,
+      ]),
+    ).toEqual([
+      [
+        "POST",
+        "/v2/projects/skriuw/annotations",
+        {
+          title: "v2.0 released",
+          date: "2026-10-01T09:30:00.000Z",
+          kind: "release",
+          url: "https://github.com/remcostoeten/skriuw/releases/tag/v2.0.0",
+        },
+      ],
+      ["PATCH", "/v2/projects/skriuw/annotations/ann_1", { endDate: null, note: "Rolled out" }],
+      [
+        "GET",
+        "/v2/projects/skriuw/annotations?from=2026-09-01T00:00:00Z&to=2026-10-02T00:00:00Z",
+        null,
+      ],
+      ["DELETE", "/v2/projects/skriuw/annotations/ann_1", null],
+    ]);
+  });
+
+  test("a validation error comes back with its field", async () => {
+    const api = fakeApi(() => ({
+      status: 400,
+      body: {
+        error: {
+          code: "VALIDATION_FAILED",
+          message: "endDate must not be before date",
+          details: { fields: [{ path: "/endDate", message: "endDate must not be before date" }] },
+          requestId: "req_1",
+          docs: "https://api.example.test/v2/openapi",
+        },
+      },
+    }));
+    const created = await admin(api.fetcher).annotations.create("skriuw", {
+      title: "Sale week",
+      date: "2026-09-20",
+      endDate: "2026-09-14",
+    });
+    expect(created).toMatchObject({
+      ok: false,
+      error: {
+        code: "VALIDATION_FAILED",
+        status: 400,
+        details: { fields: [{ path: "/endDate" }] },
+        requestId: "req_1",
+      },
     });
   });
 });

@@ -75,6 +75,7 @@ async function openapiDocument(): Promise<string> {
       limiter: adapters.limiter,
       perMinute: 1,
     },
+    annotations: stores.annotations,
     authHandler: null,
     ops: stores.ops,
     alerts: {

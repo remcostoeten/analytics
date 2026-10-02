@@ -1,9 +1,20 @@
 import { describe, expect, expectTypeOf, test } from "bun:test";
 
-import type { AlertEventName, TargetInput } from "@remcostoeten/analytics-contract";
+import type {
+  AlertEventName,
+  Annotation,
+  CreateAnnotation,
+  TargetInput,
+} from "@remcostoeten/analytics-contract";
 
 import { createAdmin, discord, mail, webhook } from "../src/admin/index";
-import type { AdminResult, MailTarget, Target, WebhookTarget } from "../src/admin/index";
+import type {
+  AdminResult,
+  AnnotationInput,
+  MailTarget,
+  Target,
+  WebhookTarget,
+} from "../src/admin/index";
 import { alertRoute } from "../src/server/index";
 import type { AlertEventOf } from "../src/server/index";
 
@@ -42,6 +53,17 @@ function editorCatches() {
   ]);
   // @ts-expect-error: the unnamed webhook is already called webhook
   void admin.alerts.sync("skriuw", [webhook({ url }), discord({ name: "webhook", url })]);
+
+  // @ts-expect-error: a Date, a calendar date or an ISO 8601 timestamp
+  void admin.annotations.create("skriuw", { title: "Outage", date: "1 October" });
+  // @ts-expect-error: http:// or https:// only
+  void admin.annotations.create("skriuw", { title: "Mirror", date: "2026-10-01", url: "ftp://x" });
+  // @ts-expect-error: release, post, content, incident or other
+  void admin.annotations.create("skriuw", { title: "Sale", date: "2026-10-01", kind: "campaign" });
+  // @ts-expect-error: at least one change
+  void admin.annotations.update("skriuw", "ann_1", {});
+  // @ts-expect-error: not in Projects
+  void admin.annotations.list("remcostoten.nl");
 
   void alertRoute({
     secret: "whsec_test",
@@ -82,6 +104,15 @@ describe("admin types", () => {
         secrets: { [key: string]: string };
       }>
     >();
+  });
+
+  test("annotation inputs fit the contract once dates are on the wire", () => {
+    expectTypeOf<Omit<AnnotationInput, "date" | "endDate">>().toExtend<
+      Omit<CreateAnnotation, "date" | "endDate">
+    >();
+    expectTypeOf(
+      admin.annotations.create("skriuw", { title: "Launch", date: new Date() }),
+    ).toEqualTypeOf<AdminResult<Annotation>>();
   });
 
   test("alertRoute handlers get the event narrowed by name", () => {

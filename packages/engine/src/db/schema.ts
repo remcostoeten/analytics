@@ -493,3 +493,20 @@ export const alertDeliveries = pgTable(
     index("alert_deliveries_target_idx").on(table.targetId, table.createdAt),
   ],
 );
+
+export const annotations = pgTable(
+  "annotations",
+  {
+    ...baseEntity(),
+    projectId: text("project_id").notNull(),
+    title: text("title").notNull(),
+    date: timestamp("date", { withTimezone: true }).notNull(),
+    endDate: timestamp("end_date", { withTimezone: true }),
+    kind: text("kind", { enum: ["release", "post", "content", "incident", "other"] })
+      .notNull()
+      .default("other"),
+    note: text("note"),
+    url: text("url"),
+  },
+  (table) => [index("annotations_project_date_idx").on(table.projectId, table.date, table.id)],
+);
