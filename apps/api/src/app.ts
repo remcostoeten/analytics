@@ -24,6 +24,7 @@ import type { QueryOptions } from "./modules/query/service";
 import { readsModule } from "./modules/reads/route";
 import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
+import type { HistorySource } from "./modules/landing/service";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
@@ -49,6 +50,7 @@ export type AppOptions = {
   alerts?: Nullable<AlertsDeps>;
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
+  history?: Nullable<HistorySource>;
 };
 
 async function signedInAdmin(headers: Headers, access: AccessDeps) {
@@ -137,6 +139,15 @@ export function createApp(options: AppOptions) {
         : new Elysia({ name: "alerts-off" }),
     );
   return new Elysia()
-    .use(landingModule({ version, clock: options.clock, tags: apiTags, routes: () => api.routes }))
+    .use(
+      landingModule({
+        version,
+        clock: options.clock,
+        tags: apiTags,
+        routes: () => api.routes,
+        geo: options.geo,
+        history: options.history ?? null,
+      }),
+    )
     .use(api);
 }

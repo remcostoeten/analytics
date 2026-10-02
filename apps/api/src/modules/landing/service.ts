@@ -1,4 +1,6 @@
-import type { Path, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable, Path, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import { Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
 export type ApiRoute = {
   method: string;
@@ -12,22 +14,28 @@ export type RouteEntry = { method: string; path: Path; summary: string };
 
 export type RouteGroup = ApiTag & { routes: RouteEntry[] };
 
-export type Landing = {
-  name: string;
+export type HealthView = {
+  ok: true;
   version: string;
-  status: "ok";
   time: Timestamp;
   runtime: string;
+  bootedAt: Timestamp;
+  geo: { city: Nullable<string>; asn: Nullable<string>; loadMs: number };
+};
+
+export type HistoryWeek = { week: Timestamp; total: number };
+
+export type History = { repo: string; weeks: HistoryWeek[]; total: number };
+
+export type HistorySource = { repo: string; send: typeof fetch };
+
+export type Landing = {
+  name: string;
   baseUrl: string;
-  links: {
-    docs: string;
-    openapi: string;
-    health: string;
-    guide: string;
-    npm: string;
-    source: string;
-  };
+  links: { docs: string; openapi: string; health: string; source: string };
+  health: HealthView;
   groups: RouteGroup[];
+  history: Nullable<History>;
 };
 
 const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "ALL"];
@@ -65,36 +73,63 @@ export function routeGroups(routes: ApiRoute[], tags: ApiTag[]): RouteGroup[] {
   });
 }
 
+const CommitActivity = Type.Array(
+  Type.Object({ total: Type.Number(), week: Type.Number() }, { additionalProperties: true }),
+);
+
 /**
- * @name landing
- * @description The public description of the API served at `/` and `/v2`: name, version, status,
- * the links that matter and every documented route grouped by tag.
+ * @name fetchHistory
+ * @description Reads the last 52 weeks of commits from GitHub's commit activity endpoint. GitHub
+ * answers 202 while it computes the statistics; that, any other failure and a malformed body
+ * give `null`, so the page renders without the chart.
  *
  * @example
- * const view = landing({ version, time: new Date().toISOString(), runtime: "bun 1.3.14", baseUrl: "https://api.analytics.remcostoeten.nl", groups });
+ * const history = await fetchHistory({ repo: "remcostoeten/analytics", send: fetch });
+ */
+export async function fetchHistory(source: HistorySource): Promise<Nullable<History>> {
+  try {
+    const response = await source.send(
+      `https://api.github.com/repos/${source.repo}/stats/commit_activity`,
+      { headers: { accept: "application/vnd.github+json", "user-agent": "spoar-api" } },
+    );
+    if (response.status !== 200) return null;
+    const body: unknown = await response.json();
+    if (!Value.Check(CommitActivity, body)) return null;
+    const weeks = body.map((item) => ({
+      week: new Date(item.week * 1000).toISOString(),
+      total: item.total,
+    }));
+    return { repo: source.repo, weeks, total: weeks.reduce((sum, w) => sum + w.total, 0) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @name landing
+ * @description The public description of the API served at `/` and `/v2`: links, the health
+ * details, every documented route grouped by tag and the commit history when it loaded.
+ *
+ * @example
+ * const view = landing({ baseUrl: "https://api.analytics.remcostoeten.nl", health, groups, history: null });
  */
 export function landing(input: {
-  version: string;
-  time: Timestamp;
-  runtime: string;
   baseUrl: string;
+  health: HealthView;
   groups: RouteGroup[];
+  history: Nullable<History>;
 }): Landing {
   return {
     name: "Spoar API",
-    version: input.version,
-    status: "ok",
-    time: input.time,
-    runtime: input.runtime,
     baseUrl: input.baseUrl,
     links: {
       docs: `${input.baseUrl}/v2/openapi`,
       openapi: `${input.baseUrl}/v2/openapi/json`,
       health: `${input.baseUrl}/v2/health`,
-      guide: "https://docs.analytics.remcostoeten.nl",
-      npm: "https://www.npmjs.com/package/@spoar/sdk",
       source: "https://github.com/remcostoeten/analytics",
     },
+    health: input.health,
     groups: input.groups,
+    history: input.history,
   };
 }
