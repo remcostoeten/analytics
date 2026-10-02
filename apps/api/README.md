@@ -6,6 +6,7 @@ The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-
 
 | Route | Does |
 | --- | --- |
+| `GET /`, `GET /v2` | Landing page: status, version, links and every documented route by tag, rendered from the route definitions; HTML for browsers, the same data as JSON for any other `Accept`. Hidden from the OpenAPI document |
 | `GET /v2/health` | `{ ok, version, time }` plus the runtime, a cold-start flag, the header the caller's IP came from, and which MaxMind files loaded |
 | `POST /v2/events` | Ingest through the engine: `text/plain` or `application/json`, at most 60 KB and 50 events, `X-Project-Key` from an allowed origin or `Authorization: Bearer sk_...` |
 | `GET /v2/openapi`, `/v2/openapi/json` | Interactive docs and the OpenAPI 3 document |
