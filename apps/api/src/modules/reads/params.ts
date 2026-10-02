@@ -38,7 +38,7 @@ const filterParameter = /^filter\[([^\]]+)\]$/;
 // A custom metric such as sum:prop.revenue or avg:prop.duration.
 const customMetric = /^(sum|avg):prop\.([\w.-]{1,64})$/;
 const earliest = new Date("2020-01-01T00:00:00.000Z");
-const maxLimit = 100;
+export const maxLimit = 100;
 const defaultLimit = 20;
 const exportFormats = new Set<string>(["csv", "json", "sql"]);
 

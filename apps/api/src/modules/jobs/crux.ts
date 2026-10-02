@@ -9,6 +9,8 @@ import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 
+import { minSamples } from "../speed/service";
+
 export type CruxOptions = {
   key: string;
   send: (url: string, init: RequestInit) => Promise<Response>;
@@ -23,7 +25,6 @@ type CruxRecord = {
 const endpoint = "https://chromeuxreport.googleapis.com/v1/records:queryRecord";
 const windowDays = 28;
 const dayMs = 24 * 60 * 60 * 1000;
-const minSamples = 20;
 const flagAbove = 0.25;
 const cruxNames: { [metric in Metric]: string } = {
   lcp: "largest_contentful_paint",

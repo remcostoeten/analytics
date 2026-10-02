@@ -3,10 +3,9 @@ import type { Static } from "@sinclair/typebox";
 
 import { EventName } from "./enums";
 import { ErrorCode } from "./errors";
+import { groupTypePattern, maxEventsPerBatch, maxGroupId, maxGroups } from "./limits";
 import { Count, nullable, Timestamp } from "./schema";
 
-export const maxEventsPerBatch = 50;
-export const maxBodyBytes = 60 * 1024;
 export const maxProps = 25;
 export const maxPropKeyLength = 255;
 export const maxPropValueLength = 255;
@@ -77,10 +76,8 @@ export function propValueLimit(name: string, key: string) {
   return name === "error" && long ? maxLongPropValueLength : maxPropValueLength;
 }
 
-export const maxGroups = 5;
-
-export const GroupType = Type.String({ pattern: "^[a-z][a-z0-9_]{0,31}$" });
-export const GroupId = Type.String({ minLength: 1, maxLength: 128 });
+export const GroupType = Type.String({ pattern: groupTypePattern });
+export const GroupId = Type.String({ minLength: 1, maxLength: maxGroupId });
 
 export const WireGroups = Type.Record(GroupType, GroupId, {
   maxProperties: maxGroups,

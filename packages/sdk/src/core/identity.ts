@@ -48,9 +48,9 @@ export function createIdentity(
   function visitor() {
     const existing = saved.read().visitor;
     if (existing) return existing;
-    const id = uuidv7(now());
-    saved.write({ visitor: id });
-    return id;
+    const fresh = uuidv7(now());
+    saved.write({ visitor: fresh });
+    return fresh;
   }
 
   function session() {

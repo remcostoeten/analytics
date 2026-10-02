@@ -1,4 +1,6 @@
 import type { WireGroups } from "@remcostoeten/analytics-contract";
+import { groupTypePattern, maxGroupId, maxGroups } from "@remcostoeten/analytics-contract/limits";
+import { hasKeys } from "@remcostoeten/analytics-shared/records";
 
 import { definePlugin } from "../core/plugin-host";
 import type { GroupMap, GroupTraits, GroupType, Plugin, PluginClient, Props } from "../core/types";
@@ -18,10 +20,7 @@ export type Groups<Map extends GroupMap = GroupMap> = Plugin & {
   leave: (type: GroupType<Map>) => void;
 };
 
-const maxGroups = 5;
-const maxId = 128;
-// A group type: a lowercase letter, then up to 31 lowercase letters, digits or underscores.
-const typePattern = /^[a-z][a-z0-9_]{0,31}$/;
+const typePattern = new RegExp(groupTypePattern);
 
 /**
  * @name groups
@@ -55,7 +54,7 @@ export function groups<Map extends GroupMap = GroupMap>(): Groups<Map> {
   ) {
     const full = !(type in members) && Object.keys(members).length === maxGroups;
     if (!typePattern.test(type) || id.length === 0 || full) return;
-    const groupId = id.slice(0, maxId);
+    const groupId = id.slice(0, maxGroupId);
     members = { ...members, [type]: groupId };
     owner = null;
     announce({ ...traits[0], groupType: type, groupId });
@@ -77,7 +76,7 @@ export function groups<Map extends GroupMap = GroupMap>(): Groups<Map> {
       const removeHook = host.beforeSend((event) => {
         owner ??= event.visitor;
         if (owner !== event.visitor) forget();
-        if (Object.keys(members).length > 0) event.groups = { ...members };
+        if (hasKeys(members)) event.groups = { ...members };
         return event;
       });
       const removeConsent = host.onConsent((status) => {

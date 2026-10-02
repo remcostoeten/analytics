@@ -1,4 +1,6 @@
 import type { IngestResult, WireContext, WireEvent } from "@remcostoeten/analytics-contract";
+import { maxEventsPerBatch } from "@remcostoeten/analytics-contract/limits";
+import { hasKeys } from "@remcostoeten/analytics-shared/records";
 
 import { buildEvent, limitProps } from "../core/build-event";
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
@@ -29,7 +31,6 @@ type Outgoing = {
   events: WireEvent[];
 };
 
-const batchLimit = 50;
 const nothing: ServerResult = { ok: true, error: null, accepted: 0, duplicates: 0, failed: 0 };
 
 function pathOf(request: Request | undefined) {
@@ -141,8 +142,8 @@ export function createServerAnalytics<
     const url = eventsUrl(config.endpoint);
     let total = nothing;
     for (const batch of batches) {
-      for (let start = 0; start < batch.events.length; start += batchLimit) {
-        const events = batch.events.slice(start, start + batchLimit);
+      for (let start = 0; start < batch.events.length; start += maxEventsPerBatch) {
+        const events = batch.events.slice(start, start + maxEventsPerBatch);
         const result = await post(events, batch, config.secret, url);
         const counts = {
           accepted: total.accepted + result.accepted,
@@ -191,7 +192,7 @@ export function createServerAnalytics<
       props: limitProps({ ...tags, ...props }, name === "error").props,
       context: wire,
     });
-    if (from.groups && Object.keys(from.groups).length > 0) event.groups = from.groups;
+    if (from.groups && hasKeys(from.groups)) event.groups = from.groups;
     return event;
   }
 

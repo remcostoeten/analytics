@@ -1,4 +1,4 @@
-import { maxBodyBytes } from "@remcostoeten/analytics-contract";
+import { maxBodyBytes } from "@remcostoeten/analytics-contract/limits";
 
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
 import { adminSessionCookie, eventsUrl, siteOrigin, visitorDetails } from "../server/forwarding";

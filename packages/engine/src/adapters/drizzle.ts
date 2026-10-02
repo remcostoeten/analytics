@@ -1,4 +1,5 @@
 import type { Props } from "@remcostoeten/analytics-contract";
+import { hasKeys, orNull } from "@remcostoeten/analytics-shared/records";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { eq, inArray, sql } from "drizzle-orm";
@@ -72,7 +73,7 @@ function legacyMeta(draft: EventDraft): Meta {
       browserVersion: enrichment.device?.browserVersion,
       os: enrichment.device?.os,
       osVersion: enrichment.device?.osVersion,
-      [groupsKey]: event.groups && Object.keys(event.groups).length > 0 ? event.groups : null,
+      [groupsKey]: event.groups ? orNull(event.groups) : null,
     }),
   };
 }
@@ -149,8 +150,8 @@ function visitorPatch(group: EventDraft[]): Meta {
     if (event.name === "experiment_exposure") Object.assign(experiments, experiment(event.props));
   }
   return present({
-    identity: Object.keys(identity).length > 0 ? identity : null,
-    experiments: Object.keys(experiments).length > 0 ? experiments : null,
+    identity: orNull(identity),
+    experiments: orNull(experiments),
   });
 }
 
@@ -237,7 +238,7 @@ async function upsertVisitor(db: Database, group: EventDraft[], newSession: bool
       projectId: last.projectId,
       fingerprint: last.event.visitor,
       isInternal: internal,
-      meta: Object.keys(patch).length > 0 ? patch : null,
+      meta: orNull(patch),
     })
     .onConflictDoUpdate({
       target: [visitors.projectId, visitors.fingerprint],
@@ -246,7 +247,7 @@ async function upsertVisitor(db: Database, group: EventDraft[], newSession: bool
         lastSeen: sql`now()`,
         visitCount: sql`${visitors.visitCount} + ${newSession ? 1 : 0}`,
         isInternal: sql`${visitors.isInternal} OR ${internal}`,
-        ...(Object.keys(patch).length > 0 ? { meta: mergedMeta(patch) } : {}),
+        ...(hasKeys(patch) ? { meta: mergedMeta(patch) } : {}),
       },
     })
     .returning({ isInternal: visitors.isInternal });
@@ -346,17 +347,17 @@ async function groupIssue(db: Database, group: EventDraft[]) {
       : [];
   const [row] = rows;
   if (!row) return;
-  const id = BigInt(String(row.id));
+  const issueId = BigInt(String(row.id));
   const before = Number(row.minute_count) - group.length;
   const keep = Math.max(0, sampleAfter - before);
   const kept = group.slice(0, keep).map((draft) => draft.event.id);
   const dropped = group.slice(keep).map((draft) => draft.event.id);
   if (kept.length > 0) {
-    await db.update(events).set({ issueId: id }).where(inArray(events.fingerprint, kept));
+    await db.update(events).set({ issueId }).where(inArray(events.fingerprint, kept));
   }
   if (dropped.length > 0) await db.delete(events).where(inArray(events.fingerprint, dropped));
   await db.execute(
-    sql`UPDATE issues SET visitors = (SELECT count(DISTINCT visitor_id) FROM events WHERE issue_id = ${id} AND visitor_id <> ${serverVisitor}) WHERE id = ${id}`,
+    sql`UPDATE issues SET visitors = (SELECT count(DISTINCT visitor_id) FROM events WHERE issue_id = ${issueId} AND visitor_id <> ${serverVisitor}) WHERE id = ${issueId}`,
   );
 }
 
