@@ -87,8 +87,8 @@ export function speedProps(metric: Measured, sampleRate: number, connection: str
  * records LCP, INP, CLS, FCP and TTFB for the hard navigation. Sampling is decided once per page
  * load. LCP, INP and CLS are reported on every change and the buffer keeps the latest value per
  * metric id, so the values are ready when the page unloads without a visibility change. Metrics
- * are sent together, credited to the path the page loaded with, when the tab is hidden, the
- * route changes or 6 metrics are waiting.
+ * are sent together, credited to the path the page loaded with and the route it had when the
+ * first metric arrived, when the tab is hidden, the route changes or 6 metrics are waiting.
  *
  * @example
  * createAnalytics({ ...config, plugins: [speedInsights({ sampleRate: 0.5 })] });
@@ -102,7 +102,7 @@ export function speedInsights(options: SpeedOptions = {}) {
         return noop;
       }
       const path = pagePath();
-      const route = client.status().route;
+      let route = client.status().route;
       const connection =
         (navigator as Navigator & { connection?: Connection }).connection?.effectiveType ?? null;
       let buffer: Props[] = [];
@@ -115,6 +115,7 @@ export function speedInsights(options: SpeedOptions = {}) {
         return pending.length > 0;
       }
       function add(metric: Measured) {
+        route ??= client.status().route;
         buffer = buffer.filter((props) => props.id !== metric.id);
         buffer.push(speedProps(metric, sampleRate, connection));
         if (buffer.length >= flushAt && send()) void client.flush();

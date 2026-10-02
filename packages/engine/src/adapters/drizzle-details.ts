@@ -440,6 +440,12 @@ export function drizzleDetails(db: Database): DetailStore {
           db,
           sql`UPDATE sessions SET is_internal = ${internal} WHERE project_id = ${project} AND visitor_id = ${visitor} RETURNING id`,
         );
+        await select(
+          db,
+          sql`UPDATE web_vitals SET is_internal = ${internal} WHERE project_id = ${project} AND session_id IN (
+              SELECT session_id FROM sessions WHERE project_id = ${project} AND visitor_id = ${visitor}
+            ) RETURNING id`,
+        );
         return { eventsUpdated: events.length, sessionsUpdated: sessions.length };
       }),
     sessions: (scope, page) =>

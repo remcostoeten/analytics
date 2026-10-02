@@ -511,11 +511,11 @@ A module that works like Vercel Speed Insights: real-user Core Web Vitals per ro
 
 - Lazy-loads the `web-vitals` attribution build so pages that do not use the plugin pay nothing, and records LCP, INP, CLS, FCP and TTFB.
 - Measures hard navigations only, as Vercel does; soft navigations are not reliably measurable in browsers yet.
-- `sampleRate` from 0 to 1, decided once per page load and stored with each row so counts can be re-weighted.
+- `sampleRate` from 0 to 1, decided once per page load and stored with each row. Reads count the measured samples and do not re-weight them, so keep the rate the same across a range you compare.
 - Each metric carries the web-vitals `id` (for dedupe when INP or CLS updates), value rounded (CLS to 4 decimals, others to whole milliseconds), rating, route and path, navigation type, device class, connection type, and one attribution CSS selector: the LCP element, the INP target or the largest CLS shift source.
 - Buffered and sent on tab hide, pagehide, route change or at 6 metrics, in one request.
 
-**Storage**: a `web_vitals` table (project, time, metric, value, rating, route, path, device, country, connection, selector, sample rate, navigation type, session, release), 30 days raw. A daily `rollup_vitals` table with p50, p75, p90, p95, p99 and counts per project, day, route, device and metric, human traffic only.
+**Storage**: a `web_vitals` table (project, time, metric, value, rating, route, path, device, country, connection, selector, sample rate, navigation type, session, bot score, internal and preview flags), 30 days raw or the project's `retentionDays` when that is shorter. A daily `rollup_vitals` table with p50, p75, p90, p95, p99 and counts per project, day, route, device and metric, human traffic only.
 
 **Score**, following Vercel's documented method:
 
@@ -538,7 +538,7 @@ Each metric's p75 is scored from 0 to 100 on a log-normal curve, the way Lightho
 | `GET /v2/projects/:project/speed/routes` | Every route with its score and metrics, worst first |
 | `GET /v2/projects/:project/speed/elements?metric=lcp` | The selectors most often behind slow values |
 
-All four take `device=mobile|desktop|all`, `percentile=75|90|95|99` (default 75) and the usual date range and filters, and hide values under 20 samples. The dashboard view mirrors Vercel's: a score ring, one card per metric with its distribution bar, a route table and a device toggle.
+All four take `device=mobile|desktop|all`, `percentile=50|75|90|95|99` (default 75) and the usual date range and filters, and hide values under 20 samples. The dashboard view mirrors Vercel's: a score ring, one card per metric with its distribution bar, a route table and a device toggle.
 
 **What keeps the numbers trustworthy.** Each step guards against one way the current numbers go wrong:
 
@@ -546,9 +546,9 @@ All four take `device=mobile|desktop|all`, `percentile=75|90|95|99` (default 75)
 | --- | --- |
 | Measure | Google's `web-vitals` library, not hand-written observers; it already handles background tabs, back/forward cache restores, prerendering, CLS session windows and INP selection. The page's path is captured when the page loads, not when the tab closes |
 | Send | Each value carries the library's metric `id`. INP and CLS can report again as they worsen, so ingest keeps only the latest value per `id` instead of counting each report |
-| Validate | Ingest rejects impossible values (negative numbers, CLS above 10, any timing above 120 s) and values from pages that were hidden from the start |
-| Filter | Bots, headless browsers, internal traffic, localhost and previews never reach the speed tables; `traffic=human` is the only mode for speed |
-| Aggregate | Percentiles, never averages, computed in the daily rollup with `percentile_cont`; no value is shown under 20 samples, and each card says how many samples it has |
+| Validate | Ingest rejects impossible values (negative numbers, CLS above 10, any timing above 120 s), strips the query and fragment from the path, and works out the rating from the value. `web-vitals` itself skips pages that were hidden from the start |
+| Filter | Bots, headless browsers, internal traffic and localhost never reach the speed tables. Previews are stored with `is_preview` and left out by the default `environment=production`. A session found to be a bot or internal later passes that on to its speed rows. `traffic=human` is the only mode for speed |
+| Aggregate | Exact percentiles with `percentile_cont` over the raw rows of the last 30 days. Older days come from the daily rollup, whose per-day percentiles are combined as a sample-weighted mean, an approximation. No value is shown under 20 samples, and each card says how many samples it has |
 | Test | Playwright fixture pages with known behaviour (an image that paints after 2 s, a button whose handler blocks for 300 ms, a banner that shifts the layout by a known amount) must produce values within 10% of the expected ones, in CI |
 | Cross-check | A weekly job compares each project's p75 with Google's Chrome UX Report for the same origin, where Google has data, and flags a gap over 25% in `/admin/metrics` |
 

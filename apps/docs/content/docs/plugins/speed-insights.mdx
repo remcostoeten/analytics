@@ -46,7 +46,7 @@ One `web_vital` event per metric:
 | `connection` | `string` or `null` | `navigator.connection.effectiveType`, such as `4g`, or `null` where the browser does not expose it |
 | `selector` | `string` or `null` | The attributed element: the LCP target, the INP interaction target or the largest CLS shift target; `null` for FCP and TTFB |
 | `sampleRate` | `number` | The `sampleRate` in effect |
-| `route` | `string` | The route template, only when one was set when the page loaded |
+| `route` | `string` | The route template the page had when its first metric arrived, so metrics sent after a client-side navigation still belong to the page they measured |
 
 ## Behaviour
 
@@ -77,4 +77,4 @@ onLCP((metric) => analytics.track("web_vital", speedProps(metric, 1, null)));
 
 The API stores a `web_vital` event as a speed row unless it comes from bot, internal or localhost traffic, names an unknown metric or rating, or holds an impossible value (negative, CLS above 10, a timing above 120 seconds). The row is keyed by the project and the metric `id`, so updates of INP and CLS replace earlier ones. Tablets count as mobile. Rows from preview deployments are kept and marked `is_preview`; the speed reads show production unless they ask for `environment=preview` or `environment=all`.
 
-The [SQL views](/docs/api/sql) `web_vitals` (one row per metric) and `daily_vitals` (daily percentiles) expose them. The rollup job keeps daily percentiles and rating counts per route, device and metric in `rollup_vitals`, and drops raw speed rows older than 30 days. The speed reads use the rollup for those older days, without the page, country and selector it does not keep.
+The [SQL views](/docs/api/sql) `web_vitals` (one row per metric) and `daily_vitals` (daily percentiles) expose them. The rollup job keeps daily percentiles and rating counts per route, device and metric in `rollup_vitals`, and drops raw speed rows older than 30 days. The cleanup job drops them sooner when the project's `retentionDays` is shorter. The speed reads use the rollup for those older days, without the page, country and selector it does not keep.

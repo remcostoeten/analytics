@@ -146,6 +146,14 @@ export function drizzleOps(db: Database): OpsStore {
               LIMIT ${batch})
             RETURNING id`,
         );
+        const vitals = await selectRows(
+          db,
+          sql`DELETE FROM web_vitals WHERE id IN (
+              SELECT w.id FROM web_vitals w JOIN projects p ON p.id = w.project_id
+              WHERE w.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
+              LIMIT ${batch})
+            RETURNING id`,
+        );
         const limits = await selectRows(
           db,
           sql`DELETE FROM rate_limits
@@ -160,7 +168,8 @@ export function drizzleOps(db: Database): OpsStore {
             RETURNING id`,
         );
         return {
-          rowsDeleted: events.length + sessions.length + limits.length + deliveries.length,
+          rowsDeleted:
+            events.length + sessions.length + vitals.length + limits.length + deliveries.length,
         };
       }),
     checkTargets: () =>

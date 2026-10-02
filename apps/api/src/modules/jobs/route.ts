@@ -50,10 +50,10 @@ function startOfDay(at: Date) {
 /**
  * @name jobsModule
  * @description Scheduled jobs behind the cron secret, each recorded in the job history:
- * `rollup?days=2` rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops
- * raw speed rows past 30 days and runs the session layer of bot detection over the previous UTC
- * day; `cleanup` deletes events and sessions past each project's
- * retention, 50,000 of each per run; `alerts` queues new issues and regressions and sends due
+ * `rollup?days=2` runs the session layer of bot detection over the previous UTC day, then rolls
+ * the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops raw speed rows past 30
+ * days; `cleanup` deletes events, sessions and raw speed rows past each project's retention,
+ * 50,000 of each per run; `alerts` queues new issues and regressions and sends due
  * deliveries to the alert targets; `crux` compares each project's p75 with the Chrome UX Report.
  *
  * @example
@@ -114,14 +114,14 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
           const now = options.clock();
           const to = new Date(startOfDay(now).getTime() + dayMs);
           const from = new Date(to.getTime() - days * dayMs);
+          const scored = await scoreYesterday(now);
+          if (!scored.ok) return scored;
           const result = await options.speed.rollup(
             from,
             to,
             new Date(now.getTime() - rawVitalDays * dayMs),
           );
           if (!result.ok) return result;
-          const scored = await scoreYesterday(now);
-          if (!scored.ok) return scored;
           return ok({
             startDay: from.toISOString().slice(0, 10),
             days,
@@ -136,7 +136,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Roll up speed",
           description:
-            "Writes daily p50 to p99 and rating counts per project, route, device and metric, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day, which adds each reason once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+            "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
           tags,
         },
       },
@@ -153,7 +153,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Delete expired rows",
           description:
-            "Deletes events and sessions older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+            "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
           tags,
         },
       },

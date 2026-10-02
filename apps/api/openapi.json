@@ -23562,7 +23562,7 @@
     "/v2/admin/jobs/rollup": {
       "post": {
         "summary": "Roll up speed",
-        "description": "Writes daily p50 to p99 and rating counts per project, route, device and metric, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day, which adds each reason once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+        "description": "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -23715,7 +23715,7 @@
     "/v2/admin/jobs/cleanup": {
       "post": {
         "summary": "Delete expired rows",
-        "description": "Deletes events and sessions older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
