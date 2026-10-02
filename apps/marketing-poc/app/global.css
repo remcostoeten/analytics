@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #09090b;
+  --color-ink: #0a0a0b;
+  --color-ink-deep: #050506;
   --color-ink-raised: #111113;
-  --color-ink-panel: #141416;
-  --color-line: #232326;
-  --color-line-strong: #2e2e32;
-  --color-fog: #8a8a90;
-  --color-mist: #c9c9ce;
-  --color-paper: #f4f3ef;
-  --color-ember: #e5742b;
-  --color-ember-dim: #9a4d1b;
-  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --color-ink-panel: #17171a;
+  --color-line: #222225;
+  --color-line-strong: #2d2d31;
+  --color-fog: #86868c;
+  --color-mist: #c4c4c9;
+  --color-paper: #f2f1ed;
+  --color-ember: #e8742b;
+  --color-ember-deep: #b14f14;
+  --color-leaf: #35c46a;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 html {
@@ -21,30 +23,120 @@ html {
 }
 
 body {
-  background: var(--color-ink);
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgb(150 85 45 / 0.55), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgb(60 32 18 / 0.9), transparent 70%),
+    linear-gradient(180deg, #1f120b 0%, #3b2114 40%, #6b3d26 100%);
   color: var(--color-paper);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-.dot-grid {
-  background-image: radial-gradient(circle, rgb(255 255 255 / 0.16) 0.8px, transparent 0.9px);
-  background-size: 9px 9px;
+.copper-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.dot-fade {
-  mask-image: linear-gradient(to bottom, black 0%, rgb(0 0 0 / 0.6) 40%, transparent 100%);
+.frame {
+  position: relative;
+  background: var(--color-ink);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 40px 120px rgb(0 0 0 / 0.6);
+  overflow: hidden;
 }
 
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.frame-vignette {
+.mono {
+  font-family: var(--font-mono);
+}
+
+.dim {
+  color: #9a9a9f;
+}
+
+.halftone {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.95) 1.5px, transparent 1.8px);
+  background-size: 7px 7px;
+  mask-image:
+    radial-gradient(ellipse 22% 26% at 22% 34%, #000 0%, transparent 100%),
+    radial-gradient(ellipse 18% 22% at 46% 22%, #000 0%, transparent 100%),
+    radial-gradient(ellipse 30% 18% at 70% 14%, #000 0%, transparent 100%),
+    radial-gradient(ellipse 14% 20% at 84% 40%, #000 0%, transparent 100%),
+    radial-gradient(ellipse 26% 22% at 30% 72%, #000 0%, transparent 100%),
+    radial-gradient(ellipse 60% 8% at 55% 6%, #000 0%, transparent 100%),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.03) 60%, transparent 100%);
+  opacity: 0.8;
+}
+
+.dust {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.7) 0.9px, transparent 1.1px);
+  background-size: 6px 6px;
+  opacity: 0.22;
+}
+
+.dust-left {
+  mask-image: radial-gradient(ellipse 60% 70% at 30% 50%, #000, transparent 70%);
+}
+
+.dust-right {
+  mask-image: radial-gradient(ellipse 60% 70% at 70% 50%, #000, transparent 70%);
+}
+
+.metal {
+  background: linear-gradient(180deg, #f6f6f4 0%, #d9d9d6 45%, #b9b9b6 50%, #e9e9e6 100%);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgb(255 255 255 / 0.25);
+}
+
+.tab-fade {
+  background: linear-gradient(90deg, #1b1b1e 0%, #141416 60%, #0f0f11 100%);
+}
+
+.board-fade {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+}
+
+.corner-marks {
   background:
-    radial-gradient(ellipse at 20% 0%, rgb(229 116 43 / 0.08), transparent 55%),
-    radial-gradient(ellipse at 100% 100%, rgb(229 116 43 / 0.06), transparent 50%);
+    linear-gradient(var(--color-ember), var(--color-ember)) top left / 6px 1px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) top left / 1px 6px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) top right / 6px 1px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) top right / 1px 6px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) bottom left / 6px 1px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) bottom left / 1px 6px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) bottom right / 6px 1px no-repeat,
+    linear-gradient(var(--color-ember), var(--color-ember)) bottom right / 1px 6px no-repeat,
+    #0e0e10;
+}
+
+.tilt-timeline {
+  transform: perspective(900px) rotateX(28deg) rotateY(-14deg) rotateZ(6deg) scale(1.08);
+  transform-origin: 50% 60%;
+}
+
+.tilt-cards {
+  transform: perspective(900px) rotateX(18deg) rotateY(-18deg) rotateZ(-4deg);
+  transform-origin: 50% 50%;
+}
+
+.ghost-stack > * + * {
+  position: absolute;
+  inset: 0;
+}
+
+.iso {
+  transform: rotateX(55deg) rotateZ(45deg);
+  transform-style: preserve-3d;
 }

@@ -10,7 +10,7 @@ const landings = [
 
 export default function Page() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-24">
+    <main className="frame mx-auto my-12 flex max-w-2xl flex-col px-8 py-16">
       <p className="eyebrow text-fog">Marketing POC</p>
       <h1 className="font-display mt-3 text-4xl">Landing pages under test</h1>
       <ul className="mt-10 divide-y divide-line border-y border-line">

@@ -3,8 +3,8 @@ import { Logo } from "./primitives";
 
 export function Footer() {
   return (
-    <footer className="border-t border-line">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-[1.5fr_repeat(3,1fr)]">
+    <footer className="border-t border-line-strong px-8">
+      <div className="mx-auto grid max-w-[1180px] gap-10 py-16 md:grid-cols-[1.5fr_repeat(3,1fr)]">
         <div>
           <Logo />
           <p className="mt-4 max-w-xs text-sm text-fog">
@@ -26,7 +26,7 @@ export function Footer() {
           </div>
         ))}
       </div>
-      <p className="eyebrow mx-auto max-w-7xl border-t border-line px-6 py-5 text-fog">
+      <p className="eyebrow mx-auto max-w-[1180px] border-t border-line py-5 text-fog">
         Stackly · Marketing POC · Not a real product
       </p>
     </footer>

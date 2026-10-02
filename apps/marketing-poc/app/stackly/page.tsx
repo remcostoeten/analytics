@@ -18,17 +18,19 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <>
-      <Nav />
-      <main>
-        <Hero />
-        <Customers />
-        <HowItWorks />
-        <Capabilities />
-        <Features />
-        <Platform />
-      </main>
-      <Footer />
-    </>
+    <div className="px-0 py-0 xl:px-16 xl:py-16">
+      <div className="frame mx-auto max-w-[1440px]">
+        <Nav />
+        <main>
+          <Hero />
+          <Customers />
+          <HowItWorks />
+          <Capabilities />
+          <Features />
+          <Platform />
+        </main>
+        <Footer />
+      </div>
+    </div>
   );
 }

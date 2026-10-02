@@ -15,7 +15,12 @@ export type Capability = {
 export type Feature = {
   name: string;
   note: string;
-  figure: "timeline" | "terrain" | "focus" | "cards" | "toolbar" | "stack";
+  figure: "timeline" | "focus" | "cards" | "toolbar" | "stack";
+};
+
+export type Customer = {
+  name: string;
+  weight: "bold" | "serif" | "wide";
 };
 
 export const navSteps = [
@@ -79,6 +84,8 @@ export const tickets: Ticket[] = [
   },
 ];
 
+export const taskCount = 15;
+
 export const ticketGroups: { status: TicketStatus; label: string }[] = [
   { status: "backlog", label: "Backlog" },
   { status: "todo", label: "Todo" },
@@ -91,18 +98,18 @@ export const awards = [
   { title: "Top rated", note: "Enterprise task management software", year: "2026" },
 ] as const;
 
-export const customers = [
-  "ramp",
-  "evil",
-  "zade",
-  "charact",
-  "goodfire",
-  "incept",
-  "arc",
-  "browser",
-  "premia",
-  "standard",
-] as const;
+export const customers: Customer[] = [
+  { name: "ramp", weight: "bold" },
+  { name: "evil", weight: "serif" },
+  { name: "zade", weight: "bold" },
+  { name: "charact", weight: "serif" },
+  { name: "goodfire", weight: "wide" },
+  { name: "incept", weight: "bold" },
+  { name: "Ar.", weight: "serif" },
+  { name: "browser", weight: "bold" },
+  { name: "Premium Airlines", weight: "serif" },
+  { name: "standard", weight: "wide" },
+];
 
 export const capabilities: Capability[] = [
   {
@@ -134,9 +141,9 @@ export const features: Feature[] = [
     figure: "timeline",
   },
   {
-    name: "Terrain",
-    note: "",
-    figure: "terrain",
+    name: "One Toolbar, Every Action",
+    note: "Import tasks, mark them done, leave notes, and check insights, all without switching screens.",
+    figure: "toolbar",
   },
   {
     name: "Focus Mode",
@@ -147,11 +154,6 @@ export const features: Feature[] = [
     name: "Task Cards, Simplified",
     note: "Every card shows exactly what is next, who owns it, and when it is ready to go.",
     figure: "cards",
-  },
-  {
-    name: "One Toolbar, Every Action",
-    note: "Import tasks, mark them done, leave notes, and check insights, all without switching screens.",
-    figure: "toolbar",
   },
   {
     name: "Connects To Your Stack",

@@ -15,7 +15,18 @@ type Props = {
 export default function Layout({ children }: Props) {
   return (
     <html lang="en">
-      <body className="min-h-screen">{children}</body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen">
+        <div className="copper-grain" />
+        {children}
+      </body>
     </html>
   );
 }
