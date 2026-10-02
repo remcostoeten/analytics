@@ -25,6 +25,9 @@ function wantsHtml(headers: Headers) {
  * new Elysia().use(landingModule({ version, clock, tags: apiTags, routes: () => api.routes })).use(api);
  */
 export function landingModule(options: LandingOptions) {
+  const runtime = process.versions.bun
+    ? `bun ${process.versions.bun}`
+    : `node ${process.versions.node}`;
   let groups: ReturnType<typeof routeGroups> | null = null;
 
   function render(request: Request) {
@@ -32,6 +35,7 @@ export function landingModule(options: LandingOptions) {
     const view = landing({
       version: options.version,
       time: options.clock().toISOString(),
+      runtime,
       baseUrl: new URL(request.url).origin,
       groups,
     });

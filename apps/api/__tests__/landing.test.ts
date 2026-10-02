@@ -61,11 +61,11 @@ describe("landing", () => {
       expect(response.headers.get("content-type")).toContain("text/html");
       const html = await response.text();
       expect(html).toContain("<title>Analytics API</title>");
-      expect(html).toContain("/v2/projects/:project/stats");
+      expect(html).toContain('/projects/<span class="param">:project</span>/stats');
       expect(html).toContain("Headline <code>numbers</code>");
       expect(html).toContain("https://api.example.test/v2/openapi");
-      expect(html).not.toContain("/v2/secret");
-      expect(html).not.toContain("/v2/untagged");
+      expect(html).not.toContain("/secret</span>");
+      expect(html).not.toContain("/untagged</span>");
     }
   });
 

@@ -17,6 +17,7 @@ export type Landing = {
   version: string;
   status: "ok";
   time: Timestamp;
+  runtime: string;
   baseUrl: string;
   links: { docs: string; openapi: string; health: string; guide: string; source: string };
   groups: RouteGroup[];
@@ -63,11 +64,12 @@ export function routeGroups(routes: ApiRoute[], tags: ApiTag[]): RouteGroup[] {
  * the links that matter and every documented route grouped by tag.
  *
  * @example
- * const view = landing({ version, time: new Date().toISOString(), baseUrl: "https://api.analytics.remcostoeten.nl", groups });
+ * const view = landing({ version, time: new Date().toISOString(), runtime: "bun 1.3.14", baseUrl: "https://api.analytics.remcostoeten.nl", groups });
  */
 export function landing(input: {
   version: string;
   time: Timestamp;
+  runtime: string;
   baseUrl: string;
   groups: RouteGroup[];
 }): Landing {
@@ -76,6 +78,7 @@ export function landing(input: {
     version: input.version,
     status: "ok",
     time: input.time,
+    runtime: input.runtime,
     baseUrl: input.baseUrl,
     links: {
       docs: `${input.baseUrl}/v2/openapi`,
