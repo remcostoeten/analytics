@@ -95,7 +95,7 @@ const response = await fetch("/v2/auth/sign-in/social", {
 location.href = (await response.json()).url;
 ```
 
-GitHub sends you back to `/v2/auth/session`, which should show your login with `"role": "owner"`: the first login in `dashboard_users` to sign in owns the organization. In the same tab, create a token for scripts and the docs site's query page; it is shown once:
+GitHub sends you back to `/v2/auth/session`, which should show your login with `"role": "owner"`: the first login in `dashboard_users` to sign in owns the organization. The v1 database already has your login in that table; on a fresh database, run `INSERT INTO dashboard_users (github_login) VALUES ('your-login')` first. In the same tab, create a token for scripts and the docs site's query page; it is shown once:
 
 ```js
 const token = await fetch("/v2/tokens", {
