@@ -1,10 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "bunVersion": "1.x",
-  "buildCommand": "bun run build",
-  "functions": {
-    "src/index.ts": {
-      "includeFiles": "data/**"
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/backends",
+      "config": {
+        "projectSettings": {
+          "buildCommand": "bun run typecheck && bun run build"
+        },
+        "includeFiles": [
+          "apps/api/data/*.mmdb"
+        ]
+      }
     }
-  }
+  ]
 }
