@@ -8,7 +8,7 @@ Detailed evidence lives in [api-inventory.md](api-inventory.md). Proposed migrat
 
 The repository currently has two distinct concerns:
 
-1. A published npm SDK, `@remcostoeten/analytics`, which sends browser and server events to ingestion.
+1. A published npm SDK, `@spoar/sdk`, which sends browser and server events to ingestion.
 2. A self-hosted ingestion service that validates, enriches, deduplicates, and writes events to Neon Postgres. The dashboard currently reads that Postgres database directly through Next.js route handlers.
 
 The SDK does not need to be rebuilt before a read API exists. Ingestion can remain running unchanged while a standalone read API and a v1 dashboard are built alongside it.
@@ -126,7 +126,7 @@ This is the first decision set because API paths, database keys, query filters, 
 ### 6. SDK architecture and public contract
 
 - Decide the package layout: core types/event builder, browser transport, server transport, optional React bindings, and possibly separate integrations.
-- Preserve or intentionally version public exports from `@remcostoeten/analytics`.
+- Preserve or intentionally version public exports from `@spoar/sdk`.
 - Decide event APIs, privacy/consent semantics, storage keys/migration, SSR behavior, offline queue behavior, error handling, and debug behavior.
 - Set SDK budgets: bundle size, browser work, network behavior, and opt-out guarantees.
 - Decide whether this is a semver-major replacement, a new package name, or an additive release path.

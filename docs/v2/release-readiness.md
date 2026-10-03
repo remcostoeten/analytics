@@ -24,9 +24,9 @@ Options, for the owner to pick:
 
 ### 4. Package names and visibility
 
-- `packages/sdk` is named `@remcostoeten/analytics-sdk` and is `private: true`. Decision 0005 recommends publishing 2.0 as `@remcostoeten/analytics`, the 1.x name, under the `next` tag first. **Owner**: confirm 0005, then rename and drop `private`.
+- `packages/sdk` is named `@spoar/sdk` and is `private: true`. Decision 0005 recommends publishing 2.0 as `@spoar/sdk`, the 1.x name, under the `next` tag first. **Owner**: confirm 0005, then rename and drop `private`.
 - `packages/contract` is public with version `0.0.0` and 19 pending minor changesets, so the first version pull request would release it as `0.1.0`. The SDK imports it at runtime (`plugins.mjs` for `signals`, `proxy.mjs`) and in its type declarations, so it must be published with the SDK or bundled into it.
-- 8 pending changesets name `@remcostoeten/analytics-sdk`. While it is private, Changesets does not version it (`privatePackages.version: false`).
+- 8 pending changesets name `@spoar/sdk`. While it is private, Changesets does not version it (`privatePackages.version: false`).
 
 ### 5. Core size budget
 

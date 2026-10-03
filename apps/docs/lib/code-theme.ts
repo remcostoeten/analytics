@@ -63,7 +63,7 @@ function tokens(colors: {
   ];
 }
 
-export const codeThemeDark = {
+const codeThemeDark = {
   name: "mono-dark",
   type: "dark",
   colors: { "editor.background": "#111111", "editor.foreground": "#ededed" },
@@ -78,7 +78,7 @@ export const codeThemeDark = {
   }),
 } as const;
 
-export const codeThemeLight = {
+const codeThemeLight = {
   name: "mono-light",
   type: "light",
   colors: { "editor.background": "#ffffff", "editor.foreground": "#0a0a0a" },

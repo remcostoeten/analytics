@@ -364,7 +364,7 @@ Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec
 
 ### E5.1 Retire 1.x
 
-Delivers: a deprecation notice on `@remcostoeten/analytics@1`, removal of the legacy `/e` routes and `packages/ingestion` and `apps/ingestion` once `schema_version = 0` traffic has stopped, removal of the dashboard's old API routes, and a single cleanup cron. Done when no code path writes `schema_version = 0` and the legacy Vercel project can be deleted by Remco.
+Delivers: a deprecation notice on `@spoar/sdk@1`, removal of the legacy `/e` routes and `packages/ingestion` and `apps/ingestion` once `schema_version = 0` traffic has stopped, removal of the dashboard's old API routes, and a single cleanup cron. Done when no code path writes `schema_version = 0` and the legacy Vercel project can be deleted by Remco.
 
 ```text
 Epic E5.1, branch chore/retire-v1. Read the plan sections "Phases" and "Storage". Start only after Remco confirms that 1.x traffic has stopped.

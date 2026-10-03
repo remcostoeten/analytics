@@ -1292,7 +1292,7 @@ GET /v2/projects/remcostoeten.nl/alerts/targets
 
 `POST /v2/admin/jobs/alerts` with the cron secret first queues new issues and regressions, up to 100 per run, as one delivery per enabled target subscribed to the event, never twice for the same target, event and subject; then it sends every due delivery, one mail or request per target, and settles each by the retry policy (5 attempts after 1, 5, 30, 120 and 720 minutes, within 24 hours, unless the config says otherwise). `rowsWritten` is the number sent. Without `alerts()` in the config it answers 503 "Alerts are off".
 
-A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@remcostoeten/analytics/server` check both.
+A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@spoar/sdk/server` check both.
 
 ### Annotations
 

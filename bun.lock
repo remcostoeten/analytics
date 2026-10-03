@@ -67,7 +67,7 @@
         "@playwright/test": "1.62.0",
         "@remcostoeten/analytics-api": "workspace:*",
         "@remcostoeten/analytics-engine": "workspace:*",
-        "@remcostoeten/analytics-sdk": "workspace:*",
+        "@spoar/sdk": "workspace:*",
       },
     },
     "packages/contract": {
@@ -103,7 +103,7 @@
       ],
     },
     "packages/sdk": {
-      "name": "@remcostoeten/analytics-sdk",
+      "name": "@spoar/sdk",
       "version": "2.0.0-next.0",
       "dependencies": {
         "@remcostoeten/analytics-contract": "workspace:*",
@@ -898,8 +898,6 @@
 
     "@remcostoeten/analytics-scripts": ["@remcostoeten/analytics-scripts@workspace:scripts"],
 
-    "@remcostoeten/analytics-sdk": ["@remcostoeten/analytics-sdk@workspace:packages/sdk"],
-
     "@remcostoeten/analytics-shared": ["@remcostoeten/analytics-shared@workspace:packages/shared"],
 
     "@remcostoeten/dashboard": ["@remcostoeten/dashboard@workspace:v1/apps/dashboard"],
@@ -1021,6 +1019,8 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@sinclair/typebox": ["@sinclair/typebox@0.34.52", "", {}, "sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw=="],
+
+    "@spoar/sdk": ["@spoar/sdk@workspace:packages/sdk"],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 

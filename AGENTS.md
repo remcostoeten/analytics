@@ -47,7 +47,7 @@ analytics/
 │  ├─ contract/       schemas, types, error catalog (phase 0)
 │  ├─ shared/         semantic types, Result, noop (phase 0)
 │  ├─ engine/         ingest pipeline, signals, enrichers, dimensions, adapters, db (phase 2)
-│  └─ sdk/            @remcostoeten/analytics 2.0 (phase 3)
+│  └─ sdk/            @spoar/sdk 2.0 (phase 3)
 ├─ tools/oxlint/      lint plugins
 ├─ scripts/           size, OpenAPI and boundary checks, migrate
 ├─ e2e/               Playwright across SDK, API and dashboard

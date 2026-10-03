@@ -7,7 +7,7 @@ Alerts tell people that something happened in a project: today a new issue or a 
 ## Goals
 
 - Every feature is opt-in: no plugin listed means no routes, no jobs and no code running for it.
-- Nothing to install beyond the one package: every piece is a module of `@remcostoeten/analytics` or of the engine, and the engine sends mail and HTTP with what the runtime already has (`node:tls` and `fetch`), without outside dependencies.
+- Nothing to install beyond the one package: every piece is a module of `@spoar/sdk` or of the engine, and the engine sends mail and HTTP with what the runtime already has (`node:tls` and `fetch`), without outside dependencies.
 - Every name, option and result autocompletes, and a wrong value is a type error before it is a runtime error.
 - The API validates at the boundary and answers with a field path and a plain message.
 - Adding an event, a channel or a mail transport is a checklist of small, separate files, never an edit to a switch in the core.
@@ -93,10 +93,10 @@ A channel's own `retry` overrides the plugin's, key by key. The docs recommend a
 
 ### 4. A project's targets: `sync`
 
-The admin client is a module of the SDK package, `@remcostoeten/analytics/admin`, for server code and scripts. `sync` takes the whole list for a project and makes the stored targets match it: it adds what is missing, updates what changed and removes what is not listed, so running it twice changes nothing.
+The admin client is a module of the SDK package, `@spoar/sdk/admin`, for server code and scripts. `sync` takes the whole list for a project and makes the stored targets match it: it adds what is missing, updates what changed and removes what is not listed, so running it twice changes nothing.
 
 ```ts
-import { createAdmin, discord, mail, webhook } from "@remcostoeten/analytics/admin";
+import { createAdmin, discord, mail, webhook } from "@spoar/sdk/admin";
 
 type Projects = "remcostoeten.nl" | "skriuw";
 
@@ -145,7 +145,7 @@ A wrong field answers `VALIDATION_FAILED` with `details.path`, such as `/targets
 A webhook target posts a signed `WebhookBody`. `alertRoute` in `/server` turns it into a route handler with one typed function per event; in Next.js it is the whole `route.ts`:
 
 ```ts
-import { alertRoute } from "@remcostoeten/analytics/server";
+import { alertRoute } from "@spoar/sdk/server";
 
 export const POST = alertRoute({
   secret: process.env.RA_WEBHOOK_SECRET,
@@ -498,6 +498,6 @@ packages/sdk/src/server/alert-route.ts       alertRoute, verifyAlert
 | Outside dependencies | None: SMTP on `node:tls`, Resend on `fetch` |
 | Which channels | Mail, webhook and Discord, each optional |
 | How projects set targets | `sync`, with single-target methods beside it |
-| Admin client | A module of the SDK package: `@remcostoeten/analytics/admin` |
+| Admin client | A module of the SDK package: `@spoar/sdk/admin` |
 | Retries | Configurable per plugin and per channel; default 5 attempts, exponential, 24 hours |
 | Syntax | Functions taking one object, not chains |

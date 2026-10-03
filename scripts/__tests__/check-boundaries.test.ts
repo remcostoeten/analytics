@@ -6,7 +6,7 @@ const workspaces = [
   { name: "@remcostoeten/analytics-shared", directory: "packages/shared" },
   { name: "@remcostoeten/analytics-contract", directory: "packages/contract" },
   { name: "@remcostoeten/analytics-engine", directory: "packages/engine" },
-  { name: "@remcostoeten/analytics", directory: "packages/sdk" },
+  { name: "@spoar/sdk", directory: "packages/sdk" },
   { name: "@remcostoeten/ingestion", directory: "v1/packages/ingestion" },
 ];
 

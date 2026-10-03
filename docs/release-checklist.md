@@ -4,7 +4,7 @@ Automated tests cover one Chromium build. Before the 2.0.0 version pull request 
 
 ## Setup
 
-1. `bun install`, then `bun run --filter @remcostoeten/analytics-sdk build`.
+1. `bun install`, then `bun run --filter @spoar/sdk build`.
 2. `bun run --cwd e2e serve`. The fixture site runs on `http://localhost:4200` and the API on `http://localhost:4100`, both against an in-memory PGlite database that starts empty.
 3. Open `http://localhost:4200/direct/<run>` and `http://localhost:4200/proxy/<run>`, where `<run>` is a word naming the browser, such as `brave-aggressive`.
 4. On each page: move the mouse, type in the input, press **Next page**, press **Throw an error**, then close the tab.

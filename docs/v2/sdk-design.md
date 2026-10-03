@@ -15,8 +15,8 @@ The SDK is one flat, typed client: `createAnalytics<Events>()` returns an object
 ## The API
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, outboundLinks, scrollDepth, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, outboundLinks, scrollDepth, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -74,7 +74,7 @@ The server client, `createServerAnalytics<Events>()`, has the same `track`, `ide
 **One event list, shared by browser and server.** `events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -109,7 +109,7 @@ function onLogout() {
 ```ts
 function onAcceptCookies() {
   analytics.consent.grant();
-  import("@remcostoeten/analytics/plugins").then((plugins) => {
+  import("@spoar/sdk/plugins").then((plugins) => {
     analytics.use(plugins.speedInsights({ sampleRate: 0.5 }));
   });
 }
@@ -118,8 +118,8 @@ function onAcceptCookies() {
 **React and Next.** `app/layout.tsx`:
 
 ```tsx
-import { AnalyticsProvider } from "@remcostoeten/analytics/react";
-import { Analytics } from "@remcostoeten/analytics/next";
+import { AnalyticsProvider } from "@spoar/sdk/react";
+import { Analytics } from "@spoar/sdk/next";
 import { analytics } from "@/lib/analytics";
 
 export default function RootLayout({ children }: Props) {
@@ -148,7 +148,7 @@ function UpgradeButton() {
 **Server.** `lib/analytics-server.ts` and a route handler:
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
@@ -169,7 +169,7 @@ Passing `request` (or `headers`) forwards the visitor's user agent and IP, the s
 **Proxy**, the one line that gets events past ad blockers. In the Next App Router a folder starting with an underscore is private, so the folder is named %5Fra to serve /\_ra. `app/%5Fra/route.ts`:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
@@ -183,7 +183,7 @@ The `/admin` entry (alert targets, the read methods and annotations; later proje
 The `errors` plugin catches what nobody caught; `captureError` and `captureMessage` are for what you catch yourself. Everything lands in the same issues.
 
 ```ts
-import { errors } from "@remcostoeten/analytics/plugins";
+import { errors } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics<Events>({
   project: "remcostoeten.nl",
@@ -254,7 +254,7 @@ export async function nightlyImport() {
 Source maps, in CI after the build:
 
 ```bash
-bunx @remcostoeten/analytics sourcemaps upload --release "$GITHUB_SHA" --dir .next/static
+bunx @spoar/sdk sourcemaps upload --release "$GITHUB_SHA" --dir .next/static
 ```
 
 `captureError` takes `unknown`, because JavaScript can throw anything and a `catch` variable is `unknown`. It is the one public parameter where the anti-slop `unknown` rule is turned off, with a one-line reason; the SDK parses the value into a typed `CapturedError` straight away.

@@ -1,5 +1,5 @@
 {
-	"name": "@remcostoeten/analytics-sdk",
+	"name": "@spoar/sdk",
 	"version": "2.0.0-next.0",
 	"private": true,
 	"description": "Privacy-first analytics for browsers, servers and React: typed events, batching, consent and plugins.",

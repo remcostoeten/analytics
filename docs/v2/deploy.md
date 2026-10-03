@@ -80,7 +80,7 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 
 Until both are set, the workflow only prints a notice. A job that is not configured on the API, such as `crux` without `CRUX_API_KEY` or `alerts` without `alerts()` in `apps/api/analytics.config.ts`, is reported as a notice rather than a failure.
 
-Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Discord channels. Each project sets its own targets with `PUT /v2/projects/:project/alerts/targets` or `admin.alerts.sync` from `@remcostoeten/analytics/admin`; `POST .../targets/:name/test` checks one at once, and `GET /v2/admin/alerts/status` shows whether mail is ready. To send mail through Resend instead of SMTP, change the transport in the config to `resend(process.env.RESEND_API_KEY)` and set `RESEND_API_KEY`. Run any job by hand from Actions, `jobs`, Run workflow.
+Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Discord channels. Each project sets its own targets with `PUT /v2/projects/:project/alerts/targets` or `admin.alerts.sync` from `@spoar/sdk/admin`; `POST .../targets/:name/test` checks one at once, and `GET /v2/admin/alerts/status` shows whether mail is ready. To send mail through Resend instead of SMTP, change the transport in the config to `resend(process.env.RESEND_API_KEY)` and set `RESEND_API_KEY`. Run any job by hand from Actions, `jobs`, Run workflow.
 
 ## 8. First sign-in and token
 

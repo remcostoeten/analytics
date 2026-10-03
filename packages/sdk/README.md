@@ -1,13 +1,13 @@
-# @remcostoeten/analytics
+# @spoar/sdk
 
 Privacy-first analytics for browsers, servers and React, sending to a self-hosted analytics API. Version 2 is ESM only, has typed events, batches requests, keeps no cookies, and adds features through plugins so an app only ships what it uses.
 
-The workspace is named `@remcostoeten/analytics-sdk` and marked private until the 2.0.0 release, because `v1/packages/sdk` still owns `@remcostoeten/analytics` in the Bun workspaces. The examples use the published name.
+The workspace is named `@spoar/sdk` and marked private until the 2.0.0 release, because `v1/packages/sdk` still owns `@spoar/sdk` in the Bun workspaces. The examples use the published name.
 
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Quick start
@@ -15,7 +15,7 @@ npm install @remcostoeten/analytics
 `events.ts` lists every custom event once, for the browser and the server:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -26,8 +26,8 @@ export type Events = {
 `analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -84,7 +84,7 @@ Do Not Track and Global Privacy Control are honoured: every event is dropped wit
 
 ## Plugins
 
-Import from `@remcostoeten/analytics/plugins`; each is one file and none imports another.
+Import from `@spoar/sdk/plugins`; each is one file and none imports another.
 
 | Plugin | Sends |
 | --- | --- |
@@ -104,8 +104,8 @@ Import from `@remcostoeten/analytics/plugins`; each is one file and none imports
 ## React and Next
 
 ```tsx
-import { AnalyticsProvider } from "@remcostoeten/analytics/react";
-import { Analytics } from "@remcostoeten/analytics/next";
+import { AnalyticsProvider } from "@spoar/sdk/react";
+import { Analytics } from "@spoar/sdk/next";
 
 export default function RootLayout({ children }: Props) {
   return (
@@ -126,7 +126,7 @@ export default function RootLayout({ children }: Props) {
 ## Server
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   secret: process.env.RA_SECRET,
@@ -147,7 +147,7 @@ Passing `request` or `headers` forwards the visitor's IP and user agent, the sit
 A same-origin path gets events past ad blockers. In the Next App Router, `app/%5Fra/route.ts` serves `/_ra`:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
@@ -160,7 +160,7 @@ The proxy refuses other methods, cross-site requests and bodies over 60 KB, the 
 | --- | --- |
 | `<Analytics projectId="my-app" />` from the root entry | `createAnalytics({ project, key, endpoint })` once, `AnalyticsProvider client={analytics}`, and `<Analytics />` from `./next` |
 | `NEXT_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`; `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
-| `@remcostoeten/analytics/browser` | The root entry, which has no React dependency |
+| `@spoar/sdk/browser` | The root entry, which has no React dependency |
 | `trackEvent(name, meta)`, `track(type, meta)` | `analytics.track(name, props)`, typed by your `Events` |
 | `trackPageView()` | `analytics.page()`, or automatic |
 | `trackError(error)`, `observeErrors`, `trackErrors` prop | `analytics.captureError(error)` and the `errors()` plugin |

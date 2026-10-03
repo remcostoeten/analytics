@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Link from "next/link";
 
@@ -14,18 +17,6 @@ import {
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
 import { baseOptions } from "@/lib/layout-options";
-
-const example = `import { createAnalytics } from "@spoar/sdk";
-import { errors, speedInsights } from "@spoar/sdk/plugins";
-
-export const analytics = createAnalytics({
-  project: "example.com",
-  key: "pk_...",
-  endpoint: "/_ra",
-  plugins: [speedInsights(), errors()],
-});
-
-analytics.track("signup", { plan: "pro" });`;
 
 const features = [
   {
@@ -67,7 +58,8 @@ const starts = [
   { title: "API reference", href: "/docs/reference" },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const example = await readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
   return (
     <HomeLayout {...baseOptions()}>
       <main className="framed mx-auto w-[min(880px,calc(100%-32px))] flex-1">
