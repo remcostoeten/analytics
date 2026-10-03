@@ -17,11 +17,23 @@ import {
   migrationsDirectory,
   readMigrations,
 } from "@remcostoeten/analytics-engine/db/migration-files";
+import { createFixtureHandler } from "@spoar/devtools/fixtures";
 import { createProxy } from "@spoar/sdk/proxy";
 
-import { apiPort, blockMs, lcpAt, publicKey, secretKey, shiftAt, sitePort } from "./ports";
+import {
+  adminCookie,
+  apiPort,
+  blockMs,
+  lcpAt,
+  publicKey,
+  secretKey,
+  shiftAt,
+  sitePort,
+} from "./ports";
 
 const dist = join(import.meta.dir, "..", "packages", "sdk", "dist");
+const devtoolsDist = join(import.meta.dir, "..", "packages", "devtools", "dist");
+const widget = createFixtureHandler({ liveMs: 1500 });
 const database = new PGlite();
 const clock = systemClock();
 const geo = openGeo([], []);
@@ -123,6 +135,34 @@ function vitalsPage() {
 </html>`;
 }
 
+function devtoolsPage() {
+  return `<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Fixture devtools</title></head>
+  <body data-scenario="devtools">
+    <h1>Fixture devtools</h1>
+    <script type="module">
+      import { mount } from "/devtools-dist/index.mjs";
+      window.unmountDevtools = mount({ endpoint: location.origin, project: "site" });
+    </script>
+  </body>
+</html>`;
+}
+
+function signedIn(request: Request) {
+  return (request.headers.get("cookie") ?? "").includes(`${adminCookie}=1`);
+}
+
+async function widgetRoute(request: Request, url: URL) {
+  if (url.pathname === "/v2/widget/session" && !signedIn(request)) {
+    return Response.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });
+  }
+  if (url.pathname !== "/v2/widget/session" && !request.headers.get("authorization")) {
+    return Response.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });
+  }
+  return widget(request);
+}
+
 async function rows(url: URL) {
   const run = url.searchParams.get("run") ?? "";
   const result = await database.query(
@@ -204,7 +244,15 @@ Bun.serve({
       return new Response(script, { headers: { "content-type": "text/javascript" } });
     }
     if (url.pathname === "/__e2e/events") return rows(url);
+    if (url.pathname.startsWith("/v2/")) return widgetRoute(request, url);
+    if (url.pathname.startsWith("/devtools-dist/")) {
+      const file = Bun.file(join(devtoolsDist, url.pathname.slice("/devtools-dist/".length)));
+      return new Response(file, { headers: { "content-type": "text/javascript" } });
+    }
     const [, scenario] = url.pathname.split("/");
+    if (scenario === "devtools") {
+      return new Response(devtoolsPage(), { headers: { "content-type": "text/html" } });
+    }
     if (scenario === "vitals") {
       return new Response(vitalsPage(), { headers: { "content-type": "text/html" } });
     }

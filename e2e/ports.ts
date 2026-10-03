@@ -5,3 +5,4 @@ export const secretKey = "sk_test";
 export const shiftAt = 300;
 export const lcpAt = 800;
 export const blockMs = 250;
+export const adminCookie = "ra_e2e_admin";
