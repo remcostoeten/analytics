@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { outlineButton } from "./control";
 import { CheckIcon, CopyIcon } from "./icons";
 
 type Props = {
@@ -26,13 +27,12 @@ export function InstallCommand({ command }: Props) {
       type="button"
       onClick={copy}
       aria-label="Copy install command"
-      className="group inline-flex h-11 items-center gap-3 rounded-lg border border-fd-border bg-fd-card px-4 font-mono text-sm text-fd-muted-foreground transition-colors hover:border-fd-ring hover:text-fd-foreground"
+      title="Copy install command"
+      className={`${outlineButton} h-auto px-3 py-2.5 font-mono text-[0.75rem] whitespace-nowrap`}
     >
-      <span className="select-none text-fd-muted-foreground/60">$</span>
+      <span className="opacity-60 select-none">$</span>
       <span>{command}</span>
-      <span className="ml-1 text-fd-muted-foreground/70 transition-colors group-hover:text-fd-foreground">
-        {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
-      </span>
+      {copied ? <CheckIcon className="size-3.5 text-ok" /> : <CopyIcon className="size-3.5" />}
     </button>
   );
 }

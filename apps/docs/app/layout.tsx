@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 
 import "./global.css";
 
-const sans = Geist({ subsets: ["latin"], variable: "--font-sans" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: { default: "Analytics", template: "%s | Analytics docs" },

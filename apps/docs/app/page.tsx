@@ -1,7 +1,9 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Link from "next/link";
 
+import { Badge } from "@/components/landing/badge";
 import { CodeWindow, Cm, Fn, Kw, Str } from "@/components/landing/code-window";
+import { outlineButton } from "@/components/landing/control";
 import {
   ArrowIcon,
   BoxIcon,
@@ -13,6 +15,7 @@ import {
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
 import { Pipeline } from "@/components/landing/pipeline";
+import { StatusPill } from "@/components/landing/status-pill";
 import { baseOptions } from "@/lib/layout-options";
 
 const features = [
@@ -64,64 +67,66 @@ const starts = [
     title: "Quick start",
     text: "From an empty project to the first stored event.",
     href: "/docs/getting-started/quick-start",
+    tag: "Tutorial",
   },
   {
     title: "SDK reference",
     text: "Every entry, option, plugin and size budget.",
     href: "/docs/sdk/install",
+    tag: "Reference",
   },
   {
     title: "API reference",
     text: "Every route, generated from the OpenAPI document.",
     href: "/docs/reference",
+    tag: "Reference",
   },
   {
     title: "Self-host",
     text: "Neon, Vercel, the migrations and the cron jobs.",
     href: "/docs/guides/self-host",
+    tag: "Guide",
   },
 ];
 
 export default function HomePage() {
   return (
     <HomeLayout {...baseOptions()}>
-      <main className="relative flex-1 overflow-hidden">
-        <div className="landing-grid pointer-events-none absolute inset-x-0 top-0 h-[720px]" />
-        <div className="landing-glow pointer-events-none absolute inset-x-0 top-0 h-[720px]" />
+      <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
+        <header className="dot-grid flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1">
+            <span className="animate-live size-1.5 rounded-full bg-accent shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_25%,transparent)]" />
+            <span className="caps text-[0.62rem] text-fg">SDK 2.0 on the next tag</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <StatusPill state="ok">api up</StatusPill>
+            <StatusPill state="running">ingesting</StatusPill>
+          </div>
+        </header>
 
-        <section className="relative mx-auto grid w-full max-w-6xl gap-12 px-6 pt-20 pb-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:pt-28">
-          <div className="landing-rise flex flex-col gap-6">
-            <Link
-              href="/docs/sdk/migrating"
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1 text-xs text-fd-muted-foreground transition-colors hover:text-fd-foreground"
-            >
-              <span className="landing-pulse size-1.5 rounded-full bg-fd-foreground" />
-              SDK 2.0 on the next tag
-              <ArrowIcon className="size-3" />
-            </Link>
-            <h1 className="text-5xl font-semibold tracking-[-0.04em] text-fd-foreground sm:text-6xl">
+        <section className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div className="flex flex-col gap-6">
+            <span className="caps text-muted">Self-hosted web analytics</span>
+            <h1 className="text-[2.6rem] leading-[1.05] font-medium tracking-[-0.02em] text-fg sm:text-[3.2rem]">
               Web analytics
               <br />
-              <span className="text-fd-muted-foreground">on your own Postgres.</span>
+              <span className="text-muted">on your own Postgres.</span>
             </h1>
-            <p className="max-w-xl text-lg leading-relaxed text-fd-muted-foreground">
+            <p className="max-w-lg text-[0.95rem] leading-relaxed text-muted">
               Pageviews, custom events, errors and Core Web Vitals from a typed SDK, through one
               API, into a database you run. No cookies for visitors. Raw IP addresses are never
               stored.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/docs/getting-started/quick-start"
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-fd-primary px-5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
-              >
+              <Link href="/docs/getting-started/quick-start" className="btn-primary">
                 Get started
-                <ArrowIcon className="size-4" />
+                <ArrowIcon className="size-3" />
               </Link>
               <InstallCommand command="npm install @remcostoeten/analytics" />
             </div>
           </div>
 
-          <div className="landing-rise flex flex-col gap-3 [animation-delay:120ms]">
+          <div className="flex flex-col gap-3">
             <CodeWindow title="lib/analytics.ts">
               <Kw>import</Kw> {"{ "}
               <Fn>createAnalytics</Fn>
@@ -152,11 +157,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        <div className="landing-rule mx-auto h-px w-full max-w-6xl" />
-
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
+        <section className="flex flex-col gap-6">
           <SectionHeading
-            eyebrow="How data flows"
+            eyebrow="01 / How data flows"
             title="From the browser to a row, in four steps"
             text="The SDK never contains database logic. Every read goes through the API, with access decided per project and per caller."
             href="/docs/getting-started/how-it-works"
@@ -165,87 +168,83 @@ export default function HomePage() {
           <Pipeline />
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
+        <section className="flex flex-col gap-6">
           <SectionHeading
-            eyebrow="What it records"
+            eyebrow="02 / What it records"
             title="Pageviews, events, errors, vitals and SQL"
           />
-          <ul className="grid gap-px overflow-hidden rounded-xl border border-fd-border bg-fd-border sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <li
                 key={feature.title}
-                className="group flex flex-col gap-4 bg-fd-card p-6 transition-colors hover:bg-fd-muted"
+                className="card-wash flex flex-col gap-4 rounded-[10px] border border-line bg-surface p-4"
               >
-                <feature.icon className="size-5 text-fd-foreground" />
+                <feature.icon className="size-3.5 text-muted" />
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-sm font-medium text-fd-foreground">{feature.title}</h3>
-                  <p className="text-sm leading-relaxed text-fd-muted-foreground">{feature.text}</p>
+                  <h3 className="text-[0.9rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[0.8rem] leading-relaxed text-muted">{feature.text}</p>
                 </div>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+        <section className="grid gap-8 lg:grid-cols-[1fr_1.2fr] lg:items-start">
           <SectionHeading
-            eyebrow="Runs on"
+            eyebrow="03 / Runs on"
             title="Anything that bundles ES modules"
             text="The browser core has no framework dependency. The framework entries add route templates and providers on top."
             href="/docs/frameworks"
             linkText="All frameworks"
           />
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ul className="flex flex-wrap gap-2">
             {stacks.map((stack) => (
               <li key={stack.name}>
-                <Link
-                  href={stack.href}
-                  className="flex h-full items-center justify-between gap-2 rounded-lg border border-fd-border bg-fd-card px-4 py-3 text-sm text-fd-foreground transition-colors hover:border-fd-ring hover:bg-fd-muted"
-                >
+                <Link href={stack.href} className={`${outlineButton} text-[0.75rem] font-medium`}>
                   {stack.name}
-                  <ArrowIcon className="size-3.5 text-fd-muted-foreground" />
                 </Link>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
-          <SectionHeading eyebrow="Where to start" title="Pick a page" />
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="flex flex-col gap-6">
+          <SectionHeading eyebrow="04 / Where to start" title="Pick a page" />
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {starts.map((start) => (
               <li key={start.title}>
                 <Link
                   href={start.href}
-                  className="group flex h-full flex-col justify-between gap-6 rounded-xl border border-fd-border bg-fd-card p-5 transition-colors hover:border-fd-ring hover:bg-fd-muted"
+                  className="card-wash group flex h-full flex-col justify-between gap-6 rounded-[10px] border border-line bg-surface p-4"
                 >
-                  <div className="flex flex-col gap-1.5">
-                    <h3 className="text-sm font-medium text-fd-foreground">{start.title}</h3>
-                    <p className="text-sm leading-relaxed text-fd-muted-foreground">{start.text}</p>
+                  <div className="flex flex-col gap-2">
+                    <Badge tone="muted">{start.tag}</Badge>
+                    <h3 className="text-[0.9rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
+                      {start.title}
+                    </h3>
+                    <p className="text-[0.8rem] leading-relaxed text-muted">{start.text}</p>
                   </div>
-                  <ArrowIcon className="size-4 text-fd-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-fd-foreground" />
+                  <ArrowIcon className="size-3.5 text-muted transition-colors group-hover:text-accent" />
                 </Link>
               </li>
             ))}
           </ul>
         </section>
 
-        <footer className="border-t border-fd-border">
-          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-xs text-fd-muted-foreground">
-            <span>Analytics, self-hosted and privacy-first. Built by Remco Stoeten.</span>
-            <div className="flex gap-5">
-              <Link href="/docs" className="transition-colors hover:text-fd-foreground">
-                Docs
-              </Link>
-              <Link href="/query" className="transition-colors hover:text-fd-foreground">
-                Query
-              </Link>
-              <a
-                href="https://github.com/remcostoeten/analytics"
-                className="transition-colors hover:text-fd-foreground"
-              >
-                GitHub
-              </a>
-            </div>
+        <footer className="dot-grid flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-muted">
+          <span>Analytics. Self-hosted, privacy-first. Built by Remco Stoeten.</span>
+          <div className="flex gap-4">
+            <Link href="/docs" className="link-line">
+              Docs
+            </Link>
+            <Link href="/query" className="link-line">
+              Query
+            </Link>
+            <a href="https://github.com/remcostoeten/analytics" className="link-line">
+              GitHub
+            </a>
           </div>
         </footer>
       </main>
@@ -260,11 +259,9 @@ type StatProps = {
 
 function Stat({ value, label }: StatProps) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-lg border border-fd-border bg-fd-card px-4 py-3">
-      <span className="font-mono text-lg font-medium tracking-tight text-fd-foreground">
-        {value}
-      </span>
-      <span className="text-xs text-fd-muted-foreground">{label}</span>
+    <div className="flex flex-col gap-1 rounded-[10px] border border-dashed border-line px-4 py-3">
+      <span className="font-mono text-lg font-medium text-fg tabular-nums">{value}</span>
+      <span className="caps text-[0.6rem] text-muted">{label}</span>
     </div>
   );
 }
@@ -280,20 +277,18 @@ type HeadingProps = {
 function SectionHeading({ eyebrow, title, text, href, linkText }: HeadingProps) {
   return (
     <div className="flex max-w-2xl flex-col gap-3">
-      <span className="font-mono text-xs tracking-[0.12em] text-fd-muted-foreground uppercase">
-        {eyebrow}
-      </span>
-      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-fd-foreground sm:text-3xl">
+      <span className="caps text-muted">{eyebrow}</span>
+      <h2 className="text-[1.3rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
         {title}
       </h2>
-      {text ? <p className="text-base leading-relaxed text-fd-muted-foreground">{text}</p> : null}
+      {text ? <p className="text-[0.9rem] leading-relaxed text-muted">{text}</p> : null}
       {href && linkText ? (
         <Link
           href={href}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-fd-foreground underline decoration-fd-border underline-offset-4 transition-colors hover:decoration-fd-foreground"
+          className="link-line inline-flex w-fit items-center gap-1.5 text-sm text-fg"
         >
           {linkText}
-          <ArrowIcon className="size-3.5" />
+          <ArrowIcon className="size-3" />
         </Link>
       ) : null}
     </div>

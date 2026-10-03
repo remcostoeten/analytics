@@ -9,20 +9,22 @@ const stages = [
 
 export function Pipeline() {
   return (
-    <ol className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-fd-border bg-fd-border md:grid-cols-4">
+    <ol className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {stages.map((stage, index) => (
-        <li key={stage.label} className="relative flex flex-col gap-3 bg-fd-card p-5">
+        <li
+          key={stage.label}
+          className="card-wash flex flex-col gap-4 rounded-[10px] border border-line bg-surface p-4"
+        >
           <div className="flex items-center justify-between">
-            <stage.icon className="size-5 text-fd-foreground" />
-            <span className="font-mono text-[11px] text-fd-muted-foreground">0{index + 1}</span>
+            <stage.icon className="size-3.5 text-muted" />
+            <span className="caps text-[0.62rem] text-muted tabular-nums">0{index + 1}</span>
           </div>
-          <div>
-            <div className="text-sm font-medium text-fd-foreground">{stage.label}</div>
-            <div className="text-xs text-fd-muted-foreground">{stage.detail}</div>
+          <div className="flex flex-col gap-1">
+            <div className="text-[0.9rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
+              {stage.label}
+            </div>
+            <div className="text-[0.75rem] text-muted">{stage.detail}</div>
           </div>
-          {index < stages.length - 1 ? (
-            <span className="landing-pulse absolute top-1/2 -right-1 hidden size-2 -translate-y-1/2 rounded-full bg-fd-foreground md:block" />
-          ) : null}
         </li>
       ))}
     </ol>
