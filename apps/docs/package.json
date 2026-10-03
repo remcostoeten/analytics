@@ -8,7 +8,8 @@
 		"dev": "bun run generate && next dev --port 3200",
 		"build": "bun run generate && next build",
 		"start": "next start --port 3200",
-		"typecheck": "bun run generate && tsgo --noEmit"
+		"typecheck": "bun run generate && tsgo --noEmit",
+		"test": "bun test"
 	},
 	"dependencies": {
 		"fumadocs-core": "16.15.15",

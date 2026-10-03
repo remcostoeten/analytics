@@ -24,6 +24,7 @@ export const allowedImports: { [workspace: string]: string[] } = {
   "packages/sdk": ["packages/shared", "packages/contract"],
   "apps/api": ["packages/engine", "packages/contract", "packages/shared"],
   "apps/dashboard": ["apps/api", "packages/contract"],
+  examples: ["packages/sdk"],
 };
 
 const sourcePattern = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
@@ -41,6 +42,11 @@ const specifierPattern = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)["']([^"']+)
  */
 export function importSpecifiers(content: string) {
   return Array.from(content.matchAll(specifierPattern), ([, specifier]) => specifier ?? "");
+}
+
+function allowedFor(directory: string) {
+  const group = directory.startsWith("examples/") ? "examples" : directory;
+  return allowedImports[group] ?? [];
 }
 
 function owningWorkspace(path: string, workspaces: Workspace[]) {
@@ -69,8 +75,7 @@ function checkSpecifier(
   const target = workspaces.find((workspace) => workspace.name === packageName(specifier));
   if (!target || target.directory === owner.directory) return null;
   if (target.directory.startsWith("v1/")) return "v2 code never imports from v1/";
-  const allowed = allowedImports[owner.directory] ?? [];
-  if (allowed.includes(target.directory)) return null;
+  if (allowedFor(owner.directory).includes(target.directory)) return null;
   return `${owner.directory} may not import ${target.directory}`;
 }
 
@@ -117,7 +122,7 @@ function readPackageName(directory: string) {
 }
 
 function readWorkspaces(root: string) {
-  const parents = ["apps", "packages", "tools/oxlint", "v1/apps", "v1/packages"];
+  const parents = ["apps", "examples", "packages", "tools/oxlint", "v1/apps", "v1/packages"];
   const workspaces: Workspace[] = [];
   for (const parent of parents) {
     for (const entry of listDirectories(join(root, parent))) {
