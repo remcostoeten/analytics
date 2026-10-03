@@ -292,3 +292,54 @@
   font-style: var(--shiki-dark-font-style);
   font-weight: var(--shiki-dark-font-weight);
 }
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes spark-draw {
+  from {
+    stroke-dashoffset: 1200;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 520ms var(--ease-out) both;
+}
+
+.hero-rise-late {
+  animation: hero-rise 520ms var(--ease-out) 120ms both;
+}
+
+.panel-rise {
+  animation: hero-rise 600ms var(--ease-out) 200ms both;
+}
+
+.spark-line {
+  stroke-dasharray: 1200;
+  animation: spark-draw 1400ms var(--ease-out) 500ms both;
+}
+
+.spark-fill {
+  animation: fade-in 600ms ease 1300ms both;
+}
+
+.bar-grow {
+  transform-origin: left;
+  animation: bar-grow 500ms var(--ease-out) both;
+}

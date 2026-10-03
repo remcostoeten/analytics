@@ -3,9 +3,12 @@ import { join } from "node:path";
 
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { CodeWindow } from "@/components/landing/code-window";
 import { outlineButton } from "@/components/landing/control";
+import { PipelineDiagram, PrivacyDiagram, ProxyDiagram } from "@/components/landing/diagrams";
+import { HeroPanel } from "@/components/landing/hero-panel";
 import {
   ArrowIcon,
   BoxIcon,
@@ -19,113 +22,194 @@ import { InstallCommand } from "@/components/landing/install-command";
 import { PixelHeading } from "@/components/landing/pixel-heading";
 import { baseOptions } from "@/lib/layout-options";
 
-const features = [
-  {
-    icon: ShieldIcon,
-    title: "No cookies, no raw IPs",
-    text: "Visitors are counted with a daily salted hash. The only cookie is the admin session.",
-  },
+const stats = [
+  { value: "< 5 KB", label: "browser core, gzipped" },
+  { value: "0", label: "cookies for visitors" },
+  { value: "1", label: "API for ingest, reads and sign-in" },
+  { value: "60 KB", label: "largest batch the API accepts" },
+];
+
+const capabilities = [
   {
     icon: BoxIcon,
-    title: "One typed SDK",
-    text: "A browser core under 5 KB gzipped, with React, Next, server and proxy entries.",
-  },
-  {
-    icon: RouteIcon,
-    title: "Same-origin proxy",
-    text: "Mount /_ra in your app so events travel on your own domain.",
+    title: "Typed events",
+    text: "Declare your event map once and get typed track() calls, with props kept inside the limits.",
+    href: "/docs/guides/custom-events",
   },
   {
     icon: GaugeIcon,
     title: "Core Web Vitals",
-    text: "LCP, INP, CLS, TTFB and FCP per route.",
+    text: "LCP, INP, CLS, TTFB and FCP per route, credited to the page that was measured.",
+    href: "/docs/plugins/speed-insights",
   },
   {
     icon: BugIcon,
     title: "Error tracking",
-    text: "Stack frames and stable fingerprints across deploys.",
+    text: "Stack frames with query strings kept, stable fingerprints across deploys, no issues from bots.",
+    href: "/docs/plugins/errors",
+  },
+  {
+    icon: ShieldIcon,
+    title: "Bot scoring",
+    text: "User agent, headless and no-input signals combined into one score per event.",
+    href: "/docs/edge-cases/bots",
   },
   {
     icon: TerminalIcon,
     title: "Read-only SQL",
-    text: "Query the console views with an API token.",
+    text: "One SELECT against the console views with an API token, from the dashboard or this site.",
+    href: "/docs/api/sql",
+  },
+  {
+    icon: RouteIcon,
+    title: "Server-side tracking",
+    text: "The /server entry sends from route handlers, actions and workers with the secret key.",
+    href: "/docs/guides/server-side-tracking",
   },
 ];
 
-const starts = [
-  { title: "Quick start", href: "/docs/getting-started/quick-start" },
-  { title: "How it works", href: "/docs/getting-started/how-it-works" },
-  { title: "SDK reference", href: "/docs/sdk/install" },
-  { title: "API reference", href: "/docs/reference" },
+const stacks = [
+  { name: "Next.js", href: "/docs/frameworks/nextjs" },
+  { name: "React", href: "/docs/frameworks/react" },
+  { name: "Vanilla", href: "/docs/frameworks/vanilla" },
+  { name: "Node, Bun, Deno", href: "/docs/frameworks/server" },
+  { name: "Workers", href: "/docs/frameworks/server" },
+  { name: "Any language", href: "/docs/frameworks/server#other-languages" },
 ];
 
 export default async function HomePage() {
   const example = await readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
   return (
     <HomeLayout {...baseOptions()}>
-      <main className="framed mx-auto w-[min(880px,calc(100%-32px))] flex-1">
-        <section className="flex flex-col gap-6 py-16! md:py-24!">
-          <span className="caps text-muted">Spoar, self-hosted web analytics</span>
-          <PixelHeading lines={["Web analytics", "on your own Postgres."]} />
-          <p className="max-w-xl text-[1rem] leading-relaxed text-muted">
-            A typed SDK, one API for ingest and reads, and a database you run. No cookies for
-            visitors. Raw IP addresses are never stored.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/docs/getting-started/quick-start" className="btn-primary">
-              Get started
-              <ArrowIcon className="size-3" />
-            </Link>
-            <Link href="/docs" className={`${outlineButton} h-auto px-4 py-2.5 caps`}>
-              Read the docs
-            </Link>
-            <InstallCommand command="npm install @spoar/sdk" />
+      <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
+        <section className="grid gap-10 py-14! lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-20!">
+          <div className="flex flex-col gap-6">
+            <span className="hero-rise caps text-muted">Spoar, self-hosted web analytics</span>
+            <PixelHeading lines={["Web analytics", "on your own Postgres."]} />
+            <p className="hero-rise-late max-w-xl text-[1rem] leading-relaxed text-muted">
+              A typed SDK, one API for ingest and reads, and a database you run. No cookies for
+              visitors. Raw IP addresses are never stored.
+            </p>
+            <div className="hero-rise-late flex flex-wrap items-center gap-3">
+              <Link href="/docs/getting-started/quick-start" className="btn-primary">
+                Get started
+                <ArrowIcon className="size-3" />
+              </Link>
+              <Link href="/docs" className={`${outlineButton} caps h-auto px-4 py-2.5`}>
+                Read the docs
+              </Link>
+              <InstallCommand command="npm install @spoar/sdk" />
+            </div>
           </div>
+          <HeroPanel />
         </section>
 
-        <section className="flex flex-col gap-4">
-          <span className="caps text-muted">One file to add</span>
-          <CodeWindow title="lib/analytics.ts" lang="ts" code={example} />
+        <section className="dot-grid grid grid-cols-2 gap-px bg-line p-0! md:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex flex-col gap-1 bg-bg px-6 py-6">
+              <span className="font-mono text-2xl font-medium text-fg tabular-nums">
+                {stat.value}
+              </span>
+              <span className="caps text-[0.6rem] text-muted">{stat.label}</span>
+            </div>
+          ))}
         </section>
 
-        <section className="flex flex-col gap-6">
-          <span className="caps text-muted">What it records</span>
-          <ul className="grid gap-x-10 sm:grid-cols-2">
-            {features.map((feature) => (
-              <li
-                key={feature.title}
-                className="flex gap-3 border-b border-dashed border-line py-4 last:border-b-0 sm:nth-last-[2]:border-b-0"
-              >
-                <feature.icon className="mt-0.5 size-3.5 shrink-0 text-muted" />
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[0.9rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
-                    {feature.title}
-                  </h2>
-                  <p className="text-[0.8rem] leading-relaxed text-muted">{feature.text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <Feature
+          eyebrow="01 / Ingest"
+          title="From the browser to a row in four hops"
+          text="The SDK batches events and sends them with fetch or sendBeacon. The API checks the key and origin, scores bots, enriches with geo, device and channel, and writes the row. Reads, the dashboard and SQL answer from the same tables."
+          href="/docs/getting-started/how-it-works"
+          linkText="How it works"
+        >
+          <PipelineDiagram />
+        </Feature>
 
-        <section className="flex flex-col gap-4">
-          <span className="caps text-muted">Where to start</span>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {starts.map((start) => (
-              <li key={start.title}>
+        <Feature
+          eyebrow="02 / Proxy"
+          title="Events travel on your domain"
+          text="Mount the /_ra route in your app with one line. The browser only ever talks to your origin; the proxy adds the secret key and the forwarded IP, refuses bodies over 60 KB, and passes nothing else along."
+          href="/docs/guides/proxy"
+          linkText="Set up the proxy"
+          reverse
+        >
+          <ProxyDiagram />
+        </Feature>
+
+        <Feature
+          eyebrow="03 / Privacy"
+          title="Hashed today, gone tomorrow"
+          text="The IP is hashed with a salt that rotates every UTC day, used for the rate limit and one bot signal, then dropped. Visitor counts never use it. The only cookie on the whole system is the admin session."
+          href="/docs/edge-cases/sessions-and-visitors"
+          linkText="Visitors and sessions"
+        >
+          <PrivacyDiagram />
+        </Feature>
+
+        <section className="flex flex-col gap-8">
+          <SectionHeading eyebrow="04 / What it records" title="More than pageviews" />
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {capabilities.map((item) => (
+              <li key={item.title}>
                 <Link
-                  href={start.href}
-                  className="card-wash group flex items-center justify-between gap-3 rounded-[10px] border border-line bg-surface px-4 py-3 text-[0.85rem] font-medium text-fg"
+                  href={item.href}
+                  className="card-wash group flex h-full flex-col gap-4 rounded-[10px] border border-line bg-surface p-5"
                 >
-                  {start.title}
-                  <ArrowIcon className="size-3.5 text-muted transition-colors group-hover:text-accent" />
+                  <item.icon className="size-4 text-muted transition-colors group-hover:text-accent" />
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="text-[0.95rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
+                      {item.title}
+                    </h3>
+                    <p className="text-[0.8rem] leading-relaxed text-muted">{item.text}</p>
+                  </div>
                 </Link>
               </li>
             ))}
           </ul>
         </section>
 
-        <footer className="dot-grid flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-muted">
+        <section className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-start">
+          <SectionHeading
+            eyebrow="05 / One file"
+            title="Create the client, add the plugins you want"
+            text="The browser core has no framework dependency. React and Next entries add a provider and route templates on top."
+            href="/docs/sdk/install"
+            linkText="SDK reference"
+          />
+          <CodeWindow title="lib/analytics.ts" lang="ts" code={example} />
+        </section>
+
+        <section className="flex flex-wrap items-center justify-between gap-6">
+          <span className="caps text-muted">Runs on</span>
+          <ul className="flex flex-wrap gap-2">
+            {stacks.map((stack) => (
+              <li key={stack.name}>
+                <Link href={stack.href} className={`${outlineButton} text-[0.75rem] font-medium`}>
+                  {stack.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="dot-grid flex flex-col items-center gap-5 py-16! text-center">
+          <h2 className="font-pixel text-[2rem] leading-[1.1] text-fg sm:text-[2.6rem]">
+            Own your analytics.
+          </h2>
+          <p className="max-w-md text-[0.9rem] text-muted">
+            One project, two keys, one route. From an empty app to the first stored event in the
+            quick start.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/docs/getting-started/quick-start" className="btn-primary">
+              Quick start
+              <ArrowIcon className="size-3" />
+            </Link>
+            <InstallCommand command="npm install @spoar/sdk" />
+          </div>
+        </section>
+
+        <footer className="flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-muted">
           <span>Spoar. Built by Remco Stoeten.</span>
           <div className="flex gap-4">
             <Link href="/query" className="link-line">
@@ -138,5 +222,65 @@ export default async function HomePage() {
         </footer>
       </main>
     </HomeLayout>
+  );
+}
+
+type FeatureProps = {
+  eyebrow: string;
+  title: string;
+  text: string;
+  href: string;
+  linkText: string;
+  reverse?: boolean;
+  children: ReactNode;
+};
+
+function Feature({ eyebrow, title, text, href, linkText, reverse, children }: FeatureProps) {
+  return (
+    <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
+      <div className={reverse ? "lg:order-2" : ""}>
+        <SectionHeading
+          eyebrow={eyebrow}
+          title={title}
+          text={text}
+          href={href}
+          linkText={linkText}
+        />
+      </div>
+      <div
+        className={`rounded-[10px] border border-dashed border-line p-4 ${reverse ? "lg:order-1" : ""}`}
+      >
+        {children}
+      </div>
+    </section>
+  );
+}
+
+type HeadingProps = {
+  eyebrow: string;
+  title: string;
+  text?: string;
+  href?: string;
+  linkText?: string;
+};
+
+function SectionHeading({ eyebrow, title, text, href, linkText }: HeadingProps) {
+  return (
+    <div className="flex max-w-xl flex-col gap-3">
+      <span className="caps text-muted">{eyebrow}</span>
+      <h2 className="text-[1.5rem] leading-[1.2] font-medium tracking-[-0.015em] text-fg">
+        {title}
+      </h2>
+      {text ? <p className="text-[0.9rem] leading-relaxed text-muted">{text}</p> : null}
+      {href && linkText ? (
+        <Link
+          href={href}
+          className="link-line inline-flex w-fit items-center gap-1.5 text-sm text-fg"
+        >
+          {linkText}
+          <ArrowIcon className="size-3" />
+        </Link>
+      ) : null}
+    </div>
   );
 }
