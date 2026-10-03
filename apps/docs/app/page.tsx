@@ -72,7 +72,7 @@ export default function HomePage() {
     <HomeLayout {...baseOptions()}>
       <main className="framed mx-auto w-[min(880px,calc(100%-32px))] flex-1">
         <section className="flex flex-col gap-6 py-16! md:py-24!">
-          <span className="caps text-muted">Self-hosted web analytics</span>
+          <span className="caps text-muted">Spoar, self-hosted web analytics</span>
           <h1 className="max-w-xl text-[2.4rem] leading-[1.1] font-medium tracking-[-0.02em] text-fg sm:text-[3rem]">
             Web analytics on your own Postgres.
           </h1>
@@ -135,7 +135,7 @@ export default function HomePage() {
         </section>
 
         <footer className="dot-grid flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-muted">
-          <span>Built by Remco Stoeten.</span>
+          <span>Spoar. Built by Remco Stoeten.</span>
           <div className="flex gap-4">
             <Link href="/query" className="link-line">
               Query

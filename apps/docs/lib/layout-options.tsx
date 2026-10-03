@@ -9,7 +9,7 @@ export function baseOptions(): BaseLayoutProps {
       title: (
         <span className="flex items-center gap-2 font-medium tracking-tight">
           <Logo className="size-5" />
-          Analytics
+          Spoar
         </span>
       ),
       transparentMode: "top",

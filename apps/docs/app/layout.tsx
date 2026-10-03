@@ -9,7 +9,7 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: { default: "Analytics", template: "%s | Analytics docs" },
+  title: { default: "Spoar", template: "%s | Spoar docs" },
   description:
     "Privacy-first web analytics you host yourself. A typed SDK, one API for ingest, reads and sign-in, and a SQL console.",
 };
