@@ -348,7 +348,7 @@ export const authMember = pgTable("auth_member", {
   userId: text("user_id")
     .notNull()
     .references(() => authUser.id, { onDelete: "cascade" }),
-  role: text("role", { enum: ["owner", "admin", "analyst", "viewer"] })
+  role: text("role", { enum: ["owner", "admin", "viewer"] })
     .notNull()
     .default("viewer"),
   projectIds: text("project_ids").array(),
@@ -373,7 +373,7 @@ export const authInvitation = pgTable("auth_invitation", {
 export const invites = pgTable("invites", {
   ...baseEntity(),
   tokenHash: text("token_hash").notNull().unique(),
-  role: text("role", { enum: ["admin", "analyst", "viewer"] }).notNull(),
+  role: text("role", { enum: ["admin", "viewer"] }).notNull(),
   projectIds: text("project_ids").array(),
   email: text("email"),
   acceptedBy: text("accepted_by").references(() => authUser.id, { onDelete: "set null" }),

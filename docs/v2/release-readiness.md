@@ -38,7 +38,7 @@ Options, for the owner to pick:
 
 - 0009 to 0030 are additive and not applied to Neon yet. The `migrate` workflow runs them with baseline `0008_add_rollup_daily` (`docs/v2/deploy.md`, step 3). **Owner**.
 - 0031 (annotations, pull request #69) follows once it merges. Update the range in `deploy.md` step 3 in the same change.
-- 0032 adds `invites` for invite links and email-and-password sign-up.
+- 0032 adds `invites` for invite links and email-and-password sign-up; 0033 drops the `analyst` role, turning any analyst into a viewer.
 - A fresh database for a self-hosted copy needs no baseline: `bun run migrate` runs 0000 onward.
 
 ### Sign-in

@@ -11,13 +11,13 @@ One short record per row of the decisions table in [`docs/v2/plan.md`](../v2/pla
 | [0005](0005-package-name.md) | Package name | Open, default |
 | [0006](0006-what-a-project-is.md) | What a project is | Open, default |
 | [0007](0007-public-visitor-data.md) | Visitor-level data on public projects | Open, default |
-| [0008](0008-admin-sign-in.md) | Admin sign-in | Open, default |
+| [0008](0008-admin-sign-in.md) | Admin sign-in | Settled |
 | [0009](0009-event-names.md) | Event names | Open, default |
 | [0010](0010-contract-schema-library.md) | Contract schema library | Open, default |
 | [0011](0011-indentation.md) | Indentation | Settled |
 | [0012](0012-patch-v1-first.md) | Patch 1.x first | Settled |
 | [0013](0013-branching.md) | Branching | Settled |
 | [0014](0014-who-runs-this.md) | Who runs this | Settled |
-| [0015](0015-roles-and-sql-access.md) | Roles and SQL access | Open, default |
+| [0015](0015-roles-and-sql-access.md) | Roles and SQL access | Settled |
 | [0016](0016-elysia-on-vercel.md) | Elysia on Vercel | Open |
 | [0017](0017-product-scope.md) | Product scope | Settled |

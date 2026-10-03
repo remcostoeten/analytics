@@ -7,7 +7,7 @@ description: Read-only SQL against documented views, scoped to the projects you 
 
 ## Who may run SQL
 
-Owners, admins and analysts whose role lists the project, and API tokens with the `sql` scope. Never anonymous callers, even on a public project. Each project's `sqlEnabled` switch is on by default; off blocks SQL on it for everyone except the owner. Every run is logged, with its duration, row count and whether it was blocked, and the database checks a signed list of project ids on every query.
+Owners, and admins whose role lists the project, and API tokens with the `sql` scope. Never anonymous callers, even on a public project. Each project's `sqlEnabled` switch is on by default; off blocks SQL on it for everyone except the owner. Every run is logged, with its duration, row count and whether it was blocked, and the database checks a signed list of project ids on every query.
 
 ## Limits
 

@@ -135,7 +135,7 @@ describe("Better Auth", () => {
   test("an invited address registers, signs in with its password and loses access with its membership", async () => {
     await stores.invites.create({
       id: "inv_ada",
-      role: "analyst",
+      role: "viewer",
       projectIds: null,
       expiresAt: new Date("2026-10-05T12:00:00.000Z"),
       tokenHash: "ada-hash",
@@ -149,7 +149,7 @@ describe("Better Auth", () => {
     const cookie = registered.value.cookies.find((line) => line.startsWith("ra.session_token="));
     expect(cookie).toBeString();
     const member = await stores.members.membership(registered.value.user.id);
-    expect(member.ok && member.value).toMatchObject({ role: "analyst", projectIds: null });
+    expect(member.ok && member.value).toMatchObject({ role: "viewer", projectIds: null });
 
     const sessions = betterAuthSessions(auth, stores.members);
     const pair = cookie?.split(";")[0] ?? "";
@@ -169,6 +169,27 @@ describe("Better Auth", () => {
       }),
     );
     expect(signIn.status).toBe(200);
+
+    const changed = await auth.handler(
+      new Request("http://localhost:3100/v2/auth/change-password", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "http://localhost:3000",
+          cookie: pair,
+        },
+        body: JSON.stringify({ currentPassword: "password-123", newPassword: "password-456" }),
+      }),
+    );
+    expect(changed.status).toBe(200);
+    const signInAgain = await auth.handler(
+      new Request("http://localhost:3100/v2/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+        body: JSON.stringify({ email: "ada@example.test", password: "password-456" }),
+      }),
+    );
+    expect(signInAgain.status).toBe(200);
 
     await database.query("DELETE FROM auth_member WHERE user_id = $1", [registered.value.user.id]);
     expect(await sessions(new Headers({ cookie: pair }))).toBeNull();

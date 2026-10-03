@@ -7,15 +7,13 @@ import type {
 } from "@remcostoeten/analytics-shared/semantic";
 
 import type { EngineError } from "../errors";
-import type { Membership, Role } from "./access";
+import type { AssignableRole, Membership } from "./access";
 
 type Reply<Value> = Promise<Result<Value, EngineError>>;
 
-export type InviteRole = Exclude<Role, "owner">;
-
 export type InviteRecord = {
   id: InviteID;
-  role: InviteRole;
+  role: AssignableRole;
   projectIds: Nullable<ProjectID[]>;
   email: Nullable<string>;
   acceptedBy: Nullable<UserID>;

@@ -56,7 +56,7 @@ function signedIn(caller: Caller): Result<QueryActor, EngineError> {
  * read-only `SELECT` against the documented views, for one project or every project the caller
  * may query; `POST /query/explain` estimates its cost; `GET /query/schema` lists the views and
  * `GET /queries/history` the latest runs; `/queries` and `/queries/:query` keep saved queries,
- * shared by everyone who may run SQL and changed only by their creator or the owner. SQL needs an owner, an admin or analyst who lists the
+ * shared by everyone who may run SQL and changed only by their creator or the owner. SQL needs an owner, an admin who lists the
  * project, or a `sql` token, and the project's `sqlEnabled` switch. Results answer CSV for
  * `Accept: text/csv` or `format=csv`.
  *

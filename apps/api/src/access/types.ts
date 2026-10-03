@@ -14,6 +14,7 @@ import type { Nullable, ProjectID, TokenID, UserID } from "@remcostoeten/analyti
 export type SignedIn = {
   userId: UserID;
   name: string;
+  email: string;
   login: Nullable<string>;
   image: Nullable<string>;
   expiresAt: Date;

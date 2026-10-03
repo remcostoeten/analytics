@@ -6,11 +6,11 @@ One admin allowlist is not enough to let someone else view one project or run SQ
 
 ## Decision
 
-Recommended default: Better Auth organizations with owner, admin, analyst and viewer roles. SQL is limited to owners, admins, analysts and `sql`-scoped tokens, and every run is logged.
+Better Auth organizations with owner, admin and viewer roles. Admins see visitor-level data and run SQL on the projects they list; viewers see aggregates only. SQL is limited to owners, admins and `sql`-scoped tokens, and every run is logged. The analyst role was dropped as unneeded (migration 0033 turns analysts into viewers).
 
 ## Status
 
-Open, default. Source: row 15 of the decisions table in [`docs/v2/plan.md`](../v2/plan.md#decisions-needed).
+Settled. Source: row 15 of the decisions table in [`docs/v2/plan.md`](../v2/plan.md#decisions-needed).
 
 ## Consequences
 

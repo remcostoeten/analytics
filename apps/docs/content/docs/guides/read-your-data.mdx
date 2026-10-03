@@ -102,7 +102,7 @@ else console.error(pages.error.code, pages.error.message);
 
 ## 5. Run SQL
 
-For questions the read routes do not answer, run one `SELECT` or `WITH` statement against the views in the `query` schema. This needs a token with the `sql` scope, or a signed-in owner, admin or analyst.
+For questions the read routes do not answer, run one `SELECT` or `WITH` statement against the views in the `query` schema. This needs a token with the `sql` scope, or a signed-in owner or admin.
 
 1. Create a token as in step 1 with `"scope":"sql"`.
 2. List the views and their columns:

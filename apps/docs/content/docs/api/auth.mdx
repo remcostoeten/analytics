@@ -24,7 +24,7 @@ Secret keys and API tokens are shown once, when created or rotated, and stored h
 | --- | --- |
 | `public` | Anyone |
 | `project` | Anyone when the project is public; otherwise a signed-in member whose role lists the project, or an API token that lists it |
-| `detail` | An owner, admin or analyst who lists the project, or an API token that lists it; also anyone when the project is public and has `publicVisitorData` on. Viewers get aggregates only |
+| `detail` | An owner, or an admin who lists the project, or an API token that lists it; also anyone when the project is public and has `publicVisitorData` on. Viewers get aggregates only |
 | `admin` | An owner, an admin for the projects their role lists, or an `admin` token for its projects. Organization-wide routes such as creating projects, tokens and invites need an owner, or an admin or `admin` token that lists no projects |
 | `ingest` | A public key from an allowed origin, or a secret key |
 | `cron` | The cron secret |
@@ -36,8 +36,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | Role | Scope | Can |
 | --- | --- | --- |
 | Owner | Organization | Everything, including members, keys and deleting projects |
-| Admin | Organization or listed projects | Settings, visibility, internal-traffic marking, tokens and SQL |
-| Analyst | Listed projects | All reads including visitor-level data, and SQL |
+| Admin | Organization or listed projects | All reads including visitor-level data, settings, visibility, internal-traffic marking and SQL. Organization-wide admins also manage tokens, invites and members |
 | Viewer | Listed projects | Aggregate reads only, the same as a public project shows |
 
 ## Sign-in
@@ -53,7 +52,7 @@ People without a GitHub login on the allowlist join through an invite and sign i
 
 ```json
 {
-  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
+  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "email": "remco@example.com", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
   "session": { "expiresAt": "2026-10-27T16:40:01.000Z" },
   "role": "owner",
   "isAdmin": true
@@ -70,7 +69,7 @@ An owner, or an admin who lists no projects, creates a single-use invite link fo
 
 | Route | Access | Does |
 | --- | --- | --- |
-| `POST /v2/invites` | `admin` | Creates an invite for `admin`, `analyst` or `viewer` on `projectIds`, or every project when null. Returns the `join_` token and the dashboard `url` once. Expires after 7 days by default, at most 30 |
+| `POST /v2/invites` | `admin` | Creates an invite for `admin` or `viewer` on `projectIds`, or every project when null. Returns the `join_` token and the dashboard `url` once. Expires after 7 days by default, at most 30 |
 | `GET /v2/invites` | `admin` | Lists invites as `pending`, `accepted` or `expired`, without tokens |
 | `DELETE /v2/invites/:invite` | `admin` | Revokes the link. Someone who already joined stays a member |
 | `GET /v2/join/:token` | `public` | The role, projects and expiry the invite grants, for the join page |
@@ -82,7 +81,19 @@ curl -X POST https://api.analytics.remcostoeten.nl/v2/invites \
   -d '{ "role": "viewer", "projectIds": ["remcostoeten.nl"] }'
 ```
 
-A used, expired or unknown token answers 404. An invited account keeps access while it is a member of the organization.
+A used, expired or unknown token answers 404, and each IP may call `/v2/join` 10 times a minute. An invited account keeps access while it is a member of the organization. Better Auth's own organization routes under `/v2/auth/organization` answer 404, so members change only through these routes.
+
+## Members
+
+Owners and admins who list no projects manage the organization's members.
+
+| Route | Does |
+| --- | --- |
+| `GET /v2/members` | Lists members with their role, projects and whether they sign in with `github` or a `password` |
+| `PATCH /v2/members/:member` | Sets `role` to `admin` or `viewer` and `projectIds`, null for every project |
+| `DELETE /v2/members/:member` | Removes the member: their account and sessions end at once, and a GitHub login leaves the allowlist |
+
+The owner cannot be changed or removed, and nobody changes or removes themselves; both answer 403. Signed in with a password, you change it at Better Auth's `POST /v2/auth/change-password`.
 
 ## API tokens
 

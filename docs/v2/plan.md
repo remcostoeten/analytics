@@ -26,7 +26,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 12 | Patch 1.x first | Settled | No. 1.x is frozen and gets no more releases; the web vitals and own-traffic fixes ship with 2.0 | Phases |
 | 13 | Branching | Settled | Trunk on master: v1 in `v1/`, v2 at the root, epics squash-merge into master | Branching, Phases |
 | 14 | Who runs this | Settled | Models 1 and 2: you self-host, and others can self-host their own copy. A hosted service stays a note for later | Who runs this |
-| 15 | Roles and SQL access | Open, default | Better Auth organizations with owner, admin, analyst and viewer roles; SQL for owner, admin, analyst and sql-scoped tokens only, every run logged | Access and sign-in |
+| 15 | Roles and SQL access | Settled | Better Auth organizations with owner, admin and viewer roles, managed through `/v2/members`; SQL for owner, admin and sql-scoped tokens only, every run logged | Access and sign-in |
 | 16 | Alerts | Settled | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
 | 17 | Product scope | Settled | v2 serves reach, traffic sources and app performance. Goals, funnels, actions and experiment statistics are not planned; what is already built stays. See [Product focus](#product-focus) | Product focus, Phases |
 
@@ -332,15 +332,16 @@ One admin allowlist is enough for you alone, but not for letting someone else lo
 | Role | Scope | Can |
 | --- | --- | --- |
 | Owner | Organization | Everything, including members, keys, deleting projects |
-| Admin | Organization or listed projects | Settings, visibility, internal-traffic marking, tokens, SQL |
-| Analyst | Listed projects | All reads including visitor-level data, and SQL |
+| Admin | Organization or listed projects | All reads including visitor-level data, settings, visibility, internal-traffic marking, SQL. Organization-wide admins also manage tokens, invites and members |
 | Viewer | Listed projects | Aggregate reads only, the same as a public project shows |
+
+Members are managed through `/v2/members`: list them, change a member's role or projects, or remove one, which ends their sessions and, for a GitHub login, removes it from the allowlist. The owner cannot be changed or removed, and nobody changes or removes themselves.
 
 API tokens get the same scopes plus one more split: `read`, `sql` and `admin`, each limited to listed projects.
 
 ### Who can run SQL
 
-- Only owners, admins and analysts, or a token with the `sql` scope, and only on the projects their role lists. Never anonymous visitors, even on a public project with `publicVisitorData` on, because SQL can reach every visitor-level row.
+- Only owners and admins, or a token with the `sql` scope, and only on the projects their role lists. Never anonymous visitors, even on a public project with `publicVisitorData` on, because SQL can reach every visitor-level row.
 - Each project has an `sqlEnabled` switch, on by default; off blocks SQL on it for everyone except the owner.
 - Every run is logged in a `query_runs` table: who, when, which projects, the SQL, duration, rows, and whether it was blocked. Owners see all runs; everyone sees their own through `/v2/queries/history`.
 - The database enforces the scope too: the API sets the caller's allowed project ids and their signature on the transaction, and the views return nothing outside a correctly signed list.

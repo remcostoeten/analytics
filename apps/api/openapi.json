@@ -890,6 +890,7 @@
                         "id",
                         "login",
                         "name",
+                        "email",
                         "avatarUrl"
                       ],
                       "properties": {
@@ -907,6 +908,11 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "email": {
+                          "format": "email",
+                          "maxLength": 254,
+                          "type": "string"
                         },
                         "avatarUrl": {
                           "format": "uri",
@@ -940,7 +946,6 @@
                       "enum": [
                         "owner",
                         "admin",
-                        "analyst",
                         "viewer"
                       ]
                     },
@@ -2899,7 +2904,6 @@
                             "type": "string",
                             "enum": [
                               "admin",
-                              "analyst",
                               "viewer"
                             ]
                           },
@@ -3035,7 +3039,7 @@
       },
       "post": {
         "summary": "Create an invite",
-        "description": "A single-use link to register with email and password as `admin`, `analyst` or `viewer`, limited to `projectIds` or all projects when null. Expires after 7 days by default, at most 30. The token and `url` are in this response only; `url` is null without a dashboard origin.",
+        "description": "A single-use link to register with email and password as `admin` or `viewer`, limited to `projectIds` or all projects when null. Expires after 7 days by default, at most 30. The token and `url` are in this response only; `url` is null without a dashboard origin.",
         "tags": [
           "Invites"
         ],
@@ -3053,7 +3057,6 @@
                     "type": "string",
                     "enum": [
                       "admin",
-                      "analyst",
                       "viewer"
                     ]
                   },
@@ -3087,7 +3090,6 @@
                     "type": "string",
                     "enum": [
                       "admin",
-                      "analyst",
                       "viewer"
                     ]
                   },
@@ -3121,7 +3123,6 @@
                     "type": "string",
                     "enum": [
                       "admin",
-                      "analyst",
                       "viewer"
                     ]
                   },
@@ -3178,7 +3179,6 @@
                           "type": "string",
                           "enum": [
                             "admin",
-                            "analyst",
                             "viewer"
                           ]
                         },
@@ -3432,7 +3432,6 @@
                           "type": "string",
                           "enum": [
                             "admin",
-                            "analyst",
                             "viewer"
                           ]
                         },
@@ -3680,7 +3679,6 @@
                           "type": "string",
                           "enum": [
                             "admin",
-                            "analyst",
                             "viewer"
                           ]
                         },
@@ -3775,6 +3773,545 @@
           }
         },
         "operationId": "postV2JoinByToken"
+      }
+    },
+    "/v2/members": {
+      "get": {
+        "summary": "List members",
+        "description": "Everyone in the organization with their role, projects and whether they sign in with GitHub or a password.",
+        "tags": [
+          "Members"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "email",
+                          "login",
+                          "avatarUrl",
+                          "signIn",
+                          "role",
+                          "projectIds",
+                          "joinedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "format": "email",
+                            "maxLength": 254,
+                            "type": "string"
+                          },
+                          "login": {
+                            "minLength": 1,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "avatarUrl": {
+                            "format": "uri",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "signIn": {
+                            "type": "string",
+                            "enum": [
+                              "github",
+                              "password"
+                            ]
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "owner",
+                              "admin",
+                              "viewer"
+                            ]
+                          },
+                          "projectIds": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "type": "string"
+                            }
+                          },
+                          "joinedAt": {
+                            "format": "date-time",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2Members"
+      }
+    },
+    "/v2/members/{member}": {
+      "patch": {
+        "summary": "Change a member",
+        "description": "Sets `role` to `admin` or `viewer` and `projectIds`, null for every project. The owner and you yourself answer 403.",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "name": "member",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "email",
+                        "login",
+                        "avatarUrl",
+                        "signIn",
+                        "role",
+                        "projectIds",
+                        "joinedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "format": "email",
+                          "maxLength": 254,
+                          "type": "string"
+                        },
+                        "login": {
+                          "minLength": 1,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "avatarUrl": {
+                          "format": "uri",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "signIn": {
+                          "type": "string",
+                          "enum": [
+                            "github",
+                            "password"
+                          ]
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "viewer"
+                          ]
+                        },
+                        "projectIds": {
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          }
+                        },
+                        "joinedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patchV2MembersByMember"
+      },
+      "delete": {
+        "summary": "Remove a member",
+        "description": "Deletes the account and its sessions at once; a GitHub login also leaves the allowlist. The owner and you yourself answer 403.",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "name": "member",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Response for status 204",
+            "content": {
+              "type": "void"
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteV2MembersByMember"
       }
     },
     "/v2/projects/{project}/stats": {

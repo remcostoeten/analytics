@@ -38,7 +38,7 @@ export function canRead(caller: Caller, project: ProjectRecord): boolean {
 /**
  * @name canReadDetail
  * @description The `detail` level, for visitor-level reads: anyone when the project is public with
- * `publicVisitorData` on, otherwise owners, admins and analysts who list the project, or any token
+ * `publicVisitorData` on, otherwise owners, admins who list the project, or any token
  * that lists it. Viewers only see aggregates.
  *
  * @example
@@ -79,17 +79,17 @@ export function isSignedInAdmin(caller: Caller): boolean {
 
 /**
  * @name canQuery
- * @description Who may run SQL on a project: owners always; admins and analysts who list it, and
+ * @description Who may run SQL on a project: owners always; admins who list it, and
  * tokens with the `sql` scope that list it, while the project's `sqlEnabled` switch is on. Never
  * viewers or anonymous callers, whatever the project's visibility.
  *
  * @example
- * canQuery(analyst, project); // true when listed and sqlEnabled
+ * canQuery(admin, project); // true when listed and sqlEnabled
  */
 export function canQuery(caller: Caller, project: ProjectRecord): boolean {
   if (caller.kind === "user") {
     if (caller.role === "owner") return true;
-    return caller.role !== "viewer" && project.sqlEnabled && isListed(caller, project.id);
+    return caller.role === "admin" && project.sqlEnabled && isListed(caller, project.id);
   }
   return (
     caller.kind === "token" &&

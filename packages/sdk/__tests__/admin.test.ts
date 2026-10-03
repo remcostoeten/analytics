@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Annotation } from "@remcostoeten/analytics-contract";
+import type { Annotation, CreatedInvite, Member } from "@remcostoeten/analytics-contract";
 
 import { createAdmin, discord, mail, webhook } from "../src/admin/index";
 import type { AdminOptions } from "../src/admin/index";
@@ -321,5 +321,78 @@ describe("admin errors", () => {
     const listed = await admin(api.fetcher, "").alerts.list("skriuw");
     expect(listed).toMatchObject({ ok: false, error: { code: "NO_TOKEN" } });
     expect(api.calls).toHaveLength(0);
+  });
+});
+
+describe("admin.invites and admin.members", () => {
+  const member: Member = {
+    id: "usr_ada",
+    name: "Ada",
+    email: "ada@example.com",
+    login: null,
+    avatarUrl: null,
+    signIn: "password",
+    role: "admin",
+    projectIds: null,
+    joinedAt: "2026-09-28T09:12:00.000Z",
+  };
+  const invite: CreatedInvite["data"] = {
+    id: "inv_1",
+    role: "viewer",
+    projectIds: ["skriuw"],
+    token: "join_abc",
+    url: null,
+    expiresAt: "2026-10-05T00:00:00.000Z",
+    createdAt: "2026-09-28T00:00:00.000Z",
+  };
+
+  test("each method calls its route and unwraps the data", async () => {
+    const api = fakeApi((call) => {
+      if (call.method === "DELETE") return { status: 204 };
+      if (call.method === "GET") return { status: 200, body: { data: [], nextCursor: null } };
+      if (call.url.pathname.startsWith("/v2/invites"))
+        return { status: 201, body: { data: invite } };
+      return { status: 200, body: { data: member } };
+    });
+    const client = admin(api.fetcher);
+    expect(
+      await client.invites.create({
+        role: "viewer",
+        projectIds: ["skriuw"],
+        expiresAt: new Date("2026-10-05T00:00:00.000Z"),
+      }),
+    ).toEqual({ ok: true, value: invite });
+    expect(await client.invites.list()).toEqual({
+      ok: true,
+      value: { data: [], nextCursor: null },
+    });
+    expect(await client.invites.revoke("inv_1")).toEqual({ ok: true, value: null });
+    expect(await client.members.list()).toEqual({
+      ok: true,
+      value: { data: [], nextCursor: null },
+    });
+    expect(await client.members.update("usr_ada", { role: "admin", projectIds: null })).toEqual({
+      ok: true,
+      value: member,
+    });
+    expect(await client.members.remove("usr_ada")).toEqual({ ok: true, value: null });
+    expect(
+      api.calls.map((call) => [
+        call.method,
+        call.url.pathname,
+        call.body ? JSON.parse(call.body) : null,
+      ]),
+    ).toEqual([
+      [
+        "POST",
+        "/v2/invites",
+        { role: "viewer", projectIds: ["skriuw"], expiresAt: "2026-10-05T00:00:00.000Z" },
+      ],
+      ["GET", "/v2/invites", null],
+      ["DELETE", "/v2/invites/inv_1", null],
+      ["GET", "/v2/members", null],
+      ["PATCH", "/v2/members/usr_ada", { role: "admin", projectIds: null }],
+      ["DELETE", "/v2/members/usr_ada", null],
+    ]);
   });
 });

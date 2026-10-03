@@ -7,7 +7,10 @@ import type { ProjectStore } from "./project-store";
 import type { RateLimiter } from "./rate-limiter";
 
 export type {
+  AssignableRole,
   KeyKind,
+  MemberPatch,
+  MemberRecord,
   Membership,
   MemberStore,
   NewProject,
@@ -80,7 +83,7 @@ export type {
   AnnotationWindow,
   NewAnnotation,
 } from "./annotations";
-export type { InviteRecord, InviteRole, InviteStore, NewInvite } from "./invites";
+export type { InviteRecord, InviteStore, NewInvite } from "./invites";
 export type {
   IgnoreRule,
   IssueEventRecord,

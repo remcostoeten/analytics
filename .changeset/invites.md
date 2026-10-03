@@ -2,4 +2,4 @@
 "@remcostoeten/analytics-contract": minor
 ---
 
-Invites: `InviteRole`, `InviteStatus`, `Invite`, `InviteList`, `CreateInvite`, `CreatedInvite`, `InvitePreview`, `AcceptInvite` and `AcceptedInvite` for `/v2/invites` and `/v2/join/{token}`.
+Invites and members: `AssignableRole`, `InviteStatus`, `Invite`, `InviteList`, `CreateInvite`, `CreatedInvite`, `InvitePreview`, `AcceptInvite`, `AcceptedInvite`, `SignInMethod`, `Member`, `MemberList`, `MemberResponse` and `UpdateMember`. `AuthSession.user` carries `email`, and `Role` drops `analyst`.

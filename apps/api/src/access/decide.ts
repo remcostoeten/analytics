@@ -46,7 +46,7 @@ function judge(
   if (level === "detail") {
     return canReadDetail(caller, project)
       ? decision
-      : refused(caller, "Visitor-level data needs an analyst, admin or API token");
+      : refused(caller, "Visitor-level data needs an admin or an API token");
   }
   return canAdmin(caller, project.id) ? decision : refused(caller, "This needs a project admin");
 }

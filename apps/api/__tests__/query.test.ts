@@ -135,6 +135,7 @@ async function addUser(id: string, role: string, projectIds: string[] | null) {
   users[id] = {
     userId: id,
     name: id,
+    email: `${id}@example.test`,
     login: id,
     image: null,
     expiresAt: new Date("2026-10-28T12:00:00.000Z"),
@@ -182,9 +183,9 @@ beforeAll(async () => {
       ('nosql', 'pageview', 'pageview', '2026-09-26T10:00:00Z', '/', 'nosql.test', 'v3', 's4', 'c1', '{}');
   `);
   await addUser("owner", "owner", null);
-  await addUser("analyst", "analyst", ["site", "closed"]);
+  await addUser("editor", "admin", ["site", "closed"]);
   await addUser("viewer", "viewer", ["site"]);
-  await addUser("limited", "analyst", ["nosql"]);
+  await addUser("limited", "admin", ["nosql"]);
   await addToken("sql", "sql", ["site"]);
   await addToken("read", "read", null);
   await addToken("burst", "sql", ["site"]);
@@ -238,7 +239,7 @@ describe("POST /v2/projects/:project/query", () => {
             project: "site",
           },
         },
-        as("analyst"),
+        as("editor"),
       ),
       QueryResult,
     );
@@ -249,7 +250,7 @@ describe("POST /v2/projects/:project/query", () => {
     const response = await post(
       "/v2/projects/site/query",
       { sql: "select path, 'a,b' as note from events order by ts" },
-      { ...as("analyst"), accept: "text/csv" },
+      { ...as("editor"), accept: "text/csv" },
     );
     expect(response.headers.get("content-type")).toStartWith("text/csv");
     expect(await response.text()).toBe('path,note\n/,"a,b"\n/pricing,"a,b"\n');
@@ -259,7 +260,7 @@ describe("POST /v2/projects/:project/query", () => {
     const blocked = await post(
       "/v2/projects/site/query",
       { sql: "delete from events" },
-      as("analyst"),
+      as("editor"),
     );
     expect(blocked.status).toBe(400);
     expect(((await blocked.json()) as { error: Json }).error).toMatchObject({
@@ -269,7 +270,7 @@ describe("POST /v2/projects/:project/query", () => {
     const failing = await post(
       "/v2/projects/site/query",
       { sql: "select nope from events" },
-      as("analyst"),
+      as("editor"),
     );
     expect(failing.status).toBe(400);
   });
@@ -277,11 +278,11 @@ describe("POST /v2/projects/:project/query", () => {
 
 describe("POST /v2/query", () => {
   test("covers every project the caller may query", async () => {
-    const analyst = await valid(
-      await post("/v2/query", { sql: countByProject }, as("analyst")),
+    const editor = await valid(
+      await post("/v2/query", { sql: countByProject }, as("editor")),
       QueryResult,
     );
-    expect(analyst.rows).toEqual([
+    expect(editor.rows).toEqual([
       ["closed", 1],
       ["site", 2],
     ]);
@@ -298,7 +299,7 @@ describe("POST /v2/query", () => {
 
   test("explain estimates without running", async () => {
     const plan = await valid(
-      await post("/v2/query/explain", { sql: "select * from events" }, as("analyst")),
+      await post("/v2/query/explain", { sql: "select * from events" }, as("editor")),
       QueryPlan,
     );
     expect((plan.data as Json).totalCost).toBeGreaterThan(0);
@@ -335,9 +336,9 @@ describe("GET /v2/query/schema", () => {
 describe("GET /v2/queries/history", () => {
   test("your own runs, blocked ones included; the owner sees everyone's", async () => {
     expect((await get("/v2/queries/history")).status).toBe(401);
-    const analyst = await valid(await get("/v2/queries/history", as("analyst")), QueryHistory);
-    const runs = analyst.data as Json[];
-    expect(runs.every((run) => (run.actor as Json).id === "analyst")).toBe(true);
+    const editor = await valid(await get("/v2/queries/history", as("editor")), QueryHistory);
+    const runs = editor.data as Json[];
+    expect(runs.every((run) => (run.actor as Json).id === "editor")).toBe(true);
     expect(runs).toContainEqual(
       expect.objectContaining({ sql: "delete from events", blocked: true, rowCount: null }),
     );
@@ -351,7 +352,7 @@ describe("GET /v2/queries/history", () => {
     const owner = await valid(await get("/v2/queries/history", as("owner")), QueryHistory);
     const actors = new Set((owner.data as Json[]).map((run) => String((run.actor as Json).id)));
     expect([...actors].sort((a, b) => a.localeCompare(b))).toEqual([
-      "analyst",
+      "editor",
       "owner",
       "tok_burst",
       "tok_sql",
@@ -367,7 +368,7 @@ describe("saved queries", () => {
       "POST",
       "/v2/queries",
       { name: "Views per path", sql: "select path, count(*) from events group by 1", chart: "bar" },
-      as("analyst"),
+      as("editor"),
     );
     expect(created.status).toBe(201);
     expect(Value.Check(SavedQueryResponse, await created.json())).toBe(true);
@@ -377,7 +378,7 @@ describe("saved queries", () => {
       name: "Views per path",
       chart: "bar",
       description: null,
-      createdBy: { kind: "user", id: "analyst" },
+      createdBy: { kind: "user", id: "editor" },
     });
     const id = String(first?.id);
     const one = await valid(await get(`/v2/queries/${id}`, as("owner")), SavedQueryResponse);
@@ -386,7 +387,7 @@ describe("saved queries", () => {
       403,
     );
     const renamed = await valid(
-      await send("PATCH", `/v2/queries/${id}`, { name: "Views by path" }, as("analyst")),
+      await send("PATCH", `/v2/queries/${id}`, { name: "Views by path" }, as("editor")),
       SavedQueryResponse,
     );
     expect((renamed.data as Json).name).toBe("Views by path");
@@ -399,7 +400,7 @@ describe("saved queries", () => {
       "POST",
       "/v2/queries",
       { name: "Bad", sql: "drop table events" },
-      as("analyst"),
+      as("editor"),
     );
     expect(response.status).toBe(400);
   });

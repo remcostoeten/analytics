@@ -16,6 +16,7 @@ export type {
   TimeseriesOptions,
 } from "./reads";
 export { discord, mail, webhook } from "./targets";
+export type { InviteInput, InvitesAdmin, MemberChanges, MembersAdmin } from "./team";
 export type { AlertsAdmin } from "./targets";
 export type {
   AdminError,

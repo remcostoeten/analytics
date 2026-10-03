@@ -91,7 +91,7 @@ describe("invites", () => {
     const created = value(
       await access.invites.create({
         id: "inv_1",
-        role: "analyst",
+        role: "viewer",
         projectIds: ["docs"],
         expiresAt: later,
         tokenHash: "invite-hash",
@@ -116,7 +116,7 @@ describe("invites", () => {
     expect(membership).toEqual({
       userId: "usr_invited",
       orgId: "org_main",
-      role: "analyst",
+      role: "viewer",
       projectIds: ["docs"],
     });
     expect(value(await access.invites.claimed("grace@example.test", at))).toBeNull();
@@ -126,6 +126,34 @@ describe("invites", () => {
     ]);
     expect(value(await access.invites.revoke("inv_1"))).toBe(true);
     expect(value(await access.invites.revoke("inv_1"))).toBe(false);
+  });
+});
+
+describe("member admin", () => {
+  test("list, update and remove members, never the owner", async () => {
+    await database.query("INSERT INTO dashboard_users (github_login) VALUES ('Guest')");
+    const listed = value(await access.members.list());
+    expect(listed.map((member) => [member.userId, member.role])).toEqual([
+      ["usr_owner", "owner"],
+      ["usr_guest", "viewer"],
+      ["usr_mail", "viewer"],
+      ["usr_invited", "viewer"],
+    ]);
+    expect(listed[0]).toMatchObject({ name: "remcostoeten", login: "remcostoeten", image: null });
+    expect(listed[2]).toMatchObject({ email: "ada@example.test", login: null });
+
+    const updated = value(
+      await access.members.update("usr_guest", { role: "admin", projectIds: null }),
+    );
+    expect(updated).toMatchObject({ userId: "usr_guest", role: "admin", projectIds: null });
+    expect(value(await access.members.update("usr_owner", { role: "viewer" }))).toBeNull();
+    expect(value(await access.members.update("usr_missing", { role: "viewer" }))).toBeNull();
+
+    expect(value(await access.members.remove("usr_owner"))).toBe(false);
+    expect(value(await access.members.remove("usr_guest"))).toBe(true);
+    expect(value(await access.members.find("usr_guest"))).toBeNull();
+    expect(value(await access.members.allowedLogin("guest"))).toBe(false);
+    expect(value(await access.members.remove("usr_guest"))).toBe(false);
   });
 });
 

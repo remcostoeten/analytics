@@ -26,6 +26,7 @@ import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import type { HistorySource } from "./modules/landing/service";
 import { invitesModule } from "./modules/invites/route";
+import { membersModule } from "./modules/members/route";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
@@ -64,7 +65,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, invites, the reads, annotations, the SQL console and, with `alerts`, the
+ * health, ingest, sign-in, projects, tokens, invites, members, the reads, annotations, the SQL console and, with `alerts`, the
  * alert routes. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
@@ -116,10 +117,20 @@ export function createApp(options: AppOptions) {
     .use(
       invitesModule(
         options.access,
-        { register: options.register ?? null, dashboardOrigin: options.dashboardOrigin },
+        {
+          register: options.register ?? null,
+          dashboardOrigin: options.dashboardOrigin,
+          limit: {
+            limiter: options.reads.limiter,
+            hasher: options.reads.hasher,
+            ipSecret: options.reads.ipSecret,
+            clock: options.clock,
+          },
+        },
         options.docsBase,
       ),
     )
+    .use(membersModule(options.access, options.docsBase))
     .use(readsModule(options.access, options.reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))
     .use(issuesModule(options.access, options.reads, options.docsBase))

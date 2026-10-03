@@ -4,7 +4,8 @@ import type { Nullable, ProjectID, TokenID, UserID } from "@remcostoeten/analyti
 import type { EngineError } from "../errors";
 
 export type Visibility = "public" | "private";
-export type Role = "owner" | "admin" | "analyst" | "viewer";
+export type Role = "owner" | "admin" | "viewer";
+export type AssignableRole = Exclude<Role, "owner">;
 export type TokenScope = "read" | "sql" | "admin";
 export type KeyKind = "public" | "secret";
 
@@ -50,6 +51,19 @@ export type Membership = {
   projectIds: Nullable<ProjectID[]>;
 };
 
+export type MemberRecord = Membership & {
+  name: string;
+  email: string;
+  login: Nullable<string>;
+  image: Nullable<string>;
+  joinedAt: Date;
+};
+
+export type MemberPatch = {
+  role?: AssignableRole;
+  projectIds?: Nullable<ProjectID[]>;
+};
+
 export type TokenRecord = {
   id: TokenID;
   name: string;
@@ -85,4 +99,8 @@ export type MemberStore = {
   allowed: (userId: UserID) => Stored<boolean>;
   membership: (userId: UserID) => Stored<Nullable<Membership>>;
   join: (userId: UserID, name: string) => Stored<Membership>;
+  list: () => Stored<MemberRecord[]>;
+  find: (userId: UserID) => Stored<Nullable<MemberRecord>>;
+  update: (userId: UserID, patch: MemberPatch) => Stored<Nullable<MemberRecord>>;
+  remove: (userId: UserID) => Stored<boolean>;
 };

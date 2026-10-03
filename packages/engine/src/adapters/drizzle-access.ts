@@ -1,5 +1,6 @@
 import { ok } from "@remcostoeten/analytics-shared/result";
-import { eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 import {
   apiTokens,
@@ -12,6 +13,7 @@ import {
 import type {
   AlertStore,
   AnnotationStore,
+  MemberRecord,
   Membership,
   MemberStore,
   ProjectAdmin,
@@ -79,6 +81,15 @@ const memberColumns = {
   orgId: authMember.organizationId,
   role: authMember.role,
   projectIds: authMember.projectIds,
+};
+
+const memberRecordColumns = {
+  ...memberColumns,
+  name: authUser.name,
+  email: authUser.email,
+  login: authUser.githubLogin,
+  image: authUser.image,
+  joinedAt: authMember.createdAt,
 };
 
 async function attempt<Value>(message: string, run: () => Promise<Value>) {
@@ -193,7 +204,9 @@ export function drizzleTokens(db: Database): TokenStore {
  * @name drizzleMembers
  * @description The `MemberStore`: the `dashboard_users` sign-in allowlist, who may sign in, and
  * membership of the single organization. A GitHub user may sign in while their login is on the
- * allowlist; a user who registered through an invite may sign in while they are a member. The first user to join creates the organization as its
+ * allowlist; a user who registered through an invite may sign in while they are a member.
+ * `update` and `remove` never touch the owner; removing deletes the account, its sessions and,
+ * for a GitHub user, the allowlist entry. The first user to join creates the organization as its
  * owner and claims the projects without one; later users join as viewers of no projects until an
  * owner lists theirs.
  *
@@ -208,6 +221,15 @@ export function drizzleMembers(db: Database): MemberStore {
       .from(authMember)
       .where(eq(authMember.userId, userId));
     return row ?? null;
+  }
+
+  function records(where?: SQL): Promise<MemberRecord[]> {
+    return db
+      .select(memberRecordColumns)
+      .from(authMember)
+      .innerJoin(authUser, eq(authUser.id, authMember.userId))
+      .where(where)
+      .orderBy(asc(authMember.createdAt));
   }
 
   return {
@@ -238,6 +260,37 @@ export function drizzleMembers(db: Database): MemberStore {
         return row.login === null ? row.member !== null : row.listed !== null;
       }),
     membership: (userId) => attempt("Could not read the membership", () => membership(userId)),
+    list: () => attempt("Could not list members", () => records()),
+    find: (userId) =>
+      attempt("Could not read the member", async () => {
+        const [row] = await records(eq(authMember.userId, userId));
+        return row ?? null;
+      }),
+    update: (userId, patch) =>
+      attempt("Could not update the member", async () => {
+        const changed = await db
+          .update(authMember)
+          .set(patch)
+          .where(and(eq(authMember.userId, userId), ne(authMember.role, "owner")))
+          .returning({ userId: authMember.userId });
+        if (changed.length === 0) return null;
+        const [row] = await records(eq(authMember.userId, userId));
+        return row ?? null;
+      }),
+    remove: (userId) =>
+      attempt("Could not remove the member", async () => {
+        const [member] = await records(
+          and(eq(authMember.userId, userId), ne(authMember.role, "owner")),
+        );
+        if (!member) return false;
+        if (member.login !== null) {
+          await db
+            .delete(dashboardUsers)
+            .where(sql`lower(${dashboardUsers.githubLogin}) = ${member.login.toLowerCase()}`);
+        }
+        await db.delete(authUser).where(eq(authUser.id, userId));
+        return true;
+      }),
     join: (userId, name) =>
       attempt("Could not add the member", async () => {
         const existing = await membership(userId);

@@ -47,7 +47,7 @@ async function invited(invites: InviteStore, email: string, at: Date) {
 /**
  * @name createAuth
  * @description Better Auth under `/v2/auth`: GitHub and email-and-password sign-in, sessions in
- * the `auth_*` tables and the organization plugin with the owner, admin, analyst and viewer roles.
+ * the `auth_*` tables and the organization plugin with the owner, admin and viewer roles.
  * A GitHub account needs its login in `dashboard_users`; an email account needs an invite claimed
  * for its address, so Better Auth's own sign-up is off and registration goes through
  * `POST /v2/join/{token}`. A GitHub account joins the single organization, the first one as owner;
@@ -97,7 +97,7 @@ export function createAuth(options: AuthOptions) {
       organization({
         allowUserToCreateOrganization: false,
         creatorRole: "owner",
-        roles: { owner: ownerAc, admin: adminAc, analyst: memberAc, viewer: memberAc },
+        roles: { owner: ownerAc, admin: adminAc, viewer: memberAc },
       }),
     ],
     advanced: {
@@ -168,6 +168,7 @@ export function betterAuthSessions(auth: Auth, members: MemberStore): SessionRea
     return {
       userId: user.id,
       name: user.name,
+      email: user.email,
       login,
       image: user.image ?? null,
       expiresAt: session.expiresAt,

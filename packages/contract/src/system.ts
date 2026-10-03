@@ -1,6 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
+import { EmailAddress } from "./alerts";
 import { BotReason, Role } from "./enums";
 import { Count, dataOf, Day, Id, Milliseconds, nullable, oneOf, Timestamp, Url } from "./schema";
 
@@ -17,6 +18,7 @@ export const AuthSession = Type.Object({
       id: Id,
       login: Type.String({ minLength: 1 }),
       name: nullable(Type.String()),
+      email: EmailAddress,
       avatarUrl: nullable(Url),
     }),
   ),

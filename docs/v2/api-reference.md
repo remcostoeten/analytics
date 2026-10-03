@@ -8,7 +8,7 @@ Every route the v2 API will have, who may call it, and what comes back. This is 
 | --- | --- |
 | `public` | Anyone |
 | `project` | Anyone when the project is public; otherwise a signed-in member whose role lists the project, or an API token (any scope) that lists it |
-| `detail` | An owner, admin or analyst who lists the project, or an API token that lists it; also anyone when the project is public **and** has `publicVisitorData` switched on. Viewers get aggregates only |
+| `detail` | An owner, or an admin who lists the project, or an API token that lists it; also anyone when the project is public **and** has `publicVisitorData` switched on. Viewers get aggregates only |
 | `admin` | An owner's session, an admin's session for the projects their role lists, or an API token with `admin` scope for its projects. Organization-wide routes (creating projects, tokens) need an owner, or an admin or `admin` token that lists no projects |
 | `ingest` | `X-Project-Key: pk_...` or `?key=pk_...` from an allowed Origin, or `Bearer sk_...`. The browser SDK uses `?key=` because `sendBeacon` cannot set headers and a custom header would trigger a CORS preflight |
 | `cron` | `Bearer CRON_SECRET` |
@@ -425,7 +425,7 @@ Every list and breakdown route (`breakdown`, `paths`, `map`, `events`, `visitors
 
 Nested fields become dotted columns (`page.path`, `geo.country`), columns come from the first 1,000 rows, and column types in the `.sql` file are inferred from them (`bigint`, `double precision`, `boolean`, else `text`). An error on the first page answers as usual; one on a later page ends the file (JSON gains an `error` field, SQL a closing comment). Past 1 million rows JSON gains `"truncated": true` and SQL a closing comment.
 
-For questions no route answers, owners, admins and analysts, and tokens with the `sql` scope, get read-only SQL on the projects they list, while each project's `sqlEnabled` switch is on (the owner is exempt):
+For questions no route answers, owners and admins, and tokens with the `sql` scope, get read-only SQL on the projects they list, while each project's `sqlEnabled` switch is on (the owner is exempt):
 
 | Method | Path | Access | Returns |
 | --- | --- | --- | --- |
@@ -613,7 +613,7 @@ Browser requests are limited to 100 per minute per project and daily IP hash. A 
 ```json
 200 OK
 {
-  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
+  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "email": "remco@example.com", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
   "session": { "expiresAt": "2026-10-27T16:40:01.000Z" },
   "role": "owner",
   "isAdmin": true
@@ -949,7 +949,7 @@ request
 { "data": { "id": "inv_3f9a1c2e", "role": "viewer", "projectIds": ["remcostoeten.nl"], "token": "join_7c2e9f1a4b6d8e0c7c2e9f1a4b6d8e0c", "url": "https://analytics.remcostoeten.nl/join/join_7c2e9f1a4b6d8e0c7c2e9f1a4b6d8e0c", "expiresAt": "2026-10-04T16:44:00.000Z", "createdAt": "2026-09-27T16:44:00.000Z" } }
 ```
 
-`role` is `admin`, `analyst` or `viewer`; `projectIds` null means every project. `expiresAt` defaults to 7 days out and may be at most 30. `url` is null when `DASHBOARD_ORIGIN` is not set. The token is in this response only.
+`role` is `admin` or `viewer`; `projectIds` null means every project. `expiresAt` defaults to 7 days out and may be at most 30. `url` is null when `DASHBOARD_ORIGIN` is not set. The token is in this response only.
 
 `GET /v2/invites` lists them with a `status` of `pending`, `accepted` or `expired`, and `DELETE /v2/invites/inv_3f9a1c2e` returns `204 No Content`.
 
@@ -971,7 +971,24 @@ Set-Cookie: ra.session_token=...; HttpOnly; SameSite=Lax
 { "data": { "user": { "id": "usr_01J8Z9", "name": "Ada Lovelace", "email": "ada@example.com" }, "role": "viewer", "projectIds": ["remcostoeten.nl"] } }
 ```
 
-A used, expired or unknown token answers 404; a taken email answers 409 and leaves the invite open. Later sign-ins go to Better Auth's `POST /v2/auth/sign-in/email`.
+A used, expired or unknown token answers 404; a taken email answers 409 and leaves the invite open. Each IP may call `/v2/join` 10 times a minute. Later sign-ins go to Better Auth's `POST /v2/auth/sign-in/email`.
+
+### Members
+
+`GET /v2/members` as admin
+
+```json
+200 OK
+{
+  "data": [
+    { "id": "usr_01J8Z3", "name": "Remco Stoeten", "email": "remco@example.com", "login": "remcostoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378", "signIn": "github", "role": "owner", "projectIds": null, "joinedAt": "2026-09-27T16:40:01.000Z" },
+    { "id": "usr_01J8Z9", "name": "Ada Lovelace", "email": "ada@example.com", "login": null, "avatarUrl": null, "signIn": "password", "role": "viewer", "projectIds": ["remcostoeten.nl"], "joinedAt": "2026-09-28T09:12:00.000Z" }
+  ],
+  "nextCursor": null
+}
+```
+
+`PATCH /v2/members/usr_01J8Z9` with `{ "role": "admin", "projectIds": null }` answers the updated member. `DELETE /v2/members/usr_01J8Z9` returns `204 No Content`: the account and its sessions are gone at once, and a GitHub login leaves `dashboard_users`. The owner and the caller themselves answer 403.
 
 ### Tokens
 

@@ -117,6 +117,32 @@ if (september.ok) console.table(september.value.data);
 
 Dates are a `Date`, a calendar date such as `"2026-10-01"` (the start of that day in UTC) or an ISO 8601 timestamp. `list` works with a `read` token; the other methods need an `admin` token that lists the project.
 
+## Invites and members
+
+Invite someone with a single-use link; they register with email and password and are signed in at once. [Auth overview](/docs/api/auth#invites) describes the flow.
+
+```ts
+const invite = await admin.invites.create({ role: "viewer", projectIds: ["skriuw"] });
+if (invite.ok) console.log(invite.value.url);
+
+const members = await admin.members.list();
+if (members.ok) console.table(members.value.data);
+
+await admin.members.update("usr_01J8Z9", { role: "admin", projectIds: null });
+await admin.members.remove("usr_01J8Z9");
+```
+
+| Method | Does |
+| --- | --- |
+| `invites.create({ role, projectIds?, expiresAt? })` | Creates a link for `admin` or `viewer`; `token` and `url` come back once |
+| `invites.list()` | Every invite with its status, without tokens |
+| `invites.revoke(id)` | The link stops working |
+| `members.list()` | Every member with role, projects and sign-in method |
+| `members.update(id, { role?, projectIds? })` | Changes a member's role or projects |
+| `members.remove(id)` | Removes the member and ends their sessions |
+
+These need an `admin` token that lists no projects. The owner and the token's own user cannot be changed or removed.
+
 ## Reads
 
 The same client reads the stats routes, typed from the contract, for your own dashboard pages and server components:

@@ -7,6 +7,9 @@ import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
 import {
+  MemberList,
+  MemberResponse,
+  UpdateMember,
   AcceptInvite,
   AcceptedInvite,
   CreateInvite,
@@ -78,6 +81,9 @@ import {
 } from "../src";
 
 const schemas: { [name: string]: TSchema } = {
+  MemberList,
+  MemberResponse,
+  UpdateMember,
   AcceptInvite,
   AcceptedInvite,
   CreateInvite,

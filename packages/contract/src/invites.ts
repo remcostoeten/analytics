@@ -2,19 +2,17 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { EmailAddress } from "./alerts";
+import { AssignableRole } from "./enums";
 import { dataOf, Id, listOf, nullable, oneOf, Timestamp, Url } from "./schema";
 
 const ProjectIds = nullable(Type.Array(Id, { minItems: 1 }));
-
-export const InviteRole = oneOf(["admin", "analyst", "viewer"]);
-export type InviteRole = Static<typeof InviteRole>;
 
 export const InviteStatus = oneOf(["pending", "accepted", "expired"]);
 export type InviteStatus = Static<typeof InviteStatus>;
 
 export const Invite = Type.Object({
   id: Id,
-  role: InviteRole,
+  role: AssignableRole,
   projectIds: ProjectIds,
   status: InviteStatus,
   email: nullable(EmailAddress),
@@ -28,7 +26,7 @@ export const InviteList = listOf(Invite);
 export type InviteList = Static<typeof InviteList>;
 
 export const CreateInvite = Type.Object({
-  role: InviteRole,
+  role: AssignableRole,
   projectIds: Type.Optional(ProjectIds),
   expiresAt: Type.Optional(Timestamp),
 });
@@ -37,7 +35,7 @@ export type CreateInvite = Static<typeof CreateInvite>;
 export const CreatedInvite = dataOf(
   Type.Object({
     id: Id,
-    role: InviteRole,
+    role: AssignableRole,
     projectIds: ProjectIds,
     token: Type.String({ minLength: 1 }),
     url: nullable(Url),
@@ -49,7 +47,7 @@ export type CreatedInvite = Static<typeof CreatedInvite>;
 
 export const InvitePreview = dataOf(
   Type.Object({
-    role: InviteRole,
+    role: AssignableRole,
     projectIds: ProjectIds,
     expiresAt: Timestamp,
   }),
@@ -66,7 +64,7 @@ export type AcceptInvite = Static<typeof AcceptInvite>;
 export const AcceptedInvite = dataOf(
   Type.Object({
     user: Type.Object({ id: Id, name: Type.String(), email: EmailAddress }),
-    role: InviteRole,
+    role: AssignableRole,
     projectIds: ProjectIds,
   }),
 );

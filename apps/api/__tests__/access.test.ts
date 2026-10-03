@@ -160,7 +160,6 @@ async function json(response: Response): Promise<Json> {
 const anonymous: Caller = {};
 const owner: Caller = { cookie: "usr_owner" };
 const admin: Caller = { cookie: "usr_admin" };
-const analyst: Caller = { cookie: "usr_analyst" };
 const viewer: Caller = { cookie: "usr_viewer" };
 const outsider: Caller = { cookie: "usr_outsider" };
 
@@ -168,6 +167,7 @@ async function addUser(id: string, role: string, projectIds: string[] | null) {
   users[id] = {
     userId: id,
     name: id,
+    email: `${id}@example.test`,
     login: id,
     image: null,
     expiresAt: new Date("2026-10-28T12:00:00.000Z"),
@@ -234,7 +234,6 @@ beforeAll(async () => {
   await addProject("closed", "private", false);
   await addUser("usr_owner", "owner", null);
   await addUser("usr_admin", "admin", ["closed"]);
-  await addUser("usr_analyst", "analyst", ["closed"]);
   await addUser("usr_viewer", "viewer", ["closed"]);
   await addUser("usr_outsider", "viewer", []);
   await addToken("read", "read", ["closed"]);
@@ -293,8 +292,8 @@ describe("public", () => {
       role: "owner",
       isAdmin: true,
     });
-    expect(await json(await call(api, "GET", "/v2/auth/session", analyst))).toMatchObject({
-      role: "analyst",
+    expect(await json(await call(api, "GET", "/v2/auth/session", viewer))).toMatchObject({
+      role: "viewer",
       isAdmin: false,
     });
   });
@@ -339,7 +338,7 @@ describe("detail", () => {
     ["anonymous on a public project without it", "open", anonymous, 401],
     ["anonymous on a private project", "closed", anonymous, 404],
     ["a viewer who lists the project", "closed", viewer, 403],
-    ["an analyst who lists the project", "closed", analyst, 200],
+    ["an admin who lists the project", "closed", admin, 200],
     ["a read token that lists the project", "closed", token("read"), 200],
     ["a sql token that lists the project", "closed", token("sql"), 200],
   ])("%s", async (_, project, caller, expected) => {
@@ -534,7 +533,6 @@ describe("invites", () => {
 
   test.each([
     ["an admin limited to some projects", admin, 403],
-    ["an analyst", analyst, 403],
     ["a viewer", viewer, 403],
     ["nobody", anonymous, 401],
   ])("%s creating an invite", async (_, caller, expected) => {
@@ -555,6 +553,20 @@ describe("invites", () => {
         expiresAt: "2026-11-30T00:00:00.000Z",
       }),
     ).toBe(400);
+  });
+
+  test("each IP may call /v2/join ten times a minute", async () => {
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 11; attempt += 1) {
+      const response = await api.handle(
+        new Request("http://localhost/v2/join/join_guess", {
+          headers: { "x-forwarded-for": "203.0.113.77" },
+        }),
+      );
+      statuses.push(response.status);
+    }
+    expect(statuses.slice(0, 10).every((code) => code === 404)).toBe(true);
+    expect(statuses[10]).toBe(429);
   });
 
   test("a short password is refused before the invite is touched", async () => {
@@ -605,19 +617,53 @@ describe("ingest", () => {
     );
   }
 
-  test("a signed-in admin's events and visitor are internal; an analyst's are not", async () => {
+  test("a signed-in admin's events and visitor are internal; a viewer's are not", async () => {
     expect((await send(owner, "visitor-owner", "91")).status).toBe(202);
-    expect((await send(analyst, "visitor-analyst", "92")).status).toBe(202);
+    expect((await send(viewer, "visitor-viewer", "92")).status).toBe(202);
     const rows = await database.query<{ visitor_id: string; is_internal: boolean }>(
-      "SELECT DISTINCT visitor_id, is_internal FROM events WHERE visitor_id IN ('visitor-owner', 'visitor-analyst') ORDER BY visitor_id",
+      "SELECT DISTINCT visitor_id, is_internal FROM events WHERE visitor_id IN ('visitor-owner', 'visitor-viewer') ORDER BY visitor_id",
     );
     expect(rows.rows).toEqual([
-      { visitor_id: "visitor-analyst", is_internal: false },
       { visitor_id: "visitor-owner", is_internal: true },
+      { visitor_id: "visitor-viewer", is_internal: false },
     ]);
     const visitors = await database.query<{ is_internal: boolean }>(
       "SELECT is_internal FROM visitors WHERE fingerprint = 'visitor-owner'",
     );
     expect(visitors.rows).toEqual([{ is_internal: true }]);
+  });
+});
+
+describe("members", () => {
+  test("an admin lists, changes and removes members, never the owner or themselves", async () => {
+    await addUser("usr_temp", "viewer", ["closed"]);
+    const listed = await json(await call(api, "GET", "/v2/members", owner));
+    expect((listed.data as Json[]).find((item) => item.id === "usr_owner")).toMatchObject({
+      role: "owner",
+      signIn: "github",
+      email: "usr_owner@example.test",
+    });
+
+    const changed = await call(api, "PATCH", "/v2/members/usr_temp", token("admin"), {
+      role: "admin",
+      projectIds: null,
+    });
+    expect(changed.status).toBe(200);
+    expect((await json(changed)).data).toMatchObject({ role: "admin", projectIds: null });
+
+    expect(await status("PATCH", "/v2/members/usr_owner", token("admin"), { role: "viewer" })).toBe(
+      403,
+    );
+    expect(await status("PATCH", "/v2/members/usr_owner", owner, { role: "viewer" })).toBe(403);
+    expect(await status("PATCH", "/v2/members/usr_temp", owner, {})).toBe(400);
+    expect(await status("PATCH", "/v2/members/usr_temp", owner, { role: "owner" })).toBe(400);
+    expect(await status("PATCH", "/v2/members/usr_missing", owner, { role: "viewer" })).toBe(404);
+    expect(await status("GET", "/v2/members", admin)).toBe(403);
+    expect(await status("GET", "/v2/members", viewer)).toBe(403);
+    expect(await status("GET", "/v2/members", anonymous)).toBe(401);
+
+    expect(await status("DELETE", "/v2/members/usr_owner", token("admin"))).toBe(403);
+    expect(await status("DELETE", "/v2/members/usr_temp", owner)).toBe(204);
+    expect(await status("DELETE", "/v2/members/usr_temp", owner)).toBe(404);
   });
 });

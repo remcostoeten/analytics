@@ -6,8 +6,8 @@ import {
   InviteList,
   InvitePreview,
 } from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError } from "@remcostoeten/analytics-engine";
+import { clientIp, engineError, hashIp } from "@remcostoeten/analytics-engine";
+import type { EngineError, Hasher, RateLimiter } from "@remcostoeten/analytics-engine";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import { Elysia, t } from "elysia";
 
@@ -17,19 +17,29 @@ import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import { acceptInvite, createInvite, listInvites, previewInvite, revokeInvite } from "./service";
 
+type JoinLimit = {
+  limiter: RateLimiter;
+  hasher: Hasher;
+  ipSecret: string;
+  clock: () => Date;
+};
+
 export type InvitesOptions = {
   register: Nullable<Register>;
   dashboardOrigin: Nullable<string>;
+  limit: Nullable<JoinLimit>;
 };
 
 const tags = ["Invites"];
+const joinsPerMinute = 10;
 
 /**
  * @name invitesModule
  * @description `/v2/invites` for organization admins: create a single-use invite link for a role
  * and projects, list invites with their status, and revoke one. `/v2/join/{token}` is public: it
  * shows what an invite grants and registers an email-and-password account with it, signed in at
- * once. Without `register`, as in tests, registering answers 503.
+ * once. Each IP may call `/v2/join` 10 times a minute. Without `register`, as in tests,
+ * registering answers 503.
  *
  * @example
  * app.use(invitesModule(deps, { register: betterAuthRegister(auth), dashboardOrigin }, docsBase));
@@ -42,6 +52,24 @@ export function invitesModule(deps: AccessDeps, options: InvitesOptions, docsBas
     const failed = failure(error, set.headers, docsBase);
     set.status = failed.status;
     return failed.body;
+  }
+
+  async function limited(request: Request): Promise<Nullable<EngineError>> {
+    const { limit } = options;
+    if (!limit) return null;
+    const now = limit.clock();
+    const ipHash = await hashIp(
+      limit.hasher,
+      limit.ipSecret,
+      clientIp(request.headers),
+      now.toISOString(),
+    );
+    const decision = await limit.limiter.hit(`join:${ipHash ?? "unknown"}`, joinsPerMinute, 60);
+    if (decision.allowed) return null;
+    return {
+      ...engineError("RATE_LIMITED", "Too many attempts; try again shortly"),
+      details: { retryAfterSeconds: decision.retryAfterSeconds },
+    };
   }
 
   return new Elysia({ name: "invites" })
@@ -76,7 +104,7 @@ export function invitesModule(deps: AccessDeps, options: InvitesOptions, docsBas
         detail: {
           summary: "Create an invite",
           description:
-            "A single-use link to register with email and password as `admin`, `analyst` or `viewer`, limited to `projectIds` or all projects when null. Expires after 7 days by default, at most 30. The token and `url` are in this response only; `url` is null without a dashboard origin.",
+            "A single-use link to register with email and password as `admin` or `viewer`, limited to `projectIds` or all projects when null. Expires after 7 days by default, at most 30. The token and `url` are in this response only; `url` is null without a dashboard origin.",
           tags,
         },
       },
@@ -99,7 +127,9 @@ export function invitesModule(deps: AccessDeps, options: InvitesOptions, docsBas
     )
     .get(
       "/join/:token",
-      async ({ params, set }) => {
+      async ({ params, request, set }) => {
+        const refused = await limited(request);
+        if (refused) return reject(refused, set);
         const found = await previewInvite(deps, params.token);
         return found.ok ? { data: found.value } : reject(found.error, set);
       },
@@ -121,6 +151,8 @@ export function invitesModule(deps: AccessDeps, options: InvitesOptions, docsBas
         if (!register) {
           return reject(engineError("UNAVAILABLE", "Registration is not configured"), set);
         }
+        const refused = await limited(request);
+        if (refused) return reject(refused, set);
         const accepted = await acceptInvite(deps, register, params.token, body, request.headers);
         if (!accepted.ok) return reject(accepted.error, set);
         set.headers["set-cookie"] = accepted.value.cookies;
