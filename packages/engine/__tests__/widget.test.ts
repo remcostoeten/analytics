@@ -11,6 +11,7 @@ import {
 } from "../src/adapters/memory";
 import { engineError } from "../src/errors";
 import { storeClientReports } from "../src/logs/client";
+import { scrubData, scrubMessage } from "../src/logs/lines";
 import { createEngine } from "../src/pipeline";
 import type { IssueStore, NewLogLine, ReadStore, SpeedStore, WidgetStore } from "../src/ports";
 import { defaultSignals } from "../src/signals";
@@ -138,6 +139,25 @@ describe("ingest log lines", () => {
         data: expect.objectContaining({ code: "RA_RATE_LIMITED" }),
       }),
     ]);
+  });
+});
+
+describe("scrubbing", () => {
+  test("replaces email, IPv4 and IPv6 addresses and keeps times", () => {
+    expect(scrubMessage("to (a@b.nl), from 81.2.69.160 via 2001:db8::1 at 12:30:45")).toBe(
+      "to [redacted] from [redacted] via [redacted] at 12:30:45",
+    );
+    expect(scrubData({ list: ["x", "10.0.0.1"], count: 2 })).toEqual({
+      list: ["x", "[redacted]"],
+      count: 2,
+    });
+  });
+
+  test("stays linear on long runs of punctuation", () => {
+    const started = performance.now();
+    scrubMessage(`${"!".repeat(100_000)}@${"!".repeat(100_000)}`);
+    scrubData({ note: `${"a".repeat(100_000)}@` });
+    expect(performance.now() - started).toBeLessThan(500);
   });
 });
 

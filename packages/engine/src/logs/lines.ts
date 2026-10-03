@@ -12,17 +12,43 @@ export const rateLimitedCode = "RA_RATE_LIMITED";
 const verdictCode = "RA_BOT_VERDICT";
 const jobCode = "RA_JOB";
 
-// An email address anywhere in a string.
-const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-// A dotted IPv4 address, or an IPv6 address with at least three colon groups.
-const addressPattern = /\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[0-9a-f]{0,4}(?::[0-9a-f]{0,4}){3,7}\b/i;
+// A whole word that is a dotted IPv4 address.
+const ipv4Pattern = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+// A whole word of hex digits and colons, the alphabet of an IPv6 address.
+const ipv6Pattern = /^[0-9a-f:]{2,45}$/i;
+// One letter or digit, the characters a bare word starts and ends with.
+const wordCharacter = /^[0-9a-z]$/i;
 // The field after `events[n]` in a parse error, such as `props` in `events[3].props.plan: ...`.
 const fieldPattern = /^events\[\d+\]\.([A-Za-z]+)/;
 
 type RawEvent = { name: Nullable<string>; visitor: Nullable<string>; session: Nullable<string> };
 
+function isEmail(word: string) {
+  const at = word.indexOf("@");
+  const dot = word.lastIndexOf(".");
+  return at > 0 && at === word.lastIndexOf("@") && dot > at + 1 && dot < word.length - 1;
+}
+
+function isAddress(word: string) {
+  if (ipv4Pattern.test(word)) return true;
+  return ipv6Pattern.test(word) && word.split(":").length > 3;
+}
+
+function bareWord(word: string) {
+  let start = 0;
+  let end = word.length;
+  while (start < end && !wordCharacter.test(word.charAt(start))) start += 1;
+  while (end > start && !wordCharacter.test(word.charAt(end - 1))) end -= 1;
+  return word.slice(start, end);
+}
+
+function sensitive(word: string) {
+  const bare = bareWord(word);
+  return isEmail(bare) || isAddress(bare);
+}
+
 function scrubbed(value: string) {
-  return emailPattern.test(value) || addressPattern.test(value) ? "[redacted]" : value;
+  return value.split(/\s+/).some(sensitive) ? "[redacted]" : value;
 }
 
 function scrubValue(value: LogValue): LogValue {
@@ -53,7 +79,7 @@ export function scrubData(data: LogData): LogData {
 export function scrubMessage(message: string): string {
   return message
     .split(/\s+/)
-    .map((word) => scrubbed(word))
+    .map((word) => (sensitive(word) ? "[redacted]" : word))
     .join(" ");
 }
 
