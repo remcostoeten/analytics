@@ -33,131 +33,180 @@ const mark = `<svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-h
 
 const styles = `
 :root {
-  color-scheme: dark;
-  --bg: #050505;
-  --panel: #0c0c0d;
-  --raised: #141416;
-  --line: #1f1f23;
-  --line-strong: #2a2a30;
-  --text: #f2f2f2;
-  --muted: #9b9ba3;
-  --faint: #66666e;
-  --ghost: #3a3a41;
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
-  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --gutter: clamp(16px, 4vw, 40px);
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #6b6b6b;
+  --line: #d9d9d9;
+  --accent: #fe5101;
+  --ok: #1fae78;
+  --warn: #b7791f;
+  --err: #e5484d;
+  --sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --wash: color-mix(in srgb, var(--fg) 7%, transparent);
+  --wash-selected: color-mix(in srgb, var(--fg) 12%, transparent);
+  --page: min(1040px, calc(100% - 32px));
+  color-scheme: light;
+  color: var(--fg);
+  background: var(--bg);
+  font-family: var(--sans);
 }
-* { box-sizing: border-box; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --fg: #ededed;
+    --muted: #8a8a8a;
+    --line: #262626;
+    --ok: #54f2b3;
+    --warn: #f5b544;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 64px; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
-::selection { background: var(--text); color: var(--bg); }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--bg); font-size: 0.875rem; line-height: normal; -webkit-font-smoothing: antialiased; }
+::selection { background: var(--fg); color: var(--bg); }
 a { color: inherit; text-decoration: none; }
-p { margin: 0; }
-code { font-family: var(--mono); font-size: .9em; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
-.frame { max-width: 1080px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 100vh; }
+p, h1, h2, h3 { margin: 0; }
+code { font-family: var(--mono); font-size: 0.9em; background: var(--wash); border-radius: 4px; padding: 1px 5px; }
+.caps { font-family: var(--mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; }
+.num { font-variant-numeric: tabular-nums; }
+.link { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; transition: text-decoration-color 140ms var(--ease-out); }
+.link:hover, .link:focus-visible { text-decoration-color: var(--accent); outline: none; }
 
-.bar { position: sticky; top: 0; z-index: 10; background: rgba(5,5,5,.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
-.bar .in { display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 var(--gutter); }
-.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.02em; font-size: 15px; }
-.brand small { font-weight: 400; color: var(--faint); font-family: var(--mono); font-size: 12px; }
+.dots { background-color: var(--bg); background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 16px 16px; }
+.top { position: sticky; top: 0; z-index: 10; border-bottom: 1px dashed var(--line); }
+.top .in { width: var(--page); margin: 0 auto; display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1rem; letter-spacing: -0.02em; }
+.context { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 3px 10px; color: var(--muted); }
+.live { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); animation: beat 1s ease-in-out infinite alternate; }
+@keyframes beat { to { opacity: 0.45; } }
+.spacer { flex: 1; }
 .nav { display: flex; gap: 2px; }
-.nav a { color: var(--muted); font-size: 13px; padding: 5px 9px; border-radius: 5px; transition: color .15s, background .15s; }
-.nav a:hover { color: var(--text); background: var(--raised); }
+.ghost, .outline, .primary, .chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; cursor: pointer; transition: background 140ms var(--ease-out), color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 120ms var(--ease-out); }
+.ghost { height: 28px; padding: 0 10px; border: 1px solid transparent; background: transparent; color: var(--muted); }
+.outline { height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.ghost:hover, .outline:hover, .chip:hover, .ghost:focus-visible, .outline:focus-visible, .chip:focus-visible { background: var(--wash); color: var(--fg); outline: none; }
+.primary { padding: 12px 18px; border: 1px solid transparent; background: var(--fg); color: var(--bg); }
+.primary:hover, .primary:focus-visible { background: var(--accent); color: #fff; }
+.primary:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+.primary:active { transform: scale(0.97); }
+.ghost:active, .outline:active, .chip:active { transform: none; }
 
-section { border-bottom: 1px solid var(--line); }
-.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 20px var(--gutter) 14px; }
-h2 { margin: 0; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
-.count { font-family: var(--mono); font-size: 12px; color: var(--faint); white-space: nowrap; }
+main { width: var(--page); margin: 0 auto; border-left: 1px dashed var(--line); border-right: 1px dashed var(--line); }
+main > section { position: relative; padding: 32px; border-bottom: 1px dashed var(--line); }
+main > section::before, main > section::after { content: ""; position: absolute; bottom: -4px; width: 7px; height: 7px; background: var(--bg); border: 1px solid var(--line); }
+main > section::before { left: -4px; }
+main > section::after { right: -4px; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.head h2 { font-size: 0.72rem; }
+.head .meta { color: var(--muted); }
 
-.kv { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
-.kv div { padding: 14px var(--gutter); border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
-.kv div:nth-child(4n+1) { border-left: 0; }
-.kv div:nth-last-child(-n+4) { border-bottom: 0; }
-.kv > div > span { display: block; font-family: var(--mono); font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
-.kv b { font-family: var(--mono); font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
-.live { display: inline-flex; align-items: center; gap: 8px; }
-.pulse { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--text); }
-.pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--text); animation: pulse 2.4s cubic-bezier(.2,.6,.4,1) infinite; }
-@keyframes pulse { to { transform: scale(3.2); opacity: 0; } }
+.card { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { transition: transform 150ms var(--ease-out), background 150ms var(--ease-out), border-color 150ms var(--ease-out); }
+.stat:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+.stat > span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.62rem; }
+.stat b { display: block; font-family: var(--mono); font-size: 0.85rem; font-weight: 500; overflow-wrap: anywhere; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 0.65rem; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.pill[data-state="ok"]::before { background: var(--ok); }
 
-.chart { padding: 14px var(--gutter) 16px; border-top: 1px solid var(--line); }
-.chart svg { display: block; width: 100%; height: 180px; overflow: visible; }
-.chart text { font-family: var(--mono); font-size: 10px; fill: var(--faint); }
-.chart .rules line { stroke: var(--line); stroke-dasharray: 2 4; }
-.chart .area { fill: url(#fade); }
-.chart .line { fill: none; stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.chart .dots circle { fill: var(--bg); stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: fill .12s; }
-.chart .dots circle:hover { fill: var(--text); }
-.chart .axis { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 10px; }
-.chart .none { font-family: var(--mono); font-size: 12px; color: var(--faint); padding: 24px 0 14px; }
+.chart .scroll { overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.chart .rules line { stroke: var(--line); stroke-dasharray: 3 4; }
+.chart .line { fill: none; stroke: var(--fg); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.chart .dot { fill: var(--surface); stroke: var(--fg); stroke-width: 1.5; vector-effect: non-scaling-stroke; transition: fill 120ms var(--ease-out); }
+.chart .dot:hover { fill: var(--fg); }
+.chart .dot.now { fill: var(--accent); stroke: var(--accent); }
+.chart .axis { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--muted); font-family: var(--mono); font-size: 0.65rem; }
+.empty { border: 1px dashed var(--line); border-radius: 10px; padding: 40px 16px; text-align: center; color: var(--muted); }
 
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 var(--gutter) 14px; }
-.toc { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 var(--gutter) 14px; }
-.toc a { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--muted); font-size: 12.5px; transition: color .15s, border-color .15s, background .15s; }
-.toc a:hover { color: var(--text); border-color: var(--faint); background: var(--raised); }
-.toc a span { font-family: var(--mono); font-size: 11px; color: var(--faint); }
-.search { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--faint); transition: border-color .15s; }
-.search:focus-within { border-color: var(--faint); }
-.search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: 13px var(--sans); }
-.search input::placeholder { color: var(--faint); }
+.toc { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 0.75rem; font-weight: 500; }
+.chip span { font-family: var(--mono); font-size: 0.65rem; opacity: 0.6; }
+.chip[aria-current="true"] { background: var(--wash-selected); color: var(--fg); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.search { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); transition: border-color 140ms var(--ease-out); }
+.search:focus-within { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--fg); font: 0.75rem var(--mono); }
+.search input::placeholder { color: var(--muted); }
 .search input::-webkit-search-cancel-button { -webkit-appearance: none; }
-kbd { font-family: var(--mono); font-size: 11px; color: var(--faint); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
-.tool { height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--muted); font: 13px var(--sans); cursor: pointer; transition: color .15s, background .15s, border-color .15s; }
-.tool:hover { color: var(--text); background: var(--raised); border-color: var(--faint); }
+kbd { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
 
-.group { border-top: 1px solid var(--line); }
-.group summary { display: flex; align-items: center; gap: 12px; padding: 13px var(--gutter); cursor: pointer; list-style: none; transition: background .12s; }
+.groups { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.group + .group { border-top: 1px solid var(--line); }
+.group summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; list-style: none; transition: background 140ms var(--ease-out); }
 .group summary::-webkit-details-marker { display: none; }
-.group summary:hover { background: var(--panel); }
-.group[open] > summary { background: var(--panel); border-bottom: 1px solid var(--line); }
-.chev { flex: none; width: 7px; height: 7px; border-right: 1.5px solid var(--faint); border-bottom: 1.5px solid var(--faint); transform: rotate(-45deg); transition: transform .15s; margin-right: 2px; }
-.group[open] .chev { transform: rotate(45deg); }
+.group summary:hover, .group summary:focus-visible, .group[open] > summary { background: var(--wash); outline: none; }
+.group:target > summary { box-shadow: inset 3px 0 0 var(--accent); }
+.chev { flex: none; width: 6px; height: 6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg) translateY(-1px); transition: transform 180ms var(--ease-out); }
+.group[open] .chev { transform: rotate(225deg) translateY(-1px); }
 .gname { display: flex; flex: 1; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; }
-.gname b { font-size: 14px; font-weight: 500; }
-.gname small { color: var(--faint); font-size: 12.5px; }
-.mix { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+.gname b { font-size: 0.9rem; font-weight: 500; letter-spacing: -0.01em; }
+.gname small { color: var(--muted); font-size: 0.75rem; }
+.mix { color: var(--muted); font-size: 0.62rem; white-space: nowrap; }
+.group .count { color: var(--muted); font-size: 0.72rem; }
 ul { list-style: none; margin: 0; padding: 0; }
-li { display: grid; grid-template-columns: 66px minmax(0, 1.2fr) minmax(0, 1fr); align-items: baseline; gap: 4px 14px; padding: 8px var(--gutter); border-top: 1px solid var(--line); transition: background .12s; }
-li:hover { background: var(--panel); }
-.method { justify-self: start; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .06em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--muted); }
-.method.get { color: var(--text); }
-.method.post { background: var(--text); color: var(--bg); border-color: var(--text); }
-.method.put, .method.patch { background: var(--ghost); color: var(--text); border-color: var(--ghost); }
-.method.delete { color: var(--muted); border-style: dashed; }
-.path { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
-.prefix { color: var(--ghost); }
+li { display: grid; grid-template-columns: 72px minmax(0, 1.3fr) minmax(0, 1fr); align-items: baseline; gap: 4px 14px; padding: 8px 16px; border-top: 1px solid var(--line); transition: background 120ms var(--ease-out); }
+li:hover { background: var(--wash); }
+.badge { justify-self: start; border-radius: 999px; padding: 2px 8px; font-size: 0.65rem; background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); }
+.badge.post { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.badge.put, .badge.patch { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+.badge.delete { background: color-mix(in srgb, var(--err) 15%, transparent); color: var(--err); }
+.path { font-family: var(--mono); font-size: 0.78rem; overflow-wrap: anywhere; }
+.prefix { color: var(--muted); opacity: 0.55; }
 .param { color: var(--muted); font-style: italic; }
-.summary { color: var(--faint); font-size: 12.5px; }
-.summary code { font-size: 11.5px; }
-.empty { padding: 32px var(--gutter); color: var(--faint); font-family: var(--mono); font-size: 12.5px; border-top: 1px solid var(--line); }
+.summary { color: var(--muted); font-size: 0.8rem; }
+.summary code { font-size: 0.72rem; }
 
-footer { padding: 18px var(--gutter) 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--faint); }
-footer a:hover { color: var(--text); }
+footer { position: sticky; bottom: 0; z-index: 5; border-top: 1px dashed var(--line); }
+footer .in { width: var(--page); margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
 
-@media (max-width: 720px) {
-  .nav a.wide { display: none; }
-  .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .kv div:nth-child(odd) { border-left: 0; }
-  .kv div:nth-child(even) { border-left: 1px solid var(--line); }
-  .kv div:nth-last-child(-n+4) { border-bottom: 1px solid var(--line); }
-  .kv div:nth-last-child(-n+2) { border-bottom: 0; }
+@media (max-width: 620px) {
+  main > section { padding: 20px; }
+  .nav, .context .host { display: none; }
+  .primary { padding: 8px 12px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart svg { min-width: 640px; }
   li { grid-template-columns: minmax(0, 1fr); gap: 5px; }
   .mix { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .pulse::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
 `;
 
-function formatTime(iso: string) {
-  const date = new Date(iso);
-  const day = `${date.getUTCDate()} ${monthNames[date.getUTCMonth()] ?? ""} ${date.getUTCFullYear()}`;
-  const clock = `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
-  return `${day}, ${clock} UTC`;
-}
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function formatDay(iso: string) {
   const date = new Date(iso);
   return `${date.getUTCDate()} ${monthNames[date.getUTCMonth()] ?? ""} ${date.getUTCFullYear()}`;
+}
+
+function formatTime(iso: string) {
+  const date = new Date(iso);
+  const clock = `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+  return `${formatDay(iso)}, ${clock} UTC`;
 }
 
 function formatSpan(milliseconds: number) {
@@ -176,7 +225,7 @@ function timeCell(iso: string) {
 function healthCells(health: HealthView) {
   const uptime = Math.max(0, Date.parse(health.time) - Date.parse(health.bootedAt));
   const cells = [
-    ["status", `<span class="live"><span class="pulse"></span>ok</span>`],
+    ["status", `<span class="pill caps" data-state="ok">ok</span>`],
     ["version", escape(health.version)],
     ["runtime", escape(health.runtime)],
     ["uptime", formatSpan(uptime)],
@@ -185,26 +234,16 @@ function healthCells(health: HealthView) {
     ["geo city", health.geo.city ? "loaded" : "not loaded"],
     ["geo asn", health.geo.asn ? "loaded" : "not loaded"],
   ];
-  return cells.map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join("");
+  return cells
+    .map(
+      ([label, value]) =>
+        `<div class="card stat"><span class="caps">${label}</span><b class="num">${value}</b></div>`,
+    )
+    .join("");
 }
 
-const monthNames = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
 function historyChart(history: History) {
-  const width = 1040;
+  const width = 1000;
   const height = 180;
   const top = 16;
   const bottom = 24;
@@ -234,12 +273,14 @@ function historyChart(history: History) {
     })
     .slice(1)
     .join("");
+  const final = points.length - 1;
   const dots = points
-    .filter((p) => p.week.total > 0)
-    .map(
-      (p) =>
-        `<circle cx="${p.x.toFixed(1)}" cy="${y(p.total).toFixed(1)}" r="3"><title>${escape(`${p.week.total} commit${p.week.total === 1 ? "" : "s"} in the week of ${formatDay(p.week.week)}, ${p.total} total`)}</title></circle>`,
-    )
+    .map((p, index) => ({ p, index }))
+    .filter(({ p, index }) => p.week.total > 0 || index === final)
+    .map(({ p, index }) => {
+      const label = `${p.week.total} commit${p.week.total === 1 ? "" : "s"} in the week of ${formatDay(p.week.week)}, ${p.total} total`;
+      return `<circle class="dot${index === final ? " now" : ""}" cx="${p.x.toFixed(1)}" cy="${y(p.total).toFixed(1)}" r="3.5"><title>${escape(label)}</title></circle>`;
+    })
     .join("");
   const rules = [0.5, 1]
     .map(
@@ -247,13 +288,13 @@ function historyChart(history: History) {
         `<line x1="0" x2="${width}" y1="${y(max * share).toFixed(1)}" y2="${y(max * share).toFixed(1)}"/>`,
     )
     .join("");
-  return `<div class="chart"><svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Cumulative commits over the last year"><defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2f2f2" stop-opacity=".16"/><stop offset="1" stop-color="#f2f2f2" stop-opacity="0"/></linearGradient></defs><g class="rules">${rules}</g><path class="area" d="${area}"/><path class="line" d="${line}"/><g class="dots">${dots}</g><g class="months">${months}</g></svg><div class="axis"><span>${history.total} commits in the last year</span><span>${formatDay(history.weeks[0]?.week ?? "")} to ${formatDay(history.weeks.at(-1)?.week ?? "")}</span></div></div>`;
+  return `<div class="card chart"><div class="scroll"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative commits over the last year"><defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--fg);stop-opacity:.14"/><stop offset="1" style="stop-color:var(--fg);stop-opacity:0"/></linearGradient></defs><g class="rules">${rules}</g><path d="${area}" style="fill:url(#fade)"/><path class="line" d="${line}"/><g>${dots}</g><g class="months">${months}</g></svg></div><div class="axis"><span>${history.total} commits in the last year</span><span>${formatDay(history.weeks[0]?.week ?? "")} to ${formatDay(history.weeks.at(-1)?.week ?? "")}</span></div></div>`;
 }
 
 function routeItem(route: RouteEntry) {
   const method = route.method === "ALL" ? "ANY" : route.method;
   const summary = route.summary ? inlineCode(route.summary) : "";
-  return `<li><span class="method ${escape(method.toLowerCase())}">${escape(method)}</span><span class="path">${pathMarkup(route.path)}</span><span class="summary">${summary}</span></li>`;
+  return `<li><span class="badge caps ${escape(method.toLowerCase())}">${escape(method)}</span><span class="path">${pathMarkup(route.path)}</span><span class="summary">${summary}</span></li>`;
 }
 
 function methodMix(group: RouteGroup) {
@@ -265,26 +306,29 @@ function methodMix(group: RouteGroup) {
 
 function groupBlock(group: RouteGroup) {
   return `<details class="group" id="${slug(group.name)}">
-<summary><span class="chev"></span><span class="gname"><b>${escape(group.name)}</b><small>${escape(group.description)}</small></span><span class="mix">${escape(methodMix(group))}</span><span class="count">${group.routes.length}</span></summary>
+<summary><span class="chev"></span><span class="gname"><b>${escape(group.name)}</b><small>${escape(group.description)}</small></span><span class="mix caps">${escape(methodMix(group))}</span><span class="count num">${group.routes.length}</span></summary>
 <ul>${group.routes.map(routeItem).join("")}</ul>
 </details>`;
 }
 
 function toc(groups: RouteGroup[]) {
-  return `<nav class="toc" aria-label="Endpoint groups">${groups.map((group) => `<a href="#${slug(group.name)}">${escape(group.name)} <span>${group.routes.length}</span></a>`).join("")}</nav>`;
+  return `<nav class="toc" aria-label="Endpoint groups">${groups.map((group) => `<a class="chip" href="#${slug(group.name)}">${escape(group.name)} <span>${group.routes.length}</span></a>`).join("")}</nav>`;
 }
 
 const script = `
 (() => {
   const groups = [...document.querySelectorAll("details.group")];
+  const chips = [...document.querySelectorAll(".toc a")];
   const input = document.getElementById("filter");
   const empty = document.querySelector(".empty");
-  function openHash() {
-    const group = groups.find((item) => item.id === location.hash.slice(1));
+  function sync() {
+    const id = location.hash.slice(1);
+    const group = groups.find((item) => item.id === id);
     if (group) group.open = true;
+    for (const chip of chips) chip.setAttribute("aria-current", String(chip.hash.slice(1) === id));
   }
-  addEventListener("hashchange", openHash);
-  openHash();
+  addEventListener("hashchange", sync);
+  sync();
   document.querySelector("[data-expand]").addEventListener("click", () => {
     for (const group of groups) group.open = true;
   });
@@ -312,6 +356,7 @@ const script = `
     event.preventDefault();
     input.focus();
   });
+  for (const scroller of document.querySelectorAll(".chart .scroll")) scroller.scrollLeft = scroller.scrollWidth;
   for (const time of document.querySelectorAll("time[data-local]")) {
     time.textContent = new Date(time.dateTime).toLocaleString(undefined, {
       day: "numeric",
@@ -327,63 +372,73 @@ const script = `
 
 /**
  * @name landingPage
- * @description Renders the API landing page as one HTML document: the health details, the
- * commits per day for the last year when they loaded, and every documented route by tag.
+ * @description Renders the API landing page as one HTML document in the framed, dashed-line
+ * design system: the health details, the commits per week for the last year when they loaded,
+ * and every documented route in collapsible groups with a table of contents and a filter.
  *
  * @example
  * const html = landingPage(landing({ baseUrl, health, groups, history }));
  */
 export function landingPage(view: Landing): string {
   const total = view.groups.reduce((sum, group) => sum + group.routes.length, 0);
+  const host = view.baseUrl.replace(/^https?:\/\//, "");
   const chart = view.history
     ? historyChart(view.history)
-    : `<div class="chart"><p class="none">Commit history is not available right now.</p></div>`;
+    : `<p class="empty caps">Commit history is not available right now</p>`;
   const historyCount = view.history
     ? `${view.history.total} commits, ${view.history.weeks.length} weeks`
-    : "";
+    : "github.com/remcostoeten/analytics";
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#050505">
-<meta name="description" content="Spoar API: health, endpoints and commit history.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Spoar API: health, git history and endpoints.">
 <title>${escape(view.name)}</title>
-<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(mark.replace('aria-hidden="true"', 'xmlns="http://www.w3.org/2000/svg" color="#f2f2f2"'))}">
+<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(mark.replace('aria-hidden="true"', 'xmlns="http://www.w3.org/2000/svg" color="#8a8a8a"'))}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>${styles}</style>
 </head>
 <body>
-<div class="frame">
-<header class="bar"><div class="in">
-<a class="brand" href="/">${mark}<span>spoar</span><small>api</small></a>
-<nav class="nav"><a href="#health">Health</a><a href="#history">History</a><a href="#endpoints">Endpoints</a><a class="wide" href="${escape(view.links.docs)}">Reference</a><a class="wide" href="${escape(view.links.source)}">GitHub</a></nav>
+<header class="top dots"><div class="in">
+<a class="brand" href="/">${mark}<span>spoar</span></a>
+<span class="context caps"><span class="live"></span><span class="host">${escape(host)}</span></span>
+<span class="spacer"></span>
+<nav class="nav"><a class="ghost caps" href="#health">Health</a><a class="ghost caps" href="#history">History</a><a class="ghost caps" href="#endpoints">Endpoints</a><a class="ghost caps" href="${escape(view.links.source)}">GitHub</a></nav>
+<a class="primary caps" href="${escape(view.links.docs)}">Reference</a>
 </div></header>
 
+<main>
 <section id="health">
-<div class="head"><h2>Health</h2><a class="count" href="${escape(view.links.health)}">/v2/health</a></div>
-<div class="kv">${healthCells(view.health)}</div>
+<div class="head"><h2 class="caps">Health</h2><a class="meta link caps" href="${escape(view.links.health)}">/v2/health</a></div>
+<div class="stats">${healthCells(view.health)}</div>
 </section>
 
 <section id="history">
-<div class="head"><h2>Git history</h2><a class="count" href="${escape(view.links.source)}">${escape(historyCount || "github.com/remcostoeten/analytics")}</a></div>
+<div class="head"><h2 class="caps">Git history</h2><a class="meta link caps" href="${escape(view.links.source)}">${escape(historyCount)}</a></div>
 ${chart}
 </section>
 
 <section id="endpoints">
-<div class="head"><h2>Endpoints</h2><a class="count" href="${escape(view.links.openapi)}">${total} routes · openapi.json</a></div>
+<div class="head"><h2 class="caps">Endpoints</h2><a class="meta link caps" href="${escape(view.links.openapi)}">${total} routes · openapi.json</a></div>
 ${toc(view.groups)}
 <div class="toolbar">
-<label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="filter" type="search" placeholder="Filter by path, method or summary" autocomplete="off" spellcheck="false"><kbd>/</kbd></label>
-<button class="tool" type="button" data-expand>Expand all</button>
-<button class="tool" type="button" data-collapse>Collapse all</button>
+<label class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="filter" type="search" placeholder="Filter by path, method or summary" autocomplete="off" spellcheck="false" aria-label="Filter endpoints"><kbd>/</kbd></label>
+<button class="outline caps" type="button" data-expand>Expand all</button>
+<button class="outline caps" type="button" data-collapse>Collapse all</button>
 </div>
+<div class="groups">
 ${view.groups.map(groupBlock).join("\n")}
-<p class="empty" hidden>No routes match that filter.</p>
-</section>
-
-<footer><span>${escape(view.name)} ${escape(view.health.version)}</span><span><a href="${escape(view.links.docs)}">Reference</a> · <a href="${escape(view.links.source)}">Source</a></span></footer>
 </div>
+<p class="empty caps" hidden>No routes match that filter</p>
+</section>
+</main>
+
+<footer class="dots"><div class="in"><span>${escape(view.name)} ${escape(view.health.version)} on ${escape(view.health.runtime)}</span><span><a class="link" href="${escape(view.links.docs)}">Reference</a> · <a class="link" href="${escape(view.links.source)}">Source</a></span></div></footer>
 <script>${script}</script>
 </body>
 </html>
