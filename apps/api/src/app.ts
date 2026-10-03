@@ -17,16 +17,18 @@ import { eventsModule } from "./modules/events/route";
 import { healthModule } from "./modules/health/route";
 import { issuesModule } from "./modules/issues/route";
 import { jobsModule } from "./modules/jobs/route";
+import { landingModule } from "./modules/landing/route";
 import { projectsModule } from "./modules/projects/route";
 import { queryModule } from "./modules/query/route";
 import type { QueryOptions } from "./modules/query/service";
 import { readsModule } from "./modules/reads/route";
 import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
+import type { HistorySource } from "./modules/landing/service";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
-import { docs } from "./plugins/docs";
+import { apiTags, docs } from "./plugins/docs";
 import { errorHandler } from "./plugins/error-handler";
 import { requestId } from "./plugins/request-id";
 
@@ -48,6 +50,7 @@ export type AppOptions = {
   alerts?: Nullable<AlertsDeps>;
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
+  history?: Nullable<HistorySource>;
 };
 
 async function signedInAdmin(headers: Headers, access: AccessDeps) {
@@ -58,7 +61,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 
 /**
  * @name createApp
- * @description Builds the v2 API under `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
+ * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
  * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console and, with `alerts`, the
  * alert routes. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
@@ -70,7 +73,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
  */
 export function createApp(options: AppOptions) {
   const ops = options.ops ?? null;
-  return new Elysia({ prefix: "/v2" })
+  const api = new Elysia({ prefix: "/v2" })
     .use(requestId())
     .use(cors({ dashboardOrigin: options.dashboardOrigin }))
     .use(
@@ -135,4 +138,16 @@ export function createApp(options: AppOptions) {
         ? alertsModule(options.access, options.alerts, options.clock, options.docsBase)
         : new Elysia({ name: "alerts-off" }),
     );
+  return new Elysia()
+    .use(
+      landingModule({
+        version,
+        clock: options.clock,
+        tags: apiTags,
+        routes: () => api.routes,
+        geo: options.geo,
+        history: options.history ?? null,
+      }),
+    )
+    .use(api);
 }
