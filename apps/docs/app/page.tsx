@@ -16,6 +16,7 @@ import {
   TerminalIcon,
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
+import { PixelHeading } from "@/components/landing/pixel-heading";
 import { baseOptions } from "@/lib/layout-options";
 
 const features = [
@@ -65,9 +66,7 @@ export default async function HomePage() {
       <main className="framed mx-auto w-[min(880px,calc(100%-32px))] flex-1">
         <section className="flex flex-col gap-6 py-16! md:py-24!">
           <span className="caps text-muted">Spoar, self-hosted web analytics</span>
-          <h1 className="max-w-xl text-[2.4rem] leading-[1.1] font-medium tracking-[-0.02em] text-fg sm:text-[3rem]">
-            Web analytics on your own Postgres.
-          </h1>
+          <PixelHeading lines={["Web analytics", "on your own Postgres."]} />
           <p className="max-w-xl text-[1rem] leading-relaxed text-muted">
             A typed SDK, one API for ingest and reads, and a database you run. No cookies for
             visitors. Raw IP addresses are never stored.

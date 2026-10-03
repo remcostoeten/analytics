@@ -15,6 +15,7 @@
   --color-err: var(--err);
   --font-sans: var(--sans);
   --font-mono: var(--mono);
+  --font-pixel: var(--pixel);
 }
 
 @theme {
@@ -24,6 +25,7 @@
   --animate-menu-in: menu-in 150ms var(--ease-out);
   --animate-notice-in: notice-in 180ms var(--ease-out);
   --animate-live: live 1s ease-in-out infinite;
+  --animate-rise: rise 420ms var(--ease-out) both;
 
   @keyframes menu-in {
     from {
@@ -35,6 +37,12 @@
     from {
       opacity: 0;
       transform: translateY(6px);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.6em);
     }
   }
   @keyframes live {
@@ -57,6 +65,7 @@
     --err: #e5484d;
     --sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif;
     --mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+    --pixel: var(--font-geist-pixel-square), var(--mono);
     color-scheme: light;
   }
 
