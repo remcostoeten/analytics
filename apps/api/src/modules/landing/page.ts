@@ -29,7 +29,9 @@ function pathMarkup(path: string) {
   return `${prefix}${body}`;
 }
 
-const mark = `<svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M2 19 8 11l5 5 4-9 5 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="19" r="2" fill="currentColor"/></svg>`;
+const mark = `<svg class="mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="tile" width="28" height="28" rx="8"/><path class="trace" pathLength="1" d="M5 19 10 11 14.5 16 18.5 8 23 19"/><circle class="end" cx="23" cy="19" r="2.6"/></svg>`;
+
+const favicon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#0a0a0a"/><path d="M5 19 10 11 14.5 16 18.5 8 23 19" fill="none" stroke="#fafafa" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="19" r="2.6" fill="#fe5101"/></svg>`;
 
 const styles = `
 :root {
@@ -91,19 +93,31 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--wash); bord
 
 .top, main, footer { color: var(--fg); }
 .dots { background-color: var(--bg); background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 16px 16px; }
-.top { position: sticky; top: 0; z-index: 10; border-bottom: 1px dashed var(--line); }
-.top .in { width: var(--page); margin: 0 auto; padding: 0 32px; display: flex; align-items: center; gap: 12px; min-height: 56px; }
-.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1rem; letter-spacing: -0.02em; }
+.top { position: sticky; top: 0; z-index: 10; border-bottom: 1px dashed var(--line); background-color: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.top .in { width: var(--page); margin: 0 auto; padding: 0 32px; display: flex; align-items: center; gap: 12px; min-height: 60px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em; }
+.mark { flex: none; }
+.mark .tile { fill: var(--fg); }
+.mark .trace { fill: none; stroke: var(--bg); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.mark .end { fill: var(--accent); transform-box: fill-box; transform-origin: center; }
+.brand:hover .trace, .brand:focus-visible .trace { animation: trace 650ms var(--ease-out); }
+.brand:hover .end, .brand:focus-visible .end { animation: pop 650ms var(--ease-out); }
+.brand:focus-visible { outline: none; }
+@keyframes trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes pop { 0%, 55% { transform: scale(0); } 100% { transform: scale(1); } }
 .context { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 3px 10px; color: var(--muted); }
 .live { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); animation: beat 1s ease-in-out infinite alternate; }
 @keyframes beat { to { opacity: 0.45; } }
 .spacer { flex: 1; }
-.nav { display: flex; gap: 2px; }
+.nav { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 80%, transparent); }
+.nav a { display: inline-flex; align-items: center; height: 24px; padding: 0 12px; border-radius: 999px; color: var(--muted); font-size: 0.68rem; transition: background 140ms var(--ease-out), color 140ms var(--ease-out); }
+.nav a:hover, .nav a:focus-visible { background: var(--wash); color: var(--fg); outline: none; }
+.nav a[aria-current="true"] { background: var(--wash-selected); color: var(--fg); }
 .ghost, .outline, .primary, .chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; cursor: pointer; transition: background 140ms var(--ease-out), color 140ms var(--ease-out), border-color 140ms var(--ease-out); }
 .ghost { height: 28px; padding: 0 10px; border: 1px solid transparent; background: transparent; color: var(--muted); }
 .outline { height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
 .ghost:hover, .outline:hover, .chip:hover, .ghost:focus-visible, .outline:focus-visible, .chip:focus-visible { background: var(--wash); color: var(--fg); outline: none; }
-.primary { padding: 12px 18px; border: 1px solid transparent; background: var(--fg); color: var(--bg); }
+.primary { height: 28px; padding: 0 12px; border: 1px solid transparent; background: var(--fg); color: var(--bg); font-size: 0.68rem; }
 .primary:hover, .primary:focus-visible { background: var(--accent); color: #fff; }
 .primary:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 
@@ -123,6 +137,7 @@ main > section::after { right: -4px; }
 .vitals > div:first-child { border-left: 0; }
 .vitals span, .kv dt { display: block; color: var(--muted); font-size: 0.62rem; }
 .vitals b { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 1.3rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.tag { border-radius: 999px; padding: 2px 8px; font-size: 0.62rem; letter-spacing: 0.02em; background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
 .state { flex: none; position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px dashed var(--line); }
 .kv > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 11px 20px; border-bottom: 1px dashed var(--line); min-width: 0; }
@@ -183,8 +198,7 @@ footer .in { width: var(--page); margin: 0 auto; padding: 10px 32px; display: fl
 @media (max-width: 620px) {
   main > section { padding: 20px; }
   .top .in, footer .in { padding-left: 20px; padding-right: 20px; }
-  .nav, .context .host { display: none; }
-  .primary { padding: 8px 12px; }
+  .nav, .context .host, .wide { display: none; }
   .vitals { grid-template-columns: minmax(0, 1fr); }
   .vitals > div { border-left: 0; border-top: 1px dashed var(--line); }
   .vitals > div:first-child { border-top: 0; }
@@ -242,7 +256,13 @@ function timeCell(iso: string) {
   return `<time datetime="${escape(iso)}" data-local>${formatTime(iso)}</time>`;
 }
 
+function splitVersion(version: string) {
+  const [number = version, tag = ""] = version.split("-");
+  return { number, tag };
+}
+
 function healthBlock(health: HealthView) {
+  const version = splitVersion(health.version);
   const uptime = Math.max(0, Date.parse(health.time) - Date.parse(health.bootedAt));
   const rows = [
     ["Runtime", escape(health.runtime)],
@@ -256,7 +276,7 @@ function healthBlock(health: HealthView) {
 <div class="vitals">
 <div><span class="caps">Status</span><b><i class="state"></i>Operational</b></div>
 <div><span class="caps">Uptime</span><b class="num">${formatSpan(uptime)}</b></div>
-<div><span class="caps">Version</span><b>${escape(health.version)}</b></div>
+<div><span class="caps">Version</span><b>${escape(version.number)}${version.tag ? ` <span class="tag caps" title="The ${escape(version.tag)} tag: v2 is still being tested and is not the stable release">pre-release</span>` : ""}</b></div>
 </div>
 <dl class="kv">${rows.map(([label, value]) => `<div><dt class="caps">${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
 </div>`;
@@ -371,6 +391,17 @@ const script = `
     }
     empty.hidden = shown !== 0;
   });
+  const spy = [...document.querySelectorAll(".nav a")];
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        for (const link of spy) link.setAttribute("aria-current", String(link.hash === "#" + entry.target.id));
+      }
+    },
+    { rootMargin: "-40% 0px -55% 0px" },
+  );
+  for (const link of spy) observer.observe(document.querySelector(link.hash));
   document.addEventListener("keydown", (event) => {
     if (event.key !== "/" || document.activeElement === input) return;
     event.preventDefault();
@@ -418,18 +449,19 @@ export function landingPage(view: Landing): string {
 <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
 <meta name="description" content="Spoar API: health, git history and endpoints.">
 <title>${escape(view.name)}</title>
-<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(mark.replace('aria-hidden="true"', 'xmlns="http://www.w3.org/2000/svg" color="#8a8a8a"'))}">
+<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>${styles}</style>
 </head>
 <body>
 <header class="top dots"><div class="in">
-<a class="brand" href="/">${mark}<span>spoar</span></a>
+<a class="brand" href="/" aria-label="Spoar API home">${mark}<span>spoar</span></a>
 <span class="context caps"><span class="live"></span><span class="host">${escape(host)}</span></span>
 <span class="spacer"></span>
-<nav class="nav"><a class="ghost caps" href="#health">Health</a><a class="ghost caps" href="#history">History</a><a class="ghost caps" href="#endpoints">Endpoints</a><a class="ghost caps" href="${escape(view.links.source)}">GitHub</a></nav>
-<a class="primary caps" href="${escape(view.links.docs)}">Reference</a>
+<nav class="nav caps" aria-label="Sections"><a href="#health">Health</a><a href="#history">History</a><a href="#endpoints">Endpoints</a></nav>
+<a class="ghost caps wide" href="${escape(view.links.source)}">GitHub</a>
+<a class="primary caps" href="${escape(view.links.docs)}">Reference<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
 </div></header>
 
 <main>
@@ -458,7 +490,7 @@ ${view.groups.map(groupBlock).join("\n")}
 </section>
 </main>
 
-<footer class="dots"><div class="in"><span>${escape(view.name)} ${escape(view.health.version)} on ${escape(view.health.runtime)}</span><span><a class="link" href="${escape(view.links.docs)}">Reference</a> · <a class="link" href="${escape(view.links.source)}">Source</a></span></div></footer>
+<footer class="dots"><div class="in"><span>${escape(view.name)} v${escape(splitVersion(view.health.version).number)} · by <a class="link" href="${escape(view.links.author)}">@remcostoeten</a></span><span><a class="link" href="${escape(view.links.docs)}">Reference</a> · <a class="link" href="${escape(view.links.source)}">Source</a></span></div></footer>
 <script>${script}</script>
 </body>
 </html>

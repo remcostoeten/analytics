@@ -32,7 +32,7 @@ export type HistorySource = { repo: string; send: typeof fetch; token: Nullable<
 export type Landing = {
   name: string;
   baseUrl: string;
-  links: { docs: string; openapi: string; health: string; source: string };
+  links: { docs: string; openapi: string; health: string; source: string; author: string };
   health: HealthView;
   groups: RouteGroup[];
   history: Nullable<History>;
@@ -138,6 +138,7 @@ export function landing(input: {
       openapi: `${input.baseUrl}/v2/openapi/json`,
       health: `${input.baseUrl}/v2/health`,
       source: "https://github.com/remcostoeten/analytics",
+      author: "https://remcostoeten.nl",
     },
     health: input.health,
     groups: input.groups,
