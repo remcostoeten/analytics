@@ -224,10 +224,7 @@
   border-right: 1px dashed var(--line);
 }
 
-#nd-sidebar a[data-active="true"] {
-  font-weight: 500;
-  box-shadow: inset 3px 0 0 var(--accent);
-}
+
 
 #nd-docs-layout article h1 {
   letter-spacing: -0.02em;

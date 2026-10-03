@@ -26,7 +26,7 @@ type Props = {
 };
 
 const itemClass =
-  "relative flex w-full flex-row items-center gap-2 rounded-lg p-2 text-start text-fd-muted-foreground wrap-anywhere transition-colors hover:bg-fd-accent/50 hover:text-fd-accent-foreground/80 data-[active=true]:bg-fd-primary/10 data-[active=true]:text-fd-primary [&_svg]:size-4 [&_svg]:shrink-0";
+  "relative flex w-full flex-row items-center gap-2 py-1.5 pe-2 text-start text-[0.8125rem] text-fd-muted-foreground wrap-anywhere transition-colors hover:text-fd-foreground data-[active=true]:font-medium data-[active=true]:text-fd-foreground [&_svg]:size-3.5 [&_svg]:shrink-0";
 
 export function DocsSidebarFolder({ item, children }: Props) {
   const pathname = usePathname();
@@ -59,8 +59,8 @@ export function DocsSidebarFolder({ item, children }: Props) {
           {item.name}
         </SidebarFolderTrigger>
       )}
-      <SidebarFolderContent className="relative before:absolute before:inset-s-2.5 before:inset-y-1 before:w-px before:bg-fd-border before:content-['']">
-        <div className="flex flex-col gap-0.5 pt-0.5">{children}</div>
+      <SidebarFolderContent className="relative before:absolute before:inset-s-2.5 before:inset-y-0 before:w-px before:bg-fd-border before:content-['']">
+        <div className="flex flex-col">{children}</div>
       </SidebarFolderContent>
     </SidebarFolder>
   );
