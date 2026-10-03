@@ -41,7 +41,7 @@ function app(options: { send?: typeof fetch; clock?: () => Date } = {}) {
         tags,
         routes: () => api.routes,
         geo: { city: "GeoIP2-City-Test", asn: null, loadMs: 3 },
-        history: options.send ? { repo: "example/repo", send: options.send } : null,
+        history: options.send ? { repo: "example/repo", send: options.send, token: null } : null,
       }),
     )
     .use(api);
@@ -108,7 +108,9 @@ describe("landing", () => {
   });
 
   test("reads commit activity from GitHub and gives null while it computes", async () => {
-    expect(await fetchHistory({ repo: "example/repo", send: github(200, activity) })).toEqual({
+    expect(
+      await fetchHistory({ repo: "example/repo", send: github(200, activity), token: null }),
+    ).toEqual({
       repo: "example/repo",
       weeks: [
         { week: "2025-09-21T00:00:00.000Z", total: 3, days: [0, 1, 0, 0, 2, 0, 0] },
@@ -116,9 +118,11 @@ describe("landing", () => {
       ],
       total: 3,
     });
-    expect(await fetchHistory({ repo: "example/repo", send: github(202, {}) })).toBeNull();
     expect(
-      await fetchHistory({ repo: "example/repo", send: github(200, [{ nope: 1 }]) }),
+      await fetchHistory({ repo: "example/repo", send: github(202, {}), token: null }),
+    ).toBeNull();
+    expect(
+      await fetchHistory({ repo: "example/repo", send: github(200, [{ nope: 1 }]), token: null }),
     ).toBeNull();
   });
 

@@ -56,6 +56,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `MAIL_URL` | For mail alerts | The SMTP server, `smtps://user:password@host:465` or `smtp://...:587` (`STARTTLS`); read by `analytics.config.ts` |
 | `MAIL_FROM` | No | The sender of alert mail; defaults to `Analytics <remco@gmail.com>` |
 | `CRUX_API_KEY` | For the crux job | A Google API key with the Chrome UX Report API enabled |
+| `GITHUB_TOKEN` | No | A GitHub token with public repository read access; raises the commit history rate limit on the landing page from 60 to 5000 requests an hour |
 | `INTERNAL_PROJECT_SECRET` | No | A project's secret key; the API records its own `INTERNAL` errors there |
 
 ## Commands
