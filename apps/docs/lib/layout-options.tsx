@@ -1,8 +1,18 @@
-import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import type { BaseLayoutProps, LinkItemType } from "fumadocs-ui/layouts/shared";
 
 import { Logo } from "@/components/logo";
+import { listExamples } from "@/lib/examples";
 
 export function baseOptions(): BaseLayoutProps {
+  const links: LinkItemType[] = [
+    { text: "Docs", url: "/docs", active: "nested-url", on: "nav" },
+    { text: "SDK", url: "/docs/sdk/install", active: "nested-url", on: "nav" },
+    { text: "API reference", url: "/docs/reference", active: "nested-url", on: "nav" },
+    { text: "Query", url: "/query", active: "nested-url", on: "nav" },
+  ];
+  if (listExamples().length > 0) {
+    links.push({ text: "Examples", url: "/examples", active: "nested-url", on: "nav" });
+  }
   return {
     githubUrl: "https://github.com/remcostoeten/analytics",
     nav: {
@@ -14,11 +24,6 @@ export function baseOptions(): BaseLayoutProps {
       ),
       transparentMode: "top",
     },
-    links: [
-      { text: "Docs", url: "/docs", active: "nested-url", on: "nav" },
-      { text: "SDK", url: "/docs/sdk/install", active: "nested-url", on: "nav" },
-      { text: "API reference", url: "/docs/reference", active: "nested-url", on: "nav" },
-      { text: "Query", url: "/query", active: "nested-url", on: "nav" },
-    ],
+    links,
   };
 }

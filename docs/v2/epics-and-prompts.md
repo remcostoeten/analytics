@@ -1,6 +1,6 @@
 # Epics and agent prompts
 
-Twenty-three epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
+Twenty-five epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
 
 ## How to use this
 
@@ -51,6 +51,8 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
+| E4.8 | Dev widget endpoints | 4 | E4.2, E4.4 | `feature/widget-endpoints` |
+| E4.9 | Dev widget UI, `@spoar/devtools` | 4 | E4.8, or its fixtures | `feature/devtools-ui` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, later epics follow the product focus in the plan (decision 17), in this order: annotations (built in the API and admin SDK; the dashboard draws them); Search Console; saved segments; email reports and metric alerts; webhooks; source maps; share links and embeds; an MCP server; and the Durable Object realtime hub if polling ever falls short. Lifecycle, stickiness and group analytics are already built. Goals, funnels, actions, experiment statistics, feature flags, click heatmaps and surveys are not planned; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
@@ -358,6 +360,81 @@ Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec
 3. API: apps/api/analytics.config.ts read at startup, the plugin's routes and the alerts job doing queue then dispatch, the status route. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site, including a page on retry settings.
 4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, rotate, deliveries, the read methods, and the mail, webhook and discord builders with the narrowed types) and alertRoute with verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.
 5. Tests as listed in the spec's Tests section, including the fake SMTP server and expectTypeOf tests for each row of "What the editor catches".
+```
+
+### E4.8 Dev widget endpoints
+
+Delivers: the API side of the dev widget. A bootstrap route that turns the admin session cookie into a short-lived bearer token, live visitor and session lists, a log stream of what ingest, the SDK, the engine and the jobs did, an overview, client log reports, and bot signals on one visitor. Done when every route is in `apps/api/openapi.json`, the shapes match the types in `packages/devtools/src/client/types.ts`, and the widget runs against the API with its fixtures removed.
+
+```text
+Epic E4.8, branch feature/widget-endpoints. Read the plan sections "Access and sign-in", "Realtime" and "Bot detection", and packages/devtools/src/client/types.ts, which holds the shapes the widget already renders from fixtures. Move those types into packages/contract as TypeBox schemas and import them back into the widget.
+1. GET /v2/widget/session?project=<id>: with an admin session cookie, answer 200 with { data: { token, expiresAt, project: { id, name, environment }, user: { name }, widgetReports } }. The token is a bearer token with detail access to that one project for 15 minutes. Without a session answer 401 and set no cookie. Allow credentials only from the project's allowedOrigins.
+2. GET /v2/projects/:project/realtime/visitors and realtime/sessions: visitors and sessions seen in the last 30 minutes, newest first, up to 400, as OnlineVisitor and LiveSession.
+3. GET /v2/projects/:project/visitors/:visitor gains botScore and botSignals: [{ reason, weight }] from the stored bot reasons.
+4. GET /v2/projects/:project/logs: LogEntry rows for ingest results (sent, retry, rejected, dropped), signals, jobs and auth, with long polling on after and server-sent events on Accept: text/event-stream with Last-Event-ID, like realtime/events. q filters on path. Keep 24 hours.
+5. POST /v2/projects/:project/logs/client: up to 50 ClientReport entries from the widget, stored as logs with source sdk. Answer 403 unless the project has widgetReports on. Add widgetReports (default off) to PATCH /v2/projects/:project.
+6. GET /v2/projects/:project/overview: Overview, the numbers on the widget's status buffer.
+7. Regenerate apps/api/openapi.json, update docs/v2/api-reference.md and add the routes to the docs site. Tests with the memory adapters for each route and the 401 on bootstrap.
+```
+
+### E4.9 Dev widget UI, `@spoar/devtools`
+
+Delivers: `packages/devtools`, published as `@spoar/devtools`: an overlay panel admins see on their own live site, lazy-loaded after the bootstrap call succeeds and rendered in a Shadow DOM. It has a vanilla `mount()`, a React `<Devtools />` and a Next entry. Done when the loader is within 1 KB gzip, a signed-out visitor downloads nothing past the loader, and the e2e spec opens the panel, switches buffers and expands a log row.
+
+```text
+Epic E4.9, branch feature/devtools-ui. Build the admin dev widget as a new published package, packages/devtools, published as @spoar/devtools. It is an overlay panel that admins see on their own live site. It shows online visitors, sessions, a colored log stream with JSON detail, speed per route, error groups and an overview. Visitors never download it.
+
+Read AGENTS.md, docs/v2/plan.md, docs/v2/sdk-design.md and docs/v2/api-reference.md first, and load the generic-program-rules and emil-design-eng skills. The visual reference is the "Terminal devtools, site data" board in https://claude.ai/artifact/MsfF7ChWUJJ32AyB6bS1Kw, which builds on https://claude.ai/artifact/8cpjmo52NBiAJUeo9px53f. Match it closely. Open one pull request into master. Do not merge or publish.
+
+This epic depends on E4.8: GET /v2/widget/session, realtime/visitors, logs with SSE, logs/client, overview, and bot signals on visitors/:visitor. If they are not merged yet, build against typed fixtures behind the same port. Then they swap in with no UI changes.
+
+0. Decision
+Add one row to the decisions table in docs/v2/plan.md: "Dev widget ships as @spoar/devtools, separate from @spoar/sdk. It is lazy-loaded after an admin bootstrap and rendered in a Shadow DOM with compiled Tailwind." Stop and ask Remco if this conflicts with an existing decision.
+
+1. Package shape
+- Create packages/devtools as a Bun workspace. Add it to the lint and lint:fix scripts and to scripts/check-boundaries.ts. It may import packages/contract and packages/shared, and the public @spoar/sdk API for client hooks. It must never import packages/engine, apps/* or v1/.
+- Entries: "." exports mount(options), vanilla, bundles React, returns an unmount function. "./react" exports <Devtools />; React 19 or later is a peer dependency. "./next" is a "use client" component that loads ./react through next/dynamic with ssr: false.
+- Build with the repo's existing bundler setup. Mirror packages/sdk, including publishConfig exports and a changeset in pre mode on the next tag.
+- Make the loader tiny. The components first call GET /v2/widget/session and import the panel chunk only on a 200. Add a size-check budget of 1 KB gzip for the loader. Report the panel chunk size without failing on it.
+
+2. Isolation
+- Render into a Shadow DOM root attached to one host element, <ra-devtools>, with position: fixed. No global styles, no global listeners beyond the keyboard shortcut, no document.body class changes.
+- Tailwind v4, compiled at build time into one CSS string including theme tokens, injected as a constructable stylesheet into the shadow root, with a <style> fallback. No CDN and no runtime compiler.
+- Pin the font stack to JetBrains Mono with ui-monospace fallbacks, loaded only for the widget, with font-display: swap.
+- Respect prefers-reduced-motion, prefers-contrast and prefers-reduced-transparency, like the reference does.
+
+3. Data
+- A client module with one function per endpoint. It uses the bearer widget token from bootstrap and refreshes 60 seconds before expiresAt. Every call returns the repo's Result shape and never throws into components.
+- SSE for realtime/events and logs, with Last-Event-ID reconnect and a fall back to long polling. Pause streams while the tab is hidden.
+- Poll overview every 10 seconds while the panel is open, and every 30 seconds while it is collapsed to the pill.
+- Collect SDK client outcomes through analytics.on("drop") and analytics.on("error") when an SDK instance is passed in. Show them in the logs buffer straight away. Post them to logs/client in batches only when the project has widgetReports on.
+- Keep lists bounded: 400 rows per buffer. Virtualize the rows with a small in-house windowing hook and no dependency.
+
+4. UI (follow the reference board exactly unless something below differs)
+- States: the collapsed pill shows the online count, the error count and the shortcut hint. Docked bottom is full width and resizable from the top edge. Floating is draggable by the header and resizable from the corner. Full-width and full-height toggles. Persist the state per origin in localStorage, wrapped in try/catch.
+- Buffers, keys 1 to 6: visitors (rows expand to trail, client, vitals, identity and bot signals; actions follow, copy id, filter path), sessions (trail and a signal tag), logs (level, kind and source colors, a legend, expandable JSON, copy, a context action and a filter shortcut per row), speed (LCP, INP, CLS and TTFB p75 bars colored by threshold per route), errors (rows expand to stack, first seen, browsers and breadcrumbs), status (overview cards and the resolved config).
+- Filter prompt at the foot of each buffer: key:value tokens per buffer, such as level:error, kind:ingest, geo:NL and bot:>0.5, plus free text. Filtering is client side over loaded rows. A /path token also passes q to the API.
+- JSON tree: collapsible nodes with the reference colors for keys, strings, numbers, booleans and null. Ids that match a loaded visitor or session link to that row. RA_* codes link to the error catalog.
+- Statusline: live or paused, online count, views per minute, LCP, errors, ingest rate, and a help hint.
+- Keyboard: Ctrl+Shift+. toggles the panel, 1 to 6 switch buffers, j and k move between rows and Enter expands one, / focuses the filter, Esc collapses the panel, Shift+F10 opens the row menu. None of these animate.
+- Motion, Emil's values from the reference: the panel enters with cubic-bezier(0.32,0.72,0,1) over 260 to 280 ms, presses scale to 0.97, the tab indicator is a clip-path transition, rows stagger by 30 ms only on first paint, new rows while scrolled up show an "n new" button instead of jumping, and only transform and opacity transition.
+- Accessibility: real buttons, tablist and tabpanel roles, aria-live for new errors, touch targets of at least 40 px on coarse pointers, and a bottom sheet below 640 px.
+
+5. Code rules
+- Function declarations for components, type only, kebab-case files, no comments except the allowed ones.
+- A feature folder per buffer, buffers/visitors/ with components, hooks and utils. Shared primitives (row, tag, JSON tree, filter prompt, statusline) in ui/.
+- One useSyncExternalStore store per buffer. No state library, no runtime dependency beyond React, no clsx.
+
+6. Tests and checks
+- bun test for the filter parser, the JSON tree model, the store reducers and the client token refresh with a memory transport.
+- A Playwright spec in e2e/ that mounts the widget on the e2e host page, signs in as an admin, opens the panel, switches buffers, expands a log row, and checks that a signed-out page loads nothing past the loader.
+- bun run size and bun run check.
+
+7. Docs
+- A "Dev widget" page in apps/docs: install, the three entries, the widgetReports setting, the keyboard map and a screenshot.
+- A short README for packages/devtools in the house style.
+
+End with a summary in the house style: what was built, the bundle sizes, anything deferred.
 ```
 
 ## Phase 5: retire 1.x
