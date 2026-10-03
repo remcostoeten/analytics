@@ -27,7 +27,7 @@ type HistoryWeek = { week: Timestamp; total: number; days: number[] };
 
 export type History = { repo: string; weeks: HistoryWeek[]; total: number };
 
-export type HistorySource = { repo: string; send: typeof fetch };
+export type HistorySource = { repo: string; send: typeof fetch; token: Nullable<string> };
 
 export type Landing = {
   name: string;
@@ -84,16 +84,23 @@ const CommitActivity = Type.Array(
  * @name fetchHistory
  * @description Reads the last 52 weeks of commits per day from GitHub's commit activity endpoint. GitHub
  * answers 202 while it computes the statistics; that, any other failure and a malformed body
- * give `null`, so the page renders without the chart.
+ * give `null`, so the page renders without the chart. A `token` raises the rate limit from 60
+ * to 5000 requests an hour, which shared egress addresses need.
  *
  * @example
- * const history = await fetchHistory({ repo: "remcostoeten/analytics", send: fetch });
+ * const history = await fetchHistory({ repo: "remcostoeten/analytics", send: fetch, token: null });
  */
 export async function fetchHistory(source: HistorySource): Promise<Nullable<History>> {
   try {
     const response = await source.send(
       `https://api.github.com/repos/${source.repo}/stats/commit_activity`,
-      { headers: { accept: "application/vnd.github+json", "user-agent": "spoar-api" } },
+      {
+        headers: {
+          accept: "application/vnd.github+json",
+          "user-agent": "spoar-api",
+          ...(source.token ? { authorization: `Bearer ${source.token}` } : {}),
+        },
+      },
     );
     if (response.status !== 200) return null;
     const body: unknown = await response.json();

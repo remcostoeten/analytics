@@ -122,5 +122,9 @@ export default createApp({
   internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
   ops: stores.ops,
   crux: process.env.CRUX_API_KEY ? { key: process.env.CRUX_API_KEY, send: fetch } : null,
-  history: { repo: "remcostoeten/analytics", send: fetch },
+  history: {
+    repo: "remcostoeten/analytics",
+    send: fetch,
+    token: process.env.GITHUB_TOKEN || null,
+  },
 });
