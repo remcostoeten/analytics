@@ -1,4 +1,11 @@
 {
   "title": "Troubleshooting",
-  "pages": ["no-events", "api-errors", "proxy-and-cors", "wrong-numbers", "web-vitals"]
+  "pages": [
+    "no-events",
+    "api-errors",
+    "proxy-and-cors",
+    "wrong-numbers",
+    "web-vitals"
+  ],
+  "defaultOpen": false
 }

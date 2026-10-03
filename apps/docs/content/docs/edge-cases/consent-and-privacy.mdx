@@ -68,7 +68,7 @@ Props are stored as you send them. The SDK checks their size and shape, not thei
 The page title and the referrer are sent as the browser reports them. If your titles contain a user's name, or your URLs carry personal data in the path, that data reaches the database. Use `beforeSend` to change or remove it:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
+import { createAnalytics } from "@spoar/sdk";
 
 export const analytics = createAnalytics({
   beforeSend: ({ page: { title, ...page }, ...event }) => ({ ...event, page }),

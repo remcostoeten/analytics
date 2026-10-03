@@ -7,7 +7,7 @@ description: Where each 1.x function went.
 | --- | --- |
 | `<Analytics projectId="my-app" />` from the root entry | `createAnalytics({ project, key, endpoint })` once, `AnalyticsProvider client={analytics}`, and `<Analytics />` from `./next` |
 | `NEXT_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`; `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
-| `@remcostoeten/analytics/browser` | The root entry, which has no React dependency |
+| `@spoar/sdk/browser` | The root entry, which has no React dependency |
 | `trackEvent(name, meta)`, `track(type, meta)` | `analytics.track(name, props)`, typed by your `Events` |
 | `trackPageView()` | `analytics.page()`, or automatic |
 | `trackError(error)`, `observeErrors`, `trackErrors` prop | `analytics.captureError(error)` and the `errors()` plugin |

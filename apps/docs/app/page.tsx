@@ -15,8 +15,8 @@ import {
 import { InstallCommand } from "@/components/landing/install-command";
 import { baseOptions } from "@/lib/layout-options";
 
-const example = `import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+const example = `import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",
@@ -88,7 +88,7 @@ export default function HomePage() {
             <Link href="/docs" className={`${outlineButton} h-auto px-4 py-2.5 caps`}>
               Read the docs
             </Link>
-            <InstallCommand command="npm install @remcostoeten/analytics" />
+            <InstallCommand command="npm install @spoar/sdk" />
           </div>
         </section>
 

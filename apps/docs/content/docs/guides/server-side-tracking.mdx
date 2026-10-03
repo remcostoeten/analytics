@@ -23,7 +23,7 @@ Type it with the same `Events` map as the browser client, so both sides agree on
 `lib/server-analytics.ts`:
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({

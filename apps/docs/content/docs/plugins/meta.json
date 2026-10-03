@@ -1,7 +1,6 @@
 {
   "title": "Plugins",
   "pages": [
-    "index",
     "pageviews",
     "speed-insights",
     "scroll-depth",
@@ -15,5 +14,6 @@
     "experiments",
     "not-found",
     "groups"
-  ]
+  ],
+  "defaultOpen": false
 }

@@ -17,7 +17,7 @@ Identity follows the same consent rules as every other event, so settle this fir
 `lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
+import { createAnalytics } from "@spoar/sdk";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -58,9 +58,9 @@ Use your own stable id, not an email address, so no personal data ends up in the
 If your app has workspaces or companies, add the `groups` plugin and join the group where the signed-in user is known:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import type { NoProps } from "@remcostoeten/analytics";
-import { groups } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import type { NoProps } from "@spoar/sdk";
+import { groups } from "@spoar/sdk/plugins";
 
 type WorkspaceGroups = {
   company: { plan: "free" | "pro"; seats: number };

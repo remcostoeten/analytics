@@ -9,7 +9,7 @@ It has three parts:
 
 | Part | What it is |
 | --- | --- |
-| SDK | `@remcostoeten/analytics`: a browser client, plugins, and React, Next, server and proxy entries. ESM only |
+| SDK | `@spoar/sdk`: a browser client, plugins, and React, Next, server and proxy entries. ESM only |
 | API | One Elysia service under `/v2`: ingest, aggregate and visitor-level reads, speed insights, error tracking, a read-only SQL console, sign-in, projects and tokens |
 | Database | Postgres (Neon in production). Every read goes through the API |
 
@@ -22,7 +22,7 @@ The browser core has no framework dependency. Anything that bundles ES modules c
 | [Next.js 15 or later](/docs/frameworks/nextjs) | The core, `/react` and `/next` for route templates, `/proxy` for the `/_ra` route, `/server` in route handlers and server actions |
 | [React 19 with any router](/docs/frameworks/react) | The core and `/react`. Pageviews follow `pushState` routers without extra code |
 | [Vite, vanilla TypeScript or JavaScript](/docs/frameworks/vanilla) | The core and plugins |
-| [Vue](/docs/frameworks/vue), [Svelte, SvelteKit](/docs/frameworks/svelte), Solid, [Astro](/docs/frameworks/astro), Preact | The core and plugins. There are no dedicated adapters |
+| Vue, Svelte, SvelteKit, Solid, Astro, Preact | The core and plugins. Dedicated guides are coming soon |
 | [Node, Bun, Deno, Vercel Functions, Cloudflare Workers](/docs/frameworks/server) | `/server` and `/proxy`, on any runtime with `fetch` and the standard `Request` and `Response` |
 | [Any other language](/docs/frameworks/server#other-languages) | `POST /v2/events` with a secret key, as described in the [API reference](/docs/reference) |
 

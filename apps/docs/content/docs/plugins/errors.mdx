@@ -4,12 +4,12 @@ description: Uncaught errors and unhandled rejections, with scrubbed breadcrumbs
 ---
 
 ```ts
-import { errors, scrub } from "@remcostoeten/analytics/plugins";
+import { errors, scrub } from "@spoar/sdk/plugins";
 ```
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",
@@ -58,7 +58,7 @@ A `fetch` that rejects, such as a network error, adds no breadcrumb. The plugin 
 `scrub(text)` is the function the plugin runs over every message, stack and breadcrumb. It drops query strings, up to the `:` before a stack frame's line number, and replaces emails, tokens of 20 or more letters, digits, underscores or dashes, and runs of 6 or more digits with `[x]`:
 
 ```ts
-import { scrub } from "@remcostoeten/analytics/plugins";
+import { scrub } from "@spoar/sdk/plugins";
 
 scrub("GET /api/users?token=abc failed for ada@example.com");
 // "GET /api/users[x] failed for [x]"

@@ -26,7 +26,7 @@ The response holds two keys:
 ## 2. Install the SDK
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## 3. Configure it
@@ -45,8 +45,8 @@ Vite reads `VITE_RA_CONFIG` and Astro and SvelteKit read `PUBLIC_RA_CONFIG`, wit
 `lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   pageviews: false,
@@ -60,8 +60,8 @@ export const analytics = createAnalytics({
 "use client";
 
 import type { ReactNode } from "react";
-import { AnalyticsProvider } from "@remcostoeten/analytics/react";
-import { Analytics } from "@remcostoeten/analytics/next";
+import { AnalyticsProvider } from "@spoar/sdk/react";
+import { Analytics } from "@spoar/sdk/next";
 import { analytics } from "@/lib/analytics";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -102,7 +102,7 @@ Without Next.js, the client alone is enough. Import `lib/analytics.ts` once from
 Browsers with ad blockers drop requests to third-party analytics hosts. A same-origin path avoids that. In the App Router, `app/%5Fra/route.ts` serves `/_ra` (a folder starting with `_` is private in Next.js, so the underscore is URL-encoded):
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
   secret: process.env.RA_SECRET,

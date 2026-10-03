@@ -4,7 +4,7 @@ description: Track from route handlers and server actions with the secret key.
 ---
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   secret: process.env.RA_SECRET,
@@ -45,7 +45,7 @@ Events from one tick go out together, in one request per origin and session cook
 A webhook [alert target](/docs/api/alerts) posts a signed `WebhookBody` to your app. `alertRoute` turns it into a route handler with one typed function per event; in Next.js it is the whole `route.ts`:
 
 ```ts
-import { alertRoute } from "@remcostoeten/analytics/server";
+import { alertRoute } from "@spoar/sdk/server";
 
 export const POST = alertRoute({
   secret: process.env.RA_WEBHOOK_SECRET,

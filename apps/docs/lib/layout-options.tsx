@@ -15,10 +15,10 @@ export function baseOptions(): BaseLayoutProps {
       transparentMode: "top",
     },
     links: [
-      { text: "Docs", url: "/docs", active: "nested-url" },
-      { text: "SDK", url: "/docs/sdk/install", active: "nested-url" },
-      { text: "API reference", url: "/docs/reference", active: "nested-url" },
-      { text: "Query", url: "/query", active: "nested-url" },
+      { text: "Docs", url: "/docs", active: "nested-url", on: "nav" },
+      { text: "SDK", url: "/docs/sdk/install", active: "nested-url", on: "nav" },
+      { text: "API reference", url: "/docs/reference", active: "nested-url", on: "nav" },
+      { text: "Query", url: "/query", active: "nested-url", on: "nav" },
     ],
   };
 }

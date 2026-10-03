@@ -90,7 +90,9 @@ function navigation(this: BeforeWrite, files: OutputFile[]) {
       path: "meta.json",
       content: json({
         title: "API reference",
-        pages: ["index", ...groups.map((group) => group.path)],
+        root: true,
+        pagesIndex: "index",
+        pages: groups.map((group) => group.path),
       }),
     },
   );

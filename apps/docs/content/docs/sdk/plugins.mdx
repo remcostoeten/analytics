@@ -3,11 +3,11 @@ title: Plugins
 description: Opt-in features, each in its own file so an app only ships what it uses.
 ---
 
-Import plugins from `@remcostoeten/analytics/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`:
+Import plugins from `@spoar/sdk/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",

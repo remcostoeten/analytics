@@ -8,7 +8,7 @@ There is no Vue adapter. The core client is created once in a module, and the de
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Keys and environment
@@ -26,7 +26,7 @@ Only the public key (`pk_...`) goes in browser code. Use `/_ra` when a server on
 `src/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -37,8 +37,8 @@ export type Events = {
 `src/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
