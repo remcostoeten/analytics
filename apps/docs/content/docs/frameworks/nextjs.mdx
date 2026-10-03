@@ -8,7 +8,7 @@ Next.js 15 or later with the App Router uses the core client, `/react` for the p
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Keys and environment
@@ -34,7 +34,7 @@ RA_ENDPOINT=https://api.example.com
 `lib/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -47,8 +47,8 @@ export type Events = {
 `lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -67,8 +67,8 @@ The client holds functions, so it cannot be passed as a prop from a Server Compo
 "use client";
 
 import type { ReactNode } from "react";
-import { AnalyticsProvider } from "@remcostoeten/analytics/react";
-import { Analytics } from "@remcostoeten/analytics/next";
+import { AnalyticsProvider } from "@spoar/sdk/react";
+import { Analytics } from "@spoar/sdk/next";
 import { analytics } from "@/lib/analytics";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -107,7 +107,7 @@ In a Client Component, `useAnalytics<Events>()` returns the client from the prov
 ```tsx
 "use client";
 
-import { useAnalytics } from "@remcostoeten/analytics/react";
+import { useAnalytics } from "@spoar/sdk/react";
 import type { Events } from "@/lib/events";
 
 export function UpgradeButton() {
@@ -123,7 +123,7 @@ export function UpgradeButton() {
 `app/%5Fra/route.ts` serves `/_ra`. A folder starting with `_` is private in the App Router, so the underscore is URL-encoded:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
   secret: process.env.RA_SECRET,
@@ -138,7 +138,7 @@ The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret ke
 `lib/server-analytics.ts`:
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({

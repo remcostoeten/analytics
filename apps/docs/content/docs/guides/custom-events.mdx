@@ -12,7 +12,7 @@ List every custom event and its props in one type. The browser and server client
 `lib/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -30,7 +30,7 @@ Pass the map to `createAnalytics`.
 `lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
+import { createAnalytics } from "@spoar/sdk";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -77,8 +77,8 @@ For buttons and links that only need a click count, the [`clicks`](/docs/plugins
 Add the plugin:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { clicks } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { clicks } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",

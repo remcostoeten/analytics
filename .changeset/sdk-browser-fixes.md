@@ -1,5 +1,5 @@
 ---
-"@remcostoeten/analytics-sdk": patch
+"@spoar/sdk": patch
 ---
 
 Browser client fixes. Do Not Track and Global Privacy Control are honoured: events are dropped with the reason `dnt` and nothing is stored. `__ra` is not written until consent allows it, except the visitor's own consent, opt-out and debug choices; the 1.x keys are read at once but moved and removed only once allowed. Every write re-reads `__ra` and changes only its own fields, and a `storage` listener picks up consent and opt-out changes from other tabs, so a revoke in one tab stops the others at once and is not overwritten. Batches stay under the 60 KB body limit, and a single event over it is dropped as a 413. A `Retry-After` header is honoured, capped at 16 seconds. Batches waiting between retries are sent when the page unloads. Events rejected inside a 202 are reported through `on("error")` as `RA_INGEST_REJECTED` and logged in debug mode. `?ra=nodebug` turns debug output off again. An empty `key` leaves the `key` query parameter out. `reset()` clears the route. The `notFound` plugin reports each page once instead of twice on the first load.

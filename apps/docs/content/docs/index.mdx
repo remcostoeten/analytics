@@ -3,13 +3,13 @@ title: Overview
 description: Privacy-first web analytics you host yourself, with a typed SDK and one API for ingest, reads and sign-in.
 ---
 
-Analytics records pageviews, custom events, errors and Core Web Vitals from your sites and apps, and stores them in a Postgres database you run. It sets no cookies for visitors and never stores raw IP addresses.
+Spoar records pageviews, custom events, errors and Core Web Vitals from your sites and apps, and stores them in a Postgres database you run. It sets no cookies for visitors and never stores raw IP addresses.
 
 It has three parts:
 
 | Part | What it is |
 | --- | --- |
-| SDK | `@remcostoeten/analytics`: a browser client, plugins, and React, Next, server and proxy entries. ESM only |
+| SDK | `@spoar/sdk`: a browser client, plugins, and React, Next, server and proxy entries. ESM only |
 | API | One Elysia service under `/v2`: ingest, aggregate and visitor-level reads, speed insights, error tracking, a read-only SQL console, sign-in, projects and tokens |
 | Database | Postgres (Neon in production). Every read goes through the API |
 
@@ -22,7 +22,7 @@ The browser core has no framework dependency. Anything that bundles ES modules c
 | [Next.js 15 or later](/docs/frameworks/nextjs) | The core, `/react` and `/next` for route templates, `/proxy` for the `/_ra` route, `/server` in route handlers and server actions |
 | [React 19 with any router](/docs/frameworks/react) | The core and `/react`. Pageviews follow `pushState` routers without extra code |
 | [Vite, vanilla TypeScript or JavaScript](/docs/frameworks/vanilla) | The core and plugins |
-| [Vue](/docs/frameworks/vue), [Svelte, SvelteKit](/docs/frameworks/svelte), Solid, [Astro](/docs/frameworks/astro), Preact | The core and plugins. There are no dedicated adapters |
+| Vue, Svelte, SvelteKit, Solid, Astro, Preact | The core and plugins. Dedicated guides are coming soon |
 | [Node, Bun, Deno, Vercel Functions, Cloudflare Workers](/docs/frameworks/server) | `/server` and `/proxy`, on any runtime with `fetch` and the standard `Request` and `Response` |
 | [Any other language](/docs/frameworks/server#other-languages) | `POST /v2/events` with a secret key, as described in the [API reference](/docs/reference) |
 
@@ -38,9 +38,11 @@ There is no `<script src>` snippet and no CommonJS build.
 
 ## Where to start
 
-- [Quick start](/docs/getting-started/quick-start): from an empty project to the first event.
-- [Concepts](/docs/getting-started/concepts): events, pageviews, routes, visitors, sessions, consent, projects and keys.
-- [Install the SDK](/docs/sdk/install): the entries and their size budgets.
-- [Auth overview](/docs/api/auth): who can call what, sign-in, tokens and keys.
-- [API reference](/docs/reference): every route, generated from the OpenAPI document.
-- [Query console](/query): run read-only SQL against your projects with a token.
+<Cards>
+  <Card title="Quick start" href="/docs/getting-started/quick-start" description="From an empty project to the first event." />
+  <Card title="Concepts" href="/docs/getting-started/concepts" description="Events, pageviews, routes, visitors, sessions, consent, projects and keys." />
+  <Card title="Install the SDK" href="/docs/sdk/install" description="The entries and their size budgets." />
+  <Card title="Auth overview" href="/docs/api/auth" description="Who can call what, sign-in, tokens and keys." />
+  <Card title="API reference" href="/docs/reference" description="Every route, generated from the OpenAPI document." />
+  <Card title="Query console" href="/query" description="Run read-only SQL against your projects with a token." />
+</Cards>

@@ -42,7 +42,7 @@ This roadmap is a proposal based on the static inventory in [api-inventory.md](a
 
 - Confirm whether project IDs are isolation/tenant boundaries or merely labels under one trusted owner.
 - Inventory real deployment policy: OAuth variables, proxy rules, Cloudflare settings, cron authentication, and whether the fallback database path is reachable.
-- Inspect the npm tarballs for `@remcostoeten/analytics@1.7.1` and relevant ingestion releases; compare export maps and generated declarations to this checkout.
+- Inspect the npm tarballs for `@spoar/sdk@1.7.1` and relevant ingestion releases; compare export maps and generated declarations to this checkout.
 - Establish a consumer registry for SDK versions, `/ingest` aliases, the dashboard URL/API, and `skriuw-*` selectors.
 
 Exit condition: proposed scopes and compatibility promises are written down; no endpoint changes yet.

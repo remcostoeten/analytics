@@ -6,14 +6,14 @@ SDK 1.x is published as `@remcostoeten/analytics` with ESM and CJS builds. 2.0 h
 
 ## Decision
 
-Recommended default: publish 2.0 as `@remcostoeten/analytics@2.0.0` on the same name, ESM only.
+Publish 2.0 as `@spoar/sdk@2.0.0`, a new package under the Spoar scope, ESM only. 1.x stays on `@remcostoeten/analytics`.
 
 ## Status
 
-Open, default. Source: row 5 of the decisions table in [`docs/v2/plan.md`](../v2/plan.md#decisions-needed).
+Decided. Source: row 5 of the decisions table in [`docs/v2/plan.md`](../v2/plan.md#decisions-needed).
 
 ## Consequences
 
-- Existing users upgrade by a major version instead of switching packages.
+- Existing users switch packages; the migrating page in the docs maps every 1.x entry to its 2.0 location.
 - Dropping the CJS build halves the package; every current bundler and Node 22+ load ESM.
 - Prereleases go out under the `next` tag so a plain install keeps giving 1.x until 2.0 ships.

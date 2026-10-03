@@ -4,13 +4,13 @@ description: Real-user Core Web Vitals from the web-vitals attribution build.
 ---
 
 ```ts
-import { speedInsights, speedProps } from "@remcostoeten/analytics/plugins";
-import type { SpeedOptions } from "@remcostoeten/analytics/plugins";
+import { speedInsights, speedProps } from "@spoar/sdk/plugins";
+import type { SpeedOptions } from "@spoar/sdk/plugins";
 ```
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { speedInsights } from "@spoar/sdk/plugins";
 
 export const analytics = createAnalytics({
   project: "example.com",
@@ -61,7 +61,7 @@ One `web_vital` event per metric:
 
 ```ts
 import { onLCP } from "web-vitals/attribution";
-import { speedProps } from "@remcostoeten/analytics/plugins";
+import { speedProps } from "@spoar/sdk/plugins";
 import { analytics } from "./analytics";
 
 onLCP((metric) => analytics.track("web_vital", speedProps(metric, 1, null)));

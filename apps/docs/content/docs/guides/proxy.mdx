@@ -46,7 +46,7 @@ In the Next.js App Router, a folder starting with `_` is private, so the undersc
 `app/%5Fra/route.ts`:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
   secret: process.env.RA_SECRET,
@@ -57,7 +57,7 @@ export const POST = createProxy({
 `createProxy` returns a standard `(request: Request) => Promise<Response>` handler, so any runtime with `fetch`, `Request` and `Response` can serve it. In a hand-written fetch handler, route `/_ra` to it:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 const proxy = createProxy({ secret: process.env.RA_SECRET, endpoint: process.env.RA_ENDPOINT });
 

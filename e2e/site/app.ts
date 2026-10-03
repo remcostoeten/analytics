@@ -1,5 +1,5 @@
-import { createAnalytics } from "@remcostoeten/analytics-sdk";
-import { botSignals, errors, ignoreSelf, speedInsights } from "@remcostoeten/analytics-sdk/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { botSignals, errors, ignoreSelf, speedInsights } from "@spoar/sdk/plugins";
 
 import { apiPort, publicKey } from "../ports";
 

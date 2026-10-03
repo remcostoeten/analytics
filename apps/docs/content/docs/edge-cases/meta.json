@@ -8,5 +8,6 @@
     "sessions-and-visitors",
     "consent-and-privacy",
     "bots"
-  ]
+  ],
+  "defaultOpen": false
 }

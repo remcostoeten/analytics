@@ -183,7 +183,7 @@ The `metric` dispatcher and selector-to-function mapping are authoritative at `a
 
 The package manifest exposes only `.`, `./browser`, and `./server` (`packages/sdk/package.json:29-45`). Files such as `api/privacy.ts`, `identity/traits.ts`, `utilities/*`, and observer modules are not importable package subpaths even when they export symbols internally. Current package version is `1.7.1` in this checkout (`package.json:2-4`); the npm artifact was not fetched, so publication parity requires a separate release inspection.
 
-### Root `@remcostoeten/analytics`
+### Root `@spoar/sdk`
 
 The root is the React entry plus every supported browser export (`packages/sdk/src/index.ts:1-11`). It adds:
 
@@ -196,7 +196,7 @@ The root is the React entry plus every supported browser export (`packages/sdk/s
 | `TrackClick` | component wrapping one React element, sends named click then existing `onClick` | Browser `trackClick`; `track-click.tsx:7-35`. |
 | `AnalyticsErrorBoundary` | component; catches render error, calls `trackError`, renders fallback | Browser error event; `error-boundary.tsx:19-67`. |
 
-### Browser exports: `@remcostoeten/analytics/browser`
+### Browser exports: `@spoar/sdk/browser`
 
 All browser tracking functions are fire-and-forget and return `void`. They no-op for SSR, opt-out, DNT, or missing consent. `track` creates a fresh UUID event ID, defaults `projectId` to hostname, builds browser/identity/enrichment metadata, and uses `sendBeacon` then `fetch(..., keepalive)` to `${baseUrl}/e`; failed/offline events go to local storage queue and later `${baseUrl}/e/batch` (`packages/sdk/src/api/track.ts:29-120`, `utilities/offline-queue.ts:32-79`).
 
@@ -212,7 +212,7 @@ All browser tracking functions are fire-and-forget and return `void`. They no-op
 
 Supported event conventions are established by code, not an enum: `pageview`, `event`, `click`, and `error` are known types but arbitrary strings are accepted (`packages/sdk/src/types/index.ts:1-5`). Automatic observer event names are `web-vitals`, `scroll`, `time-on-page`, `outbound_click`, and `form_submit` (`observers/*.ts`). These are compatibility-critical because dashboard queries inspect `type` and `meta.eventName`.
 
-### Server exports: `@remcostoeten/analytics/server`
+### Server exports: `@spoar/sdk/server`
 
 | Export | Signature and behavior | HTTP / tests / compatibility |
 | --- | --- | --- |

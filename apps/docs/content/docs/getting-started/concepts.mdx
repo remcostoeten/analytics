@@ -22,7 +22,7 @@ Secret keys and API tokens are shown once, when created or rotated, and stored h
 Every event has a `name` and optional flat `props`. List your custom events once in a type, and the browser and server clients check every call against it:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };

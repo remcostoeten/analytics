@@ -17,7 +17,7 @@ import {
   migrationsDirectory,
   readMigrations,
 } from "@remcostoeten/analytics-engine/db/migration-files";
-import { createProxy } from "@remcostoeten/analytics-sdk/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 import { apiPort, blockMs, lcpAt, publicKey, secretKey, shiftAt, sitePort } from "./ports";
 
@@ -54,7 +54,7 @@ async function bundle() {
       {
         name: "built-sdk",
         setup: (build) => {
-          build.onResolve({ filter: /^@remcostoeten\/analytics-sdk(\/plugins)?$/ }, (args) => ({
+          build.onResolve({ filter: /^@spoar\/sdk(\/plugins)?$/ }, (args) => ({
             path: join(dist, args.path.endsWith("/plugins") ? "plugins.mjs" : "index.mjs"),
           }));
         },

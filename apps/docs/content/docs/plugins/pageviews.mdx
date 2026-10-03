@@ -4,13 +4,13 @@ description: A pageview on load and on every client-side navigation. On by defau
 ---
 
 ```ts
-import { pageviews } from "@remcostoeten/analytics/plugins";
+import { pageviews } from "@spoar/sdk/plugins";
 ```
 
 The client adds this plugin itself unless it is created with `pageviews: false`, so most apps never import it.
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
+import { createAnalytics } from "@spoar/sdk";
 
 export const analytics = createAnalytics({
   project: "example.com",

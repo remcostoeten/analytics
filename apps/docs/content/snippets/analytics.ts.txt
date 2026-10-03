@@ -1,0 +1,11 @@
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [speedInsights(), errors()],
+});
+
+analytics.track("signup", { plan: "pro" });

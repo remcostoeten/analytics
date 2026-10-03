@@ -1,4 +1,13 @@
 {
   "title": "Frameworks",
-  "pages": ["index", "nextjs", "react", "vanilla", "vue", "svelte", "astro", "server"]
+  "pages": [
+    "nextjs",
+    "react",
+    "vanilla",
+    "vue",
+    "svelte",
+    "astro",
+    "server"
+  ],
+  "defaultOpen": false
 }

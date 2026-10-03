@@ -7,14 +7,14 @@ description: Track from Node, Bun, Deno, Vercel Functions and Cloudflare Workers
 
 | Entry | Export | Use it for |
 | --- | --- | --- |
-| `@remcostoeten/analytics/server` | `createServerAnalytics` | Events from route handlers, webhooks, jobs and scripts |
-| `@remcostoeten/analytics/proxy` | `createProxy` | A same-origin path such as `/_ra` that forwards browser events to the API |
-| `@remcostoeten/analytics/proxy` | `createPageCounter` | `page_request` events for HTML page loads, counted in middleware |
+| `@spoar/sdk/server` | `createServerAnalytics` | Events from route handlers, webhooks, jobs and scripts |
+| `@spoar/sdk/proxy` | `createProxy` | A same-origin path such as `/_ra` that forwards browser events to the API |
+| `@spoar/sdk/proxy` | `createPageCounter` | `page_request` events for HTML page loads, counted in middleware |
 
 ## Install and keys
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ```bash
@@ -29,7 +29,7 @@ RA_ENDPOINT=https://api.example.com
 `analytics.ts`:
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
@@ -66,7 +66,7 @@ Node frameworks that hand you a standard `Request` work the same way as Bun and 
 ## Bun
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 import { serverAnalytics } from "./analytics";
 
 const proxy = createProxy({ secret: Bun.env.RA_SECRET, endpoint: Bun.env.RA_ENDPOINT });
@@ -87,8 +87,8 @@ Bun.serve({
 ## Deno
 
 ```ts
-import { createProxy } from "npm:@remcostoeten/analytics/proxy";
-import { createServerAnalytics } from "npm:@remcostoeten/analytics/server";
+import { createProxy } from "npm:@spoar/sdk/proxy";
+import { createServerAnalytics } from "npm:@spoar/sdk/server";
 
 const options = { secret: Deno.env.get("RA_SECRET"), endpoint: Deno.env.get("RA_ENDPOINT") };
 const proxy = createProxy(options);
@@ -125,8 +125,8 @@ On Vercel the SDK reads `waitUntil` from the runtime, so the send finishes after
 Workers get their secrets per request through `env`, and keep work alive with `ctx.waitUntil`:
 
 ```ts
-import { createProxy } from "@remcostoeten/analytics/proxy";
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createProxy } from "@spoar/sdk/proxy";
+import { createServerAnalytics } from "@spoar/sdk/server";
 
 type Env = { RA_SECRET: string; RA_ENDPOINT: string };
 

@@ -8,7 +8,7 @@ The core client has no framework dependency. Any setup that bundles ES modules c
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Keys and environment
@@ -28,7 +28,7 @@ Only the public key (`pk_...`) goes in browser code. Use `/_ra` as the endpoint 
 `src/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -39,8 +39,8 @@ export type Events = {
 `src/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { clicks, errors, outboundLinks } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { clicks, errors, outboundLinks } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
