@@ -65,7 +65,19 @@
           "exitPage": "/blog/rebuilding-analytics",
           "referrer": "https://news.ycombinator.com/"
         }
-      ]
+      ],
+      "bot": {
+        "score": 0,
+        "verdict": "human",
+        "signals": {
+          "headless": null,
+          "webdriver": null,
+          "datacenterAsn": null,
+          "pointerEvents": null,
+          "uaMismatch": null,
+          "uniformDwell": null
+        }
+      }
     }
   }
 }

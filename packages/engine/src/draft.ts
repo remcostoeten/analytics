@@ -1,4 +1,10 @@
-import type { BotVerdict, Device, Source, WireEvent } from "@remcostoeten/analytics-contract";
+import type {
+  BotSignals,
+  BotVerdict,
+  Device,
+  Source,
+  WireEvent,
+} from "@remcostoeten/analytics-contract";
 import type { Nullable, ProjectID, Timestamp } from "@remcostoeten/analytics-shared/semantic";
 
 import type { IssueDraft } from "./errors/stage";
@@ -58,6 +64,8 @@ export type Flags = {
   internal: boolean;
 };
 
+type ScoredBot = BotVerdict & { signals?: BotSignals };
+
 export type EventDraft = {
   index: number;
   projectId: ProjectID;
@@ -70,7 +78,7 @@ export type EventDraft = {
   request: RequestFacts;
   enrichment: Enrichment;
   flags: Flags;
-  bot: BotVerdict;
+  bot: ScoredBot;
   replay: boolean;
   issue: Nullable<IssueDraft>;
 };

@@ -10,7 +10,8 @@ import { createDraft } from "./draft";
 import type { EventDraft, IngestRequest } from "./draft";
 import { engineError } from "./errors";
 import type { EngineError } from "./errors";
-import type { Ports } from "./ports";
+import { batchLines, rateLimitedLine, rawEvent, rejectedLine, verdictLines } from "./logs/lines";
+import type { NewLogLine, Ports } from "./ports";
 import { parseEvent } from "./stages/parse";
 import { clientIp } from "./utilities/client-ip";
 import { hashIp } from "./utilities/ip-hash";
@@ -61,7 +62,10 @@ function rejection(index: number, error: EngineError): RejectedEvent {
  * authorizes the batch, rate-limits untrusted callers per IP hash, parses each event, runs it
  * through the stages in order, drops repeated ids, stores the batch in one insert and upserts
  * sessions and visitors. The first failing stage rejects that event by index; a throwing stage
- * becomes `INTERNAL` with its stack logged. `rescore` reruns only the stages marked `rescores`.
+ * becomes `INTERNAL` with its stack logged. With a `logs` port, each batch writes its decisions as
+ * log lines: one batch line with the counts, one per rejected event, one for duplicates, one per
+ * stored event the bot score marks suspect or bot, and one per rate limited request. `rescore`
+ * reruns only the stages marked `rescores`.
  *
  * @example
  * const engine = createEngine(ports, { stages: defaultStages, signals, enrichers: defaultEnrichers, dimensions }, settings);
@@ -70,6 +74,17 @@ function rejection(index: number, error: EngineError): RejectedEvent {
 export function createEngine(ports: Ports, registry: Registry, settings: Settings): Engine {
   const context: StageContext = { ports, registry, settings };
   const rescoreStages = registry.stages.filter((stage) => stage.rescores);
+
+  async function record(lines: NewLogLine[]) {
+    if (!ports.logs || lines.length === 0) return;
+    const written = await ports.logs.write(lines);
+    if (!written.ok) {
+      ports.logger.warn("log lines not written", {
+        project: lines[0]?.project ?? null,
+        message: written.error.message,
+      });
+    }
+  }
 
   async function admit(request: IngestRequest): Promise<Result<Authorized, EngineError>> {
     const { headers } = request.request;
@@ -93,6 +108,9 @@ export function createEngine(ports: Ports, registry: Registry, settings: Setting
       windowSeconds,
     );
     if (decision.allowed) return access;
+    await record([
+      rateLimitedLine(access.value.projectId, ports.clock.now(), decision.retryAfterSeconds),
+    ]);
     return err({
       ...engineError("RATE_LIMITED", "Too many requests"),
       details: { retryAfterSeconds: decision.retryAfterSeconds },
@@ -127,17 +145,42 @@ export function createEngine(ports: Ports, registry: Registry, settings: Setting
       else rejected.push(rejection(index, result.error));
     }
     const { unique, repeated } = dedupeBatch(accepted);
-    if (unique.length === 0) return ok({ accepted: 0, duplicates: repeated, rejected });
+    const at = ports.clock.now();
+    const project = access.value.projectId;
+    const rejectedLines = rejected.map((entry) =>
+      rejectedLine(project, at, entry, rawEvent(request.events[entry.index])),
+    );
+    if (unique.length === 0) {
+      await record([
+        ...batchLines(project, at, {
+          accepted: 0,
+          duplicates: repeated,
+          rejected: rejected.length,
+        }),
+        ...rejectedLines,
+      ]);
+      return ok({ accepted: 0, duplicates: repeated, rejected });
+    }
     const stored = await ports.store.insertEvents(unique);
     if (!stored.ok) return stored;
     const inserted = new Set(stored.value.inserted);
     const fresh = unique.filter((draft) => inserted.has(draft.event.id));
     if (fresh.length > 0) await storeSessions(fresh);
-    return ok({
+    const result = {
       accepted: stored.value.inserted.length,
       duplicates: stored.value.duplicates.length + repeated,
       rejected,
-    });
+    };
+    await record([
+      ...batchLines(project, at, {
+        accepted: result.accepted,
+        duplicates: result.duplicates,
+        rejected: rejected.length,
+      }),
+      ...rejectedLines,
+      ...verdictLines(fresh, at),
+    ]);
+    return ok(result);
   }
 
   async function rescore(drafts: EventDraft[]) {

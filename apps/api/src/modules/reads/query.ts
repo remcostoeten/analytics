@@ -247,3 +247,16 @@ export const pagingQuery = Type.Object(pageFields);
  * app.get("/projects/:project/annotations", handler, { query: annotationsQuery });
  */
 export const annotationsQuery = Type.Composite([RangeQuery, Type.Object(pageFields)]);
+
+/**
+ * @name realtimeQuery
+ * @description The realtime summary's query: `include=visitors` adds the active visitor rows, and
+ * `limit` caps them (1 to 200, default 50).
+ *
+ * @example
+ * app.get("/projects/:project/realtime", handler, { query: realtimeQuery });
+ */
+export const realtimeQuery = Type.Object({
+  include: Type.Optional(Type.Literal("visitors")),
+  limit: Type.Optional(Type.String({ pattern: "^[0-9]+$" })),
+});

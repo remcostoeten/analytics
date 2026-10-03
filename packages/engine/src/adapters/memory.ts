@@ -17,6 +17,7 @@ import type {
 import type { LogFields, LogLevel } from "../ports/logger";
 
 export { memoryAlerts } from "./memory-alerts";
+export { memoryLogs } from "./memory-logs";
 
 export const emptyRecord: GeoRecord = {
   geo: {
@@ -168,9 +169,10 @@ export function memoryLogger(): Logger & { entries: LogEntry[] } {
   };
 }
 
-export type MemoryProject = ProjectAccess & {
+export type MemoryProject = Omit<ProjectAccess, "widgetReports"> & {
   publicKey: string;
   secretHash: string;
+  widgetReports?: boolean;
 };
 
 /**
@@ -182,7 +184,13 @@ export type MemoryProject = ProjectAccess & {
  */
 export function memoryProjects(list: MemoryProject[]): ProjectStore {
   function access(project: MemoryProject | undefined): Nullable<ProjectAccess> {
-    return project ? { id: project.id, allowedOrigins: project.allowedOrigins } : null;
+    return project
+      ? {
+          id: project.id,
+          allowedOrigins: project.allowedOrigins,
+          widgetReports: project.widgetReports ?? false,
+        }
+      : null;
   }
   return {
     byPublicKey: async (key) => ok(access(list.find((project) => project.publicKey === key))),

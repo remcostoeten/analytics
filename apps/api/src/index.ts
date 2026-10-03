@@ -71,7 +71,7 @@ function logger(requestId: string) {
 export default createApp({
   engine: (log) =>
     createEngine(
-      { ...adapters, geo: geo.lookup, hasher, clock, logger: log },
+      { ...adapters, geo: geo.lookup, hasher, clock, logger: log, logs: stores.logs },
       {
         stages: defaultStages,
         signals: defaultSignals,
@@ -122,6 +122,13 @@ export default createApp({
   internalSecret: process.env.INTERNAL_PROJECT_SECRET || null,
   ops: stores.ops,
   crux: process.env.CRUX_API_KEY ? { key: process.env.CRUX_API_KEY, send: fetch } : null,
+  widget: {
+    store: stores.widget,
+    logs: stores.logs,
+    keys: adapters.projects,
+    limiter: adapters.limiter,
+    reportsPerMinute: Number(process.env.CLIENT_REPORT_LIMIT ?? 60),
+  },
   history: {
     repo: "remcostoeten/analytics",
     send: fetch,

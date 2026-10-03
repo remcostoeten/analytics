@@ -7,6 +7,7 @@ export type Visibility = "public" | "private";
 export type Role = "owner" | "admin" | "analyst" | "viewer";
 export type TokenScope = "read" | "sql" | "admin";
 export type KeyKind = "public" | "secret";
+export type TokenKind = "api" | "widget";
 
 export type ProjectRecord = {
   id: ProjectID;
@@ -15,6 +16,7 @@ export type ProjectRecord = {
   visibility: Visibility;
   publicVisitorData: boolean;
   sqlEnabled: boolean;
+  widgetReports: boolean;
   allowedOrigins: string[];
   retentionDays: number;
   publicKey: string;
@@ -39,7 +41,13 @@ export type NewProject = {
 export type ProjectPatch = Partial<
   Pick<
     ProjectRecord,
-    "name" | "visibility" | "publicVisitorData" | "sqlEnabled" | "allowedOrigins" | "retentionDays"
+    | "name"
+    | "visibility"
+    | "publicVisitorData"
+    | "sqlEnabled"
+    | "widgetReports"
+    | "allowedOrigins"
+    | "retentionDays"
   >
 >;
 
@@ -52,6 +60,7 @@ export type Membership = {
 
 export type TokenRecord = {
   id: TokenID;
+  kind: TokenKind;
   name: string;
   scope: TokenScope;
   projectIds: Nullable<ProjectID[]>;
@@ -74,7 +83,7 @@ export type ProjectAdmin = {
 
 export type TokenStore = {
   byHash: (hash: string) => Stored<Nullable<TokenRecord>>;
-  list: () => Stored<TokenRecord[]>;
+  list: (kind: TokenKind) => Stored<TokenRecord[]>;
   create: (token: NewToken) => Stored<TokenRecord>;
   revoke: (id: TokenID) => Stored<boolean>;
   touch: (id: TokenID, at: Date) => Stored<void>;

@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4",
+      "lastSeen": "2026-10-03T14:02:04.117Z",
+      "path": "/pricing",
+      "referrer": "https://www.google.com/",
+      "country": "NL",
+      "city": "Leeuwarden",
+      "device": "mobile",
+      "browser": "Safari",
+      "os": "iOS",
+      "pages": 4,
+      "duration": 132,
+      "botScore": 0,
+      "identified": false
+    }
+  ],
+  "window": { "from": "2026-10-03T13:57:04.117Z", "to": "2026-10-03T14:02:04.117Z" }
+}

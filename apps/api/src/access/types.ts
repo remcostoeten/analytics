@@ -3,6 +3,7 @@ import type {
   MemberStore,
   ProjectAdmin,
   Role,
+  TokenKind,
   TokenScope,
   TokenStore,
 } from "@remcostoeten/analytics-engine";
@@ -22,7 +23,13 @@ export type Caller =
   | { kind: "anonymous" }
   | { kind: "cron" }
   | { kind: "user"; signedIn: SignedIn; role: Role; projectIds: Nullable<ProjectID[]> }
-  | { kind: "token"; tokenId: TokenID; scope: TokenScope; projectIds: Nullable<ProjectID[]> };
+  | {
+      kind: "token";
+      tokenId: TokenID;
+      tokenKind: TokenKind;
+      scope: TokenScope;
+      projectIds: Nullable<ProjectID[]>;
+    };
 
 export type Level = "public" | "project" | "detail" | "admin" | "cron";
 

@@ -4,6 +4,7 @@ import { ok } from "@remcostoeten/analytics-shared/result";
 import { defineStage } from "../define";
 import type { Signal } from "../define";
 import type { EventDraft } from "../draft";
+import { signalBreakdown } from "../signals/verdict";
 
 const maxScore = 100;
 
@@ -34,8 +35,9 @@ export function scoreBot(signals: Signal[], draft: EventDraft): BotVerdict {
 
 /**
  * @name botScoreStage
- * @description Scores the draft with every registered signal through `scoreBot`. It reruns on
- * `engine.rescore` after a signal changes.
+ * @description Scores the draft with every registered signal through `scoreBot` and keeps the
+ * breakdown of which checks fired, ran or could not run, which is stored as `bot_signals`. It
+ * reruns on `engine.rescore` after a signal changes.
  *
  * @example
  * createEngine(ports, { stages: [enrichStage, botScoreStage], signals: defaultSignals, enrichers: [], dimensions: [] }, settings);
@@ -43,5 +45,8 @@ export function scoreBot(signals: Signal[], draft: EventDraft): BotVerdict {
 export const botScoreStage = defineStage({
   name: "bot-score",
   rescores: true,
-  run: (draft, context) => ok({ ...draft, bot: scoreBot(context.registry.signals, draft) }),
+  run: (draft, context) => {
+    const verdict = scoreBot(context.registry.signals, draft);
+    return ok({ ...draft, bot: { ...verdict, signals: signalBreakdown(draft, verdict.reasons) } });
+  },
 });

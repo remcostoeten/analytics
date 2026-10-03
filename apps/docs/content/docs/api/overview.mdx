@@ -48,11 +48,14 @@ Every error uses one envelope:
 | --- | --- | --- |
 | 400 | `VALIDATION_FAILED` | Body, query or path fails the schema; `details` lists each field |
 | 401 | `UNAUTHORIZED` | No or invalid session, token or key |
+| 401 | `AUTH_REQUIRED` | The dev widget bootstrap was called without a session cookie |
 | 403 | `FORBIDDEN_ORIGIN` | Public key used from an origin not in the project's list |
+| 403 | `ORIGIN_NOT_ALLOWED` | The dev widget bootstrap's origin is in no project's allowed origins |
 | 403 | `FORBIDDEN` | The caller's role or token scope does not allow the action |
+| 403 | `WIDGET_REPORTS_DISABLED` | Client reports sent to a project with `widgetReports` off |
 | 404 | `NOT_FOUND` | Unknown route or resource, or a private project without access |
 | 409 | `CONFLICT` | Creating something that exists |
-| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events |
+| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events, or a client report body over 16 KB |
 | 429 | `RATE_LIMITED` | A rate limit was hit; `Retry-After` says when to try again |
 | 500 | `INTERNAL` | Unexpected failure; the message never includes internals |
 | 503 | `UNAVAILABLE` | The database or a configured service is unreachable, or a job is not configured |

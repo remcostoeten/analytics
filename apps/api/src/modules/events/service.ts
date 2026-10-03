@@ -1,6 +1,11 @@
 import { maxBodyBytes, maxEventsPerBatch } from "@remcostoeten/analytics-contract";
 import type { IngestResult } from "@remcostoeten/analytics-contract";
-import type { Engine, EngineError, IngestRequest } from "@remcostoeten/analytics-engine";
+import type {
+  Credentials,
+  Engine,
+  EngineError,
+  IngestRequest,
+} from "@remcostoeten/analytics-engine";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
@@ -11,6 +16,24 @@ const bearer = /^Bearer\s+(\S+)$/i;
 
 function secretKey(authorization: Nullable<string>) {
   return authorization ? (bearer.exec(authorization)?.[1] ?? null) : null;
+}
+
+/**
+ * @name ingestCredentials
+ * @description The ingest key of a request: the public key from `X-Project-Key` or the `key`
+ * query parameter (which `sendBeacon` needs, as it cannot set headers), or the secret key from
+ * `Authorization: Bearer`.
+ *
+ * @example
+ * ingestCredentials(request); // { publicKey: "pk_live_...", secretKey: null }
+ */
+export function ingestCredentials(incoming: Request): Credentials {
+  const { headers } = incoming;
+  return {
+    publicKey:
+      headers.get("x-project-key") || new URL(incoming.url).searchParams.get("key") || null,
+    secretKey: secretKey(headers.get("authorization")),
+  };
 }
 
 function tooLarge(message: string): EngineError {
@@ -59,11 +82,7 @@ export async function ingestEvents(
     return err(tooLarge(`A batch holds at most ${maxEventsPerBatch} events`));
   }
   const request: IngestRequest = {
-    credentials: {
-      publicKey:
-        headers.get("x-project-key") || new URL(incoming.url).searchParams.get("key") || null,
-      secretKey: secretKey(headers.get("authorization")),
-    },
+    credentials: ingestCredentials(incoming),
     receivedAt: receivedAt.toISOString(),
     sentAt: body.sentAt,
     request: { headers, adminSession },

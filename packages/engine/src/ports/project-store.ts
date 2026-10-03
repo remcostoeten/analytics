@@ -6,6 +6,7 @@ import type { EngineError } from "../errors";
 export type ProjectAccess = {
   id: ProjectID;
   allowedOrigins: string[];
+  widgetReports: boolean;
 };
 
 type Find = (key: string) => Promise<Result<Nullable<ProjectAccess>, EngineError>>;

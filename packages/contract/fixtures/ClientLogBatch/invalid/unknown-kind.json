@@ -1,0 +1,13 @@
+{
+  "expectedPath": "/logs/0/kind",
+  "value": {
+    "logs": [
+      {
+        "kind": "jobs",
+        "level": "info",
+        "message": "not a client kind",
+        "ts": "2026-10-03T14:02:04.117Z"
+      }
+    ]
+  }
+}
