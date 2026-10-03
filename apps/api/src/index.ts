@@ -46,6 +46,10 @@ const authSecret = process.env.BETTER_AUTH_SECRET ?? "";
 if (production && authSecret.length < 32)
   throw new Error("Refusing to start: BETTER_AUTH_SECRET must be at least 32 characters.");
 const dashboardOrigin = process.env.DASHBOARD_ORIGIN ?? null;
+const settings = {
+  ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
+  rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
+};
 const auth = createAuth({
   db: stores.db,
   members: stores.members,
@@ -60,11 +64,8 @@ const auth = createAuth({
   cookieDomain: process.env.AUTH_COOKIE_DOMAIN || null,
   trustedOrigins: dashboardOrigin ? [dashboardOrigin] : [],
   secure: production,
+  limit: { limiter: adapters.limiter, hasher, secret: settings.ipSecret },
 });
-const settings = {
-  ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
-  rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
-};
 
 function logger(requestId: string) {
   return jsonLogger((line) => console.log(line), { requestId });

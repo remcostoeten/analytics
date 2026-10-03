@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
-import { pgliteAccess } from "@remcostoeten/analytics-engine/adapters/pglite";
+import { fixedClock } from "@remcostoeten/analytics-engine/adapters/memory";
+import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
+import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
 import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
 import {
   migrationsDirectory,
@@ -15,7 +17,7 @@ const database = new PGlite();
 const stores = pgliteAccess(database);
 const secret = "x".repeat(40);
 const now = new Date("2026-09-28T12:00:00.000Z");
-const auth = createAuth({
+const options = {
   db: stores.db,
   members: stores.members,
   invites: stores.invites,
@@ -26,7 +28,8 @@ const auth = createAuth({
   cookieDomain: null,
   trustedOrigins: ["http://localhost:3000"],
   secure: false,
-});
+};
+const auth = createAuth({ ...options, limit: null });
 
 async function cookieFor(token: string) {
   return `ra.session_token=${encodeURIComponent(`${token}.${await makeSignature(token, secret)}`)}`;
@@ -193,5 +196,57 @@ describe("Better Auth", () => {
 
     await database.query("DELETE FROM auth_member WHERE user_id = $1", [registered.value.user.id]);
     expect(await sessions(new Headers({ cookie: pair }))).toBeNull();
+  });
+
+  test("sign-in is limited per IP in the shared limiter, keyed by a hash, and sessions keep no IP", async () => {
+    const limited = createAuth({
+      ...options,
+      limit: {
+        limiter: pgliteAdapters(database, fixedClock(now)).limiter,
+        hasher: webCryptoHasher(),
+        secret: "y".repeat(48),
+      },
+    });
+    await database.query(
+      "INSERT INTO auth_member (id, organization_id, user_id, role) SELECT 'mem_ada', 'org_main', id, 'viewer' FROM auth_user WHERE email = 'ada@example.test'",
+    );
+    const signedIn = await limited.handler(
+      new Request("http://localhost:3100/v2/auth/sign-in/email", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "http://localhost:3000",
+          "x-forwarded-for": "203.0.113.5",
+        },
+        body: JSON.stringify({ email: "ada@example.test", password: "password-456" }),
+      }),
+    );
+    expect(signedIn.status).toBe(200);
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const response = await limited.handler(
+        new Request("http://localhost:3100/v2/auth/sign-in/email", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            origin: "http://localhost:3000",
+            "x-forwarded-for": "198.51.100.23",
+          },
+          body: JSON.stringify({ email: "nobody@example.test", password: "wrong-password" }),
+        }),
+      );
+      statuses.push(response.status);
+    }
+    expect(statuses.slice(0, 5).every((code) => code === 401)).toBe(true);
+    expect(statuses[5]).toBe(429);
+    const keys = await database.query<{ key: string }>("SELECT key FROM rate_limits");
+    expect(keys.rows.length).toBeGreaterThan(0);
+    expect(keys.rows.every((row) => row.key.startsWith("auth:"))).toBe(true);
+    expect(JSON.stringify(keys.rows)).not.toContain("198.51.100.23");
+    expect(JSON.stringify(keys.rows)).not.toContain("203.0.113.5");
+    const stored = await database.query<{ ip_address: string | null }>(
+      "SELECT ip_address FROM auth_session",
+    );
+    expect(stored.rows.every((row) => row.ip_address === null)).toBe(true);
   });
 });

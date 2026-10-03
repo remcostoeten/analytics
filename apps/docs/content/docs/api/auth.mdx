@@ -50,6 +50,8 @@ Sign-in goes through the API, so every frontend shares one access check.
 
 People without a GitHub login on the allowlist join through an invite and sign in with email and password at `POST /v2/auth/sign-in/email`. There is no open registration and no password reset; an admin sends a new invite instead.
 
+Better Auth's routes are rate limited per IP in the `rate_limits` table, so the limits hold across serverless instances: email sign-in allows 5 attempts a minute, and the other sign-in and password routes keep Better Auth's defaults. The key is a hash of the IP and path with `IP_HASH_SECRET`, and sessions do not store the IP.
+
 ```json
 {
   "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "email": "remco@example.com", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },

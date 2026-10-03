@@ -1,5 +1,5 @@
 import { engineError } from "@remcostoeten/analytics-engine";
-import type { InviteStore, MemberStore } from "@remcostoeten/analytics-engine";
+import type { Hasher, InviteStore, MemberStore, RateLimiter } from "@remcostoeten/analytics-engine";
 import type { Database } from "@remcostoeten/analytics-engine/adapters/access";
 import {
   authAccount,
@@ -20,6 +20,12 @@ import { adminAc, memberAc, ownerAc } from "better-auth/plugins/organization/acc
 
 import type { Register, SessionReader } from "../access/types";
 
+export type AuthLimit = {
+  limiter: RateLimiter;
+  hasher: Hasher;
+  secret: string;
+};
+
 export type AuthOptions = {
   db: Database;
   members: MemberStore;
@@ -31,12 +37,26 @@ export type AuthOptions = {
   cookieDomain: Nullable<string>;
   trustedOrigins: string[];
   secure: boolean;
+  limit: Nullable<AuthLimit>;
 };
 
 async function allowed(members: MemberStore, login: string) {
   if (login === "") return false;
   const result = await members.allowedLogin(login);
   return result.ok && result.value;
+}
+
+function hashedStorage(limit: AuthLimit) {
+  return {
+    consume: async (key: string, rule: { window: number; max: number }) => {
+      const hash = await limit.hasher.sha256(`${limit.secret}:${key}`);
+      const decision = await limit.limiter.hit(`auth:${hash}`, rule.max, rule.window);
+      return {
+        allowed: decision.allowed,
+        retryAfter: decision.allowed ? null : decision.retryAfterSeconds,
+      };
+    },
+  };
 }
 
 async function invited(invites: InviteStore, email: string, at: Date) {
@@ -51,7 +71,9 @@ async function invited(invites: InviteStore, email: string, at: Date) {
  * A GitHub account needs its login in `dashboard_users`; an email account needs an invite claimed
  * for its address, so Better Auth's own sign-up is off and registration goes through
  * `POST /v2/join/{token}`. A GitHub account joins the single organization, the first one as owner;
- * an email account joins with its invite's role and projects. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
+ * an email account joins with its invite's role and projects. With `limit`, Better Auth's rate limits
+ * count in that limiter under a keyed hash of the IP and path, so they hold across serverless
+ * instances, and email sign-in allows 5 attempts a minute per IP. Sessions never store the IP. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
@@ -65,6 +87,13 @@ export function createAuth(options: AuthOptions) {
     basePath: "/v2/auth",
     secret: options.secret,
     trustedOrigins: options.trustedOrigins,
+    rateLimit: options.limit
+      ? {
+          enabled: true,
+          customStorage: hashedStorage(options.limit),
+          customRules: { "/sign-in/email": { window: 60, max: 5 } },
+        }
+      : { enabled: false },
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
@@ -101,6 +130,7 @@ export function createAuth(options: AuthOptions) {
       }),
     ],
     advanced: {
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"] },
       cookiePrefix: "ra",
       useSecureCookies: options.secure,
       crossSubDomainCookies: options.cookieDomain
@@ -136,7 +166,7 @@ export function createAuth(options: AuthOptions) {
         create: {
           before: async (session) => {
             const result = await members.allowed(session.userId);
-            return result.ok && result.value ? { data: session } : false;
+            return result.ok && result.value ? { data: { ...session, ipAddress: null } } : false;
           },
         },
       },
