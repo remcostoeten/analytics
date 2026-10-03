@@ -3,10 +3,15 @@ title: How it works
 description: What happens to an event between the browser and the database, and where each privacy guarantee comes from.
 ---
 
-```text
-browser SDK ──▶ /_ra on your domain (proxy) ──▶ API /v2/events ──▶ engine ──▶ Postgres ──▶ reads, dashboard, SQL
-server SDK  ─────────────────────────────────▶ API /v2/events
-```
+<Flow>
+  <FlowNode label="Browser SDK">Batches events, sends them with `fetch` or `sendBeacon`</FlowNode>
+  <FlowNode label="/_ra proxy">Same-origin route in your app, forwards to the API</FlowNode>
+  <FlowNode label="API /v2/events">Checks key and origin, scores bots</FlowNode>
+  <FlowNode label="Engine">Enriches with geo, device and channel</FlowNode>
+  <FlowNode label="Postgres">Stores the row; reads, dashboard and SQL answer from it</FlowNode>
+</Flow>
+
+The server SDK skips the proxy and posts to `/v2/events` with the secret key.
 
 ## In the browser
 

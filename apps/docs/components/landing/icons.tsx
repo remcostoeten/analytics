@@ -33,26 +33,6 @@ export function BoxIcon(props: Props) {
   );
 }
 
-export function ServerIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <rect x="3" y="4" width="18" height="7" rx="2" />
-      <rect x="3" y="13" width="18" height="7" rx="2" />
-      <path d="M7 7.5h.01M7 16.5h.01" />
-    </svg>
-  );
-}
-
-export function DatabaseIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <ellipse cx="12" cy="6" rx="8" ry="3" />
-      <path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
-      <path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
-    </svg>
-  );
-}
-
 export function RouteIcon(props: Props) {
   return (
     <svg {...frame(props)}>
