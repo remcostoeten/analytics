@@ -3,11 +3,13 @@ import type { EventStore } from "./event-store";
 import type { GeoLookup } from "./geo-lookup";
 import type { Hasher } from "./hasher";
 import type { Logger } from "./logger";
+import type { LogStore } from "./logs";
 import type { ProjectStore } from "./project-store";
 import type { RateLimiter } from "./rate-limiter";
 
 export type {
   KeyKind,
+  TokenKind,
   Membership,
   MemberStore,
   NewProject,
@@ -117,6 +119,8 @@ export type {
 export type { GeoLookup, GeoRecord, Location } from "./geo-lookup";
 export type { Hasher } from "./hasher";
 export type { LogEntry, LogFields, Logger, LogLevel } from "./logger";
+export type { LogFilter, LogPage, LogQuery, LogRecord, LogStore, NewLogLine } from "./logs";
+export type { ActiveVisitorRow, ReleaseRow, WidgetStore } from "./widget";
 export type { ProjectAccess, ProjectStore } from "./project-store";
 export type { RateDecision, RateLimiter } from "./rate-limiter";
 
@@ -128,4 +132,5 @@ export type Ports = {
   hasher: Hasher;
   clock: Clock;
   logger: Logger;
+  logs?: LogStore;
 };

@@ -11,8 +11,9 @@ import {
   StatsResponse,
   TimeseriesResponse,
 } from "@remcostoeten/analytics-contract";
+import { engineError } from "@remcostoeten/analytics-engine";
 import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
-import { ok } from "@remcostoeten/analytics-shared/result";
+import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import { Elysia, t } from "elysia";
 
@@ -26,6 +27,7 @@ import type { Listing } from "./export";
 import { readGate } from "./guard";
 import type { ReadsOptions, Set } from "./guard";
 import { eventStream, liveEvents, liveQuery, liveStream } from "./live";
+import { activeVisitors } from "../widget/service";
 import { breakdown, readScope, realtime, stats, timeseries } from "./service";
 import {
   breakdownQuery,
@@ -34,6 +36,7 @@ import {
   liveEventsQuery,
   mapQuery,
   pathsQuery,
+  realtimeQuery,
   retentionQuery,
   scopeQuery,
   timeseriesQuery,
@@ -101,6 +104,30 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
         const scope = scoped(params, id);
         return scope.ok ? read(options.store, scope.value, params) : scope;
       });
+  }
+
+  async function withVisitors(
+    caller: Caller,
+    project: ProjectRecord | null,
+    params: URLSearchParams,
+    id: string,
+  ): Promise<Result<RealtimeResponse, EngineError>> {
+    if (!project || !canReadDetail(caller, project)) {
+      return err(
+        caller.kind === "anonymous"
+          ? engineError("UNAUTHORIZED", "Sign in or send an API token")
+          : engineError("FORBIDDEN", "Visitor-level data needs an analyst, admin or API token"),
+      );
+    }
+    if (!options.widget) return err(engineError("UNAVAILABLE", "The widget store is not set"));
+    const now = options.clock();
+    const [summary, visitors] = await Promise.all([
+      realtime(options.store, [id], now),
+      activeVisitors(options.widget, id, params, now),
+    ]);
+    if (!summary.ok) return summary;
+    if (!visitors.ok) return visitors;
+    return ok({ ...summary.value, visitors: visitors.value.data });
   }
 
   return new Elysia({ name: "reads" })
@@ -172,16 +199,22 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
     )
     .get(
       "/projects/:project/realtime",
-      ({ request, caller, project, set }) =>
-        answer(request, caller, project, set, (_, id) =>
-          realtime(options.store, [id], options.clock()),
-        ),
+      ({ request, caller, project, set, query }) =>
+        query.include === "visitors"
+          ? gate.answer(request, caller, project, set, "private", (params, id) =>
+              withVisitors(caller, project, params, id),
+            )
+          : answer(request, caller, project, set, (_, id) =>
+              realtime(options.store, [id], options.clock()),
+            ),
       {
+        query: realtimeQuery,
         access: "project",
         response: { 200: RealtimeResponse, ...readResponses },
         detail: {
           summary: "The last five minutes",
-          description: "Human visitors, pageviews per minute, top pages and countries.",
+          description:
+            "Human visitors, pageviews per minute, top pages and countries. `include=visitors` adds `visitors`, the rows of `realtime/visitors`, which needs `detail` access.",
           tags,
         },
       },

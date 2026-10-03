@@ -92,6 +92,7 @@ describe("tokens", () => {
     const created = value(
       await access.tokens.create({
         id: "tok_1",
+        kind: "api",
         name: "CI report",
         scope: "sql",
         projectIds: ["docs"],
@@ -109,7 +110,21 @@ describe("tokens", () => {
     expect(value(await access.tokens.byHash("token-hash"))?.lastUsedAt).toEqual(
       new Date("2026-09-28T12:00:00.000Z"),
     );
-    expect(value(await access.tokens.list()).map((token) => token.id)).toEqual(["tok_1"]);
+    value(
+      await access.tokens.create({
+        id: "tok_widget",
+        kind: "widget",
+        name: "Widget",
+        scope: "admin",
+        projectIds: ["docs"],
+        expiresAt: new Date("2026-09-28T12:15:00.000Z"),
+        tokenHash: "widget-hash",
+      }),
+    );
+    expect(value(await access.tokens.list("api")).map((token) => token.id)).toEqual(["tok_1"]);
+    expect(value(await access.tokens.list("widget")).map((token) => token.id)).toEqual([
+      "tok_widget",
+    ]);
     expect(value(await access.tokens.revoke("tok_1"))).toBe(true);
     expect(value(await access.tokens.revoke("tok_1"))).toBe(false);
     expect(value(await access.tokens.byHash("token-hash"))).toBeNull();

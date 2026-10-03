@@ -4,6 +4,7 @@ import type { Database } from "../adapters/drizzle";
 import { events } from "../db/schema";
 import type { Signal } from "../define";
 import type { EventDraft } from "../draft";
+import { botLabel } from "../signals/verdict";
 import { scoreBot } from "../stages/bot-score";
 import { deviceClass } from "../utilities/device-class";
 import type { Range } from "./session-signals";
@@ -37,7 +38,6 @@ type StoredRow = {
 };
 
 const pageSize = 1000;
-const botThreshold = 50;
 const noHeaders = { get: () => null };
 
 function replayDraft(row: StoredRow): EventDraft {
@@ -140,7 +140,7 @@ export async function rescoreEvents(
       if (verdict.score === row.botScore && sameReasons(verdict.reasons, row.botReasons)) continue;
       changed += 1;
       if (options.dryRun) continue;
-      const bot = verdict.score >= botThreshold;
+      const bot = botLabel(verdict.score) === "bot";
       await db
         .update(events)
         .set({

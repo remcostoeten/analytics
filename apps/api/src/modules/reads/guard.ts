@@ -9,6 +9,7 @@ import type {
   RealtimeFeed,
   SpeedStore,
   IssueStore,
+  WidgetStore,
 } from "@remcostoeten/analytics-engine";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 
@@ -30,6 +31,7 @@ export type ReadsOptions = {
   ipSecret: string;
   publicLimit: number;
   clock: () => Date;
+  widget?: WidgetStore;
 };
 
 export type Set = { status?: unknown; headers: { [name: string]: unknown } };

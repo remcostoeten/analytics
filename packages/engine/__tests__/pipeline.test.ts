@@ -176,8 +176,12 @@ describe("enrich and bot score stages", () => {
     await engine.ingest(browserRequest());
     const [pageview, signupEvent] = [...ports.store.events.values()];
     expect(pageview?.enrichment.geo).toMatchObject({ country: "GB", city: "London" });
-    expect(pageview?.bot).toEqual({ score: 30, reasons: ["ua_automation"] });
-    expect(signupEvent?.bot).toEqual({ score: 100, reasons: ["ua_automation", "client_no_input"] });
+    expect(pageview?.bot).toMatchObject({ score: 30, reasons: ["ua_automation"] });
+    expect(signupEvent?.bot).toMatchObject({
+      score: 100,
+      reasons: ["ua_automation", "client_no_input"],
+      signals: { pointerEvents: true, headless: false, webdriver: false, uniformDwell: null },
+    });
   });
 
   test("rescore reruns only the stages marked rescores", async () => {

@@ -24,7 +24,7 @@ const target = join(import.meta.dir, "..", "openapi.json");
  * @name openapiDocument
  * @description The API's OpenAPI 3 document as formatted JSON, built from the route schemas
  * without a database: the stores are created on an empty in-memory PGlite and never queried.
- * Alerts are on with every channel, so their routes are documented.
+ * Alerts are on with every channel and the dev widget is on, so their routes are documented.
  *
  * @example
  * const json = await openapiDocument();
@@ -78,6 +78,13 @@ async function openapiDocument(): Promise<string> {
     annotations: stores.annotations,
     authHandler: null,
     ops: stores.ops,
+    widget: {
+      store: stores.widget,
+      logs: stores.logs,
+      keys: adapters.projects,
+      limiter: adapters.limiter,
+      reportsPerMinute: 1,
+    },
     alerts: {
       plugin: alerts({
         channels: [mail({ transport: smtp(undefined), from: "a@b.co" }), webhook(), discord()],

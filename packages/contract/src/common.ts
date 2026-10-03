@@ -2,7 +2,7 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { BotReason, Channel, DeviceType, Environment, Period, TrafficFilter } from "./enums";
-import { Count, nullable, Timestamp } from "./schema";
+import { Count, nullable, oneOf, Timestamp } from "./schema";
 
 export const PropValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]);
 export type PropValue = Static<typeof PropValue>;
@@ -101,6 +101,28 @@ export const BotVerdict = Type.Object({
   reasons: Type.Array(BotReason),
 });
 export type BotVerdict = Static<typeof BotVerdict>;
+
+export const BotLabel = oneOf(["human", "suspect", "bot"]);
+export type BotLabel = Static<typeof BotLabel>;
+
+const SignalFlag = nullable(Type.Boolean());
+
+export const BotSignals = Type.Object({
+  headless: SignalFlag,
+  webdriver: SignalFlag,
+  datacenterAsn: SignalFlag,
+  pointerEvents: SignalFlag,
+  uaMismatch: SignalFlag,
+  uniformDwell: SignalFlag,
+});
+export type BotSignals = Static<typeof BotSignals>;
+
+export const BotDetail = Type.Object({
+  score: Type.Integer({ minimum: 0, maximum: 100 }),
+  verdict: BotLabel,
+  signals: BotSignals,
+});
+export type BotDetail = Static<typeof BotDetail>;
 
 export const ValueCount = Type.Object({ value: Type.String(), visitors: Count });
 export type ValueCount = Static<typeof ValueCount>;

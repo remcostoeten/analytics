@@ -1,9 +1,10 @@
 import { JobResult } from "@remcostoeten/analytics-contract";
-import { engineError, rawVitalDays } from "@remcostoeten/analytics-engine";
+import { engineError, jobLine, rawVitalDays } from "@remcostoeten/analytics-engine";
 import type {
   EngineError,
   IssueStore,
   JobName,
+  LogStore,
   OpsStore,
   SpeedStore,
 } from "@remcostoeten/analytics-engine";
@@ -28,6 +29,7 @@ export type JobsOptions = {
   alerts: Nullable<AlertsDeps>;
   crux: Nullable<CruxOptions>;
   clock: () => Date;
+  logs?: Nullable<LogStore>;
 };
 
 type Set = { status?: unknown; headers: { [name: string]: unknown } };
@@ -53,8 +55,10 @@ function startOfDay(at: Date) {
  * `rollup?days=2` runs the session layer of bot detection over the previous UTC day, then rolls
  * the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops raw speed rows past 30
  * days; `cleanup` deletes events, sessions and raw speed rows past each project's retention,
- * 50,000 of each per run; `alerts` queues new issues and regressions and sends due
- * deliveries to the alert targets; `crux` compares each project's p75 with the Chrome UX Report.
+ * 50,000 of each per run, plus week-old log lines and expired widget tokens; `alerts` queues new
+ * issues and regressions and sends due deliveries to the alert targets; `crux` compares each
+ * project's p75 with the Chrome UX Report. With `logs`, every run also writes a `jobs` line to
+ * each project's log.
  *
  * @example
  * app.use(jobsModule(deps, { speed, issues, ops, alerts: null, crux: null, clock }, docsBase));
@@ -80,8 +84,32 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
       rowsDeleted: result.ok ? (result.value.rowsDeleted ?? null) : null,
       message: result.ok ? null : result.error.message,
     });
+    await logRun(job, startedAt, {
+      ok: result.ok,
+      durationMs,
+      rowsWritten: result.ok ? (result.value.rowsWritten ?? null) : null,
+      rowsDeleted: result.ok ? (result.value.rowsDeleted ?? null) : null,
+    });
     if (!result.ok) return reject(result.error, set);
     return { data: { job, status: "ok" as const, ...result.value, durationMs } };
+  }
+
+  async function logRun(
+    job: JobName,
+    at: Date,
+    outcome: {
+      ok: boolean;
+      durationMs: number;
+      rowsWritten: Nullable<number>;
+      rowsDeleted: Nullable<number>;
+    },
+  ) {
+    if (!options.logs) return;
+    const projects = await deps.projects.list(null);
+    if (!projects.ok) return;
+    await options.logs.write(
+      projects.value.map((project) => jobLine(project.id, at, { job, ...outcome })),
+    );
   }
 
   function unset(name: string): Promise<Result<Outcome, EngineError>> {
@@ -153,7 +181,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Delete expired rows",
           description:
-            "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+            "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
           tags,
         },
       },

@@ -50,6 +50,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `CRON_SECRET` | For jobs | `Authorization: Bearer` value for `cron` routes |
 | `PUBLIC_READ_LIMIT` | No | Anonymous reads per minute per daily IP hash; defaults to 120 |
 | `QUERY_LIMIT` | No | SQL console queries per minute per user or token; defaults to 30 |
+| `CLIENT_REPORT_LIMIT` | No | Dev widget client report requests per minute per project; defaults to 60 |
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.analytics.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |

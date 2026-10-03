@@ -7,12 +7,14 @@ import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
 import {
+  ActiveVisitors,
   AdminMetrics,
   AnnotationList,
   AnnotationResponse,
   ApiError,
   AuthSession,
   BreakdownResponse,
+  ClientLogBatch,
   CreatedProject,
   CreatedToken,
   CreateAnnotation,
@@ -31,7 +33,9 @@ import {
   IssueList,
   JobResult,
   LiveEvents,
+  LogList,
   MapResponse,
+  Overview,
   PathsResponse,
   PeopleList,
   PersonResponse,
@@ -69,15 +73,18 @@ import {
   VisitorDetail,
   VisitorList,
   VitalsBreakdownResponse,
+  WidgetSession,
 } from "../src";
 
 const schemas: { [name: string]: TSchema } = {
+  ActiveVisitors,
   AdminMetrics,
   AnnotationList,
   AnnotationResponse,
   ApiError,
   AuthSession,
   BreakdownResponse,
+  ClientLogBatch,
   CreatedProject,
   CreatedToken,
   CreateAnnotation,
@@ -96,7 +103,9 @@ const schemas: { [name: string]: TSchema } = {
   IssueList,
   JobResult,
   LiveEvents,
+  LogList,
   MapResponse,
+  Overview,
   PathsResponse,
   PeopleList,
   PersonResponse,
@@ -134,6 +143,7 @@ const schemas: { [name: string]: TSchema } = {
   VisitorDetail,
   VisitorList,
   VitalsBreakdownResponse,
+  WidgetSession,
 };
 
 const InvalidFixture = Type.Object({ expectedPath: Type.String(), value: Type.Unknown() });

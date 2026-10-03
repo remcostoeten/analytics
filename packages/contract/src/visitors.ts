@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { BotVerdict, Device, Geo, Props, Source } from "./common";
+import { BotDetail, BotVerdict, Device, Geo, Props, Source } from "./common";
 import { DeviceType, EventName } from "./enums";
 import { WireGroups } from "./events";
 import { Count, dataOf, Id, listOf, Milliseconds, nullable, Ratio, Timestamp, Url } from "./schema";
@@ -93,6 +93,7 @@ export const VisitorDetail = dataOf(
     device: Device,
     topPages: Type.Array(Type.Object({ value: Type.String(), pageviews: Count })),
     recentSessions: Type.Array(SessionSummary),
+    bot: BotDetail,
   }),
 );
 export type VisitorDetail = Static<typeof VisitorDetail>;

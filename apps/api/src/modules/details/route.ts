@@ -91,7 +91,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
         detail: {
           summary: "One visitor",
           description:
-            "Identity, experiments, geo, device, top pages, recent sessions and how often they return.",
+            "Identity, experiments, geo, device, top pages, recent sessions, how often they return, and `bot`: the highest score of their events with its verdict and the signal breakdown behind it (null where a signal was not evaluated, and for events stored before the breakdown existed).",
           tags,
         },
       },

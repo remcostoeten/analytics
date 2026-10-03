@@ -226,8 +226,11 @@
                             "enum": [
                               "VALIDATION_FAILED",
                               "UNAUTHORIZED",
+                              "AUTH_REQUIRED",
                               "FORBIDDEN_ORIGIN",
+                              "ORIGIN_NOT_ALLOWED",
                               "FORBIDDEN",
+                              "WIDGET_REPORTS_DISABLED",
                               "NOT_FOUND",
                               "CONFLICT",
                               "PAYLOAD_TOO_LARGE",
@@ -1072,6 +1075,7 @@
                               "visibility",
                               "publicVisitorData",
                               "sqlEnabled",
+                              "widgetReports",
                               "allowedOrigins",
                               "retentionDays",
                               "publicKey",
@@ -1106,6 +1110,9 @@
                                 "type": "boolean"
                               },
                               "sqlEnabled": {
+                                "type": "boolean"
+                              },
+                              "widgetReports": {
                                 "type": "boolean"
                               },
                               "allowedOrigins": {
@@ -1444,6 +1451,7 @@
                             "visibility",
                             "publicVisitorData",
                             "sqlEnabled",
+                            "widgetReports",
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
@@ -1483,6 +1491,9 @@
                               "type": "boolean"
                             },
                             "sqlEnabled": {
+                              "type": "boolean"
+                            },
+                            "widgetReports": {
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -1643,6 +1654,7 @@
                             "visibility",
                             "publicVisitorData",
                             "sqlEnabled",
+                            "widgetReports",
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
@@ -1677,6 +1689,9 @@
                               "type": "boolean"
                             },
                             "sqlEnabled": {
+                              "type": "boolean"
+                            },
+                            "widgetReports": {
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -1826,7 +1841,7 @@
       },
       "patch": {
         "summary": "Change project settings",
-        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, allowed origins and retention.",
+        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, allowed origins and retention.",
         "tags": [
           "Projects"
         ],
@@ -1864,6 +1879,9 @@
                     "type": "boolean"
                   },
                   "sqlEnabled": {
+                    "type": "boolean"
+                  },
+                  "widgetReports": {
                     "type": "boolean"
                   },
                   "allowedOrigins": {
@@ -1904,6 +1922,9 @@
                   "sqlEnabled": {
                     "type": "boolean"
                   },
+                  "widgetReports": {
+                    "type": "boolean"
+                  },
                   "allowedOrigins": {
                     "type": "array",
                     "items": {
@@ -1940,6 +1961,9 @@
                     "type": "boolean"
                   },
                   "sqlEnabled": {
+                    "type": "boolean"
+                  },
+                  "widgetReports": {
                     "type": "boolean"
                   },
                   "allowedOrigins": {
@@ -2016,6 +2040,9 @@
                               "type": "boolean"
                             },
                             "sqlEnabled": {
+                              "type": "boolean"
+                            },
+                            "widgetReports": {
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -3981,7 +4008,7 @@
     "/v2/projects/{project}/realtime": {
       "get": {
         "summary": "The last five minutes",
-        "description": "Human visitors, pageviews per minute, top pages and countries.",
+        "description": "Human visitors, pageviews per minute, top pages and countries. `include=visitors` adds `visitors`, the rows of `realtime/visitors`, which needs `detail` access.",
         "tags": [
           "Reads"
         ],
@@ -3991,6 +4018,24 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "visitors",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]+$",
               "type": "string"
             }
           }
@@ -4078,6 +4123,108 @@
                         "to": {
                           "format": "date-time",
                           "type": "string"
+                        }
+                      }
+                    },
+                    "visitors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "visitor",
+                          "session",
+                          "lastSeen",
+                          "path",
+                          "referrer",
+                          "country",
+                          "city",
+                          "device",
+                          "browser",
+                          "os",
+                          "pages",
+                          "duration",
+                          "botScore",
+                          "identified"
+                        ],
+                        "properties": {
+                          "visitor": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "session": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "lastSeen": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "referrer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "minLength": 2,
+                            "maxLength": 2,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "device": {
+                            "type": "string",
+                            "enum": [
+                              "desktop",
+                              "mobile",
+                              "tablet",
+                              "bot",
+                              "unknown"
+                            ]
+                          },
+                          "browser": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "os": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pages": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "duration": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "botScore": {
+                            "minimum": 0,
+                            "maximum": 100,
+                            "type": "integer"
+                          },
+                          "identified": {
+                            "type": "boolean"
+                          }
                         }
                       }
                     }
@@ -10837,7 +10984,7 @@
     "/v2/projects/{project}/visitors/{visitor}": {
       "get": {
         "summary": "One visitor",
-        "description": "Identity, experiments, geo, device, top pages, recent sessions and how often they return.",
+        "description": "Identity, experiments, geo, device, top pages, recent sessions, how often they return, and `bot`: the highest score of their events with its verdict and the signal breakdown behind it (null where a signal was not evaluated, and for events stored before the breakdown existed).",
         "tags": [
           "Visitor-level reads"
         ],
@@ -10889,7 +11036,8 @@
                         "geo",
                         "device",
                         "topPages",
-                        "recentSessions"
+                        "recentSessions",
+                        "bot"
                       ],
                       "properties": {
                         "id": {
@@ -11197,6 +11345,78 @@
                                   "string",
                                   "null"
                                 ]
+                              }
+                            }
+                          }
+                        },
+                        "bot": {
+                          "type": "object",
+                          "required": [
+                            "score",
+                            "verdict",
+                            "signals"
+                          ],
+                          "properties": {
+                            "score": {
+                              "minimum": 0,
+                              "maximum": 100,
+                              "type": "integer"
+                            },
+                            "verdict": {
+                              "type": "string",
+                              "enum": [
+                                "human",
+                                "suspect",
+                                "bot"
+                              ]
+                            },
+                            "signals": {
+                              "type": "object",
+                              "required": [
+                                "headless",
+                                "webdriver",
+                                "datacenterAsn",
+                                "pointerEvents",
+                                "uaMismatch",
+                                "uniformDwell"
+                              ],
+                              "properties": {
+                                "headless": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "webdriver": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "datacenterAsn": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "pointerEvents": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "uaMismatch": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                },
+                                "uniformDwell": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                }
                               }
                             }
                           }
@@ -14414,6 +14634,108 @@
                         "to": {
                           "format": "date-time",
                           "type": "string"
+                        }
+                      }
+                    },
+                    "visitors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "visitor",
+                          "session",
+                          "lastSeen",
+                          "path",
+                          "referrer",
+                          "country",
+                          "city",
+                          "device",
+                          "browser",
+                          "os",
+                          "pages",
+                          "duration",
+                          "botScore",
+                          "identified"
+                        ],
+                        "properties": {
+                          "visitor": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "session": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "lastSeen": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "referrer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "minLength": 2,
+                            "maxLength": 2,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "device": {
+                            "type": "string",
+                            "enum": [
+                              "desktop",
+                              "mobile",
+                              "tablet",
+                              "bot",
+                              "unknown"
+                            ]
+                          },
+                          "browser": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "os": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pages": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "duration": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "botScore": {
+                            "minimum": 0,
+                            "maximum": 100,
+                            "type": "integer"
+                          },
+                          "identified": {
+                            "type": "boolean"
+                          }
                         }
                       }
                     }
@@ -23715,7 +24037,7 @@
     "/v2/admin/jobs/cleanup": {
       "post": {
         "summary": "Delete expired rows",
-        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -26943,6 +27265,1310 @@
         },
         "operationId": "getV2AdminAlertsStatus"
       }
+    },
+    "/v2/widget/session": {
+      "get": {
+        "summary": "Start the dev widget",
+        "description": "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
+        "tags": [
+          "Dev widget"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "project",
+                    "access",
+                    "user",
+                    "release",
+                    "token",
+                    "expiresAt",
+                    "features"
+                  ],
+                  "properties": {
+                    "project": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    },
+                    "access": {
+                      "const": "admin",
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "release": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "token": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "features": {
+                      "type": "object",
+                      "required": [
+                        "logs",
+                        "speed",
+                        "issues"
+                      ],
+                      "properties": {
+                        "logs": {
+                          "type": "boolean"
+                        },
+                        "speed": {
+                          "type": "boolean"
+                        },
+                        "issues": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2WidgetSession"
+      }
+    },
+    "/v2/projects/{project}/realtime/visitors": {
+      "get": {
+        "summary": "Active visitors",
+        "description": "One row per visitor seen in the last five minutes, newest activity first: their session, latest pageview, referrer, place, device, pages and duration this session, bot score, and whether they are identified (never the user id). `limit` from 1 to 200, default 50.",
+        "tags": [
+          "Dev widget"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "window"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "visitor",
+                          "session",
+                          "lastSeen",
+                          "path",
+                          "referrer",
+                          "country",
+                          "city",
+                          "device",
+                          "browser",
+                          "os",
+                          "pages",
+                          "duration",
+                          "botScore",
+                          "identified"
+                        ],
+                        "properties": {
+                          "visitor": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "session": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "lastSeen": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "referrer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "minLength": 2,
+                            "maxLength": 2,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "city": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "device": {
+                            "type": "string",
+                            "enum": [
+                              "desktop",
+                              "mobile",
+                              "tablet",
+                              "bot",
+                              "unknown"
+                            ]
+                          },
+                          "browser": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "os": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pages": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "duration": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "botScore": {
+                            "minimum": 0,
+                            "maximum": 100,
+                            "type": "integer"
+                          },
+                          "identified": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "window": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to"
+                      ],
+                      "properties": {
+                        "from": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "to": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectRealtimeVisitors"
+      }
+    },
+    "/v2/projects/{project}/overview": {
+      "get": {
+        "summary": "Overview",
+        "description": "The widget's status numbers in one answer: visitors online, pageviews per minute for the last ten minutes, today's totals, the last day's ingest and bot numbers, p75 speed over seven days, errors, today's top pages, referrers and countries, and the newest release. Cached for 10 seconds per project.",
+        "tags": [
+          "Dev widget"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "online",
+                    "viewsPerMinute",
+                    "today",
+                    "ingest",
+                    "bots",
+                    "speed",
+                    "errors",
+                    "topPages",
+                    "referrers",
+                    "countries",
+                    "release"
+                  ],
+                  "properties": {
+                    "online": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "viewsPerMinute": {
+                      "minItems": 10,
+                      "maxItems": 10,
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "today": {
+                      "type": "object",
+                      "required": [
+                        "visitors",
+                        "pageviews",
+                        "bounceRate",
+                        "avgSessionSeconds"
+                      ],
+                      "properties": {
+                        "visitors": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "pageviews": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "bounceRate": {
+                          "minimum": 0,
+                          "maximum": 1,
+                          "type": "number"
+                        },
+                        "avgSessionSeconds": {
+                          "minimum": 0,
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "ingest": {
+                      "type": "object",
+                      "required": [
+                        "last24h"
+                      ],
+                      "properties": {
+                        "last24h": {
+                          "type": "object",
+                          "required": [
+                            "accepted",
+                            "duplicates",
+                            "rejected",
+                            "rateLimited"
+                          ],
+                          "properties": {
+                            "accepted": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "duplicates": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "rejected": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "rateLimited": {
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "bots": {
+                      "type": "object",
+                      "required": [
+                        "share",
+                        "headless",
+                        "webdriver",
+                        "datacenterAsn"
+                      ],
+                      "properties": {
+                        "share": {
+                          "minimum": 0,
+                          "maximum": 1,
+                          "type": "number"
+                        },
+                        "headless": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "webdriver": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "datacenterAsn": {
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "speed": {
+                      "type": "object",
+                      "required": [
+                        "lcp",
+                        "inp",
+                        "cls",
+                        "ttfb"
+                      ],
+                      "properties": {
+                        "lcp": {
+                          "minimum": 0,
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "inp": {
+                          "minimum": 0,
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "cls": {
+                          "minimum": 0,
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ttfb": {
+                          "minimum": 0,
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "errors": {
+                      "type": "object",
+                      "required": [
+                        "last30m",
+                        "openIssues"
+                      ],
+                      "properties": {
+                        "last30m": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "openIssues": {
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "topPages": {
+                      "maxItems": 5,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "path",
+                          "views"
+                        ],
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "views": {
+                            "minimum": 0,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "referrers": {
+                      "maxItems": 5,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "share"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "share": {
+                            "minimum": 0,
+                            "maximum": 1,
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "countries": {
+                      "maxItems": 5,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "code",
+                          "share"
+                        ],
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "share": {
+                            "minimum": 0,
+                            "maximum": 1,
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "release": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "required": [
+                        "current",
+                        "deployedAt",
+                        "newIssuesSince"
+                      ],
+                      "properties": {
+                        "current": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "deployedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "newIssuesSince": {
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectOverview"
+      }
+    },
+    "/v2/projects/{project}/logs": {
+      "get": {
+        "summary": "Log stream",
+        "description": "Every ingest and engine decision that is not a plain accepted event: rejected events with their code and field, duplicates, rate limited requests, bot verdicts from `suspect` up, one line per accepted batch, job runs and the SDK's own reports. Without `after` the last 100 lines; with it the newer lines as soon as they arrive or an empty page after 25 seconds; `Accept: text/event-stream` streams them. Filter with `level`, `kind`, `source`, `visitor` and `q`. Lines are kept for 7 days and never hold IP addresses, emails or prop values.",
+        "tags": [
+          "Dev widget"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "info",
+                "ok",
+                "warn",
+                "error"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ingest",
+                "transport",
+                "pipeline",
+                "signals",
+                "jobs",
+                "auth"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "api",
+                "sdk",
+                "engine",
+                "cron"
+              ]
+            }
+          },
+          {
+            "name": "visitor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]{1,19}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "data",
+                        "nextCursor"
+                      ],
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "ts",
+                              "level",
+                              "kind",
+                              "source",
+                              "message",
+                              "data",
+                              "visitor",
+                              "session"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                              },
+                              "ts": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "level": {
+                                "type": "string",
+                                "enum": [
+                                  "info",
+                                  "ok",
+                                  "warn",
+                                  "error"
+                                ]
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "ingest",
+                                  "transport",
+                                  "pipeline",
+                                  "signals",
+                                  "jobs",
+                                  "auth"
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "api",
+                                  "sdk",
+                                  "engine",
+                                  "cron"
+                                ]
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "data": {
+                                "maxProperties": 25,
+                                "type": "object",
+                                "patternProperties": {
+                                  "^(.*)$": {
+                                    "anyOf": [
+                                      {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "boolean"
+                                      },
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "maxItems": 50,
+                                        "type": "array",
+                                        "items": {
+                                          "maxLength": 255,
+                                          "type": "string"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "visitor": {
+                                "minLength": 1,
+                                "maxLength": 128,
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "session": {
+                                "minLength": 1,
+                                "maxLength": 128,
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "nextCursor": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "description": "text/event-stream"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectLogs"
+      }
+    },
+    "/v2/projects/{project}/logs/client": {
+      "post": {
+        "summary": "Report SDK outcomes",
+        "description": "The widget build of the SDK posts its `drop` and `error` outcomes here in batches of up to 20 (`{ logs: [...] }`, at most 16 KB), with the same key as `POST /v2/events`. They are stored as `sdk` log lines, with email and IP addresses replaced. Refused with `WIDGET_REPORTS_DISABLED` unless the project has `widgetReports` on, and rate limited per project.",
+        "tags": [
+          "Dev widget"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "logs"
+                ],
+                "properties": {
+                  "logs": {
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "level",
+                        "message",
+                        "ts"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "transport",
+                            "pipeline"
+                          ]
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "info",
+                            "ok",
+                            "warn",
+                            "error"
+                          ]
+                        },
+                        "message": {
+                          "minLength": 1,
+                          "maxLength": 500,
+                          "type": "string"
+                        },
+                        "data": {
+                          "maxProperties": 25,
+                          "type": "object",
+                          "patternProperties": {
+                            "^(.*)$": {
+                              "anyOf": [
+                                {
+                                  "maxLength": 255,
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "maxItems": 50,
+                                  "type": "array",
+                                  "items": {
+                                    "maxLength": 255,
+                                    "type": "string"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "visitor": {
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "session": {
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "ts": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Response for status 202",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "accepted"
+                  ],
+                  "properties": {
+                    "accepted": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Response for status 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2ProjectsByProjectLogsClient"
+      }
     }
   },
   "components": {
@@ -27136,8 +28762,11 @@
                 "enum": [
                   "VALIDATION_FAILED",
                   "UNAUTHORIZED",
+                  "AUTH_REQUIRED",
                   "FORBIDDEN_ORIGIN",
+                  "ORIGIN_NOT_ALLOWED",
                   "FORBIDDEN",
+                  "WIDGET_REPORTS_DISABLED",
                   "NOT_FOUND",
                   "CONFLICT",
                   "PAYLOAD_TOO_LARGE",
