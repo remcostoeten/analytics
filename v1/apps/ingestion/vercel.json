@@ -1,10 +1,29 @@
 {
-	"rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/api"
+		}
+	],
 	"crons": [
-		{ "path": "/admin/cleanup", "schedule": "0 3 * * *" },
-		{ "path": "/admin/rollup", "schedule": "30 2 * * *" }
+		{
+			"path": "/admin/cleanup",
+			"schedule": "0 3 * * *"
+		},
+		{
+			"path": "/admin/rollup",
+			"schedule": "30 2 * * *"
+		}
 	],
 	"buildCommand": "bun run --filter @remcostoeten/ingestion build && bun run scripts/build.ts",
 	"installCommand": "bun install",
-	"framework": null
+	"framework": null,
+	"git": {
+		"deploymentEnabled": {
+			"feature/*": false,
+			"fix/*": false,
+			"chore/*": false,
+			"renovate/*": false
+		}
+	}
 }
