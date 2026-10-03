@@ -17,7 +17,7 @@ import { findPlugin } from "@remcostoeten/analytics-engine/config";
 
 import config from "../analytics.config";
 import { createApp } from "./app";
-import { betterAuthSessions, createAuth } from "./auth/better-auth";
+import { betterAuthRegister, betterAuthSessions, createAuth } from "./auth/better-auth";
 import { candidatePaths, openGeo } from "./geo";
 
 const production = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
@@ -49,6 +49,8 @@ const dashboardOrigin = process.env.DASHBOARD_ORIGIN ?? null;
 const auth = createAuth({
   db: stores.db,
   members: stores.members,
+  invites: stores.invites,
+  clock: () => clock.now(),
   secret: authSecret || "insecure-development-auth-secret-change-me",
   baseURL: apiUrl,
   github: {
@@ -89,6 +91,7 @@ export default createApp({
     projects: stores.projects,
     tokens: stores.tokens,
     members: stores.members,
+    invites: stores.invites,
     sessions: betterAuthSessions(auth, stores.members),
     hasher,
     clock: () => clock.now(),
@@ -116,6 +119,7 @@ export default createApp({
   },
   annotations: stores.annotations,
   authHandler: auth.handler,
+  register: betterAuthRegister(auth),
   alerts: alertsPlugin
     ? { plugin: alertsPlugin, store: stores.alerts, links: apiLinks(apiUrl) }
     : null,

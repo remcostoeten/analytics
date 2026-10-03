@@ -20,6 +20,7 @@ export type SessionID = ID;
 export type EventID = ID;
 export type IssueID = ID;
 export type TokenID = ID;
+export type InviteID = ID;
 export type UserID = ID;
 
 export type CountryCode = string;

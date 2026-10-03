@@ -50,7 +50,6 @@ describe("members", () => {
   test("the allowlist ignores case", async () => {
     expect(value(await access.members.allowedLogin("remcostoeten"))).toBe(true);
     expect(value(await access.members.allowedLogin("someone-else"))).toBe(false);
-    expect(value(await access.members.loginOf("usr_owner"))).toBe("remcostoeten");
   });
 
   test("the first member creates the organization as owner and later ones join as viewers", async () => {
@@ -66,6 +65,67 @@ describe("members", () => {
     const guest = value(await access.members.join("usr_guest", "guest"));
     expect(guest).toMatchObject({ role: "viewer", projectIds: [] });
     expect(value(await access.projects.find("docs"))?.orgId).toBe("org_main");
+  });
+
+  test("a GitHub user may sign in while allowlisted, an invited user while a member", async () => {
+    expect(value(await access.members.allowed("usr_owner"))).toBe(true);
+    expect(value(await access.members.allowed("usr_guest"))).toBe(false);
+    expect(value(await access.members.allowed("usr_missing"))).toBe(false);
+    await database.query(
+      "INSERT INTO auth_user (id, name, email) VALUES ('usr_mail', 'Ada', 'ada@example.test')",
+    );
+    expect(value(await access.members.allowed("usr_mail"))).toBe(false);
+    value(await access.members.join("usr_mail", "Ada"));
+    expect(value(await access.members.allowed("usr_mail"))).toBe(true);
+  });
+});
+
+describe("invites", () => {
+  const at = new Date("2026-09-28T12:00:00.000Z");
+  const later = new Date("2026-10-05T12:00:00.000Z");
+
+  test("an invite is claimed once, released on a failed sign-up, and admitted as a membership", async () => {
+    await database.query(
+      "INSERT INTO auth_user (id, name, email) VALUES ('usr_invited', 'Grace', 'grace@example.test')",
+    );
+    const created = value(
+      await access.invites.create({
+        id: "inv_1",
+        role: "analyst",
+        projectIds: ["docs"],
+        expiresAt: later,
+        tokenHash: "invite-hash",
+      }),
+    );
+    expect(created).toMatchObject({ id: "inv_1", email: null, acceptedBy: null });
+    expect(value(await access.invites.open("invite-hash", at))?.id).toBe("inv_1");
+    expect(value(await access.invites.open("invite-hash", later))).toBeNull();
+
+    expect(value(await access.invites.claim("invite-hash", "Grace@Example.test", at))?.email).toBe(
+      "grace@example.test",
+    );
+    expect(value(await access.invites.claim("invite-hash", "other@example.test", at))).toBeNull();
+    expect(value(await access.invites.open("invite-hash", at))).toBeNull();
+    expect(value(await access.invites.claimed("GRACE@example.test", at))?.id).toBe("inv_1");
+
+    value(await access.invites.release("inv_1"));
+    expect(value(await access.invites.claimed("grace@example.test", at))).toBeNull();
+    value(await access.invites.claim("invite-hash", "grace@example.test", at));
+
+    const membership = value(await access.invites.admit("inv_1", "usr_invited", at));
+    expect(membership).toEqual({
+      userId: "usr_invited",
+      orgId: "org_main",
+      role: "analyst",
+      projectIds: ["docs"],
+    });
+    expect(value(await access.invites.claimed("grace@example.test", at))).toBeNull();
+    expect((await access.invites.admit("inv_1", "usr_invited", at)).ok).toBe(false);
+    expect(value(await access.invites.list())).toEqual([
+      expect.objectContaining({ id: "inv_1", acceptedBy: "usr_invited", acceptedAt: at }),
+    ]);
+    expect(value(await access.invites.revoke("inv_1"))).toBe(true);
+    expect(value(await access.invites.revoke("inv_1"))).toBe(false);
   });
 });
 

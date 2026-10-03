@@ -2856,6 +2856,927 @@
         "operationId": "deleteV2TokensByToken"
       }
     },
+    "/v2/invites": {
+      "get": {
+        "summary": "List invites",
+        "description": "Each invite is `pending`, `accepted` or `expired`. Tokens are never returned.",
+        "tags": [
+          "Invites"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "role",
+                          "projectIds",
+                          "status",
+                          "email",
+                          "acceptedAt",
+                          "expiresAt",
+                          "createdAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analyst",
+                              "viewer"
+                            ]
+                          },
+                          "projectIds": {
+                            "minItems": 1,
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "type": "string"
+                            }
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "expired"
+                            ]
+                          },
+                          "email": {
+                            "format": "email",
+                            "maxLength": 254,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "acceptedAt": {
+                            "format": "date-time",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expiresAt": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "format": "date-time",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2Invites"
+      },
+      "post": {
+        "summary": "Create an invite",
+        "description": "A single-use link to register with email and password as `admin`, `analyst` or `viewer`, limited to `projectIds` or all projects when null. Expires after 7 days by default, at most 30. The token and `url` are in this response only; `url` is null without a dashboard origin.",
+        "tags": [
+          "Invites"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "analyst",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "minItems": 1,
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  },
+                  "expiresAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "analyst",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "minItems": 1,
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  },
+                  "expiresAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "analyst",
+                      "viewer"
+                    ]
+                  },
+                  "projectIds": {
+                    "minItems": 1,
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    }
+                  },
+                  "expiresAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Response for status 201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "role",
+                        "projectIds",
+                        "token",
+                        "url",
+                        "expiresAt",
+                        "createdAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "minLength": 1,
+                          "maxLength": 128,
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analyst",
+                            "viewer"
+                          ]
+                        },
+                        "projectIds": {
+                          "minItems": 1,
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          }
+                        },
+                        "token": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "url": {
+                          "format": "uri",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2Invites"
+      }
+    },
+    "/v2/invites/{invite}": {
+      "delete": {
+        "summary": "Revoke an invite",
+        "description": "The link stops working at once. Someone who already joined stays a member.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "name": "invite",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Response for status 204",
+            "content": {
+              "type": "void"
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteV2InvitesByInvite"
+      }
+    },
+    "/v2/join/{token}": {
+      "get": {
+        "summary": "Show an invite",
+        "description": "The role, projects and expiry an open invite grants. A used, expired or unknown token answers 404.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "projectIds",
+                        "expiresAt"
+                      ],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analyst",
+                            "viewer"
+                          ]
+                        },
+                        "projectIds": {
+                          "minItems": 1,
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          }
+                        },
+                        "expiresAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2JoinByToken"
+      },
+      "post": {
+        "summary": "Register with an invite",
+        "description": "Creates an email-and-password account with the invite's role and projects and signs it in with the session cookie. The invite is used up. A taken email answers 409 and leaves the invite open.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "email": {
+                    "format": "email",
+                    "maxLength": 254,
+                    "type": "string"
+                  },
+                  "password": {
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "email": {
+                    "format": "email",
+                    "maxLength": 254,
+                    "type": "string"
+                  },
+                  "password": {
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "email": {
+                    "format": "email",
+                    "maxLength": 254,
+                    "type": "string"
+                  },
+                  "password": {
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Response for status 201",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "user",
+                        "role",
+                        "projectIds"
+                      ],
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name",
+                            "email"
+                          ],
+                          "properties": {
+                            "id": {
+                              "minLength": 1,
+                              "maxLength": 128,
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "format": "email",
+                              "maxLength": 254,
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analyst",
+                            "viewer"
+                          ]
+                        },
+                        "projectIds": {
+                          "minItems": 1,
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2JoinByToken"
+      }
+    },
     "/v2/projects/{project}/stats": {
       "get": {
         "summary": "Headline numbers",

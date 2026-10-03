@@ -370,6 +370,17 @@ export const authInvitation = pgTable("auth_invitation", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const invites = pgTable("invites", {
+  ...baseEntity(),
+  tokenHash: text("token_hash").notNull().unique(),
+  role: text("role", { enum: ["admin", "analyst", "viewer"] }).notNull(),
+  projectIds: text("project_ids").array(),
+  email: text("email"),
+  acceptedBy: text("accepted_by").references(() => authUser.id, { onDelete: "set null" }),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+
 export const queryRuns = pgTable(
   "query_runs",
   {

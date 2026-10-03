@@ -80,6 +80,7 @@ export type {
   AnnotationWindow,
   NewAnnotation,
 } from "./annotations";
+export type { InviteRecord, InviteRole, InviteStore, NewInvite } from "./invites";
 export type {
   IgnoreRule,
   IssueEventRecord,

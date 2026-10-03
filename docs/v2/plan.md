@@ -19,7 +19,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 5 | Package name | Open, default | `@remcostoeten/analytics@2.0.0` on the same name, ESM only | SDK API shape, Build |
 | 6 | What a project is | Open, default | A config row owned by you: visibility, origins, keys, retention. Not a tenant | Storage, REST API |
 | 7 | Visitor-level data on public projects | Open, default | Admin-only unless a project turns on `publicVisitorData`; default off | Access and sign-in |
-| 8 | Admin sign-in | Open, default | GitHub OAuth in the API through Better Auth with the `dashboard_users` allowlist and an admin-only session cookie. Reads the repo's no-cookies rule as covering tracked visitors only | Access and sign-in |
+| 8 | Admin sign-in | Settled | Better Auth in the API with an admin-only session cookie: GitHub OAuth for logins on the `dashboard_users` allowlist, and email and password for people who register through a single-use invite link. No open registration, no email verification and no password reset. Reads the repo's no-cookies rule as covering tracked visitors only | Access and sign-in |
 | 9 | Event names | Open, default | One `name` field with snake\_case built-ins; ingest maps them onto legacy `type` and `meta.eventName` during the transition | Envelope, Storage |
 | 10 | Contract schema library | Open, default | TypeBox; the SDK imports only its types | Contract, Build |
 | 11 | Indentation | Settled | Adopt Skriuw's oxfmt defaults and reformat the repo once in the phase 0 lint PR, instead of keeping tabs | Linting and formatting |
@@ -308,7 +308,7 @@ Each kind of caller has its own credential, and only the admin needs a sign-in f
 | Anyone | none | Read public projects' aggregates, the project list, docs |
 | Visitor's browser via the SDK | `X-Project-Key: pk_...` plus an Origin in the project's `allowed_origins` | Send events |
 | Your server via the SDK | `Authorization: Bearer sk_...`, shown once at rotation and stored hashed | Send events, forward the visitor's UA and IP for hashing |
-| You in the dashboard | Session cookie from GitHub sign-in | Everything, including private projects and settings |
+| You in the dashboard | Session cookie from GitHub or email-and-password sign-in | What your role allows, including private projects and settings |
 | Scripts, CI, other frontends | `Authorization: Bearer at_...` API token with scope `read` or `admin` and an optional project list, stored hashed | What the scope allows |
 | Vercel cron | `Authorization: Bearer CRON_SECRET` | Run rollup and cleanup |
 
@@ -318,6 +318,8 @@ How the dashboard signs you in:
 2. GitHub redirects back to the API. The API checks the GitHub login against the existing `dashboard_users` allowlist, stores a session, and sets an httpOnly, Secure, `SameSite=Lax` cookie scoped to `.remcostoeten.nl`, then redirects to the dashboard.
 3. The dashboard's server components forward that cookie on API calls, and browser calls use `credentials: 'include'`. CORS allows credentials only for the dashboard origin; today the API reflects any origin.
 4. `GET /v2/auth/session` tells the dashboard whether to show private projects, the visibility filter and admin controls. Signed out, the same dashboard renders public projects only.
+
+Someone without an allowlisted GitHub login joins through an invite: an owner or admin creates a single-use link with `POST /v2/invites` for a role and projects, the invitee registers with name, email and password at `POST /v2/join/{token}`, and signs in later at `/v2/auth/sign-in/email`. There is no open registration and no password reset; a forgotten password means a new invite.
 
 So yes, sign-in needs API routes. Putting them in the API rather than the dashboard means every frontend, including a future public embed, goes through one access check. Better Auth has a documented Elysia integration (`.mount(auth.handler)`) and brings the GitHub provider and session storage, so there is no hand-written OAuth. The dashboard's current OAuth routes retire in phase 4.
 

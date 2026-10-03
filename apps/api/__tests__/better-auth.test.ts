@@ -9,14 +9,17 @@ import {
 } from "@remcostoeten/analytics-engine/db/migration-files";
 import { makeSignature } from "better-auth/crypto";
 
-import { betterAuthSessions, createAuth } from "../src/auth/better-auth";
+import { betterAuthRegister, betterAuthSessions, createAuth } from "../src/auth/better-auth";
 
 const database = new PGlite();
 const stores = pgliteAccess(database);
 const secret = "x".repeat(40);
+const now = new Date("2026-09-28T12:00:00.000Z");
 const auth = createAuth({
   db: stores.db,
   members: stores.members,
+  invites: stores.invites,
+  clock: () => now,
   secret,
   baseURL: "http://localhost:3100",
   github: { clientId: "github-client", clientSecret: "github-client-secret" },
@@ -110,5 +113,64 @@ describe("Better Auth", () => {
     expect(new URL(body.url).host).toBe("github.com");
     expect(response.headers.get("set-cookie")).toContain("HttpOnly");
     expect(response.headers.get("set-cookie")?.toLowerCase()).toContain("samesite=lax");
+  });
+
+  test("email sign-up is closed to the public and needs a claimed invite", async () => {
+    const response = await auth.handler(
+      new Request("http://localhost:3100/v2/auth/sign-up/email", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+        body: JSON.stringify({ name: "Eve", email: "eve@example.test", password: "password-123" }),
+      }),
+    );
+    expect(response.status).toBe(400);
+    const register = betterAuthRegister(auth);
+    const refused = await register(
+      { name: "Eve", email: "eve@example.test", password: "password-123" },
+      new Headers({ origin: "http://localhost:3000" }),
+    );
+    expect(refused.ok).toBe(false);
+  });
+
+  test("an invited address registers, signs in with its password and loses access with its membership", async () => {
+    await stores.invites.create({
+      id: "inv_ada",
+      role: "analyst",
+      projectIds: null,
+      expiresAt: new Date("2026-10-05T12:00:00.000Z"),
+      tokenHash: "ada-hash",
+    });
+    await stores.invites.claim("ada-hash", "ada@example.test", now);
+    const register = betterAuthRegister(auth);
+    const headers = new Headers({ origin: "http://localhost:3000" });
+    const input = { name: "Ada", email: "ada@example.test", password: "password-123" };
+    const registered = await register(input, headers);
+    if (!registered.ok) throw new Error(registered.error.message);
+    const cookie = registered.value.cookies.find((line) => line.startsWith("ra.session_token="));
+    expect(cookie).toBeString();
+    const member = await stores.members.membership(registered.value.user.id);
+    expect(member.ok && member.value).toMatchObject({ role: "analyst", projectIds: null });
+
+    const sessions = betterAuthSessions(auth, stores.members);
+    const pair = cookie?.split(";")[0] ?? "";
+    expect(await sessions(new Headers({ cookie: pair }))).toMatchObject({
+      name: "Ada",
+      login: null,
+    });
+
+    const again = await register(input, headers);
+    expect(again.ok ? null : again.error.code).toBe("CONFLICT");
+
+    const signIn = await auth.handler(
+      new Request("http://localhost:3100/v2/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+        body: JSON.stringify({ email: "ada@example.test", password: "password-123" }),
+      }),
+    );
+    expect(signIn.status).toBe(200);
+
+    await database.query("DELETE FROM auth_member WHERE user_id = $1", [registered.value.user.id]);
+    expect(await sessions(new Headers({ cookie: pair }))).toBeNull();
   });
 });

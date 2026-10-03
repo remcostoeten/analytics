@@ -21,6 +21,7 @@ import type {
   ReadStore,
   SavedQueryStore,
   SpeedStore,
+  InviteStore,
   IssueStore,
   OpsStore,
   RealtimeFeed,
@@ -39,6 +40,7 @@ import { drizzleAlerts } from "./drizzle-alerts";
 import { drizzleAnnotations } from "./drizzle-annotations";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
+import { drizzleInvites } from "./drizzle-invites";
 import { drizzleIssues } from "./drizzle-issues";
 import { drizzleOps } from "./drizzle-ops";
 import { drizzleSpeed } from "./drizzle-speed";
@@ -189,8 +191,9 @@ export function drizzleTokens(db: Database): TokenStore {
 
 /**
  * @name drizzleMembers
- * @description The `MemberStore`: the `dashboard_users` sign-in allowlist, GitHub logins, and
- * membership of the single organization. The first user to join creates the organization as its
+ * @description The `MemberStore`: the `dashboard_users` sign-in allowlist, who may sign in, and
+ * membership of the single organization. A GitHub user may sign in while their login is on the
+ * allowlist; a user who registered through an invite may sign in while they are a member. The first user to join creates the organization as its
  * owner and claims the projects without one; later users join as viewers of no projects until an
  * owner lists theirs.
  *
@@ -216,13 +219,23 @@ export function drizzleMembers(db: Database): MemberStore {
           .where(sql`lower(${dashboardUsers.githubLogin}) = ${login.toLowerCase()}`);
         return rows.length > 0;
       }),
-    loginOf: (userId) =>
+    allowed: (userId) =>
       attempt("Could not read the user", async () => {
         const [row] = await db
-          .select({ login: authUser.githubLogin })
+          .select({
+            login: authUser.githubLogin,
+            listed: dashboardUsers.githubLogin,
+            member: authMember.id,
+          })
           .from(authUser)
+          .leftJoin(
+            dashboardUsers,
+            sql`lower(${dashboardUsers.githubLogin}) = lower(${authUser.githubLogin})`,
+          )
+          .leftJoin(authMember, eq(authMember.userId, authUser.id))
           .where(eq(authUser.id, userId));
-        return row?.login ?? null;
+        if (!row) return false;
+        return row.login === null ? row.member !== null : row.listed !== null;
       }),
     membership: (userId) => attempt("Could not read the membership", () => membership(userId)),
     join: (userId, name) =>
@@ -260,6 +273,7 @@ export type Access = {
   projects: ProjectAdmin;
   tokens: TokenStore;
   members: MemberStore;
+  invites: InviteStore;
   reads: ReadStore;
   details: DetailStore;
   feed: RealtimeFeed;
@@ -275,7 +289,7 @@ export type Access = {
 
 /**
  * @name accessOn
- * @description The project, token, member and read stores, the live feed and the SQL console on
+ * @description The project, token, member, invite and read stores, the live feed and the SQL console on
  * one Drizzle database, with the database for Better Auth's adapter. Console queries run through
  * `transact`, the driver's read-only transaction, with a 10-second timeout and 10,000 rows.
  *
@@ -288,6 +302,7 @@ export function accessOn(db: Database, transact: Transact): Access {
     projects: drizzleProjectAdmin(db),
     tokens: drizzleTokens(db),
     members: drizzleMembers(db),
+    invites: drizzleInvites(db, organizationId),
     reads: drizzleReads(db),
     details: drizzleDetails(db),
     feed: drizzleFeed(db, { pollMs: 2000 }),

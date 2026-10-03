@@ -19,7 +19,7 @@ import {
 } from "@remcostoeten/analytics-engine/db/migration-files";
 import { Elysia } from "elysia";
 
-import type { AccessDeps, SignedIn } from "../src/access/types";
+import type { AccessDeps, Register, SignedIn } from "../src/access/types";
 import { createApp } from "../src/app";
 import { openGeo } from "../src/geo";
 import { access } from "../src/plugins/access";
@@ -50,6 +50,20 @@ async function sessions(headers: Headers) {
   const match = /ra\.session_token=([\w-]+)/.exec(headers.get("cookie") ?? "");
   return match?.[1] ? (users[match[1]] ?? null) : null;
 }
+
+const register: Register = async (input) =>
+  input.email === "taken@example.test"
+    ? {
+        ok: false,
+        error: { code: "CONFLICT", message: "An account with this email already exists" },
+      }
+    : {
+        ok: true,
+        value: {
+          user: { id: "usr_joined", name: input.name, email: input.email },
+          cookies: ["ra.session_token=joined; Path=/; HttpOnly; SameSite=Lax"],
+        },
+      };
 
 const deps: AccessDeps = {
   ...pgliteAccess(database),
@@ -99,6 +113,7 @@ const api = createApp({
   },
   annotations: pgliteAccess(database).annotations,
   authHandler: null,
+  register,
 });
 
 const probe = new Elysia({ prefix: "/v2" })
@@ -453,6 +468,104 @@ describe("tokens", () => {
         expiresAt: "2026-01-01T00:00:00.000Z",
       }),
     ).toBe(400);
+  });
+});
+
+describe("invites", () => {
+  test("an admin creates a link once, anyone can see and use it once, and the list shows its status", async () => {
+    const created = await call(api, "POST", "/v2/invites", owner, {
+      role: "viewer",
+      projectIds: ["closed"],
+    });
+    expect(created.status).toBe(201);
+    const data = (await json(created)).data as Json;
+    const joinToken = String(data.token);
+    expect(joinToken).toStartWith("join_");
+    expect(data).toMatchObject({
+      role: "viewer",
+      url: `https://dashboard.example.test/join/${joinToken}`,
+      expiresAt: "2026-10-05T12:00:00.000Z",
+    });
+
+    const preview = await call(api, "GET", `/v2/join/${joinToken}`);
+    expect(await json(preview)).toEqual({
+      data: { role: "viewer", projectIds: ["closed"], expiresAt: "2026-10-05T12:00:00.000Z" },
+    });
+
+    const taken = await call(api, "POST", `/v2/join/${joinToken}`, anonymous, {
+      name: "Taken",
+      email: "taken@example.test",
+      password: "password-123",
+    });
+    expect(taken.status).toBe(409);
+
+    const joined = await call(api, "POST", `/v2/join/${joinToken}`, anonymous, {
+      name: "Ada",
+      email: "ada@example.test",
+      password: "password-123",
+    });
+    expect(joined.status).toBe(201);
+    expect(joined.headers.get("set-cookie")).toContain("ra.session_token=joined");
+    expect(await json(joined)).toEqual({
+      data: {
+        user: { id: "usr_joined", name: "Ada", email: "ada@example.test" },
+        role: "viewer",
+        projectIds: ["closed"],
+      },
+    });
+    expect(await status("GET", `/v2/join/${joinToken}`)).toBe(404);
+    expect(
+      await status("POST", `/v2/join/${joinToken}`, anonymous, {
+        name: "Eve",
+        email: "eve@example.test",
+        password: "password-123",
+      }),
+    ).toBe(404);
+
+    const listed = await json(await call(api, "GET", "/v2/invites", owner));
+    expect(JSON.stringify(listed)).not.toContain(joinToken);
+    expect((listed.data as Json[]).find((item) => item.id === data.id)).toMatchObject({
+      status: "pending",
+      email: "ada@example.test",
+    });
+    expect(await status("DELETE", `/v2/invites/${String(data.id)}`, owner)).toBe(204);
+    expect(await status("DELETE", `/v2/invites/${String(data.id)}`, owner)).toBe(404);
+  });
+
+  test.each([
+    ["an admin limited to some projects", admin, 403],
+    ["an analyst", analyst, 403],
+    ["a viewer", viewer, 403],
+    ["nobody", anonymous, 401],
+  ])("%s creating an invite", async (_, caller, expected) => {
+    expect(await status("POST", "/v2/invites", caller, { role: "viewer" })).toBe(expected);
+  });
+
+  test("an owner role, a past expiry and one past 30 days are refused", async () => {
+    expect(await status("POST", "/v2/invites", owner, { role: "owner" })).toBe(400);
+    expect(
+      await status("POST", "/v2/invites", owner, {
+        role: "viewer",
+        expiresAt: "2026-09-01T00:00:00.000Z",
+      }),
+    ).toBe(400);
+    expect(
+      await status("POST", "/v2/invites", owner, {
+        role: "viewer",
+        expiresAt: "2026-11-30T00:00:00.000Z",
+      }),
+    ).toBe(400);
+  });
+
+  test("a short password is refused before the invite is touched", async () => {
+    expect(
+      await status("POST", "/v2/join/join_unknown", anonymous, {
+        name: "Ada",
+        email: "ada@example.test",
+        password: "short",
+      }),
+    ).toBe(400);
+    expect(await status("GET", "/v2/join/join_unknown")).toBe(404);
   });
 });
 

@@ -937,6 +937,42 @@ The same route for a visitor-level read without access:
 { "error": { "code": "UNAUTHORIZED", "message": "Sign in or use a token with read scope" } }
 ```
 
+### Invites
+
+`POST /v2/invites` as admin
+
+```json
+request
+{ "role": "viewer", "projectIds": ["remcostoeten.nl"] }
+
+201 Created
+{ "data": { "id": "inv_3f9a1c2e", "role": "viewer", "projectIds": ["remcostoeten.nl"], "token": "join_7c2e9f1a4b6d8e0c7c2e9f1a4b6d8e0c", "url": "https://analytics.remcostoeten.nl/join/join_7c2e9f1a4b6d8e0c7c2e9f1a4b6d8e0c", "expiresAt": "2026-10-04T16:44:00.000Z", "createdAt": "2026-09-27T16:44:00.000Z" } }
+```
+
+`role` is `admin`, `analyst` or `viewer`; `projectIds` null means every project. `expiresAt` defaults to 7 days out and may be at most 30. `url` is null when `DASHBOARD_ORIGIN` is not set. The token is in this response only.
+
+`GET /v2/invites` lists them with a `status` of `pending`, `accepted` or `expired`, and `DELETE /v2/invites/inv_3f9a1c2e` returns `204 No Content`.
+
+`GET /v2/join/join_7c2e...` is public and shows what an open invite grants:
+
+```json
+200 OK
+{ "data": { "role": "viewer", "projectIds": ["remcostoeten.nl"], "expiresAt": "2026-10-04T16:44:00.000Z" } }
+```
+
+`POST /v2/join/join_7c2e...` registers and signs in:
+
+```json
+request
+{ "name": "Ada Lovelace", "email": "ada@example.com", "password": "correct horse battery" }
+
+201 Created
+Set-Cookie: ra.session_token=...; HttpOnly; SameSite=Lax
+{ "data": { "user": { "id": "usr_01J8Z9", "name": "Ada Lovelace", "email": "ada@example.com" }, "role": "viewer", "projectIds": ["remcostoeten.nl"] } }
+```
+
+A used, expired or unknown token answers 404; a taken email answers 409 and leaves the invite open. Later sign-ins go to Better Auth's `POST /v2/auth/sign-in/email`.
+
 ### Tokens
 
 `POST /v2/tokens` as admin

@@ -1,11 +1,14 @@
 import type {
+  EngineError,
   Hasher,
+  InviteStore,
   MemberStore,
   ProjectAdmin,
   Role,
   TokenScope,
   TokenStore,
 } from "@remcostoeten/analytics-engine";
+import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable, ProjectID, TokenID, UserID } from "@remcostoeten/analytics-shared/semantic";
 
 export type SignedIn = {
@@ -17,6 +20,18 @@ export type SignedIn = {
 };
 
 export type SessionReader = (headers: Headers) => Promise<Nullable<SignedIn>>;
+
+type Registration = { name: string; email: string; password: string };
+
+type Registered = {
+  user: { id: UserID; name: string; email: string };
+  cookies: string[];
+};
+
+export type Register = (
+  input: Registration,
+  headers: Headers,
+) => Promise<Result<Registered, EngineError>>;
 
 export type Caller =
   | { kind: "anonymous" }
@@ -30,6 +45,7 @@ export type AccessDeps = {
   projects: ProjectAdmin;
   tokens: TokenStore;
   members: MemberStore;
+  invites: InviteStore;
   sessions: SessionReader;
   hasher: Hasher;
   clock: () => Date;

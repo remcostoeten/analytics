@@ -4,7 +4,7 @@ import { Elysia } from "elysia";
 
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
-import type { AccessDeps } from "./access/types";
+import type { AccessDeps, Register } from "./access/types";
 import { adminModule } from "./modules/admin/route";
 import { alertsModule } from "./modules/alerts/route";
 import { annotationsModule } from "./modules/annotations/route";
@@ -25,6 +25,7 @@ import { readsModule } from "./modules/reads/route";
 import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import type { HistorySource } from "./modules/landing/service";
+import { invitesModule } from "./modules/invites/route";
 import { tokensModule } from "./modules/tokens/route";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
@@ -46,6 +47,7 @@ export type AppOptions = {
   query: QueryOptions;
   annotations: AnnotationStore;
   authHandler: Nullable<(request: Request) => Promise<Response>>;
+  register?: Nullable<Register>;
   ops?: Nullable<OpsStore>;
   alerts?: Nullable<AlertsDeps>;
   crux?: Nullable<CruxOptions>;
@@ -62,7 +64,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console and, with `alerts`, the
+ * health, ingest, sign-in, projects, tokens, invites, the reads, annotations, the SQL console and, with `alerts`, the
  * alert routes. The engine is created per request so its log
  * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
@@ -111,6 +113,13 @@ export function createApp(options: AppOptions) {
     )
     .use(projectsModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
+    .use(
+      invitesModule(
+        options.access,
+        { register: options.register ?? null, dashboardOrigin: options.dashboardOrigin },
+        options.docsBase,
+      ),
+    )
     .use(readsModule(options.access, options.reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))
     .use(issuesModule(options.access, options.reads, options.docsBase))

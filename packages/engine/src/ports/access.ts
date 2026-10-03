@@ -82,7 +82,7 @@ export type TokenStore = {
 
 export type MemberStore = {
   allowedLogin: (login: string) => Stored<boolean>;
-  loginOf: (userId: UserID) => Stored<Nullable<string>>;
+  allowed: (userId: UserID) => Stored<boolean>;
   membership: (userId: UserID) => Stored<Nullable<Membership>>;
   join: (userId: UserID, name: string) => Stored<Membership>;
 };

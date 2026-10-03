@@ -4,6 +4,7 @@ export * from "./common";
 export * from "./enums";
 export * from "./errors";
 export * from "./events";
+export * from "./invites";
 export * from "./issues";
 export * from "./limits";
 export * from "./projects";
