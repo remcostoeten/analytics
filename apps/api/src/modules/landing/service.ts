@@ -23,7 +23,7 @@ export type HealthView = {
   geo: { city: Nullable<string>; asn: Nullable<string>; loadMs: number };
 };
 
-export type HistoryWeek = { week: Timestamp; total: number; days: number[] };
+type HistoryWeek = { week: Timestamp; total: number; days: number[] };
 
 export type History = { repo: string; weeks: HistoryWeek[]; total: number };
 
