@@ -11,6 +11,17 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
-    rehypeCodeOptions: { themes: codeThemes },
+    rehypeCodeOptions: {
+      themes: codeThemes,
+      transformers: [
+        {
+          name: "spoar:language",
+          pre(node) {
+            node.properties["data-language"] = this.options.lang;
+            return node;
+          },
+        },
+      ],
+    },
   },
 });

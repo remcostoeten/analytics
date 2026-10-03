@@ -298,6 +298,41 @@
   background: var(--surface) !important;
 }
 
+figure.shiki {
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+figure.shiki > div:first-child {
+  height: 2.25rem;
+  padding-inline: 0.875rem;
+  border-bottom: 1px dashed var(--line);
+  font-family: var(--mono);
+  background: color-mix(in srgb, var(--fg) 2%, var(--surface));
+}
+
+figure.shiki > div:first-child button {
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+figure.shiki > div:first-child button:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+figure.shiki > div[role="region"] {
+  padding-block: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+figure.shiki .line {
+  --padding-left: 1rem;
+  --padding-right: 1rem;
+}
+
 .shiki code span {
   color: var(--shiki-light);
   font-style: var(--shiki-light-font-style);
