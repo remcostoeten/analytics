@@ -1,21 +1,13 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
-import { AdminMetrics, JobResult } from "@remcostoeten/analytics-contract";
-import {
-  createEngine,
-  defaultEnrichers,
-  defaultSignals,
-  defaultStages,
-} from "@remcostoeten/analytics-engine";
-import { fixedClock, memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
-import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
+import { AdminMetrics, JobResult } from "@spoar/contract";
+import { createEngine, defaultEnrichers, defaultSignals, defaultStages } from "@spoar/engine";
+import { fixedClock, memoryLogger } from "@spoar/engine/adapters/memory";
+import { pgliteAccess, pgliteAdapters } from "@spoar/engine/adapters/pglite";
+import { webCryptoHasher } from "@spoar/engine/adapters/system";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 import { Value } from "@sinclair/typebox/value";
 
 import { createApp } from "../src/app";

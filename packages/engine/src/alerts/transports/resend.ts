@@ -1,6 +1,6 @@
-import { postJson } from "@remcostoeten/analytics-shared/http";
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
+import { postJson } from "@spoar/shared/http";
+import type { Fetcher } from "@spoar/shared/http";
+import { err, ok } from "@spoar/shared/result";
 
 import { engineError } from "../../errors";
 import { sendFailed } from "../channels/failed";

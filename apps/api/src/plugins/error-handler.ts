@@ -1,6 +1,6 @@
-import { errorCatalog } from "@remcostoeten/analytics-contract";
-import type { ApiError } from "@remcostoeten/analytics-contract";
-import type { EngineError, Logger } from "@remcostoeten/analytics-engine";
+import { errorCatalog } from "@spoar/contract";
+import type { ApiError } from "@spoar/contract";
+import type { EngineError, Logger } from "@spoar/engine";
 import { Elysia, ValidationError } from "elysia";
 
 import type { Capture } from "./capture";

@@ -1,5 +1,5 @@
-import type { AnnotationStore, Engine, Logger, OpsStore } from "@remcostoeten/analytics-engine";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { AnnotationStore, Engine, Logger, OpsStore } from "@spoar/engine";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
 import { resolveCaller } from "./access/caller";

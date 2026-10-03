@@ -8,7 +8,7 @@ React 19 apps outside Next.js use the core client and `/react`. The default `pag
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Keys and environment
@@ -28,7 +28,7 @@ The endpoint is `/_ra` when your host can run a `createProxy` handler on the sam
 `src/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -41,8 +41,8 @@ export type Events = {
 `src/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -55,7 +55,7 @@ export const analytics = createAnalytics<Events>({
 ```tsx
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { AnalyticsProvider } from "@remcostoeten/analytics/react";
+import { AnalyticsProvider } from "@spoar/sdk/react";
 import { analytics } from "./analytics";
 import { App } from "./app";
 
@@ -73,7 +73,7 @@ This sends a pageview on load and on every client-side navigation, with the path
 ## Custom events
 
 ```tsx
-import { TrackClick, useAnalytics } from "@remcostoeten/analytics/react";
+import { TrackClick, useAnalytics } from "@spoar/sdk/react";
 import type { Events } from "./events";
 
 export function Pricing() {
@@ -97,7 +97,7 @@ A route template such as `/blog/[slug]` lets reports group every blog post into 
 
 ```tsx
 import { useLocation, useParams } from "react-router";
-import { computeRoute, useRoutePageviews } from "@remcostoeten/analytics/react";
+import { computeRoute, useRoutePageviews } from "@spoar/sdk/react";
 
 export function RouteTracker() {
   const { pathname, search } = useLocation();

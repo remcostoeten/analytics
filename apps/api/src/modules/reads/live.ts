@@ -1,14 +1,8 @@
-import type { DeviceType, LiveEvents } from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type {
-  EngineError,
-  FeedCursor,
-  FeedPage,
-  FeedQuery,
-  RealtimeFeed,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { DeviceType, LiveEvents } from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { EngineError, FeedCursor, FeedPage, FeedQuery, RealtimeFeed } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { t } from "elysia";
 
 import { maxLimit, readEnvironment, readFilters, readTraffic } from "./params";

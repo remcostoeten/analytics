@@ -1,4 +1,4 @@
-import type { WireGroups } from "@remcostoeten/analytics-contract";
+import type { WireGroups } from "@spoar/contract";
 
 import type {
   ErrorContext,

@@ -11,8 +11,8 @@ import type {
   StatsResponse,
   TimeseriesQuery,
   TimeseriesResponse,
-} from "@remcostoeten/analytics-contract";
-import type { Query } from "@remcostoeten/analytics-shared/http";
+} from "@spoar/contract";
+import type { Query } from "@spoar/shared/http";
 
 import type { AdminResult, AdminSend } from "./types";
 

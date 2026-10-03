@@ -1,9 +1,9 @@
-import { maxBodyBytes, maxEventsPerBatch } from "@remcostoeten/analytics-contract";
-import type { IngestResult } from "@remcostoeten/analytics-contract";
-import type { Engine, EngineError, IngestRequest } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { maxBodyBytes, maxEventsPerBatch } from "@spoar/contract";
+import type { IngestResult } from "@spoar/contract";
+import type { Engine, EngineError, IngestRequest } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { IngestBody } from "./model";
 

@@ -1,4 +1,4 @@
-import type { ErrorCode, ErrorDetails } from "@remcostoeten/analytics-contract";
+import type { ErrorCode, ErrorDetails } from "@spoar/contract";
 
 export type EngineError = {
   code: ErrorCode;

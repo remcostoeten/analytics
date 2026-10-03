@@ -1,4 +1,4 @@
-import { engineError, findDimension } from "@remcostoeten/analytics-engine";
+import { engineError, findDimension } from "@spoar/engine";
 import type {
   BuiltInMetric,
   EngineError,
@@ -7,9 +7,9 @@ import type {
   Metric,
   ReadFilter,
   Traffic,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import { exportPageSize } from "./export";
 

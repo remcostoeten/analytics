@@ -1,5 +1,5 @@
-import type { Geo } from "@remcostoeten/analytics-contract";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Geo } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { Network } from "../draft";
 

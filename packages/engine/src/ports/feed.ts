@@ -1,4 +1,4 @@
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import type { EngineError } from "../errors";
 import type { ReadScope } from "./reads";

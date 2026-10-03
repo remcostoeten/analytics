@@ -1,4 +1,4 @@
-import type { AlertEvent, ChannelName } from "@remcostoeten/analytics-contract";
+import type { AlertEvent, ChannelName } from "@spoar/contract";
 
 import type { DeliveryBatch } from "../ports/alerts";
 import { alertDetail, alertLabels, alertTime, alertTitle, alertUrl, newestFirst } from "./events";

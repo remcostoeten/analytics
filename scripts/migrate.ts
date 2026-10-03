@@ -1,11 +1,8 @@
 import { SQL } from "bun";
 
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import type { MigrationClient, MigrationReport } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import type { MigrationClient, MigrationReport } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 
 type Options = {
   dryRun: boolean;

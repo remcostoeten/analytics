@@ -19,13 +19,13 @@
       },
     },
     "apps/api": {
-      "name": "@remcostoeten/analytics-api",
+      "name": "@spoar/api",
       "version": "0.0.0",
       "dependencies": {
         "@elysiajs/openapi": "1.4.16",
-        "@remcostoeten/analytics-contract": "workspace:*",
-        "@remcostoeten/analytics-engine": "workspace:*",
-        "@remcostoeten/analytics-shared": "workspace:*",
+        "@spoar/contract": "workspace:*",
+        "@spoar/engine": "workspace:*",
+        "@spoar/shared": "workspace:*",
         "@sinclair/typebox": "catalog:typebox",
         "better-auth": "1.7.6",
         "drizzle-orm": "0.45.3",
@@ -36,7 +36,7 @@
       },
     },
     "apps/docs": {
-      "name": "@remcostoeten/analytics-docs",
+      "name": "@spoar/docs",
       "version": "0.0.0",
       "dependencies": {
         "fumadocs-core": "16.15.15",
@@ -65,13 +65,13 @@
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
         "@playwright/test": "1.62.0",
-        "@remcostoeten/analytics-api": "workspace:*",
-        "@remcostoeten/analytics-engine": "workspace:*",
-        "@remcostoeten/analytics-sdk": "workspace:*",
+        "@spoar/api": "workspace:*",
+        "@spoar/engine": "workspace:*",
+        "@spoar/sdk": "workspace:*",
       },
     },
     "packages/contract": {
-      "name": "@remcostoeten/analytics-contract",
+      "name": "@spoar/contract",
       "version": "0.0.0",
       "dependencies": {
         "@sinclair/typebox": "catalog:typebox",
@@ -81,12 +81,12 @@
       },
     },
     "packages/engine": {
-      "name": "@remcostoeten/analytics-engine",
+      "name": "@spoar/engine",
       "version": "0.0.0",
       "dependencies": {
         "@neondatabase/serverless": "1.1.0",
-        "@remcostoeten/analytics-contract": "workspace:*",
-        "@remcostoeten/analytics-shared": "workspace:*",
+        "@spoar/contract": "workspace:*",
+        "@spoar/shared": "workspace:*",
         "@sinclair/typebox": "catalog:typebox",
         "drizzle-orm": "0.45.3",
         "mmdb-lib": "3.0.3",
@@ -103,15 +103,15 @@
       ],
     },
     "packages/sdk": {
-      "name": "@remcostoeten/analytics-sdk",
+      "name": "@spoar/sdk",
       "version": "2.0.0-next.0",
       "dependencies": {
-        "@remcostoeten/analytics-contract": "workspace:*",
+        "@spoar/contract": "workspace:*",
         "web-vitals": "6.2.2",
       },
       "devDependencies": {
         "@happy-dom/global-registrator": "20.14.5",
-        "@remcostoeten/analytics-shared": "workspace:*",
+        "@spoar/shared": "workspace:*",
         "@sinclair/typebox": "catalog:typebox",
         "@types/react": "19.2.14",
         "@types/react-dom": "19.2.3",
@@ -130,14 +130,14 @@
       ],
     },
     "packages/shared": {
-      "name": "@remcostoeten/analytics-shared",
+      "name": "@spoar/shared",
       "version": "0.0.0",
     },
     "scripts": {
-      "name": "@remcostoeten/analytics-scripts",
+      "name": "@spoar/scripts",
       "version": "0.0.0",
       "dependencies": {
-        "@remcostoeten/analytics-engine": "workspace:*",
+        "@spoar/engine": "workspace:*",
         "drizzle-orm": "0.45.3",
       },
       "devDependencies": {
@@ -886,21 +886,21 @@
 
     "@remcostoeten/analytics": ["@remcostoeten/analytics@workspace:v1/packages/sdk"],
 
-    "@remcostoeten/analytics-api": ["@remcostoeten/analytics-api@workspace:apps/api"],
+    "@spoar/api": ["@spoar/api@workspace:apps/api"],
 
-    "@remcostoeten/analytics-contract": ["@remcostoeten/analytics-contract@workspace:packages/contract"],
+    "@spoar/contract": ["@spoar/contract@workspace:packages/contract"],
 
-    "@remcostoeten/analytics-docs": ["@remcostoeten/analytics-docs@workspace:apps/docs"],
+    "@spoar/docs": ["@spoar/docs@workspace:apps/docs"],
 
     "@remcostoeten/analytics-e2e": ["@remcostoeten/analytics-e2e@workspace:e2e"],
 
-    "@remcostoeten/analytics-engine": ["@remcostoeten/analytics-engine@workspace:packages/engine"],
+    "@spoar/engine": ["@spoar/engine@workspace:packages/engine"],
 
-    "@remcostoeten/analytics-scripts": ["@remcostoeten/analytics-scripts@workspace:scripts"],
+    "@spoar/scripts": ["@spoar/scripts@workspace:scripts"],
 
-    "@remcostoeten/analytics-sdk": ["@remcostoeten/analytics-sdk@workspace:packages/sdk"],
+    "@spoar/sdk": ["@spoar/sdk@workspace:packages/sdk"],
 
-    "@remcostoeten/analytics-shared": ["@remcostoeten/analytics-shared@workspace:packages/shared"],
+    "@spoar/shared": ["@spoar/shared@workspace:packages/shared"],
 
     "@remcostoeten/dashboard": ["@remcostoeten/dashboard@workspace:v1/apps/dashboard"],
 
@@ -2132,7 +2132,7 @@
 
     "@remcostoeten/analytics/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
-    "@remcostoeten/analytics-docs/@types/node": ["@types/node@26.6.3", "", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-dsqMQQoeTLqu9wynDD00q573mNzso3IdQOAfHRJqLCcmCFPoGo9A1bDpUcv/9tnKpErQWv9uKeGfl37EIS02Yg=="],
+    "@spoar/docs/@types/node": ["@types/node@26.6.3", "", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-dsqMQQoeTLqu9wynDD00q573mNzso3IdQOAfHRJqLCcmCFPoGo9A1bDpUcv/9tnKpErQWv9uKeGfl37EIS02Yg=="],
 
     "@remcostoeten/dashboard/@electric-sql/pglite": ["@electric-sql/pglite@0.4.4", "", {}, "sha512-g/6CWAJ4XOkObWCWAQ2IReZD8VvsDy3poRHSKvpRR2F96F8WJ3HVbjpso3gN7l0q6QPPgvxSSpl/qo5k8a7mkQ=="],
 
@@ -2302,7 +2302,7 @@
 
     "@radix-ui/react-popper/@floating-ui/react-dom/@floating-ui/dom": ["@floating-ui/dom@1.7.6", "", { "dependencies": { "@floating-ui/core": "^1.7.5", "@floating-ui/utils": "^0.2.11" } }, "sha512-9gZSAI5XM36880PPMm//9dfiEngYoC6Am2izES1FF406YFsjvyBMmeJ2g4SAju3xWwtuynNRFL2s9hgxpLI5SQ=="],
 
-    "@remcostoeten/analytics-docs/@types/node/undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
+    "@spoar/docs/@types/node/undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
 
     "@remcostoeten/dashboard/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 

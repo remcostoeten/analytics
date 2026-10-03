@@ -1,5 +1,5 @@
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { ok } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
 import type {

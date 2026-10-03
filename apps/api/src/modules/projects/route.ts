@@ -8,9 +8,9 @@ import {
   RotateKey,
   UpdatedProject,
   UpdateProject,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { EngineError } from "@spoar/engine";
 import { Elysia } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

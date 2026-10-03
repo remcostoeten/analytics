@@ -1,13 +1,8 @@
-import { engineError, rawVitalsFrom } from "@remcostoeten/analytics-engine";
-import type {
-  CheckTarget,
-  EngineError,
-  SpeedCheck,
-  SpeedStore,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { engineError, rawVitalsFrom } from "@spoar/engine";
+import type { CheckTarget, EngineError, SpeedCheck, SpeedStore } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { minSamples } from "../speed/service";
 

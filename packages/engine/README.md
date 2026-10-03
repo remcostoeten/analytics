@@ -1,4 +1,4 @@
-# @remcostoeten/analytics-engine
+# @spoar/engine
 
 The v2 ingest engine. Private: `exports` point at `src/`, so there is no build step. It has no runtime of its own: hosts such as `apps/api` pass in adapters for its ports.
 
@@ -17,11 +17,11 @@ Each adapter has its own export path, so a host only bundles what it uses.
 
 | Import | Provides |
 | --- | --- |
-| `@remcostoeten/analytics-engine/adapters/memory` | Every port in memory, for tests |
-| `@remcostoeten/analytics-engine/adapters/system` | `systemClock`, `webCryptoHasher` and `jsonLogger` (one JSON line per entry) |
-| `@remcostoeten/analytics-engine/adapters/maxmind` | `maxmindGeo(city, asn)` over MMDB file contents |
-| `@remcostoeten/analytics-engine/adapters/pglite` | `EventStore` and `RateLimiter` on PGlite |
-| `@remcostoeten/analytics-engine/adapters/postgres` | `EventStore` and `RateLimiter` on Neon over HTTP |
+| `@spoar/engine/adapters/memory` | Every port in memory, for tests |
+| `@spoar/engine/adapters/system` | `systemClock`, `webCryptoHasher` and `jsonLogger` (one JSON line per entry) |
+| `@spoar/engine/adapters/maxmind` | `maxmindGeo(city, asn)` over MMDB file contents |
+| `@spoar/engine/adapters/pglite` | `EventStore` and `RateLimiter` on PGlite |
+| `@spoar/engine/adapters/postgres` | `EventStore` and `RateLimiter` on Neon over HTTP |
 
 The PGlite and Postgres adapters share one Drizzle implementation:
 

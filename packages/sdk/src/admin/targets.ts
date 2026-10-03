@@ -8,8 +8,8 @@ import type {
   TargetChanges,
   TargetChangesResponse,
   TargetTest,
-} from "@remcostoeten/analytics-contract";
-import type { Json } from "@remcostoeten/analytics-shared/http";
+} from "@spoar/contract";
+import type { Json } from "@spoar/shared/http";
 
 import type {
   AdminResult,

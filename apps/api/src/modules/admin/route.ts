@@ -1,8 +1,8 @@
-import { AdminMetrics } from "@remcostoeten/analytics-contract";
-import type { BotReason } from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { OpsStore } from "@remcostoeten/analytics-engine";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { AdminMetrics } from "@spoar/contract";
+import type { BotReason } from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { OpsStore } from "@spoar/engine";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

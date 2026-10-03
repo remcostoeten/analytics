@@ -1,4 +1,4 @@
-import { ok } from "@remcostoeten/analytics-shared/result";
+import { ok } from "@spoar/shared/result";
 import { sql } from "drizzle-orm";
 
 import { scoreSessions } from "../jobs/session-signals";

@@ -3,7 +3,7 @@ import type {
   SpeedResponse,
   SpeedRouteList,
   SpeedTimeseries,
-} from "@remcostoeten/analytics-contract";
+} from "@spoar/contract";
 import {
   engineError,
   experienceScore,
@@ -11,7 +11,7 @@ import {
   rawVitalsFrom,
   scoreRating,
   vitalRating,
-} from "@remcostoeten/analytics-engine";
+} from "@spoar/engine";
 import type {
   EngineError,
   SpeedDevice,
@@ -22,9 +22,9 @@ import type {
   SpeedStore,
   VitalName,
   VitalStat,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import { nextCursor, readPage, readRange } from "../reads/params";
 import type { Range } from "../reads/params";

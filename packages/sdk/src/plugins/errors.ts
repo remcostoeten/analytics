@@ -1,5 +1,3 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
-
 import { definePlugin } from "../core/plugin-host";
 
 const maxCrumbs = 20;
@@ -37,7 +35,7 @@ export function errors() {
   return definePlugin({
     name: "errors",
     setup: (client) => {
-      if (typeof window === "undefined") return noop;
+      if (typeof window === "undefined") return () => {};
       const trail: string[] = [];
       function crumb(kind: string, message: string) {
         trail.push(`${Date.now()} ${kind} ${scrub(message).slice(0, 200)}`);

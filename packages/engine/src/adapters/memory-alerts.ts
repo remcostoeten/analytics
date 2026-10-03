@@ -1,5 +1,5 @@
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import { ok } from "@spoar/shared/result";
+import type { ProjectID } from "@spoar/shared/semantic";
 
 import { webhookSecret } from "../alerts/sign-body";
 import type {

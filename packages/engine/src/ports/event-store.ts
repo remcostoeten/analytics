@@ -1,5 +1,5 @@
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { EventID } from "@remcostoeten/analytics-shared/semantic";
+import type { Result } from "@spoar/shared/result";
+import type { EventID } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
 import type { EngineError } from "../errors";

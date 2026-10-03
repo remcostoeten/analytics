@@ -10,9 +10,9 @@ import type {
   SessionRow,
   Visit,
   VisitorRow,
-} from "@remcostoeten/analytics-contract";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/contract";
+import { ok } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 

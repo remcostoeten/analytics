@@ -10,10 +10,10 @@ import {
   StickinessResponse,
   StatsResponse,
   TimeseriesResponse,
-} from "@remcostoeten/analytics-contract";
-import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/contract";
+import type { EngineError, ProjectRecord } from "@spoar/engine";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { Elysia, t } from "elysia";
 
 import { canReadDetail } from "../../access/rules";

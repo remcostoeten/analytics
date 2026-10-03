@@ -1,5 +1,5 @@
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { Result } from "@spoar/shared/result";
+import type { ProjectID } from "@spoar/shared/semantic";
 
 import type { Dimension } from "../define";
 import type { EngineError } from "../errors";

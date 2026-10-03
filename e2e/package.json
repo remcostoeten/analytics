@@ -11,8 +11,8 @@
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8",
 		"@playwright/test": "1.62.0",
-		"@remcostoeten/analytics-api": "workspace:*",
-		"@remcostoeten/analytics-engine": "workspace:*",
-		"@remcostoeten/analytics-sdk": "workspace:*"
+		"@spoar/api": "workspace:*",
+		"@spoar/engine": "workspace:*",
+		"@spoar/sdk": "workspace:*"
 	}
 }

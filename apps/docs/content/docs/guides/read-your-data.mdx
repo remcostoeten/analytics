@@ -81,7 +81,7 @@ curl -G https://api.example.com/v2/projects/example.com/breakdown/referrer_domai
 In server code and scripts, `createAdmin` from `/admin` calls the same routes with typed answers. A `read` token is enough for the read methods:
 
 ```ts
-import { createAdmin } from "@remcostoeten/analytics/admin";
+import { createAdmin } from "@spoar/sdk/admin";
 
 const admin = createAdmin<"example.com">({
   endpoint: "https://api.example.com",

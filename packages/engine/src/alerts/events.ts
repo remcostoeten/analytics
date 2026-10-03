@@ -1,10 +1,5 @@
-import type {
-  AlertEvent,
-  AlertEventName,
-  IssueAlert,
-  SpeedAlert,
-} from "@remcostoeten/analytics-contract";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { AlertEvent, AlertEventName, IssueAlert, SpeedAlert } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 
 export type AlertEvents = {
   "issue.new": IssueAlert;

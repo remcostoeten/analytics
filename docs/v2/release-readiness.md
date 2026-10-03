@@ -6,7 +6,7 @@ State of v2 against a first deploy and a first npm release, as checked on Oct 1,
 
 ### 1. Published packages would point at source files
 
-`packages/sdk` and `packages/contract` keep `exports` pointing at `./src/*.ts` for the workspace and put the `./dist` paths in `publishConfig.exports`. Only pnpm applies `publishConfig.exports`. Neither `npm pack` nor `bun pm pack` does: a packed `@remcostoeten/analytics-contract` still has `"default": "./src/index.ts"`, while `files` ships only `dist`. An install of either package would fail to import.
+`packages/sdk` and `packages/contract` keep `exports` pointing at `./src/*.ts` for the workspace and put the `./dist` paths in `publishConfig.exports`. Only pnpm applies `publishConfig.exports`. Neither `npm pack` nor `bun pm pack` does: a packed `@spoar/contract` still has `"default": "./src/index.ts"`, while `files` ships only `dist`. An install of either package would fail to import.
 
 Options, for the owner to pick:
 
@@ -16,7 +16,7 @@ Options, for the owner to pick:
 
 ### 2. `catalog:` and `workspace:` versions must be resolved at publish
 
-`packages/contract` depends on `"@sinclair/typebox": "catalog:typebox"`, and the SDK on `"@remcostoeten/analytics-contract": "workspace:*"`. `npm pack` keeps both strings as they are, which no registry install can resolve. `bun pm pack` and `bun publish` replace them with real versions (checked: `catalog:typebox` becomes `0.34.52`). `changeset publish` calls `npm publish`, so the release must publish with `bun publish` per package and then run `changeset tag`.
+`packages/contract` depends on `"@sinclair/typebox": "catalog:typebox"`, and the SDK on `"@spoar/contract": "workspace:*"`. `npm pack` keeps both strings as they are, which no registry install can resolve. `bun pm pack` and `bun publish` replace them with real versions (checked: `catalog:typebox` becomes `0.34.52`). `changeset publish` calls `npm publish`, so the release must publish with `bun publish` per package and then run `changeset tag`.
 
 ### 3. No release workflow
 
@@ -24,9 +24,9 @@ Options, for the owner to pick:
 
 ### 4. Package names and visibility
 
-- `packages/sdk` is named `@remcostoeten/analytics-sdk` and is `private: true`. Decision 0005 recommends publishing 2.0 as `@remcostoeten/analytics`, the 1.x name, under the `next` tag first. **Owner**: confirm 0005, then rename and drop `private`.
+- `packages/sdk` is named `@spoar/sdk` and is `private: true`. Decision 0005 is settled: the SDK ships as `@spoar/sdk` under the `next` tag. Drop `private` once blockers 1 to 3 are fixed.
 - `packages/contract` is public with version `0.0.0` and 19 pending minor changesets, so the first version pull request would release it as `0.1.0`. The SDK imports it at runtime (`plugins.mjs` for `signals`, `proxy.mjs`) and in its type declarations, so it must be published with the SDK or bundled into it.
-- 8 pending changesets name `@remcostoeten/analytics-sdk`. While it is private, Changesets does not version it (`privatePackages.version: false`).
+- 8 pending changesets name `@spoar/sdk`. While it is private, Changesets does not version it (`privatePackages.version: false`).
 
 ### 5. Core size budget
 

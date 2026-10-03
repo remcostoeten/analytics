@@ -1,4 +1,4 @@
-import { ApiError } from "@remcostoeten/analytics-contract";
+import { ApiError } from "@spoar/contract";
 import { Elysia } from "elysia";
 
 import { decide } from "../access/decide";

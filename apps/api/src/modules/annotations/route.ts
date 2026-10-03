@@ -3,8 +3,8 @@ import {
   AnnotationResponse,
   CreateAnnotation,
   UpdateAnnotation,
-} from "@remcostoeten/analytics-contract";
-import type { AnnotationStore } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import type { AnnotationStore } from "@spoar/engine";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

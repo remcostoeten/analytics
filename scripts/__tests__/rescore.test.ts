@@ -3,11 +3,8 @@ import { join } from "node:path";
 
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 
 import { parseArguments } from "../rescore";
 

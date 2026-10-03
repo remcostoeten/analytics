@@ -2,18 +2,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { PGlite } from "@electric-sql/pglite";
-import { createEngine } from "@remcostoeten/analytics-engine";
-import {
-  alerts,
-  apiLinks,
-  discord,
-  mail,
-  smtp,
-  webhook,
-} from "@remcostoeten/analytics-engine/alerts";
-import { fixedClock, memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
-import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
+import { createEngine } from "@spoar/engine";
+import { alerts, apiLinks, discord, mail, smtp, webhook } from "@spoar/engine/alerts";
+import { fixedClock, memoryLogger } from "@spoar/engine/adapters/memory";
+import { pgliteAccess, pgliteAdapters } from "@spoar/engine/adapters/pglite";
+import { webCryptoHasher } from "@spoar/engine/adapters/system";
 
 import { createApp } from "../src/app";
 import { openGeo } from "../src/geo";

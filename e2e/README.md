@@ -10,7 +10,7 @@ Each test uses its own `<run>` path segment, so tests can share the database and
 
 | Command | Does |
 | --- | --- |
-| `bun run --filter @remcostoeten/analytics-sdk build` | Builds the SDK the fixture site loads; run it first |
+| `bun run --filter @spoar/sdk build` | Builds the SDK the fixture site loads; run it first |
 | `bun run test:e2e` (repo root) | Runs every test; the `headed` project needs a display, so use `xvfb-run -a bun run test:e2e` on Linux without one |
 | `bun run --cwd e2e serve` | Starts the servers for manual checks, as in `docs/release-checklist.md` |
 

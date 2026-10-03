@@ -8,7 +8,7 @@ There is no Astro adapter. The core client runs in a bundled client script, and 
 ## Install
 
 ```bash
-npm install @remcostoeten/analytics
+npm install @spoar/sdk
 ```
 
 ## Keys and environment
@@ -30,7 +30,7 @@ A fully static site without a server adapter has no endpoint of its own: set `en
 `src/lib/events.ts`:
 
 ```ts
-import type { NoProps } from "@remcostoeten/analytics";
+import type { NoProps } from "@spoar/sdk";
 
 export type Events = {
   signup: { plan: "free" | "pro" };
@@ -41,8 +41,8 @@ export type Events = {
 `src/lib/analytics.ts`:
 
 ```ts
-import { createAnalytics } from "@remcostoeten/analytics";
-import { clicks, errors, speedInsights } from "@remcostoeten/analytics/plugins";
+import { createAnalytics } from "@spoar/sdk";
+import { clicks, errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
@@ -104,7 +104,7 @@ In a framework island (React, Vue, Svelte), import the same module and call `ana
 
 ```ts
 import type { APIRoute } from "astro";
-import { createProxy } from "@remcostoeten/analytics/proxy";
+import { createProxy } from "@spoar/sdk/proxy";
 
 export const prerender = false;
 
@@ -123,7 +123,7 @@ export const POST: APIRoute = ({ request }) => proxy(request);
 `src/lib/server-analytics.ts`:
 
 ```ts
-import { createServerAnalytics } from "@remcostoeten/analytics/server";
+import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({

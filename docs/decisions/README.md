@@ -8,7 +8,7 @@ One short record per row of the decisions table in [`docs/v2/plan.md`](../v2/pla
 | [0002](0002-project-visibility.md) | Project visibility | Settled |
 | [0003](0003-lint-baseline.md) | Lint baseline | Settled |
 | [0004](0004-api-location.md) | Where the new API lives | Open, default |
-| [0005](0005-package-name.md) | Package name | Open, default |
+| [0005](0005-package-name.md) | Package name | Settled |
 | [0006](0006-what-a-project-is.md) | What a project is | Open, default |
 | [0007](0007-public-visitor-data.md) | Visitor-level data on public projects | Open, default |
 | [0008](0008-admin-sign-in.md) | Admin sign-in | Open, default |
