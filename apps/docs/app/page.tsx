@@ -2,7 +2,7 @@ import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Link from "next/link";
 
 import { Badge } from "@/components/landing/badge";
-import { CodeWindow, Cm, Fn, Kw, Str } from "@/components/landing/code-window";
+import { CodeWindow } from "@/components/landing/code-window";
 import { outlineButton } from "@/components/landing/control";
 import {
   ArrowIcon,
@@ -17,6 +17,18 @@ import { InstallCommand } from "@/components/landing/install-command";
 import { Pipeline } from "@/components/landing/pipeline";
 import { StatusPill } from "@/components/landing/status-pill";
 import { baseOptions } from "@/lib/layout-options";
+
+const example = `import { createAnalytics } from "@remcostoeten/analytics";
+import { errors, speedInsights } from "@remcostoeten/analytics/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [speedInsights(), errors()],
+});
+
+analytics.track("signup", { plan: "pro" });`;
 
 const features = [
   {
@@ -127,28 +139,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <CodeWindow title="lib/analytics.ts">
-              <Kw>import</Kw> {"{ "}
-              <Fn>createAnalytics</Fn>
-              {" } "}
-              <Kw>from</Kw> <Str>"@remcostoeten/analytics"</Str>;{"\n"}
-              <Kw>import</Kw> {"{ "}
-              <Fn>errors</Fn>, <Fn>speedInsights</Fn>
-              {" } "}
-              <Kw>from</Kw> <Str>"@remcostoeten/analytics/plugins"</Str>;{"\n\n"}
-              <Kw>export const</Kw> analytics = <Fn>createAnalytics</Fn>({"{"}
-              {"\n"}
-              {"  "}project: <Str>"example.com"</Str>,{"\n"}
-              {"  "}key: <Str>"pk_..."</Str>,{"\n"}
-              {"  "}endpoint: <Str>"/_ra"</Str>,{"\n"}
-              {"  "}plugins: [<Fn>speedInsights</Fn>(), <Fn>errors</Fn>()],{"\n"}
-              {"}"});{"\n\n"}
-              analytics.<Fn>track</Fn>(<Str>"signup"</Str>, {"{ plan: "}
-              <Str>"pro"</Str>
-              {" }"});
-              {"  "}
-              <Cm>{"// batched, sent on your domain"}</Cm>
-            </CodeWindow>
+            <CodeWindow title="lib/analytics.ts" lang="ts" code={example} />
             <div className="grid grid-cols-3 gap-3">
               <Stat value="< 5 KB" label="core, gzipped" />
               <Stat value="0" label="visitor cookies" />

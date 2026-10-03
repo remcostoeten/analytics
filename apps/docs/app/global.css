@@ -270,3 +270,19 @@
 .prose :where(a):not(:where(.not-prose, .not-prose *)):hover {
   text-decoration-color: var(--accent);
 }
+
+.shiki {
+  background: var(--surface) !important;
+}
+
+.shiki code span {
+  color: var(--shiki-light);
+  font-style: var(--shiki-light-font-style);
+  font-weight: var(--shiki-light-font-weight);
+}
+
+.dark .shiki code span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+}

@@ -1,40 +1,38 @@
-import type { ReactNode } from "react";
+import { highlight } from "fumadocs-core/highlight";
+import type { ComponentProps } from "react";
+
+import { codeThemes } from "@/lib/code-theme";
+
+function Pre({ className, ...props }: ComponentProps<"pre">) {
+  return (
+    <pre
+      {...props}
+      className={`${className ?? ""} not-fumadocs-codeblock overflow-x-auto p-4 font-mono text-[13px] leading-6`}
+    />
+  );
+}
 
 type Props = {
   title: string;
-  children: ReactNode;
+  lang: string;
+  code: string;
 };
 
-export function CodeWindow({ title, children }: Props) {
+export async function CodeWindow({ title, lang, code }: Props) {
+  const rendered = await highlight(code, {
+    lang,
+    themes: codeThemes,
+    defaultColor: false,
+    components: { pre: Pre },
+  });
+
   return (
     <div className="overflow-hidden rounded-[10px] border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-dashed border-line px-4 py-2">
         <span className="caps text-[0.62rem] text-muted">{title}</span>
-        <span className="caps text-[0.62rem] text-muted">ts</span>
+        <span className="caps text-[0.62rem] text-muted">{lang}</span>
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-6 text-fg">
-        <code>{children}</code>
-      </pre>
+      {rendered}
     </div>
   );
-}
-
-type TokenProps = {
-  children: ReactNode;
-};
-
-export function Kw({ children }: TokenProps) {
-  return <span className="text-muted">{children}</span>;
-}
-
-export function Str({ children }: TokenProps) {
-  return <span className="text-fg/80">{children}</span>;
-}
-
-export function Fn({ children }: TokenProps) {
-  return <span className="font-medium text-fg">{children}</span>;
-}
-
-export function Cm({ children }: TokenProps) {
-  return <span className="text-muted/70">{children}</span>;
 }
