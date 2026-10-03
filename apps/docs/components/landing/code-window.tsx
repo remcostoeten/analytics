@@ -1,16 +1,7 @@
 import { highlight } from "fumadocs-core/highlight";
-import type { ComponentProps } from "react";
 
+import { Pre } from "@/components/code-block";
 import { codeThemes } from "@/lib/code-theme";
-
-function Pre({ className, ...props }: ComponentProps<"pre">) {
-  return (
-    <pre
-      {...props}
-      className={`${className ?? ""} not-fumadocs-codeblock overflow-x-auto p-4 font-mono text-[13px] leading-6`}
-    />
-  );
-}
 
 type Props = {
   title: string;

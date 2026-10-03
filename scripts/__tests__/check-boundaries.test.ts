@@ -7,6 +7,8 @@ const workspaces = [
   { name: "@remcostoeten/analytics-contract", directory: "packages/contract" },
   { name: "@remcostoeten/analytics-engine", directory: "packages/engine" },
   { name: "@spoar/sdk", directory: "packages/sdk" },
+  { name: "@remcostoeten/analytics-docs", directory: "apps/docs" },
+  { name: "@spoar/example-next", directory: "examples/next" },
   { name: "@remcostoeten/ingestion", directory: "v1/packages/ingestion" },
 ];
 
@@ -83,6 +85,24 @@ describe("findViolations", () => {
       path: "packages/shared/src/noop.ts",
       content: 'import Type from "typebox";',
       expected: [],
+    },
+    {
+      name: "an example may import the SDK",
+      path: "examples/next/app/layout.tsx",
+      content: 'import { createAnalytics } from "@spoar/sdk";',
+      expected: [],
+    },
+    {
+      name: "an example may not import the engine",
+      path: "examples/next/app/layout.tsx",
+      content: 'import { ingest } from "@remcostoeten/analytics-engine";',
+      expected: ["examples/next may not import packages/engine"],
+    },
+    {
+      name: "nothing imports an example",
+      path: "apps/docs/lib/examples.ts",
+      content: 'import { config } from "@spoar/example-next";',
+      expected: ["apps/docs may not import examples/next"],
     },
     {
       name: "v1 files are skipped",
