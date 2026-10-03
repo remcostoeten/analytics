@@ -20,6 +20,21 @@
         "tests/*.spec.ts",
         "site/app.ts"
       ]
+    },
+    "packages/devtools": {
+      "entry": [
+        "scripts/*.ts"
+      ],
+      "ignore": [
+        "src/styles/panel.css"
+      ],
+      "ignoreDependencies": [
+        "tailwindcss",
+        "@fontsource-variable/jetbrains-mono"
+      ]
     }
+  },
+  "ignoreExportsUsedInFile": {
+    "type": true
   }
 }

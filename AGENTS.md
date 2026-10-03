@@ -47,7 +47,8 @@ analytics/
 │  ├─ contract/       schemas, types, error catalog (phase 0)
 │  ├─ shared/         semantic types, Result, noop (phase 0)
 │  ├─ engine/         ingest pipeline, signals, enrichers, dimensions, adapters, db (phase 2)
-│  └─ sdk/            @spoar/sdk 2.0 (phase 3)
+│  ├─ sdk/            @spoar/sdk 2.0 (phase 3)
+│  └─ devtools/       @spoar/devtools, the admin dev widget
 ├─ tools/oxlint/      lint plugins
 ├─ scripts/           size, OpenAPI and boundary checks, migrate
 ├─ e2e/               Playwright across SDK, API and dashboard
@@ -55,7 +56,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `packages/devtools` (the dev widget: loaders, the Shadow DOM panel on fixtures until the widget endpoints exist), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -74,7 +75,7 @@ Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated fr
 | `bun run knip:v1` | knip report of what v1 no longer uses; never fails |
 | `bun run migrate` | Applies `packages/engine/src/db/migrations` to `DATABASE_URL`; `--dry-run`, and `--baseline 0008_add_rollup_daily` on a database v1 already migrated. Remco runs it against Neon |
 | `bun run rescore` | `scripts/rescore.ts`: reruns bot scoring and the session signals over stored events for `--from` to `--to` (UTC dates); `--dry-run`, and `--include-legacy` for v1 rows. Remco runs it against Neon |
-| `bun run size` | `scripts/size-check.ts`: gzips the built SDK core, `react` and `next` entries and each plugin bundled alone, and fails above the budgets (core 5 KB, `react` 1.5 KB, `next` 1 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB); build `packages/sdk` first |
+| `bun run size` | `scripts/size-check.ts`: gzips the built SDK core, `react` and `next` entries and each plugin bundled alone, and fails above the budgets (core 5 KB, `react` 1.5 KB, `next` 1 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB) and the `@spoar/devtools` loaders (1 KB each), and reports the lazy panel chunk; build `packages/sdk` and `packages/devtools` first |
 | `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
 | `bun run test:e2e` | Playwright in `e2e/` against the built SDK, the API on PGlite and the `/_ra` proxy; build `packages/sdk` first, and on Linux without a display run it under `xvfb-run -a` for the headed project. `docs/release-checklist.md` is the manual browser and blocker matrix |
@@ -89,7 +90,7 @@ CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull req
 
 Lefthook runs oxfmt, Oxlint and gitleaks (when installed) on staged files before each commit, and rejects commit subjects that are not conventional commits; `bun install` sets it up.
 
-A pull request that changes a published package (`packages/contract`, later `packages/sdk`) adds a changeset with `bun run changeset`.
+A pull request that changes a published package (`packages/contract`, `packages/sdk`, `packages/devtools`) adds a changeset with `bun run changeset`.
 
 Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 

@@ -1,0 +1,94 @@
+{
+	"name": "@spoar/devtools",
+	"version": "0.1.0-next.0",
+	"private": true,
+	"description": "An overlay panel for admins on their own site: live visitors, sessions, logs, speed and errors from Spoar analytics.",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./react": {
+			"types": "./src/react/index.ts",
+			"default": "./src/react/index.ts"
+		},
+		"./next": {
+			"types": "./src/next/index.tsx",
+			"default": "./src/next/index.tsx"
+		},
+		"./fixtures": {
+			"types": "./src/fixtures/index.ts",
+			"default": "./src/fixtures/index.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"./react": {
+				"types": "./dist/react.d.mts",
+				"default": "./dist/react.mjs"
+			},
+			"./next": {
+				"types": "./dist/next.d.mts",
+				"default": "./dist/next.mjs"
+			},
+			"./fixtures": {
+				"types": "./dist/fixtures.d.mts",
+				"default": "./dist/fixtures.mjs"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"styles": "bun scripts/build-styles.ts",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@remcostoeten/analytics-contract": "workspace:*"
+	},
+	"peerDependencies": {
+		"@spoar/sdk": ">=2.0.0-next.0",
+		"next": ">=15",
+		"react": ">=19",
+		"react-dom": ">=19"
+	},
+	"peerDependenciesMeta": {
+		"@spoar/sdk": {
+			"optional": true
+		},
+		"next": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		},
+		"react-dom": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@fontsource-variable/jetbrains-mono": "5.3.0",
+		"@happy-dom/global-registrator": "20.14.5",
+		"@remcostoeten/analytics-shared": "workspace:*",
+		"@spoar/sdk": "workspace:*",
+		"@tailwindcss/postcss": "4.3.3",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"next": "16.2.0",
+		"postcss": "8.5.28",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
+		"tailwindcss": "4.3.3",
+		"tsdown": "catalog:tsdown"
+	}
+}

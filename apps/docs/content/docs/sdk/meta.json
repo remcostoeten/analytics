@@ -1,4 +1,1 @@
-{
-  "title": "SDK",
-  "pages": ["install", "client", "options", "plugins", "react", "next", "server", "proxy", "admin", "migrating"]
-}
+{"title": "SDK", "pages": ["install", "client", "options", "plugins", "react", "next", "server", "proxy", "admin", "devtools", "migrating"]}

@@ -13,6 +13,7 @@ export type Measured = Budget & {
 };
 
 const sdk = join(import.meta.dir, "..", "packages", "sdk");
+const devtools = join(import.meta.dir, "..", "packages", "devtools", "dist");
 const pluginDirectory = join(sdk, "src", "plugins");
 const pluginBudget = 0.6 * 1024;
 
@@ -21,6 +22,15 @@ export const entryBudgets: Budget[] = [
   { file: "react.mjs", limitBytes: 1.5 * 1024 },
   { file: "next.mjs", limitBytes: 1 * 1024 },
 ];
+
+export const devtoolsBudgets: Budget[] = [
+  { file: "index.mjs", limitBytes: 1 * 1024 },
+  { file: "react.mjs", limitBytes: 1 * 1024 },
+  { file: "next.mjs", limitBytes: 1 * 1024 },
+];
+
+// The lazy panel chunk of @spoar/devtools, such as mount-panel-CbhGSFvW.mjs.
+const panelChunk = /^mount-panel-[\w-]+\.mjs$/;
 
 export const pluginExceptions: { [file: string]: number } = {
   "speed-insights.ts": 2.5 * 1024,
@@ -99,6 +109,23 @@ function kilobytes(bytes: number) {
   return `${(bytes / 1024).toFixed(2)} KB`;
 }
 
+function readText(directory: string) {
+  return (file: string) => readFileSync(join(directory, file), "utf8");
+}
+
+function measureEntries(list: Budget[], directory: string) {
+  return measure(list, (entry) => new TextEncoder().encode(withChunks(entry, readText(directory))));
+}
+
+function print(results: Measured[], prefix: string) {
+  for (const result of results) {
+    const verdict = result.over ? "OVER" : "within";
+    console.log(
+      `${`${prefix}${result.file}`.padEnd(36)} ${kilobytes(result.gzipBytes)} gzip, ${verdict} ${kilobytes(result.limitBytes)}`,
+    );
+  }
+}
+
 async function main() {
   const missing = entryBudgets.find((budget) => !existsSync(join(sdk, "dist", budget.file)));
   if (missing) {
@@ -106,24 +133,29 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  const loaderMissing = devtoolsBudgets.find((budget) => !existsSync(join(devtools, budget.file)));
+  if (loaderMissing) {
+    console.error(`Build devtools first: packages/devtools/dist/${loaderMissing.file} is missing`);
+    process.exitCode = 1;
+    return;
+  }
   const plugins = pluginBudgets(readdirSync(pluginDirectory));
   const bundles = new Map<string, Uint8Array>();
   for (const plugin of plugins) bundles.set(plugin.file, await bundlePlugin(plugin.file));
   const results = [
-    ...measure(entryBudgets, (entry) =>
-      new TextEncoder().encode(
-        withChunks(entry, (file) => readFileSync(join(sdk, "dist", file), "utf8")),
-      ),
-    ),
+    ...measureEntries(entryBudgets, join(sdk, "dist")),
     ...measure(plugins, (file) => bundles.get(file) ?? new Uint8Array()),
   ];
-  for (const result of results) {
-    const verdict = result.over ? "OVER" : "within";
-    console.log(
-      `${result.file.padEnd(20)} ${kilobytes(result.gzipBytes)} gzip, ${verdict} ${kilobytes(result.limitBytes)}`,
-    );
+  const loaders = measureEntries(devtoolsBudgets, devtools);
+  print(results, "");
+  print(loaders, "devtools/");
+  for (const file of readdirSync(devtools)
+    .filter((name) => panelChunk.test(name))
+    .sort()) {
+    const bytes = gzipSync(readFileSync(join(devtools, file)), { level: 9 }).length;
+    console.log(`${`devtools/${file}`.padEnd(36)} ${kilobytes(bytes)} gzip, lazy panel, no budget`);
   }
-  if (results.some((result) => result.over)) process.exitCode = 1;
+  if ([...results, ...loaders].some((result) => result.over)) process.exitCode = 1;
 }
 
 if (import.meta.main) await main();

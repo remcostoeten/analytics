@@ -68,6 +68,7 @@
         "@playwright/test": "1.62.0",
         "@remcostoeten/analytics-api": "workspace:*",
         "@remcostoeten/analytics-engine": "workspace:*",
+        "@spoar/devtools": "workspace:*",
         "@spoar/sdk": "workspace:*",
       },
     },
@@ -80,6 +81,40 @@
       "devDependencies": {
         "tsdown": "catalog:tsdown",
       },
+    },
+    "packages/devtools": {
+      "name": "@spoar/devtools",
+      "version": "0.1.0-next.0",
+      "dependencies": {
+        "@remcostoeten/analytics-contract": "workspace:*",
+      },
+      "devDependencies": {
+        "@fontsource-variable/jetbrains-mono": "5.3.0",
+        "@happy-dom/global-registrator": "20.14.5",
+        "@remcostoeten/analytics-shared": "workspace:*",
+        "@spoar/sdk": "workspace:*",
+        "@tailwindcss/postcss": "4.3.3",
+        "@types/react": "19.2.14",
+        "@types/react-dom": "19.2.3",
+        "next": "16.2.0",
+        "postcss": "8.5.28",
+        "react": "19.2.4",
+        "react-dom": "19.2.4",
+        "tailwindcss": "4.3.3",
+        "tsdown": "catalog:tsdown",
+      },
+      "peerDependencies": {
+        "@spoar/sdk": ">=2.0.0-next.0",
+        "next": ">=15",
+        "react": ">=19",
+        "react-dom": ">=19",
+      },
+      "optionalPeers": [
+        "@spoar/sdk",
+        "next",
+        "react",
+        "react-dom",
+      ],
     },
     "packages/engine": {
       "name": "@remcostoeten/analytics-engine",
@@ -486,6 +521,8 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.9", "", { "dependencies": { "@floating-ui/dom": "^1.8.0" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-JDjEFGCpImxDCA7JJKviA0M9+RtmJdj0m/NVU5IMgBK+AmZouAQQ7/+2GLH0GXXY0YMw9oXPB8hKdbPYg5QLYg=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
+
+    "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
 
     "@fuma-translate/react": ["@fuma-translate/react@1.0.2", "", { "peerDependencies": { "@types/react": "*", "react": "^19.2.0", "react-dom": "^19.2.0" }, "optionalPeers": ["@types/react"] }, "sha512-uOiOtBx3nRXR8Nu1GzBf1tApgF1FErDBTHxRIAQeyQdyOoZbrNRN6H4kDCWObY4qyGeGbHydG0DHzgeUgFDMIw=="],
 
@@ -1020,6 +1057,8 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@sinclair/typebox": ["@sinclair/typebox@0.34.52", "", {}, "sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw=="],
+
+    "@spoar/devtools": ["@spoar/devtools@workspace:packages/devtools"],
 
     "@spoar/sdk": ["@spoar/sdk@workspace:packages/sdk"],
 
