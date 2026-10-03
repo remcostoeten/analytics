@@ -151,7 +151,7 @@ export function TaskBoard() {
     <div
       ref={board}
       data-demo={demoActive}
-      className="board-fade group/board relative flex h-full overflow-hidden rounded-tl-md border-t border-l border-line-strong bg-ink-deep text-[13px] shadow-[-30px_0_80px_rgb(0_0_0/0.5)]"
+      className="board-fade group/board relative flex h-full overflow-hidden bg-ink-deep text-[13px]"
     >
       <aside className="flex w-12 flex-col items-center gap-4 border-r border-line pt-3">
         <span className="pulse flex size-7 items-center justify-center rounded-md bg-linear-to-b from-[#f0863a] to-[#c4581a] text-ink shadow-[0_0_0_1px_rgb(255_255_255/0.15)_inset]">

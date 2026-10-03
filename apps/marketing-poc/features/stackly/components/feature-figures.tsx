@@ -279,7 +279,6 @@ export function StackFigure() {
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <div className="dust dust-right pointer-events-none absolute inset-0" />
       <div className="float relative -translate-y-2">
         <Slab label="Stackly">
           <span className="flex size-10 items-center justify-center rounded-full border border-current/40">

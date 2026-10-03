@@ -25,10 +25,9 @@ export function HeroSurface({ children }: Props) {
       className="hero-surface relative overflow-hidden"
       onPointerMove={track}
     >
-      <div className="halftone pointer-events-none absolute inset-0" />
-      <div className="halftone-spot pointer-events-none absolute inset-0" />
+      <div className="hero-lines pointer-events-none absolute inset-0" />
       <div className="hero-glow pointer-events-none absolute inset-0" />
-      <div className="hero-shade pointer-events-none absolute inset-0" />
+      <div className="hero-scan pointer-events-none absolute inset-x-0 top-0 h-px" />
       {children}
     </section>
   );

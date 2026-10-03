@@ -68,8 +68,6 @@ export function HowItWorks() {
 
   return (
     <section id="ship" className="relative overflow-hidden px-8 py-24">
-      <div className="dust dust-left pointer-events-none absolute top-0 left-0 h-[420px] w-[420px]" />
-      <div className="dust dust-right pointer-events-none absolute top-0 right-0 h-[420px] w-[420px]" />
       <div className="relative">
         <Reveal>
           <Eyebrow centered>How it works</Eyebrow>

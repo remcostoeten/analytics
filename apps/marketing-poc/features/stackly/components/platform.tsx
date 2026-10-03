@@ -4,7 +4,6 @@ import { Reveal } from "./reveal";
 export function Platform() {
   return (
     <section className="relative overflow-hidden px-8 py-28">
-      <div className="dust dust-right pointer-events-none absolute right-0 bottom-0 h-[380px] w-[520px]" />
       <Reveal className="relative mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-end">
         <div>
           <Eyebrow>The platform</Eyebrow>
