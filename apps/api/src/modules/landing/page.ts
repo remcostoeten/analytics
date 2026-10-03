@@ -134,7 +134,8 @@ main > section::after { right: -4px; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
 .chart text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
 .chart .rules line { stroke: var(--line); stroke-dasharray: 3 4; }
-.chart .line { fill: none; stroke: var(--fg); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.chart .line { fill: none; stroke: url(#stroke); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 38%, transparent)); }
+.chart .halo { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
 .chart .dot { fill: var(--surface); stroke: var(--fg); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .chart .dot.now { fill: var(--accent); stroke: var(--accent); }
 .chart .axis { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--muted); font-family: var(--mono); font-size: 0.65rem; }
@@ -307,7 +308,7 @@ function historyChart(history: History) {
         `<line x1="0" x2="${width}" y1="${y(max * share).toFixed(1)}" y2="${y(max * share).toFixed(1)}"/>`,
     )
     .join("");
-  return `<div class="card chart"><div class="scroll"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative commits over the last year"><defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--fg);stop-opacity:.14"/><stop offset="1" style="stop-color:var(--fg);stop-opacity:0"/></linearGradient></defs><g class="rules">${rules}</g><path d="${area}" style="fill:url(#fade)"/><path class="line" d="${line}"/><g>${dots}</g><g class="months">${months}</g></svg></div><div class="axis"><span>${history.total} commits in the last year</span><span>${formatDay(history.weeks[0]?.week ?? "")} to ${formatDay(history.weeks.at(-1)?.week ?? "")}</span></div></div>`;
+  return `<div class="card chart"><div class="scroll"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative commits over the last year"><defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.12"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient><linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--fg);stop-opacity:.5"/><stop offset=".75" style="stop-color:var(--fg)"/><stop offset="1" style="stop-color:var(--accent)"/></linearGradient></defs><g class="rules">${rules}</g><path d="${area}" style="fill:url(#fade)"/><path class="line" d="${line}"/><g>${dots}</g><circle class="halo" cx="${points[final]?.x.toFixed(1) ?? 0}" cy="${y(running).toFixed(1)}" r="9"/><g class="months">${months}</g></svg></div><div class="axis"><span>${history.total} commits in the last year</span><span>${formatDay(history.weeks[0]?.week ?? "")} to ${formatDay(history.weeks.at(-1)?.week ?? "")}</span></div></div>`;
 }
 
 function routeItem(route: RouteEntry) {
