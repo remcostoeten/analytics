@@ -1,15 +1,11 @@
 "use client";
 
 import type * as PageTree from "fumadocs-core/page-tree";
-import {
-  SidebarFolder,
-  SidebarFolderContent,
-  SidebarFolderLink,
-  SidebarFolderTrigger,
-  useFolderDepth,
-} from "fumadocs-ui/components/sidebar/base";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
+
+import { sectionIcon } from "@/components/sidebar-icons";
+import { setOpenSection, toggleSection, useOpenSection } from "@/lib/sidebar-state";
 
 function containsPath(folder: PageTree.Folder, pathname: string): boolean {
   if (folder.index?.url === pathname) return true;
@@ -20,48 +16,72 @@ function containsPath(folder: PageTree.Folder, pathname: string): boolean {
   });
 }
 
+function slugOf(folder: PageTree.Folder) {
+  const url = folder.index?.url ?? folder.children.find((node) => node.type === "page")?.url ?? "";
+  const parts = url.split("/").filter(Boolean);
+  return parts[parts.length - (folder.index ? 1 : 2)] ?? "";
+}
+
 type Props = {
   item: PageTree.Folder;
   children: ReactNode;
 };
 
-const itemClass =
-  "relative flex w-full flex-row items-center gap-2 py-1.5 pe-2 text-start text-[0.8125rem] text-fd-muted-foreground wrap-anywhere transition-colors hover:text-fd-foreground data-[active=true]:font-medium data-[active=true]:text-fd-foreground [&_svg]:size-3.5 [&_svg]:shrink-0";
-
 export function DocsSidebarFolder({ item, children }: Props) {
   const pathname = usePathname();
-  const depth = useFolderDepth();
+  const generated = useId();
+  const id = item.$id ?? generated;
+  const open = useOpenSection();
+  const active = containsPath(item, pathname);
+
+  useEffect(() => {
+    if (active) setOpenSection(id);
+  }, [active, id]);
 
   if (item.root) return null;
 
-  const style = { paddingInlineStart: `calc(${2 + 3 * depth} * var(--spacing))` };
-  const active = containsPath(item, pathname);
+  const expanded = open === id;
+  const Icon = sectionIcon(slugOf(item));
 
   return (
-    <SidebarFolder
-      collapsible={item.collapsible}
-      defaultOpen={item.defaultOpen || active}
-      active={active}
-    >
-      {item.index ? (
-        <SidebarFolderLink
-          href={item.index.url}
-          active={pathname === item.index.url}
-          className={itemClass}
-          style={style}
+    <div className="border-b border-line/70">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={`${id}-panel`}
+        onClick={() => toggleSection(id)}
+        className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[0.875rem] font-medium transition-colors ${
+          expanded
+            ? "bg-fg/3 text-fd-foreground"
+            : "text-fd-foreground/70 hover:bg-fg/3 hover:text-fd-foreground"
+        }`}
+      >
+        <span className="flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
+          {Icon ? <Icon /> : item.icon}
+        </span>
+        <span className="grow">{item.name}</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className={`size-4 shrink-0 text-fd-muted-foreground transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
         >
-          {item.icon}
-          {item.name}
-        </SidebarFolderLink>
-      ) : (
-        <SidebarFolderTrigger className={itemClass} style={style}>
-          {item.icon}
-          {item.name}
-        </SidebarFolderTrigger>
-      )}
-      <SidebarFolderContent className="relative before:absolute before:inset-s-2.5 before:inset-y-0 before:w-px before:bg-fd-border before:content-['']">
-        <div className="flex flex-col">{children}</div>
-      </SidebarFolderContent>
-    </SidebarFolder>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <div
+        id={`${id}-panel`}
+        className="section-panel grid"
+        data-state={expanded ? "open" : "closed"}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex flex-col py-1">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 }

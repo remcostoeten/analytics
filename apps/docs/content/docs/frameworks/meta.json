@@ -8,6 +8,5 @@
     "svelte",
     "astro",
     "server"
-  ],
-  "defaultOpen": false
+  ]
 }

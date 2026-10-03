@@ -233,6 +233,23 @@
   border-right: 1px dashed var(--line);
 }
 
+.section-panel {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 250ms ease;
+}
+
+.section-panel[data-state="open"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+#nd-toc .size-1.rounded-full {
+  display: none;
+}
+
 
 
 #nd-docs-layout article h1 {
