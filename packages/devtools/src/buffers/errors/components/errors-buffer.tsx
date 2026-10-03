@@ -36,7 +36,8 @@ export function ErrorsBuffer({ runtime, filterRef, register }: BufferProps) {
       },
     ];
     if (!dashboard) return list;
-    const url = `${dashboard.replace(/\/+$/, "")}/issues/${encodeURIComponent(row.id)}`;
+    const base = dashboard.endsWith("/") ? dashboard.slice(0, -1) : dashboard;
+    const url = `${base}/issues/${encodeURIComponent(row.id)}`;
     return [
       { label: "open in dashboard", run: () => window.open(url, "_blank", "noopener") },
       ...list,

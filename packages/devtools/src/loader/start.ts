@@ -17,7 +17,9 @@ type Mount = (bootstrap: Bootstrap, options: DevtoolsOptions) => () => void;
  */
 export async function readBootstrap(options: DevtoolsOptions): Promise<Nullable<Bootstrap>> {
   const send = options.fetch ?? fetch;
-  const url = `${options.endpoint.replace(/\/+$/, "")}/v2/widget/session?project=${encodeURIComponent(options.project)}`;
+  let base = options.endpoint;
+  while (base.endsWith("/")) base = base.slice(0, -1);
+  const url = `${base}/v2/widget/session?project=${encodeURIComponent(options.project)}`;
   try {
     const response = await send(url, {
       credentials: "include",
