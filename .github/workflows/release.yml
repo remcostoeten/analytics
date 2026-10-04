@@ -78,6 +78,8 @@ jobs:
       - name: Publish
         shell: bash
         if: steps.version.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bun run release | tee release.log
           git config user.name "github-actions[bot]"
@@ -85,4 +87,5 @@ jobs:
           for tag in $(sed -n 's/^New tag: //p' release.log); do
             git tag "$tag"
             git push origin "$tag"
+            gh release create "$tag" --verify-tag --prerelease --generate-notes --title "$tag"
           done

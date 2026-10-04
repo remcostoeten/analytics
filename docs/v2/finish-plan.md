@@ -17,7 +17,7 @@ Live on `api.analytics.remcostoeten.nl` from `master` (`7470ed0`, 4 October 2026
 
 - The dev widget routes and the `live` WebSocket (#94).
 
-Public and on the release pipeline (#96, #97): `@spoar/sdk` (2.0.0-next.x) and `@spoar/devtools` (0.1.0-next.x), in Changesets pre mode on the `next` tag. `.github/workflows/release.yml` versions and publishes them; `@spoar/contract` stays private and is bundled into both. `@spoar/devtools@0.1.0-next.0` is on npm; `@spoar/sdk` has no `next` version yet, and its `latest` is the 0.0.1 placeholder.
+Public and on the release pipeline (#96, #97): `@spoar/sdk` (2.0.0-next.x) and `@spoar/devtools` (0.1.0-next.x), in Changesets pre mode on the `next` tag. `.github/workflows/release.yml` versions and publishes them; `@spoar/contract` stays private and is bundled into both. `@spoar/sdk@2.0.0-next.1` and `@spoar/devtools@0.1.0-next.1` are on npm under `next` and `latest`, with git tags and GitHub Releases.
 
 Not built: the v2 dashboard (E4.5) and the retirement of v1 (E5.1).
 
@@ -26,7 +26,7 @@ Not built: the v2 dashboard (E4.5) and the retirement of v1 (E5.1).
 | Step | Owner | Done when |
 | --- | --- | --- |
 | Add `GITHUB_TOKEN` (fine-grained, public repositories read-only) to the `v2.ingestion` Vercel project | Remco | The landing page shows the commit chart |
-| Delete the duplicate Vercel project `v2.analytics-docs`; `v2.analytics.docs` serves the docs domain | Remco | One docs project builds per push |
+| Keep one docs project: `v2.analytics.docs` is gone and `v2.analytics-docs` serves `docs.analytics.remcostoeten.nl` | Remco, done | One docs project builds per push |
 | Check the `jobs` workflow has `API_URL` and `CRON_SECRET` in the `production` environment ([deploy.md](deploy.md) step 7) | Remco | The last rollup, cleanup and alerts runs show in `GET /v2/admin/metrics` |
 | Sign in once on the API, create the organization and a first `admin` token ([deploy.md](deploy.md) step 8) | Remco | `GET /v2/auth/session` returns `isAdmin: true` |
 | Download MaxMind GeoLite2 with an own free license key instead of the third-party mirror in `apps/api/scripts/download-geo.ts`: Remco creates the key as `MAXMIND_LICENSE_KEY`, the agent changes the script with a checksum check and a mirror fallback for local work | Remco, agent | Production builds fetch from `download.maxmind.com` |
@@ -42,10 +42,11 @@ The five blockers in [release-readiness.md](release-readiness.md) are fixed in #
 | Point `exports` at `dist` and resolve source in the workspace through a `source` condition (`tsconfig` `customConditions`, Bun `--conditions`) for `@spoar/sdk` and `@spoar/devtools` | agent, done in #96 another way: `exports` keeps `src`, and `scripts/publish.ts` copies `publishConfig.exports` into `exports` while it packs | `bun pm pack` of each package imports from a clean install |
 | Bundle `@spoar/contract` into the SDK build (tsdown `noExternal`, bundled declarations) and keep it private; drop `private: true` from `@spoar/sdk` and `@spoar/devtools` | agent, done in #96 | A packed SDK has no `@spoar/contract` dependency; `bun run changeset` versions both packages |
 | Add a `release` workflow: `changesets/action` pushes the version changes to `changeset-release/master`, and after the version pull request merges `bun run release` (`scripts/publish.ts`) packs each public package with `bun pm pack` and runs `npm publish --provenance` through trusted publishing | agent, done in #96 | The workflow runs green on a dry run |
-| Set up npm trusted publishing in the browser: on npmjs.com, `@spoar/sdk` (already published as the 0.0.1 placeholder), Settings, Trusted Publisher, GitHub Actions, repository `remcostoeten/analytics`, workflow `release.yml`. `@spoar/devtools` needs its first version on npm before it can get the same trusted publisher; `0.1.0-next.0` is there now | Remco | Both packages publish from CI with provenance |
-| Enable "Allow GitHub Actions to create and approve pull requests" (repository Settings, Actions, General). Until then the version pull request is opened by hand from the `changeset-release/master` branch | Remco | `release.yml` opens the version pull request itself |
+| Set up npm trusted publishing in the browser: on npmjs.com, `@spoar/sdk` (already published as the 0.0.1 placeholder), Settings, Trusted Publisher, GitHub Actions, repository `remcostoeten/analytics`, workflow `release.yml`. `@spoar/devtools` needs its first version on npm before it can get the same trusted publisher; `0.1.0-next.0` is there now | Remco, done | Both packages publish from CI with provenance |
+| Enable "Allow GitHub Actions to create and approve pull requests" (repository Settings, Actions, General). Until then the version pull request is opened by hand from the `changeset-release/master` branch | Remco, done | `release.yml` opens the version pull request itself |
 | Run the blocker matrix in [release-checklist.md](../release-checklist.md): Brave standard and aggressive, uBlock Origin with EasyPrivacy, Firefox strict, Safari | Remco | Every row passes through the `/_ra` proxy and every human run scores under 50 |
-| Merge the version pull request | Remco | `@spoar/sdk@2.0.0-next.x` is on npm under `next` |
+| Merge the version pull request | Remco, done | `@spoar/sdk@2.0.0-next.x` is on npm under `next` |
+| Point `latest` at the newest prerelease, so npmjs.com shows its README instead of the 0.0.1 placeholder's: `npm dist-tag add @spoar/sdk@2.0.0-next.1 latest` and `npm dist-tag add @spoar/devtools@0.1.0-next.1 latest`. The release only moves `next`, so repeat after each prerelease until 2.0.0 | Remco | `npm view @spoar/sdk dist-tags` shows `latest` on a 2.0.0 prerelease |
 
 ## Milestone 3: own sites on v2
 

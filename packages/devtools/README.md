@@ -3,7 +3,7 @@
 An overlay panel for admins on their own site, showing what Spoar analytics sees right now: online visitors, sessions, a log stream with JSON detail, speed per route, error groups and an overview.
 
 <p align="center">
-  <img src="../../apps/docs/public/images/dev-widget.png" width="100%" alt="The panel docked to the bottom of a page, logs buffer open, one rejected event expanded as JSON" />
+  <img src="https://raw.githubusercontent.com/remcostoeten/analytics/master/apps/docs/public/images/dev-widget.png" width="100%" alt="The panel docked to the bottom of a page, logs buffer open, one rejected event expanded as JSON" />
 </p>
 
 It is a separate package from `@spoar/sdk`, so the SDK keeps its size budgets and the widget releases on its own.
@@ -14,7 +14,7 @@ It is a separate package from `@spoar/sdk`, so the SDK keeps its size budgets an
 - Docks to the bottom or floats, resizes, and remembers its layout per origin.
 - Shows the SDK's dropped events and errors as they happen when you pass your SDK client.
 
-The [dev widget page](../../apps/docs/content/docs/sdk/devtools.mdx) covers the entries, options, `widgetReports` and the keyboard map.
+The [dev widget page](https://docs.analytics.remcostoeten.nl/docs/sdk/devtools) covers the entries, options, `widgetReports` and the keyboard map.
 
 ## Install
 
