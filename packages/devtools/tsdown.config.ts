@@ -3,10 +3,11 @@ import type { UserConfig } from "tsdown";
 
 const shared: UserConfig = {
   format: "esm",
+  tsconfig: "tsconfig.build.json",
   dts: { eager: true },
   sourcemap: true,
   minify: true,
-  noExternal: [/^@spoar\/shared/, /^@spoar\/contract/],
+  deps: { alwaysBundle: [/^@spoar\/shared/, /^@spoar\/contract/] },
 };
 
 const client: UserConfig = { ...shared, banner: { js: '"use client";' } };
@@ -15,13 +16,15 @@ export default defineConfig([
   {
     ...shared,
     entry: { index: "src/index.ts" },
-    noExternal: [
-      /^@spoar\/shared/,
-      /^@spoar\/contract/,
-      /^react($|\/)/,
-      /^react-dom($|\/)/,
-      /^scheduler/,
-    ],
+    deps: {
+      alwaysBundle: [
+        /^@spoar\/shared/,
+        /^@spoar\/contract/,
+        /^react($|\/)/,
+        /^react-dom($|\/)/,
+        /^scheduler/,
+      ],
+    },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     clean: true,
   },

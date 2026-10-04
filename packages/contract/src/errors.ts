@@ -1,7 +1,8 @@
 import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
-import { oneOf, Url } from "./schema";
+import { oneOf } from "./schema";
+import notFound from "../fixtures/ApiError/valid/not-found.json";
 
 type LogLevel = "info" | "warn" | "error";
 
@@ -111,18 +112,41 @@ export const errorCatalog = {
   },
 } as const satisfies { [Code in ErrorCode]: ErrorSpec };
 
-export const ErrorCode = oneOf(errorCodes);
+export const ErrorCode = oneOf(errorCodes, {
+  description: errorCodes
+    .map((code) => `- \`${code}\` (${errorCatalog[code].status}): ${errorCatalog[code].docs}`)
+    .join("\n"),
+});
 
-export const ErrorDetails = Type.Record(Type.String(), Type.Unknown());
+export const ErrorDetails = Type.Record(Type.String(), Type.Unknown(), {
+  description:
+    "Extra context for some codes: `fields` with each failed `path` and `message` for `VALIDATION_FAILED`, `retryAfterSeconds` for `RATE_LIMITED`.",
+});
 export type ErrorDetails = Static<typeof ErrorDetails>;
 
-export const ApiError = Type.Object({
-  error: Type.Object({
-    code: ErrorCode,
-    message: Type.String({ minLength: 1 }),
-    details: Type.Optional(ErrorDetails),
-    requestId: Type.String({ minLength: 1 }),
-    docs: Url,
-  }),
-});
+export const ApiError = Type.Object(
+  {
+    error: Type.Object({
+      code: ErrorCode,
+      message: Type.String({
+        minLength: 1,
+        description: "What went wrong, for people. Never includes internals.",
+      }),
+      details: Type.Optional(ErrorDetails),
+      requestId: Type.String({
+        minLength: 1,
+        description:
+          "The `X-Request-Id` the request sent, or a new `req_<uuid>`; also returned as the `X-Request-Id` header.",
+      }),
+      docs: Type.String({
+        format: "uri",
+        description: "Link to this error code in the API reference.",
+      }),
+    }),
+  },
+  {
+    description: "The error envelope every failed request answers with.",
+    examples: [notFound],
+  },
+);
 export type ApiError = Static<typeof ApiError>;

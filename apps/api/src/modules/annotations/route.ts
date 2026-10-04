@@ -2,6 +2,7 @@ import {
   AnnotationList,
   AnnotationResponse,
   CreateAnnotation,
+  ProjectParams,
   UpdateAnnotation,
 } from "@spoar/contract";
 import type { AnnotationStore } from "@spoar/engine";
@@ -17,7 +18,10 @@ import { createAnnotation, deleteAnnotation, listAnnotations, updateAnnotation }
 
 const tags = ["Annotations"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
-const named = t.Object({ project: t.String(), annotation: t.String() });
+const named = t.Composite([
+  ProjectParams,
+  t.Object({ annotation: t.String({ description: "The annotation id (`ann_...`)." }) }),
+]);
 
 /**
  * @name annotationsModule
@@ -45,6 +49,7 @@ export function annotationsModule(
           listAnnotations(store, id, params, options.clock()),
         ),
       {
+        params: ProjectParams,
         access: "project",
         query: annotationsQuery,
         response: { 200: AnnotationList, ...responses },
@@ -66,6 +71,7 @@ export function annotationsModule(
         return created;
       },
       {
+        params: ProjectParams,
         access: "admin",
         body: CreateAnnotation,
         response: { 201: AnnotationResponse, ...responses },

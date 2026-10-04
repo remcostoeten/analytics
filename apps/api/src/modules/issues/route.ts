@@ -5,6 +5,7 @@ import {
   IssueEventList,
   IssueList,
   IssueResponse,
+  ProjectParams,
   UpdatedIssue,
   UpdateIssue,
 } from "@spoar/contract";
@@ -28,6 +29,19 @@ import { issuesQuery, pagingQuery } from "../reads/query";
 
 const tags = ["Issues"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
+const issueParams = t.Composite([
+  ProjectParams,
+  t.Object({ issue: t.String({ description: "The issue id (`iss_...`)." }) }),
+]);
+const ruleParams = t.Composite([
+  ProjectParams,
+  t.Object({
+    rule: t.String({
+      description:
+        "`rule_...` removes an ignore pattern; `mute_<issue>` unmutes that issue, which reopens it.",
+    }),
+  }),
+]);
 
 /**
  * @name issuesModule
@@ -52,6 +66,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
         ),
       {
         query: issuesQuery,
+        params: ProjectParams,
         access: "detail",
         response: { 200: IssueList, ...responses },
         detail: {
@@ -68,6 +83,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
           issueDetail(store, [id], path.issue),
         ),
       {
+        params: issueParams,
         access: "detail",
         response: { 200: IssueResponse, ...responses },
         detail: { summary: "One issue", description: "By its `iss_` id.", tags },
@@ -81,6 +97,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
         ),
       {
         query: pagingQuery,
+        params: issueParams,
         access: "detail",
         response: { 200: IssueEventList, ...responses },
         detail: {
@@ -97,6 +114,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
           updateIssue(store, [id], path.issue, body.status),
         ),
       {
+        params: issueParams,
         access: "admin",
         body: UpdateIssue,
         response: { 200: UpdatedIssue, ...responses },
@@ -112,6 +130,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
       ({ request, caller, project, set }) =>
         gate.answer(request, caller, project, set, "private", (_, id) => listErrorRules(store, id)),
       {
+        params: ProjectParams,
         access: "admin",
         response: { 200: ErrorRuleList, ...responses },
         detail: {
@@ -132,6 +151,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
         return created;
       },
       {
+        params: ProjectParams,
         access: "admin",
         body: CreateErrorRule,
         response: { 201: ErrorRuleResponse, ...responses },
@@ -152,6 +172,7 @@ export function issuesModule(deps: AccessDeps, options: ReadsOptions, docsBase: 
         return removed === null ? status(204, undefined) : removed;
       },
       {
+        params: ruleParams,
         access: "admin",
         response: { 204: t.Void(), ...responses },
         detail: {

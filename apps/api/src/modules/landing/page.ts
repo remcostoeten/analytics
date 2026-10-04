@@ -31,7 +31,7 @@ function pathMarkup(path: string) {
 
 const mark = `<svg class="mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="tile" width="28" height="28" rx="8"/><path class="trace" pathLength="1" d="M5 19 10 11 14.5 16 18.5 8 23 19"/><circle class="end" cx="23" cy="19" r="2.6"/></svg>`;
 
-const favicon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#0a0a0a"/><path d="M5 19 10 11 14.5 16 18.5 8 23 19" fill="none" stroke="#fafafa" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="19" r="2.6" fill="#fe5101"/></svg>`;
+export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#0a0a0a"/><path d="M5 19 10 11 14.5 16 18.5 8 23 19" fill="none" stroke="#fafafa" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="19" r="2.6" fill="#fe5101"/></svg>`;
 
 const styles = `
 :root {
@@ -192,6 +192,8 @@ li { display: grid; grid-template-columns: 64px minmax(0, 1.4fr) minmax(0, 1fr);
 .badge.delete { background: color-mix(in srgb, var(--err) 15%, transparent); color: var(--err); }
 .badge.ws { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 .path { font-family: var(--mono); font-size: 0.78rem; overflow-wrap: anywhere; }
+a.path { color: inherit; text-decoration: none; }
+a.path:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .prefix { color: var(--muted); opacity: 0.55; }
 .param { color: var(--muted); font-style: italic; }
 .summary { color: var(--muted); font-size: 0.8rem; }
@@ -356,10 +358,21 @@ function historyChart(history: History) {
   return `<div class="card chart"><div class="scroll"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Cumulative commits over the last year"><defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.12"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient><linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--fg);stop-opacity:.5"/><stop offset=".75" style="stop-color:var(--fg)"/><stop offset="1" style="stop-color:var(--accent)"/></linearGradient></defs><g class="rules">${rules}</g><path d="${area}" style="fill:url(#fade)"/><path class="line" d="${line}"/><g>${dots}</g><circle class="halo" cx="${points[final]?.x.toFixed(1) ?? 0}" cy="${y(running).toFixed(1)}" r="9"/><g class="months">${months}</g></svg></div><div class="axis"><span>${history.total} commits in the last year</span><span>${formatDay(history.weeks[0]?.week ?? "")} to ${formatDay(history.weeks.at(-1)?.week ?? "")}</span></div></div>`;
 }
 
-function routeItem(route: RouteEntry) {
+function referenceAnchor(group: RouteGroup, route: RouteEntry) {
+  // Scalar's operation anchors use `{param}` where Elysia routes use `:param`.
+  const path = route.path.replaceAll(/:(\w+)/g, "{$1}");
+  return `#tag/${slug(group.name)}/${route.method}${path}`;
+}
+
+function routeItem(group: RouteGroup, route: RouteEntry, docs: string) {
   const method = route.method === "ALL" ? "ANY" : route.method;
   const summary = route.summary ? inlineCode(route.summary) : "";
-  return `<li><span class="badge caps ${escape(method.toLowerCase())}">${escape(method)}</span><span class="path">${pathMarkup(route.path)}</span><span class="summary">${summary}</span></li>`;
+  const path = pathMarkup(route.path);
+  const target =
+    route.method === "WS" || route.method === "ALL"
+      ? `<span class="path">${path}</span>`
+      : `<a class="path" href="${escape(docs + referenceAnchor(group, route))}">${path}</a>`;
+  return `<li><span class="badge caps ${escape(method.toLowerCase())}">${escape(method)}</span>${target}<span class="summary">${summary}</span></li>`;
 }
 
 function methodMix(group: RouteGroup) {
@@ -369,10 +382,10 @@ function methodMix(group: RouteGroup) {
   return [...methods].join(" · ");
 }
 
-function groupBlock(group: RouteGroup) {
+function groupBlock(group: RouteGroup, docs: string) {
   return `<details class="group" id="${slug(group.name)}">
 <summary><span class="chev"></span><b class="gname">${escape(group.name)}</b><small class="gdesc">${escape(group.description)}</small><span class="mix caps">${escape(methodMix(group))}</span><span class="count num">${group.routes.length}</span></summary>
-<ul>${group.routes.map(routeItem).join("")}</ul>
+<ul>${group.routes.map((route) => routeItem(group, route, docs)).join("")}</ul>
 </details>`;
 }
 
@@ -486,7 +499,7 @@ export function landingPage(view: Landing): string {
 <span class="spacer"></span>
 <nav class="nav caps" aria-label="Sections"><a href="#health">Health</a><a href="#history">History</a><a href="#endpoints">Endpoints</a></nav>
 <a class="ghost caps wide" href="${escape(view.links.source)}">GitHub</a>
-<a class="primary caps" href="${escape(view.links.docs)}">Reference<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+<a class="primary caps" href="${escape(view.links.docs)}">API reference<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
 </div></header>
 
 <main>
@@ -509,13 +522,13 @@ ${toc(view.groups)}
 <button class="outline caps" type="button" data-collapse>Collapse all</button>
 </div>
 <div class="groups">
-${view.groups.map(groupBlock).join("\n")}
+${view.groups.map((group) => groupBlock(group, view.links.docs)).join("\n")}
 </div>
 <p class="empty caps" hidden>No routes match that filter</p>
 </section>
 </main>
 
-<footer class="dots"><div class="in"><span>${escape(view.name)} v${escape(splitVersion(view.health.version).number)} · by <a class="link" href="${escape(view.links.author)}">@remcostoeten</a></span><span><a class="link" href="${escape(view.links.docs)}">Reference</a> · <a class="link" href="${escape(view.links.source)}">Source</a></span></div></footer>
+<footer class="dots"><div class="in"><span>${escape(view.name)} v${escape(splitVersion(view.health.version).number)} · by <a class="link" href="${escape(view.links.author)}">@remcostoeten</a></span><span><a class="link" href="${escape(view.links.docs)}">API reference</a> · <a class="link" href="${escape(view.links.source)}">Source</a></span></div></footer>
 <script>${script}</script>
 </body>
 </html>

@@ -3,10 +3,11 @@ import type { UserConfig } from "tsdown";
 
 const shared: UserConfig = {
   format: "esm",
+  tsconfig: "tsconfig.build.json",
   dts: { eager: true },
   sourcemap: true,
   minify: true,
-  noExternal: [/^@spoar\/shared/, /^@spoar\/contract/],
+  deps: { alwaysBundle: [/^@spoar\/shared/, /^@spoar\/contract/] },
 };
 
 const client: UserConfig = { ...shared, banner: { js: '"use client";' } };

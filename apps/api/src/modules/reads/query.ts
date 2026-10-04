@@ -1,9 +1,13 @@
 import {
   BreakdownQuery,
   FilterQuery,
+  HeatmapMetric,
   IssueStatus,
   LifecycleInterval,
+  MapLevel,
   oneOf,
+  PathDirection,
+  ProjectParams,
   RangeQuery,
   RetentionInterval,
   SpeedDevice,
@@ -27,7 +31,10 @@ const cursor = Type.String({
   minLength: 1,
   description: "The opaque `nextCursor` of the previous page.",
 });
-const format = oneOf(["csv", "json", "sql"]);
+const format = oneOf(["csv", "json", "sql"], {
+  description:
+    "Returns every row as one download instead of a page, up to 1,000,000 rows: `csv` with a header row and nested fields as dotted columns, `json` as the normal answer with all rows in `data`, `sql` as `CREATE TABLE` and `INSERT` statements for Postgres or SQLite. `Accept: text/csv` also asks for CSV.",
+});
 
 const pageFields = { limit: Type.Optional(limit), cursor: Type.Optional(cursor) };
 const listFields = { ...pageFields, format: Type.Optional(format) };
@@ -85,7 +92,7 @@ export const pathsQuery = Type.Composite([
     page: Type.Optional(
       Type.String({ minLength: 1, description: "The page path to start from; required." }),
     ),
-    direction: Type.Optional(oneOf(["next", "previous"])),
+    direction: Type.Optional(PathDirection),
     ...listFields,
   }),
 ]);
@@ -124,7 +131,7 @@ export const lifecycleQuery = Type.Composite([
 export const heatmapQuery = Type.Composite([
   scopeQuery,
   Type.Object({
-    metric: Type.Optional(oneOf(["visitors", "pageviews"])),
+    metric: Type.Optional(HeatmapMetric),
     timezone: Type.Optional(
       Type.String({ minLength: 1, description: "An IANA timezone; default UTC." }),
     ),
@@ -140,7 +147,7 @@ export const heatmapQuery = Type.Composite([
  */
 export const mapQuery = Type.Composite([
   scopeQuery,
-  Type.Object({ level: Type.Optional(oneOf(["country", "region", "city"])), ...listFields }),
+  Type.Object({ level: Type.Optional(MapLevel), ...listFields }),
 ]);
 
 /**
@@ -155,10 +162,18 @@ export const liveEventsQuery = Type.Composite([
   FilterQuery,
   Type.Object({
     limit: Type.Optional(
-      t.Integer({ minimum: 1, maximum: 100, description: "Events per poll, 1 to 100." }),
+      t.Integer({
+        minimum: 1,
+        maximum: 100,
+        description: "Events per poll, 1 to 100; default 50.",
+      }),
     ),
     after: Type.Optional(
-      Type.String({ minLength: 1, description: "The cursor of the last event seen." }),
+      Type.String({
+        minLength: 1,
+        description:
+          "The `nextCursor` of the previous poll; without it the last five minutes come at once. A reconnecting event stream sends `Last-Event-ID` instead.",
+      }),
     ),
   }),
 ]);
@@ -213,9 +228,24 @@ export const speedQuery = Type.Composite([
     environment: Type.Optional(SpeedEnvironment),
     interval: Type.Optional(SpeedInterval),
     group: Type.Optional(SpeedGroup),
-    minShare: Type.Optional(Type.String({ pattern: "^(0(\\.\\d+)?|1(\\.0+)?)$" })),
-    percentile: Type.Optional(oneOf(["50", "75", "90", "95", "99"])),
-    metric: Type.Optional(VitalMetric),
+    minShare: Type.Optional(
+      Type.String({
+        pattern: "^(0(\\.\\d+)?|1(\\.0+)?)$",
+        description:
+          "`speed/routes` only: leaves out routes with less than this share of the samples, from 0 to 1; default 0.005, `0` keeps them all.",
+      }),
+    ),
+    percentile: Type.Optional(
+      oneOf(["50", "75", "90", "95", "99"], {
+        description: "Which percentile of the samples the values show; default 75.",
+      }),
+    ),
+    metric: Type.Optional(
+      Type.Union(VitalMetric.anyOf, {
+        description:
+          "The Web Vital: `lcp`, `inp`, `cls`, `fcp` or `ttfb`. Required on `speed/timeseries` and `speed/elements`.",
+      }),
+    ),
     ...pageFields,
   }),
 ]);
@@ -227,7 +257,12 @@ export const speedQuery = Type.Composite([
  * @example
  * app.get("/projects/:project/issues", handler, { query: issuesQuery });
  */
-export const issuesQuery = Type.Object({ status: Type.Optional(IssueStatus), ...pageFields });
+export const issuesQuery = Type.Object({
+  status: Type.Optional(
+    Type.Union(IssueStatus.anyOf, { description: "Keep one status; every issue by default." }),
+  ),
+  ...pageFields,
+});
 
 /**
  * @name pagingQuery
@@ -257,6 +292,39 @@ export const annotationsQuery = Type.Composite([RangeQuery, Type.Object(pageFiel
  * app.get("/projects/:project/realtime", handler, { query: realtimeQuery });
  */
 export const realtimeQuery = Type.Object({
-  include: Type.Optional(Type.Literal("visitors")),
-  limit: Type.Optional(Type.String({ pattern: "^[0-9]+$" })),
+  include: Type.Optional(
+    Type.Literal("visitors", {
+      description: "Adds the active visitor rows as `visitors`; needs `detail` access.",
+    }),
+  ),
+  limit: Type.Optional(
+    Type.String({
+      pattern: "^[0-9]+$",
+      description: "Caps the visitor rows, 1 to 200; default 50.",
+    }),
+  ),
 });
+
+const dimension = Type.String({
+  minLength: 1,
+  description:
+    "A registered dimension such as `page`, `referrer_domain`, `country`, `browser`, `device` or `utm_source`, or `prop:<key>`, `trait:<key>` and `group:<type>`.",
+});
+
+/**
+ * @name dimensionParams
+ * @description The `:dimension` path parameter of the breakdown across projects.
+ *
+ * @example
+ * app.get("/breakdown/:dimension", handler, { params: dimensionParams });
+ */
+export const dimensionParams = Type.Object({ dimension });
+
+/**
+ * @name breakdownParams
+ * @description The `:project` and `:dimension` path parameters of a project's breakdown.
+ *
+ * @example
+ * app.get("/projects/:project/breakdown/:dimension", handler, { params: breakdownParams });
+ */
+export const breakdownParams = Type.Composite([ProjectParams, dimensionParams]);

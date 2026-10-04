@@ -59,6 +59,7 @@ import { breakdown, readScope, realtime, stats, timeseries } from "../reads/serv
 import type { Scoped as ReadScoped } from "../reads/service";
 import {
   breakdownQuery,
+  dimensionParams,
   eventsQuery,
   heatmapQuery,
   issuesQuery,
@@ -330,6 +331,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           },
         ),
       {
+        params: dimensionParams,
         query: breakdownQuery,
         access: "public",
         response: { 200: t.Union([BreakdownResponse, download]), ...responses },
@@ -429,6 +431,12 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
           return allowed.ok ? personDetail(options.details, projects, path.userId) : allowed;
         }),
       {
+        params: t.Object({
+          userId: t.String({
+            minLength: 1,
+            description: "The `userId` the SDK sent with `identify`.",
+          }),
+        }),
         access: "public",
         response: { 200: PersonResponse, ...responses },
         detail: {

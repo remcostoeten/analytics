@@ -99,6 +99,9 @@ describe("landing", () => {
       expect(html).toContain('/projects/<span class="param">:project</span>/stats');
       expect(html).toContain("Headline <code>numbers</code>");
       expect(html).toContain("https://api.example.test/v2/openapi");
+      expect(html).toContain(
+        'href="https://api.example.test/v2/openapi#tag/reads/GET/v2/projects/{project}/stats"',
+      );
       expect(html).toContain("Commit history is not available");
       expect(html).not.toContain("/secret</span>");
       expect(html).not.toContain("/untagged</span>");

@@ -82,6 +82,7 @@ export function eventsModule(options: EventsOptions) {
         description:
           "The body is an ingest envelope, sent as text/plain so browsers skip the preflight, or as application/json from a server. Each event in `events` is a WireEvent and is checked on its own: a bad event is reported by index in `rejected` while the rest are stored.",
         tags: ["Ingest"],
+        security: [{ projectKey: [] }, { apiToken: [] }],
       },
     },
   );

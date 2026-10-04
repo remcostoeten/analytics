@@ -2,6 +2,7 @@ import {
   AlertDeliveryList,
   AlertsStatus,
   AlertTargetList,
+  ProjectParams,
   RotatedSecret,
   SyncTargets,
   TargetChangesResponse,
@@ -32,7 +33,7 @@ import type { AlertsDeps } from "./service";
 type Set = { status?: unknown; headers: { [name: string]: unknown } };
 
 const tags = ["Alerts"];
-const named = t.Object({ project: t.String(), name: TargetName });
+const named = t.Composite([ProjectParams, t.Object({ name: TargetName })]);
 
 /**
  * @name alertsModule
@@ -70,6 +71,7 @@ export function alertsModule(
         return answered.ok ? { data: answered.value, nextCursor: null } : answered.body;
       },
       {
+        params: ProjectParams,
         access: "admin",
         response: { 200: AlertTargetList, ...errorResponses },
         detail: {
@@ -85,6 +87,7 @@ export function alertsModule(
       async ({ project, body, set }) =>
         data(await syncTargets(alerts, project?.id ?? "", body.targets), set),
       {
+        params: ProjectParams,
         access: "admin",
         body: SyncTargets,
         response: { 200: TargetChangesResponse, ...errorResponses },
@@ -171,6 +174,7 @@ export function alertsModule(
         return answered.ok ? answered.value : answered.body;
       },
       {
+        params: ProjectParams,
         access: "admin",
         response: { 200: AlertDeliveryList, ...errorResponses },
         detail: {
