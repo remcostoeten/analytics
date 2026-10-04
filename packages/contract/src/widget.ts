@@ -45,6 +45,29 @@ export type ActiveVisitor = Static<typeof ActiveVisitor>;
 export const ActiveVisitors = Type.Object({ data: Type.Array(ActiveVisitor), window: Range });
 export type ActiveVisitors = Static<typeof ActiveVisitors>;
 
+export const SessionSignal = oneOf(["human", "engaged", "suspect", "bot"]);
+export type SessionSignal = Static<typeof SessionSignal>;
+
+export const LiveSession = Type.Object({
+  id: Id,
+  visitor: Id,
+  startedAt: Timestamp,
+  lastSeen: Timestamp,
+  trail: Type.Array(Type.String(), { maxItems: 20 }),
+  pages: Count,
+  events: Count,
+  durationMs: Count,
+  referrer: nullable(Type.String()),
+  country: nullable(Type.String({ minLength: 2, maxLength: 2 })),
+  device: DeviceType,
+  botScore: Type.Integer({ minimum: 0, maximum: 100 }),
+  signal: SessionSignal,
+});
+export type LiveSession = Static<typeof LiveSession>;
+
+export const LiveSessions = Type.Object({ data: Type.Array(LiveSession), window: Range });
+export type LiveSessions = Static<typeof LiveSessions>;
+
 export const ActiveVisitorsQuery = Type.Object({
   limit: Type.Optional(Type.String({ pattern: "^[0-9]+$" })),
 });

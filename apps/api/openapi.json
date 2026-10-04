@@ -48,6 +48,18 @@
       "description": "Error tracking, issues and error rules"
     },
     {
+      "name": "Annotations",
+      "description": "Dated labels on a project's time series"
+    },
+    {
+      "name": "Dev widget",
+      "description": "The admin dev widget: bootstrap, live visitors and sessions, logs, overview"
+    },
+    {
+      "name": "Alerts",
+      "description": "Alert targets, deliveries and their status"
+    },
+    {
       "name": "SQL",
       "description": "The read-only SQL console and saved queries"
     },
@@ -27672,6 +27684,248 @@
           }
         },
         "operationId": "getV2ProjectsByProjectRealtimeVisitors"
+      }
+    },
+    "/v2/projects/{project}/realtime/sessions": {
+      "get": {
+        "summary": "Live sessions",
+        "description": "One row per session with an event in the last five minutes, most recently active first: the visitor, the last 20 pages in order, pageviews, events, duration, referrer, place, device, the highest bot score and `signal`: `bot` from 50, `suspect` from 25, `engaged` from three pageviews or a minute, else `human`. `limit` from 1 to 200, default 50.",
+        "tags": [
+          "Dev widget"
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "window"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "visitor",
+                          "startedAt",
+                          "lastSeen",
+                          "trail",
+                          "pages",
+                          "events",
+                          "durationMs",
+                          "referrer",
+                          "country",
+                          "device",
+                          "botScore",
+                          "signal"
+                        ],
+                        "properties": {
+                          "id": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "visitor": {
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "type": "string"
+                          },
+                          "startedAt": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "lastSeen": {
+                            "format": "date-time",
+                            "type": "string"
+                          },
+                          "trail": {
+                            "maxItems": 20,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "pages": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "events": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "durationMs": {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "referrer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "country": {
+                            "minLength": 2,
+                            "maxLength": 2,
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "device": {
+                            "type": "string",
+                            "enum": [
+                              "desktop",
+                              "mobile",
+                              "tablet",
+                              "bot",
+                              "unknown"
+                            ]
+                          },
+                          "botScore": {
+                            "minimum": 0,
+                            "maximum": 100,
+                            "type": "integer"
+                          },
+                          "signal": {
+                            "type": "string",
+                            "enum": [
+                              "human",
+                              "engaged",
+                              "suspect",
+                              "bot"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "window": {
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to"
+                      ],
+                      "properties": {
+                        "from": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "to": {
+                          "format": "date-time",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Response for status 403",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectRealtimeSessions"
       }
     },
     "/v2/projects/{project}/overview": {

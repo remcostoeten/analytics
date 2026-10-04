@@ -1,4 +1,1 @@
-{
-  "title": "API",
-  "pages": ["overview", "auth", "sql", "alerts", "alert-retries", "annotations"]
-}
+{"title": "API", "pages": ["overview", "auth", "dev-widget", "sql", "alerts", "alert-retries", "annotations"]}

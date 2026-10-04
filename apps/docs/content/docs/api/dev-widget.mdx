@@ -1,0 +1,134 @@
+---
+title: Dev widget
+description: The routes behind the dev widget, and the WebSocket that streams events, logs, visitors and sessions on one connection.
+---
+
+The [dev widget](/docs/sdk/devtools) reads these routes. They are ordinary API routes, so a script with an API token can call them too.
+
+## Routes
+
+| Method | Path | Access | Does |
+| --- | --- | --- | --- |
+| GET | `/v2/widget/session` | session cookie | Finds the project from `Origin` and answers a 15-minute widget token |
+| GET | `/v2/projects/:project/realtime/visitors` | detail | One row per visitor seen in the last 5 minutes |
+| GET | `/v2/projects/:project/realtime/sessions` | detail | One row per session active in the last 5 minutes, with its page trail and signal |
+| GET | `/v2/projects/:project/overview` | project | The statusline numbers in one answer, cached 10 seconds |
+| GET | `/v2/projects/:project/logs` | admin | Ingest and engine decisions: long-polling with `after`, or server-sent events |
+| POST | `/v2/projects/:project/logs/client` | ingest key | The SDK's `drop` and `error` reports, when the project has `widgetReports` on |
+| GET (WebSocket) | `/v2/projects/:project/live` | token | Events, logs, visitors and sessions on one connection |
+
+The [API reference](/docs/reference) has the request and response schema of every HTTP route under **Dev widget**. The WebSocket is not in the OpenAPI document, so its protocol is below.
+
+## Signing in
+
+The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API finds the project whose `allowedOrigins` lists the page's `Origin`, reads the admin session cookie, checks that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `admin` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. Call the route again before `expiresAt` to refresh.
+
+| Answer | When |
+| --- | --- |
+| `200` | You are signed in and may administer the project |
+| `401 AUTH_REQUIRED` | No session cookie reached the API |
+| `403 ORIGIN_NOT_ALLOWED` | No project lists the page's origin |
+| `403 FORBIDDEN` | You are signed in but cannot administer this project |
+
+The session cookie is `SameSite=Lax`, so browsers send it to the API only from the same site, such as `www.example.com` calling `api.example.com`. A site on another domain reaches `401 AUTH_REQUIRED` even when you are signed in.
+
+Widget tokens never appear in `GET /v2/tokens`, cannot call organization-wide routes such as `POST /v2/tokens`, and are deleted by the cleanup job once they expire.
+
+## Live sessions
+
+`GET /v2/projects/:project/realtime/sessions` answers one row per session with an event in the last five minutes, most recently active first. `limit` takes 1 to 200 and defaults to 50.
+
+```json
+{
+  "data": [
+    {
+      "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "startedAt": "2026-10-03T13:59:12.000Z",
+      "lastSeen": "2026-10-03T14:02:04.117Z",
+      "trail": ["/", "/pricing", "/quote"],
+      "pages": 3,
+      "events": 5,
+      "durationMs": 172117,
+      "referrer": "https://www.google.com/",
+      "country": "NL",
+      "device": "mobile",
+      "botScore": 0,
+      "signal": "engaged"
+    }
+  ],
+  "window": { "from": "2026-10-03T13:57:04.117Z", "to": "2026-10-03T14:02:04.117Z" }
+}
+```
+
+- `trail` holds the last 20 pageview paths of the session, oldest first.
+- `durationMs` runs from the session's first event to its last.
+- `botScore` is the highest score of the session's events.
+- `signal` is `bot` from a score of 50, `suspect` from 25, `engaged` from three pageviews or a minute on the site, and `human` otherwise.
+
+## Live updates over a WebSocket
+
+`/v2/projects/:project/live` carries the data of `realtime/events`, `logs`, `realtime/visitors` and `realtime/sessions` on one connection. Every message, in both directions, is one JSON object with a `type`.
+
+### Connecting
+
+1. Open `wss://<api>/v2/projects/:project/live`.
+2. Send `{ "type": "auth", "token": "wt_..." }` within 10 seconds. A browser cannot set headers on a WebSocket, so the token goes in this first message and never in the URL. An `at_` API token works as well.
+3. The API answers `ready` with the channels the token may use.
+
+| Channel | Needs | Sends |
+| --- | --- | --- |
+| `events` | `project` access | New events in batches with a cursor; `visitor` and `session` ids only with `detail` access |
+| `visitors` | `detail` access | The active visitor rows, at once and whenever they change |
+| `sessions` | `detail` access | The live session rows, at once and whenever they change |
+| `logs` | `admin` access | New log lines in batches with a cursor |
+
+```ts
+const socket = new WebSocket("wss://api.example.com/v2/projects/example.com/live");
+
+socket.addEventListener("open", () => {
+  socket.send(JSON.stringify({ type: "auth", token }));
+});
+
+socket.addEventListener("message", (event) => {
+  const message = JSON.parse(event.data);
+  if (message.type === "ready") {
+    socket.send(JSON.stringify({ type: "subscribe", channel: "events" }));
+    socket.send(JSON.stringify({ type: "subscribe", channel: "sessions" }));
+  }
+  if (message.type === "events") cursors.events = message.cursor;
+});
+```
+
+### Messages
+
+| From | `type` | Fields |
+| --- | --- | --- |
+| client | `auth` | `token` |
+| client | `subscribe` | `channel`, optional `after` cursor |
+| client | `unsubscribe` | `channel` |
+| client | `ping` | none |
+| server | `ready` | `project`, `channels`, `expiresAt` (null for a token without expiry) |
+| server | `subscribed` | `channel` |
+| server | `events`, `logs` | `data`, `cursor` |
+| server | `visitors`, `sessions` | `data` |
+| server | `error` | `code`, `message`, optional `channel` |
+| server | `pong` | none |
+
+Rows have the same shape as the HTTP routes. `@spoar/contract` exports the schemas as `LiveClientMessage` and `LiveServerMessage`. A malformed message answers `error` with `VALIDATION_FAILED` and leaves the socket open; a channel the token may not use answers `error` with `FORBIDDEN`.
+
+### Reconnecting
+
+| Close code | Means | Do |
+| --- | --- | --- |
+| `4401` | No `auth` within 10 seconds, or the token was refused | Fix the token, then connect again |
+| `4001` | The token expired | Call `GET /v2/widget/session` for a new token, then connect again |
+| `1000`, `1001`, `1006` | The connection ended, for example when the function reached its maximum duration | Connect again with a backoff |
+
+When you subscribe again, pass the last `cursor` you received for `events` and `logs` as `after`, and you get what you missed. Without `after`, `events` starts with the last five minutes and `logs` with the last 100 lines. Delivery is at least once around a reconnect, so drop ids you already have.
+
+### How it scales
+
+The API runs on Vercel Functions, where a WebSocket stays on the instance that accepted it. On each instance, every socket watching the same project and channel shares one poller. `events` and `logs` long-poll Postgres from a cursor, and `visitors` and `sessions` are read every 5 seconds and sent only when they changed. Ten open widgets on one instance cost the same database reads as one. Postgres stays the only source of truth, so a reconnect that lands on another instance or a new deployment resumes from its cursor.
+
+The HTTP routes and server-sent events (`Accept: text/event-stream` on `realtime/events` and `logs`) stay available for clients that cannot open a WebSocket.
