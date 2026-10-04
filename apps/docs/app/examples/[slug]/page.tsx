@@ -4,11 +4,11 @@ import { extname, join } from "node:path";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { CodeWindow } from "@/components/landing/code-window";
 import { ArrowIcon } from "@/components/landing/icons";
-import type { Example } from "@/lib/examples";
 import { getExample, listExamples } from "@/lib/examples";
 import { baseOptions } from "@/lib/layout-options";
 
@@ -30,10 +30,10 @@ const languages: { [extension: string]: string } = {
   ".md": "md",
 };
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
-  return listExamples().map((example) => ({ slug: example.slug }));
+  const params = listExamples().map((example) => ({ slug: example.slug }));
+  // Cache Components refuses an empty list, so a slug no example uses stands in and 404s.
+  return params.length > 0 ? params : [{ slug: "none" }];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -46,14 +46,18 @@ function languageOf(file: string) {
   return languages[extname(file)] ?? "txt";
 }
 
-function readSource(example: Example, file: string) {
-  return readFile(join(process.cwd(), "..", "..", "examples", example.directory, file), "utf8");
+async function readSource(directory: string, file: string) {
+  "use cache";
+  cacheLife("max");
+  return readFile(join(process.cwd(), "..", "..", "examples", directory, file), "utf8");
 }
 
 export default async function ExamplePage({ params }: Props) {
   const example = getExample((await params).slug);
   if (!example) notFound();
-  const sources = await Promise.all(example.files.map((file) => readSource(example, file)));
+  const sources = await Promise.all(
+    example.files.map((file) => readSource(example.directory, file)),
+  );
   return (
     <HomeLayout {...baseOptions()}>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">

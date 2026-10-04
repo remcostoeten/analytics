@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { HomeLayout } from "fumadocs-ui/layouts/home";
+import { cacheLife } from "next/cache";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -77,8 +78,14 @@ const stacks = [
   { name: "Any language", href: "/docs/frameworks/server#other-languages" },
 ];
 
+async function readSnippet() {
+  "use cache";
+  cacheLife("max");
+  return readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
+}
+
 export default async function HomePage() {
-  const example = await readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
+  const example = await readSnippet();
   return (
     <HomeLayout {...baseOptions()}>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">

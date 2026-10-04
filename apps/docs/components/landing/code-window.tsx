@@ -1,4 +1,5 @@
 import { highlight } from "fumadocs-core/highlight";
+import { cacheLife } from "next/cache";
 
 import { Pre } from "@/components/code-block";
 import { codeThemes } from "@/lib/code-theme";
@@ -10,6 +11,8 @@ type Props = {
 };
 
 export async function CodeWindow({ title, lang, code }: Props) {
+  "use cache";
+  cacheLife("max");
   const rendered = await highlight(code, {
     lang,
     themes: codeThemes,
