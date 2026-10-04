@@ -4,6 +4,7 @@ import { PGlite } from "@electric-sql/pglite";
 import {
   ActiveVisitors,
   ApiError,
+  LiveSessions,
   LogList,
   Overview,
   RealtimeResponse,
@@ -244,7 +245,7 @@ beforeAll(async () => {
      VALUES ($1, 'pageview', 'pageview', '2026-09-20T10:00:00Z', '2026-09-20T10:00:00Z', '/', 'legacy-visitor', 'legacy-session', 'legacy-1', 0)`,
     [project],
   );
-});
+}, 20_000);
 
 describe("GET /v2/widget/session", () => {
   test("403 ORIGIN_NOT_ALLOWED when no project lists the origin", async () => {
@@ -372,6 +373,39 @@ describe("active visitors", () => {
       401,
       "UNAUTHORIZED",
     );
+  });
+});
+
+describe("live sessions", () => {
+  test("one row per active session with its trail and signal", async () => {
+    const list = await body(`/v2/projects/${project}/realtime/sessions`, LiveSessions);
+    expect(list.data).toEqual([
+      {
+        id: session,
+        visitor,
+        startedAt: "2026-10-03T14:01:30.000Z",
+        lastSeen: now.toISOString(),
+        trail: ["/pricing"],
+        pages: 1,
+        events: 2,
+        durationMs: 0,
+        referrer: "https://www.google.com/",
+        country: null,
+        device: "desktop",
+        botScore: 25,
+        signal: "suspect",
+      },
+    ]);
+    expect(list.window).toEqual({ from: "2026-10-03T13:57:00.000Z", to: now.toISOString() });
+  });
+
+  test("checks limit and needs detail access", async () => {
+    await failed(
+      await call(`/v2/projects/${project}/realtime/sessions?limit=0`, read),
+      400,
+      "VALIDATION_FAILED",
+    );
+    await failed(await call(`/v2/projects/${project}/realtime/sessions`), 401, "UNAUTHORIZED");
   });
 });
 

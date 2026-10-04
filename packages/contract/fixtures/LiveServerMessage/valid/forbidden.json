@@ -1,0 +1,6 @@
+{
+  "type": "error",
+  "code": "FORBIDDEN",
+  "message": "The logs channel needs admin access",
+  "channel": "logs"
+}

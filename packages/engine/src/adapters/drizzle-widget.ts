@@ -4,12 +4,13 @@ import { sql } from "drizzle-orm";
 
 import type { WidgetStore } from "../ports";
 import { serverVisitor } from "../reads/server-visitor";
-import { botScoreFloor } from "../signals/verdict";
+import { botScoreFloor, sessionSignal } from "../signals/verdict";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 
 const deviceTypes = new Set<string>(["desktop", "mobile", "tablet", "bot", "unknown"]);
 const releaseWindowDays = 30;
+const trailLength = 20;
 
 function nullableText(value: unknown): Nullable<string> {
   return value === null || value === undefined ? null : textual(value);
@@ -29,7 +30,8 @@ function country(value: unknown): Nullable<string> {
  * @name drizzleWidget
  * @description The `WidgetStore` on Postgres: the visitors active in a window, one row each with
  * their latest event, latest pageview, session and highest bot score in the window (served by
- * `events_project_received_idx`);
+ * `events_project_received_idx`); the sessions active in a window with their page trail (the last
+ * 20 pageviews), counts, duration, highest bot score and `sessionSignal`;
  * human pageviews per minute for the last minutes; and the newest `release` seen on events with
  * when it first appeared in the last 30 days and how many issues were first seen since.
  *
@@ -80,6 +82,61 @@ export function drizzleWidget(db: Database): WidgetStore {
           botScore: Math.min(100, Math.max(0, numeric(row.bot_score))),
           identified: row.identified === true,
         }));
+      }),
+    sessions: (project, from, to, limit) =>
+      attempt("Could not read the live sessions", async () => {
+        const rows = await selectRows(
+          db,
+          sql`WITH recent AS (
+              SELECT e.session_id, max(e.received_at) AS last_seen
+              FROM events e
+              WHERE e.project_id = ${project} AND e.received_at >= ${from.toISOString()}::timestamptz
+                AND e.received_at <= ${to.toISOString()}::timestamptz
+                AND e.session_id IS NOT NULL AND e.session_id <> ${serverVisitor}
+                AND e.visitor_id IS DISTINCT FROM ${serverVisitor}
+              GROUP BY e.session_id
+              ORDER BY last_seen DESC, e.session_id ASC
+              LIMIT ${limit}
+            )
+            SELECT r.session_id, r.last_seen,
+              (array_agg(e.visitor_id ORDER BY e.ts ASC, e.id ASC))[1] AS visitor_id,
+              min(e.ts) AS started_at, max(e.ts) AS ended_at,
+              count(*) FILTER (WHERE e.type = 'pageview') AS pages, count(*) AS events,
+              max(e.bot_score) AS bot_score,
+              array_agg(e.path ORDER BY e.ts ASC, e.id ASC) FILTER (WHERE e.type = 'pageview' AND e.path IS NOT NULL) AS trail,
+              (array_agg(e.referrer ORDER BY e.ts ASC, e.id ASC))[1] AS referrer,
+              (array_agg(e.country ORDER BY e.ts DESC, e.id DESC))[1] AS country,
+              (array_agg(e.device_type ORDER BY e.ts DESC, e.id DESC))[1] AS device_type
+            FROM recent r
+            JOIN events e ON e.project_id = ${project} AND e.session_id = r.session_id
+            GROUP BY r.session_id, r.last_seen
+            ORDER BY r.last_seen DESC, r.session_id ASC`,
+        );
+        return rows.map((row) => {
+          const startedAt = new Date(textual(row.started_at));
+          const durationMs = Math.max(
+            0,
+            new Date(textual(row.ended_at)).getTime() - startedAt.getTime(),
+          );
+          const pages = numeric(row.pages);
+          const score = Math.min(100, Math.max(0, numeric(row.bot_score)));
+          const trail = Array.isArray(row.trail) ? row.trail.map((path) => textual(path)) : [];
+          return {
+            id: textual(row.session_id),
+            visitor: textual(row.visitor_id ?? "unknown"),
+            startedAt: startedAt.toISOString(),
+            lastSeen: new Date(textual(row.last_seen)).toISOString(),
+            trail: trail.slice(-trailLength),
+            pages,
+            events: numeric(row.events),
+            durationMs,
+            referrer: nullableText(row.referrer),
+            country: country(row.country),
+            device: device(row.device_type),
+            botScore: score,
+            signal: sessionSignal({ score, pages, durationMs }),
+          };
+        });
       }),
     perMinute: (project, to, minutes) =>
       attempt("Could not read the pageviews per minute", async () => {

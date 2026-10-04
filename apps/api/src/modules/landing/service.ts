@@ -38,7 +38,7 @@ export type Landing = {
   history: Nullable<History>;
 };
 
-const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "ALL"];
+const methodOrder = ["GET", "WS", "POST", "PUT", "PATCH", "DELETE", "ALL"];
 
 function methodRank(method: string) {
   const rank = methodOrder.indexOf(method);

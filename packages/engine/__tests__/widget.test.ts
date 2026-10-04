@@ -15,7 +15,7 @@ import { scrubData, scrubMessage } from "../src/logs/lines";
 import { createEngine } from "../src/pipeline";
 import type { IssueStore, NewLogLine, ReadStore, SpeedStore, WidgetStore } from "../src/ports";
 import { defaultSignals } from "../src/signals";
-import { botLabel } from "../src/signals/verdict";
+import { botLabel, sessionSignal } from "../src/signals/verdict";
 import { defaultStages } from "../src/stages";
 import { composeOverview } from "../src/widget/overview";
 import { browserEvents, browserRequest, memoryPorts, now, project, settings } from "./batch";
@@ -50,6 +50,16 @@ describe("botLabel", () => {
       "bot",
       "bot",
     ]);
+  });
+});
+
+describe("sessionSignal", () => {
+  test("bot and suspect from the score, engaged from three pages or a minute", () => {
+    expect(sessionSignal({ score: 60, pages: 9, durationMs: 120_000 })).toBe("bot");
+    expect(sessionSignal({ score: 30, pages: 1, durationMs: 0 })).toBe("suspect");
+    expect(sessionSignal({ score: 0, pages: 3, durationMs: 0 })).toBe("engaged");
+    expect(sessionSignal({ score: 10, pages: 1, durationMs: 60_000 })).toBe("engaged");
+    expect(sessionSignal({ score: 0, pages: 2, durationMs: 59_999 })).toBe("human");
   });
 });
 
@@ -271,6 +281,7 @@ describe("composeOverview", () => {
   };
   const widget: WidgetStore = {
     active: async () => ok([]),
+    sessions: async () => ok([]),
     perMinute: async () => ok([3, 5, 4, 6, 5, 8, 7, 11, 9, 14]),
     release: async () =>
       ok({

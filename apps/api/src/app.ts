@@ -26,6 +26,8 @@ import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import type { HistorySource } from "./modules/landing/service";
 import { tokensModule } from "./modules/tokens/route";
+import { liveModule } from "./modules/live/route";
+import type { LiveOptions } from "./modules/live/route";
 import { logsModule } from "./modules/logs/route";
 import { widgetModule } from "./modules/widget/route";
 import { projectForOrigin } from "./modules/widget/service";
@@ -56,7 +58,10 @@ export type AppOptions = {
   internalSecret?: Nullable<string>;
   history?: Nullable<HistorySource>;
   widget?: Nullable<WidgetDeps>;
+  live?: LiveOptions;
 };
+
+const defaultLive: LiveOptions = { snapshotMs: 5_000, retryMs: 2_000, authMs: 10_000 };
 
 async function signedInAdmin(headers: Headers, access: AccessDeps) {
   if (!headers.get("cookie")) return false;
@@ -68,8 +73,10 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
  * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console, with
- * `alerts` the alert routes, and with `widget` the dev widget's bootstrap, active visitors,
- * overview and log. The engine is created per request so its log lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
+ * `alerts` the alert routes, and with `widget` the dev widget's bootstrap, active visitors and
+ * sessions, overview, log and the `live` WebSocket. The engine is created per request so its
+ * log lines carry the request id. Events sent with a signed-in admin's session cookie are
+ * internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
  *
  * @example
@@ -164,6 +171,11 @@ export function createApp(options: AppOptions) {
       widget
         ? logsModule(options.access, reads, widget, options.docsBase)
         : new Elysia({ name: "logs-off" }),
+    )
+    .use(
+      widget
+        ? liveModule(options.access, reads, widget, options.live ?? defaultLive)
+        : new Elysia({ name: "live-off" }),
     );
   return new Elysia()
     .use(

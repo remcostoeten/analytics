@@ -186,6 +186,7 @@ li { display: grid; grid-template-columns: 64px minmax(0, 1.4fr) minmax(0, 1fr);
 .badge.post { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
 .badge.put, .badge.patch { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
 .badge.delete { background: color-mix(in srgb, var(--err) 15%, transparent); color: var(--err); }
+.badge.ws { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 .path { font-family: var(--mono); font-size: 0.78rem; overflow-wrap: anywhere; }
 .prefix { color: var(--muted); opacity: 0.55; }
 .param { color: var(--muted); font-style: italic; }

@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "startedAt": "2026-10-03T13:59:12.000Z",
+      "lastSeen": "2026-10-03T14:02:04.117Z",
+      "trail": ["/", "/pricing", "/quote"],
+      "pages": 3,
+      "events": 5,
+      "durationMs": 172117,
+      "referrer": "https://www.google.com/",
+      "country": "NL",
+      "device": "mobile",
+      "botScore": 0,
+      "signal": "engaged"
+    }
+  ],
+  "window": { "from": "2026-10-03T13:57:04.117Z", "to": "2026-10-03T14:02:04.117Z" }
+}
