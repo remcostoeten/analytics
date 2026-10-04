@@ -8,7 +8,7 @@ Nothing here needs code. Every step is a read against the database, a `bun run r
 
 - The weights in `packages/engine/src/signals/` are the starting values from the plan, not measured ones. No v2-scored production traffic exists yet: the v2 API is live, but no site sends to it until milestone 3 of [finish-plan.md](finish-plan.md).
 - Events are stored whatever their score and reads filter at 50, so a wrong weight costs a rescore, not lost data.
-- The threshold of 50 is repeated as a local constant in `reads/scope.ts`, `speed/vitals.ts`, `adapters/drizzle.ts`, `adapters/drizzle-ops.ts`, `adapters/drizzle-speed.ts`, `jobs/rescore.ts` and `jobs/session-signals.ts`. Changing the threshold means changing all seven; changing a weight means changing one signal file.
+- The threshold of 50 is one constant, `botThreshold` in `@spoar/contract`, which scoring, rescoring, the session signals, every read filter and the speed rows import. Changing a weight means changing one signal file.
 
 ## How a score reads
 

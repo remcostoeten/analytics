@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
+import { botThreshold } from "@spoar/contract";
 
 import type { RouteStat, SpeedGroup, SpeedScope, SpeedStore, VitalStat } from "../ports";
 import type { VitalName } from "../speed/score";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 
-const humanScore = 50;
 const rolledColumns: { [percentile: number]: string } = {
   50: "p50",
   75: "p75",
@@ -37,7 +37,7 @@ function where(scope: SpeedScope): SQL {
     projectsIn(sql`w.project_id`, scope),
     sql`w.ts >= ${rawStart(scope).toISOString()}::timestamptz`,
     sql`w.ts < ${scope.to.toISOString()}::timestamptz`,
-    sql`w.bot_score < ${humanScore}`,
+    sql`w.bot_score < ${botThreshold}`,
     sql`NOT w.is_internal`,
   ];
   if (scope.device !== "all") conditions.push(sql`w.device = ${scope.device}`);
@@ -259,7 +259,7 @@ export function drizzleSpeed(db: Database): SpeedStore {
               count(*) FILTER (WHERE w.rating = 'poor')
             FROM web_vitals w
             WHERE w.ts >= ${from.toISOString()}::timestamptz AND w.ts < ${to.toISOString()}::timestamptz
-              AND w.bot_score < ${humanScore} AND NOT w.is_internal AND NOT w.is_preview
+              AND w.bot_score < ${botThreshold} AND NOT w.is_internal AND NOT w.is_preview
             GROUP BY 1, 2, 3, 4, 5
             ON CONFLICT (project_id, day, route, device, metric) DO UPDATE SET
               samples = excluded.samples, p50 = excluded.p50, p75 = excluded.p75, p90 = excluded.p90,

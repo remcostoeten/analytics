@@ -1,3 +1,4 @@
+import { botThreshold } from "@spoar/contract";
 import { and, gte, lt, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
@@ -6,7 +7,6 @@ import { events, sessions } from "../db/schema";
 import type { Signal } from "../define";
 import { serverVisitor } from "../reads/server-visitor";
 import { ipFanout, sessionVelocity } from "../signals";
-import { botScoreFloor } from "../signals/verdict";
 
 export type Range = {
   from: Date;
@@ -81,8 +81,8 @@ async function apply(db: Database, signal: Signal, target: SQL, dryRun: boolean)
     .set({
       botScore: raised,
       botReasons: sql`array_append(${events.botReasons}, ${signal.name})`,
-      botDetected: sql`${raised} >= ${botScoreFloor}`,
-      deviceType: sql`CASE WHEN ${raised} >= ${botScoreFloor} THEN 'bot' ELSE ${events.deviceType} END`,
+      botDetected: sql`${raised} >= ${botThreshold}`,
+      deviceType: sql`CASE WHEN ${raised} >= ${botThreshold} THEN 'bot' ELSE ${events.deviceType} END`,
       botSignals:
         signal.name === sessionVelocity.name
           ? sql`jsonb_set(COALESCE(${events.botSignals}, '{}'::jsonb), '{uniformDwell}', 'true'::jsonb)`

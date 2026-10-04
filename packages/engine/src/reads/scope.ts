@@ -1,11 +1,10 @@
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
+import { botThreshold } from "@spoar/contract";
 
 import type { Dimension, DimensionJoin } from "../define";
 import type { Environment, ReadFilter, ReadScope, Traffic } from "../ports";
 import { countedSession, countedVisitor } from "./server-visitor";
-
-const humanScore = 50;
 
 /**
  * @name trafficCondition
@@ -16,10 +15,10 @@ const humanScore = 50;
  * trafficCondition("human");
  */
 function trafficCondition(traffic: Traffic): SQL {
-  if (traffic === "bots") return sql`e.bot_score >= ${humanScore}`;
+  if (traffic === "bots") return sql`e.bot_score >= ${botThreshold}`;
   if (traffic === "internal") return sql`COALESCE(e.is_internal, false)`;
   if (traffic === "all") return sql`true`;
-  return sql`e.bot_score < ${humanScore} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false)`;
+  return sql`e.bot_score < ${botThreshold} AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false)`;
 }
 
 /**

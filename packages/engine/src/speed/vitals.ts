@@ -1,4 +1,5 @@
 import type { Nullable } from "@spoar/shared/semantic";
+import { botThreshold } from "@spoar/contract";
 
 import type { EventDraft } from "../draft";
 import { vitalRating } from "./score";
@@ -26,7 +27,6 @@ export type VitalRow = {
 
 const metrics = new Set<string>(["lcp", "inp", "cls", "fcp", "ttfb"]);
 const ratings = new Set<string>(["good", "needs-improvement", "poor"]);
-const humanScore = 50;
 const maxTimingMs = 120_000;
 const maxShift = 10;
 const pathSuffix = /[?#].*$/;
@@ -56,7 +56,7 @@ function device(draft: EventDraft) {
 export function vitalRow(draft: EventDraft): VitalRow | null {
   const { event, flags } = draft;
   if (event.name !== "web_vital") return null;
-  if (draft.bot.score >= humanScore || flags.internal || flags.localhost) {
+  if (draft.bot.score >= botThreshold || flags.internal || flags.localhost) {
     return null;
   }
   const props = event.props;
