@@ -51,13 +51,32 @@ jobs:
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry-run
         run: bun run release --dry-run
-      - name: Version pull request or publish
+      - name: Find pending changesets
+        id: pending
         if: github.event_name == 'push' || !inputs.dry-run
-        uses: changesets/action@v1
-        with:
-          version: bun run changeset version
-          publish: bun run release
-          title: "chore(release): version packages"
-          commit: "chore(release): version packages"
+        run: echo "count=$(find .changeset -maxdepth 1 -name '*.md' ! -name README.md | wc -l)" >> "$GITHUB_OUTPUT"
+      - name: Version pull request
+        if: steps.pending.outputs.count != '0' && steps.pending.outputs.count != ''
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B changeset-release/master
+          bun run changeset version
+          git add -A
+          git commit -m "chore(release): version packages"
+          git push --force origin changeset-release/master
+          if [ -z "$(gh pr list --head changeset-release/master --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base master --head changeset-release/master --title "chore(release): version packages" --body "Merging this publishes the versioned packages to npm." || echo "::warning::Could not open the version pull request; open it by hand from changeset-release/master"
+          fi
+      - name: Publish
+        if: steps.pending.outputs.count == '0'
+        run: |
+          bun run release | tee release.log
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for tag in $(sed -n 's/^New tag: //p' release.log); do
+            git tag "$tag"
+            git push origin "$tag"
+          done
