@@ -14,6 +14,15 @@ npm install @spoar/sdk@next
 npm install @spoar/devtools@next
 ```
 
+## Self-host
+
+```bash
+bun install
+DATABASE_URL=postgres://... bun run setup --owner your-github-login --project my-site --domain example.com
+```
+
+This migrates the database, allows your GitHub login to sign in and creates the first project with its keys. The [self-hosting guide](apps/docs/content/docs/guides/self-host.mdx) covers the environment in [`apps/api/.env.example`](apps/api/.env.example), deploying the API and scheduling the jobs.
+
 ## Development
 
 Requires Bun 1.3.

@@ -88,7 +88,7 @@ On hold until Remco delivers the dashboard design system.
 | Deprecate 1.x on npm with the command the agent writes | Remco | `npm deprecate` is done |
 | Remove `v1/`, the legacy `/e` routes and the old dashboard API routes; keep one cleanup cron | agent | `v1/` is gone from the repository |
 | Delete the v1 Vercel projects `ingestion` and `v1.analytics` | Remco | Only v2 projects remain |
-| Self-hosting: root README setup, `.env.example`, `bun run setup` that migrates and creates the owner and first project, Vercel deploy buttons | agent | A fresh clone reaches a working API with one command |
+| Self-hosting: root README setup, `.env.example`, `bun run setup` that migrates and creates the owner and first project, Vercel deploy buttons | agent; done except the deploy buttons | A fresh clone reaches a working API with one command |
 | Rewrite `AGENTS.md` for the v2-only layout | agent | The guide has no v1 sections |
 
 ## After 2.0

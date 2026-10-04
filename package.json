@@ -52,6 +52,7 @@
 		"knip:v1": "knip --config knip.v1.json --no-exit-code",
 		"changeset": "changeset",
 		"migrate": "bun scripts/migrate.ts",
+		"setup": "bun scripts/setup.ts",
 		"rescore": "bun scripts/rescore.ts",
 		"size": "bun scripts/size-check.ts",
 		"release": "bun scripts/publish.ts",
