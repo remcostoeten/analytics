@@ -46,6 +46,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Build packages
         run: bun run --filter './packages/*' build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry-run
         run: bun run release --dry-run
