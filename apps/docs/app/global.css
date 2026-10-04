@@ -69,6 +69,22 @@
     color-scheme: light;
   }
 
+  :root[data-font="mono"] {
+    --sans: var(--mono);
+  }
+
+  :root[data-font="system"] {
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  :root[data-font="serif"] {
+    --sans: ui-serif, "Iowan Old Style", "Charter", Georgia, serif;
+  }
+
+  :root[data-font="pixel"] {
+    --sans: var(--pixel);
+  }
+
   .dark {
     --bg: #0a0a0a;
     --surface: #111111;

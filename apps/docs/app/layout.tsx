@@ -5,6 +5,8 @@ import { GeistMono } from "geist/font/mono";
 import { GeistPixelSquare } from "geist/font/pixel";
 import { GeistSans } from "geist/font/sans";
 
+import { fontScript } from "@/lib/font-style";
+
 import "./global.css";
 
 export const metadata: Metadata = {
@@ -20,6 +22,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: fontScript }} />
+      </head>
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <RootProvider theme={{ defaultTheme: "dark" }}>{children}</RootProvider>
       </body>
