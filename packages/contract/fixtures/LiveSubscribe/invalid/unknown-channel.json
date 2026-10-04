@@ -1,0 +1,4 @@
+{
+  "expectedPath": "/channel",
+  "value": { "type": "subscribe", "channel": "speed" }
+}

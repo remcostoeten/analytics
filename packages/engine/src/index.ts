@@ -40,7 +40,7 @@ export { defaultSignals } from "./signals";
 export { engineError } from "./errors";
 export type { EngineError } from "./errors";
 export { createEngine } from "./pipeline";
-export { botLabel, signalBreakdown, storedSignals } from "./signals/verdict";
+export { botLabel, sessionSignal, signalBreakdown, storedSignals } from "./signals/verdict";
 export { storeClientReports } from "./logs/client";
 export type { ClientReport, ReportLimit, ReportPorts } from "./logs/client";
 export { jobLine, scrubData, scrubMessage } from "./logs/lines";

@@ -1,4 +1,10 @@
-import { ActiveVisitors, ActiveVisitorsQuery, Overview, WidgetSession } from "@spoar/contract";
+import {
+  ActiveVisitors,
+  ActiveVisitorsQuery,
+  LiveSessions,
+  Overview,
+  WidgetSession,
+} from "@spoar/contract";
 import { Elysia } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
@@ -7,7 +13,7 @@ import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
-import { activeVisitors, overviewCache, startWidget } from "./service";
+import { activeVisitors, liveSessions, overviewCache, startWidget } from "./service";
 import type { WidgetDeps } from "./service";
 
 const tags = ["Dev widget"];
@@ -17,8 +23,9 @@ const responses = { ...errorResponses, 429: errorResponses[400] };
  * @name widgetModule
  * @description The dev widget's routes: `GET /v2/widget/session`, the bootstrap called with the
  * admin session cookie from the customer site, which answers a 15-minute widget token; the
- * visitors active in the last five minutes at the `detail` level; and the project overview at the
- * `project` level, composed from the existing reads and cached for 10 seconds per project.
+ * visitors and sessions active in the last five minutes at the `detail` level; and the project
+ * overview at the `project` level, composed from the existing reads and cached for 10 seconds
+ * per project.
  *
  * @example
  * app.use(widgetModule(deps, reads, widget, docsBase));
@@ -77,6 +84,24 @@ export function widgetModule(
           summary: "Active visitors",
           description:
             "One row per visitor seen in the last five minutes, newest activity first: their session, latest pageview, referrer, place, device, pages and duration this session, bot score, and whether they are identified (never the user id). `limit` from 1 to 200, default 50.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/projects/:project/realtime/sessions",
+      ({ request, caller, project, set }) =>
+        gate.answer(request, caller, project, set, "private", (params, id) =>
+          liveSessions(widget.store, id, params, reads.clock()),
+        ),
+      {
+        query: ActiveVisitorsQuery,
+        access: "detail",
+        response: { 200: LiveSessions, ...responses },
+        detail: {
+          summary: "Live sessions",
+          description:
+            "One row per session with an event in the last five minutes, most recently active first: the visitor, the last 20 pages in order, pageviews, events, duration, referrer, place, device, the highest bot score and `signal`: `bot` from 50, `suspect` from 25, `engaged` from three pageviews or a minute, else `human`. `limit` from 1 to 200, default 50.",
           tags,
         },
       },

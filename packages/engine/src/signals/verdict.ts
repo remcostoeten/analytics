@@ -1,4 +1,4 @@
-import type { BotLabel, BotSignals } from "@spoar/contract";
+import type { BotLabel, BotSignals, SessionSignal } from "@spoar/contract";
 import type { Nullable } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
@@ -27,6 +27,28 @@ const unscoredSignals: BotSignals = {
 export function botLabel(score: number): BotLabel {
   if (score >= botScoreFloor) return "bot";
   return score >= suspectScoreFloor ? "suspect" : "human";
+}
+
+const engagedPages = 3;
+const engagedMs = 60_000;
+
+/**
+ * @name sessionSignal
+ * @description How a live session reads: `bot` or `suspect` from its highest bot score as
+ * `botLabel` judges it, otherwise `engaged` from three pageviews or a minute on the site, and
+ * `human` below that.
+ *
+ * @example
+ * sessionSignal({ score: 0, pages: 4, durationMs: 12_000 }); // "engaged"
+ */
+export function sessionSignal(session: {
+  score: number;
+  pages: number;
+  durationMs: number;
+}): SessionSignal {
+  const label = botLabel(session.score);
+  if (label !== "human") return label;
+  return session.pages >= engagedPages || session.durationMs >= engagedMs ? "engaged" : "human";
 }
 
 function reported(draft: EventDraft, fired: boolean): Nullable<boolean> {

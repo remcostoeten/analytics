@@ -1,4 +1,4 @@
-import type { ActiveVisitors, Overview, WidgetSession } from "@spoar/contract";
+import type { ActiveVisitors, LiveSessions, Overview, WidgetSession } from "@spoar/contract";
 import { composeOverview, engineError } from "@spoar/engine";
 import type {
   EngineError,
@@ -118,6 +118,39 @@ export async function startWidget(
   });
 }
 
+function readLimit(params: URLSearchParams): Result<number, EngineError> {
+  const limit = Number(params.get("limit") ?? defaultLimit);
+  return Number.isInteger(limit) && limit >= 1 && limit <= maxLimit
+    ? ok(limit)
+    : err(engineError("VALIDATION_FAILED", `limit must be a whole number from 1 to ${maxLimit}`));
+}
+
+/**
+ * @name liveSessions
+ * @description One row per session with an event in the last five minutes, most recently active
+ * first, with `limit` from 1 to 200 (default 50): the page trail, counts, duration, highest bot
+ * score and its `signal` (`human`, `engaged`, `suspect` or `bot`).
+ *
+ * @example
+ * await liveSessions(store, "docs", params, new Date());
+ */
+export async function liveSessions(
+  store: WidgetStore,
+  project: string,
+  params: URLSearchParams,
+  now: Date,
+): Promise<Result<LiveSessions, EngineError>> {
+  const limit = readLimit(params);
+  if (!limit.ok) return limit;
+  const from = new Date(now.getTime() - realtimeMs);
+  const found = await store.sessions(project, from, now, limit.value);
+  if (!found.ok) return found;
+  return ok({
+    data: found.value,
+    window: { from: from.toISOString(), to: now.toISOString() },
+  });
+}
+
 /**
  * @name activeVisitors
  * @description One row per visitor seen in the last five minutes, newest activity first, with
@@ -132,14 +165,10 @@ export async function activeVisitors(
   params: URLSearchParams,
   now: Date,
 ): Promise<Result<ActiveVisitors, EngineError>> {
-  const limit = Number(params.get("limit") ?? defaultLimit);
-  if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
-    return err(
-      engineError("VALIDATION_FAILED", `limit must be a whole number from 1 to ${maxLimit}`),
-    );
-  }
+  const limit = readLimit(params);
+  if (!limit.ok) return limit;
   const from = new Date(now.getTime() - realtimeMs);
-  const found = await store.active(project, from, now, limit);
+  const found = await store.active(project, from, now, limit.value);
   if (!found.ok) return found;
   return ok({
     data: found.value,

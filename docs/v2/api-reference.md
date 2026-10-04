@@ -35,6 +35,8 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects/:project/breakdown/:dimension` | project | Top values of one dimension |
 | GET | `/v2/projects/:project/realtime` | project | Last 5 minutes; `include=visitors` adds the active visitor rows and needs `detail` |
 | GET | `/v2/projects/:project/realtime/visitors` | detail | One row per visitor seen in the last 5 minutes |
+| GET | `/v2/projects/:project/realtime/sessions` | detail | One row per session active in the last 5 minutes, with its page trail and signal |
+| GET (WebSocket) | `/v2/projects/:project/live` | token | Live events, logs, visitors and sessions over one WebSocket; access per channel |
 | GET | `/v2/projects/:project/overview` | project | The dev widget's status numbers in one answer, cached 10 seconds |
 | GET | `/v2/projects/:project/events` | detail | Raw events, newest first |
 | GET | `/v2/projects/:project/visitors` | detail | Visitor list |
@@ -1386,6 +1388,32 @@ The dev widget is a panel the SDK mounts on a customer site for signed-in admins
 }
 ```
 
+**Live sessions.** `GET /v2/projects/:project/realtime/sessions` (`detail`) answers one row per session with an event in the last five minutes, most recently active first, `limit` 1 to 200 (default 50). `trail` holds the session's last 20 pageview paths in order, `durationMs` runs from its first to its last event, `botScore` is the highest of its events, and `signal` reads it: `bot` from 50, `suspect` from 25, `engaged` from three pageviews or a minute, else `human`.
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "startedAt": "2026-10-03T13:59:12.000Z",
+      "lastSeen": "2026-10-03T14:02:04.117Z",
+      "trail": ["/", "/pricing", "/quote"],
+      "pages": 3,
+      "events": 5,
+      "durationMs": 172117,
+      "referrer": "https://www.google.com/",
+      "country": "NL",
+      "device": "mobile",
+      "botScore": 0,
+      "signal": "engaged"
+    }
+  ],
+  "window": { "from": "2026-10-03T13:57:04.117Z", "to": "2026-10-03T14:02:04.117Z" }
+}
+```
+
 **Log stream.** `GET /v2/projects/:project/logs` (`admin`) lists every decision that is not a plain accepted event: one `RA_INGEST_BATCH` line per stored batch with its counts, an `RA_INGEST_REJECTED` line per rejected event with its reason, index, event name and field, `RA_INGEST_DUPLICATE` when events were already stored, `RA_RATE_LIMITED` per refused request, `RA_BOT_VERDICT` per stored event scored `suspect` or `bot`, `RA_JOB` per cron run, and the SDK's own reports. It works like `realtime/events`: without `after` the last 100 lines, with `after=<nextCursor>` it long-polls up to 25 seconds, and `Accept: text/event-stream` streams `logs` messages. Filter with `level` (`info`, `ok`, `warn`, `error`), `kind` (`ingest`, `transport`, `pipeline`, `signals`, `jobs`, `auth`), `source` (`api`, `sdk`, `engine`, `cron`), `visitor` and `q`, a case-insensitive substring of the message. `data` holds keys, counts and codes only, never IP addresses, emails or prop values. Lines are kept for 7 days.
 
 `GET /v2/projects/noorderlicht-lease/logs?level=error` with a widget token
@@ -1442,6 +1470,31 @@ request
   "release": { "current": "2026.10.03-a1", "deployedAt": "2026-10-03T11:42:00.000Z", "newIssuesSince": 3 }
 }
 ```
+
+**Live updates over a WebSocket.** `GET /v2/projects/:project/live` upgrades to a WebSocket that carries the same data as `realtime/events`, `logs`, `realtime/visitors` and `realtime/sessions` on one connection. Every message is one JSON object with a `type`.
+
+1. The client opens `wss://<api>/v2/projects/:project/live` and sends `{ "type": "auth", "token": "wt_..." }` within 10 seconds, or the socket closes with code 4401. A browser cannot set headers on a WebSocket, so the token travels in this first message, never in the URL. An `at_` API token works too.
+2. The API answers `ready` with the channels the token may use: `events` for anyone who may read the project, `visitors` and `sessions` with `detail` access, `logs` with `admin` access. A token that is unknown, expired or without access to the project answers an `error` and closes with 4401.
+3. `{ "type": "subscribe", "channel": "events", "after": "<cursor>" }` joins a channel. `after` is optional and takes the cursor of the last batch received, so a reconnect gets what it missed; without it, `events` and `logs` start with the latest window (the last five minutes, the last 100 lines). `visitors` and `sessions` send the current rows at once and again whenever they change. `unsubscribe` leaves a channel, and `ping` answers `pong`.
+4. The socket closes with 4001 when the token expires, so the widget fetches a new one from `GET /v2/widget/session` and reconnects. It also closes when the function reaches its maximum duration; reconnect with the last cursor of each channel.
+
+```json
+client
+{ "type": "auth", "token": "wt_xxxxxxxxxxxxxxxx" }
+{ "type": "subscribe", "channel": "events" }
+{ "type": "subscribe", "channel": "logs", "after": "9102" }
+
+server
+{ "type": "ready", "project": "noorderlicht-lease", "channels": ["events", "visitors", "sessions", "logs"], "expiresAt": "2026-10-03T14:32:00.000Z" }
+{ "type": "subscribed", "channel": "events" }
+{ "type": "events", "data": [ { "id": "88123", "project": "noorderlicht-lease", "name": "pageview", "ts": "2026-10-03T14:02:04.117Z", "path": "/pricing", "country": "NL", "device": "mobile", "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6", "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607" } ], "cursor": "eyJyIjoi..." }
+{ "type": "sessions", "data": [ { "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607", "signal": "engaged", "trail": ["/", "/pricing"], "pages": 2, "...": "..." } ] }
+{ "type": "error", "code": "FORBIDDEN", "message": "The logs channel needs admin access", "channel": "logs" }
+```
+
+Rows have the same shape as the HTTP routes: `events` rows are `LiveEvent`s with `visitor` and `session` only with `detail` access, `logs` rows are log lines, and `visitors` and `sessions` rows are the active visitor and live session rows. A malformed message answers `error` with `VALIDATION_FAILED` and keeps the socket open. The contract exports the message schemas as `LiveClientMessage` and `LiveServerMessage`.
+
+On each API instance, every socket watching the same project and channel shares one poller: `events` and `logs` long-poll Postgres from a cursor, and `visitors` and `sessions` are read every 5 seconds and sent only when they changed. Postgres stays the only source of truth, so a reconnect that lands on another instance or a new deployment resumes from its cursor. Delivery is at least once around a reconnect, so clients drop ids they already have. The HTTP routes and server-sent events stay available for clients that cannot open a WebSocket.
 
 ### Error codes
 

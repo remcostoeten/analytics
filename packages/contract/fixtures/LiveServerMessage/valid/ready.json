@@ -1,0 +1,6 @@
+{
+  "type": "ready",
+  "project": "noorderlicht-lease",
+  "channels": ["events", "visitors", "sessions", "logs"],
+  "expiresAt": "2026-10-03T14:32:00.000Z"
+}

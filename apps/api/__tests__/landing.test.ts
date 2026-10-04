@@ -72,6 +72,18 @@ describe("landing", () => {
     expect(groups[1]?.routes).toEqual([{ method: "GET", path: "/v2/a", summary: "" }]);
   });
 
+  test("lists WebSocket routes after the GET route of the same path", () => {
+    const groups = routeGroups(
+      [
+        { method: "POST", path: "/v2/live", hooks: { detail: { tags: ["Reads"] } } },
+        { method: "WS", path: "/v2/live", hooks: { detail: { summary: "Live", tags: ["Reads"] } } },
+        { method: "GET", path: "/v2/live", hooks: { detail: { tags: ["Reads"] } } },
+      ],
+      tags,
+    );
+    expect(groups[0]?.routes.map((route) => route.method)).toEqual(["GET", "WS", "POST"]);
+  });
+
   test("serves HTML to browsers at / and /v2", async () => {
     for (const path of ["/", "/v2", "/v2/"]) {
       const response = await app().handle(
