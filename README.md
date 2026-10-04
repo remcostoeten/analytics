@@ -2,7 +2,17 @@
 
 Self-hosted, privacy-first web analytics: a browser and server SDK, an API for ingest and reads, and a dashboard, on your own Postgres.
 
-This branch is a rebuild in progress. The version that runs in production lives in [`v1/`](v1/README.md).
+Version 2 is in prerelease. The API runs on [api.analytics.remcostoeten.nl](https://api.analytics.remcostoeten.nl) and its docs on [docs.analytics.remcostoeten.nl](https://docs.analytics.remcostoeten.nl). The v2 dashboard is not built yet; v1, which still serves production, lives in [`v1/`](v1/README.md).
+
+- [`@spoar/sdk`](https://www.npmjs.com/package/@spoar/sdk) tracks pageviews, events, errors and speed from the browser and the server, with React and Next entries and a first-party proxy.
+- [`@spoar/devtools`](https://www.npmjs.com/package/@spoar/devtools) is an overlay panel for admins that shows live visitors, sessions and the event log on their own site.
+
+## Install
+
+```bash
+npm install @spoar/sdk@next
+npm install @spoar/devtools@next
+```
 
 ## Development
 

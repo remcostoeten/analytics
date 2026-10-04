@@ -98,4 +98,4 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 ## Deployment
 
 - v1's Vercel projects deploy from `master`: `ingestion` from `v1/apps/ingestion`, `analytics` (the dashboard) from `v1/apps/dashboard`. To stop them rebuilding on every v2 merge, set their ignored build step to `git diff --quiet HEAD^ HEAD -- ../../` (Remco does this).
-- `apps/api` deploys from `master` as the Vercel project `v2.ingestion` and `apps/docs` as `v2.analytics.docs` (`docs/v2/deploy.md`). The v2 dashboard gets its own project once it is built (Remco creates it).
+- `apps/api` deploys from `master` as the Vercel project `v2.ingestion` and `apps/docs` as `v2.analytics-docs` (`docs/v2/deploy.md`). The v2 dashboard gets its own project once it is built (Remco creates it).
