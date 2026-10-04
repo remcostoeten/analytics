@@ -34,4 +34,4 @@ For each row, record for both transports: whether the pageviews, the `web_vital`
 
 - Note any blocker rule that matched, from the extension's logger, in the Notes column.
 - File an issue for each failed row before merging the version pull request.
-- Merging the Changesets version pull request publishes to npm from CI; that step is Remco's.
+- Merging the Changesets version pull request publishes to npm; that step is Remco's. `.github/workflows/release.yml` runs on every push to `master` and keeps the version changes on the `changeset-release/master` branch. Until GitHub Actions may create pull requests in this repository, Remco opens the version pull request from that branch by hand. When it merges, the same workflow runs `bun run release` (`scripts/publish.ts`), which publishes every public package version not yet on npm under the `next` tag with provenance and prints a `New tag:` line per package.

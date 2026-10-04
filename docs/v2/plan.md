@@ -30,6 +30,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 16 | Alerts | Settled | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
 | 17 | Product scope | Settled | v2 serves reach, traffic sources and app performance. Goals, funnels, actions and experiment statistics are not planned; what is already built stays. See [Product focus](#product-focus) | Product focus, Phases |
 | 18 | Dev widget | Settled | Ships as `@spoar/devtools`, separate from `@spoar/sdk`. It is lazy-loaded after an admin bootstrap (`GET /v2/widget/session`) and rendered in a Shadow DOM with Tailwind compiled at build time, so visitors never download it and the SDK size budgets stay untouched | SDK API shape, Build |
+| 19 | Publishing `@spoar/contract` | Settled, 4 October 2026 | Private and never published. `@spoar/sdk` and `@spoar/devtools` bundle it through tsdown `noExternal` and list it under `devDependencies`. It only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step. Replaces "published so other projects can type against the API" in Build process. See [finish-plan.md](finish-plan.md) | Monorepo structure, Build, Branching |
 
 One open question is not a choice between options: Elysia on Vercel. Elysia documents a Vercel integration, but runtime, cold start and MMDB bundling need a short spike in phase 1 before the API commits to it.
 
@@ -80,7 +81,7 @@ Where each piece lives is in the Monorepo structure section below.
 
 **Update, Sep 27:** v1 now lives in `v1/` ([PR #23](https://github.com/remcostoeten/analytics/pull/23), on `master` since [PR #24](https://github.com/remcostoeten/analytics/pull/24)): `v1/apps/dashboard`, `v1/apps/ingestion`, `v1/packages/ingestion`, `v1/packages/sdk`, `v1/packages/typescript` and `v1/scripts/demo-db`. The tree below shows v2's folders; where it says "existing", read `v1/`. v2 never imports from `v1/`: logic is copied into the engine with its tests, and the v2 dashboard is a new `apps/dashboard`.
 
-New code goes into the existing `apps/` and `packages/` folders, not a separate `v2/` folder, so nothing needs moving again once 1.x is gone. The SDK is rewritten in place because 2.0 is the same npm package; 1.x is frozen in `v1/` until v2 replaces it.
+New code goes into the existing `apps/` and `packages/` folders, not a separate `v2/` folder, so nothing needs moving again once 1.x is gone. The SDK is rewritten in place; 2.0 publishes as `@spoar/sdk` (decision 5), while 1.x stays on npm as `@remcostoeten/analytics` and is frozen in `v1/` until v2 replaces it.
 
 ```text
 analytics/
@@ -103,7 +104,7 @@ analytics/
 │  ├─ dashboard/           existing Next app; moves to the API in phase 4
 │  └─ ingestion/           existing legacy deploy shell; removed in phase 5
 ├─ packages/
-│  ├─ contract/            new: @spoar/contract
+│  ├─ contract/            new: @spoar/contract; private, bundled into sdk and devtools
 │  │  └─ src/             events.ts, errors.ts, projects.ts, stats.ts, visitors.ts, issues.ts
 │  ├─ shared/              new: semantic types, Result, noop; private
 │  ├─ engine/              new: @spoar/engine; private until stable
@@ -141,7 +142,7 @@ Who may import whom, checked by `scripts/check-boundaries.ts` in CI:
 | `shared` | nothing inside the repo |
 | `contract` | `shared` |
 | `engine` | `contract`, `shared` |
-| `sdk` | `shared` bundled in; `contract` for types only, so no validator ships |
+| `sdk` | `shared` and `contract` bundled in; from `contract` only types and the `limits` and `signals` constants, so no validator ships |
 | `apps/api` | `engine`, `contract`, `shared` |
 | `apps/dashboard` | the API's route types through Eden Treaty, `contract` |
 
@@ -426,7 +427,7 @@ The REST API is the base; these are thin layers on top of it, each a later epic 
 | MCP server | Claude and other AI tools can query your analytics directly ("which pages got slower this week?") through tools that call the same API with a read token | Yes, cheap: a thin wrapper over existing routes, and it fits how you already work |
 | Share links and embeds | A signed, read-only link or iframe for one project or one chart, even for a private project, with an expiry | Yes, later: covers "show a client their stats" without making the project public |
 | Badges | An SVG like "1.2k visitors this week" for READMEs, from a public project | Optional, very small |
-| Generated clients | TypeScript through Eden and the contract package now; Python or Go generated from the OpenAPI document if ever needed | Only on demand |
+| Generated clients | TypeScript through Eden now; Python or Go generated from the OpenAPI document if ever needed | Only on demand |
 | Scheduled exports | A nightly CSV or Parquet dump of events to S3-compatible storage such as Cloudflare R2 | Only if you want a long-term archive beyond the retention window |
 | GraphQL | One flexible query endpoint | No: the breakdown route plus SQL already cover flexible querying, and it would double the surface to secure |
 
@@ -727,12 +728,12 @@ Order: bump both tools and add the configs in their own PR, fix what the stricte
 
 ## Build process
 
-Only the two published packages get a build step; internal packages are imported from source, which removes today's "rebuild packages or apps see stale code" problem.
+Only the published packages, `@spoar/sdk` and `@spoar/devtools`, need a build step; internal packages are imported from source, which removes today's "rebuild packages or apps see stale code" problem.
 
 | Target | Tool | Output |
 | --- | --- | --- |
 | `packages/sdk` | tsdown (0.23.0, the Rolldown-based successor to tsup 8.5.1 that the repo uses today) | ESM only, one file per entry (`.`, `./plugins`, `./react`, `./next`, `./server`, `./proxy`), `.d.ts` per entry, minified, source maps; `"use client"` banner on `./react` and `./next` |
-| `packages/contract` | tsdown | ESM and types; published so other projects can type against the API |
+| `packages/contract` | tsdown | Private (decision 19). The SDK and devtools builds bundle it from source through tsdown `noExternal`, so neither depends on it on npm |
 | `packages/shared`, `packages/engine` | none | `exports` point at `src/*.ts`; Bun, the API bundler and TypeScript read them directly |
 | `apps/api` | `bun build` into Vercel's Build Output API, the approach `apps/ingestion/scripts/build.ts` already uses | One bundled function plus the two MMDB files; the Elysia spike decides the Bun or Node runtime |
 | `apps/dashboard` | `next build` | Unchanged |
@@ -740,7 +741,7 @@ Only the two published packages get a build step; internal packages are imported
 - **ESM only for SDK 2.0.** Every current bundler and Node 22+ load ESM, and dropping the CJS copy halves the package. It is a major version anyway.
 - **Task order**: `bun run --filter` already runs workspace scripts in dependency order. Turborepo is only worth adding if CI time becomes a problem, for its caching.
 - **Size check**: `scripts/size-check.ts` gzips each SDK entry after build and fails CI above the budgets: core 5 KB, `./react` 1.5 KB, `./next` 1 KB, each plugin 0.6 KB, `speedInsights` 2.5 KB, `errors` 0.7 KB. Each plugin is bundled alone, the way an app that imports only that plugin pays for it.
-- **Releases**: Changesets. Each PR that changes a published package adds a changeset; merging to `master` opens a version PR; merging that publishes to npm from CI with provenance. This replaces today's manual `npm publish`.
+- **Releases**: Changesets, in pre mode on the `next` tag. Each PR that changes `@spoar/sdk` or `@spoar/devtools` adds a changeset. On every push to `master`, `.github/workflows/release.yml` runs `changesets/action`, which pushes the version changes to the `changeset-release/master` branch. Merging the version PR from that branch runs `bun run release` (`scripts/publish.ts`): each public package is packed with `bun pm pack` after `publishConfig.exports` is copied into `exports` and `devDependencies` are dropped, then published with `npm publish --provenance --tag next` through npm trusted publishing (OIDC, npm 11, `id-token: write`). Versions already on npm are skipped, and each published one prints a `New tag:` line. A manual `workflow_dispatch` run with `dry-run` packs without publishing. The build steps set `NODE_OPTIONS=--max-old-space-size=6144`, because bundling contract makes the declaration build need more than 4 GB. Until Remco enables "Allow GitHub Actions to create and approve pull requests", the version PR is opened by hand from `changeset-release/master`.
 - **Migrations**: `scripts/migrate.ts` applies the numbered SQL files in order and records them in a `schema_migrations` table. It is run by hand against Neon, never on deploy, which keeps the repo rule of applying migrations manually while removing the copy-paste step.
 - **Deploys**: Vercel builds `apps/api` and `apps/dashboard` per PR as previews and on `master` as production. The legacy `apps/ingestion` project stays as it is until phase 5.
 
@@ -751,8 +752,8 @@ Only the two published packages get a build step; internal packages are imported
 1. `master` is the trunk. Every epic branches from `master` as `feature/*`, `fix/*` or `chore/*` and squash-merges back with green checks.
 2. v1 keeps serving production from `master`: the Vercel projects `ingestion` and `analytics` build from `v1/apps/ingestion` and `v1/apps/dashboard`. Their ignored build step should skip builds when nothing under `v1/` changed.
 3. v2 code never imports from `v1/`, so v2 epics cannot break production.
-4. `apps/api` and the v2 `apps/dashboard` get their own Vercel projects on `master`.
-5. SDK prereleases publish under the npm `next` tag (`2.0.0-next.0` and up), so a plain install keeps giving 1.x. 2.0.0 publishes once phase 4's gate passes.
+4. `apps/api` deploys from `master` as the Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`; the v2 `apps/dashboard` gets its own project on `master` once it is built.
+5. SDK prereleases publish under the npm `next` tag (`2.0.0-next.0` and up). 1.x lives on npm as `@remcostoeten/analytics`, and `latest` on `@spoar/sdk` stays the 0.0.1 placeholder until 2.0.0, so a plain `npm install @spoar/sdk` does not give 2.0 before then. 2.0.0 publishes once phase 4's gate passes.
 6. When v2 replaces v1 in production, `v1/` is deleted in one pull request.
 
 ## Test process

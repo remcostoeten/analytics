@@ -5,7 +5,7 @@ Self-hosted, privacy-first web analytics, owned and designed by Remco. This repo
 ## Status
 
 - **v1 lives in `v1/` and is frozen.** Production runs it from `master`: the Hono ingestion, the Next dashboard, SDK 1.x and the demo database. No new features; fixes only when Remco asks. Its own guide is `v1/AGENTS.md`.
-- **v2 is being built at the repo root, on `master`.** Nothing in v2 is deployed yet.
+- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/devtools` publish to npm under the `next` tag; the v2 dashboard is not built yet.
 - v2 code never imports from `v1/`. When v1 logic is reused, it is copied into the engine with its tests, so v1 keeps working untouched until it is removed.
 
 ## The plan
@@ -34,7 +34,7 @@ Load the `generic-program-rules` skill before writing code, prose, commits or su
 - `master` is the trunk for both v1 and v2. There is no `v2` branch.
 - Every epic branches from `master` as `feature/*`, `fix/*` or `chore/*`, opens a pull request into `master`, and is squash-merged with green checks.
 - Commits are conventional: `type(scope): subject`.
-- Agents do not merge, publish to npm, apply migrations to Neon, or change Vercel or Cloudflare settings. Remco does.
+- Agents do not merge, publish to npm, apply migrations to Neon, or change Vercel or Cloudflare settings. Remco does. Publishing happens when Remco merges the Changesets version pull request.
 
 ## Layout
 
@@ -50,13 +50,13 @@ analytics/
 │  ├─ sdk/            @spoar/sdk 2.0 (phase 3)
 │  └─ devtools/       @spoar/devtools, the admin dev widget
 ├─ tools/oxlint/      lint plugins
-├─ scripts/           size, OpenAPI and boundary checks, migrate
+├─ scripts/           size, OpenAPI and boundary checks, migrate, publish
 ├─ e2e/               Playwright across SDK, API and dashboard
 ├─ docs/v2/           the plan, API reference, epics and prompts
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `packages/devtools` (the dev widget: loaders, the Shadow DOM panel on fixtures until the widget endpoints exist), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `packages/devtools` (the dev widget: loaders and the Shadow DOM panel, with fixtures for local work), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `publish.ts`, `rescore.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -77,6 +77,7 @@ Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated fr
 | `bun run rescore` | `scripts/rescore.ts`: reruns bot scoring and the session signals over stored events for `--from` to `--to` (UTC dates); `--dry-run`, and `--include-legacy` for v1 rows. Remco runs it against Neon |
 | `bun run size` | `scripts/size-check.ts`: gzips the built SDK core, `react` and `next` entries and each plugin bundled alone, and fails above the budgets (core 5 KB, `react` 1.5 KB, `next` 1 KB, plugins 0.6 KB, `errors` 0.7 KB, `speedInsights` 2.5 KB) and the `@spoar/devtools` loaders (1 KB each), and reports the lazy panel chunk; build `packages/sdk` and `packages/devtools` first |
 | `bun run changeset` | Adds a changeset; published packages are in pre mode on the `next` tag |
+| `bun run release` | `scripts/publish.ts`: packs each public package with `bun pm pack` (with `publishConfig.exports` as `exports` and no `devDependencies`) and runs `npm publish --provenance` on the pre tag, skipping versions already on npm; `--dry-run` publishes nothing. `release.yml` runs it; agents never do |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
 | `bun run test:e2e` | Playwright in `e2e/` against the built SDK, the API on PGlite and the `/_ra` proxy; build `packages/sdk` first, and on Linux without a display run it under `xvfb-run -a` for the headed project. `docs/release-checklist.md` is the manual browser and blocker matrix |
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
@@ -86,15 +87,15 @@ Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated fr
 | `bun run dev:ingestion` | v1 ingestion on port 3000+ |
 | `bun run demo:db` | Local Postgres with seeded v1 data |
 
-CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, SDK size, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. Pull requests also run the `e2e` job. CodeQL runs on pull requests and weekly. `migrate.yml` runs the migrations against the `DATABASE_URL` secret of the `production` environment when Remco starts it, and `jobs.yml` calls the cron routes on a schedule once `API_URL` and `CRON_SECRET` are set there; `docs/v2/deploy.md` is the setup checklist. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
+CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, SDK size, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. Pull requests also run the `e2e` job. CodeQL runs on pull requests and weekly. `migrate.yml` runs the migrations against the `DATABASE_URL` secret of the `production` environment when Remco starts it, and `jobs.yml` calls the cron routes on a schedule once `API_URL` and `CRON_SECRET` are set there; `docs/v2/deploy.md` is the setup checklist. `release.yml` runs `changesets/action` on every push to `master`: it keeps the version pull request on the `changeset-release/master` branch up to date and, once that pull request merges, runs `bun run release` through npm trusted publishing; a manual run with `dry-run` packs without publishing. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
 
 Lefthook runs oxfmt, Oxlint and gitleaks (when installed) on staged files before each commit, and rejects commit subjects that are not conventional commits; `bun install` sets it up.
 
-A pull request that changes a published package (`packages/contract`, `packages/sdk`, `packages/devtools`) adds a changeset with `bun run changeset`.
+A pull request that changes a published package (`packages/sdk`, `packages/devtools`) adds a changeset with `bun run changeset`. `packages/contract` is private and bundled into both builds, so it is never published on its own.
 
 Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 
 ## Deployment
 
 - v1's Vercel projects deploy from `master`: `ingestion` from `v1/apps/ingestion`, `analytics` (the dashboard) from `v1/apps/dashboard`. To stop them rebuilding on every v2 merge, set their ignored build step to `git diff --quiet HEAD^ HEAD -- ../../` (Remco does this).
-- `apps/api`, `apps/docs` and the v2 dashboard get their own Vercel projects on `master` (Remco creates them).
+- `apps/api` deploys from `master` as the Vercel project `v2.ingestion` and `apps/docs` as `v2.analytics.docs` (`docs/v2/deploy.md`). The v2 dashboard gets its own project once it is built (Remco creates it).

@@ -2,12 +2,12 @@
 
 Privacy-first analytics for browsers, servers and React, sending to a self-hosted analytics API. Version 2 is ESM only, has typed events, batches requests, keeps no cookies, and adds features through plugins so an app only ships what it uses.
 
-The workspace is named `@spoar/sdk` and marked private until the 2.0.0 release, because `v1/packages/sdk` still owns `@spoar/sdk` in the Bun workspaces. The examples use the published name.
+2.0 prereleases publish under the `next` tag, so install `@spoar/sdk@next` until 2.0.0; `latest` is a 0.0.1 placeholder until then. 1.x is the `@remcostoeten/analytics` package.
 
 ## Install
 
 ```bash
-npm install @spoar/sdk
+npm install @spoar/sdk@next
 ```
 
 ## Quick start
