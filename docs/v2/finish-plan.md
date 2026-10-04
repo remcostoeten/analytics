@@ -108,6 +108,6 @@ Left out on purpose: goals, funnels, experiments, feature flags, session replay,
 | --- | --- | --- |
 | Core size budget | 5 KB, as checked today | 4 October 2026 |
 | `@spoar/contract` | Bundled into the SDK, not published: it only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step | 4 October 2026 |
-| npm publishing | Trusted publishing, set up by Remco in the npm website | 4 October 2026 |
+| npm publishing | Trusted publishing. Set up for `@spoar/sdk` (GitHub Actions, `remcostoeten/analytics`, `release.yml`, publish only); `@spoar/devtools` follows after its first version | 4 October 2026 |
 | Dashboard design | A design system from Remco, still to come | 4 October 2026 |
 | Vercel plan | Hobby. Keep the deployments per push low: v1 deploys from `master` only (#82), one docs project | 4 October 2026 |
