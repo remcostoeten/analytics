@@ -14,6 +14,7 @@ The plan for the v2 rebuild, exported from the "Analytics SDK v2 plan" doc on Se
 | [sql-reference.md](sql-reference.md) | The SQL console's views, rules and example queries |
 | [bot-readiness.md](bot-readiness.md) | How to validate and tune the bot score against real traffic before relying on it |
 | [capabilities-and-gaps.md](capabilities-and-gaps.md) | What v2 tracks, how it compares with other tools, and which gaps matter for the product focus |
+| [finish-plan.md](finish-plan.md) | Everything left until a finished v2, in order, with an owner and a done condition per step |
 | [epics-and-prompts.md](epics-and-prompts.md) | The work, split into epics with ready-to-paste prompts |
 | [archive/](archive/) | Scope that was planned and dropped, with the reason |
 
