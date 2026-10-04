@@ -21,6 +21,8 @@ export type HealthView = {
   runtime: string;
   bootedAt: Timestamp;
   geo: { city: Nullable<string>; asn: Nullable<string>; loadMs: number };
+  database: Nullable<{ ok: boolean; latencyMs: number }>;
+  commit: Nullable<string>;
 };
 
 type HistoryWeek = { week: Timestamp; total: number; days: number[] };

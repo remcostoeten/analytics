@@ -55,6 +55,8 @@ export type AppOptions = {
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
   history?: Nullable<HistorySource>;
+  ping?: Nullable<() => Promise<unknown>>;
+  commit?: Nullable<string>;
   widget?: Nullable<WidgetDeps>;
 };
 
@@ -174,6 +176,8 @@ export function createApp(options: AppOptions) {
         routes: () => api.routes,
         geo: options.geo,
         history: options.history ?? null,
+        ping: options.ping ?? null,
+        commit: options.commit ?? null,
       }),
     )
     .use(api);
