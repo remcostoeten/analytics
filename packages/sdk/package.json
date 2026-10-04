@@ -3,6 +3,11 @@
 	"version": "2.0.0-next.1",
 	"description": "Privacy-first analytics for browsers, servers and React: typed events, batching, consent and plugins.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/remcostoeten/analytics.git",
+		"directory": "packages/sdk"
+	},
 	"type": "module",
 	"sideEffects": false,
 	"exports": {
