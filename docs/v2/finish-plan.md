@@ -36,11 +36,11 @@ The five blockers in [release-readiness.md](release-readiness.md), then the brow
 
 | Step | Owner | Done when |
 | --- | --- | --- |
-| Decide the core size budget: 5 KB (current check) or 4.5 KB (project notes, core is 0.41 KB over) | Remco | One number in `scripts/size-check.ts` and the notes |
-| Point `exports` at `dist` and resolve source in the workspace through a `source` condition (`tsconfig` `customConditions`, Bun `--conditions`) for `@spoar/sdk`, `@spoar/devtools` and `@spoar/contract` | agent | `bun pm pack` of each package imports from a clean install |
-| Drop `private: true` from `@spoar/sdk` and `@spoar/devtools`; publish `@spoar/contract` with them or bundle it into the SDK | agent, Remco decides | `bun run changeset` versions all three |
+| Keep the core size budget at 5 KB, as `scripts/size-check.ts` checks today (core is 4.91 KB), and drop the 4.5 KB figure from the notes | agent | One number everywhere |
+| Point `exports` at `dist` and resolve source in the workspace through a `source` condition (`tsconfig` `customConditions`, Bun `--conditions`) for `@spoar/sdk` and `@spoar/devtools` | agent | `bun pm pack` of each package imports from a clean install |
+| Bundle `@spoar/contract` into the SDK build (tsdown `noExternal`, bundled declarations) and keep it private; drop `private: true` from `@spoar/sdk` and `@spoar/devtools` | agent | A packed SDK has no `@spoar/contract` dependency; `bun run changeset` versions both packages |
 | Add a `release` workflow: `changesets/action` opens the version pull request, a publish step runs `bun publish` per public package, then `changeset tag`, with provenance | agent | The workflow runs green on a dry run |
-| Set up npm trusted publishing or an `NPM_TOKEN` secret, and approve the workflow | Remco | The first publish succeeds |
+| Set up npm trusted publishing in the browser: on npmjs.com, `@spoar/sdk` (already published as the 0.0.1 placeholder), Settings, Trusted Publisher, GitHub Actions, repository `remcostoeten/analytics`, workflow `release.yml`. `@spoar/devtools` is not on npm yet, so its first version goes out once by hand or with a short-lived token, and gets the same trusted publisher afterwards | Remco | Both packages publish from CI with provenance |
 | Run the blocker matrix in [release-checklist.md](../release-checklist.md): Brave standard and aggressive, uBlock Origin with EasyPrivacy, Firefox strict, Safari | Remco | Every row passes through the `/_ra` proxy and every human run scores under 50 |
 | Merge the version pull request | Remco | `@spoar/sdk@2.0.0-next.x` is on npm under `next` |
 
@@ -65,11 +65,11 @@ Follows [bot-readiness.md](bot-readiness.md) once two weeks of v2 traffic exist.
 
 ## Milestone 5: dashboard on v2 (E4.5)
 
-On hold for a design. The design system pasted on 4 October (monochrome, one orange accent, Geist, dashed frames) can serve as that design: the API landing page and the docs site already use it.
+On hold until Remco delivers the dashboard design system.
 
 | Step | Owner | Done when |
 | --- | --- | --- |
-| Confirm the design system is the dashboard design, or supply screens | Remco | E4.5 is off hold |
+| Remco delivers the dashboard design system | Remco | E4.5 is off hold |
 | Build `apps/dashboard` v2 on the Eden Treaty client, one view per commit: overview, pages and referrers, geo, devices, visitors and session trails, realtime, speed, issues, annotations on the time series | agent | Every view reads only from `/v2` |
 | A parity test per view against the seeded dataset | agent | All parity tests pass |
 | Sign-in through the API; remove the dashboard's own GitHub OAuth routes | agent | One sign-in for the API and the dashboard |
@@ -102,12 +102,12 @@ In the order of [plan.md](plan.md) decision 17 and [capabilities-and-gaps.md](ca
 
 Left out on purpose: goals, funnels, experiments, feature flags, session replay, click heatmaps and surveys.
 
-## Decisions Remco owes
+## Decisions
 
-| Decision | Blocks |
-| --- | --- |
-| Core size budget, 5 KB or 4.5 KB | Milestone 2 |
-| Publish `@spoar/contract` separately or bundle it | Milestone 2 |
-| npm trusted publishing or a token | Milestone 2 |
-| Design system as the dashboard design | Milestone 5 |
-| Vercel plan: stay on Hobby with fewer projects, or Pro | Daily deployment limit of 100 |
+| Decision | Choice | Date |
+| --- | --- | --- |
+| Core size budget | 5 KB, as checked today | 4 October 2026 |
+| `@spoar/contract` | Bundled into the SDK, not published: it only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step | 4 October 2026 |
+| npm publishing | Trusted publishing, set up by Remco in the npm website | 4 October 2026 |
+| Dashboard design | A design system from Remco, still to come | 4 October 2026 |
+| Vercel plan | Hobby. Keep the deployments per push low: v1 deploys from `master` only (#82), one docs project | 4 October 2026 |
