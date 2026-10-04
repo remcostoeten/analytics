@@ -6,6 +6,8 @@ function tokens(colors: {
   accent: string;
   ok: string;
   string: string;
+  constant: string;
+  punctuation: string;
 }) {
   return [
     {
@@ -28,7 +30,7 @@ function tokens(colors: {
     },
     {
       scope: ["constant.numeric", "constant.language", "support.constant"],
-      settings: { foreground: colors.ok },
+      settings: { foreground: colors.constant },
     },
     {
       scope: [
@@ -48,7 +50,7 @@ function tokens(colors: {
     },
     {
       scope: ["punctuation", "keyword.operator", "meta.brace"],
-      settings: { foreground: colors.muted },
+      settings: { foreground: colors.punctuation },
     },
     {
       scope: ["entity.name.tag", "punctuation.definition.tag"],
@@ -74,7 +76,9 @@ const codeThemeDark = {
     line: "#262626",
     accent: "#fe5101",
     ok: "#54f2b3",
-    string: "#c4c4c4",
+    string: "#86e1c0",
+    constant: "#f5b544",
+    punctuation: "#5f5f5f",
   }),
 } as const;
 
@@ -89,7 +93,9 @@ const codeThemeLight = {
     line: "#d9d9d9",
     accent: "#fe5101",
     ok: "#1fae78",
-    string: "#3d3d3d",
+    string: "#0f7a54",
+    constant: "#b7791f",
+    punctuation: "#9a9a9a",
   }),
 } as const;
 

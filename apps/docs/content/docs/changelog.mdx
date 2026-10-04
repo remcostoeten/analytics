@@ -1,0 +1,40 @@
+---
+title: Changelog
+description: Changes to the published packages, from the changesets and each package's CHANGELOG.md.
+---
+
+Unreleased entries come from the pending changesets and ship with the next release on the `next` tag.
+
+## SDK
+
+`@remcostoeten/analytics-sdk`
+
+### Unreleased
+
+#### Major changes
+
+- SDK 2.0: an ESM-only rewrite with a typed browser client, plugins, and new `./react`, `./next`, `./server` and `./proxy` entries. The browser client batches events, keeps visitors without cookies, honours consent and opt-out, and reads its options from `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`. `./react` adds `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews` and `computeRoute`; `./next` adds the `Analytics` route adapter; `./server` adds `createServerAnalytics`, which forwards the visitor's IP and user agent and uses `waitUntil`; `./proxy` adds `createProxy` and `createPageCounter` for a same-origin ingest path.
+
+#### Patch changes
+
+- `speedInsights` asks web-vitals for every LCP, INP and CLS change and keeps the latest value per metric id, so those values are sent even when a page unloads without a visibility change.
+
+## Contract
+
+`@remcostoeten/analytics-contract`
+
+### Unreleased
+
+#### Minor changes
+
+- Access and roles: `TokenScope` adds `sql`, a new `Role` enum has `owner`, `admin`, `analyst` and `viewer`, `Project` and `UpdateProject` carry `sqlEnabled`, and `AuthSession` carries the caller's `role`.
+- Operations: `AdminMetrics` gains `speedChecks`, the Chrome UX Report comparison per project and metric, `JobRun` gains an optional `message`, and `JobName` gains `crux`.
+- Export `clientSignals` from `@remcostoeten/analytics-contract/signals` too, which loads no TypeBox, so the browser SDK can use it without bundling the schemas.
+- Add `clientSignals`, the bit layout of a wire event's `signals` field.
+- Error rules: `ErrorRule`, `ErrorRuleList`, `ErrorRuleResponse` and `CreateErrorRule` for ignore patterns and issue mutes, and `JobName` gains `alerts`.
+- `PathsResponse`, `RetentionResponse`, `HeatmapResponse`, `MapResponse` and `LiveEvents` for the paths, retention, heatmap, map and live event routes.
+- First release of the v2 contract: TypeBox schemas and types for every v2 route, the error catalog and shared fixtures.
+- `PersonRow` and `PeopleList` for `GET /v2/people`, one row per identified user across projects.
+- Saved queries: `SavedQuery`, `SavedQueryList`, `SavedQueryResponse`, `CreateSavedQuery`, `UpdateSavedQuery` and `ChartType`.
+- Speed insights: `MetricSummary` gains `samples` and its `value` and `rating` are null under the sample minimum, `SpeedResponse` and `SpeedRoute` scores are nullable for the same reason, and `SpeedTimeseries` with `SpeedPoint` is new.
+- SQL console schemas: `QueryRequest` takes `params` (`from`, `to`, `project`), `QueryResult` adds `truncated`, and new `QueryPlan`, `QuerySchema`, `QueryRun` and `QueryHistory`.

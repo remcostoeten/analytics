@@ -95,3 +95,12 @@ export function CheckIcon(props: Props) {
     </svg>
   );
 }
+
+export function FileIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" />
+      <path d="M14 3v5h5" />
+    </svg>
+  );
+}

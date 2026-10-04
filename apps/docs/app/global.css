@@ -188,32 +188,39 @@
   text-transform: uppercase;
   transition:
     transform 120ms ease,
-    background 120ms ease,
-    color 120ms ease;
+    background-color 150ms ease,
+    color 150ms ease;
 
   &:hover,
   &:focus-visible {
+    outline: none;
     background: var(--accent);
     color: #fff;
   }
   &:active {
     transform: scale(0.97);
   }
-  &:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
-    outline-offset: 2px;
-  }
 }
 
 @utility card-wash {
   transition:
     transform 150ms var(--ease-out),
-    background 150ms ease,
+    background-color 150ms ease,
     border-color 150ms ease;
 
   &:hover {
-    transform: translateY(-2px);
-    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    background-color: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  }
+  &:focus-visible {
+    outline: none;
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border-color: var(--accent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY(-2px);
+    }
   }
 }
 
@@ -221,12 +228,31 @@
   text-decoration: underline;
   text-decoration-color: var(--line);
   text-underline-offset: 3px;
-  transition: text-decoration-color 120ms ease;
+  transition:
+    text-decoration-color 150ms ease,
+    color 150ms ease;
 
-  &:hover,
-  &:focus-visible {
+  &:hover {
     text-decoration-color: var(--accent);
   }
+  &:focus-visible {
+    outline: none;
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+  }
+}
+
+#nd-nav :is(a, button) {
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+#nd-nav :is(a, button):focus-visible {
+  outline: none;
+  box-shadow: none;
+  background-color: color-mix(in srgb, var(--fg) 10%, transparent);
+  color: var(--fg);
 }
 
 #nd-sidebar {
@@ -279,6 +305,65 @@
 
 .shiki {
   background: var(--surface) !important;
+}
+
+.code-window {
+  background:
+    radial-gradient(
+      90% 60% at 0% 0%,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 70%
+    ),
+    var(--surface);
+}
+
+.code-window {
+  transition: border-color 150ms ease;
+}
+
+.code-window:has(pre:focus-visible) {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+}
+
+.code-window pre:focus-visible {
+  outline: none;
+}
+
+.code-window .shiki {
+  background: transparent !important;
+  padding-inline: 0;
+}
+
+.code-window code {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  counter-reset: line;
+}
+
+.code-window .line {
+  border-left: 2px solid transparent;
+  padding-inline: 14px 20px;
+}
+
+.code-window .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: var(--gutter, 2ch);
+  margin-right: 20px;
+  text-align: right;
+  color: color-mix(in srgb, var(--muted) 55%, transparent);
+  user-select: none;
+}
+
+.code-window .line.is-marked {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.code-window .line.is-marked::before {
+  color: var(--accent);
 }
 
 .shiki code span {

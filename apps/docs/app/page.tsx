@@ -162,7 +162,7 @@ export default async function HomePage() {
                   href={item.href}
                   className="card-wash group flex h-full flex-col gap-4 rounded-[10px] border border-line bg-surface p-5"
                 >
-                  <item.icon className="size-4 text-muted transition-colors group-hover:text-accent" />
+                  <item.icon className="size-4 text-muted transition-colors group-hover:text-accent group-focus-visible:text-accent" />
                   <div className="flex flex-col gap-1.5">
                     <h3 className="text-[0.95rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg">
                       {item.title}
@@ -175,7 +175,7 @@ export default async function HomePage() {
           </ul>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-start">
+        <section className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <SectionHeading
             eyebrow="05 / One file"
             title="Create the client, add the plugins you want"
@@ -183,7 +183,7 @@ export default async function HomePage() {
             href="/docs/sdk/install"
             linkText="SDK reference"
           />
-          <CodeWindow title="lib/analytics.ts" lang="ts" code={example} />
+          <CodeWindow title="lib/analytics.ts" lang="ts" code={example} mark={[11]} />
         </section>
 
         <section className="flex flex-wrap items-center justify-between gap-6">
