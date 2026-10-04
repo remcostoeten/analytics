@@ -76,6 +76,7 @@ jobs:
             gh pr create --base master --head changeset-release/master --title "chore(release): version packages" --body "Merging this publishes the versioned packages to npm." || echo "::warning::Could not open the version pull request; open it by hand from changeset-release/master"
           fi
       - name: Publish
+        shell: bash
         if: steps.version.outputs.changed == 'false'
         run: |
           bun run release | tee release.log
