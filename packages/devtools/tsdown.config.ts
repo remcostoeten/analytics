@@ -6,7 +6,7 @@ const shared: UserConfig = {
   dts: { eager: true },
   sourcemap: true,
   minify: true,
-  noExternal: [/^@spoar\/shared/],
+  noExternal: [/^@spoar\/shared/, /^@spoar\/contract/],
 };
 
 const client: UserConfig = { ...shared, banner: { js: '"use client";' } };
@@ -15,7 +15,13 @@ export default defineConfig([
   {
     ...shared,
     entry: { index: "src/index.ts" },
-    noExternal: [/^@spoar\/shared/, /^react($|\/)/, /^react-dom($|\/)/, /^scheduler/],
+    noExternal: [
+      /^@spoar\/shared/,
+      /^@spoar\/contract/,
+      /^react($|\/)/,
+      /^react-dom($|\/)/,
+      /^scheduler/,
+    ],
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     clean: true,
   },

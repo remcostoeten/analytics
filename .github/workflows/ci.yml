@@ -34,6 +34,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Build packages
         run: bun run --filter './v1/packages/*' --filter './packages/*' build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
       - name: Check SDK size
         run: bun run size
       - name: Typecheck
@@ -72,6 +74,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Build SDK
         run: bun run --filter './packages/*' build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
       - name: Install Chromium
         working-directory: e2e
         run: bunx playwright install --with-deps chromium

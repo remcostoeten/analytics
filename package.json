@@ -54,6 +54,7 @@
 		"migrate": "bun scripts/migrate.ts",
 		"rescore": "bun scripts/rescore.ts",
 		"size": "bun scripts/size-check.ts",
+		"release": "bun scripts/publish.ts",
 		"check": "bun run typecheck && bun run lint && bun run format:check && bun run boundaries && bun run deps && bun run knip && bun run test",
 		"dev": "bun run --cwd v1/apps/dashboard dev",
 		"dev:ingestion": "bun run --cwd v1/apps/ingestion dev",

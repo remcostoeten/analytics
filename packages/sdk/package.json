@@ -1,7 +1,6 @@
 {
 	"name": "@spoar/sdk",
 	"version": "2.0.0-next.0",
-	"private": true,
 	"description": "Privacy-first analytics for browsers, servers and React: typed events, batching, consent and plugins.",
 	"license": "MIT",
 	"type": "module",
@@ -77,7 +76,6 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@spoar/contract": "workspace:*",
 		"web-vitals": "6.2.2"
 	},
 	"peerDependencies": {
@@ -95,6 +93,7 @@
 	"devDependencies": {
 		"@happy-dom/global-registrator": "20.14.5",
 		"@sinclair/typebox": "catalog:typebox",
+		"@spoar/contract": "workspace:*",
 		"@spoar/shared": "workspace:*",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
