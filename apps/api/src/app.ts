@@ -26,6 +26,10 @@ import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import type { HistorySource } from "./modules/landing/service";
 import { tokensModule } from "./modules/tokens/route";
+import { logsModule } from "./modules/logs/route";
+import { widgetModule } from "./modules/widget/route";
+import { projectForOrigin } from "./modules/widget/service";
+import type { WidgetDeps } from "./modules/widget/service";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
 import { apiTags, docs } from "./plugins/docs";
@@ -51,6 +55,7 @@ export type AppOptions = {
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
   history?: Nullable<HistorySource>;
+  widget?: Nullable<WidgetDeps>;
 };
 
 async function signedInAdmin(headers: Headers, access: AccessDeps) {
@@ -62,9 +67,9 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console and, with `alerts`, the
- * alert routes. The engine is created per request so its log
- * lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
+ * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console, with
+ * `alerts` the alert routes, and with `widget` the dev widget's bootstrap, active visitors,
+ * overview and log. The engine is created per request so its log lines carry the request id. Events sent with a signed-in admin's session cookie are internal.
  * With `internalSecret`, the API's own `INTERNAL` errors go to the project with that secret key.
  *
  * @example
@@ -73,9 +78,20 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
  */
 export function createApp(options: AppOptions) {
   const ops = options.ops ?? null;
+  const widget = options.widget ?? null;
+  const reads = widget ? { ...options.reads, widget: widget.store } : options.reads;
+  async function widgetOrigin(origin: string) {
+    const found = await projectForOrigin(options.access, origin);
+    return found.ok && found.value !== null;
+  }
   const api = new Elysia({ prefix: "/v2" })
     .use(requestId())
-    .use(cors({ dashboardOrigin: options.dashboardOrigin }))
+    .use(
+      cors({
+        dashboardOrigin: options.dashboardOrigin,
+        widgetOrigin: widget ? widgetOrigin : undefined,
+      }),
+    )
     .use(
       errorHandler({
         docsBase: options.docsBase,
@@ -111,7 +127,7 @@ export function createApp(options: AppOptions) {
     )
     .use(projectsModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
-    .use(readsModule(options.access, options.reads, options.docsBase))
+    .use(readsModule(options.access, reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))
     .use(issuesModule(options.access, options.reads, options.docsBase))
     .use(detailsModule(options.access, options.reads, options.docsBase))
@@ -128,6 +144,7 @@ export function createApp(options: AppOptions) {
           alerts: options.alerts ?? null,
           crux: options.crux ?? null,
           clock: options.clock,
+          logs: widget?.logs ?? null,
         },
         options.docsBase,
       ),
@@ -137,6 +154,16 @@ export function createApp(options: AppOptions) {
       options.alerts
         ? alertsModule(options.access, options.alerts, options.clock, options.docsBase)
         : new Elysia({ name: "alerts-off" }),
+    )
+    .use(
+      widget
+        ? widgetModule(options.access, reads, widget, options.docsBase)
+        : new Elysia({ name: "widget-off" }),
+    )
+    .use(
+      widget
+        ? logsModule(options.access, reads, widget, options.docsBase)
+        : new Elysia({ name: "logs-off" }),
     );
   return new Elysia()
     .use(

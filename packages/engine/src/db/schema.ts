@@ -40,6 +40,7 @@ export const events = pgTable(
     botDetected: boolean("bot_detected").default(false),
     botScore: smallint("bot_score").notNull().default(0),
     botReasons: text("bot_reasons").array().notNull().default([]),
+    botSignals: jsonb("bot_signals"),
     isInternal: boolean("is_internal").default(false),
     ua: text("ua"),
     lang: text("lang"),
@@ -181,6 +182,7 @@ export const projects = pgTable("projects", {
   retentionDays: integer("retention_days").notNull().default(90),
   orgId: text("org_id").references(() => authOrganization.id, { onDelete: "set null" }),
   sqlEnabled: boolean("sql_enabled").notNull().default(true),
+  widgetReports: boolean("widget_reports").notNull().default(false),
 });
 
 export const apiTokens = pgTable("api_tokens", {
@@ -191,6 +193,9 @@ export const apiTokens = pgTable("api_tokens", {
   projectIds: text("project_ids").array(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  kind: text("kind", { enum: ["api", "widget"] })
+    .notNull()
+    .default("api"),
 });
 
 export const issues = pgTable(
@@ -509,4 +514,23 @@ export const annotations = pgTable(
     url: text("url"),
   },
   (table) => [index("annotations_project_date_idx").on(table.projectId, table.date, table.id)],
+);
+
+export const logs = pgTable(
+  "logs",
+  {
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    project: text("project").notNull(),
+    ts: timestamp("ts", { withTimezone: true }).notNull().defaultNow(),
+    level: text("level", { enum: ["info", "ok", "warn", "error"] }).notNull(),
+    kind: text("kind", {
+      enum: ["ingest", "transport", "pipeline", "signals", "jobs", "auth"],
+    }).notNull(),
+    source: text("source", { enum: ["api", "sdk", "engine", "cron"] }).notNull(),
+    message: text("message").notNull(),
+    data: jsonb("data").notNull().default({}),
+    visitor: text("visitor"),
+    session: text("session"),
+  },
+  (table) => [index("logs_project_ts_idx").on(table.project, table.ts)],
 );

@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "9102",
+      "ts": "2026-10-03T14:02:04.117Z",
+      "level": "error",
+      "kind": "ingest",
+      "source": "api",
+      "message": "RA_INGEST_REJECTED events[3].props: Expected object with at most 25 properties",
+      "data": {
+        "code": "RA_INGEST_REJECTED",
+        "reason": "VALIDATION_FAILED",
+        "index": 3,
+        "event": "quote_requested",
+        "field": "props"
+      },
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4"
+    }
+  ],
+  "nextCursor": "9102"
+}

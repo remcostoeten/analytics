@@ -11,6 +11,7 @@ const topReasons = 5;
 const rateLimitDays = 1;
 const sentDays = 30;
 const failedDays = 90;
+const logDays = 7;
 
 function hourOf(at: Date) {
   const hour = new Date(at);
@@ -27,6 +28,7 @@ function nullableNumber(value: unknown) {
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
  * ingest numbers since a moment, retention cleanup of events and sessions past each project's
  * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
+ * log lines older than 7 days and expired widget tokens,
  * the session layer of bot detection over a range, and the Chrome UX Report checks.
  *
  * @example
@@ -167,9 +169,27 @@ export function drizzleOps(db: Database): OpsStore {
               OR (status = 'failed' AND created_at < ${at}::timestamptz - make_interval(days => ${failedDays}))
             RETURNING id`,
         );
+        const lines = await selectRows(
+          db,
+          sql`DELETE FROM logs WHERE id IN (
+              SELECT id FROM logs WHERE ts < ${at}::timestamptz - make_interval(days => ${logDays})
+              LIMIT ${batch})
+            RETURNING id`,
+        );
+        const tokens = await selectRows(
+          db,
+          sql`DELETE FROM api_tokens WHERE kind = 'widget' AND expires_at < ${at}::timestamptz
+            RETURNING id`,
+        );
         return {
           rowsDeleted:
-            events.length + sessions.length + vitals.length + limits.length + deliveries.length,
+            events.length +
+            sessions.length +
+            vitals.length +
+            limits.length +
+            deliveries.length +
+            lines.length +
+            tokens.length,
         };
       }),
     checkTargets: () =>

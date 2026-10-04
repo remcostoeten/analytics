@@ -3,24 +3,37 @@ import { Elysia } from "elysia";
 
 const allowedHeaders = "content-type, authorization, x-project-key, x-request-id";
 const exposedHeaders = "x-request-id, retry-after";
+const widgetSession = "/v2/widget/session";
+
+export type CorsOptions = {
+  dashboardOrigin: Nullable<string>;
+  widgetOrigin?: (origin: string) => Promise<boolean>;
+};
+
+async function credentialed(origin: string, path: string, options: CorsOptions) {
+  if (origin === options.dashboardOrigin) return true;
+  return path === widgetSession && options.widgetOrigin ? options.widgetOrigin(origin) : false;
+}
 
 /**
  * @name cors
- * @description CORS for every route. The dashboard origin gets credentials; any other origin gets
- * `*` without credentials, which is what ingest needs, because the engine checks the origin
+ * @description CORS for every route. The dashboard origin gets credentials, and so does any origin
+ * that `widgetOrigin` accepts on `GET /v2/widget/session`, so the dev widget can send the admin
+ * session cookie from a customer site; any other origin gets `*` without credentials, which is
+ * what ingest and the bearer-token widget reads need, because the engine checks the origin
  * against the project key's allowed origins itself. Preflight requests answer 204 here.
  *
  * @example
  * new Elysia().use(cors({ dashboardOrigin: "https://analytics.remcostoeten.nl" }));
  */
-export function cors(options: { dashboardOrigin: Nullable<string> }) {
-  return new Elysia({ name: "cors" }).onRequest(({ request, set }) => {
+export function cors(options: CorsOptions) {
+  return new Elysia({ name: "cors" }).onRequest(async ({ request, set }) => {
     const origin = request.headers.get("origin");
     if (origin) {
-      const dashboard = origin === options.dashboardOrigin;
-      set.headers["access-control-allow-origin"] = dashboard ? origin : "*";
+      const allowed = await credentialed(origin, new URL(request.url).pathname, options);
+      set.headers["access-control-allow-origin"] = allowed ? origin : "*";
       set.headers["access-control-expose-headers"] = exposedHeaders;
-      if (dashboard) {
+      if (allowed) {
         set.headers["access-control-allow-credentials"] = "true";
         set.headers.vary = "Origin";
       }

@@ -25,8 +25,10 @@ import type {
   OpsStore,
   RealtimeFeed,
   DetailStore,
+  LogStore,
   TokenRecord,
   TokenStore,
+  WidgetStore,
 } from "../ports";
 import { queryRunner } from "../query/runner";
 import type { Transact } from "../query/runner";
@@ -40,10 +42,12 @@ import { drizzleAnnotations } from "./drizzle-annotations";
 import { drizzleDetails } from "./drizzle-details";
 import { drizzleFeed } from "./drizzle-feed";
 import { drizzleIssues } from "./drizzle-issues";
+import { drizzleLogs } from "./drizzle-logs";
 import { drizzleOps } from "./drizzle-ops";
 import { drizzleSpeed } from "./drizzle-speed";
 import { drizzleQueryLog, drizzleSavedQueries, readQuerySecret } from "./drizzle-queries";
 import { drizzleReads } from "./drizzle-reads";
+import { drizzleWidget } from "./drizzle-widget";
 
 export const organizationId = "org_main";
 
@@ -54,6 +58,7 @@ const projectColumns = {
   visibility: projects.visibility,
   publicVisitorData: projects.publicVisitorData,
   sqlEnabled: projects.sqlEnabled,
+  widgetReports: projects.widgetReports,
   allowedOrigins: projects.allowedOrigins,
   retentionDays: projects.retentionDays,
   publicKey: projects.publicKey,
@@ -64,6 +69,7 @@ const projectColumns = {
 
 const tokenColumns = {
   id: apiTokens.id,
+  kind: apiTokens.kind,
   name: apiTokens.name,
   scope: apiTokens.scope,
   projectIds: apiTokens.projectIds,
@@ -146,7 +152,8 @@ export function drizzleProjectAdmin(db: Database): ProjectAdmin {
 /**
  * @name drizzleTokens
  * @description The `TokenStore` on `api_tokens`. Tokens are looked up by their sha256 hash, never
- * read back in full, and revoking deletes the row.
+ * read back in full, listed per kind (`api` or the short-lived `widget` tokens), and revoking
+ * deletes the row.
  *
  * @example
  * const tokens = drizzleTokens(db);
@@ -162,9 +169,13 @@ export function drizzleTokens(db: Database): TokenStore {
           .where(eq(apiTokens.tokenHash, hash));
         return row ?? null;
       }),
-    list: () =>
+    list: (kind) =>
       attempt("Could not list tokens", async (): Promise<TokenRecord[]> =>
-        db.select(tokenColumns).from(apiTokens).orderBy(apiTokens.createdAt),
+        db
+          .select(tokenColumns)
+          .from(apiTokens)
+          .where(eq(apiTokens.kind, kind))
+          .orderBy(apiTokens.createdAt),
       ),
     create: (token) =>
       attempt("Could not create the token", async () => {
@@ -271,12 +282,14 @@ export type Access = {
   issues: IssueStore;
   ops: OpsStore;
   alerts: AlertStore;
+  logs: LogStore;
+  widget: WidgetStore;
 };
 
 /**
  * @name accessOn
- * @description The project, token, member and read stores, the live feed and the SQL console on
- * one Drizzle database, with the database for Better Auth's adapter. Console queries run through
+ * @description The project, token, member and read stores, the live feed, the log lines, the
+ * widget reads and the SQL console on one Drizzle database, with the database for Better Auth's adapter. Console queries run through
  * `transact`, the driver's read-only transaction, with a 10-second timeout and 10,000 rows.
  *
  * @example
@@ -302,5 +315,7 @@ export function accessOn(db: Database, transact: Transact): Access {
     issues: drizzleIssues(db),
     ops: drizzleOps(db),
     alerts: drizzleAlerts(db),
+    logs: drizzleLogs(db, { pollMs: 2000 }),
+    widget: drizzleWidget(db),
   };
 }

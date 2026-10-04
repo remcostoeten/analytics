@@ -24,11 +24,14 @@ Every API error uses the same envelope, with a `code`, a `message`, an optional 
 | --- | --- | --- | --- | --- |
 | 400 | `VALIDATION_FAILED` | No | The body, query or path does not match the schema, or the body is not JSON | Read `message` and `details.fields`, and correct the request |
 | 401 | `UNAUTHORIZED` | No | No credential, or an unknown key, token or cron secret | Send a valid key, API token or session |
+| 401 | `AUTH_REQUIRED` | No | The dev widget bootstrap was called without the admin session cookie | Sign in to the API, then reload the site |
 | 403 | `FORBIDDEN_ORIGIN` | No | A public key was used from an origin missing from the project's allowed origins | Add the exact origin, or send through the proxy |
+| 403 | `ORIGIN_NOT_ALLOWED` | No | The dev widget bootstrap came from an origin no project lists | Add the site's origin to the project's `allowedOrigins` |
 | 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
+| 403 | `WIDGET_REPORTS_DISABLED` | No | SDK client reports were sent while the project's `widgetReports` is off | Turn on `widgetReports` with `PATCH /v2/projects/:project` |
 | 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
 | 409 | `CONFLICT` | No | A project with this id already exists | Pick another id |
-| 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events | Send smaller batches |
+| 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events, or a client report body is over 16 KB | Send smaller batches |
 | 429 | `RATE_LIMITED` | Yes | A rate limit was hit | Wait for the number of seconds in `Retry-After` |
 | 500 | `INTERNAL` | Yes | An unexpected failure | Report the `requestId`; the API's log line carries the same id |
 | 503 | `UNAVAILABLE` | Yes | The database or a configured service is unreachable, or a job is not configured | Check the database and the service named in `message` |

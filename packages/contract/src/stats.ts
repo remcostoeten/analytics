@@ -2,6 +2,7 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Compared, Filters, Range, ValueCount } from "./common";
+import { ActiveVisitor } from "./widget";
 import {
   DeviceType,
   Environment,
@@ -150,6 +151,7 @@ export const RealtimeResponse = Type.Object({
     countries: Type.Array(ValueCount),
   }),
   window: Range,
+  visitors: Type.Optional(Type.Array(ActiveVisitor)),
 });
 export type RealtimeResponse = Static<typeof RealtimeResponse>;
 

@@ -15,3 +15,4 @@ export * from "./stats";
 export * from "./system";
 export * from "./tokens";
 export * from "./visitors";
+export * from "./widget";

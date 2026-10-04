@@ -1,0 +1,13 @@
+{
+  "logs": [
+    {
+      "kind": "transport",
+      "level": "warn",
+      "message": "RA_DROP beacon refused, queued for retry",
+      "data": { "events": 3, "status": 0 },
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4",
+      "ts": "2026-10-03T14:02:04.117Z"
+    }
+  ]
+}

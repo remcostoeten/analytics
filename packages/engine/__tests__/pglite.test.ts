@@ -258,7 +258,7 @@ describe("engine on PGlite", () => {
   test("finds projects by public key and secret hash", async () => {
     expect(await adapters.projects.byPublicKey(project.publicKey)).toEqual({
       ok: true,
-      value: { id: project.id, allowedOrigins: project.allowedOrigins },
+      value: { id: project.id, allowedOrigins: project.allowedOrigins, widgetReports: false },
     });
     expect(await adapters.projects.bySecretHash("missing")).toEqual({ ok: true, value: null });
   });

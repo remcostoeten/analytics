@@ -15,8 +15,11 @@ type ErrorSpec = {
 export const errorCodes = [
   "VALIDATION_FAILED",
   "UNAUTHORIZED",
+  "AUTH_REQUIRED",
   "FORBIDDEN_ORIGIN",
+  "ORIGIN_NOT_ALLOWED",
   "FORBIDDEN",
+  "WIDGET_REPORTS_DISABLED",
   "NOT_FOUND",
   "CONFLICT",
   "PAYLOAD_TOO_LARGE",
@@ -40,17 +43,35 @@ export const errorCatalog = {
     level: "info",
     docs: "No or invalid session, token or key.",
   },
+  AUTH_REQUIRED: {
+    status: 401,
+    retryable: false,
+    level: "info",
+    docs: "The widget bootstrap was called without a signed-in session cookie.",
+  },
   FORBIDDEN_ORIGIN: {
     status: 403,
     retryable: false,
     level: "warn",
     docs: "The public key was used from an origin that is not in the project's allowed origins.",
   },
+  ORIGIN_NOT_ALLOWED: {
+    status: 403,
+    retryable: false,
+    level: "info",
+    docs: "The widget bootstrap's Origin is not in any project's allowed origins.",
+  },
   FORBIDDEN: {
     status: 403,
     retryable: false,
     level: "info",
     docs: "The token scope or the signed-in member's role does not allow the action.",
+  },
+  WIDGET_REPORTS_DISABLED: {
+    status: 403,
+    retryable: false,
+    level: "info",
+    docs: "SDK client reports were sent to a project whose widgetReports switch is off.",
   },
   NOT_FOUND: {
     status: 404,
@@ -68,7 +89,7 @@ export const errorCatalog = {
     status: 413,
     retryable: false,
     level: "warn",
-    docs: "The ingest body is over 60 KB or has more than 50 events.",
+    docs: "The ingest body is over 60 KB or has more than 50 events, or a client report body is over 16 KB.",
   },
   RATE_LIMITED: {
     status: 429,

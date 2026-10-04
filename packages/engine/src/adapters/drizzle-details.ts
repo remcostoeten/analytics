@@ -1,4 +1,5 @@
 import type {
+  BotDetail,
   BotReason,
   Channel,
   DeviceType,
@@ -21,6 +22,7 @@ import type { DetailStore, Keyset, Page } from "../ports";
 import { scopeParts } from "../reads/scope";
 import { notServer, serverVisitor } from "../reads/server-visitor";
 import { defaultSignals } from "../signals";
+import { botLabel, storedSignals } from "../signals/verdict";
 import type { Database } from "./drizzle";
 import { unavailable } from "./drizzle";
 
@@ -63,7 +65,7 @@ const topPages = 5;
 const eventColumns =
   sql.raw(`e.id AS row_id, e.fingerprint, e.name, e.type, e.meta, e.ts, e.visitor_id, e.session_id,
   e.path, e.route, e.referrer, e.referrer_domain, e.channel, e.country, e.region, e.city, e.postal_code, e.timezone,
-  e.latitude, e.longitude, e.device_type, e.lang, e.bot_score, e.bot_reasons, e.is_internal, e.host`);
+  e.latitude, e.longitude, e.device_type, e.lang, e.bot_score, e.bot_reasons, e.bot_signals, e.is_internal, e.host`);
 
 async function select(db: Database, query: SQL): Promise<Row[]> {
   const result: unknown = await db.execute(query);
@@ -85,6 +87,11 @@ async function attempt<Value>(message: string, run: () => Promise<Value>) {
   } catch (error) {
     return unavailable(message, error);
   }
+}
+
+function botDetail(row: Row | undefined): BotDetail {
+  const score = Math.min(100, Math.max(0, count(row?.bot_score)));
+  return { score, verdict: botLabel(score), signals: storedSignals(row?.bot_signals) };
 }
 
 function text(value: unknown): Nullable<string> {
@@ -357,6 +364,11 @@ export function drizzleDetails(db: Database): DetailStore {
           sql`SELECT ${eventColumns} FROM events e WHERE e.project_id = ${project} AND e.visitor_id = ${visitor}
             ORDER BY e.ts DESC, e.id DESC LIMIT 1`,
         );
+        const [strongest] = await select(
+          db,
+          sql`SELECT e.bot_score, e.bot_signals FROM events e WHERE e.project_id = ${project} AND e.visitor_id = ${visitor}
+            ORDER BY e.bot_score DESC, e.ts DESC, e.id DESC LIMIT 1`,
+        );
         const sessions = await select(
           db,
           sql`SELECT session_id, min(ts) AS started_at, max(ts) AS ended_at,
@@ -423,6 +435,7 @@ export function drizzleDetails(db: Database): DetailStore {
               exitPage: text(row.exit_page) ?? "",
               referrer: text(row.referrer),
             })),
+          bot: botDetail(strongest),
         };
       }),
     markVisitor: (project, visitor, internal) =>

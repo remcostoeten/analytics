@@ -32,13 +32,14 @@ function tokenShape(token: TokenRecord): ApiToken {
 
 /**
  * @name listTokens
- * @description Every API token, oldest first, without the token values.
+ * @description Every API token, oldest first, without the token values. Widget tokens are never
+ * listed.
  *
  * @example
  * await listTokens(deps);
  */
 export async function listTokens(deps: AccessDeps): Promise<Result<ApiToken[], EngineError>> {
-  const found = await deps.tokens.list();
+  const found = await deps.tokens.list("api");
   return found.ok ? ok(found.value.map(tokenShape)) : found;
 }
 
@@ -61,6 +62,7 @@ export async function createToken(
   const token = randomSecret("at_live_", 16);
   const created = await deps.tokens.create({
     id: randomSecret("tok_", 8),
+    kind: "api",
     name: input.name,
     scope: input.scope,
     projectIds: input.projectIds ?? null,

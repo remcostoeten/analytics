@@ -1,5 +1,7 @@
 export const maxEventsPerBatch = 50;
 export const maxBodyBytes = 60 * 1024;
+export const maxReportBytes = 16 * 1024;
+export const maxReportsPerBatch = 20;
 export const maxGroups = 5;
 export const maxGroupId = 128;
 // A group type: a lowercase letter, then up to 31 lowercase letters, digits or underscores.

@@ -1,0 +1,13 @@
+{
+  "online": 27,
+  "viewsPerMinute": [3, 5, 4, 6, 5, 8, 7, 11, 9, 14],
+  "today": { "visitors": 1284, "pageviews": 3902, "bounceRate": 0.41, "avgSessionSeconds": 134 },
+  "ingest": { "last24h": { "accepted": 40112, "duplicates": 311, "rejected": 42, "rateLimited": 9 } },
+  "bots": { "share": 0.078, "headless": 3, "webdriver": 1, "datacenterAsn": 14 },
+  "speed": { "lcp": 1400, "inp": 96, "cls": 0.02, "ttfb": 610 },
+  "errors": { "last30m": 3, "openIssues": 12 },
+  "topPages": [{ "path": "/", "views": 1044 }],
+  "referrers": [{ "name": "google.com", "share": 0.48 }],
+  "countries": [{ "code": "NL", "share": 0.71 }],
+  "release": { "current": "2026.10.03-a1", "deployedAt": "2026-10-03T11:42:00.000Z", "newIssuesSince": 3 }
+}

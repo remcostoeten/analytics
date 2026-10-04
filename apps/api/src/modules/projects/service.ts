@@ -48,6 +48,7 @@ function adminShape(project: ProjectRecord): Project {
     ...publicShape(project),
     publicVisitorData: project.publicVisitorData,
     sqlEnabled: project.sqlEnabled,
+    widgetReports: project.widgetReports,
     allowedOrigins: project.allowedOrigins,
     retentionDays: project.retentionDays,
     publicKey: project.publicKey,
@@ -147,6 +148,7 @@ export async function updateProject(
       ? {}
       : { publicVisitorData: shaped.publicVisitorData }),
     ...(patch.sqlEnabled === undefined ? {} : { sqlEnabled: shaped.sqlEnabled }),
+    ...(patch.widgetReports === undefined ? {} : { widgetReports: shaped.widgetReports }),
     ...(patch.allowedOrigins === undefined ? {} : { allowedOrigins: shaped.allowedOrigins }),
     ...(patch.retentionDays === undefined ? {} : { retentionDays: shaped.retentionDays }),
     updatedAt: shaped.updatedAt,

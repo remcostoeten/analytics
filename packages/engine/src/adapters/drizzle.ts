@@ -20,6 +20,7 @@ import { groupsKey } from "../groups";
 import { engineError } from "../errors";
 import type { EventStore, ProjectStore, RateLimiter } from "../ports";
 import { serverVisitor } from "../reads/server-visitor";
+import { botLabel } from "../signals/verdict";
 import { vitalRow } from "../speed/vitals";
 import type { VitalRow } from "../speed/vitals";
 
@@ -30,14 +31,13 @@ type Meta = { [key: string]: unknown };
 
 const legacyTypes = new Set(["pageview", "click", "error"]);
 const schemaVersion = 1;
-const botThreshold = 50;
 
 function legacyType(name: string) {
   return legacyTypes.has(name) ? name : "event";
 }
 
 function isBot(draft: EventDraft) {
-  return draft.bot.score >= botThreshold;
+  return botLabel(draft.bot.score) === "bot";
 }
 
 function countsAsIssue(draft: EventDraft) {
@@ -119,6 +119,7 @@ function toEventRow(draft: EventDraft): EventRow {
     isInternal: flags.internal,
     botScore: draft.bot.score,
     botReasons: draft.bot.reasons,
+    botSignals: draft.bot.signals ?? null,
     botDetected: isBot(draft),
     fingerprint: event.id,
     schemaVersion,
@@ -506,7 +507,11 @@ export function drizzleProjects(db: Database): ProjectStore {
   async function find(where: SQL) {
     try {
       const [row] = await db
-        .select({ id: projects.id, allowedOrigins: projects.allowedOrigins })
+        .select({
+          id: projects.id,
+          allowedOrigins: projects.allowedOrigins,
+          widgetReports: projects.widgetReports,
+        })
         .from(projects)
         .where(where)
         .limit(1);

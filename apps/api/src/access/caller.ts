@@ -1,5 +1,5 @@
 import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError } from "@remcostoeten/analytics-engine";
+import type { EngineError, TokenKind } from "@remcostoeten/analytics-engine";
 import { err, ok } from "@remcostoeten/analytics-shared/result";
 import type { Result } from "@remcostoeten/analytics-shared/result";
 import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
@@ -7,7 +7,10 @@ import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
 import type { AccessDeps, Caller, SignedIn } from "./types";
 
 const bearer = /^Bearer\s+(\S+)$/i;
-const tokenPrefix = "at_";
+const tokenPrefixes = new Map<string, TokenKind>([
+  ["at_", "api"],
+  ["wt_", "widget"],
+]);
 
 /**
  * @name bearerToken
@@ -42,11 +45,19 @@ function unauthorized(message: string): Result<Caller, EngineError> {
   return err(engineError("UNAUTHORIZED", message));
 }
 
-async function tokenCaller(token: string, deps: AccessDeps): Promise<Result<Caller, EngineError>> {
+function tokenKind(token: Nullable<string>): Nullable<TokenKind> {
+  return token ? (tokenPrefixes.get(token.slice(0, 3)) ?? null) : null;
+}
+
+async function tokenCaller(
+  token: string,
+  kind: TokenKind,
+  deps: AccessDeps,
+): Promise<Result<Caller, EngineError>> {
   const found = await deps.tokens.byHash(await deps.hasher.sha256(token));
   if (!found.ok) return found;
   const record = found.value;
-  if (!record) return unauthorized("The API token is not valid");
+  if (!record || record.kind !== kind) return unauthorized("The API token is not valid");
   const now = deps.clock();
   if (record.expiresAt && record.expiresAt <= now) return unauthorized("The API token has expired");
   const touched = await deps.tokens.touch(record.id, now);
@@ -54,12 +65,21 @@ async function tokenCaller(token: string, deps: AccessDeps): Promise<Result<Call
   return ok({
     kind: "token",
     tokenId: record.id,
+    tokenKind: record.kind,
     scope: record.scope,
     projectIds: record.projectIds,
   });
 }
 
-async function userCaller(
+/**
+ * @name memberCaller
+ * @description The caller for a signed-in user: their role and listed projects, or anonymous when
+ * they are not a member of the organization.
+ *
+ * @example
+ * const caller = await memberCaller(signedIn, deps);
+ */
+export async function memberCaller(
   signedIn: SignedIn,
   deps: AccessDeps,
 ): Promise<Result<Caller, EngineError>> {
@@ -72,9 +92,10 @@ async function userCaller(
 
 /**
  * @name resolveCaller
- * @description Who is calling: an API token from `Authorization: Bearer at_...`, else a signed-in
- * member from the session cookie, else anonymous. An unknown or expired token is `UNAUTHORIZED`
- * rather than anonymous, so a broken script fails loudly. A valid token's `lastUsedAt` is updated.
+ * @description Who is calling: an API token from `Authorization: Bearer at_...` or a widget token
+ * from `Bearer wt_...`, else a signed-in member from the session cookie, else anonymous. An
+ * unknown or expired token, or a token sent with the other kind's prefix, is `UNAUTHORIZED` rather
+ * than anonymous, so a broken script fails loudly. A valid token's `lastUsedAt` is updated.
  *
  * @example
  * const caller = await resolveCaller(request.headers, deps);
@@ -84,7 +105,8 @@ export async function resolveCaller(
   deps: AccessDeps,
 ): Promise<Result<Caller, EngineError>> {
   const token = bearerToken(headers);
-  if (token?.startsWith(tokenPrefix)) return tokenCaller(token, deps);
+  const kind = tokenKind(token);
+  if (token && kind) return tokenCaller(token, kind, deps);
   const signedIn = await deps.sessions(headers);
-  return signedIn ? userCaller(signedIn, deps) : ok({ kind: "anonymous" });
+  return signedIn ? memberCaller(signedIn, deps) : ok({ kind: "anonymous" });
 }

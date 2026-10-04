@@ -165,6 +165,43 @@ describe("fixture requests land on the expected side of 50", () => {
   });
 });
 
+describe("stored signal breakdown", () => {
+  async function signals(id: string) {
+    const result = await database.query<{ bot_signals: unknown }>(
+      "SELECT bot_signals FROM events WHERE session_id = $1",
+      [id],
+    );
+    return result.rows[0]?.bot_signals;
+  }
+
+  test("the bot score stage writes which checks fired, passed or could not run", async () => {
+    await send(
+      browserHeaders.chrome,
+      [event("breakdown-webdriver", "breakdown-webdriver", 0, 1)],
+      datacenter,
+    );
+    expect(await signals("breakdown-webdriver")).toEqual({
+      headless: false,
+      webdriver: true,
+      datacenterAsn: true,
+      pointerEvents: false,
+      uaMismatch: false,
+      uniformDwell: null,
+    });
+  });
+
+  test("checks without their inputs are null", async () => {
+    const reported = event("breakdown-unreported", "breakdown-unreported", 0);
+    await send({ "user-agent": agents.chrome }, [{ ...reported, signals: undefined }]);
+    expect(await signals("breakdown-unreported")).toMatchObject({
+      headless: null,
+      webdriver: null,
+      datacenterAsn: null,
+      pointerEvents: null,
+    });
+  });
+});
+
 describe("secret-key requests without forwarded visitor details", () => {
   test("are neutral: the server's own IP and user agent add no weight", async () => {
     await send(
@@ -215,6 +252,10 @@ describe("session job", () => {
 
     const fast = await session("session-fast");
     expect(fast.every((row) => row.bot_reasons.includes("session_velocity"))).toBe(true);
+    const dwell = await database.query<{ uniform: boolean | null }>(
+      "SELECT (bot_signals->>'uniformDwell')::boolean AS uniform FROM events WHERE session_id = 'session-fast'",
+    );
+    expect(dwell.rows.every((row) => row.uniform === true)).toBe(true);
     expect(fast[0]?.bot_score).toBe(50);
     const slow = await session("session-slow");
     expect(slow.map((row) => row.bot_score)).toEqual([0, 0, 0]);

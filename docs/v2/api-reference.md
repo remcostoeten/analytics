@@ -11,6 +11,7 @@ Every route the v2 API will have, who may call it, and what comes back. This is 
 | `detail` | An owner, admin or analyst who lists the project, or an API token that lists it; also anyone when the project is public **and** has `publicVisitorData` switched on. Viewers get aggregates only |
 | `admin` | An owner's session, an admin's session for the projects their role lists, or an API token with `admin` scope for its projects. Organization-wide routes (creating projects, tokens) need an owner, or an admin or `admin` token that lists no projects |
 | `ingest` | `X-Project-Key: pk_...` or `?key=pk_...` from an allowed Origin, or `Bearer sk_...`. The browser SDK uses `?key=` because `sendBeacon` cannot set headers and a custom header would trigger a CORS preflight |
+| widget token | `Bearer wt_...` from `GET /v2/widget/session`: passes `admin` and below for its one project for 15 minutes, never organization-wide routes such as `/v2/tokens` |
 | `cron` | `Bearer CRON_SECRET` |
 
 A private project answers 404, not 403, to callers without access, so its name does not leak. A project the caller can read but not change or see in detail answers 401 when signed out and 403 otherwise. An unknown or expired `at_` token is 401, never treated as anonymous.
@@ -27,21 +28,23 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects` | public | Public projects for anyone; all projects for admins, filterable with `visibility=public\|private` |
 | POST | `/v2/projects` | admin | Create a project |
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
-| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `allowedOrigins`, `retentionDays` |
+| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `allowedOrigins`, `retentionDays` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
 | GET | `/v2/projects/:project/stats` | project | Headline numbers with the previous period |
 | GET | `/v2/projects/:project/timeseries` | project | One metric bucketed by hour or day |
 | GET | `/v2/projects/:project/breakdown/:dimension` | project | Top values of one dimension |
-| GET | `/v2/projects/:project/realtime` | project | Last 5 minutes |
+| GET | `/v2/projects/:project/realtime` | project | Last 5 minutes; `include=visitors` adds the active visitor rows and needs `detail` |
+| GET | `/v2/projects/:project/realtime/visitors` | detail | One row per visitor seen in the last 5 minutes |
+| GET | `/v2/projects/:project/overview` | project | The dev widget's status numbers in one answer, cached 10 seconds |
 | GET | `/v2/projects/:project/events` | detail | Raw events, newest first |
 | GET | `/v2/projects/:project/visitors` | detail | Visitor list |
-| GET | `/v2/projects/:project/visitors/:visitor` | detail | One visitor with traits and history summary |
+| GET | `/v2/projects/:project/visitors/:visitor` | detail | One visitor with traits, history summary and bot signal detail |
 | PATCH | `/v2/projects/:project/visitors/:visitor` | admin | Mark as internal traffic |
 | GET | `/v2/projects/:project/sessions/:session/events` | detail | Every event in one session |
 | GET | `/v2/projects/:project/annotations` | project | Annotations that overlap the range, by date, paged |
 | POST | `/v2/projects/:project/annotations` | admin | Add an annotation |
 | PATCH, DELETE | `/v2/projects/:project/annotations/:annotation` | admin | Change or delete one annotation |
-| GET, POST | `/v2/tokens` | admin | List and create API tokens |
+| GET, POST | `/v2/tokens` | admin | List and create API tokens; widget tokens are never listed |
 | DELETE | `/v2/tokens/:token` | admin | Revoke a token |
 | GET | `/v2/admin/metrics` | admin | Ingest counters and job history |
 | POST | `/v2/admin/jobs/:job` | cron | Run `rollup`, `cleanup`, `alerts` or `crux`; each run is recorded in the job history |
@@ -51,6 +54,9 @@ A private project answers 404, not 403, to callers without access, so its name d
 | POST | `/v2/projects/:project/alerts/targets/:name/rotate` | admin | A new webhook signing secret, shown once |
 | GET | `/v2/projects/:project/alerts/deliveries` | admin | Delivery history, `status` filter, paged |
 | GET | `/v2/admin/alerts/status` | admin | Enabled channels, the mail transport without secrets, pending count, failing targets |
+| GET | `/v2/widget/session` | session cookie | Dev widget bootstrap: resolves the project from `Origin` and mints a 15-minute widget token |
+| GET | `/v2/projects/:project/logs` | admin | Log stream of ingest and engine decisions: long-polling with `after`, or server-sent events |
+| POST | `/v2/projects/:project/logs/client` | ingest | The widget SDK's `drop` and `error` reports, up to 20 per request; needs `widgetReports` |
 
 ## Shared query parameters
 
@@ -829,6 +835,8 @@ request
 }
 ```
 
+With `include=visitors` the same answer adds `visitors`, the rows of `GET /v2/projects/:project/realtime/visitors` (see [Dev widget](#dev-widget)), so one call serves a statusline and a visitor list. It needs `detail` access: 401 signed out, 403 otherwise.
+
 ### Visitor-level reads
 
 `GET /v2/projects/remcostoeten.nl/events?name=signup&limit=1`
@@ -899,10 +907,17 @@ request
     "topPages": [ { "value": "/blog/rebuilding-analytics", "pageviews": 7 }, { "value": "/", "pageviews": 6 } ],
     "recentSessions": [
       { "id": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607", "startedAt": "2026-09-27T16:38:10.000Z", "durationMs": 109901, "pageviews": 3, "entryPage": "/", "exitPage": "/blog/rebuilding-analytics", "referrer": "https://news.ycombinator.com/" }
-    ]
+    ],
+    "bot": {
+      "score": 25,
+      "verdict": "suspect",
+      "signals": { "headless": true, "webdriver": false, "datacenterAsn": false, "pointerEvents": false, "uaMismatch": false, "uniformDwell": null }
+    }
   }
 }
 ```
+
+`bot` comes from the visitor's highest-scoring event. `verdict` is `bot` from 50, the threshold `bun run rescore` uses for `bot_detected`, `suspect` from 25, the weight of one client hint, and `human` below that. Each signal is `true` when its check fired, `false` when it ran and passed, and `null` when it could not run: `headless`, `webdriver` and `pointerEvents` (no pointer, key, touch or scroll input) need the SDK's `botSignals` plugin, `datacenterAsn` a known ASN, `uaMismatch` a browser user agent on a public-key request, and `uniformDwell` is set by the daily session job. Events stored before the breakdown existed answer `null` for every signal.
 
 `PATCH /v2/projects/remcostoeten.nl/visitors/8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6` as admin
 
@@ -982,7 +997,7 @@ request
 
 These counters come from Postgres, not instance memory, so they are correct across serverless instances. `ingest` counts requests to `/v2/events` per hour; `bots` counts stored events scored 50 or more; `jobs` holds each job's last run; `speedChecks` holds the last Chrome UX Report comparison per project and metric, where `gap` is `|ours - crux| / crux` and a gap over 0.25 is `flagged`. `ours` is null under 20 samples and `crux` is null when Google has no data for the origin.
 
-`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, and rate limit windows older than a day. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
+`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens, and rate limit windows older than a day. Every job run also writes a `jobs` line to each project's log. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
 `POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
 
@@ -1321,17 +1336,127 @@ GET /v2/projects/remcostoeten.nl/annotations?from=2026-09-01T00:00:00Z&to=2026-1
 - `PATCH .../annotations/:annotation` changes the fields sent and leaves the rest; `null` clears `endDate`, `note` or `url`. An empty body answers `VALIDATION_FAILED`. `DELETE` answers 204.
 - An `endDate` before `date`, on create or after a change, answers `VALIDATION_FAILED` with `/endDate` in `details.fields`. An id from another project answers `NOT_FOUND`.
 
+### Dev widget
+
+The dev widget is a panel the SDK mounts on a customer site for signed-in admins. It starts from the admin session cookie once, then uses a short-lived bearer token for everything else, so the cookie is never sent cross-origin again.
+
+**Bootstrap.** The widget calls `GET /v2/widget/session` from the customer site with `credentials: "include"`. The API finds the project whose `allowedOrigins` lists the `Origin` header (the first by id when several do), reads the session cookie, checks the member may administer that project, and mints a widget token: `wt_`, 15 minutes, `admin` scope, this project only. CORS allows credentials on this route for any origin a project lists; every other widget read sends `Authorization: Bearer wt_...` and needs no credentials. Call the route again before `expiresAt` to refresh. Widget tokens are stored as their hash, never listed by `GET /v2/tokens`, refused on organization-wide routes, and deleted by the cleanup job once expired.
+
+`GET /v2/widget/session` from `https://noorderlicht.example` with the admin session cookie
+
+```json
+200 OK
+{
+  "project": "noorderlicht-lease",
+  "access": "admin",
+  "user": { "id": "u_01j8z7", "name": "Remco" },
+  "release": "2026.10.03-a1",
+  "token": "wt_xxxxxxxxxxxxxxxx",
+  "expiresAt": "2026-10-03T14:32:00.000Z",
+  "features": { "logs": true, "speed": true, "issues": true }
+}
+```
+
+`release` is the newest `context.release` seen on the project's events, or `null`. Without a session the route answers `401 AUTH_REQUIRED`; from an origin no project lists, `403 ORIGIN_NOT_ALLOWED`; for a member who cannot administer the project, `403 FORBIDDEN`.
+
+**Active visitors.** `GET /v2/projects/:project/realtime/visitors` (`detail`) answers one row per visitor seen in the last five minutes, newest activity first, `limit` 1 to 200 (default 50). `path` is their latest pageview, `pages` and `duration` (seconds) cover the current session, `botScore` is their highest in the window, and `identified` says whether they called `identify`, never with the user id.
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607",
+      "lastSeen": "2026-10-03T14:02:04.117Z",
+      "path": "/pricing",
+      "referrer": "https://www.google.com/",
+      "country": "NL",
+      "city": "Leeuwarden",
+      "device": "mobile",
+      "browser": "Safari",
+      "os": "iOS",
+      "pages": 4,
+      "duration": 132,
+      "botScore": 0,
+      "identified": false
+    }
+  ],
+  "window": { "from": "2026-10-03T13:57:04.117Z", "to": "2026-10-03T14:02:04.117Z" }
+}
+```
+
+**Log stream.** `GET /v2/projects/:project/logs` (`admin`) lists every decision that is not a plain accepted event: one `RA_INGEST_BATCH` line per stored batch with its counts, an `RA_INGEST_REJECTED` line per rejected event with its reason, index, event name and field, `RA_INGEST_DUPLICATE` when events were already stored, `RA_RATE_LIMITED` per refused request, `RA_BOT_VERDICT` per stored event scored `suspect` or `bot`, `RA_JOB` per cron run, and the SDK's own reports. It works like `realtime/events`: without `after` the last 100 lines, with `after=<nextCursor>` it long-polls up to 25 seconds, and `Accept: text/event-stream` streams `logs` messages. Filter with `level` (`info`, `ok`, `warn`, `error`), `kind` (`ingest`, `transport`, `pipeline`, `signals`, `jobs`, `auth`), `source` (`api`, `sdk`, `engine`, `cron`), `visitor` and `q`, a case-insensitive substring of the message. `data` holds keys, counts and codes only, never IP addresses, emails or prop values. Lines are kept for 7 days.
+
+`GET /v2/projects/noorderlicht-lease/logs?level=error` with a widget token
+
+```json
+200 OK
+{
+  "data": [
+    {
+      "id": "9102",
+      "ts": "2026-10-03T14:02:04.117Z",
+      "level": "error",
+      "kind": "ingest",
+      "source": "api",
+      "message": "RA_INGEST_REJECTED events[3].props: Expected object with at most 25 properties on quote_requested",
+      "data": { "code": "RA_INGEST_REJECTED", "reason": "VALIDATION_FAILED", "index": 3, "event": "quote_requested", "field": "props" },
+      "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6",
+      "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607"
+    }
+  ],
+  "nextCursor": "9102"
+}
+```
+
+**Client reports.** The SDK's `drop` and `error` outcomes only exist in the browser, so the widget build posts them to `POST /v2/projects/:project/logs/client` with the same key as `POST /v2/events`, as `text/plain` to skip the preflight. The key must belong to the project in the path. The body holds up to 20 reports and at most 16 KB, else `413 PAYLOAD_TOO_LARGE`; each is stored as a `source: "sdk"` line with email and IP addresses replaced by `[redacted]`. The project needs `widgetReports: true` (off by default, set with `PATCH /v2/projects/:project`), else `403 WIDGET_REPORTS_DISABLED`, so normal visitors never produce rows. Reports are rate limited per project.
+
+```json
+request
+{
+  "logs": [
+    { "kind": "transport", "level": "warn", "message": "RA_DROP beacon refused, queued for retry", "data": { "events": 3 }, "visitor": "8c4e1f0a-2b3c-4d5e-8f60-718293a4b5c6", "session": "f1a2b3c4-d5e6-4f70-8a91-b2c3d4e5f607", "ts": "2026-10-03T14:02:04.117Z" }
+  ]
+}
+
+202 Accepted
+{ "accepted": 1 }
+```
+
+**Overview.** `GET /v2/projects/:project/overview` (`project`) composes the statusline's numbers from the existing reads, cached in memory for 10 seconds per project: visitors online in the last five minutes, human pageviews per minute for the last ten (oldest first), today's UTC totals, the last day's ingest counts from the log, the last day's share of bot visitors and visitors flagged headless, webdriver or from a datacenter ASN, the p75 of LCP, INP, CLS and TTFB over seven days (`null` under 20 samples), errors in the last 30 minutes and open issues, today's top five pages, referrer domains and countries with their share of visitors, and the newest release with when it first appeared and how many issues were first seen since.
+
+```json
+200 OK
+{
+  "online": 27,
+  "viewsPerMinute": [3, 5, 4, 6, 5, 8, 7, 11, 9, 14],
+  "today": { "visitors": 1284, "pageviews": 3902, "bounceRate": 0.41, "avgSessionSeconds": 134 },
+  "ingest": { "last24h": { "accepted": 40112, "duplicates": 311, "rejected": 42, "rateLimited": 9 } },
+  "bots": { "share": 0.078, "headless": 3, "webdriver": 1, "datacenterAsn": 14 },
+  "speed": { "lcp": 1400, "inp": 96, "cls": 0.02, "ttfb": 610 },
+  "errors": { "last30m": 3, "openIssues": 12 },
+  "topPages": [{ "path": "/", "views": 1044 }],
+  "referrers": [{ "name": "google.com", "share": 0.48 }],
+  "countries": [{ "code": "NL", "share": 0.71 }],
+  "release": { "current": "2026.10.03-a1", "deployedAt": "2026-10-03T11:42:00.000Z", "newIssuesSince": 3 }
+}
+```
+
 ### Error codes
 
 | Status | Code | When |
 | --- | --- | --- |
 | 400 | `VALIDATION_FAILED` | Body, query or path fails the schema; `details` lists each field |
 | 401 | `UNAUTHORIZED` | No or invalid session, token or key |
+| 401 | `AUTH_REQUIRED` | The widget bootstrap was called without a session cookie |
 | 403 | `FORBIDDEN_ORIGIN` | Public key used from an origin not in the project's list |
+| 403 | `ORIGIN_NOT_ALLOWED` | The widget bootstrap's `Origin` is in no project's allowed origins |
 | 403 | `FORBIDDEN` | The token scope or the signed-in member's role does not allow the action |
+| 403 | `WIDGET_REPORTS_DISABLED` | Client reports sent to a project with `widgetReports` off |
 | 404 | `NOT_FOUND` | Unknown route, project, visitor or session, or a private project without access |
 | 409 | `CONFLICT` | Creating a project whose id exists |
-| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events |
+| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events, or a client report body over 16 KB |
 | 429 | `RATE_LIMITED` | Per-IP-hash limit hit; `Retry-After` header set |
 | 500 | `INTERNAL` | Unexpected failure; the message never includes internals |
 | 503 | `UNAVAILABLE` | Database unreachable, or a feature the route needs is not configured: a job's store, alerts, `CRUX_API_KEY`, SMTP or Resend; ingest clients retry |
