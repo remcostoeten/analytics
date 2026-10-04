@@ -6,7 +6,7 @@ const shared: UserConfig = {
   dts: { eager: true },
   sourcemap: true,
   minify: true,
-  noExternal: [/^@spoar\/shared/],
+  noExternal: [/^@spoar\/shared/, /^@spoar\/contract/],
 };
 
 const client: UserConfig = { ...shared, banner: { js: '"use client";' } };

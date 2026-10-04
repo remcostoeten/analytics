@@ -36,7 +36,7 @@ The five blockers in [release-readiness.md](release-readiness.md), then the brow
 
 | Step | Owner | Done when |
 | --- | --- | --- |
-| Keep the core size budget at 5 KB, as `scripts/size-check.ts` checks today (core is 4.91 KB), and drop the 4.5 KB figure from the notes | agent | One number everywhere |
+| Keep the core size budget at 5 KB, as `scripts/size-check.ts` checks today (core is 4.91 KB) | agent | One number everywhere |
 | Point `exports` at `dist` and resolve source in the workspace through a `source` condition (`tsconfig` `customConditions`, Bun `--conditions`) for `@spoar/sdk` and `@spoar/devtools` | agent | `bun pm pack` of each package imports from a clean install |
 | Bundle `@spoar/contract` into the SDK build (tsdown `noExternal`, bundled declarations) and keep it private; drop `private: true` from `@spoar/sdk` and `@spoar/devtools` | agent | A packed SDK has no `@spoar/contract` dependency; `bun run changeset` versions both packages |
 | Add a `release` workflow: `changesets/action` opens the version pull request, a publish step runs `bun publish` per public package, then `changeset tag`, with provenance | agent | The workflow runs green on a dry run |

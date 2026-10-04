@@ -1,5 +1,4 @@
 ---
-"@spoar/contract": patch
 "@spoar/sdk": patch
 ---
 

@@ -2,35 +2,19 @@
 
 State of v2 against a first deploy and a first npm release, as checked on Oct 1, 2026 against master `74e2093`. Each item names what was checked and what is left. Items marked **owner** need an account or a decision that only the owner has; agents do not run them.
 
-## Blockers for an npm release
+## npm release
 
-### 1. Published packages would point at source files
+The five release blockers found on Oct 1 are resolved on Oct 4, 2026:
 
-`packages/sdk` and `packages/contract` keep `exports` pointing at `./src/*.ts` for the workspace and put the `./dist` paths in `publishConfig.exports`. Only pnpm applies `publishConfig.exports`. Neither `npm pack` nor `bun pm pack` does: a packed `@spoar/contract` still has `"default": "./src/index.ts"`, while `files` ships only `dist`. An install of either package would fail to import.
+| Blocker | Resolution |
+| --- | --- |
+| Packed packages pointed at `src` | `exports` keeps `src` for the workspace. `bun run release` (`scripts/publish.ts`) writes `publishConfig.exports` into `exports` and drops `devDependencies` while it packs, then restores `package.json`. A packed `@spoar/sdk` imports and typechecks from a clean install |
+| `catalog:` and `workspace:` versions | The package is packed with `bun pm pack`, which resolves both, and the tarball is published with `npm publish` |
+| No release workflow | `.github/workflows/release.yml`: on `master`, `changesets/action` opens the version pull request and, once it merges, runs `bun run release`, which publishes every public package not yet on npm with provenance through trusted publishing (npm 11, `id-token: write`) and prints the `New tag:` lines the action turns into git tags. A manual run with `dry-run` packs and runs `npm publish --dry-run` |
+| Names and visibility | `@spoar/sdk` and `@spoar/devtools` are public. `@spoar/contract` is private and bundled into both builds (tsdown `noExternal`), so neither depends on it. Its pending changesets were removed or trimmed to the public packages |
+| Core size budget | 5 KB, as `scripts/size-check.ts` checks |
 
-Options, for the owner to pick:
-
-- Swap the two: `exports` points at `dist`, and the workspace resolves source through a custom condition such as `"source"`, set in `tsconfig` `customConditions` and Bun's `--conditions`.
-- Rewrite `exports` from `publishConfig` in a `prepack` script and restore it in `postpack`.
-- Publish with pnpm, which applies `publishConfig` natively.
-
-### 2. `catalog:` and `workspace:` versions must be resolved at publish
-
-`packages/contract` depends on `"@sinclair/typebox": "catalog:typebox"`, and the SDK on `"@spoar/contract": "workspace:*"`. `npm pack` keeps both strings as they are, which no registry install can resolve. `bun pm pack` and `bun publish` replace them with real versions (checked: `catalog:typebox` becomes `0.34.52`). `changeset publish` calls `npm publish`, so the release must publish with `bun publish` per package and then run `changeset tag`.
-
-### 3. No release workflow
-
-`docs/release-checklist.md` and the plan say merging the Changesets version pull request publishes from CI with provenance, but `.github/workflows` has only `ci`, `codeql`, `jobs`, `migrate` and `openapi`. A `release` workflow needs: `changesets/action` to open the version pull request, a publish step that runs `bun publish` for each public package, npm trusted publishing or an `NPM_TOKEN` secret, and `id-token: write` for provenance. **Owner**: the npm side (token or trusted publisher) and approving the workflow.
-
-### 4. Package names and visibility
-
-- `packages/sdk` is named `@spoar/sdk` and is `private: true`. Decision 0005 recommends publishing 2.0 as `@spoar/sdk`, the 1.x name, under the `next` tag first. **Owner**: confirm 0005, then rename and drop `private`.
-- `packages/contract` is public with version `0.0.0` and 19 pending minor changesets, so the first version pull request would release it as `0.1.0`. The SDK imports it at runtime (`plugins.mjs` for `signals`, `proxy.mjs`) and in its type declarations, so it must be published with the SDK or bundled into it.
-- 8 pending changesets name `@spoar/sdk`. While it is private, Changesets does not version it (`privatePackages.version: false`).
-
-### 5. Core size budget
-
-`bun run size` measures the core `index.mjs` at 4.91 KB gzip against a 5 KB budget in `scripts/size-check.ts`. The project notes put the budget at 4.5 KB. **Owner**: confirm which limit holds; at 4.5 KB the core is 0.41 KB over.
+Left for **owner**: the first `@spoar/devtools` version is not on npm, so trusted publishing cannot be set up for it until it is published once by hand; until then the release workflow fails on it after `@spoar/sdk` is published. Then the browser matrix in `docs/release-checklist.md`, and merging the version pull request.
 
 ## Before the first deploy
 
