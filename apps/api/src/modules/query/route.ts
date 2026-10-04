@@ -8,11 +8,11 @@ import {
   SavedQueryList,
   SavedQueryResponse,
   UpdateSavedQuery,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError, ProjectRecord, QueryActor } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { EngineError, ProjectRecord, QueryActor } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { Elysia, t } from "elysia";
 
 import { canQuery } from "../../access/rules";

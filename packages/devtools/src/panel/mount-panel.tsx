@@ -1,4 +1,4 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { noop } from "@spoar/shared/noop";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 

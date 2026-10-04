@@ -1,11 +1,6 @@
-import {
-  SpeedElementList,
-  SpeedResponse,
-  SpeedRouteList,
-  SpeedTimeseries,
-} from "@remcostoeten/analytics-contract";
-import type { EngineError, ProjectRecord, SpeedStore } from "@remcostoeten/analytics-engine";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import { SpeedElementList, SpeedResponse, SpeedRouteList, SpeedTimeseries } from "@spoar/contract";
+import type { EngineError, ProjectRecord, SpeedStore } from "@spoar/engine";
+import type { Result } from "@spoar/shared/result";
 import { Elysia } from "elysia";
 
 import type { AccessDeps, Caller } from "../../access/types";

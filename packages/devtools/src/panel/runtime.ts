@@ -1,5 +1,5 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
-import type { ID, Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { noop } from "@spoar/shared/noop";
+import type { ID, Nullable } from "@spoar/shared/semantic";
 
 import { createClient } from "../client/client";
 import type { Client } from "../client/client";

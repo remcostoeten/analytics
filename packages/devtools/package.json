@@ -54,7 +54,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@remcostoeten/analytics-contract": "workspace:*"
+		"@spoar/contract": "workspace:*"
 	},
 	"peerDependencies": {
 		"@spoar/sdk": ">=2.0.0-next.0",
@@ -79,8 +79,8 @@
 	"devDependencies": {
 		"@fontsource-variable/jetbrains-mono": "5.3.0",
 		"@happy-dom/global-registrator": "20.14.5",
-		"@remcostoeten/analytics-shared": "workspace:*",
 		"@spoar/sdk": "workspace:*",
+		"@spoar/shared": "workspace:*",
 		"@tailwindcss/postcss": "4.3.3",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",

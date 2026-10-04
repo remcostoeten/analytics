@@ -1,7 +1,7 @@
 import { SQL } from "bun";
 
-import { defaultSignals } from "@remcostoeten/analytics-engine";
-import { rescoreEvents, scoreSessions } from "@remcostoeten/analytics-engine/jobs";
+import { defaultSignals } from "@spoar/engine";
+import { rescoreEvents, scoreSessions } from "@spoar/engine/jobs";
 import { drizzle } from "drizzle-orm/bun-sql";
 
 type Options = {

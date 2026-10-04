@@ -1,4 +1,4 @@
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
 import { vitalRating } from "./score";

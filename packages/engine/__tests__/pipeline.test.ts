@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { err, ok } from "@remcostoeten/analytics-shared/result";
+import { err, ok } from "@spoar/shared/result";
 
 import { defineEnricher, defineSignal, defineStage } from "../src/define";
 import type { Registry, Stage } from "../src/define";

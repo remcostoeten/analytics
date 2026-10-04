@@ -1,4 +1,4 @@
-import type { IngestResult, PropValue, WireEvent } from "@remcostoeten/analytics-contract";
+import type { IngestResult, PropValue, WireEvent } from "@spoar/contract";
 
 export type Props = { [key: string]: PropValue };
 export type NoProps = Record<never, never>;

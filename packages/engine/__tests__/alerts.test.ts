@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, test } from "bun:test";
 
-import type { WebhookBody } from "@remcostoeten/analytics-contract";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
+import type { WebhookBody } from "@spoar/contract";
+import { err, ok } from "@spoar/shared/result";
 
 import { fixedClock, memoryAlerts } from "../src/adapters/memory";
 import {

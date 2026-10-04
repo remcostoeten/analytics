@@ -1,9 +1,9 @@
-import type { BreakdownRow, ProjectBreakdownResponse } from "@remcostoeten/analytics-contract";
-import { rawVitalsFrom } from "@remcostoeten/analytics-engine";
-import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { BreakdownRow, ProjectBreakdownResponse } from "@spoar/contract";
+import { rawVitalsFrom } from "@spoar/engine";
+import type { EngineError, ProjectRecord } from "@spoar/engine";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import type { ReadsOptions } from "../reads/guard";
 import { previousRange } from "../reads/params";

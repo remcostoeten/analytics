@@ -7,20 +7,20 @@ import type {
   IssueAlert,
   TargetInput,
   TargetState,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
 import type {
   AlertStore,
   DeliveryRecord,
   EngineError,
   TargetRecord,
   TargetSpec,
-} from "@remcostoeten/analytics-engine";
-import { defaultAlertEvents } from "@remcostoeten/analytics-engine/alerts";
-import type { AlertLinks, AlertsPlugin } from "@remcostoeten/analytics-engine/alerts";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/engine";
+import { defaultAlertEvents } from "@spoar/engine/alerts";
+import type { AlertLinks, AlertsPlugin } from "@spoar/engine/alerts";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { nextCursor, readPage } from "../reads/params";
 

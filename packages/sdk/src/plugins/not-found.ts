@@ -1,4 +1,4 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { noop } from "@spoar/shared/noop";
 
 import { pagePath } from "../core/environment";
 import { definePlugin } from "../core/plugin-host";

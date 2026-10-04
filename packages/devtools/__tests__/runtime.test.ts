@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
+import type { Fetcher } from "@spoar/shared/http";
 import type { Analytics } from "@spoar/sdk";
 
 import type { ClientReport } from "../src/client/types";

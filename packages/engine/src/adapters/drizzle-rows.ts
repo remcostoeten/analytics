@@ -1,4 +1,4 @@
-import { ok } from "@remcostoeten/analytics-shared/result";
+import { ok } from "@spoar/shared/result";
 import type { SQL } from "drizzle-orm";
 
 import type { Database } from "./drizzle";

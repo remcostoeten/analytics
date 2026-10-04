@@ -1,6 +1,6 @@
-import type { EngineError } from "@remcostoeten/analytics-engine";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { EngineError } from "@spoar/engine";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { t } from "elysia";
 
 import { csvLines } from "./csv";

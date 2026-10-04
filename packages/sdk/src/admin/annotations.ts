@@ -4,9 +4,9 @@ import type {
   AnnotationList,
   AnnotationResponse,
   AnnotationsQuery,
-} from "@remcostoeten/analytics-contract";
-import type { Json } from "@remcostoeten/analytics-shared/http";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/contract";
+import type { Json } from "@spoar/shared/http";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { AdminResult, AdminSend } from "./types";
 

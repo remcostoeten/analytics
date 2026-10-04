@@ -1,4 +1,4 @@
-import type { ID } from "@remcostoeten/analytics-shared/semantic";
+import type { ID } from "@spoar/shared/semantic";
 import type { RefObject } from "react";
 
 import type { Link } from "../json/tree";

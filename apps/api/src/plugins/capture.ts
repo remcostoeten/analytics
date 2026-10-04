@@ -1,4 +1,4 @@
-import type { Engine, Logger } from "@remcostoeten/analytics-engine";
+import type { Engine, Logger } from "@spoar/engine";
 
 export type Capture = (error: unknown, request: Request, requestId: string) => Promise<void>;
 

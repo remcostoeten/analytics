@@ -1,6 +1,6 @@
-import type { Fetcher, Json } from "@remcostoeten/analytics-shared/http";
-import { noop } from "@remcostoeten/analytics-shared/noop";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Fetcher, Json } from "@spoar/shared/http";
+import { noop } from "@spoar/shared/noop";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { ClientResult } from "./client";
 

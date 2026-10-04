@@ -1,6 +1,6 @@
-import { postJson } from "@remcostoeten/analytics-shared/http";
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
-import { ok } from "@remcostoeten/analytics-shared/result";
+import { postJson } from "@spoar/shared/http";
+import type { Fetcher } from "@spoar/shared/http";
+import { ok } from "@spoar/shared/result";
 
 import { renderDiscord } from "../render-discord";
 import type { ChannelDriver, RetryPolicy } from "../types";

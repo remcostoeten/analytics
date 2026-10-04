@@ -1,4 +1,4 @@
-import { Health } from "@remcostoeten/analytics-contract";
+import { Health } from "@spoar/contract";
 import { Type } from "@sinclair/typebox";
 import { Elysia } from "elysia";
 

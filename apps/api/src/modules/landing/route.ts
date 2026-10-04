@@ -1,4 +1,4 @@
-import type { Milliseconds, Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Milliseconds, Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
 import { landingPage } from "./page";

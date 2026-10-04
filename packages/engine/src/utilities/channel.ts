@@ -1,5 +1,5 @@
-import type { Channel } from "@remcostoeten/analytics-contract";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Channel } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 
 const searchHosts = [
   "google.",

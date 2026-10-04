@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
-import type { BotReason } from "@remcostoeten/analytics-contract";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { BotReason } from "@spoar/contract";
+import type { Result } from "@spoar/shared/result";
 
 import type { Enrichment, EventDraft } from "./draft";
 import type { EngineError } from "./errors";

@@ -1,5 +1,5 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { noop } from "@spoar/shared/noop";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { Bootstrap } from "../client/types";
 import type { DevtoolsOptions } from "../options";

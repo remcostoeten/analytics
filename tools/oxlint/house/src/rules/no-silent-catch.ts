@@ -20,7 +20,7 @@ export const noSilentCatch = defineRule({
     },
     messages: {
       silent:
-        "Handle the error, or call `noop()` from `@remcostoeten/analytics-shared/noop` to swallow it on purpose.",
+        "Handle the error, or call `noop()` from `@spoar/shared/noop` to swallow it on purpose.",
     },
   },
   createOnce(context) {

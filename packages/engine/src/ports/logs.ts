@@ -1,17 +1,6 @@
-import type {
-  IngestTotals,
-  LineKind,
-  LineLevel,
-  LineSource,
-  LogData,
-} from "@remcostoeten/analytics-contract";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type {
-  Nullable,
-  ProjectID,
-  SessionID,
-  VisitorID,
-} from "@remcostoeten/analytics-shared/semantic";
+import type { IngestTotals, LineKind, LineLevel, LineSource, LogData } from "@spoar/contract";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID, SessionID, VisitorID } from "@spoar/shared/semantic";
 
 import type { EngineError } from "../errors";
 

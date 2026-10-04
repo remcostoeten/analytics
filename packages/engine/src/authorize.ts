@@ -1,6 +1,6 @@
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { Credentials } from "./draft";
 import { engineError } from "./errors";

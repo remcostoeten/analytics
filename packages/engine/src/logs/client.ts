@@ -1,7 +1,7 @@
-import type { ClientLog, ClientLogResult } from "@remcostoeten/analytics-contract";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { ClientLog, ClientLogResult } from "@spoar/contract";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { authorize } from "../authorize";
 import type { Credentials } from "../draft";

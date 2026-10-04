@@ -1,5 +1,5 @@
-import type { BotVerdict } from "@remcostoeten/analytics-contract";
-import { ok } from "@remcostoeten/analytics-shared/result";
+import type { BotVerdict } from "@spoar/contract";
+import { ok } from "@spoar/shared/result";
 
 import { defineStage } from "../define";
 import type { Signal } from "../define";

@@ -1,7 +1,7 @@
-import { propValueLimit, WireEvent } from "@remcostoeten/analytics-contract";
-import type { WireEvent as Event } from "@remcostoeten/analytics-contract";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import { propValueLimit, WireEvent } from "@spoar/contract";
+import type { WireEvent as Event } from "@spoar/contract";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { Value } from "@sinclair/typebox/value";
 
 import { engineError } from "../errors";

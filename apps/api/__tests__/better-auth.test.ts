@@ -1,12 +1,9 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
-import { pgliteAccess } from "@remcostoeten/analytics-engine/adapters/pglite";
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
+import { pgliteAccess } from "@spoar/engine/adapters/pglite";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 import { makeSignature } from "better-auth/crypto";
 
 import { betterAuthSessions, createAuth } from "../src/auth/better-auth";

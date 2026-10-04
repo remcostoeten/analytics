@@ -1,4 +1,4 @@
-import type { Nullable, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable, Timestamp } from "@spoar/shared/semantic";
 
 import type { Hasher } from "../ports";
 

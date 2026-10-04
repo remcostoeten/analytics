@@ -1,6 +1,6 @@
-import type { ChannelName } from "@remcostoeten/analytics-contract";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { ChannelName } from "@spoar/contract";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import type { EngineError } from "../errors";
 import type { AlertStore, DeliveryBatch, DeliveryOutcome } from "../ports/alerts";

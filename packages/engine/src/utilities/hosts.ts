@@ -1,4 +1,4 @@
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable } from "@spoar/shared/semantic";
 
 // Vercel preview hosts: a -git- branch segment or a hash segment of 8 or more characters before .vercel.app.
 const vercelPreview = /(-git-|-[a-z0-9]{8,}-)[^.]*\.vercel\.app$/i;

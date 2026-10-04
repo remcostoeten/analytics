@@ -96,7 +96,7 @@ Delivers: `packages/shared` (semantic types, `Result`, `noop`) and `packages/con
 ```text
 Epic E0.3, branch feature/contract-package. Read the plan sections "Monorepo structure", "Event envelope and transport", "Errors", the whole API reference tab, and the Schemas and types tab, which is the starting point for these types.
 1. Create packages/shared: semantic.ts (ID, Timestamp, ProjectID, VisitorID, SessionID, EventID, Nullable, per the generic-program-rules types section), result.ts (Result, ok, err), noop.ts. Private package, exports point at src.
-2. Create packages/contract as @remcostoeten/analytics-contract with TypeBox schemas: events.ts (envelope v1, event, context, page, signals), errors.ts (the catalog: code, status, retryable, level, docs line; ErrorCode as the union of keys), projects.ts, stats.ts, visitors.ts, issues.ts, speed.ts, tokens.ts matching every request and response in the API reference tab. Export static types with Static<>.
+2. Create packages/contract as @spoar/contract with TypeBox schemas: events.ts (envelope v1, event, context, page, signals), errors.ts (the catalog: code, status, retryable, level, docs line; ErrorCode as the union of keys), projects.ts, stats.ts, visitors.ts, issues.ts, speed.ts, tokens.ts matching every request and response in the API reference tab. Export static types with Static<>.
 3. Add fixtures/ with valid and invalid JSON for each schema, and tests that valid ones pass and invalid ones fail with the expected path.
 4. Build contract with tsdown to ESM and types. Add the boundary rule to scripts/check-boundaries.ts: shared imports nothing, contract imports only shared.
 ```
@@ -355,7 +355,7 @@ Delivers: the design in `docs/v2/alerts.md`: `defineConfig` with server plugins,
 
 ```text
 Epic E4.7, branch feature/alerts. Read docs/v2/alerts.md in full; it is the spec, and its vocabulary is binding for names of types, files and routes. Also read the plan section "Errors" and the existing apps/api/src/modules/jobs/alerts.ts, which this replaces. Add no outside dependencies.
-1. Contract: use the existing helpers in @remcostoeten/analytics-shared/http for every HTTP call; packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
+1. Contract: use the existing helpers in @spoar/shared/http for every HTTP call; packages/contract/src/alerts.ts with the schemas in the spec, and a changeset.
 2. Engine: defineConfig and ServerPlugin; migration 0029_add_alert_targets; the AlertStore port and its Drizzle and memory versions; packages/engine/src/alerts with the plugin, queue, dispatch, retry policy, renderers, signing, the mail, webhook and Discord channels, and the smtp (node:tls) and resend (postJson) transports.
 3. API: apps/api/analytics.config.ts read at startup, the plugin's routes and the alerts job doing queue then dispatch, the status route. Remove ALERT_WEBHOOK_URL and ALERT_WEBHOOK_SECRET, regenerate apps/api/openapi.json, and update docs/v2/api-reference.md, docs/v2/deploy.md and the docs site, including a page on retry settings.
 4. SDK: packages/sdk/src/admin (createAdmin with a project id type parameter, alerts.sync, list, set, remove, test, rotate, deliveries, the read methods, and the mail, webhook and discord builders with the narrowed types) and alertRoute with verifyAlert in /server. Add the ./admin entry to package.json, the build and the docs site, and a changeset.

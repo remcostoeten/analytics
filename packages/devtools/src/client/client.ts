@@ -1,14 +1,8 @@
-import { request } from "@remcostoeten/analytics-shared/http";
-import type {
-  Fetcher,
-  HttpError,
-  Json,
-  JsonBody,
-  Query,
-} from "@remcostoeten/analytics-shared/http";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { ID, Nullable, ProjectID, VisitorID } from "@remcostoeten/analytics-shared/semantic";
+import { request } from "@spoar/shared/http";
+import type { Fetcher, HttpError, Json, JsonBody, Query } from "@spoar/shared/http";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { ID, Nullable, ProjectID, VisitorID } from "@spoar/shared/semantic";
 
 import type {
   Bootstrap,

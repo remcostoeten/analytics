@@ -5,7 +5,7 @@ import type {
   IssueEvent,
   LiveEvent,
   SpeedRoute,
-} from "@remcostoeten/analytics-contract";
+} from "@spoar/contract";
 import type {
   CountryCode,
   ID,
@@ -16,7 +16,7 @@ import type {
   SessionID,
   Timestamp,
   VisitorID,
-} from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/shared/semantic";
 
 export type { Issue, IssueEvent, LiveEvent, SpeedRoute };
 

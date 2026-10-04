@@ -1,5 +1,5 @@
-import type { LogData, LogValue, RejectedEvent } from "@remcostoeten/analytics-contract";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { LogData, LogValue, RejectedEvent } from "@spoar/contract";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
 import type { NewLogLine } from "../ports";

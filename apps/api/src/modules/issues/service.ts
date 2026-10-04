@@ -8,8 +8,8 @@ import type {
   IssueList,
   IssueResponse,
   UpdatedIssue,
-} from "@remcostoeten/analytics-contract";
-import { engineError, parseStack } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError, parseStack } from "@spoar/engine";
 import type {
   EngineError,
   IgnoreRule,
@@ -17,9 +17,9 @@ import type {
   IssueRecord,
   IssueStatus,
   IssueStore,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import { nextCursor, readPage } from "../reads/params";
 

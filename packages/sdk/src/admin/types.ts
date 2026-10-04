@@ -1,7 +1,7 @@
-import type { AlertEventName, ErrorCode, ErrorDetails } from "@remcostoeten/analytics-contract";
-import type { Fetcher, HttpMethod, JsonBody, Query } from "@remcostoeten/analytics-shared/http";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Milliseconds, Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { AlertEventName, ErrorCode, ErrorDetails } from "@spoar/contract";
+import type { Fetcher, HttpMethod, JsonBody, Query } from "@spoar/shared/http";
+import type { Result } from "@spoar/shared/result";
+import type { Milliseconds, Nullable } from "@spoar/shared/semantic";
 
 export type Email = `${string}@${string}.${string}`;
 

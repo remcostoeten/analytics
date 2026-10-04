@@ -1,4 +1,4 @@
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Reader } from "mmdb-lib";
 import type { AsnResponse, CityResponse } from "mmdb-lib";
 

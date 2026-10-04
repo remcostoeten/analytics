@@ -1,4 +1,4 @@
-import type { IngestResult } from "@remcostoeten/analytics-contract";
+import type { IngestResult } from "@spoar/contract";
 
 import type { SendResult, Transport } from "../core/types";
 

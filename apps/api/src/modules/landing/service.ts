@@ -1,4 +1,4 @@
-import type { Nullable, Path, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable, Path, Timestamp } from "@spoar/shared/semantic";
 import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 

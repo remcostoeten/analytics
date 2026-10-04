@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Annotation } from "@remcostoeten/analytics-contract";
+import type { Annotation } from "@spoar/contract";
 
 import { createAdmin, discord, mail, webhook } from "../src/admin/index";
 import type { AdminOptions } from "../src/admin/index";

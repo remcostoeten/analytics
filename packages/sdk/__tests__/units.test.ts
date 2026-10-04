@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { maxBodyBytes as contractMaxBodyBytes } from "@remcostoeten/analytics-contract";
-import type { WireEvent } from "@remcostoeten/analytics-contract";
+import { maxBodyBytes as contractMaxBodyBytes } from "@spoar/contract";
+import type { WireEvent } from "@spoar/contract";
 
 import { limitProps } from "../src/core/build-event";
 import { debugFlag, privacySignal } from "../src/core/environment";

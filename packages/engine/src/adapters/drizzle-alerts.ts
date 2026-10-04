@@ -1,6 +1,6 @@
-import { AlertEvent } from "@remcostoeten/analytics-contract";
-import type { AlertEventName, ChannelName, DeliveryStatus } from "@remcostoeten/analytics-contract";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import { AlertEvent } from "@spoar/contract";
+import type { AlertEventName, ChannelName, DeliveryStatus } from "@spoar/contract";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 import { Value } from "@sinclair/typebox/value";
 import { sql } from "drizzle-orm";
 

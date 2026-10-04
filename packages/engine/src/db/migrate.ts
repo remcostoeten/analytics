@@ -1,6 +1,6 @@
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { splitStatements } from "./split-statements";
 

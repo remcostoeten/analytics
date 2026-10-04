@@ -1,5 +1,5 @@
-import { ApiError, WireEvent } from "@remcostoeten/analytics-contract";
-import type { Engine, IngestCount, Logger } from "@remcostoeten/analytics-engine";
+import { ApiError, WireEvent } from "@spoar/contract";
+import type { Engine, IngestCount, Logger } from "@spoar/engine";
 import { Elysia } from "elysia";
 
 import { failure } from "../../plugins/error-handler";

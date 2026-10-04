@@ -1,4 +1,4 @@
-import type { ID, Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { ID, Nullable } from "@spoar/shared/semantic";
 import { useEffect, useState } from "react";
 
 import type { ListStore } from "./runtime";

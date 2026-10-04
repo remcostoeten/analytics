@@ -1,6 +1,6 @@
-import type { IngestResult, WireContext, WireEvent } from "@remcostoeten/analytics-contract";
-import { maxEventsPerBatch } from "@remcostoeten/analytics-contract/limits";
-import { hasKeys } from "@remcostoeten/analytics-shared/records";
+import type { IngestResult, WireContext, WireEvent } from "@spoar/contract";
+import { maxEventsPerBatch } from "@spoar/contract/limits";
+import { hasKeys } from "@spoar/shared/records";
 
 import { buildEvent, limitProps } from "../core/build-event";
 import { mergeConfig, parseConfig, readEnv } from "../core/config";
