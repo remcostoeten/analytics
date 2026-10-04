@@ -3690,10 +3690,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Response for status 204",
-            "content": {
-              "type": "void"
-            }
+            "description": "Response for status 204"
           },
           "400": {
             "description": "The error envelope every failed request answers with.",
@@ -12256,10 +12253,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Response for status 204",
-            "content": {
-              "type": "void"
-            }
+            "description": "Response for status 204"
           },
           "400": {
             "description": "The error envelope every failed request answers with.",
@@ -25988,10 +25982,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Response for status 204",
-            "content": {
-              "type": "void"
-            }
+            "description": "Response for status 204"
           },
           "400": {
             "description": "The error envelope every failed request answers with.",
@@ -28662,10 +28653,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Response for status 204",
-            "content": {
-              "type": "void"
-            }
+            "description": "Response for status 204"
           },
           "400": {
             "description": "The error envelope every failed request answers with.",
@@ -31557,10 +31545,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Response for status 204",
-            "content": {
-              "type": "void"
-            }
+            "description": "Response for status 204"
           },
           "400": {
             "description": "The error envelope every failed request answers with.",

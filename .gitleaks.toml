@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example keys in the contract fixtures, the API reference and the generated OpenAPI document"
+regexes = [
+  '''sk_live_5d0e7c1f9a2b4c6d8e0f''',
+  '''sk_live_9b8a7f6e5d4c3b2a1f0e''',
+  '''at_live_7c2e9f1a4b6d8e0c''',
+]
