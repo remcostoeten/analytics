@@ -54,6 +54,7 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 | `DOCS_BASE` | No | Base of the `docs` link in errors; defaults to `https://api.analytics.remcostoeten.nl/v2/openapi` |
 | `INGEST_RATE_LIMIT` | No | Browser requests per minute per project and IP hash; defaults to 100 |
 | `GEOIP_CITY_PATH`, `GEOIP_ASN_PATH` | No | Explicit MaxMind paths; otherwise `data/` from the build |
+| `MAXMIND_LICENSE_KEY` | For production builds | A free GeoLite2 license key; the build downloads from MaxMind and checks the SHA-256. Without it the build uses a community mirror, which is fine for local work |
 | `MAIL_URL` | For mail alerts | The SMTP server, `smtps://user:password@host:465` or `smtp://...:587` (`STARTTLS`); read by `analytics.config.ts` |
 | `MAIL_FROM` | No | The sender of alert mail; defaults to `Analytics <remco@gmail.com>` |
 | `CRUX_API_KEY` | For the crux job | A Google API key with the Chrome UX Report API enabled |
@@ -63,6 +64,6 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 ## Commands
 
 - `bun run dev` serves on port 3100.
-- `bun run build` downloads the GeoLite2 City and ASN files into `data/`.
+- `bun run build` downloads the GeoLite2 City and ASN files into `data/`, from MaxMind when `MAXMIND_LICENSE_KEY` is set and from a community mirror otherwise.
 - `bun test` runs the integration tests through `app.handle` on PGlite, including a check that `openapi.json` matches the routes.
 - `bun run openapi` writes the OpenAPI document to `openapi.json`; the docs site reads it and the `openapi` workflow fails a pull request that breaks it.

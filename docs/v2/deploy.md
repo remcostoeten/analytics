@@ -56,6 +56,7 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 | `API_URL` | `https://api.analytics.remcostoeten.nl` |
 | `DASHBOARD_ORIGIN` | `https://analytics.remcostoeten.nl` (the dashboard or docs origin that signs in) |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
+| `MAXMIND_LICENSE_KEY` | A free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
 | `MAIL_URL` | Optional: the SMTP server for mail alerts, such as `smtps://you%40gmail.com:<app password>@smtp.gmail.com:465`; without it mail targets stay `paused` |
 | `MAIL_FROM` | Optional: the sender of alert mail, such as `Analytics <you@gmail.com>`; with Gmail it must be the account's own address |
