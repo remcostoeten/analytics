@@ -8,6 +8,16 @@ import { failure } from "./error-handler";
 // The project id segment of /v2/projects/:project and anything below it.
 const projectPath = /^\/v2\/projects\/([^/]+)/;
 
+const signedIn: Record<string, string[]>[] = [{ apiToken: [] }, { session: [] }];
+
+const security: Record<Level, Record<string, string[]>[]> = {
+  public: [{}, ...signedIn],
+  project: [{}, ...signedIn],
+  detail: signedIn,
+  admin: signedIn,
+  cron: [{ cronSecret: [] }],
+};
+
 function projectOf(url: string) {
   const segment = projectPath.exec(new URL(url).pathname)?.[1];
   if (!segment) return null;
@@ -22,7 +32,8 @@ function projectOf(url: string) {
  * @name access
  * @description The `access` route option: `{ access: "project" }` and the other levels run
  * `decide` before the handler, answer with the error envelope when the caller may not pass, and
- * give the handler `caller` and, on `/projects/:project` routes, `project`. It also registers the
+ * give the handler `caller` and, on `/projects/:project` routes, `project`. Each level documents the
+ * credentials it accepts as the route's OpenAPI `security`. It also registers the
  * `ApiError` model that `errorResponses` refers to, so the OpenAPI document holds it once.
  *
  * @example
@@ -31,6 +42,7 @@ function projectOf(url: string) {
 export function access(deps: AccessDeps, docsBase: string) {
   return new Elysia({ name: "access" }).model({ ApiError }).macro({
     access: (level: Level) => ({
+      detail: { security: security[level] },
       resolve: async ({ request, set, status }) => {
         const decision = await decide(level, request.headers, projectOf(request.url), deps);
         if (decision.ok) return decision.value;

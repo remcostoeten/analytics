@@ -13,15 +13,25 @@ export type HealthOptions = {
 const HealthDetails = Type.Composite([
   Health,
   Type.Object({
-    runtime: Type.String(),
-    coldStart: Type.Boolean(),
-    bootedAt: Type.String({ format: "date-time" }),
-    ipHeader: Type.Union([Type.String(), Type.Null()]),
-    geo: Type.Object({
-      city: Type.Union([Type.String(), Type.Null()]),
-      asn: Type.Union([Type.String(), Type.Null()]),
-      loadMs: Type.Number(),
+    runtime: Type.String({ description: "The runtime and its version, such as `bun 1.3.14`." }),
+    coldStart: Type.Boolean({ description: "Whether this was the instance's first request." }),
+    bootedAt: Type.String({ format: "date-time", description: "When this instance started." }),
+    ipHeader: Type.Union([Type.String(), Type.Null()], {
+      description:
+        "The header the caller's IP was read from, such as `cf-connecting-ip`; never the address.",
     }),
+    geo: Type.Object(
+      {
+        city: Type.Union([Type.String(), Type.Null()], {
+          description: "Path of the MaxMind City database, or null when it did not load.",
+        }),
+        asn: Type.Union([Type.String(), Type.Null()], {
+          description: "Path of the MaxMind ASN database, or null when it did not load.",
+        }),
+        loadMs: Type.Number({ description: "Milliseconds the databases took to load." }),
+      },
+      { description: "The geo databases this instance loaded." },
+    ),
   }),
 ]);
 

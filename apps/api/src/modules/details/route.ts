@@ -1,5 +1,6 @@
 import {
   EventList,
+  ProjectParams,
   SessionEvents,
   SessionList,
   UpdatedVisitor,
@@ -39,6 +40,20 @@ const responses = { ...errorResponses, 429: errorResponses[400] };
  * @example
  * app.use(detailsModule(deps, reads, docsBase));
  */
+const VisitorParams = t.Composite([
+  ProjectParams,
+  t.Object({
+    visitor: t.String({ description: "The visitor id, as listed by the visitors read." }),
+  }),
+]);
+
+const SessionParams = t.Composite([
+  ProjectParams,
+  t.Object({
+    session: t.String({ description: "The session id, as listed by the sessions read." }),
+  }),
+]);
+
 export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase: string) {
   const gate = readGate(options, docsBase);
   const store = options.details;
@@ -52,6 +67,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listEvents(store, params, [id], options.clock()),
         ),
       {
+        params: ProjectParams,
         query: eventsQuery,
         access: "detail",
         response: { 200: t.Union([EventList, download]), ...responses },
@@ -69,6 +85,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listVisitors(store, params, [id], options.clock()),
         ),
       {
+        params: ProjectParams,
         query: listQuery,
         access: "detail",
         response: { 200: t.Union([VisitorList, download]), ...responses },
@@ -86,6 +103,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           visitorDetail(store, id, path.visitor, options.clock()),
         ),
       {
+        params: VisitorParams,
         access: "detail",
         response: { 200: VisitorDetail, ...responses },
         detail: {
@@ -103,6 +121,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           markVisitor(store, id, path.visitor, body.isInternal),
         ),
       {
+        params: VisitorParams,
         access: "admin",
         body: UpdateVisitor,
         response: { 200: UpdatedVisitor, ...responses },
@@ -120,6 +139,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           visitorVisits(store, params, id, path.visitor),
         ),
       {
+        params: VisitorParams,
         query: pageQuery,
         access: "detail",
         response: { 200: t.Union([VisitList, download]), ...responses },
@@ -138,6 +158,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           listSessions(store, params, [id], options.clock()),
         ),
       {
+        params: ProjectParams,
         query: listQuery,
         access: "detail",
         response: { 200: t.Union([SessionList, download]), ...responses },
@@ -155,6 +176,7 @@ export function detailsModule(deps: AccessDeps, options: ReadsOptions, docsBase:
           sessionTrail(store, params, id, path.session),
         ),
       {
+        params: SessionParams,
         query: pageQuery,
         access: "detail",
         response: { 200: t.Union([SessionEvents, download]), ...responses },

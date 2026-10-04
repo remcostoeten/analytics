@@ -1,4 +1,10 @@
-import { SpeedElementList, SpeedResponse, SpeedRouteList, SpeedTimeseries } from "@spoar/contract";
+import {
+  ProjectParams,
+  SpeedElementList,
+  SpeedResponse,
+  SpeedRouteList,
+  SpeedTimeseries,
+} from "@spoar/contract";
 import type { EngineError, ProjectRecord, SpeedStore } from "@spoar/engine";
 import type { Result } from "@spoar/shared/result";
 import { Elysia } from "elysia";
@@ -53,6 +59,7 @@ export function speedModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
   return new Elysia({ name: "speed" })
     .use(access(deps, docsBase))
     .get("/projects/:project/speed", answer(speedSummary), {
+      params: ProjectParams,
       query: speedQuery,
       access: "project",
       response: { 200: SpeedResponse, ...responses },
@@ -64,18 +71,21 @@ export function speedModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/speed/timeseries", answer(speedTimeseries), {
+      params: ProjectParams,
       query: speedQuery,
       access: "project",
       response: { 200: SpeedTimeseries, ...responses },
       detail: { summary: "One metric per day", description: "`metric` is required.", tags },
     })
     .get("/projects/:project/speed/routes", answer(speedRoutes), {
+      params: ProjectParams,
       query: speedQuery,
       access: "project",
       response: { 200: SpeedRouteList, ...responses },
       detail: { summary: "Speed per route", description: "Worst score first.", tags },
     })
     .get("/projects/:project/speed/elements", answer(speedElements), {
+      params: ProjectParams,
       query: speedQuery,
       access: "project",
       response: { 200: SpeedElementList, ...responses },

@@ -9,6 +9,9 @@ import { errorResponses } from "../../plugins/error-responses";
 import { createToken, listTokens, revokeToken } from "./service";
 
 const tags = ["Tokens"];
+const tokenParams = t.Object({
+  token: t.String({ description: "The token id (`tok_...`) from `GET /v2/tokens`." }),
+});
 
 /**
  * @name tokensModule
@@ -71,6 +74,7 @@ export function tokensModule(deps: AccessDeps, docsBase: string) {
         return revoked.ok ? status(204, undefined) : reject(revoked.error, set);
       },
       {
+        params: tokenParams,
         access: "admin",
         response: { 204: t.Void(), ...errorResponses },
         detail: { summary: "Revoke an API token", description: "It stops working at once.", tags },

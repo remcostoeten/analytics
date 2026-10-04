@@ -336,6 +336,9 @@
       "version": "0.0.0",
     },
   },
+  "patchedDependencies": {
+    "@elysiajs/openapi@1.4.16": "patches/@elysiajs%2Fopenapi@1.4.16.patch",
+  },
   "overrides": {
     "undici": "7.30.0",
   },

@@ -160,7 +160,14 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
       },
       {
         ...route,
-        query: t.Object({ days: t.Optional(t.String()) }),
+        query: t.Object({
+          days: t.Optional(
+            t.String({
+              description:
+                "How many past UTC days of speed samples to roll up, from 1 to 90; 2 by default.",
+            }),
+          ),
+        }),
         detail: {
           summary: "Roll up speed",
           description:

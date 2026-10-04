@@ -3,6 +3,7 @@ import {
   ActiveVisitorsQuery,
   LiveSessions,
   Overview,
+  ProjectParams,
   WidgetSession,
 } from "@spoar/contract";
 import { Elysia } from "elysia";
@@ -64,6 +65,7 @@ export function widgetModule(
         response: { 200: WidgetSession, ...errorResponses },
         detail: {
           summary: "Start the dev widget",
+          security: [{ session: [] }],
           description:
             "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
           tags,
@@ -77,6 +79,7 @@ export function widgetModule(
           activeVisitors(widget.store, id, params, reads.clock()),
         ),
       {
+        params: ProjectParams,
         query: ActiveVisitorsQuery,
         access: "detail",
         response: { 200: ActiveVisitors, ...responses },
@@ -95,6 +98,7 @@ export function widgetModule(
           liveSessions(widget.store, id, params, reads.clock()),
         ),
       {
+        params: ProjectParams,
         query: ActiveVisitorsQuery,
         access: "detail",
         response: { 200: LiveSessions, ...responses },
@@ -111,6 +115,7 @@ export function widgetModule(
       ({ request, caller, project, set }) =>
         gate.answer(request, caller, project, set, "private", (_, id) => overview(id)),
       {
+        params: ProjectParams,
         access: "project",
         response: { 200: Overview, ...responses },
         detail: {

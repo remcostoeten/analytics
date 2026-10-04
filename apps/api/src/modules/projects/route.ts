@@ -2,6 +2,7 @@ import {
   CreatedProject,
   CreateProject,
   ProjectList,
+  ProjectParams,
   ProjectResponse,
   ProjectsQuery,
   RotatedKey,
@@ -86,6 +87,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
           ? { data: shapeFor(caller, project) }
           : reject(engineError("NOT_FOUND", "Project not found"), set),
       {
+        params: ProjectParams,
         access: "project",
         response: { 200: ProjectResponse, ...errorResponses },
         detail: {
@@ -103,6 +105,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
         return reject(updated.error, set);
       },
       {
+        params: ProjectParams,
         access: "admin",
         body: UpdateProject,
         response: { 200: UpdatedProject, ...errorResponses },
@@ -122,6 +125,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
         return reject(rotated.error, set);
       },
       {
+        params: ProjectParams,
         access: "admin",
         body: RotateKey,
         response: { 200: RotatedKey, ...errorResponses },

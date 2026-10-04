@@ -4,6 +4,7 @@ import {
   LiveEvents,
   MapResponse,
   PathsResponse,
+  ProjectParams,
   RealtimeResponse,
   RetentionResponse,
   LifecycleResponse,
@@ -30,6 +31,7 @@ import { eventStream, liveEvents, liveQuery, liveStream } from "./live";
 import { activeVisitors } from "../widget/service";
 import { breakdown, readScope, realtime, stats, timeseries } from "./service";
 import {
+  breakdownParams,
   breakdownQuery,
   heatmapQuery,
   lifecycleQuery,
@@ -140,6 +142,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           return scope.ok ? stats(options.store, scope.value) : scope;
         }),
       {
+        params: ProjectParams,
         query: scopeQuery,
         access: "project",
         response: { 200: StatsResponse, ...readResponses },
@@ -159,6 +162,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           return scope.ok ? timeseries(options.store, scope.value, params) : scope;
         }),
       {
+        params: ProjectParams,
         query: timeseriesQuery,
         access: "project",
         response: { 200: TimeseriesResponse, ...readResponses },
@@ -186,6 +190,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           },
         ),
       {
+        params: breakdownParams,
         query: breakdownQuery,
         access: "project",
         response: { 200: t.Union([BreakdownResponse, download]), ...readResponses },
@@ -208,6 +213,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
               realtime(options.store, [id], options.clock()),
             ),
       {
+        params: ProjectParams,
         query: realtimeQuery,
         access: "project",
         response: { 200: RealtimeResponse, ...readResponses },
@@ -220,6 +226,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     )
     .get("/projects/:project/paths", exploreList("paths", paths), {
+      params: ProjectParams,
       query: pathsQuery,
       access: "project",
       response: { 200: t.Union([PathsResponse, download]), ...readResponses },
@@ -231,6 +238,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/retention", explore(retention), {
+      params: ProjectParams,
       query: retentionQuery,
       access: "project",
       response: { 200: RetentionResponse, ...readResponses },
@@ -242,6 +250,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/lifecycle", explore(lifecycle), {
+      params: ProjectParams,
       query: lifecycleQuery,
       access: "project",
       response: { 200: LifecycleResponse, ...readResponses },
@@ -253,6 +262,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/stickiness", explore(stickiness), {
+      params: ProjectParams,
       query: scopeQuery,
       access: "project",
       response: { 200: StickinessResponse, ...readResponses },
@@ -264,6 +274,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/heatmap", explore(heatmap), {
+      params: ProjectParams,
       query: heatmapQuery,
       access: "project",
       response: { 200: HeatmapResponse, ...readResponses },
@@ -275,6 +286,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
       },
     })
     .get("/projects/:project/map", exploreList("map", places), {
+      params: ProjectParams,
       query: mapQuery,
       access: "project",
       response: { 200: t.Union([MapResponse, download]), ...readResponses },
@@ -309,6 +321,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           },
         ),
       {
+        params: ProjectParams,
         query: liveEventsQuery,
         access: "project",
         response: { 200: t.Union([LiveEvents, eventStream]), ...readResponses },

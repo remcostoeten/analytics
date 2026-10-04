@@ -1,0 +1,56 @@
+diff --git a/dist/cjs/index.js b/dist/cjs/index.js
+index c0bfcd3e814ad0e00d2041a60d01474838e0dcb9..60a79853e3581ebde365295ac640601b8a2bb719 100644
+--- a/dist/cjs/index.js
++++ b/dist/cjs/index.js
+@@ -710,7 +710,8 @@ var enumToOpenApi = (_schema) => {
+     ))
+       return {
+         type: "string",
+-        enum: schema2.anyOf.map((item) => item.const)
++        enum: schema2.anyOf.map((item) => item.const),
++        ...schema2.description ? { description: schema2.description } : {}
+       };
+   }
+   const schema = _schema;
+diff --git a/dist/cjs/openapi.js b/dist/cjs/openapi.js
+index f4d09beda9b7dfc94f9ad5039c1468ff900aba1e..17080450de39316d9843a1bd49a527e123cec189 100644
+--- a/dist/cjs/openapi.js
++++ b/dist/cjs/openapi.js
+@@ -436,7 +436,8 @@ var enumToOpenApi = (_schema) => {
+     ))
+       return {
+         type: "string",
+-        enum: schema2.anyOf.map((item) => item.const)
++        enum: schema2.anyOf.map((item) => item.const),
++        ...schema2.description ? { description: schema2.description } : {}
+       };
+   }
+   const schema = _schema;
+diff --git a/dist/index.mjs b/dist/index.mjs
+index ea2d0d4fff24fb950dcef0bf25ede511545a30bb..6c49d39bb9ea3dd4bf1c1be525453f508e88becf 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -684,7 +684,8 @@ var enumToOpenApi = (_schema) => {
+     ))
+       return {
+         type: "string",
+-        enum: schema2.anyOf.map((item) => item.const)
++        enum: schema2.anyOf.map((item) => item.const),
++        ...schema2.description ? { description: schema2.description } : {}
+       };
+   }
+   const schema = _schema;
+diff --git a/dist/openapi.mjs b/dist/openapi.mjs
+index d2d5db38557db0d098d8e5e043f6191e83467dde..923bf4472824658ee7c22d07d9f28adf5ca08dcb 100644
+--- a/dist/openapi.mjs
++++ b/dist/openapi.mjs
+@@ -405,7 +405,8 @@ var enumToOpenApi = (_schema) => {
+     ))
+       return {
+         type: "string",
+-        enum: schema2.anyOf.map((item) => item.const)
++        enum: schema2.anyOf.map((item) => item.const),
++        ...schema2.description ? { description: schema2.description } : {}
+       };
+   }
+   const schema = _schema;

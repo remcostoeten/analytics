@@ -1,4 +1,11 @@
-import { ApiError, ClientLogBatch, ClientLogResult, LogList, LogsQuery } from "@spoar/contract";
+import {
+  ApiError,
+  ClientLogBatch,
+  ClientLogResult,
+  LogList,
+  LogsQuery,
+  ProjectParams,
+} from "@spoar/contract";
 import { storeClientReports } from "@spoar/engine";
 import type { EngineError, LogStore, ProjectRecord } from "@spoar/engine";
 import { ok } from "@spoar/shared/result";
@@ -64,6 +71,7 @@ export function logsModule(
     .use(access(deps, docsBase))
     .model({ ApiError })
     .get("/projects/:project/logs", read(widget.logs), {
+      params: ProjectParams,
       query: LogsQuery,
       access: "admin",
       response: { 200: t.Union([LogList, eventStream]), ...responses },
@@ -114,6 +122,7 @@ export function logsModule(
             ? context.status(413, failed.body)
             : context.status(400, failed.body);
         },
+        params: ProjectParams,
         body: ClientLogBatch,
         response: {
           202: ClientLogResult,
@@ -127,6 +136,7 @@ export function logsModule(
         },
         detail: {
           summary: "Report SDK outcomes",
+          security: [{ projectKey: [] }, { apiToken: [] }],
           description:
             "The widget build of the SDK posts its `drop` and `error` outcomes here in batches of up to 20 (`{ logs: [...] }`, at most 16 KB), with the same key as `POST /v2/events`. They are stored as `sdk` log lines, with email and IP addresses replaced. Refused with `WIDGET_REPORTS_DISABLED` unless the project has `widgetReports` on, and rate limited per project.",
           tags,

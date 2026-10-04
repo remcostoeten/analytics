@@ -1,5 +1,6 @@
 import {
   CreateSavedQuery,
+  ProjectParams,
   QueryHistory,
   QueryPlan,
   QueryRequest,
@@ -37,6 +38,9 @@ import type { QueryOptions } from "./service";
 
 const tags = ["SQL"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
+const savedQueryParams = t.Object({
+  query: t.String({ description: "The saved query id (`sq_...`)." }),
+});
 
 function wantsCsv(request: Request) {
   return (
@@ -126,6 +130,7 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
         return reply(request, set, result);
       },
       {
+        params: ProjectParams,
         access: "project",
         body: QueryRequest,
         response: { 200: t.Union([QueryResult, t.String()]), ...responses },
@@ -262,6 +267,7 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
         return answer(set, await getSaved(options.saved, params.query));
       },
       {
+        params: savedQueryParams,
         access: "public",
         response: { 200: SavedQueryResponse, ...errorResponses },
         detail: { summary: "One saved query", description: "By its id.", tags },
@@ -283,6 +289,7 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
         return changed.value ?? reject(set, engineError("NOT_FOUND", "Saved query not found"));
       },
       {
+        params: savedQueryParams,
         access: "public",
         body: UpdateSavedQuery,
         response: { 200: SavedQueryResponse, ...errorResponses },
@@ -308,6 +315,7 @@ export function queryModule(deps: AccessDeps, options: QueryOptions, docsBase: s
         return removed.ok ? status(204, undefined) : reject(set, removed.error);
       },
       {
+        params: savedQueryParams,
         access: "public",
         response: { 204: t.Void(), ...errorResponses },
         detail: {
