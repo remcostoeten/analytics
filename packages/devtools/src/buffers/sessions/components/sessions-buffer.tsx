@@ -45,7 +45,7 @@ export function SessionsBuffer({ runtime, filterRef, register, jump }: BufferPro
         open={state.open}
         selected={buffer.selected}
         loaded={state.loaded}
-        empty="no sessions in the last 30 minutes"
+        empty="no sessions in the last 5 minutes"
         onToggle={(row) => {
           buffer.select(row.id);
           expand(row);

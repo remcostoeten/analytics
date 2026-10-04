@@ -322,7 +322,9 @@ export function Panel({ runtime }: Props) {
               ~/<b>{runtime.bootstrap.project.name}</b>
             </span>
             <span className="m hide-sm">{online} online</span>
-            <span className="env hide-sm">admin · {runtime.bootstrap.project.environment}</span>
+            <span className="env hide-sm">
+              admin · {runtime.bootstrap.project.release ?? "no release"}
+            </span>
           </div>
           <div className="modes">
             <button

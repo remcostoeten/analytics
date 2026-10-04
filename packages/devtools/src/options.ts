@@ -7,6 +7,7 @@ export type DevtoolsOptions = {
   project: ProjectID;
   analytics?: Pick<Analytics, "on">;
   fetch?: Fetcher;
+  live?: boolean;
   catalogUrl?: string;
   dashboardUrl?: string;
 };

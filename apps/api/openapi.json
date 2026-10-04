@@ -27294,6 +27294,8 @@
                   "type": "object",
                   "required": [
                     "project",
+                    "projectName",
+                    "publicKey",
                     "access",
                     "user",
                     "release",
@@ -27305,6 +27307,13 @@
                     "project": {
                       "minLength": 1,
                       "maxLength": 128,
+                      "type": "string"
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "publicKey": {
+                      "minLength": 1,
                       "type": "string"
                     },
                     "access": {
@@ -27347,7 +27356,8 @@
                       "required": [
                         "logs",
                         "speed",
-                        "issues"
+                        "issues",
+                        "reports"
                       ],
                       "properties": {
                         "logs": {
@@ -27357,6 +27367,9 @@
                           "type": "boolean"
                         },
                         "issues": {
+                          "type": "boolean"
+                        },
+                        "reports": {
                           "type": "boolean"
                         }
                       }

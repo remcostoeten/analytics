@@ -19,9 +19,7 @@ export function mount(options: DevtoolsOptions): () => void {
 }
 export type {
   Bootstrap,
-  BotSignal,
   ClientReport,
-  Consent,
   JsonValue,
   LiveSession,
   LogEntry,
@@ -34,5 +32,4 @@ export type {
   SessionSignal,
   Share,
   VisitorDetail,
-  Vitals,
 } from "./client/types";

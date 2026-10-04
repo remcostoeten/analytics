@@ -1,8 +1,13 @@
+import type { ActiveVisitor, LiveSession as ApiSession, LogLine } from "@spoar/contract";
 import { noop } from "@spoar/shared/noop";
+import { ok } from "@spoar/shared/result";
 import type { ID, Nullable } from "@spoar/shared/semantic";
 
+import { toLog, toSession, toVisitor } from "../client/adapt";
 import { createClient } from "../client/client";
 import type { Client } from "../client/client";
+import { openSocket, socketUrl } from "../client/live";
+import type { Connect, Socket, SocketState } from "../client/live";
 import { openStream } from "../client/stream";
 import type { Stream, StreamState } from "../client/stream";
 import type {
@@ -70,16 +75,23 @@ export type Runtime = {
 };
 
 const minuteMs = 60_000;
-const reportBatch = 50;
+const reportBatch = 20;
 
 export type Timing = {
   open: number;
   closed: number;
   slow: number;
   report: number;
+  retry: number;
 };
 
-export const timing: Timing = { open: 10_000, closed: 30_000, slow: 60_000, report: 5000 };
+export const timing: Timing = {
+  open: 10_000,
+  closed: 30_000,
+  slow: 60_000,
+  report: 5000,
+  retry: 2000,
+};
 
 function liveReducer(state: LiveState, action: LiveAction): LiveState {
   switch (action.type) {
@@ -98,6 +110,10 @@ function liveReducer(state: LiveState, action: LiveAction): LiveState {
   }
 }
 
+function streamState(state: SocketState): StreamState {
+  return state === "failed" ? "offline" : state;
+}
+
 function list<Item extends { id: ID }, Detail>(): ListStore<Item, Detail> {
   return createStore<ListState<Item, Detail>, ListAction<Item, Detail>>(
     listReducer,
@@ -111,7 +127,9 @@ function toJson<Value>(value: Value): JsonValue {
 }
 
 function newestFirst(rows: LogEntry[]): LogEntry[] {
+  const ids = new Set<ID>();
   return rows
+    .filter((row) => !ids.has(row.id) && Boolean(ids.add(row.id)))
     .map((row, index) => ({ row, index, at: Date.parse(row.at) }))
     .sort((left, right) => right.at - left.at || left.index - right.index)
     .map((entry) => entry.row);
@@ -119,10 +137,12 @@ function newestFirst(rows: LogEntry[]): LogEntry[] {
 
 /**
  * @name createRuntime
- * @description Everything the panel reads, wired to the API: one store per buffer, the log
- * and live event streams, polling for lists and the overview (every 10 seconds while open, 30
- * while collapsed), and the SDK's `drop` and `error` outcomes when an SDK client is passed in,
- * posted to `logs/client` in batches when the project has `widgetReports` on.
+ * @description Everything the panel reads, wired to the API: one store per buffer, the `live`
+ * WebSocket for events, logs, visitors and sessions, polling for the overview (every 10 seconds
+ * while open, 30 while collapsed) and the slower lists, and the SDK's `drop` and `error`
+ * outcomes when an SDK client is passed in, posted to `logs/client` in batches of 20 when the
+ * project has `widgetReports` on. When the socket fails, or `live` is false, the log and event
+ * streams and list polling take over; a log path filter always reads through the log stream.
  *
  * @example
  * const runtime = createRuntime(bootstrap, options);
@@ -133,6 +153,7 @@ export function createRuntime(
   bootstrap: Bootstrap,
   options: DevtoolsOptions,
   pace: Timing = timing,
+  connect: Nullable<Connect> = null,
 ): Runtime {
   const client = createClient(
     { endpoint: options.endpoint, project: options.project, fetch: options.fetch },
@@ -154,8 +175,13 @@ export function createRuntime(
   const cleanups: (() => void)[] = [];
   const reports: ClientReport[] = [];
   let logPath: Nullable<string> = null;
+  let logsHeld = false;
   let stopped = false;
   let counter = 0;
+  let people: ActiveVisitor[] = [];
+  let visits: ApiSession[] = [];
+  let socket: Nullable<Socket> = null;
+  let socketState: SocketState = "connecting";
 
   function visible() {
     return document.visibilityState !== "hidden";
@@ -177,14 +203,35 @@ export function createRuntime(
 
   async function loadOverview() {
     const answer = await client.overview();
-    if (answer.ok) live.dispatch({ type: "overview", overview: answer.value.data });
+    if (answer.ok) live.dispatch({ type: "overview", overview: answer.value });
+  }
+
+  function showVisitors() {
+    const trails = new Map(visits.map((visit) => [visit.id, visit.trail]));
+    visitors.dispatch({
+      type: "replace",
+      rows: people.map((row) => toVisitor(row, trails.get(row.session) ?? [])),
+    });
+  }
+
+  function setVisitors(rows: ActiveVisitor[]) {
+    people = rows;
+    showVisitors();
+  }
+
+  function setSessions(rows: ApiSession[]) {
+    visits = rows;
+    sessions.dispatch({ type: "replace", rows: rows.map(toSession) });
+    showVisitors();
   }
 
   async function loadLists() {
-    if (!live.get().open) return;
-    const [people, visits] = await Promise.all([client.visitors(), client.sessions()]);
-    if (people.ok) visitors.dispatch({ type: "replace", rows: people.value.data });
-    if (visits.ok) sessions.dispatch({ type: "replace", rows: visits.value.data });
+    if (!live.get().open || socketState === "live") return;
+    const [found, active] = await Promise.all([client.visitors(), client.sessions()]);
+    if (active.ok) visits = active.value.data;
+    if (found.ok) people = found.value.data;
+    if (active.ok) sessions.dispatch({ type: "replace", rows: visits.map(toSession) });
+    if (found.ok || active.ok) showVisitors();
   }
 
   async function loadSlow() {
@@ -212,28 +259,75 @@ export function createRuntime(
     logs.dispatch({ type: "replace", rows: newestFirst([...items, ...logs.get().rows]) });
   }
 
+  function addEvents(items: LiveEvent[]) {
+    const now = Date.now();
+    const views = items.filter((item) => item.name === "pageview");
+    live.dispatch({ type: "seen", at: views.map((item) => Date.parse(item.ts)), now });
+  }
+
   function openLogs(): Stream {
-    return openStream<LogEntry>({
+    const stream = openStream<LogLine>({
       url: (cursor) => projectUrl("logs", cursor, logPath),
       token: client.token,
       fetch: options.fetch,
-      onItems: (items) => addLogs(items),
+      onItems: (items) => addLogs(items.map(toLog)),
       onState: (state) => live.dispatch({ type: "stream", name: "logs", state }),
+    });
+    if (logsHeld) stream.pause();
+    return stream;
+  }
+
+  function openEvents(): Stream {
+    return openStream<LiveEvent>({
+      url: (cursor) => projectUrl("realtime/events", cursor, null),
+      token: client.token,
+      fetch: options.fetch,
+      onItems: addEvents,
+      onState: (state) => live.dispatch({ type: "stream", name: "events", state }),
     });
   }
 
-  let logStream = openLogs();
-  const eventStream = openStream<LiveEvent>({
-    url: (cursor) => projectUrl("realtime/events", cursor, null),
-    token: client.token,
-    fetch: options.fetch,
-    onItems: (items) => {
-      const now = Date.now();
-      const views = items.filter((item) => item.name === "pageview");
-      live.dispatch({ type: "seen", at: views.map((item) => Date.parse(item.ts)), now });
-    },
-    onState: (state) => live.dispatch({ type: "stream", name: "events", state }),
-  });
+  let logStream: Nullable<Stream> = null;
+  let eventStream: Nullable<Stream> = null;
+
+  function socketLogs() {
+    return socket !== null && socketState !== "failed" && logPath === null;
+  }
+
+  function onSocketState(state: SocketState) {
+    socketState = state;
+    if (state === "failed") {
+      socket = null;
+      logStream ??= openLogs();
+      eventStream ??= openEvents();
+      void loadLists();
+      return;
+    }
+    if (logPath === null) live.dispatch({ type: "stream", name: "logs", state });
+    live.dispatch({ type: "stream", name: "events", state });
+  }
+
+  if (options.live !== false && (connect || typeof WebSocket !== "undefined")) {
+    socket = openSocket({
+      url: socketUrl(client.base(), options.project),
+      token: client.token,
+      refresh: async () => {
+        const fresh = await client.bootstrap();
+        return fresh.ok ? ok(fresh.value.token) : fresh;
+      },
+      channels: ["events", "logs", "visitors", "sessions"],
+      connect: connect ?? undefined,
+      retryMs: pace.retry,
+      onEvents: addEvents,
+      onLogs: (items) => addLogs(items.map(toLog)),
+      onVisitors: setVisitors,
+      onSessions: setSessions,
+      onState: onSocketState,
+    });
+  } else {
+    logStream = openLogs();
+    eventStream = openEvents();
+  }
 
   function pushLocal(
     entry: Omit<LogEntry, "id" | "at" | "visitor" | "path">,
@@ -249,7 +343,7 @@ export function createRuntime(
         path: report.path,
       },
     ]);
-    if (bootstrap.widgetReports) reports.push(report);
+    if (bootstrap.features.reports) reports.push(report);
   }
 
   if (options.analytics) {
@@ -323,20 +417,32 @@ export function createRuntime(
       if (open && !was) refresh();
     },
     holdLogs: (held) => {
+      logsHeld = held;
       logs.dispatch({ type: "hold", held });
-      if (held) logStream.pause();
-      else logStream.resume();
+      if (held) logStream?.pause();
+      else logStream?.resume();
+      if (!socketLogs()) return;
+      if (held) socket?.pause("logs");
+      else socket?.resume("logs");
     },
     setLogPath: (path) => {
       if (path === logPath) return;
+      const fromSocket = socketLogs();
       logPath = path;
-      logStream.stop();
+      if (fromSocket) socket?.pause("logs");
+      logStream?.stop();
+      logStream = null;
+      if (socketLogs()) {
+        if (!logsHeld) socket?.resume("logs");
+        live.dispatch({ type: "stream", name: "logs", state: streamState(socketState) });
+        return;
+      }
       logStream = openLogs();
     },
     loadVisitor: (id) => {
       if (visitors.get().details[id]) return;
       void client.visitor(id).then((answer) => {
-        if (answer.ok) visitors.dispatch({ type: "detail", id, detail: answer.value.data });
+        if (answer.ok) visitors.dispatch({ type: "detail", id, detail: answer.value });
       });
     },
     loadIssue: (id) => {
@@ -352,8 +458,9 @@ export function createRuntime(
       stopped = true;
       for (const timer of timers) clearTimeout(timer);
       timers.clear();
-      logStream.stop();
-      eventStream.stop();
+      logStream?.stop();
+      eventStream?.stop();
+      socket?.stop();
       for (const cleanup of cleanups) cleanup();
     },
   };

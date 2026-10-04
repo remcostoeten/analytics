@@ -59,9 +59,11 @@ export function StatusBuffer({ runtime, register }: BufferProps) {
   if (!overview) return <div className="empty">loading overview</div>;
 
   const config: JsonValue = {
-    ...overview.config,
     project: runtime.bootstrap.project.id,
-    widgetReports: runtime.bootstrap.widgetReports,
+    release: runtime.bootstrap.project.release,
+    endpoint: runtime.options.endpoint,
+    publicKey: runtime.bootstrap.publicKey,
+    ...runtime.bootstrap.features,
   };
 
   return (
@@ -70,7 +72,7 @@ export function StatusBuffer({ runtime, register }: BufferProps) {
         <h4>Online</h4>
         <div className="big">
           {overview.online}
-          <small>visitors, 30 min window</small>
+          <small>visitors, 5 min window</small>
         </div>
         <div className="spark" aria-label="Views per minute">
           {sparkHeights(overview.viewsPerMinute).map((height, index, all) => (

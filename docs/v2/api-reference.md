@@ -1350,16 +1350,18 @@ The dev widget is a panel the SDK mounts on a customer site for signed-in admins
 200 OK
 {
   "project": "noorderlicht-lease",
+  "projectName": "Noorderlicht Lease",
+  "publicKey": "pk_live_noorderlicht",
   "access": "admin",
   "user": { "id": "u_01j8z7", "name": "Remco" },
   "release": "2026.10.03-a1",
   "token": "wt_xxxxxxxxxxxxxxxx",
   "expiresAt": "2026-10-03T14:32:00.000Z",
-  "features": { "logs": true, "speed": true, "issues": true }
+  "features": { "logs": true, "speed": true, "issues": true, "reports": true }
 }
 ```
 
-`release` is the newest `context.release` seen on the project's events, or `null`. Without a session the route answers `401 AUTH_REQUIRED`; from an origin no project lists, `403 ORIGIN_NOT_ALLOWED`; for a member who cannot administer the project, `403 FORBIDDEN`.
+`release` is the newest `context.release` seen on the project's events, or `null`. `publicKey` is the project's ingest key, the same one the SDK already ships in the page, so the widget can post the SDK's reports to `logs/client`; `features.reports` is the project's `widgetReports` setting. Without a session the route answers `401 AUTH_REQUIRED`; from an origin no project lists, `403 ORIGIN_NOT_ALLOWED`; for a member who cannot administer the project, `403 FORBIDDEN`.
 
 **Active visitors.** `GET /v2/projects/:project/realtime/visitors` (`detail`) answers one row per visitor seen in the last five minutes, newest activity first, `limit` 1 to 200 (default 50). `path` is their latest pageview, `pages` and `duration` (seconds) cover the current session, `botScore` is their highest in the window, and `identified` says whether they called `identify`, never with the user id.
 

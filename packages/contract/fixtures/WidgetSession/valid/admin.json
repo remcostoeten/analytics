@@ -1,9 +1,11 @@
 {
   "project": "noorderlicht-lease",
+  "projectName": "Noorderlicht Lease",
+  "publicKey": "pk_live_noorderlicht",
   "access": "admin",
   "user": { "id": "u_01j8z7", "name": "Remco" },
   "release": "2026.10.03-a1",
   "token": "wt_xxxxxxxxxxxxxxxx",
   "expiresAt": "2026-10-03T14:32:00.000Z",
-  "features": { "logs": true, "speed": true, "issues": true }
+  "features": { "logs": true, "speed": true, "issues": true, "reports": true }
 }

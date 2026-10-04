@@ -23,6 +23,22 @@ The [API reference](/docs/reference) has the request and response schema of ever
 
 The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API finds the project whose `allowedOrigins` lists the page's `Origin`, reads the admin session cookie, checks that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `admin` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. Call the route again before `expiresAt` to refresh.
 
+```json
+{
+  "project": "noorderlicht-lease",
+  "projectName": "Noorderlicht Lease",
+  "publicKey": "pk_live_noorderlicht",
+  "access": "admin",
+  "user": { "id": "u_01j8z7", "name": "Remco" },
+  "release": "2026.10.03-a1",
+  "token": "wt_xxxxxxxxxxxxxxxx",
+  "expiresAt": "2026-10-03T14:32:00.000Z",
+  "features": { "logs": true, "speed": true, "issues": true, "reports": true }
+}
+```
+
+`publicKey` is the project's ingest key, the one the SDK already ships in the page, so the widget can post the SDK's reports to `logs/client`. `features.reports` is the project's `widgetReports` setting.
+
 | Answer | When |
 | --- | --- |
 | `200` | You are signed in and may administer the project |

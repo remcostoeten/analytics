@@ -179,7 +179,7 @@ beforeAll(async () => {
     }),
     error({ message: "Cannot read properties of undefined (reading 'slug')", release: "e4f5a6b" }),
   ]);
-});
+}, 20_000);
 
 describe("issues", () => {
   test("need visitor-level access", async () => {

@@ -1,6 +1,9 @@
 import { noop } from "@spoar/shared/noop";
 import type { Nullable } from "@spoar/shared/semantic";
 
+import type { WidgetSession } from "@spoar/contract";
+
+import { toBootstrap } from "../client/bootstrap";
 import type { Bootstrap } from "../client/types";
 import type { DevtoolsOptions } from "../options";
 
@@ -26,8 +29,8 @@ export async function readBootstrap(options: DevtoolsOptions): Promise<Nullable<
       headers: { accept: "application/json" },
     });
     if (response.status !== 200) return null;
-    const body: { data: Bootstrap } = await response.json();
-    return body.data;
+    const body: WidgetSession = await response.json();
+    return toBootstrap(body);
   } catch {
     return null;
   }

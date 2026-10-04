@@ -1,21 +1,14 @@
-import type {
-  Bootstrap,
-  Issue,
-  IssueEvent,
-  LiveSession,
-  LogEntry,
-  OnlineVisitor,
-  Overview,
-  SpeedRoute,
-  VisitorDetail,
-} from "../client/types";
+import type { ActiveVisitor, LiveSession, LogLine, Overview, WidgetSession } from "@spoar/contract";
+
+import type { VisitorBot } from "../client/adapt";
+import type { Issue, IssueEvent, SpeedRoute } from "../client/types";
 
 export type Fixtures = {
-  bootstrap: Bootstrap;
-  visitors: OnlineVisitor[];
-  details: VisitorDetail[];
+  session: WidgetSession;
+  visitors: ActiveVisitor[];
+  details: VisitorBot[];
   sessions: LiveSession[];
-  logs: LogEntry[];
+  logs: LogLine[];
   overview: Overview;
   speed: SpeedRoute[];
   issues: Issue[];
@@ -29,132 +22,143 @@ function ago(now: number, seconds: number) {
 function visitor(
   now: number,
   seconds: number,
-  partial: Omit<OnlineVisitor, "seenAt" | "consent" | "userId"> &
-    Partial<Pick<OnlineVisitor, "consent" | "userId">>,
-): OnlineVisitor {
-  return { consent: "granted", userId: null, ...partial, seenAt: ago(now, seconds) };
+  partial: Omit<ActiveVisitor, "lastSeen" | "identified"> &
+    Partial<Pick<ActiveVisitor, "identified">>,
+): ActiveVisitor {
+  return { identified: false, ...partial, lastSeen: ago(now, seconds) };
 }
 
-function visitors(now: number): OnlineVisitor[] {
+function visitors(now: number): ActiveVisitor[] {
   return [
     visitor(now, 4, {
-      id: "v_8f2a1c3e9c1e",
+      visitor: "v_8f2a1c3e9c1e",
       session: "s_2b7f40a1e",
       path: "/cars/polestar-2",
       referrer: "google",
       country: "NL",
       city: "Amsterdam",
       device: "desktop",
-      botScore: 0.04,
+      browser: "Safari 26",
+      os: "macOS",
+      botScore: 4,
       pages: 3,
-      durationMs: 242_000,
-      trail: ["/", "/cars", "/cars/polestar-2"],
-      client: { os: "macOS", browser: "Safari 26", screen: "1728x1117", language: "nl-NL" },
-      vitals: { lcp: 1100, inp: 48, cls: 0.01 },
+      duration: 242,
     }),
     visitor(now, 8, {
-      id: "v_19d0aa507e40",
+      visitor: "v_19d0aa507e40",
       session: "s_90aa21dc4",
       path: "/private-lease",
       referrer: null,
       country: "BE",
       city: "Antwerp",
       device: "mobile",
-      botScore: 0.02,
+      browser: "Safari",
+      os: "iOS 26",
+      botScore: 2,
       pages: 1,
-      durationMs: 42_000,
-      trail: ["/private-lease"],
-      client: { os: "iOS 26", browser: "Safari", screen: "393x852", language: "nl-BE" },
-      vitals: { lcp: 2300, inp: 180, cls: 0.06 },
-      consent: "unset",
+      duration: 42,
     }),
     visitor(now, 15, {
-      id: "v_c3b702d811f0",
+      visitor: "v_c3b702d811f0",
       session: "s_17de9b033",
       path: "/",
       referrer: "linkedin",
       country: "NL",
       city: "Rotterdam",
       device: "desktop",
-      botScore: 0.05,
+      browser: "Edge 140",
+      os: "Windows 11",
+      botScore: 5,
       pages: 4,
-      durationMs: 408_000,
-      trail: ["/", "/business", "/contact", "/"],
-      client: { os: "Windows 11", browser: "Edge 140", screen: "1920x1080", language: "nl-NL" },
-      vitals: { lcp: 1400, inp: 72, cls: 0.02 },
-      userId: "u_4410",
+      duration: 408,
+      identified: true,
     }),
     visitor(now, 31, {
-      id: "v_55e19a6cb002",
+      visitor: "v_55e19a6cb002",
       session: "s_e4c17a280",
       path: "/blog/ev-winter-range",
       referrer: "news.ycombinator",
       country: "DE",
       city: "Berlin",
       device: "tablet",
-      botScore: 0.09,
+      browser: "Safari",
+      os: "iPadOS 26",
+      botScore: 9,
       pages: 2,
-      durationMs: 190_000,
-      trail: ["/blog/ev-winter-range", "/blog"],
-      client: { os: "iPadOS 26", browser: "Safari", screen: "1024x1366", language: "de-DE" },
-      vitals: { lcp: 1900, inp: 96, cls: 0.03 },
+      duration: 190,
     }),
     visitor(now, 45, {
-      id: "v_a0f4d8e1c3a7",
+      visitor: "v_a0f4d8e1c3a7",
       session: "s_6f02c55b7",
       path: "/sitemap.xml",
       referrer: null,
       country: "US",
       city: "Ashburn",
       device: "desktop",
-      botScore: 0.92,
+      browser: "HeadlessChrome 141",
+      os: "Linux",
+      botScore: 92,
       pages: 2,
-      durationMs: 1000,
-      trail: ["/sitemap.xml", "/robots.txt"],
-      client: { os: "Linux", browser: "HeadlessChrome 141", screen: "800x600", language: null },
-      vitals: { lcp: null, inp: null, cls: null },
+      duration: 1,
     }),
     visitor(now, 63, {
-      id: "v_e4c1803f2d9b",
+      visitor: "v_e4c1803f2d9b",
       session: "s_a9b1e7704",
       path: "/cars/kia-ev6",
       referrer: "google",
       country: "NL",
       city: "Utrecht",
       device: "mobile",
-      botScore: 0.41,
+      browser: "Chrome 141",
+      os: "Android 16",
+      botScore: 41,
       pages: 5,
-      durationMs: 65_000,
-      trail: ["/", "/cars", "/cars/kia-ev6", "/cars", "/cars/tesla-model-3"],
-      client: { os: "Android 16", browser: "Chrome 141", screen: "412x915", language: "nl-NL" },
-      vitals: { lcp: 2800, inp: 240, cls: 0.12 },
+      duration: 65,
     }),
   ];
 }
 
-const details: VisitorDetail[] = [
+const quiet = {
+  headless: false,
+  webdriver: false,
+  datacenterAsn: false,
+  pointerEvents: null,
+  uaMismatch: false,
+  uniformDwell: null,
+};
+
+const details: VisitorBot[] = [
   {
     id: "v_a0f4d8e1c3a7",
-    botScore: 0.92,
-    botSignals: [
-      { reason: "client_headless", weight: 25 },
-      { reason: "asn_datacenter", weight: 40 },
-      { reason: "client_no_input", weight: 20 },
-    ],
+    bot: {
+      score: 92,
+      verdict: "bot",
+      signals: { ...quiet, headless: true, datacenterAsn: true, pointerEvents: false },
+    },
   },
   {
     id: "v_e4c1803f2d9b",
-    botScore: 0.41,
-    botSignals: [{ reason: "session_velocity", weight: 50 }],
+    bot: { score: 41, verdict: "suspect", signals: { ...quiet, uniformDwell: true } },
   },
 ];
 
 function session(
   now: number,
   seconds: number,
-  partial: Omit<LiveSession, "startedAt">,
+  partial: Omit<
+    LiveSession,
+    "startedAt" | "lastSeen" | "events" | "referrer" | "country" | "device"
+  >,
 ): LiveSession {
-  return { ...partial, startedAt: ago(now, seconds) };
+  return {
+    ...partial,
+    startedAt: ago(now, seconds),
+    lastSeen: ago(now, Math.max(0, seconds - Math.round(partial.durationMs / 1000))),
+    events: partial.pages,
+    referrer: null,
+    country: "NL",
+    device: "desktop",
+  };
 }
 
 function sessions(now: number): LiveSession[] {
@@ -166,7 +170,7 @@ function sessions(now: number): LiveSession[] {
       pages: 1,
       durationMs: 42_000,
       signal: "human",
-      botScore: 0.02,
+      botScore: 2,
     }),
     session(now, 46, {
       id: "s_6f02c55b7",
@@ -175,7 +179,7 @@ function sessions(now: number): LiveSession[] {
       pages: 2,
       durationMs: 1000,
       signal: "bot",
-      botScore: 0.92,
+      botScore: 92,
     }),
     session(now, 128, {
       id: "s_a9b1e7704",
@@ -184,7 +188,7 @@ function sessions(now: number): LiveSession[] {
       pages: 5,
       durationMs: 65_000,
       signal: "suspect",
-      botScore: 0.41,
+      botScore: 41,
     }),
     session(now, 246, {
       id: "s_2b7f40a1e",
@@ -192,8 +196,8 @@ function sessions(now: number): LiveSession[] {
       trail: ["/", "/cars", "/cars/polestar-2"],
       pages: 3,
       durationMs: 242_000,
-      signal: "human",
-      botScore: 0.04,
+      signal: "engaged",
+      botScore: 4,
     }),
     session(now, 221, {
       id: "s_e4c17a280",
@@ -201,8 +205,8 @@ function sessions(now: number): LiveSession[] {
       trail: ["/blog/ev-winter-range", "/blog"],
       pages: 2,
       durationMs: 190_000,
-      signal: "human",
-      botScore: 0.09,
+      signal: "engaged",
+      botScore: 9,
     }),
     session(now, 423, {
       id: "s_17de9b033",
@@ -211,92 +215,71 @@ function sessions(now: number): LiveSession[] {
       pages: 4,
       durationMs: 408_000,
       signal: "engaged",
-      botScore: 0.05,
+      botScore: 5,
     }),
   ];
 }
 
-function logs(now: number): LogEntry[] {
+function logs(now: number): LogLine[] {
   return [
     {
-      id: "l7",
-      at: ago(now, 49),
-      level: "info",
-      outcome: "job",
+      id: "7",
+      ts: ago(now, 49),
+      level: "ok",
       kind: "jobs",
       source: "cron",
       message: "rollup_daily upserted 1,284 visitors in 412ms",
-      code: null,
       visitor: null,
-      path: null,
+      session: null,
       data: { job: "rollup", visitors: 1284, pageviews: 3902, durationMs: 412, ok: true },
     },
     {
-      id: "l6",
-      at: ago(now, 31),
+      id: "6",
+      ts: ago(now, 31),
       level: "warn",
-      outcome: "signal",
       kind: "signals",
       source: "engine",
-      message: "bot score 0.92, headless and datacenter ASN",
-      code: null,
+      message: "bot score 92, headless and datacenter ASN",
       visitor: "v_a0f4d8e1c3a7",
-      path: "/sitemap.xml",
+      session: "s_6f02c55b7",
       data: {
-        visitor: "v_a0f4d8e1c3a7",
-        score: 0.92,
-        signals: {
-          headless: true,
-          webdriver: false,
-          datacenterAsn: true,
-          pointerEvents: 0,
-          uaMismatch: null,
-        },
+        path: "/sitemap.xml",
+        score: 92,
+        signals: ["headless", "datacenterAsn"],
         verdict: "bot",
       },
     },
     {
-      id: "l5",
-      at: ago(now, 20),
-      level: "info",
-      outcome: "sent",
+      id: "5",
+      ts: ago(now, 20),
+      level: "ok",
       kind: "ingest",
       source: "sdk",
       message: "speed sample on /cars, LCP 1380 INP 96 CLS 0.02",
-      code: null,
       visitor: "v_8f2a1c3e9c1e",
-      path: "/cars",
+      session: "s_2b7f40a1e",
       data: { name: "speed", path: "/cars", lcp: 1380, inp: 96, cls: 0.02, ttfb: 210 },
     },
     {
-      id: "l4",
-      at: ago(now, 12),
+      id: "4",
+      ts: ago(now, 12),
       level: "info",
-      outcome: "dropped",
       kind: "pipeline",
       source: "sdk",
       message: "scroll_depth dropped before send, reason consent",
-      code: null,
       visitor: "v_19d0aa507e40",
-      path: "/private-lease",
-      data: {
-        event: "scroll_depth",
-        reason: "consent",
-        consent: "unset",
-        visitor: "v_19d0aa507e40",
-      },
+      session: "s_90aa21dc4",
+      data: { outcome: "dropped", code: "consent", path: "/private-lease" },
     },
     {
-      id: "l3",
-      at: ago(now, 7),
+      id: "3",
+      ts: ago(now, 7),
       level: "error",
-      outcome: "rejected",
       kind: "ingest",
       source: "api",
       message: "RA_INGEST_REJECTED props exceed 25 keys on quote_requested",
-      code: "RA_INGEST_REJECTED",
       visitor: "v_c3b702d811f0",
-      path: "/contact",
+      session: "s_17de9b033",
       data: {
         code: "RA_INGEST_REJECTED",
         reason: "VALIDATION_FAILED",
@@ -305,35 +288,31 @@ function logs(now: number): LogEntry[] {
         field: "props",
         limit: 25,
         got: 31,
-        visitor: "v_c3b702d811f0",
+        path: "/contact",
         stored: false,
       },
     },
     {
-      id: "l2",
-      at: ago(now, 2),
+      id: "2",
+      ts: ago(now, 2),
       level: "warn",
-      outcome: "retry",
       kind: "transport",
       source: "sdk",
       message: "batch b_70 retry 1/3 after 429, Retry-After 4s",
-      code: null,
       visitor: "v_19d0aa507e40",
-      path: "/private-lease",
+      session: "s_90aa21dc4",
       data: { batchId: "b_70", attempt: 1, status: 429, retryAfterMs: 4000, events: 7 },
     },
     {
-      id: "l1",
-      at: ago(now, 0),
-      level: "info",
-      outcome: "sent",
+      id: "1",
+      ts: ago(now, 0),
+      level: "ok",
       kind: "ingest",
       source: "api",
       message: "batch b_71 accepted 12 events (202)",
-      code: null,
       visitor: null,
-      path: null,
-      data: { batchId: "b_71", accepted: 12, duplicates: 0, rejected: [], latencyMs: 38 },
+      session: null,
+      data: { batchId: "b_71", accepted: 12, duplicates: 0, rejected: 0, latencyMs: 38 },
     },
   ];
 }
@@ -515,55 +494,39 @@ function issueEvents(now: number): { [issue: string]: IssueEvent[] } {
 
 function overview(now: number): Overview {
   return {
-    online: 27,
+    online: 6,
     viewsPerMinute: [4, 6, 5, 8, 7, 10, 9, 12, 11, 14],
-    today: { visitors: 1284, pageviews: 3902, bounceRate: 0.41, sessionMs: 134_000 },
-    ingest: { accepted: 3890, rejected: 12, duplicates: 48, ratio: 0.996 },
-    bots: {
-      share: 0.078,
-      reasons: [
-        { label: "client_headless", value: 3 },
-        { label: "client_webdriver", value: 1 },
-        { label: "asn_datacenter", value: 14 },
-      ],
-    },
+    today: { visitors: 1284, pageviews: 3902, bounceRate: 0.41, avgSessionSeconds: 134 },
+    ingest: { last24h: { accepted: 3890, duplicates: 48, rejected: 12, rateLimited: 0 } },
+    bots: { share: 0.078, headless: 3, webdriver: 1, datacenterAsn: 14 },
+    speed: { lcp: 1400, inp: 96, cls: 0.03, ttfb: 240 },
+    errors: { last30m: 3, openIssues: 3 },
     topPages: [
-      { label: "/", value: 1044 },
-      { label: "/cars", value: 612 },
-      { label: "/private-lease", value: 388 },
-      { label: "/blog/ev-winter-range", value: 201 },
+      { path: "/", views: 1044 },
+      { path: "/cars", views: 612 },
+      { path: "/private-lease", views: 388 },
+      { path: "/blog/ev-winter-range", views: 201 },
     ],
     referrers: [
-      { label: "google", value: 0.48 },
-      { label: "direct", value: 0.31 },
-      { label: "news.ycombinator", value: 0.09 },
-      { label: "linkedin", value: 0.06 },
+      { name: "google", share: 0.48 },
+      { name: "direct", share: 0.31 },
+      { name: "news.ycombinator", share: 0.09 },
+      { name: "linkedin", share: 0.06 },
     ],
     countries: [
-      { label: "NL", value: 0.71 },
-      { label: "BE", value: 0.12 },
-      { label: "DE", value: 0.08 },
-      { label: "other", value: 0.09 },
+      { code: "NL", share: 0.71 },
+      { code: "BE", share: 0.12 },
+      { code: "DE", share: 0.08 },
     ],
-    release: { name: "2026.10.03-a1", deployedAt: ago(now, 8400), newIssues: 3 },
-    lcp: 1400,
-    errors: 3,
-    config: {
-      project: "site",
-      endpoint: "/_ra",
-      consent: "required",
-      plugins: ["pageviews", "speedInsights", "errors", "scrollDepth", "outboundLinks"],
-      sampleRate: 1,
-      release: "2026.10.03-a1",
-    },
+    release: { current: "2026.10.03-a1", deployedAt: ago(now, 8400), newIssuesSince: 3 },
   };
 }
 
 /**
  * @name createFixtures
- * @description The typed sample data the fixture transport serves until the widget endpoints
- * exist: six visitors and their sessions, seven log rows, speed per route, three error groups
- * and an overview, with times relative to `now`.
+ * @description Typed sample answers of the widget's routes, in the API's shapes: six visitors
+ * and their sessions, seven log lines, speed per route, three error groups and an overview, with
+ * times relative to `now`.
  *
  * @example
  * const fixtures = createFixtures(Date.now());
@@ -571,12 +534,16 @@ function overview(now: number): Overview {
  */
 export function createFixtures(now: number): Fixtures {
   return {
-    bootstrap: {
+    session: {
+      project: "site",
+      projectName: "noorderlicht-lease",
+      publicKey: "pk_fixture",
+      access: "admin",
+      user: { id: "u_admin", name: "admin" },
+      release: "2026.10.03-a1",
       token: "wt_fixture",
       expiresAt: new Date(now + 15 * 60_000).toISOString(),
-      project: { id: "site", name: "noorderlicht-lease", environment: "production" },
-      user: { name: "admin" },
-      widgetReports: false,
+      features: { logs: true, speed: true, issues: true, reports: false },
     },
     visitors: visitors(now),
     details,

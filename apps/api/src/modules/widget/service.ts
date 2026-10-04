@@ -31,7 +31,6 @@ const realtimeMs = 5 * 60 * 1000;
 const defaultLimit = 50;
 const maxLimit = 200;
 const overviewMs = 10_000;
-const features = { logs: true, speed: true, issues: true };
 
 function originOf(value: string): Nullable<string> {
   try {
@@ -69,7 +68,9 @@ export async function projectForOrigin(
  * (`ORIGIN_NOT_ALLOWED` when none lists it), reads the session cookie (`AUTH_REQUIRED` without
  * one), checks the member may administer that project (`FORBIDDEN` otherwise), and mints a
  * 15-minute `wt_` widget token with the `admin` scope bound to the project. The token is stored
- * as its hash and never listed by `GET /v2/tokens`.
+ * as its hash and never listed by `GET /v2/tokens`. The answer carries the project's name and
+ * public key, so the widget can post the SDK's reports, and `features.reports` mirrors
+ * `widgetReports`.
  *
  * @example
  * await startWidget(deps, widget, request.headers);
@@ -109,12 +110,14 @@ export async function startWidget(
   if (!release.ok) return release;
   return ok({
     project: project.id,
+    projectName: project.name,
+    publicKey: project.publicKey,
     access: "admin",
     user: { id: signedIn.userId, name: signedIn.name },
     release: release.value?.current ?? null,
     token,
     expiresAt: expiresAt.toISOString(),
-    features,
+    features: { logs: true, speed: true, issues: true, reports: project.widgetReports },
   });
 }
 

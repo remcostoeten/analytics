@@ -1,10 +1,11 @@
 import type {
-  BotReason,
+  BotLabel,
   DeviceType,
   Issue,
   IssueEvent,
   LiveEvent,
   SpeedRoute,
+  WidgetFeatures,
 } from "@spoar/contract";
 import type {
   CountryCode,
@@ -20,20 +21,13 @@ import type {
 
 export type { Issue, IssueEvent, LiveEvent, SpeedRoute };
 
-export type Consent = "granted" | "denied" | "unset";
-
 export type Bootstrap = {
   token: string;
   expiresAt: Timestamp;
-  project: { id: ProjectID; name: string; environment: string };
+  project: { id: ProjectID; name: string; release: Nullable<string> };
   user: { name: string };
-  widgetReports: boolean;
-};
-
-export type Vitals = {
-  lcp: Nullable<Milliseconds>;
-  inp: Nullable<Milliseconds>;
-  cls: Nullable<number>;
+  publicKey: string;
+  features: WidgetFeatures;
 };
 
 export type OnlineVisitor = {
@@ -52,23 +46,15 @@ export type OnlineVisitor = {
   client: {
     os: Nullable<string>;
     browser: Nullable<string>;
-    screen: Nullable<string>;
-    language: Nullable<string>;
   };
-  vitals: Vitals;
-  userId: Nullable<string>;
-  consent: Consent;
-};
-
-export type BotSignal = {
-  reason: BotReason;
-  weight: number;
+  identified: boolean;
 };
 
 export type VisitorDetail = {
   id: VisitorID;
   botScore: number;
-  botSignals: BotSignal[];
+  verdict: BotLabel;
+  signals: string[];
 };
 
 export type SessionSignal = "human" | "engaged" | "suspect" | "bot";
@@ -122,6 +108,7 @@ export type ClientReport = {
 export type Share = {
   label: string;
   value: number;
+  unit: "count" | "ratio";
 };
 
 export type Overview = {
@@ -136,7 +123,6 @@ export type Overview = {
   release: Nullable<{ name: string; deployedAt: Timestamp; newIssues: number }>;
   lcp: Nullable<Milliseconds>;
   errors: number;
-  config: { [key: string]: JsonValue };
 };
 
 export type Page<Item> = {

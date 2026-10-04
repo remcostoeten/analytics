@@ -135,7 +135,7 @@ function devtoolsPage() {
     <h1>Fixture devtools</h1>
     <script type="module">
       import { mount } from "/devtools-dist/index.mjs";
-      window.unmountDevtools = mount({ endpoint: location.origin, project: "site" });
+      window.unmountDevtools = mount({ endpoint: location.origin, project: "site", live: false });
     </script>
   </body>
 </html>`;

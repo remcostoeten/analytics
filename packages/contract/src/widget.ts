@@ -10,11 +10,14 @@ export const WidgetFeatures = Type.Object({
   logs: Type.Boolean(),
   speed: Type.Boolean(),
   issues: Type.Boolean(),
+  reports: Type.Boolean(),
 });
 export type WidgetFeatures = Static<typeof WidgetFeatures>;
 
 export const WidgetSession = Type.Object({
   project: Id,
+  projectName: Type.String(),
+  publicKey: Type.String({ minLength: 1 }),
   access: Type.Literal("admin"),
   user: Type.Object({ id: Id, name: Type.String() }),
   release: nullable(Type.String()),

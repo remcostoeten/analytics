@@ -4,7 +4,7 @@ import type { BufferProps } from "../../../panel/types";
 import { useBuffer } from "../../../panel/use-buffer";
 import { copyText } from "../../../ui/copy";
 import { FilterPrompt } from "../../../ui/filter-prompt";
-import { botTone, clock, duration, shortId, vitalText } from "../../../ui/format";
+import { botTone, clock, duration, shortId } from "../../../ui/format";
 import { ActionBar, RowMenu } from "../../../ui/row-menu";
 import type { Action } from "../../../ui/row-menu";
 import { VirtualList } from "../../../ui/virtual-list";
@@ -37,9 +37,10 @@ export function VisitorsBuffer({ runtime, filterRef, register, jump }: BufferPro
   function signals(row: OnlineVisitor) {
     const detail = state.details[row.id];
     if (!detail) return "loading";
-    if (detail.botSignals.length === 0) return `score ${detail.botScore.toFixed(2)}, no signals`;
-    const reasons = detail.botSignals.map((signal) => `${signal.reason} +${signal.weight}`);
-    return `score ${detail.botScore.toFixed(2)}, ${reasons.join(", ")}`;
+    const score = `${detail.verdict}, score ${detail.botScore.toFixed(2)}`;
+    return detail.signals.length === 0
+      ? `${score}, no signals`
+      : `${score}, ${detail.signals.join(", ")}`;
   }
 
   const selected = rows.find((row) => row.id === buffer.selected);
@@ -54,7 +55,7 @@ export function VisitorsBuffer({ runtime, filterRef, register, jump }: BufferPro
         open={state.open}
         selected={buffer.selected}
         loaded={state.loaded}
-        empty="no visitors in the last 30 minutes"
+        empty="no visitors in the last 5 minutes"
         onToggle={(row) => {
           buffer.select(row.id);
           expand(row);
@@ -85,19 +86,11 @@ export function VisitorsBuffer({ runtime, filterRef, register, jump }: BufferPro
                 · {row.pages} pages · {duration(row.durationMs)}
               </dd>
               <dt>trail</dt>
-              <dd>{row.trail.join(" → ")}</dd>
+              <dd>{row.trail.join(" → ") || row.path}</dd>
               <dt>client</dt>
               <dd>{clientLine(row)}</dd>
-              <dt>vitals</dt>
-              <dd>
-                LCP <b>{vitalText("lcp", row.vitals.lcp)}</b> · INP{" "}
-                <b>{vitalText("inp", row.vitals.inp)}</b> · CLS{" "}
-                <b>{vitalText("cls", row.vitals.cls)}</b>
-              </dd>
               <dt>identity</dt>
-              <dd>
-                {row.userId ? `identified ${row.userId}` : "anonymous"}, consent {row.consent}
-              </dd>
+              <dd>{row.identified ? "identified" : "anonymous"}</dd>
               <dt>signals</dt>
               <dd>{signals(row)}</dd>
             </dl>

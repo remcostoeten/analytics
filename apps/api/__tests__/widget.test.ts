@@ -279,11 +279,13 @@ describe("GET /v2/widget/session", () => {
     });
     expect(started).toMatchObject({
       project,
+      projectName: "Noorderlicht",
+      publicKey: "pk_test_noord",
       access: "admin",
       user: { id: "u_owner", name: "Remco" },
       release,
       expiresAt: "2026-10-03T14:17:00.000Z",
-      features: { logs: true, speed: true, issues: true },
+      features: { logs: true, speed: true, issues: true, reports: false },
     });
     const token = String(started.token);
     expect(token.startsWith("wt_")).toBe(true);

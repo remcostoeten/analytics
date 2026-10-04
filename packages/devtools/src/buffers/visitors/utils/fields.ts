@@ -12,8 +12,7 @@ export const visitorFields: Fields<OnlineVisitor> = {
   path: (row) => row.path,
   ref: (row) => row.referrer ?? "direct",
   pages: (row) => row.pages,
-  consent: (row) => row.consent,
-  user: (row) => row.userId,
+  identified: (row) => String(row.identified),
   browser: (row) => row.client.browser,
   os: (row) => row.client.os,
 };
@@ -29,8 +28,8 @@ export function place(row: OnlineVisitor) {
 }
 
 export function clientLine(row: OnlineVisitor) {
-  const { os, browser, screen, language } = row.client;
-  return [os, browser, screen, language].filter(Boolean).join(" · ") || "unknown";
+  const { os, browser } = row.client;
+  return [os, browser].filter(Boolean).join(" · ") || "unknown";
 }
 
 export const visitorColumns = "92px 112px minmax(0,1fr) minmax(0,1fr) 120px 72px 56px 16px";
