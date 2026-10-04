@@ -135,10 +135,14 @@ main > section::after { right: -4px; }
 .vitals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .vitals > div { padding: 18px 20px; border-left: 1px dashed var(--line); min-width: 0; }
 .vitals > div:first-child { border-left: 0; }
-.vitals span, .kv dt { display: block; color: var(--muted); font-size: 0.62rem; }
-.vitals b { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 1.3rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.vitals > div > span, .kv dt { display: block; color: var(--muted); font-size: 0.62rem; }
+.vitals b { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 0.95rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.3; overflow-wrap: anywhere; }
 .tag { border-radius: 999px; padding: 2px 8px; font-size: 0.62rem; letter-spacing: 0.02em; background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
-.state { flex: none; position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.state.down { background: var(--err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 25%, transparent); }
+.muted { color: var(--muted); }
+.commit { margin-left: auto; font-family: var(--mono); font-size: 0.72rem; font-weight: 400; }
+abbr { text-decoration: underline dotted var(--line); text-underline-offset: 3px; cursor: help; }
+.state { flex: none; position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px dashed var(--line); }
 .kv > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 11px 20px; border-bottom: 1px dashed var(--line); min-width: 0; }
 .kv > div:nth-child(even) { border-left: 1px dashed var(--line); }
@@ -261,22 +265,42 @@ function splitVersion(version: string) {
   return { number, tag };
 }
 
+function databaseCell(health: HealthView) {
+  if (!health.database) return `<span class="muted">not checked</span>`;
+  if (!health.database.ok) return `<i class="state down"></i>unreachable`;
+  return `<i class="state"></i><span class="num">${health.database.latencyMs} ms</span>`;
+}
+
+function geoCell(health: HealthView) {
+  const loaded = [health.geo.city ? "city" : "", health.geo.asn ? "ASN" : ""].filter(Boolean);
+  if (loaded.length === 0) return "not loaded";
+  return `${loaded.join(" and ")} <span class="muted">· ${health.geo.loadMs} ms</span>`;
+}
+
 function healthBlock(health: HealthView) {
   const version = splitVersion(health.version);
-  const uptime = Math.max(0, Date.parse(health.time) - Date.parse(health.bootedAt));
+  const down = health.database?.ok === false;
+  const since = Math.max(0, Date.parse(health.time) - Date.parse(health.bootedAt));
+  const commit = health.commit
+    ? `<a class="link" href="https://github.com/remcostoeten/analytics/commit/${escape(health.commit)}">${escape(health.commit.slice(0, 7))}</a>`
+    : `<span class="muted">local build</span>`;
   const rows = [
     ["Runtime", escape(health.runtime)],
     ["Server time", timeCell(health.time)],
-    ["Last cold start", timeCell(health.bootedAt)],
-    ["Geo city database", health.geo.city ? "loaded" : "not loaded"],
-    ["Geo ASN database", health.geo.asn ? "loaded" : "not loaded"],
-    ["Geo load time", `${health.geo.loadMs} ms`],
+    [
+      "Instance started",
+      `<time datetime="${escape(health.bootedAt)}" title="${formatTime(health.bootedAt)}">${formatSpan(since)} ago</time>`,
+    ],
+    [
+      `<abbr title="MaxMind GeoLite2 files that turn a visitor IP into a city and a network (ASN) during ingest. The IP itself is never stored.">Geo lookup</abbr>`,
+      geoCell(health),
+    ],
   ];
   return `<div class="card">
 <div class="vitals">
-<div><span class="caps">Status</span><b><i class="state"></i>Operational</b></div>
-<div><span class="caps">Uptime</span><b class="num">${formatSpan(uptime)}</b></div>
-<div><span class="caps">Version</span><b>${escape(version.number)}${version.tag ? ` <span class="tag caps" title="The ${escape(version.tag)} tag: v2 is still being tested and is not the stable release">pre-release</span>` : ""}</b></div>
+<div><span class="caps">Status</span><b><i class="state${down ? " down" : ""}"></i>${down ? "Degraded" : "Operational"}</b></div>
+<div><span class="caps">Database</span><b>${databaseCell(health)}</b></div>
+<div><span class="caps">Version</span><b>${escape(version.number)}${version.tag ? ` <span class="tag caps" title="The ${escape(version.tag)} tag: v2 is still being tested and is not the stable release">pre-release</span>` : ""}<span class="commit">${commit}</span></b></div>
 </div>
 <dl class="kv">${rows.map(([label, value]) => `<div><dt class="caps">${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
 </div>`;

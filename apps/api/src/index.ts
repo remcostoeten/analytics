@@ -5,7 +5,7 @@ import {
   defaultStages,
   ipSecretProblem,
 } from "@spoar/engine";
-import { postgresAccess, postgresAdapters } from "@spoar/engine/adapters/postgres";
+import { neonTransact, postgresAccess, postgresAdapters } from "@spoar/engine/adapters/postgres";
 import { jsonLogger, systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
 
 import { apiLinks } from "@spoar/engine/alerts";
@@ -130,4 +130,6 @@ export default createApp({
     send: fetch,
     token: process.env.GITHUB_TOKEN || null,
   },
+  ping: () => neonTransact(databaseUrl)([{ text: "SELECT 1", params: [] }]),
+  commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
 });

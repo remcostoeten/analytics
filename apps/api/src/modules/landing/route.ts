@@ -12,7 +12,11 @@ export type LandingOptions = {
   routes: () => ApiRoute[];
   geo: { city: Nullable<string>; asn: Nullable<string>; loadMs: number };
   history: Nullable<HistorySource>;
+  ping: Nullable<() => Promise<unknown>>;
+  commit: Nullable<string>;
 };
+
+const pingTimeout: Milliseconds = 2000;
 
 const historyTtl: Milliseconds = 60 * 60 * 1000;
 
@@ -47,6 +51,20 @@ export function landingModule(options: LandingOptions) {
     return fresh ?? cached?.history ?? null;
   }
 
+  async function database() {
+    if (!options.ping) return null;
+    const started = Date.now();
+    const timeout = new Promise<false>((resolve) => setTimeout(() => resolve(false), pingTimeout));
+    const ok = await Promise.race([
+      options.ping().then(
+        () => true,
+        () => false,
+      ),
+      timeout,
+    ]);
+    return { ok, latencyMs: Date.now() - started };
+  }
+
   async function render(request: Request) {
     groups ??= routeGroups(options.routes(), options.tags);
     const view = landing({
@@ -58,6 +76,8 @@ export function landingModule(options: LandingOptions) {
         runtime,
         bootedAt,
         geo: options.geo,
+        database: await database(),
+        commit: options.commit,
       },
       groups,
       history: await history(),

@@ -24,7 +24,9 @@ function github(status: number, body: unknown): typeof fetch {
   return Object.assign(send, { count: () => calls }) as unknown as typeof fetch;
 }
 
-function app(options: { send?: typeof fetch; clock?: () => Date } = {}) {
+function app(
+  options: { send?: typeof fetch; clock?: () => Date; ping?: () => Promise<unknown> } = {},
+) {
   const api = new Elysia({ prefix: "/v2" })
     .get("/health", () => ({ ok: true }), { detail: { summary: "Liveness", tags: ["System"] } })
     .get("/projects/:project/stats", () => ({}), {
@@ -42,6 +44,8 @@ function app(options: { send?: typeof fetch; clock?: () => Date } = {}) {
         routes: () => api.routes,
         geo: { city: "GeoIP2-City-Test", asn: null, loadMs: 3 },
         history: options.send ? { repo: "example/repo", send: options.send, token: null } : null,
+        ping: options.ping ?? null,
+        commit: "0123456789abcdef",
       }),
     )
     .use(api);
@@ -142,5 +146,24 @@ describe("landing", () => {
     now += 31 * 60 * 1000;
     await served.handle(new Request("https://api.example.test/"));
     expect((send as unknown as { count: () => number }).count()).toBe(2);
+  });
+
+  test("checks the database and links the deployed commit", async () => {
+    async function html(ping?: () => Promise<unknown>) {
+      const response = await app({ ping }).handle(
+        new Request("https://api.example.test/", { headers: { accept: "text/html" } }),
+      );
+      return response.text();
+    }
+    const healthy = await html(async () => [1]);
+    expect(healthy).toContain("Operational");
+    expect(healthy).toContain(" ms</span>");
+    expect(healthy).toContain("/commit/0123456789abcdef");
+    const down = await html(async () => {
+      throw new Error("no database");
+    });
+    expect(down).toContain("Degraded");
+    expect(down).toContain("unreachable");
+    expect(await html()).toContain("not checked");
   });
 });
