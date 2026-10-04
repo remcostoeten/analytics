@@ -1,5 +1,5 @@
-import type { WireEvent } from "@remcostoeten/analytics-contract";
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import type { WireEvent } from "@spoar/contract";
+import { noop } from "@spoar/shared/noop";
 
 import type { Props } from "./types";
 

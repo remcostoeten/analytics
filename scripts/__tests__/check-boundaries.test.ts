@@ -3,11 +3,11 @@ import { describe, expect, test } from "bun:test";
 import { findViolations, importSpecifiers } from "../check-boundaries";
 
 const workspaces = [
-  { name: "@remcostoeten/analytics-shared", directory: "packages/shared" },
-  { name: "@remcostoeten/analytics-contract", directory: "packages/contract" },
-  { name: "@remcostoeten/analytics-engine", directory: "packages/engine" },
+  { name: "@spoar/shared", directory: "packages/shared" },
+  { name: "@spoar/contract", directory: "packages/contract" },
+  { name: "@spoar/engine", directory: "packages/engine" },
   { name: "@spoar/sdk", directory: "packages/sdk" },
-  { name: "@remcostoeten/analytics-docs", directory: "apps/docs" },
+  { name: "@spoar/docs", directory: "apps/docs" },
   { name: "@spoar/example-next", directory: "examples/next" },
   { name: "@remcostoeten/ingestion", directory: "v1/packages/ingestion" },
 ];
@@ -19,17 +19,17 @@ function reasons(path: string, content: string) {
 describe("importSpecifiers", () => {
   test("finds static, type-only, re-export and dynamic imports", () => {
     const content = [
-      'import { ok } from "@remcostoeten/analytics-shared/result";',
+      'import { ok } from "@spoar/shared/result";',
       'import type { Static } from "typebox";',
       'export * from "./events";',
-      'const engine = await import("@remcostoeten/analytics-engine");',
+      'const engine = await import("@spoar/engine");',
       'import "./side-effect";',
     ].join("\n");
     expect(importSpecifiers(content)).toEqual([
-      "@remcostoeten/analytics-shared/result",
+      "@spoar/shared/result",
       "typebox",
       "./events",
-      "@remcostoeten/analytics-engine",
+      "@spoar/engine",
       "./side-effect",
     ]);
   });
@@ -40,26 +40,26 @@ describe("findViolations", () => {
     {
       name: "contract may import shared",
       path: "packages/contract/src/events.ts",
-      content: 'import { noop } from "@remcostoeten/analytics-shared/noop";',
+      content: 'import { noop } from "@spoar/shared/noop";',
       expected: [],
     },
     {
       name: "shared may not import contract",
       path: "packages/shared/src/result.ts",
-      content: 'import type { ErrorCode } from "@remcostoeten/analytics-contract";',
+      content: 'import type { ErrorCode } from "@spoar/contract";',
       expected: ["packages/shared may not import packages/contract"],
     },
     {
       name: "contract may not import engine",
       path: "packages/contract/src/index.ts",
-      content: 'export * from "@remcostoeten/analytics-engine";',
+      content: 'export * from "@spoar/engine";',
       expected: ["packages/contract may not import packages/engine"],
     },
     {
       name: "engine may import contract and shared",
       path: "packages/engine/src/pipeline.ts",
       content:
-        'import { ErrorCode } from "@remcostoeten/analytics-contract";\nimport { ok } from "@remcostoeten/analytics-shared/result";',
+        'import { ErrorCode } from "@spoar/contract";\nimport { ok } from "@spoar/shared/result";',
       expected: [],
     },
     {
@@ -95,7 +95,7 @@ describe("findViolations", () => {
     {
       name: "an example may not import the engine",
       path: "examples/next/app/layout.tsx",
-      content: 'import { ingest } from "@remcostoeten/analytics-engine";',
+      content: 'import { ingest } from "@spoar/engine";',
       expected: ["examples/next may not import packages/engine"],
     },
     {
@@ -107,7 +107,7 @@ describe("findViolations", () => {
     {
       name: "v1 files are skipped",
       path: "v1/packages/ingestion/src/app.ts",
-      content: 'import { anything } from "@remcostoeten/analytics-engine";',
+      content: 'import { anything } from "@spoar/engine";',
       expected: [],
     },
   ];

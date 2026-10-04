@@ -1,4 +1,4 @@
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { vitalShare, vitalText, vitalTone } from "../../../ui/format";
 import type { Vital } from "../../../ui/format";

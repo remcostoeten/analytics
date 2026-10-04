@@ -1,5 +1,5 @@
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
-import type { Milliseconds } from "@remcostoeten/analytics-shared/semantic";
+import type { Fetcher } from "@spoar/shared/http";
+import type { Milliseconds } from "@spoar/shared/semantic";
 
 import type { LiveEvent, LogEntry } from "../client/types";
 import { createFixtures } from "./data";

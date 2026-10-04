@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
-import { ok } from "@remcostoeten/analytics-shared/result";
+import type { Fetcher } from "@spoar/shared/http";
+import { ok } from "@spoar/shared/result";
 
 import { openStream, parseEvents } from "../src/client/stream";
 import type { StreamState } from "../src/client/stream";

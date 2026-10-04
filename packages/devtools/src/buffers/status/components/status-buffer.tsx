@@ -1,4 +1,4 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { noop } from "@spoar/shared/noop";
 import { useEffect } from "react";
 
 import type { JsonValue, Share } from "../../../client/types";

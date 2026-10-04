@@ -1,5 +1,5 @@
-import type { ActiveVisitors, Overview, WidgetSession } from "@remcostoeten/analytics-contract";
-import { composeOverview, engineError } from "@remcostoeten/analytics-engine";
+import type { ActiveVisitors, Overview, WidgetSession } from "@spoar/contract";
+import { composeOverview, engineError } from "@spoar/engine";
 import type {
   EngineError,
   LogStore,
@@ -8,10 +8,10 @@ import type {
   ProjectStore,
   RateLimiter,
   WidgetStore,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import { memberCaller } from "../../access/caller";
 import { canAdmin } from "../../access/rules";

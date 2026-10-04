@@ -1,4 +1,4 @@
-import { clientSignals } from "@remcostoeten/analytics-contract";
+import { clientSignals } from "@spoar/contract";
 
 import { defineSignal } from "../define";
 

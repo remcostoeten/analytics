@@ -1,7 +1,7 @@
-import type { Overview } from "@remcostoeten/analytics-contract";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { Overview } from "@spoar/contract";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { Dimension } from "../define";
 import { findDimension } from "../dimensions";

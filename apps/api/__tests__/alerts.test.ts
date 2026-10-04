@@ -9,32 +9,18 @@ import {
   RotatedSecret,
   TargetChangesResponse,
   TargetTest,
-} from "@remcostoeten/analytics-contract";
-import type { WebhookBody } from "@remcostoeten/analytics-contract";
-import { createEngine, engineError } from "@remcostoeten/analytics-engine";
-import { fixedClock, memoryLogger } from "@remcostoeten/analytics-engine/adapters/memory";
-import { pgliteAccess, pgliteAdapters } from "@remcostoeten/analytics-engine/adapters/pglite";
-import { webCryptoHasher } from "@remcostoeten/analytics-engine/adapters/system";
-import {
-  alerts,
-  apiLinks,
-  discord,
-  mail,
-  signBody,
-  webhook,
-} from "@remcostoeten/analytics-engine/alerts";
-import type {
-  AlertsPlugin,
-  MailMessage,
-  MailTransport,
-} from "@remcostoeten/analytics-engine/alerts";
-import { runMigrations } from "@remcostoeten/analytics-engine/db/migrate";
-import {
-  migrationsDirectory,
-  readMigrations,
-} from "@remcostoeten/analytics-engine/db/migration-files";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/contract";
+import type { WebhookBody } from "@spoar/contract";
+import { createEngine, engineError } from "@spoar/engine";
+import { fixedClock, memoryLogger } from "@spoar/engine/adapters/memory";
+import { pgliteAccess, pgliteAdapters } from "@spoar/engine/adapters/pglite";
+import { webCryptoHasher } from "@spoar/engine/adapters/system";
+import { alerts, apiLinks, discord, mail, signBody, webhook } from "@spoar/engine/alerts";
+import type { AlertsPlugin, MailMessage, MailTransport } from "@spoar/engine/alerts";
+import { runMigrations } from "@spoar/engine/db/migrate";
+import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
+import { err, ok } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 

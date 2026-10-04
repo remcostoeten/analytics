@@ -1,4 +1,4 @@
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { Nullable } from "@spoar/shared/semantic";
 
 type IpHeader = "cf-connecting-ip" | "x-real-ip" | "x-forwarded-for";
 

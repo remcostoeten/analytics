@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { IngestEnvelope } from "@remcostoeten/analytics-contract";
+import { IngestEnvelope } from "@spoar/contract";
 import { Value } from "@sinclair/typebox/value";
 
 import { eventsUrl, visitorDetails } from "../src/server/forwarding";

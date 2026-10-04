@@ -6,8 +6,8 @@ import type {
   TokenKind,
   TokenScope,
   TokenStore,
-} from "@remcostoeten/analytics-engine";
-import type { Nullable, ProjectID, TokenID, UserID } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/engine";
+import type { Nullable, ProjectID, TokenID, UserID } from "@spoar/shared/semantic";
 
 export type SignedIn = {
   userId: UserID;

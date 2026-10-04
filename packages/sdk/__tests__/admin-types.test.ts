@@ -1,11 +1,6 @@
 import { describe, expect, expectTypeOf, test } from "bun:test";
 
-import type {
-  AlertEventName,
-  Annotation,
-  CreateAnnotation,
-  TargetInput,
-} from "@remcostoeten/analytics-contract";
+import type { AlertEventName, Annotation, CreateAnnotation, TargetInput } from "@spoar/contract";
 
 import { createAdmin, discord, mail, webhook } from "../src/admin/index";
 import type {

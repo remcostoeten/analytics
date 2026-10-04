@@ -1,12 +1,6 @@
-import type {
-  LineKind,
-  LineLevel,
-  LineSource,
-  LogData,
-  LogValue,
-} from "@remcostoeten/analytics-contract";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { LineKind, LineLevel, LineSource, LogData, LogValue } from "@spoar/contract";
+import { ok } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 import { and, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 

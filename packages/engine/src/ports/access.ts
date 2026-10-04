@@ -1,5 +1,5 @@
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID, TokenID, UserID } from "@remcostoeten/analytics-shared/semantic";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID, TokenID, UserID } from "@spoar/shared/semantic";
 
 import type { EngineError } from "../errors";
 

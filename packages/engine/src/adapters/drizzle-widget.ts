@@ -1,5 +1,5 @@
-import type { DeviceType } from "@remcostoeten/analytics-contract";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import type { DeviceType } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 import { sql } from "drizzle-orm";
 
 import type { WidgetStore } from "../ports";

@@ -1,4 +1,4 @@
-import { IngestEnvelope } from "@remcostoeten/analytics-contract";
+import { IngestEnvelope } from "@spoar/contract";
 import { Value } from "@sinclair/typebox/value";
 
 import { createAnalytics } from "../src/core/client";

@@ -1,4 +1,4 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { noop } from "@spoar/shared/noop";
 
 import { definePlugin } from "../core/plugin-host";
 
@@ -41,7 +41,7 @@ export function errors() {
       const trail: string[] = [];
       function crumb(kind: string, message: string) {
         trail.push(`${Date.now()} ${kind} ${scrub(message).slice(0, 200)}`);
-        if (trail.length > maxCrumbs) trail.shift();
+        trail.splice(0, trail.length - maxCrumbs);
       }
       function report(error: unknown) {
         const copy =

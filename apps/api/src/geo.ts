@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { memoryGeo } from "@remcostoeten/analytics-engine/adapters/memory";
-import { maxmindGeo } from "@remcostoeten/analytics-engine/adapters/maxmind";
-import type { GeoLookup } from "@remcostoeten/analytics-engine";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { memoryGeo } from "@spoar/engine/adapters/memory";
+import { maxmindGeo } from "@spoar/engine/adapters/maxmind";
+import type { GeoLookup } from "@spoar/engine";
+import type { Nullable } from "@spoar/shared/semantic";
 
 export type GeoSource = {
   lookup: GeoLookup;

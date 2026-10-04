@@ -1,5 +1,5 @@
 {
-	"name": "@remcostoeten/analytics-contract",
+	"name": "@spoar/contract",
 	"version": "0.0.0",
 	"devDependencies": {
 		"tsdown": "catalog:tsdown"

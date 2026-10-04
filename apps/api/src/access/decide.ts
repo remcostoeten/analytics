@@ -1,8 +1,8 @@
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError, ProjectRecord } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import { engineError } from "@spoar/engine";
+import type { EngineError, ProjectRecord } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { bearerToken, resolveCaller, sameSecret } from "./caller";
 import { canAdmin, canRead, canReadDetail } from "./rules";

@@ -1,4 +1,4 @@
-# @remcostoeten/analytics-contract
+# @spoar/contract
 
 TypeBox (`@sinclair/typebox` 0.34, the version Elysia supports) schemas and static types for every request and response of the v2 API, plus the error catalog. The API validates with the schemas; the SDK imports only the types, so no validator ships in the browser bundle.
 

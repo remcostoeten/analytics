@@ -1,4 +1,4 @@
-import type { WireEvent } from "@remcostoeten/analytics-contract";
+import type { WireEvent } from "@spoar/contract";
 
 import type { BeforeSend, ConsentStatus, Hooks, Plugin, PluginClient } from "./types";
 

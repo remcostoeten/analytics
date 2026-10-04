@@ -1,11 +1,6 @@
-import type {
-  AlertEvent,
-  AlertEventName,
-  ChannelName,
-  DeliveryStatus,
-} from "@remcostoeten/analytics-contract";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { ID, Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { AlertEvent, AlertEventName, ChannelName, DeliveryStatus } from "@spoar/contract";
+import type { Result } from "@spoar/shared/result";
+import type { ID, Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { EngineError } from "../errors";
 import type { Offset } from "./details";

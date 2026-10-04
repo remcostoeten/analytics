@@ -1,5 +1,5 @@
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import type { EngineError } from "../errors";
 import { engineError } from "../errors";

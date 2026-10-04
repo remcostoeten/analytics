@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
+import type { Fetcher } from "@spoar/shared/http";
 
 import { createClient, refreshAheadMs } from "../src/client/client";
 import type { Bootstrap } from "../src/client/types";

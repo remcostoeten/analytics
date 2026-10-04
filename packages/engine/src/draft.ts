@@ -1,11 +1,5 @@
-import type {
-  BotSignals,
-  BotVerdict,
-  Device,
-  Source,
-  WireEvent,
-} from "@remcostoeten/analytics-contract";
-import type { Nullable, ProjectID, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import type { BotSignals, BotVerdict, Device, Source, WireEvent } from "@spoar/contract";
+import type { Nullable, ProjectID, Timestamp } from "@spoar/shared/semantic";
 
 import type { IssueDraft } from "./errors/stage";
 import type { Location } from "./ports";

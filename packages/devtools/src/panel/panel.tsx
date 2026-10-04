@@ -1,4 +1,4 @@
-import { noop } from "@remcostoeten/analytics-shared/noop";
+import { noop } from "@spoar/shared/noop";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type {
   KeyboardEvent as ReactKeyboardEvent,

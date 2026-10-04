@@ -4,17 +4,17 @@ import type {
   AnnotationResponse,
   CreateAnnotation,
   UpdateAnnotation,
-} from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
+} from "@spoar/contract";
+import { engineError } from "@spoar/engine";
 import type {
   AnnotationPatch,
   AnnotationRecord,
   AnnotationStore,
   EngineError,
-} from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { nextCursor, readPage, readRange } from "../reads/params";
 

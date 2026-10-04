@@ -1,14 +1,8 @@
-import {
-  ApiError,
-  ClientLogBatch,
-  ClientLogResult,
-  LogList,
-  LogsQuery,
-} from "@remcostoeten/analytics-contract";
-import { storeClientReports } from "@remcostoeten/analytics-engine";
-import type { EngineError, LogStore, ProjectRecord } from "@remcostoeten/analytics-engine";
-import { ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import { ApiError, ClientLogBatch, ClientLogResult, LogList, LogsQuery } from "@spoar/contract";
+import { storeClientReports } from "@spoar/engine";
+import type { EngineError, LogStore, ProjectRecord } from "@spoar/engine";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps, Caller } from "../../access/types";

@@ -1,10 +1,10 @@
-import { maxReportBytes } from "@remcostoeten/analytics-contract";
-import type { LineKind, LineLevel, LineSource, LogList } from "@remcostoeten/analytics-contract";
-import { engineError } from "@remcostoeten/analytics-engine";
-import type { EngineError, LogPage, LogQuery, LogStore } from "@remcostoeten/analytics-engine";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+import { maxReportBytes } from "@spoar/contract";
+import type { LineKind, LineLevel, LineSource, LogList } from "@spoar/contract";
+import { engineError } from "@spoar/engine";
+import type { EngineError, LogPage, LogQuery, LogStore } from "@spoar/engine";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { LiveOptions } from "../reads/live";
 

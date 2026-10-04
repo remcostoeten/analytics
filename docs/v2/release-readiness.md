@@ -6,7 +6,7 @@ State of v2 against a first deploy and a first npm release, as checked on Oct 1,
 
 ### 1. Published packages would point at source files
 
-`packages/sdk` and `packages/contract` keep `exports` pointing at `./src/*.ts` for the workspace and put the `./dist` paths in `publishConfig.exports`. Only pnpm applies `publishConfig.exports`. Neither `npm pack` nor `bun pm pack` does: a packed `@remcostoeten/analytics-contract` still has `"default": "./src/index.ts"`, while `files` ships only `dist`. An install of either package would fail to import.
+`packages/sdk` and `packages/contract` keep `exports` pointing at `./src/*.ts` for the workspace and put the `./dist` paths in `publishConfig.exports`. Only pnpm applies `publishConfig.exports`. Neither `npm pack` nor `bun pm pack` does: a packed `@spoar/contract` still has `"default": "./src/index.ts"`, while `files` ships only `dist`. An install of either package would fail to import.
 
 Options, for the owner to pick:
 
@@ -16,7 +16,7 @@ Options, for the owner to pick:
 
 ### 2. `catalog:` and `workspace:` versions must be resolved at publish
 
-`packages/contract` depends on `"@sinclair/typebox": "catalog:typebox"`, and the SDK on `"@remcostoeten/analytics-contract": "workspace:*"`. `npm pack` keeps both strings as they are, which no registry install can resolve. `bun pm pack` and `bun publish` replace them with real versions (checked: `catalog:typebox` becomes `0.34.52`). `changeset publish` calls `npm publish`, so the release must publish with `bun publish` per package and then run `changeset tag`.
+`packages/contract` depends on `"@sinclair/typebox": "catalog:typebox"`, and the SDK on `"@spoar/contract": "workspace:*"`. `npm pack` keeps both strings as they are, which no registry install can resolve. `bun pm pack` and `bun publish` replace them with real versions (checked: `catalog:typebox` becomes `0.34.52`). `changeset publish` calls `npm publish`, so the release must publish with `bun publish` per package and then run `changeset tag`.
 
 ### 3. No release workflow
 

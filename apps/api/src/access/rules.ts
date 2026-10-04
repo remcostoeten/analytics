@@ -1,5 +1,5 @@
-import type { ProjectRecord } from "@remcostoeten/analytics-engine";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { ProjectRecord } from "@spoar/engine";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { Caller } from "./types";
 

@@ -1,5 +1,5 @@
-import { alerts, discord, mail, smtp, webhook } from "@remcostoeten/analytics-engine/alerts";
-import { defineConfig } from "@remcostoeten/analytics-engine/config";
+import { alerts, discord, mail, smtp, webhook } from "@spoar/engine/alerts";
+import { defineConfig } from "@spoar/engine/config";
 
 export default defineConfig({
   plugins: [

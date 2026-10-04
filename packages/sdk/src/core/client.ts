@@ -1,4 +1,4 @@
-import type { WireEvent } from "@remcostoeten/analytics-contract";
+import type { WireEvent } from "@spoar/contract";
 
 import { pageviews } from "../plugins/pageviews";
 import { beacon } from "../transports/beacon";

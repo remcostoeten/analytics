@@ -1,4 +1,4 @@
-import type { Milliseconds, Nullable, Timestamp } from "@remcostoeten/analytics-shared/semantic";
+import type { Milliseconds, Nullable, Timestamp } from "@spoar/shared/semantic";
 
 export type Tone = "ok" | "warn" | "bad" | "info" | "none";
 

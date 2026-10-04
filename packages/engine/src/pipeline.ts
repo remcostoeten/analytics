@@ -1,6 +1,6 @@
-import type { IngestResult, RejectedEvent } from "@remcostoeten/analytics-contract";
-import { err, ok } from "@remcostoeten/analytics-shared/result";
-import type { Result } from "@remcostoeten/analytics-shared/result";
+import type { IngestResult, RejectedEvent } from "@spoar/contract";
+import { err, ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
 
 import { authorize } from "./authorize";
 import type { Authorized } from "./authorize";

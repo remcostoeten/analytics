@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AlertEvent, WebhookBody } from "@remcostoeten/analytics-contract";
+import type { AlertEvent, WebhookBody } from "@spoar/contract";
 
 import { alertRoute, verifyAlert } from "../src/server/index";
 import { withNativeRuntime } from "./native";

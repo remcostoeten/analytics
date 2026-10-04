@@ -1,5 +1,5 @@
 ---
-"@remcostoeten/analytics-contract": minor
+"@spoar/contract": minor
 "@spoar/sdk": patch
 ---
 

@@ -1,6 +1,6 @@
-import type { WireGroups } from "@remcostoeten/analytics-contract";
-import { groupTypePattern, maxGroupId, maxGroups } from "@remcostoeten/analytics-contract/limits";
-import { hasKeys } from "@remcostoeten/analytics-shared/records";
+import type { WireGroups } from "@spoar/contract";
+import { groupTypePattern, maxGroupId, maxGroups } from "@spoar/contract/limits";
+import { hasKeys } from "@spoar/shared/records";
 
 import { definePlugin } from "../core/plugin-host";
 import type { GroupMap, GroupTraits, GroupType, Plugin, PluginClient, Props } from "../core/types";

@@ -1,4 +1,4 @@
-import type { IssueID, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { IssueID, ProjectID } from "@spoar/shared/semantic";
 
 export type AlertLinks = {
   issue: (project: ProjectID, issue: IssueID) => string;

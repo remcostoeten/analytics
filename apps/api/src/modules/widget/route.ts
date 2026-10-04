@@ -1,9 +1,4 @@
-import {
-  ActiveVisitors,
-  ActiveVisitorsQuery,
-  Overview,
-  WidgetSession,
-} from "@remcostoeten/analytics-contract";
+import { ActiveVisitors, ActiveVisitorsQuery, Overview, WidgetSession } from "@spoar/contract";
 import { Elysia } from "elysia";
 
 import type { AccessDeps } from "../../access/types";

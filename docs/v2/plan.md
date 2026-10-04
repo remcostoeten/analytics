@@ -103,10 +103,10 @@ analytics/
 │  ├─ dashboard/           existing Next app; moves to the API in phase 4
 │  └─ ingestion/           existing legacy deploy shell; removed in phase 5
 ├─ packages/
-│  ├─ contract/            new: @remcostoeten/analytics-contract
+│  ├─ contract/            new: @spoar/contract
 │  │  └─ src/             events.ts, errors.ts, projects.ts, stats.ts, visitors.ts, issues.ts
 │  ├─ shared/              new: semantic types, Result, noop; private
-│  ├─ engine/              new: @remcostoeten/analytics-engine; private until stable
+│  ├─ engine/              new: @spoar/engine; private until stable
 │  │  └─ src/
 │  │     ├─ define.ts       defineStage, defineSignal, defineEnricher, defineDimension
 │  │     ├─ pipeline.ts     the fixed stage order

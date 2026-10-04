@@ -1,6 +1,6 @@
-import type { ActiveVisitor } from "@remcostoeten/analytics-contract";
-import type { Result } from "@remcostoeten/analytics-shared/result";
-import type { Nullable, ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { ActiveVisitor } from "@spoar/contract";
+import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import type { EngineError } from "../errors";
 

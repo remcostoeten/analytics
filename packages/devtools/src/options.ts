@@ -1,5 +1,5 @@
-import type { Fetcher } from "@remcostoeten/analytics-shared/http";
-import type { ProjectID } from "@remcostoeten/analytics-shared/semantic";
+import type { Fetcher } from "@spoar/shared/http";
+import type { ProjectID } from "@spoar/shared/semantic";
 import type { Analytics } from "@spoar/sdk";
 
 export type DevtoolsOptions = {

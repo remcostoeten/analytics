@@ -1,5 +1,5 @@
-import type { MemberStore } from "@remcostoeten/analytics-engine";
-import type { Database } from "@remcostoeten/analytics-engine/adapters/access";
+import type { MemberStore } from "@spoar/engine";
+import type { Database } from "@spoar/engine/adapters/access";
 import {
   authAccount,
   authInvitation,
@@ -8,8 +8,8 @@ import {
   authSession,
   authUser,
   authVerification,
-} from "@remcostoeten/analytics-engine/db/schema";
-import type { Nullable } from "@remcostoeten/analytics-shared/semantic";
+} from "@spoar/engine/db/schema";
+import type { Nullable } from "@spoar/shared/semantic";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
