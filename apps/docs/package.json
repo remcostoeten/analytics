@@ -12,14 +12,14 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"fumadocs-core": "16.15.15",
-		"fumadocs-mdx": "15.4.5",
-		"fumadocs-openapi": "12.0.4",
-		"fumadocs-ui": "16.15.15",
+		"fumadocs-core": "16.16.0",
+		"fumadocs-mdx": "15.4.6",
+		"fumadocs-openapi": "12.2.0",
+		"fumadocs-ui": "16.16.0",
 		"geist": "1.7.2",
-		"next": "16.2.0",
-		"react": "19.2.4",
-		"react-dom": "19.2.4",
+		"next": "16.4.0-canary.59",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
 		"zod": "4.6.5"
 	},
 	"devDependencies": {
@@ -28,6 +28,7 @@
 		"@types/node": "26.6.3",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
+		"babel-plugin-react-compiler": "1.0.0",
 		"postcss": "8.5.28",
 		"tailwindcss": "4.3.3",
 		"typescript": "catalog:ts"

@@ -1,26 +1,15 @@
 "use client";
 
-import { useState } from "react";
-
 import { outlineButton } from "./control";
 import { CheckIcon, CopyIcon } from "./icons";
+import { useCopy } from "./use-copy";
 
 type Props = {
   command: string;
 };
 
 export function InstallCommand({ command }: Props) {
-  const [copied, setCopied] = useState(false);
-
-  function copy() {
-    navigator.clipboard
-      .writeText(command)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
-      })
-      .catch(() => setCopied(false));
-  }
+  const { copied, copy } = useCopy(command);
 
   return (
     <button
