@@ -1,12 +1,12 @@
 import { ok } from "@spoar/shared/result";
 import { sql } from "drizzle-orm";
+import { botThreshold } from "@spoar/contract";
 
 import { scoreSessions } from "../jobs/session-signals";
 import type { JobName, OpsStore, SpeedCheck } from "../ports";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 
-const botThreshold = 50;
 const topReasons = 5;
 const rateLimitDays = 1;
 const sentDays = 30;

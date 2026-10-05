@@ -5,29 +5,26 @@ description: Deploy the API on your own Postgres database and host, sign in, and
 
 This guide runs the whole v2 stack yourself: a Postgres database, the API, and the scheduled jobs. The SDK then sends to your API instead of `api.analytics.remcostoeten.nl`. It needs Bun 1.3 or later, a Postgres database such as Neon, a host that runs Bun, and a GitHub account for sign-in.
 
-## 1. Create the database and migrate it
+## 1. Set up the database
 
-Clone the repository, install, and run every migration against an empty database:
+Clone the repository, install, and run the setup against an empty database with your GitHub login and, optionally, your first site:
 
 ```bash
 git clone https://github.com/remcostoeten/analytics
 cd analytics
 bun install
-DATABASE_URL=postgres://... bun run migrate --dry-run
-DATABASE_URL=postgres://... bun run migrate
+DATABASE_URL=postgres://... bun run setup --owner your-github-login --project my-site --domain example.com
 ```
 
-`--dry-run` lists what would run without changing anything. Every migration is additive, and running the command again skips the ones already applied.
+It runs every migration, adds your login to `dashboard_users`, the allowlist of who may sign in, and creates the project with a public and a secret key. The secret key is printed once; keep it. Running it again skips what is already there and leaves the keys unchanged. `--name` sets the project's display name, which defaults to the domain. `bun run migrate --dry-run` lists the migrations without running them.
 
-## 2. Allow your GitHub login
+## 2. Who may sign in
 
-Only GitHub logins in the `dashboard_users` table can sign in. Add yours before the first sign-in:
+The first allowed login to sign in owns the organization and the projects created by the setup. Later logins join as viewers of no projects until an owner gives them access. To allow another login, run the setup again with its `--owner`, or insert it yourself:
 
 ```sql
-INSERT INTO dashboard_users (github_login) VALUES ('your-github-login');
+INSERT INTO dashboard_users (github_login) VALUES ('their-github-login');
 ```
-
-The first allowed login to sign in owns the organization. Later logins join as viewers of no projects until an owner gives them access.
 
 ## 3. Create a GitHub OAuth app
 
@@ -42,7 +39,7 @@ Keep the client id and generate a client secret.
 
 ## 4. Set the environment
 
-Generate the three secrets once with `openssl rand -hex 32`, then set:
+Generate the three secrets once with `openssl rand -hex 32`, then set the variables below. `apps/api/.env.example` lists them all:
 
 | Variable | Needed | Value |
 | --- | --- | --- |
@@ -56,6 +53,7 @@ Generate the three secrets once with `openssl rand -hex 32`, then set:
 | `AUTH_COOKIE_DOMAIN` | No | A parent domain such as `.example.com`, so sites on its subdomains send the admin cookie and your own visits count as internal |
 | `MAIL_URL`, `MAIL_FROM` | For mail alerts | An SMTP URL such as `smtps://user:password@host:465`, and the sender |
 | `CRUX_API_KEY` | No | A Google API key with the Chrome UX Report API, for the weekly speed cross-check |
+| `MAXMIND_LICENSE_KEY` | For production builds | A free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 
 `apps/api/README.md` lists the optional limits and paths.
 
@@ -81,7 +79,7 @@ const response = await fetch("/v2/auth/sign-in/social", {
 location.href = (await response.json()).url;
 ```
 
-`/v2/auth/session` then shows your login with `"role": "owner"`. Create a project with `POST /v2/projects` from the same tab, or with the [admin client](/docs/sdk/admin), and keep its public and secret keys.
+`/v2/auth/session` then shows your login with `"role": "owner"`. If you skipped `--project` in step 1, create a project with `POST /v2/projects` from the same tab, or with the [admin client](/docs/sdk/admin), and keep its public and secret keys.
 
 ## 7. Schedule the jobs
 

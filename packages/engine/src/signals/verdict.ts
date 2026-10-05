@@ -1,9 +1,9 @@
+import { botThreshold } from "@spoar/contract";
 import type { BotLabel, BotSignals, SessionSignal } from "@spoar/contract";
 import type { Nullable } from "@spoar/shared/semantic";
 
 import type { EventDraft } from "../draft";
 
-export const botScoreFloor = 50;
 const suspectScoreFloor = 25;
 
 const unscoredSignals: BotSignals = {
@@ -25,7 +25,7 @@ const unscoredSignals: BotSignals = {
  * botLabel(40); // "suspect"
  */
 export function botLabel(score: number): BotLabel {
-  if (score >= botScoreFloor) return "bot";
+  if (score >= botThreshold) return "bot";
   return score >= suspectScoreFloor ? "suspect" : "human";
 }
 

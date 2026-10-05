@@ -1,10 +1,11 @@
+import { botThreshold } from "@spoar/contract";
 import type { DeviceType } from "@spoar/contract";
 import type { Nullable } from "@spoar/shared/semantic";
 import { sql } from "drizzle-orm";
 
 import type { WidgetStore } from "../ports";
 import { serverVisitor } from "../reads/server-visitor";
-import { botScoreFloor, sessionSignal } from "../signals/verdict";
+import { sessionSignal } from "../signals/verdict";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 
@@ -148,7 +149,7 @@ export function drizzleWidget(db: Database): WidgetStore {
             WHERE e.project_id = ${project} AND e.type = 'pageview'
               AND e.ts > ${end}::timestamptz - make_interval(mins => ${minutes})
               AND e.ts <= ${end}::timestamptz
-              AND e.bot_score < ${botScoreFloor}
+              AND e.bot_score < ${botThreshold}
               AND NOT COALESCE(e.is_internal, false) AND NOT COALESCE(e.is_localhost, false)
             GROUP BY 1`,
         );

@@ -29,7 +29,7 @@ Not built: the v2 dashboard (E4.5) and the retirement of v1 (E5.1).
 | Keep one docs project: `v2.analytics.docs` is gone and `v2.analytics-docs` serves `docs.analytics.remcostoeten.nl` | Remco, done | One docs project builds per push |
 | Check the `jobs` workflow has `API_URL` and `CRON_SECRET` in the `production` environment ([deploy.md](deploy.md) step 7) | Remco | The last rollup, cleanup and alerts runs show in `GET /v2/admin/metrics` |
 | Sign in once on the API, create the organization and a first `admin` token ([deploy.md](deploy.md) step 8) | Remco | `GET /v2/auth/session` returns `isAdmin: true` |
-| Download MaxMind GeoLite2 with an own free license key instead of the third-party mirror in `apps/api/scripts/download-geo.ts`: Remco creates the key as `MAXMIND_LICENSE_KEY`, the agent changes the script with a checksum check and a mirror fallback for local work | Remco, agent | Production builds fetch from `download.maxmind.com` |
+| Download MaxMind GeoLite2 with an own free license key instead of the third-party mirror in `apps/api/scripts/download-geo.ts`: Remco creates the key as `MAXMIND_LICENSE_KEY`, the agent changes the script with a checksum check and a mirror fallback for local work | Remco; agent part done | Production builds fetch from `download.maxmind.com` |
 | Refresh `bot-readiness.md` and `release-readiness.md`: both still say the v2 API is not deployed | agent, done | The docs match production |
 
 ## Milestone 2: SDK 2.0 on npm under `next`
@@ -62,7 +62,7 @@ Follows [bot-readiness.md](bot-readiness.md) once two weeks of v2 traffic exist.
 
 | Step | Owner | Done when |
 | --- | --- | --- |
-| Move the threshold of 50 into one constant in `@spoar/contract`; it is repeated in seven files today | agent | One place to change it |
+| Move the threshold of 50 into one constant in `@spoar/contract` (`botThreshold`) | agent, done | One place to change it |
 | Step 1: shadow-score the v1 history with `bun run rescore --dry-run` | Remco runs, agent reads | The report lists borderline combinations |
 | Step 2: read the first two weeks of v2 traffic with the queries in the readiness doc | agent | Every borderline combination is judged |
 | Step 3: tune weights, rescore | agent, Remco runs the rescore | The "Ready when" list in the readiness doc holds |
@@ -88,7 +88,7 @@ On hold until Remco delivers the dashboard design system.
 | Deprecate 1.x on npm with the command the agent writes | Remco | `npm deprecate` is done |
 | Remove `v1/`, the legacy `/e` routes and the old dashboard API routes; keep one cleanup cron | agent | `v1/` is gone from the repository |
 | Delete the v1 Vercel projects `ingestion` and `v1.analytics` | Remco | Only v2 projects remain |
-| Self-hosting: root README setup, `.env.example`, `bun run setup` that migrates and creates the owner and first project, Vercel deploy buttons | agent | A fresh clone reaches a working API with one command |
+| Self-hosting: root README setup, `.env.example`, `bun run setup` that migrates and creates the owner and first project, Vercel deploy buttons | agent; done except the deploy buttons | A fresh clone reaches a working API with one command |
 | Rewrite `AGENTS.md` for the v2-only layout | agent | The guide has no v1 sections |
 
 ## After 2.0

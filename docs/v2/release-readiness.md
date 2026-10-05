@@ -28,8 +28,7 @@ The API runs in production on `api.analytics.remcostoeten.nl` (Vercel project `v
 
 For a self-hosted copy:
 
-- A fresh database needs no baseline: `bun run migrate` runs 0000 onward.
-- Only logins in `dashboard_users` can sign in. A fresh database has none, so a self-hosted copy must insert one first. The [self-hosting guide](../../apps/docs/content/docs/guides/self-host.mdx) covers it; `deploy.md` assumes the v1 row.
+- `bun run setup --owner <login> [--project <id> --domain <domain>]` migrates a fresh database from 0000, adds the login to `dashboard_users` and creates the first project. The [self-hosting guide](../../apps/docs/content/docs/guides/self-host.mdx) covers the rest; `deploy.md` assumes the v1 row.
 - The bot checks in [bot-readiness.md](bot-readiness.md) apply once real traffic arrives.
 
 ## Checks

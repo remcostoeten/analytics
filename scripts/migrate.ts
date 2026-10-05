@@ -28,7 +28,15 @@ export function parseArguments(argv: string[]): Options {
   };
 }
 
-function createClient(sql: SQL): MigrationClient {
+/**
+ * @name createClient
+ * @description The `MigrationClient` on a Bun SQL connection: runs statements and reads and
+ * records rows in `schema_migrations`.
+ *
+ * @example
+ * await runMigrations(createClient(sql), readMigrations(migrationsDirectory), options);
+ */
+export function createClient(sql: SQL): MigrationClient {
   return {
     execute: async (statement) => {
       await sql.unsafe(statement);
@@ -44,7 +52,14 @@ function createClient(sql: SQL): MigrationClient {
   };
 }
 
-function printReport(report: MigrationReport) {
+/**
+ * @name printReport
+ * @description Prints what a migration run baselined and applied, and the totals.
+ *
+ * @example
+ * printReport(report.value);
+ */
+export function printReport(report: MigrationReport) {
   const verb = report.dryRun ? "Would apply" : "Applied";
   for (const name of report.baselined)
     console.log(`${report.dryRun ? "Would baseline" : "Baselined"} ${name}`);

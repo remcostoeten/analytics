@@ -9,3 +9,13 @@
  * const signals = navigator.webdriver ? clientSignals.webdriver : 0;
  */
 export const clientSignals = { webdriver: 1, headless: 2, noInput: 4 } as const;
+
+/**
+ * @name botThreshold
+ * @description The bot score from which an event counts as a bot: scoring, rescoring, every read
+ * filter, the speed rows and the stored `bot_detected` flag compare against it.
+ *
+ * @example
+ * const isBot = score >= botThreshold;
+ */
+export const botThreshold = 50;
