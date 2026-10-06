@@ -84,9 +84,9 @@ Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated fr
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
 | `bun run --cwd apps/docs dev` | The docs site on port 3200; `build` regenerates the API reference from `apps/api/openapi.json` first |
 | `bun run --cwd apps/api openapi` | Rewrites `apps/api/openapi.json` after a route change; a test fails while it is stale |
-| `bun run dev` | v1 dashboard |
-| `bun run dev:ingestion` | v1 ingestion on port 3000+ |
-| `bun run demo:db` | Local Postgres with seeded v1 data |
+| `bun run dev:v1` | v1 dashboard |
+| `bun run dev:v1:ingestion` | v1 ingestion on port 3000+ |
+| `bun run demo:v1:db` | Local Postgres with seeded v1 data |
 
 CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull request: build, SDK size, typecheck, lint, format check, boundaries, deps, knip, test, and a gitleaks secret scan. Pull requests also run the `e2e` job. CodeQL runs on pull requests and weekly. `migrate.yml` runs the migrations against the `DATABASE_URL` secret of the `production` environment when Remco starts it, and `jobs.yml` calls the cron routes on a schedule once `API_URL` and `CRON_SECRET` are set there; `docs/v2/deploy.md` is the setup checklist. `release.yml` runs `changesets/action` on every push to `master`: it keeps the version pull request on the `changeset-release/master` branch up to date and, once that pull request merges, runs `bun run release` through npm trusted publishing; a manual run with `dry-run` packs without publishing. `openapi.yml` fails a pull request with a breaking OpenAPI change once `apps/api/openapi.json` exists. Renovate opens grouped dependency pull requests every Monday.
 

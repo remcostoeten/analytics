@@ -4,10 +4,10 @@ Local Postgres with ~90 days of realistic seeded analytics data, for developing
 and demoing the dashboard without touching the production Neon database.
 
 ```sh
-bun run demo:db              # start containers, apply migrations, seed
-bun run demo:db -- --force   # reseed over existing data
-bun run demo:db -- --use-demo  # point the dashboard at the demo DB (no prompt)
-bun run demo:db -- --restore   # switch the dashboard back to your own DATABASE_URL
+bun run demo:v1:db              # start containers, apply migrations, seed
+bun run demo:v1:db -- --force   # reseed over existing data
+bun run demo:v1:db -- --use-demo  # point the dashboard at the demo DB (no prompt)
+bun run demo:v1:db -- --restore   # switch the dashboard back to your own DATABASE_URL
 ```
 
 After setup the script asks whether to point the dashboard at the demo database.

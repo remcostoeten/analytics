@@ -117,7 +117,7 @@ async function applyEnvChoice(): Promise<void> {
   ) {
     switchToDemo(envFile);
     console.log(
-      "Dashboard now points at the demo database. Run `bun run demo:db -- --restore` to switch back.",
+      "Dashboard now points at the demo database. Run `bun run demo:v1:db -- --restore` to switch back.",
     );
   } else {
     console.log("Kept your current env. Run against the demo DB ad hoc with:");

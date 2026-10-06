@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
 import type { Clock, EventStore, ProjectStore, RateLimiter } from "../ports";
@@ -6,6 +6,18 @@ import type { Transact } from "../query/runner";
 import { drizzleLimiter, drizzleProjects, drizzleStore } from "./drizzle";
 import { accessOn } from "./drizzle-access";
 import type { Access } from "./drizzle-access";
+
+/**
+ * @name routeLocalNeon
+ * @description Sends the Neon HTTP driver to a local proxy such as `local-neon-http-proxy` when
+ * `NEON_LOCAL_PROXY` names its `/sql` endpoint, so the API can run against Postgres in Docker.
+ *
+ * @example
+ * routeLocalNeon(process.env.NEON_LOCAL_PROXY); // "http://127.0.0.1:4444/sql"
+ */
+export function routeLocalNeon(endpoint: string | undefined): void {
+  if (endpoint) neonConfig.fetchEndpoint = endpoint;
+}
 
 /**
  * @name postgresAdapters

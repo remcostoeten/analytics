@@ -87,12 +87,12 @@ A schema change updates `schema.ts`, adds the next numbered migration, and updat
 ### Run it locally
 
 ```bash
-bun run demo:db          # local Postgres with about 90 days of seeded data
-bun run dev              # dashboard on http://localhost:3000
-bun run dev:ingestion    # ingestion on port 3000, or the next free port
+bun run demo:v1:db          # local Postgres with about 90 days of seeded data
+bun run dev:v1              # dashboard on http://localhost:3000
+bun run dev:v1:ingestion    # ingestion on port 3000, or the next free port
 ```
 
-`demo:db` runs Postgres 16 on port 5434 and a Neon HTTP proxy on port 4444 through Docker, applies every migration and seeds the data. It then offers to point `apps/dashboard/.env.local` at the demo database, keeping your own `DATABASE_URL` so it can be restored, and to start the dashboard. Pass `-- --force` to reseed, `-- --use-demo` to switch without the prompt and `-- --restore` to switch back. More in [scripts/demo-db/README.md](scripts/demo-db/README.md).
+`demo:v1:db` runs Postgres 16 on port 5434 and a Neon HTTP proxy on port 4444 through Docker, applies every migration and seeds the data. It then offers to point `apps/dashboard/.env.local` at the demo database, keeping your own `DATABASE_URL` so it can be restored, and to start the dashboard. Pass `-- --force` to reseed, `-- --use-demo` to switch without the prompt and `-- --restore` to switch back. More in [scripts/demo-db/README.md](scripts/demo-db/README.md).
 
 ### Tests and checks
 

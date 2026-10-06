@@ -248,7 +248,7 @@ export function prepareQuery(sql: string, params: QueryParams): Result<PreparedQ
       cursor = token.end;
     }
   }
-  const last = tokens[lastCode];
-  parts.push(sql.slice(cursor, last?.end ?? sql.length));
+  const trailing = tokens[lastCode + 1];
+  parts.push(sql.slice(cursor, trailing?.start ?? sql.length));
   return ok({ text: parts.join("").trim(), params: bound });
 }

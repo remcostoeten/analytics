@@ -1,0 +1,21 @@
+{
+	"name": "@spoar/example-playground",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --port=3300 ./index.html",
+		"build": "bun build ./index.html --outdir dist --minify --splitting",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@spoar/sdk": "workspace:*",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"shiki": "4.5.0"
+	},
+	"devDependencies": {
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3"
+	}
+}

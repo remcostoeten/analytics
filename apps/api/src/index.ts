@@ -5,7 +5,12 @@ import {
   defaultStages,
   ipSecretProblem,
 } from "@spoar/engine";
-import { neonTransact, postgresAccess, postgresAdapters } from "@spoar/engine/adapters/postgres";
+import {
+  neonTransact,
+  postgresAccess,
+  postgresAdapters,
+  routeLocalNeon,
+} from "@spoar/engine/adapters/postgres";
 import { jsonLogger, systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
 
 import { apiLinks } from "@spoar/engine/alerts";
@@ -34,6 +39,7 @@ const apiUrl = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 31
 const alertsPlugin = findPlugin(config, "alerts");
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("Refusing to start: DATABASE_URL is not set.");
+routeLocalNeon(process.env.NEON_LOCAL_PROXY);
 const adapters = postgresAdapters(databaseUrl, clock);
 const stores = postgresAccess(databaseUrl);
 const hasher = webCryptoHasher();
