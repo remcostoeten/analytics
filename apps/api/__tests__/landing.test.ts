@@ -94,7 +94,7 @@ describe("landing", () => {
       const html = await response.text();
       expect(html).toContain("<title>Spoar API</title>");
       expect(html).toContain("2 Oct 2026, 12:00 UTC");
-      expect(html).toContain('<details class="group" id="reads">');
+      expect(html).toContain('<details class="group" id="reads" open>');
       expect(html).toContain('href="#reads"');
       expect(html).toContain('/projects/<span class="param">:project</span>/stats');
       expect(html).toContain("Headline <code>numbers</code>");
