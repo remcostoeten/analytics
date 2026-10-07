@@ -5,10 +5,11 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun --port=3300 ./index.html",
-		"build": "bun build ./index.html --outdir dist --minify --splitting",
+		"build": "bun build ./index.html --outdir dist --minify --splitting --env 'BUN_PUBLIC_*'",
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {
+		"@spoar/devtools": "workspace:*",
 		"@spoar/sdk": "workspace:*",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",

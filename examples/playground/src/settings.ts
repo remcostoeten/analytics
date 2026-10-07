@@ -5,10 +5,10 @@ import type { Settings } from "./request";
 const storageKey = "spoar-playground-settings";
 
 const defaultSettings: Settings = {
-  base: "https://api.analytics.remcostoeten.nl",
-  token: "",
-  projectKey: "",
-  project: "",
+  base: process.env.BUN_PUBLIC_PLAYGROUND_API || "https://api.analytics.remcostoeten.nl",
+  token: process.env.BUN_PUBLIC_PLAYGROUND_TOKEN ?? "",
+  projectKey: process.env.BUN_PUBLIC_PLAYGROUND_PROJECT_KEY ?? "",
+  project: process.env.BUN_PUBLIC_PLAYGROUND_PROJECT ?? "",
 };
 
 function stored(): Settings {
@@ -17,9 +17,9 @@ function stored(): Settings {
     if (!isRecord(saved)) return defaultSettings;
     return {
       base: text(saved.base, defaultSettings.base),
-      token: text(saved.token),
-      projectKey: text(saved.projectKey),
-      project: text(saved.project),
+      token: text(saved.token) || defaultSettings.token,
+      projectKey: text(saved.projectKey) || defaultSettings.projectKey,
+      project: text(saved.project) || defaultSettings.project,
     };
   } catch {
     return defaultSettings;

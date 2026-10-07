@@ -383,7 +383,7 @@ function methodMix(group: RouteGroup) {
 }
 
 function groupBlock(group: RouteGroup, docs: string) {
-  return `<details class="group" id="${slug(group.name)}">
+  return `<details class="group" id="${slug(group.name)}" open>
 <summary><span class="chev"></span><b class="gname">${escape(group.name)}</b><small class="gdesc">${escape(group.description)}</small><span class="mix caps">${escape(methodMix(group))}</span><span class="count num">${group.routes.length}</span></summary>
 <ul>${group.routes.map((route) => routeItem(group, route, docs)).join("")}</ul>
 </details>`;
