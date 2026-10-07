@@ -97,3 +97,20 @@ const token = await fetch("/v2/tokens", {
 });
 console.log(await token.json());
 ```
+
+## 9. Publishing a new package to npm
+
+`release.yml` publishes through npm trusted publishing, which only works for a package that already exists on npm with this repository as its trusted publisher. The first version of a new package is published by hand once:
+
+```sh
+bun run --filter './packages/*' build
+cd packages/<name>
+cp package.json /tmp/package.json.bak
+bun -e 'import { publishManifest } from "../../scripts/publish.ts"; const m = JSON.parse(await Bun.file("package.json").text()); await Bun.write("package.json", `${JSON.stringify(publishManifest(m), null, "\t")}\n`)'
+npm publish --access public --tag next
+mv /tmp/package.json.bak package.json
+```
+
+Then on npmjs.com open the package, Settings, Trusted Publisher, and add GitHub Actions with repository `remcostoeten/analytics` and workflow `release.yml`. Run the `release` workflow by hand with `dry-run` off: `scripts/publish.ts` skips the version already on npm and publishes the rest.
+
+The script publishes `packages/*` in folder order and stops at the first failure, so a package that cannot be published blocks the ones after it. The hand-published version gets no git tag or GitHub release.
