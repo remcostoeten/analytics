@@ -1,6 +1,7 @@
 import { createAnalytics } from "@spoar/sdk";
 import type { Analytics } from "@spoar/sdk";
 import { createAdmin } from "@spoar/sdk/admin";
+import { Devtools } from "@spoar/devtools/react";
 import { useEffect, useRef, useState } from "react";
 import { MethodPanel } from "./components/method-panel";
 import { Overview } from "./components/overview";
@@ -128,56 +129,59 @@ export function App() {
   const effective = { ...settings, base };
 
   return (
-    <div className="shell">
-      <SettingsBar settings={settings} version={spec?.version ?? ""} onChange={setSettings} />
-      <div className="layout">
-        <Sidebar
-          groups={spec?.groups ?? []}
-          methods={sdkMethods}
-          selected={selected}
-          query={query}
-          onQuery={setQuery}
-          onSelect={select}
-        />
-        <main className="main">
-          {specError ? <p className="note warn">{specError}</p> : null}
-          {route ? (
-            <RoutePanel
-              key={route.id}
-              route={route}
-              settings={effective}
-              draft={drafts[route.id] ?? initialDraft(route, settings)}
-              outcome={outcomes[route.id]}
-              onDraft={(draft) => setDrafts((current) => ({ ...current, [route.id]: draft }))}
-              onOutcome={(outcome) =>
-                setOutcomes((current) => ({ ...current, [route.id]: outcome }))
-              }
-            />
-          ) : null}
-          {method ? (
-            <MethodPanel
-              key={method.id}
-              method={method}
-              project={settings.project}
-              ready={readiness(method.name, method.entry, settings)}
-              kit={kit}
-              log={log}
-            />
-          ) : null}
-          {selected === "overview" ? (
-            <Overview spec={spec} methods={sdkMethods} base={base} onSelect={select} />
-          ) : null}
-          {selected === "walkthrough" ? (
-            <Walkthrough settings={effective} kit={kit} log={log} />
-          ) : null}
-          {selected !== "overview" && selected !== "walkthrough" && !route && !method && spec ? (
-            <p className="note">Nothing matches this link. Pick a route or method on the left.</p>
-          ) : null}
-          {selected !== "overview" && selected !== "walkthrough" && !spec && !specError ? (
-            <p className="note">Loading the API's OpenAPI document.</p>
-          ) : null}
-        </main>
+    <>
+      <div className="shell">
+        <SettingsBar settings={settings} version={spec?.version ?? ""} onChange={setSettings} />
+        <div className="layout">
+          <Sidebar
+            groups={spec?.groups ?? []}
+            methods={sdkMethods}
+            selected={selected}
+            query={query}
+            onQuery={setQuery}
+            onSelect={select}
+          />
+          <main className="main">
+            {specError ? <p className="note warn">{specError}</p> : null}
+            {route ? (
+              <RoutePanel
+                key={route.id}
+                route={route}
+                settings={effective}
+                draft={drafts[route.id] ?? initialDraft(route, settings)}
+                outcome={outcomes[route.id]}
+                onDraft={(draft) => setDrafts((current) => ({ ...current, [route.id]: draft }))}
+                onOutcome={(outcome) =>
+                  setOutcomes((current) => ({ ...current, [route.id]: outcome }))
+                }
+              />
+            ) : null}
+            {method ? (
+              <MethodPanel
+                key={method.id}
+                method={method}
+                project={settings.project}
+                ready={readiness(method.name, method.entry, settings)}
+                kit={kit}
+                log={log}
+              />
+            ) : null}
+            {selected === "overview" ? (
+              <Overview spec={spec} methods={sdkMethods} base={base} onSelect={select} />
+            ) : null}
+            {selected === "walkthrough" ? (
+              <Walkthrough settings={effective} kit={kit} log={log} />
+            ) : null}
+            {selected !== "overview" && selected !== "walkthrough" && !route && !method && spec ? (
+              <p className="note">Nothing matches this link. Pick a route or method on the left.</p>
+            ) : null}
+            {selected !== "overview" && selected !== "walkthrough" && !spec && !specError ? (
+              <p className="note">Loading the API's OpenAPI document.</p>
+            ) : null}
+          </main>
+        </div>
       </div>
-    </div>
+      {settings.project ? <Devtools endpoint={base} project={settings.project} /> : null}
+    </>
   );
 }
