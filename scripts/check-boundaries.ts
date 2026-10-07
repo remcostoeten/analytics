@@ -21,11 +21,12 @@ export const allowedImports: { [workspace: string]: string[] } = {
   "packages/shared": [],
   "packages/contract": ["packages/shared"],
   "packages/engine": ["packages/contract", "packages/shared"],
-  "packages/sdk": ["packages/shared", "packages/contract"],
+  "packages/client": ["packages/shared", "packages/contract"],
+  "packages/sdk": ["packages/shared", "packages/contract", "packages/client"],
   "packages/devtools": ["packages/shared", "packages/contract", "packages/sdk"],
   "apps/api": ["packages/engine", "packages/contract", "packages/shared"],
   "apps/dashboard": ["apps/api", "packages/contract"],
-  examples: ["packages/sdk"],
+  examples: ["packages/sdk", "packages/devtools"],
 };
 
 const sourcePattern = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;

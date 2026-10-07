@@ -1,0 +1,40 @@
+{
+	"name": "@spoar/client",
+	"version": "2.0.0-next.0",
+	"description": "Typed read and admin client for the v2 analytics API: one chainable scope, one method per route.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/remcostoeten/analytics.git",
+		"directory": "packages/client"
+	},
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"devDependencies": {
+		"@spoar/contract": "workspace:*",
+		"@spoar/shared": "workspace:*",
+		"tsdown": "catalog:tsdown"
+	}
+}

@@ -98,6 +98,7 @@
 	"devDependencies": {
 		"@happy-dom/global-registrator": "20.14.5",
 		"@sinclair/typebox": "catalog:typebox",
+		"@spoar/client": "workspace:*",
 		"@spoar/contract": "workspace:*",
 		"@spoar/shared": "workspace:*",
 		"@types/react": "19.2.14",

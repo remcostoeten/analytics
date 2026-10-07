@@ -87,6 +87,15 @@
         "@types/react-dom": "19.2.3",
       },
     },
+    "packages/client": {
+      "name": "@spoar/client",
+      "version": "2.0.0-next.0",
+      "devDependencies": {
+        "@spoar/contract": "workspace:*",
+        "@spoar/shared": "workspace:*",
+        "tsdown": "catalog:tsdown",
+      },
+    },
     "packages/contract": {
       "name": "@spoar/contract",
       "version": "0.0.0",
@@ -160,6 +169,7 @@
       "devDependencies": {
         "@happy-dom/global-registrator": "20.14.5",
         "@sinclair/typebox": "catalog:typebox",
+        "@spoar/client": "workspace:*",
         "@spoar/contract": "workspace:*",
         "@spoar/shared": "workspace:*",
         "@types/react": "19.2.14",
@@ -1065,6 +1075,8 @@
     "@sinclair/typebox": ["@sinclair/typebox@0.34.52", "", {}, "sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw=="],
 
     "@spoar/api": ["@spoar/api@workspace:apps/api"],
+
+    "@spoar/client": ["@spoar/client@workspace:packages/client"],
 
     "@spoar/contract": ["@spoar/contract@workspace:packages/contract"],
 

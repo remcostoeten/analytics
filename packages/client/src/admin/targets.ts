@@ -11,9 +11,9 @@ import type {
 } from "@spoar/contract";
 import type { Json } from "@spoar/shared/http";
 
+import type { ClientResult, Send } from "../types";
+
 import type {
-  AdminResult,
-  AdminSend,
   DiscordTarget,
   MailOptions,
   MailTarget,
@@ -21,20 +21,20 @@ import type {
   UniqueNames,
   UrlOptions,
   WebhookTarget,
-} from "./types";
+} from "./target-types";
 
 export type AlertsAdmin<Projects extends string> = {
   sync: <const Targets extends readonly Target[]>(
     project: Projects,
     targets: UniqueNames<Targets>,
-  ) => AdminResult<TargetChanges>;
-  list: (project: Projects) => AdminResult<AlertTarget[]>;
-  set: (project: Projects, target: Target) => AdminResult<TargetChanges>;
-  remove: (project: Projects, name: string) => AdminResult<null>;
-  test: (project: Projects, name: string) => AdminResult<TargetTest["data"]>;
-  rotate: (project: Projects, name: string) => AdminResult<RotatedSecret["data"]>;
-  deliveries: (project: Projects, query?: DeliveriesQuery) => AdminResult<AlertDeliveryList>;
-  status: () => AdminResult<AlertsStatus["data"]>;
+  ) => ClientResult<TargetChanges>;
+  list: (project: Projects) => ClientResult<AlertTarget[]>;
+  set: (project: Projects, target: Target) => ClientResult<TargetChanges>;
+  remove: (project: Projects, name: string) => ClientResult<null>;
+  test: (project: Projects, name: string) => ClientResult<TargetTest["data"]>;
+  rotate: (project: Projects, name: string) => ClientResult<RotatedSecret["data"]>;
+  deliveries: (project: Projects, query?: DeliveriesQuery) => ClientResult<AlertDeliveryList>;
+  status: () => ClientResult<AlertsStatus["data"]>;
 };
 
 /**
@@ -105,7 +105,7 @@ function targetBody(target: Target) {
  * const alerts = alertsAdmin<"skriuw">(send);
  * await alerts.sync("skriuw", [mail({ to: ["remco@gmail.com"] })]);
  */
-export function alertsAdmin<Projects extends string>(send: AdminSend): AlertsAdmin<Projects> {
+export function alertsAdmin<Projects extends string>(send: Send): AlertsAdmin<Projects> {
   function targetsPath(project: Projects) {
     return `/v2/projects/${encodeURIComponent(project)}/alerts/targets`;
   }
@@ -114,7 +114,7 @@ export function alertsAdmin<Projects extends string>(send: AdminSend): AlertsAdm
     return `${targetsPath(project)}/${encodeURIComponent(name)}`;
   }
 
-  async function data<Value>(answer: AdminResult<{ data: Value }>): AdminResult<Value> {
+  async function data<Value>(answer: ClientResult<{ data: Value }>): ClientResult<Value> {
     const result = await answer;
     return result.ok ? { ok: true, value: result.value.data } : result;
   }
@@ -122,35 +122,38 @@ export function alertsAdmin<Projects extends string>(send: AdminSend): AlertsAdm
   return {
     sync: (project, targets) =>
       data(
-        send<TargetChangesResponse>({
+        send.json<TargetChangesResponse>({
           method: "PUT",
           path: targetsPath(project),
           body: { targets: targets.map((target) => targetBody(target)) },
         }),
       ),
-    list: (project) => data(send<AlertTargetList>({ method: "GET", path: targetsPath(project) })),
+    list: (project) =>
+      data(send.json<AlertTargetList>({ method: "GET", path: targetsPath(project) })),
     set: (project, target) =>
       data(
-        send<TargetChangesResponse>({
+        send.json<TargetChangesResponse>({
           method: "PUT",
           path: targetPath(project, target.name ?? target.channel),
           body: targetBody(target),
         }),
       ),
     remove: async (project, name) => {
-      const result = await send<Json>({ method: "DELETE", path: targetPath(project, name) });
+      const result = await send.json<Json>({ method: "DELETE", path: targetPath(project, name) });
       return result.ok ? { ok: true, value: null } : result;
     },
     test: (project, name) =>
-      data(send<TargetTest>({ method: "POST", path: `${targetPath(project, name)}/test` })),
+      data(send.json<TargetTest>({ method: "POST", path: `${targetPath(project, name)}/test` })),
     rotate: (project, name) =>
-      data(send<RotatedSecret>({ method: "POST", path: `${targetPath(project, name)}/rotate` })),
+      data(
+        send.json<RotatedSecret>({ method: "POST", path: `${targetPath(project, name)}/rotate` }),
+      ),
     deliveries: (project, query = {}) =>
-      send<AlertDeliveryList>({
+      send.json<AlertDeliveryList>({
         method: "GET",
         path: `/v2/projects/${encodeURIComponent(project)}/alerts/deliveries`,
         query,
       }),
-    status: () => data(send<AlertsStatus>({ method: "GET", path: "/v2/admin/alerts/status" })),
+    status: () => data(send.json<AlertsStatus>({ method: "GET", path: "/v2/admin/alerts/status" })),
   };
 }

@@ -3,7 +3,7 @@ title: Admin
 description: Manage alert targets and annotations and read stats from server code and scripts with a token, using the `read` scope for the read methods and the `admin` scope for alert targets and annotation writes.
 ---
 
-`@spoar/sdk/admin` is for server code, scripts and CI. It calls the API with a token; never ship it to a browser.
+`@spoar/sdk/admin` is for server code, scripts and CI. It calls the API with a token; never ship it to a browser. It is a thin layer over [`@spoar/client`](/docs/sdk/read-client), which covers every read route as a chainable scope; new code should use that package directly.
 
 ```ts
 import { createAdmin, discord, mail, webhook } from "@spoar/sdk/admin";
