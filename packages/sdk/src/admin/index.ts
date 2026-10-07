@@ -4,31 +4,28 @@ export type {
   AnnotationInput,
   AnnotationsAdmin,
   WebUrl,
-} from "./annotations";
-export { createAdmin } from "./create-admin";
-export type { Admin } from "./create-admin";
+} from "@spoar/client";
+export { discord, mail, webhook } from "@spoar/client";
 export type {
-  BreakdownOptions,
-  IssuesOptions,
-  LifecycleOptions,
-  ReadOptions,
-  ReadsAdmin,
-  TimeseriesOptions,
-} from "./reads";
-export { discord, mail, webhook } from "./targets";
-export type { AlertsAdmin } from "./targets";
-export type {
-  AdminError,
-  AdminErrorCode,
-  AdminOptions,
-  AdminResult,
+  AlertsAdmin,
   DiscordTarget,
   Email,
   HttpsUrl,
+  IssuesOptions,
   MailTarget,
   Recipients,
   Subscription,
   Target,
   UniqueNames,
   WebhookTarget,
-} from "./types";
+} from "@spoar/client";
+export { createAdmin } from "./create-admin";
+export type {
+  Admin,
+  AdminBreakdownOptions,
+  AdminLifecycleOptions,
+  AdminReadOptions,
+  AdminTimeseriesOptions,
+  ReadsAdmin,
+} from "./create-admin";
+export type { AdminError, AdminErrorCode, AdminOptions, AdminResult } from "./types";

@@ -1,81 +1,12 @@
-import type { AlertEventName, ErrorCode, ErrorDetails } from "@spoar/contract";
-import type { Fetcher, HttpMethod, JsonBody, Query } from "@spoar/shared/http";
-import type { Result } from "@spoar/shared/result";
-import type { Milliseconds, Nullable } from "@spoar/shared/semantic";
+import type { ClientError, ClientErrorCode, ClientResult } from "@spoar/client";
+import type { Fetcher } from "@spoar/shared/http";
+import type { Milliseconds } from "@spoar/shared/semantic";
 
-export type Email = `${string}@${string}.${string}`;
+export type AdminErrorCode = ClientErrorCode;
 
-export type HttpsUrl = `https://${string}`;
+export type AdminError = ClientError;
 
-export type Recipients = [Email, ...Email[]];
-
-export type Subscription = [AlertEventName, ...AlertEventName[]];
-
-type TargetOptions<Name extends string> = {
-  name?: Name;
-  on?: Subscription;
-  enabled?: boolean;
-};
-
-export type MailTarget<Name extends string = string> = TargetOptions<Name> & {
-  channel: "mail";
-  to: Recipients;
-};
-
-export type WebhookTarget<Name extends string = string> = TargetOptions<Name> & {
-  channel: "webhook";
-  url: HttpsUrl;
-};
-
-export type DiscordTarget<Name extends string = string> = TargetOptions<Name> & {
-  channel: "discord";
-  url: HttpsUrl;
-};
-
-export type Target<Name extends string = string> =
-  | MailTarget<Name>
-  | WebhookTarget<Name>
-  | DiscordTarget<Name>;
-
-export type MailOptions = Omit<MailTarget, "channel" | "name">;
-
-export type UrlOptions = Omit<WebhookTarget, "channel" | "name">;
-
-type TargetKey<Item> = Item extends { name?: infer Name extends string } ? Name : never;
-
-type Duplicates<
-  Targets extends readonly Target[],
-  Seen extends string = never,
-> = Targets extends readonly [infer Head extends Target, ...infer Rest extends readonly Target[]]
-  ? string extends TargetKey<Head>
-    ? Duplicates<Rest, Seen>
-    : TargetKey<Head> extends Seen
-      ? TargetKey<Head> | Duplicates<Rest, Seen>
-      : Duplicates<Rest, Seen | TargetKey<Head>>
-  : never;
-
-export type UniqueNames<Targets extends readonly Target[]> = [Duplicates<Targets>] extends [never]
-  ? Targets
-  : Targets & { "each target needs its own name": Duplicates<Targets> };
-
-export type AdminErrorCode =
-  | ErrorCode
-  | "NO_TOKEN"
-  | "NETWORK"
-  | "TIMEOUT"
-  | "ABORTED"
-  | "BAD_URL"
-  | "BAD_RESPONSE";
-
-export type AdminError = {
-  code: AdminErrorCode;
-  message: string;
-  status: Nullable<number>;
-  details: Nullable<ErrorDetails>;
-  requestId: Nullable<string>;
-};
-
-export type AdminResult<Value> = Promise<Result<Value, AdminError>>;
+export type AdminResult<Value> = ClientResult<Value>;
 
 export type AdminOptions = {
   endpoint: string;
@@ -83,12 +14,3 @@ export type AdminOptions = {
   fetch?: Fetcher;
   timeoutMs?: Milliseconds;
 };
-
-export type AdminCall = {
-  method: HttpMethod;
-  path: string;
-  query?: Query;
-  body?: JsonBody;
-};
-
-export type AdminSend = <Body>(call: AdminCall) => AdminResult<Body>;

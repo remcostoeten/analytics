@@ -30,6 +30,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 16 | Alerts | Settled | A plugin, `alerts({ channels: [mail(), webhook(), discord()] })`, in the API's `analytics.config.ts`; each channel optional, mail over our own SMTP client or Resend with no outside dependencies, credentials only in the environment; targets per project set with `sync` through `/v2/projects/:project/alerts` and the SDK's `/admin` module; a delivery queue with a configurable retry policy (default 5 attempts, exponential, 24 hours). See [alerts.md](alerts.md) | Errors, REST API, SDK API shape |
 | 17 | Product scope | Settled | v2 serves reach, traffic sources and app performance. Goals, funnels, actions and experiment statistics are not planned; what is already built stays. See [Product focus](#product-focus) | Product focus, Phases |
 | 18 | Dev widget | Settled | Ships as `@spoar/devtools`, separate from `@spoar/sdk`. It is lazy-loaded after an admin bootstrap (`GET /v2/widget/session`) and rendered in a Shadow DOM with Tailwind compiled at build time, so visitors never download it and the SDK size budgets stay untouched | SDK API shape, Build |
+| 20 | Read client | Settled, 7 October 2026 | `@spoar/client` is the typed client for every read and admin route: one immutable chainable scope (`period`, `between`, `traffic`, `human`, `environment`, `where`, `exclude`) ending in a method named after the route, typed by `contract` (metrics, dimensions and filters as literal unions), returning `Result` values. The dashboard and scripts use it instead of Eden Treaty; `@spoar/sdk/admin` is a shim over it | REST API, Engine and modules |
 | 19 | Publishing `@spoar/contract` | Settled, 4 October 2026 | Private and never published. `@spoar/sdk` and `@spoar/devtools` bundle it through tsdown `noExternal` and list it under `devDependencies`. It only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step. Replaces "published so other projects can type against the API" in Build process. See [finish-plan.md](finish-plan.md) | Monorepo structure, Build, Branching |
 
 One open question is not a choice between options: Elysia on Vercel. Elysia documents a Vercel integration, but runtime, cold start and MMDB bundling need a short spike in phase 1 before the API commits to it.
@@ -115,6 +116,7 @@ analytics/
 │  │     ├─ ports/          EventStore, GeoLookup, RateLimiter, Hasher, Clock, Logger
 │  │     ├─ adapters/       postgres, pglite, memory, maxmind
 │  │     └─ db/             schema.ts and numbered SQL migrations
+│  ├─ client/              @spoar/client: the typed read and admin client, a chainable scope per project
 │  ├─ sdk/                 @spoar/sdk, rewritten for 2.0
 │  │  └─ src/
 │  │     ├─ core/           client, queue, identity, storage, consent
@@ -142,9 +144,10 @@ Who may import whom, checked by `scripts/check-boundaries.ts` in CI:
 | `shared` | nothing inside the repo |
 | `contract` | `shared` |
 | `engine` | `contract`, `shared` |
-| `sdk` | `shared` and `contract` bundled in; from `contract` only types and the `limits` and `signals` constants, so no validator ships |
+| `client` | `shared` and `contract` bundled in; types only from `contract` |
+| `sdk` | `shared`, `contract` and `client` bundled in; from `contract` only types and the `limits` and `signals` constants, so no validator ships |
 | `apps/api` | `engine`, `contract`, `shared` |
-| `apps/dashboard` | the API's route types through Eden Treaty, `contract` |
+| `apps/dashboard` | `client`, `contract` |
 
 Conventions for every package: `package.json`, a `tsconfig.json` extending `@remcostoeten/tsconfig`, `src/`, a README, and tests in a `__tests__/` folder next to the code they test, which is the pattern the lint overrides already match. Ingestion's current `tests/unit` and `tests/integration` move to that pattern as the code moves into `engine`. Files are kebab-case, and an `index.ts` barrel exists only where a folder has several exports.
 
@@ -385,7 +388,7 @@ The OpenAPI document is generated from the same TypeBox schemas that validate re
 - Better Auth's routes are merged into the same document under an `Auth` tag, using the method the Elysia skill documents.
 - Each route declares `detail.summary`, `tags` and every response status it can return, including the error envelope.
 - CI exports the document on every PR, runs the api-design skill's review on it, and diffs it against the last release to flag breaking changes.
-- The dashboard calls the API through Eden Treaty, which reads the same route types, so a breaking change fails its typecheck before it ships.
+- The dashboard calls the API through `@spoar/client`, whose option and response types come from `contract`, so a breaking change fails its typecheck before it ships (decision 20).
 
 ## REST, tRPC or oRPC
 

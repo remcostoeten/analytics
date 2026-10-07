@@ -254,7 +254,7 @@ describe("admin reads", () => {
       filter: { country: "NL" },
     });
     await client.timeseries("remcostoeten.nl", { metric: "visitors", interval: "day" });
-    await client.breakdown("remcostoeten.nl", "prop:plan", { metrics: "visitors", limit: 5 });
+    await client.breakdown("remcostoeten.nl", "prop:plan", { metrics: ["visitors"], limit: 5 });
     await client.lifecycle("remcostoeten.nl", { interval: "month" });
     await client.issues("remcostoeten.nl", { status: "open", cursor: "10" });
     expect(

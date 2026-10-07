@@ -47,6 +47,7 @@ analytics/
 │  ├─ contract/       schemas, types, error catalog (phase 0)
 │  ├─ shared/         semantic types, Result, noop (phase 0)
 │  ├─ engine/         ingest pipeline, signals, enrichers, dimensions, adapters, db (phase 2)
+│  ├─ client/         @spoar/client, the typed read and admin client
 │  ├─ sdk/            @spoar/sdk 2.0 (phase 3)
 │  └─ devtools/       @spoar/devtools, the admin dev widget
 ├─ tools/oxlint/      lint plugins
@@ -56,7 +57,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server and proxy entries), `packages/devtools` (the dev widget: loaders and the Shadow DOM panel, with fixtures for local work), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `publish.ts`, `rescore.ts`, `setup.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/client` (`@spoar/client`: one chainable scope per project with a method per read route, plus the admin namespaces; `@spoar/sdk/admin` wraps it), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server, proxy and admin entries), `packages/devtools` (the dev widget: loaders and the Shadow DOM panel, with fixtures for local work), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `publish.ts`, `rescore.ts`, `setup.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -92,7 +93,7 @@ CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on every pull req
 
 Lefthook runs oxfmt, Oxlint and gitleaks (when installed) on staged files before each commit, and rejects commit subjects that are not conventional commits; `bun install` sets it up.
 
-A pull request that changes a published package (`packages/sdk`, `packages/devtools`) adds a changeset with `bun run changeset`. `packages/contract` is private and bundled into both builds, so it is never published on its own.
+A pull request that changes a published package (`packages/sdk`, `packages/client`, `packages/devtools`) adds a changeset with `bun run changeset`. `packages/contract` is private and bundled into both builds, so it is never published on its own.
 
 Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicitly. A new top-level v2 folder gets added to the `lint` and `lint:fix` scripts.
 
