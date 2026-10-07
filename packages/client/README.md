@@ -83,6 +83,10 @@ Pass `token` for an `at_` API token, or `credentials: "include"` from a browser 
 
 Every method resolves to `{ ok: true, value }` or `{ ok: false, error }`. `error.code` is a code from the API's error catalog, or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when no answer came back. `error.status`, `error.details` and `error.requestId` carry what the API sent.
 
+## Example
+
+[`examples/dashboard`](../../examples/dashboard) is a small React app on this client: stats, a timeseries chart, breakdowns, a country table and a live event stream for one project, each view from one scope method. `bun run --cwd examples/dashboard dev` serves it on port 3301.
+
 ## Development
 
 ```sh

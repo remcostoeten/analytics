@@ -100,6 +100,8 @@ else console.error(pages.error.code, pages.error.message);
 
 `stats`, `timeseries`, `lifecycle` and `issues` work the same way. See [Admin](/docs/sdk/admin#reads).
 
+In the browser, or for every read route, `@spoar/client` is the full typed client: one chainable scope per project and a method per route. The [example dashboard](/examples/dashboard) is this guide as a runnable page: stats tiles, a visitors chart, breakdowns, countries and a live stream, each from one client call. See [Read client](/docs/sdk/read-client).
+
 ## 5. Run SQL
 
 For questions the read routes do not answer, run one `SELECT` or `WITH` statement against the views in the `query` schema. This needs a token with the `sql` scope, or a signed-in owner, admin or analyst.
