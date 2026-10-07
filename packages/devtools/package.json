@@ -1,6 +1,6 @@
 {
 	"name": "@spoar/devtools",
-	"version": "0.1.0-next.1",
+	"version": "0.1.0-next.2",
 	"description": "An overlay panel for admins on their own site: live visitors, sessions, logs, speed and errors from Spoar analytics.",
 	"license": "MIT",
 	"repository": {
@@ -58,7 +58,7 @@
 		"test": "bun test"
 	},
 	"peerDependencies": {
-		"@spoar/sdk": ">=2.0.0-next.1",
+		"@spoar/sdk": ">=2.0.0-next.2",
 		"next": ">=15",
 		"react": ">=19",
 		"react-dom": ">=19"

@@ -1,5 +1,13 @@
 # @spoar/devtools
 
+## 0.1.0-next.2
+
+### Patch Changes
+
+- ebc8906: Link the README screenshot and the dev widget docs page with absolute URLs, so both work on npmjs.com.
+- Updated dependencies [2cd492f]
+  - @spoar/sdk@2.0.0-next.2
+
 ## 0.1.0-next.1
 
 ### Minor Changes
