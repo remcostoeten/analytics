@@ -31,7 +31,7 @@ Requires Bun 1.3.
 bun install          # install every workspace
 bun run test         # run all tests
 bun run typecheck    # typecheck every workspace
-bun run dev          # start the v1 dashboard
+bun run dev:v1       # start the v1 dashboard
 ```
 
 How the repo is organised and how work is done is in [AGENTS.md](AGENTS.md).

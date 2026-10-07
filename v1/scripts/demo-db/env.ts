@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-const BLOCK_START = "# >>> demo-db (managed by `bun run demo:db`) >>>";
+const BLOCK_START = "# >>> demo-db (managed by `bun run demo:v1:db`) >>>";
 const BLOCK_END = "# <<< demo-db <<<";
 const SAVED_PREFIX = "# demo-db saved: ";
 export const DEMO_DATABASE_URL = "postgres://postgres:postgres@db.localtest.me:5434/analytics";

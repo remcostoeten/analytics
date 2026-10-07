@@ -52,7 +52,13 @@ The five blockers in [release-readiness.md](release-readiness.md) are fixed in #
 
 | Step | Owner | Done when |
 | --- | --- | --- |
-| Create a project per site through the API (`POST /v2/projects`) | Remco or agent with a token | Each site has a public and a secret key |
+| E3.5: the Next install in two lines, and the prerender and React types fixes found on doradb.app | agent | A Next 16 fixture with `cacheComponents` and an instant route builds clean and records a pageview |
+| Merge the E3.5 version pull request | Remco | The fixed `@spoar/sdk` is on npm under `next` |
+| E4.10: the setup page at `/v2/setup` | agent | A project and its keys can be created in the browser |
+| Sign in on `/v2/setup` once, which creates the organization | Remco | `GET /v2/auth/session` shows the owner role |
+| Create a project per site on `/v2/setup`, starting with `doradb.app` | Remco | Each site has a public and a secret key |
+| Move doradb.app to the two-line setup: `~/dev/dora/apps/marketing` runs 2.0.0-next.1 with a provider wrapper, a client-only tracker and an explicit proxy endpoint (uncommitted on its current branch) | agent, in the dora repository | `src/core/analytics/` is one layout line and the proxy route is `createProxy()` |
+| Set `NEXT_PUBLIC_RA_CONFIG`, `RA_SECRET` and `RA_ENDPOINT` on each site's Vercel project | Remco | Events arrive in v2 |
 | Install `@spoar/sdk@next` on remcostoeten.nl and the other sites, through the `/_ra` proxy, next to 1.x | agent, per site repository | Events arrive in v2 for every site |
 | Run v1 and v2 side by side for two weeks | none | Two weeks of v2 traffic exist |
 

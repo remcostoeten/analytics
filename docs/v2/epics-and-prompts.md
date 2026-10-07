@@ -1,6 +1,6 @@
 # Epics and agent prompts
 
-Twenty-five epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
+Twenty-seven epics across six phases, each small enough for one agent session and one PR. Every epic lists what it needs first, what it delivers, when it is done, and a prompt to paste into a new agent session.
 
 ## How to use this
 
@@ -44,6 +44,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E3.2 | SDK plugins | 3 | E3.1 | `feature/sdk-2-plugins` |
 | E3.3 | React, server and proxy entries, build and release | 3 | E3.1 | `feature/sdk-2-entries` |
 | E3.4 | End-to-end tests, blocker matrix, 2.0.0 | 3 | E3.2, E3.3 | `chore/sdk-2-release` |
+| E3.5 | Next install in two lines | 3 | E3.3 | `fix/sdk-next-install` |
 | E4.1 | Auth, tokens and visibility | 4 | E2.4 | `feature/api-auth` |
 | E4.2 | Read resources | 4 | E4.1 | `feature/api-reads` |
 | E4.3 | Speed insights | 4 | E3.2, E4.2 | `feature/speed-insights` |
@@ -53,6 +54,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E4.8 | Dev widget endpoints | 4 | E4.2, E4.4 | `feature/widget-endpoints` |
 | E4.9 | Dev widget UI, `@spoar/devtools` | 4 | E4.8, or its fixtures | `feature/devtools-ui` |
+| E4.10 | Setup page in the API | 4 | E4.1 | `feature/api-setup-page` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, later epics follow the product focus in the plan (decision 17), in this order: annotations (built in the API and admin SDK; the dashboard draws them); Search Console; saved segments; email reports and metric alerts; webhooks; source maps; share links and embeds; an MCP server; and the Durable Object realtime hub if polling ever falls short. Lifecycle, stickiness and group analytics are already built. Goals, funnels, actions, experiment statistics, feature flags, click heatmaps and surveys are not planned; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
@@ -162,7 +164,7 @@ Epic E1.2, branch feature/v2-migrations. Read the plan sections "Storage", "Acce
 2. Update schema.ts, using one baseEntity helper for id and timestamps where the rules require it.
 3. Write scripts/migrate.ts: applies numbered files in order, records them in schema_migrations, prints what it would do with --dry-run, needs DATABASE_URL, never runs on deploy.
 4. Replace the hand-copied DDL in packages/ingestion/tests/setup.ts with running the migration files on PGlite. All existing ingestion tests must still pass.
-5. Run it against the local demo database (bun run demo:db) twice and include the output. Do not touch Neon.
+5. Run it against the local demo database (bun run demo:v1:db) twice and include the output. Do not touch Neon.
 ```
 
 ## Phase 2: engine and v2 ingest
@@ -269,6 +271,41 @@ Epic E3.4, branch chore/sdk-2-release. Read the plan sections "Test process" and
 3. docs/release-checklist.md with the manual matrix (Brave standard and aggressive, uBlock Origin with EasyPrivacy, Firefox strict, Safari) and what to record.
 4. Rewrite packages/sdk/README.md for 2.0 following the README rules in generic-program-rules, including a 1.x to 2.0 migration table.
 5. Add the e2e job to CI on pull requests. Do not publish; the Changesets version PR is for Remco to merge.
+```
+
+### E3.5 Next install in two lines
+
+Delivers: fixes for the three problems found installing `@spoar/sdk@2.0.0-next.1` on doradb.app, and a Next setup of one component and one proxy route. `<Analytics />` from `./next` no longer reads the URL during prerender, so `cacheComponents` routes with `export const instant = true` build clean. `@types/react` is an optional peer dependency, so a monorepo with React 18 and 19 types resolves the consumer's version. `<Analytics />` works without `AnalyticsProvider`: it builds its own client from `NEXT_PUBLIC_RA_CONFIG` and takes plugins by name. `createProxy()` reads `RA_SECRET` and `RA_ENDPOINT` from the environment. Done when a Next 16 fixture with `cacheComponents` and an instant route builds with no blocking-prerender errors and records a pageview with its route template through the proxy, and the size budgets hold.
+
+```text
+Epic E3.5, branch fix/sdk-next-install. Make @spoar/sdk install in a Next App Router app with one component in the root layout and one proxy route, and fix the three problems found installing 2.0.0-next.1 on doradb.app (~/dev/dora/apps/marketing, uncommitted on its current branch; read src/core/analytics/ and src/app/%5Fra/route.ts there for the workaround it needed). Read AGENTS.md, docs/v2/sdk-design.md, packages/sdk/README.md and apps/docs/content/docs/sdk/next.mdx first. Open one pull request into master with a changeset for @spoar/sdk. Do not merge or publish.
+
+1. Prerender-safe tracker
+- Problem: in a Next 16 app with cacheComponents: true, `next build` logs "Next.js encountered URL data `usePathname()` in a Client Component outside of `<Suspense>`" for every route with `export const instant = true`, even though Tracker in packages/sdk/src/next/index.tsx sits in its own Suspense, and also with a Suspense around it in the layout. Mounting it with next/dynamic and ssr: false avoids it.
+- Fix: render Tracker only after hydration, gated by useSyncExternalStore with a server snapshot of false and a client snapshot of true, so prerender never calls usePathname, useParams or useSearchParams. No setState in an effect. The first pageview still carries the route template.
+- Add a Next fixture app under e2e (e2e/next-site, a Bun workspace on the repo's Next version) with cacheComponents: true, a static page, a dynamic [slug] page with `export const instant = true`, and the /_ra proxy route. Add it to the boundaries check and lint folders as AGENTS.md says. A Playwright spec builds it, fails on any "blocking-prerender" line in the build output, starts it against the API on PGlite, and checks that a visit to /blog/hello records a pageview with route /blog/[slug] through /_ra.
+
+2. React types as a peer
+- Problem: the SDK has no @types/react dependency, so in a monorepo with @types/react 18 hoisted (dora's desktop and studio) and 19 in the app, dist/react.d.mts resolves the 18 types and `<AnalyticsProvider>{children}</AnalyticsProvider>` fails with "ReactNode is not assignable to React.ReactNode".
+- Fix: add "@types/react": ">=19" to peerDependencies, optional in peerDependenciesMeta, next to react. Check with bun pm pack: install the tarball in a scratch Bun workspace that hoists @types/react 18 and has 19 in the app package, and typecheck a component that wraps children.
+
+3. One component without a provider
+- `<Analytics />` from ./next keeps working inside AnalyticsProvider. Without a provider it creates its own client on first client render, once per page, from NEXT_PUBLIC_RA_CONFIG with pageviews: false, and provides it to its children, so useAnalytics, TrackClick and ErrorBoundary work below it.
+- A server layout cannot pass functions to a client component, so the standalone form takes serializable props only: plugins as names, `plugins={["errors", "outboundLinks"]}`, typed as a literal union of the plugin names in ./plugins, each loaded with its own dynamic import so an unused plugin is never downloaded; and optional project, key, debug and consent. Options given here win over NEXT_PUBLIC_RA_CONFIG.
+- It accepts children: `<Analytics plugins={["errors"]}>{children}</Analytics>` in app/layout.tsx is the whole browser setup. Without children it renders only the tracker.
+- Keep the next entry under its 1 KB budget; the lazy plugin chunks count against their own budgets. Run bun run size.
+
+4. Proxy from the environment
+- createProxy() with no options reads RA_SECRET and RA_ENDPOINT, then the JSON in RA_CONFIG, then the options passed, the later ones winning. The handler for app/%5Fra/route.ts becomes `export const POST = createProxy()`. No hosted endpoint is baked in, since others self-host (decision 14). The error when either is missing names both variables.
+
+5. Docs
+- Rewrite apps/docs/content/docs/sdk/next.mdx and the Next part of getting-started/quick-start.mdx around the two-line setup: `<Analytics plugins={[...]}>` in the layout, `export const POST = createProxy()`, and the three variables NEXT_PUBLIC_RA_CONFIG, RA_SECRET and RA_ENDPOINT. Keep the provider form as the second option, for apps that create the client themselves.
+- Update packages/sdk/README.md to match, and add a troubleshooting entry for the mixed React types case.
+
+6. Checks
+- bun test for the plugin-name loader and the proxy env resolution, the new Playwright spec, bun run size and bun run check.
+
+End with a summary in the house style, including the gzip sizes of the next entry before and after.
 ```
 
 ## Phase 4: read API, sign-in and dashboard
@@ -435,6 +472,46 @@ Add one row to the decisions table in docs/v2/plan.md: "Dev widget ships as @spo
 - A short README for packages/devtools in the house style.
 
 End with a summary in the house style: what was built, the bundle sizes, anything deferred.
+```
+
+### E4.10 Setup page in the API
+
+Delivers: `GET /v2/setup`, an HTML page served by the API for the owner until the dashboard exists. It signs in with GitHub, lists the projects, creates a project and shows its keys once with a ready-to-paste env block, rotates a secret, and edits allowed origins. New projects get `https://<domain>` and `https://www.<domain>` as allowed origins by default, in the page and in `bun run setup`. Done when a fresh database goes from no organization to a created project with copied keys in the browser only, and the Playwright spec covers sign-in, create and rotate against the API on PGlite.
+
+```text
+Epic E4.10, branch feature/api-setup-page. Add a setup page to the API, so creating a project and getting its keys needs a browser and nothing else until E4.5 ships the dashboard. Today it needs `bun run setup` against the production database, or a sign-in snippet pasted into the browser console (apps/docs/content/docs/guides/self-host.mdx step 6) followed by POST /v2/projects by hand. Read AGENTS.md, docs/v2/plan.md (Access and sign-in, decisions 6, 8 and 14), docs/v2/api-reference.md, apps/api/src/modules/landing and apps/api/src/modules/projects first, and load the generic-program-rules and emil-design-eng skills. Open one pull request into master. Do not merge, apply migrations or change Vercel settings.
+
+0. Decision
+Add one row to the decisions table in docs/v2/plan.md: "Until the dashboard (E4.5) exists, the API serves a setup page at /v2/setup for sign-in, projects and keys. It is server-rendered HTML with no client framework, hidden from the OpenAPI document, and is removed or redirected to the dashboard once E4.5 ships." Stop and ask Remco if this conflicts with an existing decision.
+
+1. Route
+- A setup module beside the landing module: GET /v2/setup returns HTML, hidden from the OpenAPI document like GET /v2. Render it the way the landing page renders, with the same styles and theme tokens, no client framework and a small inline script for the forms.
+- Signed out: one "Sign in with GitHub" button that calls POST /v2/auth/sign-in/social with callbackURL /v2/setup. Explain that only logins on the dashboard_users allowlist get in, and that the first one becomes the owner.
+- Signed in without admin rights: show the login and role, and say an owner must grant access.
+- Admin or owner: the project list (id, name, domain, visibility, allowed origins, created), and the forms below.
+
+2. Create a project
+- Fields: id (the CreateProject pattern, suggested from the domain), name, domain, visibility, allowed origins. Allowed origins start filled with https://<domain> and https://www.<domain> and stay editable; say that an empty list accepts events from any origin.
+- It calls POST /v2/projects with the session cookie. On 201, show the public and secret keys once, with copy buttons, a warning that the secret is not shown again, and ready-to-paste blocks: the Next env block (NEXT_PUBLIC_RA_CONFIG with project and key, RA_SECRET, RA_ENDPOINT set to this API's origin) and the two-line install from E3.5 (the <Analytics /> layout line and `export const POST = createProxy()`). Before E3.5 merges, show the current provider form from apps/docs/content/docs/sdk/next.mdx instead.
+- Validation errors from the API show next to their field.
+
+3. Keys and origins
+- Rotate the secret per project through POST /v2/projects/:project/keys, behind a confirm step that says the old secret stops working at once; show the new one once, like create.
+- Edit allowed origins inline through PATCH /v2/projects/:project.
+
+4. Same default in the CLI
+- scripts/setup.ts creates the first project with allowedOrigins [https://<domain>, https://www.<domain>] instead of [], and prints the same env block as the page. Update its test.
+
+5. Safety
+- Cookie-authenticated writes keep the API's existing origin and trustedOrigins checks; do not widen CORS. The page sends Cache-Control: no-store and a Content-Security-Policy that allows only its own inline script by hash or nonce. Keys never go into a URL, a log line or localStorage.
+
+6. Tests and docs
+- bun test for the page rendering per state (signed out, no rights, admin with and without projects) and the default origins, with memory adapters.
+- A Playwright spec against the API on PGlite: sign in as an allowlisted admin the way e2e/tests/devtools.spec.ts does, create a project, read the keys, send one event with them, rotate the secret, and check the old one is refused.
+- Replace step 6 of apps/docs/content/docs/guides/self-host.mdx and the project step of docs/v2/deploy.md with "open <API URL>/v2/setup".
+- bun run --cwd apps/api openapi, which should not change the document, and bun run check.
+
+End with a summary in the house style and a screenshot of each state.
 ```
 
 ## Phase 5: retire 1.x

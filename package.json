@@ -57,9 +57,9 @@
 		"size": "bun scripts/size-check.ts",
 		"release": "bun scripts/publish.ts",
 		"check": "bun run typecheck && bun run lint && bun run format:check && bun run boundaries && bun run deps && bun run knip && bun run test",
-		"dev": "bun run --cwd v1/apps/dashboard dev",
-		"dev:ingestion": "bun run --cwd v1/apps/ingestion dev",
-		"demo:db": "bun run v1/scripts/demo-db/setup.ts"
+		"dev:v1": "bun run --cwd v1/apps/dashboard dev",
+		"dev:v1:ingestion": "bun run --cwd v1/apps/ingestion dev",
+		"demo:v1:db": "bun run v1/scripts/demo-db/setup.ts"
 	},
 	"workspaces": [
 		"apps/*",

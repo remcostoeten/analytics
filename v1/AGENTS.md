@@ -2,7 +2,7 @@
 
 This is the guide for v1, the version running in production from `master`. It is frozen: no new features, and fixes only when Remco asks for one. New work happens in v2 at the repo root; start from the root `AGENTS.md`.
 
-Paths below are relative to `v1/`. The root commands (`bun run dev`, `bun run demo:db`, `bun run test`) still work from the repo root.
+Paths below are relative to `v1/`. The root commands (`bun run dev:v1`, `bun run demo:v1:db`, `bun run test`) still work from the repo root.
 
 Self-hosted, privacy-first web analytics. Owned and designed by Remco.
 
@@ -117,7 +117,7 @@ Schema change checklist:
 3. Update the hand-maintained DDL in `packages/ingestion/tests/setup.ts`.
 4. Apply to Neon.
 
-Local demo database: `bun run demo:db` starts Postgres 16 on `:5434` plus a Neon HTTP proxy on `:4444`, applies all migrations, seeds ~90 days of data. `--force` reseeds, `--use-demo` / `--restore` switch consumer `.env.local`.
+Local demo database: `bun run demo:v1:db` starts Postgres 16 on `:5434` plus a Neon HTTP proxy on `:4444`, applies all migrations, seeds ~90 days of data. `--force` reseeds, `--use-demo` / `--restore` switch consumer `.env.local`.
 
 ## SDK
 
@@ -174,8 +174,8 @@ npm packages: no release script; bump, build and `npm publish` by hand from `pac
 | `bun run lint` | `oxlint apps packages --deny-warnings` |
 | `bun run fmt` / `fmt:check` | oxfmt over `apps` and `packages` |
 | `bun run test` | `bun test` per workspace |
-| `bun run dev:ingestion` | local ingestion server |
-| `bun run demo:db` | local seeded Postgres |
+| `bun run dev:v1:ingestion` | local ingestion server |
+| `bun run demo:v1:db` | local seeded Postgres |
 
 Before merge: `bun run typecheck`, `bun run lint`, `bun run test`. CI (`.github/workflows/ci.yml`) builds packages, then typecheck, lint, fmt:check, test.
 

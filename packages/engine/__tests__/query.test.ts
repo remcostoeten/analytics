@@ -188,6 +188,17 @@ describe("prepareQuery", () => {
     expect(result.ok ? null : result.error.message).toBe(message);
   });
 
+  test("keeps a string literal or comment at the end of the query", () => {
+    expect(prepareQuery("select name from events where props->>'run' = 'dpq66ak8';", {})).toEqual({
+      ok: true,
+      value: { text: "select name from events where props->>'run' = 'dpq66ak8'", params: [] },
+    });
+    expect(prepareQuery("select 1 -- trailing note", {})).toEqual({
+      ok: true,
+      value: { text: "select 1 -- trailing note", params: [] },
+    });
+  });
+
   test("needs a value for every parameter used", () => {
     const result = prepareQuery("select :project", {});
     expect(result.ok ? null : result.error.message).toBe(
