@@ -1,4 +1,4 @@
-import { parseJson } from "./json";
+import { isRecord, parseJson } from "./json";
 import type { Json } from "./json";
 import type { Route } from "./spec";
 
@@ -152,4 +152,61 @@ export function fetchSnippet(settings: Settings, route: Route, draft: Draft) {
     "});",
     "const data = await response.json();",
   ].join("\n");
+}
+
+const playgroundSession = crypto.randomUUID();
+
+function playgroundVisitor() {
+  try {
+    const saved = localStorage.getItem("spoar-playground-visitor");
+    if (saved) return saved;
+    const created = crypto.randomUUID();
+    localStorage.setItem("spoar-playground-visitor", created);
+    return created;
+  } catch {
+    return playgroundSession;
+  }
+}
+
+/**
+ * @name sendDirect
+ * @description Posts one event straight to `/v2/events` with the project key, skipping the SDK's
+ * Do Not Track and Global Privacy Control check so test sends work in any browser.
+ *
+ * @example
+ * const result = await sendDirect(settings, "pageview", {});
+ */
+export async function sendDirect(
+  settings: Settings,
+  name: string,
+  props: { [key: string]: string },
+) {
+  const now = new Date().toISOString();
+  const response = await fetch(`${settings.base}/v2/events`, {
+    method: "POST",
+    headers: { "content-type": "text/plain", "x-project-key": settings.projectKey },
+    body: JSON.stringify({
+      v: 1,
+      sentAt: now,
+      events: [
+        {
+          id: crypto.randomUUID(),
+          name,
+          ts: now,
+          visitor: playgroundVisitor(),
+          session: playgroundSession,
+          page: {
+            path: location.pathname,
+            title: document.title,
+            referrer: document.referrer || undefined,
+          },
+          props,
+        },
+      ],
+    }),
+  });
+  const raw = await response.text();
+  const body = parseJson(raw);
+  const accepted = response.ok && isRecord(body) ? Number(body.accepted ?? 0) : 0;
+  return { ok: accepted > 0, status: response.status, raw };
 }

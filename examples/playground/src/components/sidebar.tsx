@@ -81,6 +81,13 @@ export function Sidebar({ groups, methods, selected, query, onQuery, onSelect }:
         />
         <button
           type="button"
+          className={selected === "stats" ? "item overview active" : "item overview"}
+          onClick={() => onSelect("stats")}
+        >
+          Stats
+        </button>
+        <button
+          type="button"
           className={selected === "overview" ? "item overview active" : "item overview"}
           onClick={() => onSelect("overview")}
         >

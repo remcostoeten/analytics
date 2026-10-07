@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { isRecord, list, parseJson, text } from "../json";
 import type { Json } from "../json";
+import { sendDirect } from "../request";
 import type { Settings } from "../request";
 import type { Kit } from "../sdk-catalog";
 
@@ -222,6 +223,19 @@ export function Walkthrough({ settings, kit, log }: Props) {
     try {
       analytics.track(eventName, { run: id });
       const result = await analytics.flush();
+      if (result.accepted === 0 && result.duplicates === 0 && drops[0] === "dnt") {
+        const direct = await sendDirect(settings, eventName, { run: id });
+        setSent(
+          direct.ok
+            ? {
+                state: "ok",
+                summary: `This browser sends Do Not Track or Global Privacy Control, so the SDK dropped the event. The playground posted it straight to /v2/events instead. It carries run id ${id} so step 3 can find exactly this row.`,
+                table: null,
+              }
+            : { state: "error", message: `${direct.status}: ${direct.raw.slice(0, 300)}` },
+        );
+        return;
+      }
       if (result.accepted === 0 && result.duplicates === 0) {
         setSent({ state: "error", message: sentMessage(result.failed, drops, errors) });
         return;

@@ -8,6 +8,7 @@ import { Overview } from "./components/overview";
 import { RoutePanel } from "./components/route-panel";
 import { SettingsBar } from "./components/settings-bar";
 import { Sidebar } from "./components/sidebar";
+import { Stats } from "./components/stats";
 import { Walkthrough } from "./components/walkthrough";
 import type { Draft, Outcome, Settings } from "./request";
 import { sdkMethods } from "./sdk-catalog";
@@ -17,6 +18,7 @@ import { loadSpec } from "./spec";
 import type { Route, Spec } from "./spec";
 
 const logLimit = 40;
+const pages = ["stats", "overview", "walkthrough"];
 
 function trimBase(base: string) {
   let trimmed = base;
@@ -34,7 +36,7 @@ function initialDraft(route: Route, settings: Settings): Draft {
 }
 
 function selectedFromHash() {
-  return decodeURIComponent(location.hash.slice(1)) || "overview";
+  return decodeURIComponent(location.hash.slice(1)) || "stats";
 }
 
 function readiness(method: string, entry: string, settings: Settings) {
@@ -166,16 +168,19 @@ export function App() {
                 log={log}
               />
             ) : null}
+            {selected === "stats" ? (
+              <Stats settings={effective} onAdvanced={() => select("overview")} />
+            ) : null}
             {selected === "overview" ? (
               <Overview spec={spec} methods={sdkMethods} base={base} onSelect={select} />
             ) : null}
             {selected === "walkthrough" ? (
               <Walkthrough settings={effective} kit={kit} log={log} />
             ) : null}
-            {selected !== "overview" && selected !== "walkthrough" && !route && !method && spec ? (
+            {pages.includes(selected) === false && !route && !method && spec ? (
               <p className="note">Nothing matches this link. Pick a route or method on the left.</p>
             ) : null}
-            {selected !== "overview" && selected !== "walkthrough" && !spec && !specError ? (
+            {pages.includes(selected) === false && !spec && !specError ? (
               <p className="note">Loading the API's OpenAPI document.</p>
             ) : null}
           </main>
