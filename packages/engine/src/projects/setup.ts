@@ -11,12 +11,13 @@ export type InstallKeys = {
 };
 
 function bareHost(domain: string): string {
-  return domain
+  const withoutScheme = domain
     .trim()
     .toLowerCase()
-    .replace(/^[a-z]+:\/\//, "")
-    .replace(/[/?#].*$/, "")
-    .replace(/:\d+$/, "");
+    .replace(/^[a-z]+:\/\//, "");
+  const end = withoutScheme.search(/[/?#]/);
+  const host = end === -1 ? withoutScheme : withoutScheme.slice(0, end);
+  return host.replace(/:\d+$/, "");
 }
 
 /**

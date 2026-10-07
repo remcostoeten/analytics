@@ -90,7 +90,9 @@ const script = `
     return { message, fields };
   }
   function host(domain) {
-    return domain.trim().toLowerCase().replace(/^[a-z]+:\\/\\//, "").replace(/[/?#].*$/, "").replace(/:\\d+$/, "");
+    const withoutScheme = domain.trim().toLowerCase().replace(/^[a-z]+:\\/\\//, "");
+    const end = withoutScheme.search(/[/?#]/);
+    return (end === -1 ? withoutScheme : withoutScheme.slice(0, end)).replace(/:\\d+$/, "");
   }
   function suggestId(domain) {
     return host(domain).replace(/^www\\./, "").replace(/[^a-z0-9.-]+/g, "-").replace(/^[.-]+/, "").slice(0, 64);
