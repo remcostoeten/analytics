@@ -1,5 +1,6 @@
 import { SQL } from "bun";
 
+import { defaultOrigins, envBlock } from "@spoar/engine";
 import { drizzleProjectAdmin, organizationId } from "@spoar/engine/adapters/access";
 import { webCryptoHasher } from "@spoar/engine/adapters/system";
 import { runMigrations } from "@spoar/engine/db/migrate";
@@ -18,7 +19,7 @@ type Parsed = { ok: true; value: Options } | { ok: false; error: string };
 type Keys = { publicKey: string; secretKey: string };
 
 const usage =
-  "Usage: DATABASE_URL=postgres://... bun run setup --owner <github-login> [--project <id> --domain <domain> [--name <name>]]";
+  "Usage: DATABASE_URL=postgres://... [API_URL=https://...] bun run setup --owner <github-login> [--project <id> --domain <domain> [--name <name>]]";
 
 // A GitHub login: letters, digits and single hyphens, not at either end.
 const loginPattern = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
@@ -80,8 +81,9 @@ export async function allowOwner(sql: SQL, login: string): Promise<boolean> {
 /**
  * @name createFirstProject
  * @description Creates a public project with a new public key and secret key, storing only the
- * secret's sha256 hash. Without an organization yet, the owner's first sign-in claims it. Answers
- * null when the id is taken.
+ * secret's sha256 hash, allowing `https://<domain>` and `https://www.<domain>` to send events.
+ * Without an organization yet, the owner's first sign-in claims it. Answers null when the id is
+ * taken.
  *
  * @example
  * const keys = await createFirstProject(sql, { id: "blog", name: "Blog", domain: "blog.nl" });
@@ -98,7 +100,7 @@ export async function createFirstProject(
     ...project,
     visibility: "public",
     publicVisitorData: false,
-    allowedOrigins: [],
+    allowedOrigins: defaultOrigins(project.domain),
     retentionDays: 90,
     publicKey,
     secretKeyHash: await webCryptoHasher().sha256(secretKey),
@@ -122,6 +124,7 @@ async function main() {
     return;
   }
   const { owner, project } = parsed.value;
+  const apiUrl = process.env.API_URL ?? "https://api.analytics.remcostoeten.nl";
   // Unnamed statements, so pooled connections such as Neon's pooler do not collide on names.
   const sql = new SQL(url, { prepare: false });
   try {
@@ -140,9 +143,21 @@ async function main() {
     if (project) {
       const keys = await createFirstProject(sql, project);
       if (keys) {
-        console.log(`Created project ${project.id}`);
+        console.log(
+          `Created project ${project.id}, accepting events from ${defaultOrigins(project.domain).join(" and ")}`,
+        );
         console.log(`Public key: ${keys.publicKey}`);
         console.log(`Secret key: ${keys.secretKey} (shown once)`);
+        console.log("");
+        console.log(
+          envBlock({
+            project: project.id,
+            publicKey: keys.publicKey,
+            secretKey: keys.secretKey,
+            endpoint: apiUrl,
+          }),
+        );
+        console.log("");
       } else {
         console.log(`Project ${project.id} already exists; its keys are unchanged`);
       }

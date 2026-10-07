@@ -47,6 +47,15 @@ async function prepare() {
     "INSERT INTO projects (id, name, domain, allowed_origins, public_key, secret_key_hash) VALUES ('site', 'site', 'localhost', '{}', $1, $2)",
     [publicKey, await webCryptoHasher().sha256(secretKey)],
   );
+  await database.query(
+    "INSERT INTO auth_organization (id, name, slug) VALUES ('org_main', 'Main', 'main')",
+  );
+  await database.query(
+    "INSERT INTO auth_user (id, name, email, github_login) VALUES ('u_owner', 'Owner', 'owner@example.test', 'owner')",
+  );
+  await database.query(
+    "INSERT INTO auth_member (id, organization_id, user_id, role, project_ids) VALUES ('mem_owner', 'org_main', 'u_owner', 'owner', NULL)",
+  );
 }
 
 async function bundle() {
@@ -142,8 +151,20 @@ function devtoolsPage() {
 }
 
 function signedIn(request: Request) {
-  return (request.headers.get("cookie") ?? "").includes(`${adminCookie}=1`);
+  return adminCookieSent(request.headers);
 }
+
+function adminCookieSent(headers: Headers) {
+  return (headers.get("cookie") ?? "").includes(`${adminCookie}=1`);
+}
+
+const owner = {
+  userId: "u_owner",
+  name: "Owner",
+  login: "owner",
+  image: null,
+  expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+};
 
 async function widgetRoute(request: Request, url: URL) {
   if (url.pathname === "/v2/widget/session" && !signedIn(request)) {
@@ -195,7 +216,7 @@ const api = createApp({
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
   access: {
     ...pgliteAccess(database),
-    sessions: async () => null,
+    sessions: async (headers) => (adminCookieSent(headers) ? owner : null),
     hasher: webCryptoHasher(),
     clock: () => clock.now(),
     cronSecret: null,

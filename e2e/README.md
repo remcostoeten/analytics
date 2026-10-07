@@ -18,5 +18,5 @@ Each test uses its own `<run>` path segment, so tests can share the database and
 
 | Project | Checks |
 | --- | --- |
-| `headless` | Pageviews, SPA navigation, custom events and send on hide through both transports; required consent; `?ra=ignore`; web vitals, with stored LCP, INP and CLS within 10% of the browser's own measurements; uncaught errors; a headless browser scoring 50 or more |
+| `headless` | Pageviews, SPA navigation, custom events and send on hide through both transports; required consent; `?ra=ignore`; web vitals, with stored LCP, INP and CLS within 10% of the browser's own measurements; uncaught errors; a headless browser scoring 50 or more; the dev widget; the setup page at `/v2/setup`, where the `ra_e2e_admin` cookie stands in for the owner's session |
 | `headed` | A headed browser without the automation flag, with scripted mouse and keyboard input, scoring under 50 |

@@ -68,18 +68,9 @@ Check that `<API URL>/v2/health` answers `"ok": true`.
 
 ## 6. Sign in and create a project
 
-Open `<API URL>/v2/health` and run this in the browser console. It redirects to GitHub and back:
+Open `<API URL>/v2/setup` and sign in with GitHub. The page lists your projects, creates one with its public and secret key, prints the `.env.local` block and the two Next files to paste, rotates a secret and edits the allowed origins. New projects accept events from `https://<domain>` and `https://www.<domain>`; clear the list to accept any origin. The secret key is shown once.
 
-```js
-const response = await fetch("/v2/auth/sign-in/social", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ provider: "github", callbackURL: "/v2/auth/session" }),
-});
-location.href = (await response.json()).url;
-```
-
-`/v2/auth/session` then shows your login with `"role": "owner"`. If you skipped `--project` in step 1, create a project with `POST /v2/projects` from the same tab, or with the [admin client](/docs/sdk/admin), and keep its public and secret keys.
+The first allowed login to sign in becomes the owner. Later logins see their role and a note that an owner must grant access.
 
 ## 7. Schedule the jobs
 

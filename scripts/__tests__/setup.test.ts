@@ -12,7 +12,7 @@ const database = new PGlite();
 const server = new PGLiteSocketServer({ db: database, port });
 const url = `postgres://postgres:postgres@127.0.0.1:${port}/postgres?sslmode=disable`;
 
-async function setup(args: string[], env: { DATABASE_URL?: string }) {
+async function setup(args: string[], env: { DATABASE_URL?: string; API_URL?: string }) {
   const child = Bun.spawn(["bun", script, ...args], {
     env: { PATH: process.env.PATH, ...env },
     stdout: "pipe",
@@ -73,20 +73,36 @@ describe("scripts/setup.ts against a Postgres server", () => {
   test("migrates, allows the owner and creates the project with its keys", async () => {
     const result = await setup(
       ["--owner", "remcostoeten", "--project", "blog", "--domain", "blog.nl", "--name", "Blog"],
-      { DATABASE_URL: url },
+      { DATABASE_URL: url, API_URL: "https://api.example.test" },
     );
     expect(result.stderr).toBe("");
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("Allowed remcostoeten to sign in");
     expect(result.stdout).toMatch(/Public key: pk_live_[0-9a-f]{16}/);
     expect(result.stdout).toMatch(/Secret key: sk_live_[0-9a-f]{32}/);
+    expect(result.stdout).toContain(
+      "accepting events from https://blog.nl and https://www.blog.nl",
+    );
+    expect(result.stdout).toMatch(
+      /NEXT_PUBLIC_RA_CONFIG='\{"project":"blog","key":"pk_live_[0-9a-f]{16}","endpoint":"\/_ra"\}'\nRA_SECRET=sk_live_[0-9a-f]{32}\nRA_ENDPOINT=https:\/\/api\.example\.test/,
+    );
 
     const users = await database.query("SELECT github_login FROM dashboard_users");
     expect(users.rows).toEqual([{ github_login: "remcostoeten" }]);
-    const projects = await database.query<{ id: string; name: string; org_id: string | null }>(
-      "SELECT id, name, org_id FROM projects",
-    );
-    expect(projects.rows).toEqual([{ id: "blog", name: "Blog", org_id: null }]);
+    const projects = await database.query<{
+      id: string;
+      name: string;
+      org_id: string | null;
+      allowed_origins: string[];
+    }>("SELECT id, name, org_id, allowed_origins FROM projects");
+    expect(projects.rows).toEqual([
+      {
+        id: "blog",
+        name: "Blog",
+        org_id: null,
+        allowed_origins: ["https://blog.nl", "https://www.blog.nl"],
+      },
+    ]);
   });
 
   test("a second run changes nothing", async () => {

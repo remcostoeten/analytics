@@ -22,6 +22,7 @@ import { projectsModule } from "./modules/projects/route";
 import { queryModule } from "./modules/query/route";
 import type { QueryOptions } from "./modules/query/service";
 import { readsModule } from "./modules/reads/route";
+import { setupModule } from "./modules/setup/route";
 import { speedModule } from "./modules/speed/route";
 import type { ReadsOptions } from "./modules/reads/guard";
 import type { HistorySource } from "./modules/landing/service";
@@ -74,7 +75,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, tokens, the reads, annotations, the SQL console, with
+ * health, ingest, sign-in, projects, the setup page, tokens, the reads, annotations, the SQL console, with
  * `alerts` the alert routes, and with `widget` the dev widget's bootstrap, active visitors and
  * sessions, overview, log and the `live` WebSocket. The engine is created per request so its
  * log lines carry the request id. Events sent with a signed-in admin's session cookie are
@@ -135,6 +136,7 @@ export function createApp(options: AppOptions) {
       }),
     )
     .use(projectsModule(options.access, options.docsBase))
+    .use(setupModule(options.access, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
     .use(readsModule(options.access, reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))

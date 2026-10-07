@@ -85,18 +85,9 @@ Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Disco
 
 ## 8. First sign-in and token
 
-Sign-in is a `POST` that answers with the GitHub URL. Open `https://api.analytics.remcostoeten.nl/v2/health`, then run this in that tab's console:
+Open `https://api.analytics.remcostoeten.nl/v2/setup` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The page creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins.
 
-```js
-const response = await fetch("/v2/auth/sign-in/social", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ provider: "github", callbackURL: "/v2/auth/session" }),
-});
-location.href = (await response.json()).url;
-```
-
-GitHub sends you back to `/v2/auth/session`, which should show your login with `"role": "owner"`: the first login in `dashboard_users` to sign in owns the organization. The v1 database already has your login in that table; on a fresh database, run `INSERT INTO dashboard_users (github_login) VALUES ('your-login')` first. In the same tab, create a token for scripts and the docs site's query page; it is shown once:
+For a token for scripts and the docs site's query page, run this in that tab's console; it is shown once:
 
 ```js
 const token = await fetch("/v2/tokens", {
