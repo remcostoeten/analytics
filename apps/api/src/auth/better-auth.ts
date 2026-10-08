@@ -38,8 +38,10 @@ async function allowed(members: MemberStore, login: unknown) {
  * @name createAuth
  * @description Better Auth under `/v2/auth`: GitHub sign-in, sessions in the `auth_*` tables and
  * the organization plugin with the owner, admin, analyst and viewer roles. Only GitHub logins in
- * `dashboard_users` may create an account or a session, and each new account joins the single
- * organization. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
+ * `dashboard_users` may create an account or a session: `validateUserInfo` checks the login from
+ * the GitHub profile on every sign-in, and the user row takes that verified login, since Better
+ * Auth ignores `mapProfileToUser` for the server-owned `githubLogin` field. Each new account joins
+ * the single organization. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
@@ -47,6 +49,7 @@ async function allowed(members: MemberStore, login: unknown) {
  */
 export function createAuth(options: AuthOptions) {
   const { members } = options;
+  const verifiedLogins = new WeakMap<object, string>();
   return betterAuth({
     appName: "Analytics",
     baseURL: options.baseURL,
@@ -67,12 +70,18 @@ export function createAuth(options: AuthOptions) {
     }),
     user: {
       additionalFields: { githubLogin: { type: "string", required: false, input: false } },
+      validateUserInfo: async ({ source }, context) => {
+        const login = source.oauth?.providerId === "github" ? source.oauth.profile?.login : null;
+        if (typeof login !== "string" || !(await allowed(members, login))) {
+          return { error: "not_allowed", errorDescription: "This GitHub account is not allowed." };
+        }
+        if (context) verifiedLogins.set(context, login);
+      },
     },
     socialProviders: {
       github: {
         clientId: options.github.clientId,
         clientSecret: options.github.clientSecret,
-        mapProfileToUser: (profile) => ({ githubLogin: profile.login }),
       },
     },
     plugins: [
@@ -93,8 +102,10 @@ export function createAuth(options: AuthOptions) {
     databaseHooks: {
       user: {
         create: {
-          before: async (user) =>
-            (await allowed(members, user.githubLogin)) ? { data: user } : false,
+          before: async (user, context) => {
+            const login = context ? verifiedLogins.get(context) : undefined;
+            return login ? { data: { ...user, githubLogin: login } } : false;
+          },
           after: async (user) => {
             const login = typeof user.githubLogin === "string" ? user.githubLogin : user.name;
             const joined = await members.join(user.id, login);

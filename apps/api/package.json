@@ -25,6 +25,7 @@
 		"elysia": "1.4.30"
 	},
 	"devDependencies": {
+		"@better-auth/core": "1.7.6",
 		"@electric-sql/pglite": "0.5.8"
 	}
 }

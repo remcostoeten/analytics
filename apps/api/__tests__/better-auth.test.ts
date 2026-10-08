@@ -4,6 +4,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { pgliteAccess } from "@spoar/engine/adapters/pglite";
 import { runMigrations } from "@spoar/engine/db/migrate";
 import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
+import { runWithEndpointContext } from "@better-auth/core/context";
+import type { GenericEndpointContext } from "better-auth";
 import { makeSignature } from "better-auth/crypto";
 
 import { betterAuthSessions, createAuth } from "../src/auth/better-auth";
@@ -26,12 +28,21 @@ async function cookieFor(token: string) {
   return `ra.session_token=${encodeURIComponent(`${token}.${await makeSignature(token, secret)}`)}`;
 }
 
-async function createUser(login: string) {
+async function createUser(login: string, claimedLogin = login) {
   const context = await auth.$context;
+  // Safe: the OAuth callback hands validateUserInfo and the database hooks this same context, and they only read `context` from it.
+  const endpoint = { context } as GenericEndpointContext;
   try {
-    return await context.internalAdapter.createUser(
-      { name: login, email: `${login}@example.test`, emailVerified: true, githubLogin: login },
-      { method: "oauth", oauth: { providerId: "github", profile: { login } } },
+    return await runWithEndpointContext(endpoint, () =>
+      context.internalAdapter.createUser(
+        {
+          name: login,
+          email: `${login}@example.test`,
+          emailVerified: true,
+          githubLogin: claimedLogin,
+        },
+        { method: "oauth", oauth: { providerId: "github", profile: { login } } },
+      ),
     );
   } catch {
     return null;
@@ -59,6 +70,7 @@ beforeAll(async () => {
 describe("Better Auth", () => {
   test("only allowlisted GitHub logins get an account; the first one owns the organization", async () => {
     expect(await createUser("stranger")).toBeNull();
+    expect(await createUser("stranger", "remcostoeten")).toBeNull();
     const owner = await createUser("remcostoeten");
     const helper = await createUser("helper");
     expect(owner?.id).toBeString();
