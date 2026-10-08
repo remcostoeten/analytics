@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * @name useCopy
@@ -11,13 +11,17 @@ import { useState } from "react";
  */
 export function useCopy(text: string) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
 
   function copy() {
     navigator.clipboard
       .writeText(text)
       .then(() => {
+        clearTimeout(resetTimer.current);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
+        resetTimer.current = setTimeout(() => setCopied(false), 1600);
       })
       .catch(() => setCopied(false));
   }

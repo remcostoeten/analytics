@@ -104,3 +104,79 @@ export function FileIcon(props: Props) {
     </svg>
   );
 }
+
+export function SparkIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M12 3c.6 4.4 2.6 6.4 7 7-4.4.6-6.4 2.6-7 7-.6-4.4-2.6-6.4-7-7 4.4-.6 6.4-2.6 7-7Z" />
+    </svg>
+  );
+}
+
+export function ArrowUpRightIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M7 17 17 7M8 7h9v9" />
+    </svg>
+  );
+}
+
+export function ChevronIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+export function MenuIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M5 8h14M5 12h14M5 16h14" />
+    </svg>
+  );
+}
+
+export function CloseIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+export function ClockIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.5 2" />
+    </svg>
+  );
+}
+
+export function DatabaseIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <ellipse cx="12" cy="6" rx="7" ry="2.5" />
+      <path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5" />
+    </svg>
+  );
+}
+
+export function KeyIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <circle cx="8" cy="15" r="3.5" />
+      <path d="m10.5 12.5 8-8M16 7l2 2M14 9l1.5 1.5" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <path d="M3 12s3.5-6 9-6c1.6 0 3 .5 4.2 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.2-1.2" />
+      <path d="M4 20 20 4" />
+    </svg>
+  );
+}

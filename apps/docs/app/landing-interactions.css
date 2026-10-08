@@ -1,0 +1,177 @@
+.landing :is(.pill-dark, .pill-light, .pill-outline, .pill-ghost, .chip, .copy-control) {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.landing :is(.pill-dark, .pill-light, .pill-outline, .pill-ghost, .chip, .copy-control):active {
+  transform: scale(0.97);
+  transition-duration: 100ms;
+}
+
+.landing :is(a, button, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.landing :is(.pill-light, .pill-outline):focus-visible {
+  outline-color: var(--lilac);
+}
+
+.landing .cta-arrow,
+.landing .pill-light > svg,
+.landing .chip > svg {
+  transition: transform 180ms var(--ease-out);
+}
+
+.copy-feedback,
+.landing .nav-toggle-icons {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.copy-feedback > svg,
+.landing .nav-toggle-icons > svg {
+  grid-area: 1 / 1;
+  transition:
+    transform 160ms var(--ease-out),
+    opacity 120ms ease;
+}
+
+.copy-done,
+.landing .nav-close-icon {
+  opacity: 0;
+  transform: scale(0.9) rotate(-15deg);
+}
+
+.copy-control[data-copied="true"] .copy-idle,
+.landing .nav-toggle[aria-expanded="true"] .nav-menu-icon {
+  opacity: 0;
+  transform: scale(0.9) rotate(15deg);
+}
+
+.copy-control[data-copied="true"] .copy-done,
+.landing .nav-toggle[aria-expanded="true"] .nav-close-icon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.copy-control[data-copied="true"] {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+  background-color: color-mix(in srgb, var(--ok) 7%, var(--surface));
+}
+
+.landing .nav-popover {
+  transform-origin: calc(100% - 20px) top;
+}
+
+.landing .nav-popover a {
+  transition:
+    transform 150ms var(--ease-out),
+    background-color 150ms ease;
+}
+
+.landing .step-card {
+  transition: border-color 150ms ease;
+}
+
+.landing .step-card > div > span,
+.landing .step-card > div > div {
+  transition: transform 180ms var(--ease-out);
+}
+
+.landing .faq summary {
+  border-radius: 6px;
+  transition: color 150ms ease;
+}
+
+.landing .faq-chevron {
+  transition:
+    transform 180ms var(--ease-out),
+    color 150ms ease;
+}
+
+.landing .faq[open] .faq-chevron {
+  color: var(--fg);
+  transform: rotate(180deg);
+}
+
+@supports (interpolate-size: allow-keywords) and selector(::details-content) {
+  .landing .faq {
+    interpolate-size: allow-keywords;
+  }
+
+  .landing .faq::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      block-size 220ms var(--ease-out),
+      opacity 150ms ease,
+      content-visibility 220ms allow-discrete;
+  }
+
+  .landing .faq[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing :is(.pill-dark, .pill-light, .pill-outline, .chip):hover {
+    transform: translateY(-1px);
+  }
+
+  .landing :is(.pill-dark, .pill-light, .pill-outline, .chip):active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .landing .cta-glow:hover .cta-arrow {
+    transform: rotate(45deg);
+  }
+
+  .landing .pill-light:hover > svg {
+    transform: translateX(3px);
+  }
+
+  .landing .chip:hover > svg {
+    transform: translateY(-1px) rotate(-6deg);
+  }
+
+  .landing .nav-popover a:hover {
+    transform: translateX(2px);
+  }
+
+  .landing .step-card:hover {
+    border-color: color-mix(in srgb, var(--fg) 16%, transparent);
+  }
+
+  .landing .step-card:hover > div > :nth-child(odd) {
+    transform: translateY(-2px);
+  }
+
+  .landing .faq summary:hover {
+    color: var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing :is(.pill-dark, .pill-light, .pill-outline, .pill-ghost, .chip, .copy-control),
+  .landing .cta-arrow,
+  .landing .pill-light > svg,
+  .landing .chip > svg,
+  .copy-feedback > svg,
+  .landing .nav-toggle-icons > svg,
+  .landing .nav-popover a,
+  .landing .step-card > div > span,
+  .landing .step-card > div > div {
+    transform: none !important;
+  }
+
+  .landing .faq::details-content {
+    transition: none;
+  }
+}

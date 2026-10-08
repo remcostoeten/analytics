@@ -1,0 +1,90 @@
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 560px;
+  height: clamp(180px, 32vw, 220px);
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.halo {
+  position: absolute;
+  width: 300px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(175 151 217 / 0.13), transparent 68%);
+}
+
+.shadow {
+  position: absolute;
+  bottom: 22px;
+  width: 90px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(0 0 0 / 0.35), transparent 70%);
+}
+
+.reveal {
+  position: relative;
+  width: clamp(140px, 26vw, 176px);
+  aspect-ratio: 1;
+}
+
+.canvas,
+.fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 250ms var(--ease-out);
+}
+
+.fallback {
+  object-fit: contain;
+}
+
+.canvas,
+.stage[data-rendered="true"] .fallback {
+  opacity: 0;
+}
+
+.stage[data-rendered="true"] .canvas {
+  opacity: 1;
+}
+
+.stage[data-entered="true"] .reveal {
+  animation: arrive 1000ms var(--ease-out) both;
+}
+
+.stage[data-paused="true"] .reveal {
+  animation-play-state: paused;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-entered="true"] .reveal {
+    animation: fade-in 200ms var(--ease-out) both;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
