@@ -5,7 +5,7 @@ Self-hosted, privacy-first web analytics, owned and designed by Remco. This repo
 ## Status
 
 - **v1 lives in `v1/` and is frozen.** Production runs it from `master`: the Hono ingestion, the Next dashboard, SDK 1.x and the demo database. No new features; fixes only when Remco asks. Its own guide is `v1/AGENTS.md`.
-- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/devtools` publish to npm under the `next` tag. The v2 dashboard (`apps/dashboard`, Next) holds the admin module only, for sign-in, projects and keys, and is not deployed yet; its analytics views wait for Remco's design.
+- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/devtools` publish to npm under the `next` tag. The v2 dashboard (`apps/dashboard`, Next) holds the admin module only, for sign-in, projects and keys, and runs from `master` as the Vercel project `v2.dashboard` on `dashboard.analytics.remcostoeten.nl`; its analytics views wait for Remco's design.
 - v2 code never imports from `v1/`. When v1 logic is reused, it is copied into the engine with its tests, so v1 keeps working untouched until it is removed.
 
 ## The plan
@@ -103,4 +103,4 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 ## Deployment
 
 - v1's Vercel projects deploy from `master`: `ingestion` from `v1/apps/ingestion`, `analytics` (the dashboard) from `v1/apps/dashboard`. To stop them rebuilding on every v2 merge, set their ignored build step to `git diff --quiet HEAD^ HEAD -- ../../` (Remco does this).
-- `apps/api` deploys from `master` as the Vercel project `v2.ingestion` and `apps/docs` as `v2.analytics-docs` (`docs/v2/deploy.md`). The v2 dashboard gets its own project once Remco deploys it; until then the setup page at `/v2/setup` stays.
+- `apps/api` deploys from `master` as the Vercel project `v2.ingestion`, `apps/docs` as `v2.analytics-docs` and `apps/dashboard` as `v2.dashboard` (`docs/v2/deploy.md`). The setup page at `/v2/setup` stays until the dashboard replaces it.
