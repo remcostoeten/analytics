@@ -10,7 +10,26 @@ export type Example = {
   preview?: string;
 };
 
-const examples: Example[] = [];
+const examples: Example[] = [
+  {
+    slug: "dashboard",
+    title: "Dashboard on @spoar/client",
+    stack: "react",
+    description:
+      "Stats tiles, a visitors chart, breakdowns, countries and a live stream for one project, read through the typed client, with the page tracking itself through the SDK.",
+    directory: "dashboard",
+    files: [
+      "src/app.tsx",
+      "src/api.ts",
+      "src/use-read.ts",
+      "src/state.ts",
+      "src/components/stats-tiles.tsx",
+      "src/components/breakdown-table.tsx",
+      "src/components/realtime.tsx",
+      "src/analytics.ts",
+    ],
+  },
+];
 
 /**
  * @name getExample

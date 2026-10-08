@@ -55,6 +55,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.8 | Dev widget endpoints | 4 | E4.2, E4.4 | `feature/widget-endpoints` |
 | E4.9 | Dev widget UI, `@spoar/devtools` | 4 | E4.8, or its fixtures | `feature/devtools-ui` |
 | E4.10 | Setup page in the API | 4 | E4.1 | `feature/api-setup-page` |
+| E4.11 | Example dashboard on `@spoar/client` | 4 | E4.2, E4.10 | `feature/example-dashboard` |
 | E5.1 | Retire 1.x | 5 | E4.5 and 1.x traffic gone | `chore/retire-v1` |
 
 After phase 5, later epics follow the product focus in the plan (decision 17), in this order: annotations (built in the API and admin SDK; the dashboard draws them); Search Console; saved segments; email reports and metric alerts; webhooks; source maps; share links and embeds; an MCP server; and the Durable Object realtime hub if polling ever falls short. Lifecycle, stickiness and group analytics are already built. Goals, funnels, actions, experiment statistics, feature flags, click heatmaps and surveys are not planned; [archive/conversion-scope.md](archive/conversion-scope.md) says why.
@@ -512,6 +513,43 @@ Add one row to the decisions table in docs/v2/plan.md: "Until the dashboard (E4.
 - bun run --cwd apps/api openapi, which should not change the document, and bun run check.
 
 End with a summary in the house style and a screenshot of each state.
+```
+
+### E4.11 Example dashboard on `@spoar/client`
+
+Delivers: `examples/dashboard`, a small React app served by Bun like the playground, that reads one project through `@spoar/client` and tracks itself through `@spoar/sdk`. It is a reference implementation of the read client for people building their own page on the API, and a first end-to-end consumer of every aggregate read that the priorities list names. It is not the v2 dashboard: E4.5 stays on hold for Remco's design, and nothing here pre-empts it. Done when the app runs against the playground database and against production with a public project, every view renders from a typed `Result`, and the docs site lists it as an example.
+
+```text
+Epic E4.11, branch feature/example-dashboard. Build an example dashboard in examples/dashboard that uses @spoar/client for reads and @spoar/sdk for tracking itself, so the read client gets used end to end before 2.0.0 and people have a runnable reference for their own pages. Read AGENTS.md, docs/v2/plan.md (decisions 2, 6, 20 and 22), packages/client/README.md, examples/README.md and examples/playground (the Bun-served React setup, settings and styles to reuse) first, and load the generic-program-rules and emil-design-eng skills. Open one pull request into master. Do not merge or change Vercel settings.
+
+0. Decision
+Add one row to the decisions table in docs/v2/plan.md: "An example dashboard lives in examples/dashboard, built on @spoar/client and @spoar/sdk with plain styling and no design opinions. It is a reference for people reading the API, not the v2 dashboard; E4.5 stays on hold for Remco's design and later reuses its seeded dataset for parity tests." Stop and ask Remco if this conflicts with an existing decision.
+
+1. Workspace
+- examples/dashboard as its own Bun workspace, @spoar/example-dashboard, private, the same scripts as the playground (dev on port 3301, build, typecheck) and a bunfig.toml exposing BUN_PUBLIC_*. Dependencies: @spoar/client, @spoar/sdk, react and react-dom at the workspace versions; no chart library, no router.
+- Allow examples to import packages/client in scripts/check-boundaries.ts. The root lint, lint:fix and test scripts already cover examples/*.
+- Settings like the playground: endpoint, project, read token and public key, from BUN_PUBLIC_DASHBOARD_* with the production API as default, editable in the page and kept in localStorage. A public project needs no token; say so in the settings bar.
+
+2. Reads, one component per method
+- One client from createClient({ endpoint, token, projects: [project] }) and one scope per page state: period from a 24h, 7d, 30d, 90d select, traffic human by default with a toggle for all, environment production.
+- Views, in this order, each in its own commit: stats tiles (visitors, sessions, pageviews, bounce rate, session duration, with the change against the previous range); a timeseries of visitors as an inline SVG line with the previous range dashed; breakdowns for page, referrer_domain, country, browser and device as tables with a share bar; map as a country table from map({ level: "country" }); realtime as the live visitor count and a stream from liveEvents({ signal }) that stops on unmount.
+- Every read goes through a small useRead(fn) hook that holds { loading, value, error } from the Result and never throws. Loading shows a skeleton of the final size; an error shows the error code and message in place with a retry button; an empty result says so.
+- A click on a breakdown row adds that value to where(), shown as removable filter chips above the views; the URL hash mirrors period, traffic and filters so a view can be linked.
+
+3. Tracking itself
+- createAnalytics with the public key and endpoint, pageviews on, plus the clicks() plugin with data-ra-click on the period select, the traffic toggle and the breakdown rows. One typed Events map in src/events.ts. With no public key configured, the SDK runs in development mode and logs.
+
+4. Styling
+- Reuse the playground's tokens and type scale, light and dark, plain tables and tiles, no illustrations. It must read well at phone width. No design decisions that the v2 dashboard would have to inherit.
+
+5. Docs
+- Register it in apps/docs/lib/examples.ts with stack "react", the main source files and a short description, so it appears at /examples/dashboard, and link it from apps/docs/content/docs/guides/read-your-data.mdx and packages/client/README.md as the runnable version of the guide.
+- examples/README.md gets one line per example; add this one.
+
+6. Checks
+- bun test for useRead and the filter and hash helpers, with a fake client, no module mocking. bun run check green. Run it once against bun run db with a project created by bun run admin and once against production with a public project, and include a screenshot of each view in the pull request.
+
+End with a summary in the house style.
 ```
 
 ## Phase 5: retire 1.x

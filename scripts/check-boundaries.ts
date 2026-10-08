@@ -26,7 +26,7 @@ export const allowedImports: { [workspace: string]: string[] } = {
   "packages/devtools": ["packages/shared", "packages/contract", "packages/sdk"],
   "apps/api": ["packages/engine", "packages/contract", "packages/shared"],
   "apps/dashboard": ["apps/api", "packages/contract"],
-  examples: ["packages/sdk", "packages/devtools"],
+  examples: ["packages/sdk", "packages/devtools", "packages/client", "packages/contract"],
 };
 
 const sourcePattern = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
