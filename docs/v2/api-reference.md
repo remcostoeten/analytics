@@ -30,6 +30,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
 | PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `allowedOrigins`, `retentionDays` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
+| DELETE | `/v2/projects/:project` | admin, owner only | Delete a project; its keys stop at once and the cleanup job purges its rows |
 | GET | `/v2/projects/:project/stats` | project | Headline numbers with the previous period |
 | GET | `/v2/projects/:project/timeseries` | project | One metric bucketed by hour or day |
 | GET | `/v2/projects/:project/breakdown/:dimension` | project | Top values of one dimension |
@@ -735,6 +736,14 @@ request
 { "data": { "kind": "secret", "key": "sk_live_9b8a7f6e5d4c3b2a1f0e", "rotatedAt": "2026-09-27T16:43:00.000Z" } }
 ```
 
+`DELETE /v2/projects/docs` as owner
+
+```json
+204 No Content
+```
+
+Only the signed-in owner may delete a project; admins and admin tokens get 403. The project row goes at once, so its keys fail at ingest and every route under it answers 404. Its events, sessions, visitors, speed rows, rollups, issues, error rules, speed checks and log lines are purged by the cleanup job in batches, and until that is done creating a project with the same id answers 409. Alert targets, their deliveries and annotations go with the row.
+
 ### Aggregate reads
 
 `GET /v2/projects/remcostoeten.nl/stats?period=7d`
@@ -999,7 +1008,7 @@ request
 
 These counters come from Postgres, not instance memory, so they are correct across serverless instances. `ingest` counts requests to `/v2/events` per hour; `bots` counts stored events scored 50 or more; `jobs` holds each job's last run; `speedChecks` holds the last Chrome UX Report comparison per project and metric, where `gap` is `|ours - crux| / crux` and a gap over 0.25 is `flagged`. `ours` is null under 20 samples and `crux` is null when Google has no data for the origin.
 
-`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens, and rate limit windows older than a day. Every job run also writes a `jobs` line to each project's log. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
+`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens, rate limit windows older than a day, and the rows of deleted projects, up to 50,000 per table per run, freeing the project id once none remain. Every job run also writes a `jobs` line to each project's log. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
 `POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
 

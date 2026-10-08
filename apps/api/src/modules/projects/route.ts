@@ -12,21 +12,28 @@ import {
 } from "@spoar/contract";
 import { engineError } from "@spoar/engine";
 import type { EngineError } from "@spoar/engine";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
 import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
-import { createProject, listProjects, rotateKey, shapeFor, updateProject } from "./service";
+import {
+  createProject,
+  listProjects,
+  removeProject,
+  rotateKey,
+  shapeFor,
+  updateProject,
+} from "./service";
 
 const tags = ["Projects"];
 
 /**
  * @name projectsModule
- * @description `/v2/projects`: the project list and one project for readers, and creating,
- * changing and rotating the keys of projects for admins. A private project answers 404 to anyone
- * who may not read it.
+ * @description `/v2/projects`: the project list and one project for readers, creating, changing
+ * and rotating the keys of projects for admins, and deleting one for the owner. A private project
+ * answers 404 to anyone who may not read it.
  *
  * @example
  * app.use(projectsModule(deps, docsBase));
@@ -133,6 +140,24 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
           summary: "Rotate a key",
           description:
             "Replaces the public or the secret key. A new secret key is returned once and the old one stops working.",
+          tags,
+        },
+      },
+    )
+    .delete(
+      "/projects/:project",
+      async ({ caller, params, set, status }) => {
+        const removed = await removeProject(deps, caller, params.project);
+        return removed.ok ? status(204, undefined) : reject(removed.error, set);
+      },
+      {
+        params: ProjectParams,
+        access: "admin",
+        response: { 204: t.Void(), ...errorResponses },
+        detail: {
+          summary: "Delete a project",
+          description:
+            "Owner only. The keys stop working and every route answers 404 at once; the cleanup job then purges the project's events, sessions and other rows in batches, and the id cannot be reused until that is done.",
           tags,
         },
       },

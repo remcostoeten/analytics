@@ -7,6 +7,7 @@ import {
   authOrganization,
   authUser,
   dashboardUsers,
+  deletedProjects,
   projects,
 } from "../db/schema";
 import type {
@@ -95,9 +96,12 @@ async function attempt<Value>(message: string, run: () => Promise<Value>) {
 
 /**
  * @name drizzleProjectAdmin
- * @description The `ProjectAdmin` store on `projects`: find, list by visibility, create, patch and
- * key rotation. Creating an existing id returns null, as does changing a project that does not
- * exist. Rotation stores the public key as is and the secret key's hash.
+ * @description The `ProjectAdmin` store on `projects`: find, list by visibility, create, patch,
+ * key rotation and removal. Creating an existing id returns null, as does an id whose rows the
+ * cleanup job is still purging, and so does changing a project that does not exist. Rotation
+ * stores the public key as is and the secret key's hash. Removal deletes the project row, so its
+ * keys and routes stop at once, and records the id in `deleted_projects` for the cleanup job to
+ * purge its rows in batches.
  *
  * @example
  * const admin = drizzleProjectAdmin(db);
@@ -119,6 +123,11 @@ export function drizzleProjectAdmin(db: Database): ProjectAdmin {
       }),
     create: (project) =>
       attempt("Could not create the project", async () => {
+        const purging = await db
+          .select({ id: deletedProjects.id })
+          .from(deletedProjects)
+          .where(eq(deletedProjects.id, project.id));
+        if (purging.length > 0) return null;
         const [row] = await db
           .insert(projects)
           .values(project)
@@ -145,6 +154,16 @@ export function drizzleProjectAdmin(db: Database): ProjectAdmin {
           .where(eq(projects.id, id))
           .returning({ updatedAt: projects.updatedAt });
         return row ? row.updatedAt : null;
+      }),
+    remove: (id) =>
+      attempt("Could not delete the project", async () => {
+        const rows = await db
+          .delete(projects)
+          .where(eq(projects.id, id))
+          .returning({ id: projects.id });
+        if (rows.length === 0) return false;
+        await db.insert(deletedProjects).values({ id }).onConflictDoNothing();
+        return true;
       }),
   };
 }

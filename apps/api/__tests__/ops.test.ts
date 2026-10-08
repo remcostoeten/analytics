@@ -235,6 +235,30 @@ describe("jobs", () => {
     );
   });
 
+  test("cleanup purges the rows of a deleted project and then frees its id", async () => {
+    await database.query(
+      `INSERT INTO events (project_id, type, name, ts, path, visitor_id, session_id)
+       VALUES ('gamma', 'pageview', 'pageview', '2026-09-27T10:00:00Z', '/', 'v', 's')`,
+    );
+    await database.query(
+      `INSERT INTO error_rules (id, project_id, field, pattern)
+       VALUES ('rule_gamma', 'gamma', 'message', 'ResizeObserver')`,
+    );
+    await database.query("INSERT INTO deleted_projects (id) VALUES ('gamma')");
+    const response = await post("/admin/jobs/cleanup");
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as { data: Json }).data).toMatchObject({
+      job: "cleanup",
+      rowsDeleted: 2,
+    });
+    const left = await database.query<{ rows: number }>(
+      `SELECT (SELECT count(*) FROM events WHERE project_id = 'gamma')::int
+        + (SELECT count(*) FROM error_rules WHERE project_id = 'gamma')::int
+        + (SELECT count(*) FROM deleted_projects WHERE id = 'gamma')::int AS rows`,
+    );
+    expect(left.rows[0]?.rows).toBe(0);
+  });
+
   test("crux compares p75 with the Chrome UX Report and flags gaps over 25%", async () => {
     const response = await post("/admin/jobs/crux");
     expect(response.status).toBe(200);

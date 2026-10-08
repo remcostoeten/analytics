@@ -23,13 +23,57 @@ function nullableNumber(value: unknown) {
   return value === null || value === undefined ? null : numeric(value);
 }
 
+const batchedTables = ["events", "visitors", "sessions", "rollup_daily", "web_vitals", "issues"];
+const wholeTables = ["rollup_vitals", "error_rules", "speed_checks"];
+
+async function purgeDeletedProjects(db: Database, batch: number) {
+  const gone = sql`SELECT id FROM deleted_projects`;
+  let deleted = 0;
+  for (const table of batchedTables) {
+    const name = sql.raw(table);
+    const rows = await selectRows(
+      db,
+      sql`DELETE FROM ${name} WHERE id IN (
+          SELECT id FROM ${name} WHERE project_id IN (${gone}) LIMIT ${batch})
+        RETURNING id`,
+    );
+    deleted += rows.length;
+  }
+  const lines = await selectRows(
+    db,
+    sql`DELETE FROM logs WHERE id IN (
+        SELECT id FROM logs WHERE project IN (${gone}) LIMIT ${batch})
+      RETURNING id`,
+  );
+  deleted += lines.length;
+  for (const table of wholeTables) {
+    const name = sql.raw(table);
+    const rows = await selectRows(
+      db,
+      sql`DELETE FROM ${name} WHERE project_id IN (${gone}) RETURNING project_id`,
+    );
+    deleted += rows.length;
+  }
+  await db.execute(
+    sql`DELETE FROM deleted_projects d
+      WHERE NOT EXISTS (SELECT 1 FROM events WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM visitors WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM sessions WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM rollup_daily WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM web_vitals WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM issues WHERE project_id = d.id)
+        AND NOT EXISTS (SELECT 1 FROM logs WHERE project = d.id)`,
+  );
+  return deleted;
+}
+
 /**
  * @name drizzleOps
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
  * ingest numbers since a moment, retention cleanup of events and sessions past each project's
  * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
- * log lines older than 7 days and expired widget tokens,
- * the session layer of bot detection over a range, and the Chrome UX Report checks.
+ * log lines older than 7 days, expired widget tokens, and the rows of deleted projects until none
+ * are left, the session layer of bot detection over a range, and the Chrome UX Report checks.
  *
  * @example
  * await drizzleOps(db).metrics(new Date(Date.now() - 86_400_000));
@@ -181,6 +225,7 @@ export function drizzleOps(db: Database): OpsStore {
           sql`DELETE FROM api_tokens WHERE kind = 'widget' AND expires_at < ${at}::timestamptz
             RETURNING id`,
         );
+        const purged = await purgeDeletedProjects(db, batch);
         return {
           rowsDeleted:
             events.length +
@@ -189,7 +234,8 @@ export function drizzleOps(db: Database): OpsStore {
             limits.length +
             deliveries.length +
             lines.length +
-            tokens.length,
+            tokens.length +
+            purged,
         };
       }),
     checkTargets: () =>

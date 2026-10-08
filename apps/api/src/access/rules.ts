@@ -101,3 +101,14 @@ export function canQuery(caller: Caller, project: ProjectRecord): boolean {
     isListed(caller, project.id)
   );
 }
+
+/**
+ * @name isOwner
+ * @description The signed-in owner of the organization, the only caller who may delete a project.
+ *
+ * @example
+ * isOwner(caller);
+ */
+export function isOwner(caller: Caller): boolean {
+  return caller.kind === "user" && caller.role === "owner";
+}

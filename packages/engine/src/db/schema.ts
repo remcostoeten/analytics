@@ -185,6 +185,11 @@ export const projects = pgTable("projects", {
   widgetReports: boolean("widget_reports").notNull().default(false),
 });
 
+export const deletedProjects = pgTable("deleted_projects", {
+  id: text("id").primaryKey(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const apiTokens = pgTable("api_tokens", {
   ...baseEntity(),
   name: text("name").notNull(),

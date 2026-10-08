@@ -12,7 +12,7 @@ import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
 import type { Nullable } from "@spoar/shared/semantic";
 
-import { canAdmin, isListed } from "../../access/rules";
+import { canAdmin, isListed, isOwner } from "../../access/rules";
 import { randomSecret } from "../../access/secrets";
 import type { AccessDeps, Caller } from "../../access/types";
 
@@ -174,4 +174,25 @@ export async function rotateKey(
   if (!rotated.ok) return rotated;
   if (!rotated.value) return err(engineError("NOT_FOUND", "Project not found"));
   return ok({ kind, key, rotatedAt: rotated.value.toISOString() });
+}
+
+/**
+ * @name removeProject
+ * @description Deletes a project for its owner: the row goes at once, so its keys stop at ingest
+ * and its routes answer 404, and the cleanup job purges its events, sessions and other rows in
+ * batches. Until that purge is done the id cannot be reused. Admins and tokens are `FORBIDDEN`.
+ *
+ * @example
+ * await removeProject(deps, caller, "docs");
+ */
+export async function removeProject(
+  deps: AccessDeps,
+  caller: Caller,
+  id: string,
+): Promise<Result<null, EngineError>> {
+  if (!isOwner(caller)) return err(engineError("FORBIDDEN", "Deleting a project needs the owner"));
+  const removed = await deps.projects.remove(id);
+  if (!removed.ok) return removed;
+  if (!removed.value) return err(engineError("NOT_FOUND", "Project not found"));
+  return ok(null);
 }

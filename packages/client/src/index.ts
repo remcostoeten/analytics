@@ -45,7 +45,12 @@ export type {
 } from "./reads/explore";
 export type { AllReads, AllScope, ProjectReads, ProjectScope } from "./reads/index";
 export type { IssueReads, IssuesOptions, ProjectIssueReads } from "./reads/issues";
-export type { AllOnlyReads, LiveRowsOptions, ProjectOnlyReads } from "./reads/project";
+export type {
+  AllOnlyReads,
+  LiveRowsOptions,
+  LiveVisitorsOptions,
+  ProjectOnlyReads,
+} from "./reads/project";
 export type { SpeedListOptions, SpeedOptions, SpeedReads } from "./reads/speed";
 export { toQuery } from "./scope";
 export type { Scope } from "./scope";

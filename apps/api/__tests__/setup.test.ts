@@ -57,6 +57,11 @@ function memoryDeps(projects: ProjectRecord[], failing = false): AccessDeps {
         return ok(found ? { ...found, ...patch } : null);
       },
       rotate: async () => ok(now),
+      remove: async (id) => {
+        const index = stored.findIndex((item) => item.id === id);
+        if (index >= 0) stored.splice(index, 1);
+        return ok(index >= 0);
+      },
     },
     tokens: {
       byHash: async () => ok(null),
