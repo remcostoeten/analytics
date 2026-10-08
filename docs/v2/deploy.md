@@ -83,7 +83,11 @@ Until both are set, the workflow only prints a notice. A job that is not configu
 
 Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Discord channels. Each project sets its own targets with `PUT /v2/projects/:project/alerts/targets` or `admin.alerts.sync` from `@spoar/sdk/admin`; `POST .../targets/:name/test` checks one at once, and `GET /v2/admin/alerts/status` shows whether mail is ready. To send mail through Resend instead of SMTP, change the transport in the config to `resend(process.env.RESEND_API_KEY)` and set `RESEND_API_KEY`. Run any job by hand from Actions, `jobs`, Run workflow.
 
-## 8. First sign-in and token
+## 8. The dashboard on Vercel
+
+Not deployed yet. When it is: a project with root directory `apps/dashboard`, framework Next, and `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. The API's `DASHBOARD_ORIGIN` must be the dashboard's origin, and `AUTH_COOKIE_DOMAIN` must cover both hosts, or sign-in and the session cookie are refused. Until then the setup page below does the same job.
+
+## 9. First sign-in and token
 
 Open `https://api.analytics.remcostoeten.nl/v2/setup` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The page creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins.
 
