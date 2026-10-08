@@ -366,6 +366,8 @@ Epic E4.4, branch feature/error-tracking. Also read the SDK design tab's Error t
 
 On hold since Sep 28 until Remco provides a design. Parity tests will compare each view against fixed expected values from a seeded dataset.
 
+**Update, 8 October 2026:** the admin module shipped first on `feature/dashboard-admin`: `apps/dashboard` on Next with sign-in through the API, the project list, creating a project, its settings and key rotation, and API tokens, all through `@spoar/client` rather than Eden Treaty. The views below stay on hold.
+
 Delivers: the dashboard reading only through Eden Treaty, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
 
 ```text
