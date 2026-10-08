@@ -5,6 +5,7 @@ import { pgliteAccess } from "@spoar/engine/adapters/pglite";
 import { runMigrations } from "@spoar/engine/db/migrate";
 import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 import { makeSignature } from "better-auth/crypto";
+import { parseAdditionalUserInputFromProviderProfile } from "better-auth/db";
 
 import { betterAuthSessions, createAuth } from "../src/auth/better-auth";
 
@@ -28,9 +29,14 @@ async function cookieFor(token: string) {
 
 async function createUser(login: string) {
   const context = await auth.$context;
+  const fromProfile = parseAdditionalUserInputFromProviderProfile(
+    auth.options,
+    { githubLogin: login },
+    "create",
+  );
   try {
     return await context.internalAdapter.createUser(
-      { name: login, email: `${login}@example.test`, emailVerified: true, githubLogin: login },
+      { name: login, email: `${login}@example.test`, emailVerified: true, ...fromProfile },
       { method: "oauth", oauth: { providerId: "github", profile: { login } } },
     );
   } catch {
@@ -92,6 +98,32 @@ describe("Better Auth", () => {
     await database.query("DELETE FROM dashboard_users WHERE github_login = 'helper'");
     expect(await context.internalAdapter.createSession(helper?.user.id ?? "")).toBeNull();
     expect(await sessions(new Headers({ cookie: helperCookie }))).toBeNull();
+  });
+
+  test("the GitHub login reaches the allowlist hook through the profile filter, and cannot be changed later", async () => {
+    expect(
+      parseAdditionalUserInputFromProviderProfile(auth.options, { githubLogin: "x" }, "create"),
+    ).toEqual({ githubLogin: "x" });
+    const context = await auth.$context;
+    const owner = await context.internalAdapter.findUserByEmail("remcostoeten@example.test");
+    const session = await context.internalAdapter.createSession(owner?.user.id ?? "");
+    await auth.handler(
+      new Request("http://localhost:3100/v2/auth/update-user", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "http://localhost:3000",
+          cookie: await cookieFor(session.token),
+        },
+        body: JSON.stringify({ githubLogin: "someone-else" }),
+      }),
+    );
+    const [row] = (
+      await database.query<{ github_login: string }>(
+        "SELECT github_login FROM auth_user WHERE email = 'remcostoeten@example.test'",
+      )
+    ).rows;
+    expect(row?.github_login).toBe("remcostoeten");
   });
 
   test("the GitHub sign-in starts at the API under /v2/auth", async () => {
