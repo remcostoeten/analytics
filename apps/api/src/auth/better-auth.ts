@@ -39,7 +39,9 @@ async function allowed(members: MemberStore, login: unknown) {
  * @description Better Auth under `/v2/auth`: GitHub sign-in, sessions in the `auth_*` tables and
  * the organization plugin with the owner, admin, analyst and viewer roles. Only GitHub logins in
  * `dashboard_users` may create an account or a session, and each new account joins the single
- * organization. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
+ * organization. The GitHub login is copied from the profile into `githubLogin`, which stays open
+ * to provider input because Better Auth drops `input: false` fields from the profile, and an
+ * update that touches it is refused instead. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
@@ -66,7 +68,7 @@ export function createAuth(options: AuthOptions) {
       },
     }),
     user: {
-      additionalFields: { githubLogin: { type: "string", required: false, input: false } },
+      additionalFields: { githubLogin: { type: "string", required: false } },
     },
     socialProviders: {
       github: {
@@ -100,6 +102,9 @@ export function createAuth(options: AuthOptions) {
             const joined = await members.join(user.id, login);
             if (!joined.ok) throw new Error(joined.error.message);
           },
+        },
+        update: {
+          before: async (user) => ("githubLogin" in user ? false : { data: user }),
         },
       },
       session: {
