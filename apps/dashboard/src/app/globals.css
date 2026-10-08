@@ -28,6 +28,7 @@
     --err: #e5484d;
     --sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif;
     --mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     color-scheme: light;
   }
 
@@ -62,6 +63,87 @@
       animation-duration: 1ms !important;
       transition-duration: 1ms !important;
     }
+  }
+}
+
+.sign-in {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.sign-in:active:not([aria-busy="true"]) {
+  transform: scale(0.97);
+}
+
+.sign-in[aria-busy="true"] {
+  cursor: progress;
+}
+
+.sign-in[data-state="error"] {
+  background: var(--err);
+  color: #fff;
+  animation: sign-in-nudge 320ms var(--ease-out);
+}
+
+.sign-in-label {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+.sign-in-label[data-position="before"] {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.sign-in-label[data-position="after"] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.sign-in-spinner {
+  animation: sign-in-spin 800ms linear infinite;
+}
+
+@keyframes sign-in-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sign-in-nudge {
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign-in[data-state="error"],
+  .sign-in-spinner {
+    animation: none;
+  }
+  .sign-in-spinner {
+    opacity: 0.6;
+  }
+  .sign-in-label[data-position="before"],
+  .sign-in-label[data-position="after"] {
+    transform: none;
   }
 }
 
