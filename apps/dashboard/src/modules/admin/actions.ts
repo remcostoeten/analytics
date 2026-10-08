@@ -14,6 +14,7 @@ import type {
 import type { Result } from "@spoar/shared/result";
 import type { TokenID } from "@spoar/shared/semantic";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { serverClient } from "@/shared/api/server-client";
 
@@ -70,6 +71,22 @@ export async function rotateKey(
   const result = await api.projects.rotateKey(project, kind);
   if (result.ok) revalidatePath(`/admin/projects/${encodeURIComponent(project)}`);
   return result;
+}
+
+/**
+ * @name removeProject
+ * @description Deletes one project, owner only. Its keys stop at once and the cleanup job purges
+ * its rows. On success the caller lands on the project list.
+ *
+ * @example
+ * await removeProject("example.com");
+ */
+export async function removeProject(project: string): Promise<Result<null, ClientError>> {
+  const api = await serverClient();
+  const result = await api.projects.remove(project);
+  if (!result.ok) return result;
+  revalidatePath("/admin/projects");
+  redirect("/admin/projects");
 }
 
 /**
