@@ -1,0 +1,32 @@
+{
+	"name": "@spoar/dashboard",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "next dev --port 3300",
+		"build": "next build",
+		"start": "next start --port 3300",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@remcostoeten/notifier": "1.2.1",
+		"@spoar/client": "workspace:*",
+		"@spoar/contract": "workspace:*",
+		"@spoar/shared": "workspace:*",
+		"geist": "1.7.2",
+		"next": "16.4.0-canary.59",
+		"react": "19.3.0",
+		"react-dom": "19.3.0"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "4.3.3",
+		"@types/node": "26.6.3",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"postcss": "8.5.28",
+		"tailwindcss": "4.3.3",
+		"typescript": "catalog:ts"
+	}
+}

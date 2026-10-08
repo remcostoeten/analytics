@@ -5,7 +5,7 @@ Self-hosted, privacy-first web analytics, owned and designed by Remco. This repo
 ## Status
 
 - **v1 lives in `v1/` and is frozen.** Production runs it from `master`: the Hono ingestion, the Next dashboard, SDK 1.x and the demo database. No new features; fixes only when Remco asks. Its own guide is `v1/AGENTS.md`.
-- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/devtools` publish to npm under the `next` tag; the v2 dashboard is not built yet.
+- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/devtools` publish to npm under the `next` tag. The v2 dashboard (`apps/dashboard`, Next) holds the admin module only, for sign-in, projects and keys, and runs from `master` as the Vercel project `v2.dashboard` on `dashboard.analytics.remcostoeten.nl`; its analytics views wait for Remco's design.
 - v2 code never imports from `v1/`. When v1 logic is reused, it is copied into the engine with its tests, so v1 keeps working untouched until it is removed.
 
 ## The plan
@@ -42,6 +42,7 @@ Load the `generic-program-rules` skill before writing code, prose, commits or su
 analytics/
 ├─ apps/
 │  ├─ api/            v2 API on Elysia (phase 1 onward)
+│  ├─ dashboard/      v2 dashboard on Next: the admin module (projects and keys) today
 │  └─ docs/           docs site on Fumadocs: SDK, API reference, auth overview, query page
 ├─ packages/
 │  ├─ contract/       schemas, types, error catalog (phase 0)
@@ -57,7 +58,7 @@ analytics/
 └─ v1/                frozen v1: apps/dashboard, apps/ingestion, packages/ingestion, packages/sdk, packages/typescript, scripts/demo-db
 ```
 
-Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, the setup page at `/v2/setup`, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/client` (`@spoar/client`: one chainable scope per project with a method per read route, plus the admin namespaces; `@spoar/sdk/admin` wraps it), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server, proxy and admin entries), `packages/devtools` (the dev widget: loaders and the Shadow DOM panel, with fixtures for local work), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `publish.ts`, `rescore.ts`, `setup.ts`, `admin.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
+Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated from `apps/api/openapi.json`), `apps/dashboard` (the Next app with the admin module: sign-in through the API, the project list, creating a project, its settings and key rotation, and API tokens, reading through `@spoar/client` with the session cookie forwarded from server components), `apps/api` (health, `POST /v2/events` on the engine, Better Auth sign-in, access levels, projects and tokens, the setup page at `/v2/setup`, and the dev widget's bootstrap, overview, log and live session routes and its `live` WebSocket), `tools/oxlint/` (the vendored `anti-slop` plugin and the `house` plugin), `packages/shared`, `packages/contract`, `packages/engine` (database layer, ingest stages, enrichers, bot signals, jobs, ports and adapters), `packages/client` (`@spoar/client`: one chainable scope per project with a method per read route, plus the admin namespaces; `@spoar/sdk/admin` wraps it), `packages/sdk` (the 2.0 browser core, plugins, and the React, Next, server, proxy and admin entries), `packages/devtools` (the dev widget: loaders and the Shadow DOM panel, with fixtures for local work), `e2e/` (Playwright against the built SDK, the API on PGlite and the proxy) and `scripts/` (the boundary check, `migrate.ts`, `publish.ts`, `rescore.ts`, `setup.ts`, `admin.ts` and `size-check.ts`) exist; the rest arrives epic by epic. Bun workspaces cover `apps/*`, `e2e`, `packages/*`, `scripts`, `tools/oxlint/house`, `v1/apps/*` and `v1/packages/*`.
 
 ## Commands
 
@@ -102,4 +103,4 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 ## Deployment
 
 - v1's Vercel projects deploy from `master`: `ingestion` from `v1/apps/ingestion`, `analytics` (the dashboard) from `v1/apps/dashboard`. To stop them rebuilding on every v2 merge, set their ignored build step to `git diff --quiet HEAD^ HEAD -- ../../` (Remco does this).
-- `apps/api` deploys from `master` as the Vercel project `v2.ingestion` and `apps/docs` as `v2.analytics-docs` (`docs/v2/deploy.md`). The v2 dashboard gets its own project once it is built (Remco creates it).
+- `apps/api` deploys from `master` as the Vercel project `v2.ingestion`, `apps/docs` as `v2.analytics-docs` and `apps/dashboard` as `v2.dashboard` (`docs/v2/deploy.md`). The setup page at `/v2/setup` stays until the dashboard replaces it.

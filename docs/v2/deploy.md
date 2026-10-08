@@ -2,7 +2,7 @@
 
 Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
 
-`./setup-vercel.sh` at the repo root does steps 1, 2, 5, 6 and 7 in one run once step 4 is done: it creates both projects, sets their variables and domains, starts a deploy, sets the ignored build step on the v1 projects and, when `gh` is signed in, fills the GitHub `production` environment. It needs `VERCEL_TOKEN`, `DATABASE_URL`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, keeps the generated secrets in `.env.deploy`, and is safe to rerun. `./setup-vercel.sh --help` lists the optional variables.
+`./setup-vercel.sh` at the repo root does steps 1, 2, 5, 6, 7 and 8 in one run once step 4 is done: it creates the three projects, sets their variables and domains, starts a deploy, sets the ignored build step on the v1 projects and, when `gh` is signed in, fills the GitHub `production` environment. It needs `VERCEL_TOKEN`, `DATABASE_URL`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, keeps the generated secrets in `.env.deploy`, and is safe to rerun. `./setup-vercel.sh --help` lists the optional variables.
 
 ## 1. Stop v1 building on every push
 
@@ -54,7 +54,7 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 | `DATABASE_URL` | The Neon connection string |
 | `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET` | From step 2 |
 | `API_URL` | `https://api.analytics.remcostoeten.nl` |
-| `DASHBOARD_ORIGIN` | `https://analytics.remcostoeten.nl` (the dashboard or docs origin that signs in) |
+| `DASHBOARD_ORIGIN` | `https://dashboard.analytics.remcostoeten.nl`, the only origin allowed to sign in and call the API from a browser |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
 | `MAXMIND_LICENSE_KEY` | A free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
@@ -83,7 +83,11 @@ Until both are set, the workflow only prints a notice. A job that is not configu
 
 Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Discord channels. Each project sets its own targets with `PUT /v2/projects/:project/alerts/targets` or `admin.alerts.sync` from `@spoar/sdk/admin`; `POST .../targets/:name/test` checks one at once, and `GET /v2/admin/alerts/status` shows whether mail is ready. To send mail through Resend instead of SMTP, change the transport in the config to `resend(process.env.RESEND_API_KEY)` and set `RESEND_API_KEY`. Run any job by hand from Actions, `jobs`, Run workflow.
 
-## 8. First sign-in and token
+## 8. The dashboard on Vercel
+
+Project `v2.dashboard` (created 8 October 2026, with `dashboard.analytics.remcostoeten.nl`), same repository, root directory `apps/dashboard`, framework Next.js, build command `bun run build`, install command `bun install`. Variable `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. The API's `DASHBOARD_ORIGIN` is this origin and `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on the custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`. The setup page at `/v2/setup` stays until the dashboard replaces it (decision 21).
+
+## 9. First sign-in and token
 
 Open `https://api.analytics.remcostoeten.nl/v2/setup` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The page creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins.
 

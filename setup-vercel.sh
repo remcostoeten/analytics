@@ -7,7 +7,9 @@ api_project="${API_PROJECT:-v2.ingestion}"
 docs_project="${DOCS_PROJECT:-v2.analytics-docs}"
 api_domain="${API_DOMAIN:-api.analytics.remcostoeten.nl}"
 docs_domain="${DOCS_DOMAIN:-docs.analytics.remcostoeten.nl}"
-dashboard_origin="${DASHBOARD_ORIGIN:-https://analytics.remcostoeten.nl}"
+dashboard_project="${DASHBOARD_PROJECT:-v2.dashboard}"
+dashboard_domain="${DASHBOARD_DOMAIN:-dashboard.analytics.remcostoeten.nl}"
+dashboard_origin="${DASHBOARD_ORIGIN:-https://$dashboard_domain}"
 cookie_domain="${AUTH_COOKIE_DOMAIN:-.remcostoeten.nl}"
 v1_projects="${V1_PROJECTS:-ingestion v1.analytics}"
 state_file="$(cd "$(dirname "$0")" && pwd)/.env.deploy"
@@ -26,8 +28,8 @@ Required:
   GITHUB_CLIENT_SECRET
 
 Optional: MAIL_URL, MAIL_FROM, INTERNAL_PROJECT_SECRET, CRUX_API_KEY,
-VERCEL_TEAM, API_PROJECT, DOCS_PROJECT, API_DOMAIN, DOCS_DOMAIN,
-DASHBOARD_ORIGIN, AUTH_COOKIE_DOMAIN, V1_PROJECTS, SKIP_DEPLOY=1.
+VERCEL_TEAM, API_PROJECT, DOCS_PROJECT, DASHBOARD_PROJECT, API_DOMAIN, DOCS_DOMAIN,
+DASHBOARD_DOMAIN, DASHBOARD_ORIGIN, AUTH_COOKIE_DOMAIN, V1_PROJECTS, SKIP_DEPLOY=1.
 
 IP_HASH_SECRET, BETTER_AUTH_SECRET and CRON_SECRET are generated once and kept
 in .env.deploy, so a second run never rotates them. Every step is safe to rerun.
@@ -196,9 +198,14 @@ ensure_project "$docs_project" '"framework":"nextjs","rootDirectory":"apps/docs"
 set_env "$docs_project" "NEXT_PUBLIC_API_URL=https://$api_domain"
 add_domain "$docs_project" "$docs_domain"
 
+ensure_project "$dashboard_project" '"framework":"nextjs","rootDirectory":"apps/dashboard","installCommand":"bun install","buildCommand":"bun run build"'
+set_env "$dashboard_project" "NEXT_PUBLIC_API_URL=https://$api_domain"
+add_domain "$dashboard_project" "$dashboard_domain"
+
 if [[ "${SKIP_DEPLOY:-}" != 1 ]]; then
 	deploy "$api_project"
 	deploy "$docs_project"
+	deploy "$dashboard_project"
 fi
 
 if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
@@ -215,7 +222,7 @@ cat <<EOF
 
 Done. Secrets are in $state_file; keep a copy somewhere safe.
 Next:
-  1. Point DNS for $api_domain and $docs_domain at Vercel if the domains are unverified.
+  1. Point DNS for $api_domain, $docs_domain and $dashboard_domain at Vercel if the domains are unverified.
   2. Actions, migrate: dry-run with baseline 0008_add_rollup_daily, then apply.
   3. Check https://$api_domain/v2/health answers ok: true.
   4. Sign in and create a token (docs/v2/deploy.md step 8).

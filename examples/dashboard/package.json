@@ -1,0 +1,24 @@
+{
+	"name": "@spoar/example-dashboard",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --port=3301 ./index.html",
+		"build": "bun build ./index.html --outdir dist --minify --splitting --env 'BUN_PUBLIC_*'",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@spoar/client": "workspace:*",
+		"@spoar/sdk": "workspace:*",
+		"react": "19.3.0",
+		"react-dom": "19.3.0"
+	},
+	"devDependencies": {
+		"@happy-dom/global-registrator": "20.14.5",
+		"@spoar/contract": "workspace:*",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3"
+	}
+}
