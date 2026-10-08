@@ -1,7 +1,29 @@
 import type { Environment, Period, TrafficFilter } from "@spoar/contract";
-import type { Query } from "@spoar/shared/http";
+import type { Query, QueryValue } from "@spoar/shared/http";
+import type { Nullable } from "@spoar/shared/semantic";
 
 import type { DateInput, Filters, ReadOptions, ScopeState } from "./types";
+
+export type RouteName<Extra> = {
+  [Name in keyof Extra]: Extra[Name] extends (...args: never[]) => object ? Name : never;
+}[keyof Extra] &
+  string;
+
+export type RouteArgs<Extra, Route extends keyof Extra> = Extra[Route] extends (
+  ...args: infer Args
+) => object
+  ? Args
+  : never;
+
+export type QueryEntry = readonly [name: string, value: QueryValue | QueryValue[]];
+
+export type ScopeKey<Route extends string, Args extends readonly unknown[]> = readonly [
+  "spoar",
+  Nullable<string>,
+  Route,
+  readonly QueryEntry[],
+  ...Args,
+];
 
 export type Scope<Extra> = Extra & {
   period: (period: Period) => Scope<Extra>;
@@ -13,6 +35,10 @@ export type Scope<Extra> = Extra & {
   exclude: (filters: Filters) => Scope<Extra>;
   apply: (options: ReadOptions) => Scope<Extra>;
   toQuery: () => Query;
+  key: <Route extends RouteName<Extra>>(
+    route: Route,
+    ...args: RouteArgs<Extra, Route>
+  ) => ScopeKey<Route, RouteArgs<Extra, Route>>;
 };
 
 function iso(value: DateInput) {
@@ -63,6 +89,28 @@ export function toQuery(state: ScopeState): Query {
 }
 
 /**
+ * @name scopeKey
+ * @description A stable, serialisable key for one read: the project, the route, the scope's query
+ * sorted by name with empty values dropped, and the route's own arguments. Two scopes that send the
+ * same request get equal keys however their links were chained, so a cache such as TanStack Query
+ * can dedupe and invalidate on it.
+ *
+ * @example
+ * scopeKey({ project: "skriuw", period: "7d", filter: {} }, "breakdown", ["page"]);
+ * // ["spoar", "skriuw", "breakdown", [["period", "7d"]], "page"]
+ */
+export function scopeKey<Route extends string, Args extends readonly unknown[]>(
+  state: ScopeState,
+  route: Route,
+  args: Args,
+): ScopeKey<Route, Args> {
+  const entries = Object.entries(toQuery(state))
+    .filter(([, value]) => value !== undefined)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return ["spoar", state.project, route, entries, ...args];
+}
+
+/**
  * @name scope
  * @description Builds a chainable, immutable scope: every link returns a new scope with one more
  * query parameter set, and `build` adds the route terminals for the state. Period and an explicit
@@ -90,6 +138,7 @@ export function scope<Extra>(state: ScopeState, build: (state: ScopeState) => Ex
       return next({ ...rest, filter: { ...state.filter, ...filter } });
     },
     toQuery: () => toQuery(state),
+    key: (route, ...args) => scopeKey(state, route, args),
     ...build(state),
   };
 }
