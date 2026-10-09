@@ -3,14 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { QueryConsole } from "@/components/query-console";
+import { apiEndpoint } from "@/lib/api-endpoint";
 import { baseOptions } from "@/lib/layout-options";
 
 export const metadata: Metadata = {
   title: "Query",
   description: "Run read-only SQL against your projects with an API token.",
 };
-
-const endpoint = process.env.NEXT_PUBLIC_API_URL ?? "https://api.analytics.remcostoeten.nl";
 
 export default function QueryPage() {
   return (
@@ -28,7 +27,7 @@ export default function QueryPage() {
             for the views, limits and who may run SQL.
           </p>
         </header>
-        <QueryConsole endpoint={endpoint} />
+        <QueryConsole endpoint={apiEndpoint()} />
       </main>
     </HomeLayout>
   );

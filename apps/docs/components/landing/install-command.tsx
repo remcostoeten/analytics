@@ -17,11 +17,18 @@ export function InstallCommand({ command }: Props) {
       onClick={copy}
       aria-label="Copy install command"
       title="Copy install command"
-      className={`${outlineButton} h-auto px-3 py-2.5 font-mono text-[0.75rem] whitespace-nowrap`}
+      data-copied={copied}
+      className={`${outlineButton} copy-control h-auto px-3 py-2.5 font-mono text-[0.75rem] whitespace-nowrap`}
     >
       <span className="opacity-60 select-none">$</span>
       <span>{command}</span>
-      {copied ? <CheckIcon className="size-3.5 text-ok" /> : <CopyIcon className="size-3.5" />}
+      <span className="copy-feedback" aria-hidden="true">
+        <CopyIcon className="copy-idle size-3.5" />
+        <CheckIcon className="copy-done size-3.5 text-ok" />
+      </span>
+      <span role="status" className="sr-only">
+        {copied ? "Copied to clipboard" : ""}
+      </span>
     </button>
   );
 }

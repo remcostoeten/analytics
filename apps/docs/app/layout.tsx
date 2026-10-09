@@ -2,10 +2,10 @@ import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { GeistMono } from "geist/font/mono";
-import { GeistPixelSquare } from "geist/font/pixel";
 import { GeistSans } from "geist/font/sans";
 
 import "./global.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: { default: "Spoar", template: "%s | Spoar docs" },
@@ -17,11 +17,13 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col font-sans antialiased">
-        <RootProvider theme={{ defaultTheme: "dark" }}>{children}</RootProvider>
+        <RootProvider theme={{ defaultTheme: "dark" }}>
+          <Providers>{children}</Providers>
+        </RootProvider>
       </body>
     </html>
   );

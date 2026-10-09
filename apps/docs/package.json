@@ -12,6 +12,8 @@
 		"test": "bun test"
 	},
 	"dependencies": {
+		"@spoar/client": "workspace:*",
+		"@spoar/sdk": "workspace:*",
 		"fumadocs-core": "16.16.0",
 		"fumadocs-mdx": "15.4.6",
 		"fumadocs-openapi": "12.2.0",
@@ -20,14 +22,19 @@
 		"next": "16.4.0-canary.59",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
+		"three": "0.186.1",
+		"web-vitals": "6.2.2",
 		"zod": "4.6.5"
 	},
 	"devDependencies": {
+		"@spoar/contract": "workspace:*",
+		"@spoar/shared": "workspace:*",
 		"@tailwindcss/postcss": "4.3.3",
 		"@types/mdx": "2.0.14",
 		"@types/node": "26.6.3",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
+		"@types/three": "0.186.0",
 		"babel-plugin-react-compiler": "1.0.0",
 		"postcss": "8.5.28",
 		"tailwindcss": "4.3.3",
