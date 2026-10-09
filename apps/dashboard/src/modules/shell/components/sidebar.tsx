@@ -17,6 +17,7 @@ import {
   KeyIcon,
   PulseIcon,
   SelectorIcon,
+  UsersIcon,
 } from "@/shared/ui/icons";
 import { Logo } from "@/shared/ui/logo";
 
@@ -80,12 +81,20 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
       },
     );
     if (signedIn) {
-      workspace.push({
-        label: "Issues",
-        href: `${projectPath}/issues`,
-        icon: BugIcon,
-        active: section === "issues",
-      });
+      workspace.push(
+        {
+          label: "Issues",
+          href: `${projectPath}/issues`,
+          icon: BugIcon,
+          active: section === "issues",
+        },
+        {
+          label: "Visitors",
+          href: `${projectPath}/visitors`,
+          icon: UsersIcon,
+          active: section === "visitors" || section === "sessions",
+        },
+      );
     }
     if (isAdmin) {
       workspace.push({
