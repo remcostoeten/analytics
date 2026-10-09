@@ -7,7 +7,6 @@ import Link from "next/link";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { CodeWindow } from "@/components/landing/code-window";
-import { DashboardMock } from "@/components/landing/dashboard-mock";
 import { DropTrail } from "@/components/landing/drop-trail";
 import { HeroDrop } from "@/components/landing/hero-drop";
 import {
@@ -33,10 +32,14 @@ import {
   TerminalIcon,
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
+import { LiveDashboard } from "@/components/landing/live-dashboard";
+import { RunningOn } from "@/components/landing/running-on";
 import { SiteNav } from "@/components/landing/site-nav";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
 import { Logo } from "@/components/logo";
+import { apiEndpoint } from "@/lib/api-endpoint";
 import { listExamples } from "@/lib/examples";
+import { showcasePeriod, showcaseProject } from "@/lib/showcase";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -66,8 +69,6 @@ const tiles = [
   "tile-f row-span-2",
   "tile-g",
 ];
-
-const stacks = ["Next.js", "React", "Astro", "Svelte", "Node", "Bun", "Deno", "Workers"];
 
 const steps = [
   {
@@ -193,11 +194,10 @@ const principles: { icon: Icon; title: string; text: string }[] = [
   },
 ];
 
-const facts = [
-  { value: "< 5 KB", label: "browser core, gzipped" },
-  { value: "0", label: "cookies for visitors" },
-  { value: "1", label: "API for ingest and reads" },
-  { value: "60 KB", label: "largest batch accepted" },
+const story = [
+  "Spoar started in February 2026 as a Hono ingestion service, a Next dashboard that read the same Postgres directly, and an SDK published as @remcostoeten/analytics. It ran on my own sites and still does.",
+  "That version had no read API: every chart was a query inside the dashboard, and the SDK and the server shared no types. So v2 is a rebuild on one contract of TypeBox schemas that the SDK, the API and the client all import, with one Elysia API for ingest, reads and sign-in.",
+  "Projects are public by default because I want my own numbers in the open. The dashboard at the top of this page is this site's, and the list below it is every project the production API serves.",
 ];
 
 const questions = [
@@ -304,23 +304,22 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="relative z-10 mx-auto h-[300px] max-w-[860px] px-3 pt-10 sm:h-[440px] sm:px-8 sm:pt-14">
-            <DashboardMock />
+            <LiveDashboard />
           </div>
         </div>
+        <p className="hero-rise-late mt-6 max-w-lg font-serif text-[0.9rem] text-muted">
+          These are this site&apos;s own numbers, read from the public API with @spoar/client.{" "}
+          <a
+            href={`${apiEndpoint()}/v2/projects/${encodeURIComponent(showcaseProject())}/stats?period=${showcasePeriod}`}
+            rel="noreferrer"
+            className="link-line text-fg"
+          >
+            The same stats as JSON
+          </a>
+        </p>
       </header>
 
-      <section className="px-4 py-14 sm:py-20">
-        <p className="text-center font-serif text-[0.95rem] text-muted">
-          Runs wherever your site runs
-        </p>
-        <ul className="mx-auto mt-6 flex max-w-4xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {stacks.map((stack) => (
-            <li key={stack} className="text-[1.35rem] font-semibold tracking-[-0.03em] text-fg/55">
-              {stack}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <RunningOn />
 
       <section className="container-land py-14 sm:py-20">
         <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
@@ -437,20 +436,30 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-          <div className="mt-14 border-t border-dashed border-white/15 pt-12">
-            <ul className="flex flex-wrap justify-center gap-4">
-              {facts.map((fact) => (
-                <li key={fact.label} className="fact-coin">
-                  <span className="font-mono text-[0.95rem] font-medium text-white">
-                    {fact.value}
-                  </span>
-                  <span className="max-w-[72px] text-[0.55rem] leading-tight text-white/60">
-                    {fact.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        </div>
+      </section>
+
+      <section className="container-land grid gap-10 py-16 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        <div>
+          <h2 className="reveal font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
+            Why it exists
+          </h2>
+          <p className="mt-4 font-serif text-[0.95rem] text-muted">
+            Remco Stoeten, who builds and runs it.{" "}
+            <a href={`${github}/blob/master/v1/README.md`} className="link-line text-fg">
+              v1 is still in the repository
+            </a>
+          </p>
+        </div>
+        <div className="flex flex-col gap-5">
+          {story.map((paragraph) => (
+            <p
+              key={paragraph}
+              className="reveal font-serif text-[1.05rem] leading-relaxed text-fg/85"
+            >
+              {paragraph}
+            </p>
+          ))}
         </div>
       </section>
 
@@ -529,16 +538,19 @@ export default async function HomePage() {
           <path
             d="M0 180 C 200 120 380 200 560 150 S 920 90 1100 150 S 1340 190 1440 140 V320 H0Z"
             fill="#f6c9d8"
+            className="footer-wave-1"
             opacity="0.55"
           />
           <path
             d="M0 230 C 240 180 420 250 640 210 S 1000 160 1200 220 S 1380 240 1440 210 V320 H0Z"
             fill="#e6b9e2"
+            className="footer-wave-2"
             opacity="0.6"
           />
           <path
             d="M0 280 C 260 240 520 300 760 265 S 1160 235 1440 275 V320 H0Z"
             fill="#d7aee0"
+            className="footer-wave-3"
             opacity="0.7"
           />
         </svg>

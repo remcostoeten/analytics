@@ -69,6 +69,24 @@ Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.rem
 
 Project `v2.analytics-docs` (already created, with `docs.analytics.remcostoeten.nl`), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variable `NEXT_PUBLIC_API_URL` (defaults to `https://api.analytics.remcostoeten.nl`). Add a domain such as `docs.analytics.remcostoeten.nl`.
 
+The site tracks itself and shows its own numbers on the landing page. Create its project once, as an owner or with an `admin` token:
+
+```bash
+curl -X POST https://api.analytics.remcostoeten.nl/v2/projects \
+  -H "authorization: Bearer $RA_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"id":"docs.analytics.remcostoeten.nl","name":"Spoar docs","domain":"docs.analytics.remcostoeten.nl","allowedOrigins":["https://docs.analytics.remcostoeten.nl"]}'
+```
+
+Then set on `v2.analytics-docs`:
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_RA_CONFIG` | `{"project":"docs.analytics.remcostoeten.nl","key":"<publicKey>","endpoint":"/_ra"}` |
+| `RA_SECRET` | The `secretKey` from the answer |
+
+Until the project exists the landing page renders with empty numbers and the site sends nothing.
+
 ## 7. Scheduled jobs
 
 GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https://api.analytics.remcostoeten.nl`) and the secret `CRON_SECRET` from step 2. The `jobs` workflow then runs:

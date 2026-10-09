@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
 import "./global.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: { default: "Spoar", template: "%s | Spoar docs" },
@@ -20,7 +21,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col font-sans antialiased">
-        <RootProvider theme={{ defaultTheme: "dark" }}>{children}</RootProvider>
+        <RootProvider theme={{ defaultTheme: "dark" }}>
+          <Providers>{children}</Providers>
+        </RootProvider>
       </body>
     </html>
   );

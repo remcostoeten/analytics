@@ -62,6 +62,8 @@
       "name": "@spoar/docs",
       "version": "0.0.0",
       "dependencies": {
+        "@spoar/client": "workspace:*",
+        "@spoar/sdk": "workspace:*",
         "fumadocs-core": "16.16.0",
         "fumadocs-mdx": "15.4.6",
         "fumadocs-openapi": "12.2.0",
@@ -74,6 +76,8 @@
         "zod": "4.6.5",
       },
       "devDependencies": {
+        "@spoar/contract": "workspace:*",
+        "@spoar/shared": "workspace:*",
         "@tailwindcss/postcss": "4.3.3",
         "@types/mdx": "2.0.14",
         "@types/node": "26.6.3",
