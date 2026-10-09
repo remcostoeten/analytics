@@ -8,14 +8,8 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { CodeWindow } from "@/components/landing/code-window";
 import { DropTrail } from "@/components/landing/drop-trail";
-import { HeroDrop } from "@/components/landing/hero-drop";
-import {
-  ErrorsScene,
-  PipelineScene,
-  PrivacyScene,
-  ProxyScene,
-  VitalsScene,
-} from "@/components/landing/feature-scenes";
+import { ErrorsScene } from "@/components/landing/errors-live";
+import { PrivacyScene, ProxyScene } from "@/components/landing/feature-scenes";
 import {
   ArrowIcon,
   ArrowUpRightIcon,
@@ -33,13 +27,18 @@ import {
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
 import { LiveDashboard } from "@/components/landing/live-dashboard";
+import { PipelineScene } from "@/components/landing/pipeline-scene";
+import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
 import { SiteNav } from "@/components/landing/site-nav";
+import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
+import { VitalsScene } from "@/components/landing/vitals-live";
 import { Logo } from "@/components/logo";
 import { apiEndpoint } from "@/lib/api-endpoint";
+import { dashboardUrl } from "@/lib/dashboard-url";
 import { listExamples } from "@/lib/examples";
-import { showcasePeriod, showcaseProject } from "@/lib/showcase";
+import { showcaseProject, showcaseQuery } from "@/lib/showcase";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -73,7 +72,7 @@ const tiles = [
 const steps = [
   {
     title: "Install the SDK",
-    text: "Create the client in one file. The browser core has no framework dependency; React and Next entries add a provider on top.",
+    text: "Create the client in one file. The browser core has no framework dependency, so it runs in React, Next, Vue, Svelte, Astro or plain TypeScript, and the server entry runs anywhere with fetch.",
     badge: "npm install @spoar/sdk",
     tone: "tone-lilac",
     visual: <InstallVisual />,
@@ -154,7 +153,7 @@ const features: {
     noteIcon: GaugeIcon,
     href: "/docs/plugins/speed-insights",
     linkText: "Speed insights",
-    visual: <VitalsScene />,
+    visual: <VitalsScene endpoint={apiEndpoint()} project={showcaseProject()} />,
   },
   {
     title: "Error tracking",
@@ -167,7 +166,7 @@ const features: {
     noteIcon: BugIcon,
     href: "/docs/plugins/errors",
     linkText: "Errors plugin",
-    visual: <ErrorsScene />,
+    visual: <ErrorsScene endpoint={apiEndpoint()} project={showcaseProject()} />,
   },
 ];
 
@@ -219,7 +218,7 @@ const questions = [
   {
     question: "Which frameworks does it support?",
     answer:
-      "Next.js, React, Astro, Svelte and plain JavaScript in the browser. The /server entry tracks from Node, Bun, Deno and Workers, and any language can post to the API over HTTP.",
+      "Next.js, React, Vue, Svelte, Astro and plain TypeScript in the browser. The /server entry tracks from Node, Bun, Deno and Workers, and any language can post to the API over HTTP.",
   },
   {
     question: "How do I keep my own visits out of the reports?",
@@ -252,7 +251,7 @@ function navLinks() {
     { label: "Query", href: "/query" },
   ];
   if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
-  links.push({ label: "GitHub", href: github });
+  links.push({ label: "Dashboard", href: dashboardUrl() }, { label: "GitHub", href: github });
   return links;
 }
 
@@ -260,12 +259,12 @@ export default async function HomePage() {
   const example = await readSnippet();
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
-      <SiteNav links={navLinks()} />
+      <RevealObserver />
+      <SiteNav links={navLinks()} loginHref={dashboardUrl()} />
 
       <header className="hero-wash relative isolate flex overflow-x-clip flex-col items-center px-4 pt-32 text-center sm:pt-40">
         <span aria-hidden="true" className="hero-blob hero-blob-a" />
         <span aria-hidden="true" className="hero-blob hero-blob-b" />
-        <HeroDrop />
         <h1 className="hero-rise font-serif max-w-4xl text-[3rem] leading-[1.02] font-light tracking-[-0.02em] text-fg sm:text-[4.6rem] lg:text-[5.5rem]">
           Web analytics on your own Postgres
         </h1>
@@ -294,7 +293,7 @@ export default async function HomePage() {
             </li>
           ))}
         </ul>
-        <div className="mosaic grain-host relative mt-14 w-full max-w-[1120px] overflow-hidden">
+        <div className="mosaic grain-host relative mt-14 w-full max-w-[1040px] overflow-hidden">
           <div
             aria-hidden="true"
             className="absolute inset-0 grid grid-cols-[2fr_1fr_2fr] grid-rows-[56px_1fr_1fr] gap-1.5"
@@ -310,11 +309,19 @@ export default async function HomePage() {
         <p className="hero-rise-late mt-6 max-w-lg font-serif text-[0.9rem] text-muted">
           These are this site&apos;s own numbers, read from the public API with @spoar/client.{" "}
           <a
-            href={`${apiEndpoint()}/v2/projects/${encodeURIComponent(showcaseProject())}/stats?period=${showcasePeriod}`}
+            href={`${apiEndpoint()}/v2/projects/${encodeURIComponent(showcaseProject())}/stats?${await showcaseQuery()}`}
             rel="noreferrer"
             className="link-line text-fg"
           >
             The same stats as JSON
+          </a>
+          , or{" "}
+          <a
+            href={dashboardUrl(`/admin/projects/${encodeURIComponent(showcaseProject())}`)}
+            rel="noreferrer"
+            className="link-line text-fg"
+          >
+            the project in the dashboard
           </a>
         </p>
       </header>
@@ -322,9 +329,9 @@ export default async function HomePage() {
       <RunningOn />
 
       <section className="container-land py-14 sm:py-20">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+        <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-md">
-            <h2 className="reveal font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
+            <h2 className="font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
               Spoar in three steps
             </h2>
             <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
@@ -336,9 +343,10 @@ export default async function HomePage() {
           </Link>
         </div>
         <ol className="mt-12 grid gap-4 md:grid-cols-3 md:grid-rows-[auto_auto]">
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <li
               key={step.title}
+              style={stagger(index)}
               className="reveal flex flex-col gap-4 md:row-span-2 md:grid md:grid-rows-subgrid"
             >
               <div className="px-1">
@@ -402,9 +410,9 @@ export default async function HomePage() {
       </section>
 
       <section className="container-land py-14 sm:py-20">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+        <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-md">
-            <h2 className="reveal font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
+            <h2 className="font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
               One file to set it up
             </h2>
             <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
@@ -427,7 +435,7 @@ export default async function HomePage() {
           </h2>
           <ul className="mt-14 grid gap-10 text-left sm:grid-cols-2 lg:grid-cols-4">
             {principles.map((item) => (
-              <li key={item.title} className="flex flex-col gap-3">
+              <li key={item.title} className="principle flex flex-col gap-3">
                 <item.icon className="size-5 text-[#f6efe9]/80" />
                 <h3 className="font-serif text-[1.1rem] text-[#f6efe9]">{item.title}</h3>
                 <p className="font-serif text-[0.9rem] leading-relaxed text-[#f6efe9]/60">
@@ -440,8 +448,8 @@ export default async function HomePage() {
       </section>
 
       <section className="container-land grid gap-10 py-16 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-        <div>
-          <h2 className="reveal font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
+        <div className="reveal">
+          <h2 className="font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
             Why it exists
           </h2>
           <p className="mt-4 font-serif text-[0.95rem] text-muted">
@@ -464,8 +472,8 @@ export default async function HomePage() {
       </section>
 
       <section className="container-land grid gap-10 py-16 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-        <div>
-          <h2 className="reveal font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
+        <div className="reveal">
+          <h2 className="font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
             Frequently asked questions
           </h2>
           <p className="mt-4 font-serif text-[0.95rem] text-muted">
@@ -476,8 +484,12 @@ export default async function HomePage() {
           </p>
         </div>
         <div className="flex flex-col">
-          {questions.map((item) => (
-            <details key={item.question} className="faq group border-b border-line">
+          {questions.map((item, index) => (
+            <details
+              key={item.question}
+              style={stagger(index)}
+              className="faq reveal group border-b border-line"
+            >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-serif text-[1rem] text-fg">
                 {item.question}
                 <ChevronIcon className="faq-chevron size-4 shrink-0 text-muted" />
@@ -537,19 +549,19 @@ export default async function HomePage() {
         >
           <path
             d="M0 180 C 200 120 380 200 560 150 S 920 90 1100 150 S 1340 190 1440 140 V320 H0Z"
-            fill="#f6c9d8"
+            fill="var(--wave-1)"
             className="footer-wave-1"
             opacity="0.55"
           />
           <path
             d="M0 230 C 240 180 420 250 640 210 S 1000 160 1200 220 S 1380 240 1440 210 V320 H0Z"
-            fill="#e6b9e2"
+            fill="var(--wave-2)"
             className="footer-wave-2"
             opacity="0.6"
           />
           <path
             d="M0 280 C 260 240 520 300 760 265 S 1160 235 1440 275 V320 H0Z"
-            fill="#d7aee0"
+            fill="var(--wave-3)"
             className="footer-wave-3"
             opacity="0.7"
           />

@@ -10,7 +10,7 @@ type SceneProps = {
 
 export function Scene({ backdrop, children, className = "" }: SceneProps) {
   return (
-    <div className={`scene group/scene relative isolate overflow-hidden rounded-2xl ${className}`}>
+    <div className={`scene group/scene relative isolate overflow-clip rounded-2xl ${className}`}>
       <span aria-hidden="true" className="scene-blob scene-blob-a" />
       <span aria-hidden="true" className="scene-blob scene-blob-b" />
       {backdrop === "hills" ? <Hills /> : null}
@@ -47,7 +47,7 @@ function Hills() {
           <feGaussianBlur stdDeviation="1.6" />
         </filter>
       </defs>
-      <g fill="#f3a7a0" opacity="0.32" filter="url(#scene-soft)">
+      <g fill="var(--tree)" opacity="0.32" filter="url(#scene-soft)">
         <Tree x={40} scale={1.25} />
         <Tree x={92} scale={0.9} />
         <Tree x={330} scale={1.1} />
@@ -55,12 +55,12 @@ function Hills() {
       </g>
       <path
         d="M0 250 C 80 220 140 260 220 235 S 340 215 400 240 V320 H0Z"
-        fill="#f7b9c8"
+        fill="var(--hill-back)"
         opacity="0.45"
       />
       <path
         d="M0 285 C 100 260 180 295 280 270 S 370 265 400 280 V320 H0Z"
-        fill="#e7b3e3"
+        fill="var(--hill-front)"
         opacity="0.5"
       />
     </svg>

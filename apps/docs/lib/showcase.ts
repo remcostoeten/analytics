@@ -1,9 +1,16 @@
 import { createClient } from "@spoar/client";
-import type { BreakdownRow, PublicProject, StatsResponse, TimeseriesPoint } from "@spoar/contract";
+import type {
+  BreakdownRow,
+  ProjectList,
+  PublicProject,
+  StatsResponse,
+  TimeseriesPoint,
+} from "@spoar/contract";
 import type { Nullable } from "@spoar/shared/semantic";
 import { cacheLife } from "next/cache";
 
 import { apiEndpoint } from "./api-endpoint";
+import { showcaseReads, showcaseWindow } from "./showcase-period";
 
 export type Showcase = {
   project: string;
@@ -15,9 +22,15 @@ export type Showcase = {
 
 export type ShowcaseProject = PublicProject & {
   visitors: Nullable<number>;
+  pageviews: Nullable<number>;
+  change: Nullable<number>;
+  series: TimeseriesPoint[];
 };
 
-export const showcasePeriod = "30d";
+export type ShowcaseProjects = {
+  projects: ShowcaseProject[];
+  list: Nullable<ProjectList>;
+};
 
 const fallbackProject = "docs.analytics.remcostoeten.nl";
 
@@ -38,8 +51,23 @@ export function showcaseProject() {
   }
 }
 
+/**
+ * @name showcaseQuery
+ * @description The `from` and `to` query string of the showcase window for links to the raw
+ * JSON, cached for a minute so a prerendered page never reads the clock itself.
+ *
+ * @example
+ * `${endpoint}/v2/projects/docs/stats?${await showcaseQuery()}`
+ */
+export async function showcaseQuery() {
+  "use cache";
+  cacheLife("minutes");
+  const { from, to } = showcaseWindow();
+  return `from=${from.toISOString()}&to=${to.toISOString()}`;
+}
+
 function scope(project: string) {
-  return createClient({ endpoint: apiEndpoint() }).project(project).period(showcasePeriod);
+  return showcaseReads(createClient({ endpoint: apiEndpoint() }).project(project));
 }
 
 /**
@@ -73,21 +101,26 @@ export async function readShowcase(): Promise<Showcase> {
 
 /**
  * @name readProjects
- * @description Every public project on the API with its visitors over the last 30 days, cached
- * for a minute. An empty list means the API gave no answer.
+ * @description Every public project on the API with its visitors, pageviews, change against the
+ * 30 days before and visitors per day over the last 30 days, plus the list response as the API
+ * sent it, cached for a minute. An empty list means the API gave no answer.
  *
  * @example
- * const projects = await readProjects();
+ * const { projects, list } = await readProjects();
  */
-export async function readProjects(): Promise<ShowcaseProject[]> {
+export async function readProjects(): Promise<ShowcaseProjects> {
   "use cache";
   cacheLife("minutes");
   const api = createClient({ endpoint: apiEndpoint() });
   const list = await api.projects.list();
-  if (!list.ok) return [];
-  return Promise.all(
+  if (!list.ok) return { projects: [], list: null };
+  const projects = await Promise.all(
     list.value.data.map(async (project) => {
-      const stats = await api.project(project.id).period(showcasePeriod).stats();
+      const reads = showcaseReads(api.project(project.id));
+      const [stats, series] = await Promise.all([
+        reads.stats(),
+        reads.timeseries("visitors", { interval: "day" }),
+      ]);
       return {
         id: project.id,
         name: project.name,
@@ -95,7 +128,11 @@ export async function readProjects(): Promise<ShowcaseProject[]> {
         visibility: project.visibility,
         createdAt: project.createdAt,
         visitors: stats.ok ? stats.value.data.visitors.value : null,
+        pageviews: stats.ok ? stats.value.data.pageviews.value : null,
+        change: stats.ok ? stats.value.data.visitors.change : null,
+        series: series.ok ? series.value.data : [],
       };
     }),
   );
+  return { projects, list: list.value };
 }

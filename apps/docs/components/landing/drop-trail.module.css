@@ -30,6 +30,7 @@
 .reveal {
   position: relative;
   width: clamp(140px, 26vw, 176px);
+  max-width: 100%;
   aspect-ratio: 1;
 }
 

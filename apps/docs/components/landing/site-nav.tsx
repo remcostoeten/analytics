@@ -1,11 +1,12 @@
 "use client";
 
+import { useTheme } from "fumadocs-ui/provider/base";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Logo } from "@/components/logo";
 
-import { CloseIcon, MenuIcon } from "./icons";
+import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 
 type NavLink = {
   label: string;
@@ -14,13 +15,15 @@ type NavLink = {
 
 type Props = {
   links: NavLink[];
+  loginHref: string;
 };
 
-export function SiteNav({ links }: Props) {
+export function SiteNav({ links, loginHref }: Props) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     if (!open) return;
@@ -44,7 +47,7 @@ export function SiteNav({ links }: Props) {
   return (
     <nav ref={root} className="fixed inset-x-0 top-3 z-50 flex justify-center px-4">
       <div className="relative">
-        <div className="flex items-center gap-1 rounded-full border border-line bg-surface/85 p-1.5 shadow-[0_6px_24px_-12px_rgb(60_30_10/0.25)] backdrop-blur-md">
+        <div className="flex items-center gap-1 rounded-full border border-line bg-surface/85 p-1.5 shadow-[0_6px_24px_-12px_rgb(var(--shade)/0.25)] backdrop-blur-md">
           <Link
             href="/"
             aria-label="Spoar home"
@@ -56,9 +59,21 @@ export function SiteNav({ links }: Props) {
           <Link href="/docs" className="pill-ghost">
             Docs
           </Link>
+          <a href={loginHref} className="pill-ghost">
+            Log in
+          </a>
           <Link href="/docs/getting-started/quick-start" className="pill-dark">
             Get started
           </Link>
+          <button
+            type="button"
+            aria-label="Toggle dark mode"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            className="pill-ghost theme-toggle size-8 px-0!"
+          >
+            <MoonIcon className="theme-moon size-4" />
+            <SunIcon className="theme-sun size-4" />
+          </button>
           <button
             ref={trigger}
             type="button"
@@ -77,7 +92,7 @@ export function SiteNav({ links }: Props) {
         {open ? (
           <ul
             id={menuId}
-            className="nav-popover animate-menu-in absolute inset-x-0 top-[calc(100%+8px)] flex flex-col gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-[0_16px_40px_-20px_rgb(60_30_10/0.35)]"
+            className="nav-popover animate-menu-in absolute inset-x-0 top-[calc(100%+8px)] flex flex-col gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-[0_16px_40px_-20px_rgb(var(--shade)/0.35)]"
           >
             {links.map((link) => (
               <li key={link.href}>

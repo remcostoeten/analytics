@@ -12,6 +12,7 @@ import {
 } from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
+import type { DropAppearance } from "./drop-appearance";
 import { createDropGeometry } from "./drop-geometry";
 
 /**
@@ -37,8 +38,16 @@ export function createDropScene(canvas: HTMLCanvasElement) {
   const camera = new OrthographicCamera(-1.8, 1.8, 1.65, -1.95, 0.1, 20);
   camera.position.set(0, 0, 6);
   const geometry = createDropGeometry();
+  geometry.setAttribute(
+    "color",
+    new Float32BufferAttribute(
+      new Float32Array(geometry.getAttribute("position").count * 3).fill(1),
+      3,
+    ),
+  );
   const material = new MeshPhysicalMaterial({
     color: new Color("#cbc1e5"),
+    vertexColors: true,
     metalness: 1,
     roughness: 0.2,
     clearcoat: 1,
@@ -97,6 +106,41 @@ export function createDropScene(canvas: HTMLCanvasElement) {
     render();
   }
 
+  function setAppearance({
+    color = "#cbc1e5",
+    palette,
+    metalness = 1,
+    roughness = 0.2,
+  }: DropAppearance) {
+    const base = new Color(color);
+    const shadow = new Color(palette?.shadow ?? color);
+    const midtone = new Color(palette?.midtone ?? color);
+    const highlight = new Color(palette?.highlight ?? color);
+    const strength = Math.min(1, Math.max(0, (palette?.amount ?? 0) / 100));
+    const tint = new Color();
+    const surfaceColors = geometry.getAttribute("color");
+    const reflectedColors = reflectionGeometry.getAttribute("color");
+
+    for (let index = 0; index < positions.count; index++) {
+      const height = Math.min(1, Math.max(0, (positions.getY(index) + 1.35) / 2.7));
+      if (height < 0.5) tint.copy(shadow).lerp(midtone, height * 2);
+      else tint.copy(midtone).lerp(highlight, (height - 0.5) * 2);
+      tint.lerp(base, 1 - strength);
+      surfaceColors.setXYZ(index, tint.r, tint.g, tint.b);
+      reflectedColors.setXYZ(index, tint.r, tint.g, tint.b);
+    }
+
+    surfaceColors.needsUpdate = true;
+    reflectedColors.needsUpdate = true;
+    material.color.set("#ffffff");
+    material.metalness = Math.min(1, Math.max(0, metalness));
+    material.roughness = Math.min(1, Math.max(0, roughness));
+    reflectionMaterial.color.set("#ffffff");
+    reflectionMaterial.metalness = material.metalness;
+    reflectionMaterial.roughness = Math.min(1, material.roughness + 0.18);
+    render();
+  }
+
   const resizeObserver = new ResizeObserver(() => {
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     render();
@@ -107,6 +151,7 @@ export function createDropScene(canvas: HTMLCanvasElement) {
   render();
 
   return {
+    setAppearance,
     setActive(visible: boolean) {
       if (active === visible) return;
       active = visible;

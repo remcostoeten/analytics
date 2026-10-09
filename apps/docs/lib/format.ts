@@ -51,3 +51,16 @@ export function countryName(code: string) {
     return code;
   }
 }
+
+/**
+ * @name formatVital
+ * @description Formats a Web Vital the way the dashboard shows it: CLS to two decimals, times
+ * under a second in whole milliseconds and longer ones in seconds to one decimal.
+ *
+ * @example
+ * formatVital("lcp", 1934); // "1.9 s"
+ */
+export function formatVital(metric: string, value: number) {
+  if (metric === "cls") return value.toFixed(2);
+  return value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(1)} s`;
+}
