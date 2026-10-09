@@ -1,7 +1,8 @@
-import type { Period } from "@spoar/contract";
+import type { IssueStatus, Percentile, Period } from "@spoar/contract";
 
 export type FilterDimension =
   | "page"
+  | "route"
   | "referrer_domain"
   | "host"
   | "country"
@@ -17,6 +18,8 @@ export type ViewState = {
   bots: boolean;
   split: FilterDimension | null;
   filters: ViewFilters;
+  percentile: Percentile;
+  status: IssueStatus;
 };
 
 export type SearchParams = { [key: string]: string | string[] | undefined };
@@ -32,6 +35,7 @@ export const periods = [
 export const dimensions = [
   { value: "referrer_domain", label: "Referrer" },
   { value: "page", label: "Path" },
+  { value: "route", label: "Route" },
   { value: "host", label: "Host" },
   { value: "country", label: "Country" },
   { value: "browser", label: "Browser" },
@@ -40,7 +44,19 @@ export const dimensions = [
   { value: "channel", label: "Channel" },
 ] as const satisfies readonly { value: FilterDimension; label: string }[];
 
-const defaultPeriod: Period = "7d";
+export const percentiles = [50, 75, 90, 95, 99] as const satisfies readonly Percentile[];
+
+export const issueStatuses = [
+  { value: "open", label: "Open" },
+  { value: "resolved", label: "Resolved" },
+  { value: "ignored", label: "Ignored" },
+] as const satisfies readonly { value: IssueStatus; label: string }[];
+
+const defaults = {
+  period: "7d",
+  percentile: 75,
+  status: "open",
+} as const satisfies Pick<ViewState, "period" | "percentile" | "status">;
 
 function single(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -54,29 +70,41 @@ function isDimension(value: string | undefined): value is FilterDimension {
   return dimensions.some((dimension) => dimension.value === value);
 }
 
+function isPercentile(value: number): value is Percentile {
+  return percentiles.some((percentile) => percentile === value);
+}
+
+function isIssueStatus(value: string | undefined): value is IssueStatus {
+  return issueStatuses.some((status) => status.value === value);
+}
+
 /**
  * @name readViewState
  * @description Reads the analytics view from the URL: `period`, `bots=include`, `split` for the
- * summary chart and one parameter per filtered dimension, where a leading `!` excludes the value.
- * Unknown or empty values fall back to the defaults.
+ * summary chart, one parameter per filtered dimension (a leading `!` excludes the value), and
+ * `percentile` and `status` for the speed and issue views. Unknown or empty values fall
+ * back to the defaults.
  *
  * @example
- * readViewState({ period: "30d", country: "!NL" });
- * // { period: "30d", bots: false, split: null, filters: { country: "!NL" } }
+ * readViewState({ period: "30d", country: "!NL" }).filters; // { country: "!NL" }
  */
 export function readViewState(params: SearchParams): ViewState {
   const period = single(params.period);
   const split = single(params.split);
+  const percentile = Number(single(params.percentile));
+  const status = single(params.status);
   const filters: ViewFilters = {};
   for (const { value } of dimensions) {
     const filter = single(params[value]);
     if (filter && filter !== "!") filters[value] = filter;
   }
   return {
-    period: isPeriod(period) ? period : defaultPeriod,
+    period: isPeriod(period) ? period : defaults.period,
     bots: single(params.bots) === "include",
     split: isDimension(split) ? split : null,
     filters,
+    percentile: isPercentile(percentile) ? percentile : defaults.percentile,
+    status: isIssueStatus(status) ? status : defaults.status,
   };
 }
 
@@ -86,17 +114,19 @@ export function readViewState(params: SearchParams): ViewState {
  * Returns an empty string or one starting with `?`.
  *
  * @example
- * viewQuery({ period: "7d", bots: false, split: null, filters: { page: "/" } }); // "?page=%2F"
+ * viewQuery(readViewState({ page: "/" })); // "?page=%2F"
  */
 export function viewQuery(state: ViewState) {
   const query = new URLSearchParams();
-  if (state.period !== defaultPeriod) query.set("period", state.period);
+  if (state.period !== defaults.period) query.set("period", state.period);
   if (state.bots) query.set("bots", "include");
   if (state.split) query.set("split", state.split);
   for (const { value } of dimensions) {
     const filter = state.filters[value];
     if (filter) query.set(value, filter);
   }
+  if (state.percentile !== defaults.percentile) query.set("percentile", String(state.percentile));
+  if (state.status !== defaults.status) query.set("status", state.status);
   const text = query.toString();
   return text ? `?${text}` : "";
 }

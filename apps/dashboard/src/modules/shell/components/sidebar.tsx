@@ -10,6 +10,7 @@ import {
   BookIcon,
   ChartIcon,
   FolderIcon,
+  GaugeIcon,
   GearIcon,
   HomeIcon,
   KeyIcon,
@@ -25,6 +26,8 @@ type Item = {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   active: boolean;
 };
+
+const projectSections = ["speed", "issues", "realtime", "visitors", "sessions"];
 
 function currentProject(pathname: string) {
   const match = /^\/(?:admin\/)?projects\/([^/]+)/.exec(pathname);
@@ -52,12 +55,22 @@ export function Sidebar({ projects, isAdmin }: Props) {
     { label: "Home", href: "/", icon: HomeIcon, active: pathname === "/" },
   ];
   if (encoded) {
-    workspace.push({
-      label: "Web analytics",
-      href: `/projects/${encoded}`,
-      icon: ChartIcon,
-      active: pathname.startsWith(`/projects/${encoded}`),
-    });
+    const projectPath = `/projects/${encoded}`;
+    const section = pathname.slice(projectPath.length).split("/")[1] ?? "";
+    workspace.push(
+      {
+        label: "Web analytics",
+        href: projectPath,
+        icon: ChartIcon,
+        active: pathname.startsWith(projectPath) && !projectSections.includes(section),
+      },
+      {
+        label: "Speed",
+        href: `${projectPath}/speed`,
+        icon: GaugeIcon,
+        active: section === "speed",
+      },
+    );
     if (isAdmin) {
       workspace.push({
         label: "Settings",

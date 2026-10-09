@@ -15,6 +15,8 @@ import { listProjects, readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
+import { ProjectHeader } from "@/modules/shell/components/project-header";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
 import type { ProjectScope } from "@spoar/client";
@@ -61,16 +63,6 @@ async function Summary({ stats, scope, view, state, path }: SummaryProps) {
   const data = await stats;
   const total = data ? data[view.stat].value : null;
   return <SummarySection scope={scope} view={view} state={state} path={path} total={total} />;
-}
-
-type SkeletonProps = { height: number };
-
-function SectionSkeleton({ height }: SkeletonProps) {
-  return (
-    <div className="panel-section" aria-hidden="true">
-      <div className="skeleton" style={{ height }} />
-    </div>
-  );
 }
 
 function RailSkeleton() {
@@ -125,17 +117,13 @@ export default async function Page({ params, searchParams }: Props) {
       </aside>
 
       <div className="panel">
-        <header className="panel-section grid gap-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h1 className="text-2xl font-normal tracking-tight">Web analytics for {found.name}</h1>
-            <span className="font-mono text-xs text-muted">{found.domain}</span>
-          </div>
+        <ProjectHeader title={`Web analytics for ${found.name}`} domain={found.domain}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <AddFilter path={path} state={state} />
             <PeriodSelect path={path} state={state} />
           </div>
           <FilterChips path={path} state={state} />
-        </header>
+        </ProjectHeader>
 
         <Suspense
           key={`summary${path}${viewQuery(state)}`}

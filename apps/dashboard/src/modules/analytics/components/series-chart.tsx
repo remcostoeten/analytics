@@ -6,13 +6,18 @@ import { useEffect, useRef, useState } from "react";
 import { formatMetric } from "../format";
 import type { MetricFormat } from "../metrics";
 
-export type ChartSeries = { label: string; points: { bucket: string; value: number }[] };
+export type ChartPoint = { bucket: string; value: number | null };
+
+export type ChartSeries = { label: string; points: ChartPoint[] };
+
+export type ChartThreshold = { value: number; label: string };
 
 type Props = {
   series: ChartSeries[];
   format: MetricFormat;
   interval: Interval;
   label: string;
+  thresholds?: ChartThreshold[];
 };
 
 const height = 240;
@@ -43,7 +48,25 @@ function bucketLabel(bucket: string, interval: Interval, long: boolean) {
   return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
-export function SeriesChart({ series, format, interval, label }: Props) {
+function linePath(
+  points: ChartPoint[],
+  x: (index: number) => number,
+  y: (value: number) => number,
+) {
+  let path = "";
+  let open = false;
+  points.forEach((point, index) => {
+    if (point.value === null) {
+      open = false;
+      return;
+    }
+    path += `${open ? "L" : "M"}${x(index)},${y(point.value)} `;
+    open = true;
+  });
+  return path.trim();
+}
+
+export function SeriesChart({ series, format, interval, label, thresholds = [] }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
@@ -59,7 +82,10 @@ export function SeriesChart({ series, format, interval, label }: Props) {
   }, []);
 
   const buckets = series[0]?.points.map((point) => point.bucket) ?? [];
-  const peak = Math.max(0, ...series.flatMap((entry) => entry.points.map((point) => point.value)));
+  const values = series.flatMap((entry) =>
+    entry.points.flatMap((point) => (point.value === null ? [] : [point.value])),
+  );
+  const peak = Math.max(0, ...values, ...thresholds.map((threshold) => threshold.value));
   const tickStep = niceStep(peak, format);
   const top = Math.max(tickStep, Math.ceil(peak / tickStep) * tickStep);
   const plotWidth = Math.max(width - pad.left - pad.right, 0);
@@ -121,6 +147,27 @@ export function SeriesChart({ series, format, interval, label }: Props) {
               </text>
             </g>
           ))}
+          {thresholds.map((threshold) => (
+            <g key={threshold.label}>
+              <line
+                x1={pad.left}
+                x2={width - pad.right}
+                y1={y(threshold.value)}
+                y2={y(threshold.value)}
+                stroke="var(--warn)"
+                strokeDasharray="4 4"
+                strokeWidth={1}
+              />
+              <text
+                x={width - pad.right}
+                y={y(threshold.value) - 4}
+                textAnchor="end"
+                className="fill-warn font-mono text-[10px]"
+              >
+                {threshold.label}
+              </text>
+            </g>
+          ))}
           {buckets.map((bucket, index) =>
             index % labelEvery === 0 ? (
               <text
@@ -137,9 +184,7 @@ export function SeriesChart({ series, format, interval, label }: Props) {
           {series.map((entry, order) => (
             <path
               key={entry.label}
-              d={entry.points
-                .map((point, index) => `${index === 0 ? "M" : "L"}${x(index)},${y(point.value)}`)
-                .join(" ")}
+              d={linePath(entry.points, x, y)}
               fill="none"
               stroke={`var(--series-${order + 1})`}
               strokeWidth={2}
@@ -158,7 +203,7 @@ export function SeriesChart({ series, format, interval, label }: Props) {
               />
               {series.map((entry, order) => {
                 const point = entry.points[hover];
-                return point ? (
+                return point && point.value !== null ? (
                   <circle
                     key={entry.label}
                     cx={x(hover)}
@@ -185,18 +230,21 @@ export function SeriesChart({ series, format, interval, label }: Props) {
           <p className="mb-1 font-mono text-[11px] text-muted">
             {bucketLabel(hovered, interval, true)}
           </p>
-          {series.map((entry, order) => (
-            <p key={entry.label} className="flex items-center gap-2 text-xs">
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ background: `var(--series-${order + 1})` }}
-              />
-              <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-              <span className="font-medium tabular-nums">
-                {formatMetric(entry.points[hover]?.value ?? 0, format)}
-              </span>
-            </p>
-          ))}
+          {series.map((entry, order) => {
+            const value = entry.points[hover]?.value ?? null;
+            return (
+              <p key={entry.label} className="flex items-center gap-2 text-xs">
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: `var(--series-${order + 1})` }}
+                />
+                <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+                <span className="font-medium tabular-nums">
+                  {value === null ? "–" : formatMetric(value, format)}
+                </span>
+              </p>
+            );
+          })}
         </div>
       ) : null}
     </div>

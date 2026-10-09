@@ -7,6 +7,7 @@ import { cache } from "react";
 import { serverClient } from "@/shared/api/server-client";
 
 import type { MetricView } from "./metrics";
+import { speedFilters } from "./speed";
 import type { FilterDimension, ViewFilters, ViewState } from "./view-state";
 
 export type SplitSeries = { value: string; series: TimeseriesResponse };
@@ -88,4 +89,18 @@ export async function readTopList(
 ): Promise<Result<BreakdownResponse, string>> {
   const read = await scope.breakdown(dimension, { limit, metrics: [count] });
   return read.ok ? ok(read.value) : err(read.error.message);
+}
+
+/**
+ * @name speedScope
+ * @description The read scope for the speed routes of one project: its period and only the route,
+ * path and country filters, which are the ones speed accepts. Traffic is always human there.
+ *
+ * @example
+ * const scope = await speedScope("skriuw", state);
+ * const vitals = await scope.speed({ percentile: state.percentile, device: state.device });
+ */
+export async function speedScope(project: string, state: ViewState): Promise<ProjectScope> {
+  const api = await serverClient();
+  return api.project(project).period(state.period).where(speedFilters(state.filters));
 }

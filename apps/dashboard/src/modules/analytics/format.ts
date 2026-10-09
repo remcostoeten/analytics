@@ -7,7 +7,8 @@ const regions = new Intl.DisplayNames(["en"], { type: "region" });
 /**
  * @name formatMetric
  * @description Formats a metric value for display: counts with separators (compact from 10,000
- * up when `short`), rates as percentages and durations as minutes and seconds.
+ * up when `short`), rates as percentages, durations as minutes and seconds, web vital timings
+ * (`millis`) in milliseconds or seconds and layout shifts (`shift`) to two decimals.
  *
  * @example
  * formatMetric(0.462, "percent"); // "46.2%"
@@ -16,7 +17,14 @@ const regions = new Intl.DisplayNames(["en"], { type: "region" });
 export function formatMetric(value: number, format: MetricFormat, short = false) {
   if (format === "percent") return `${(value * 100).toFixed(1)}%`;
   if (format === "duration") return formatDuration(value);
+  if (format === "millis") return formatMillis(value);
+  if (format === "shift") return value.toFixed(2);
   return short && value >= 10_000 ? compact.format(value) : whole.format(Math.round(value));
+}
+
+function formatMillis(ms: number) {
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  return `${(ms / 1000).toFixed(ms < 10_000 ? 2 : 1)} s`;
 }
 
 function formatDuration(ms: number) {

@@ -109,3 +109,12 @@ export function ExternalIcon(props: Props) {
     </Icon>
   );
 }
+
+export function GaugeIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M2.5 11.5a5.5 5.5 0 1 1 11 0" />
+      <path d="M8 11.5 10.5 7" />
+    </Icon>
+  );
+}

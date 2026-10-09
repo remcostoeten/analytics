@@ -3,10 +3,20 @@ import { describe, expect, test } from "bun:test";
 import { formatChange, formatDimensionValue, formatMetric } from "../src/modules/analytics/format";
 import { metricView } from "../src/modules/analytics/metrics";
 import { readViewState, viewQuery, withFilter } from "../src/modules/analytics/view-state";
+import type { ViewState } from "../src/modules/analytics/view-state";
+
+const defaults: ViewState = {
+  period: "7d",
+  bots: false,
+  split: null,
+  filters: {},
+  percentile: 75,
+  status: "open",
+};
 
 describe("readViewState", () => {
   test("falls back to the defaults", () => {
-    expect(readViewState({})).toEqual({ period: "7d", bots: false, split: null, filters: {} });
+    expect(readViewState({})).toEqual(defaults);
   });
 
   test("reads period, bots, split and filters", () => {
@@ -19,6 +29,7 @@ describe("readViewState", () => {
         page: "/",
       }),
     ).toEqual({
+      ...defaults,
       period: "30d",
       bots: true,
       split: "country",
@@ -26,15 +37,26 @@ describe("readViewState", () => {
     });
   });
 
+  test("reads the speed and issue parameters", () => {
+    expect(readViewState({ percentile: "95", status: "resolved", route: "/blog" })).toEqual({
+      ...defaults,
+      percentile: 95,
+      status: "resolved",
+      filters: { route: "/blog" },
+    });
+  });
+
   test("ignores unknown values and bare negations", () => {
     expect(
-      readViewState({ period: "5y", split: "visitor", country: "!", event: "signup" }),
-    ).toEqual({
-      period: "7d",
-      bots: false,
-      split: null,
-      filters: {},
-    });
+      readViewState({
+        period: "5y",
+        split: "visitor",
+        country: "!",
+        event: "signup",
+        percentile: "80",
+        status: "muted",
+      }),
+    ).toEqual(defaults);
   });
 
   test("takes the first of repeated parameters", () => {
@@ -48,7 +70,14 @@ describe("viewQuery", () => {
   });
 
   test("round-trips through readViewState", () => {
-    const state = readViewState({ period: "90d", bots: "include", host: "a.nl", page: "/x y" });
+    const state = readViewState({
+      period: "90d",
+      bots: "include",
+      host: "a.nl",
+      page: "/x y",
+      percentile: "50",
+      status: "ignored",
+    });
     const query = Object.fromEntries(new URLSearchParams(viewQuery(state)));
     expect(readViewState(query)).toEqual(state);
   });
@@ -69,6 +98,10 @@ describe("format", () => {
     expect(formatMetric(0.462, "percent")).toBe("46.2%");
     expect(formatMetric(71_000, "duration")).toBe("1m 11s");
     expect(formatMetric(4_000, "duration")).toBe("4s");
+    expect(formatMetric(320, "millis")).toBe("320 ms");
+    expect(formatMetric(2_410, "millis")).toBe("2.41 s");
+    expect(formatMetric(12_400, "millis")).toBe("12.4 s");
+    expect(formatMetric(0.1234, "shift")).toBe("0.12");
   });
 
   test("formats changes", () => {

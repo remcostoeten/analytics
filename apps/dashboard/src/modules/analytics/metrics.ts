@@ -1,6 +1,6 @@
 import type { StatsResponse } from "@spoar/contract";
 
-export type MetricFormat = "count" | "percent" | "duration";
+export type MetricFormat = "count" | "percent" | "duration" | "millis" | "shift";
 
 export type CountMetric = "visitors" | "pageviews" | "sessions";
 

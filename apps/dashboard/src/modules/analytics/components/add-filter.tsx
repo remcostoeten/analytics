@@ -8,16 +8,18 @@ import { PlusCircleIcon } from "@/shared/ui/icons";
 import { dimensions, viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
 
-type Props = { path: string; state: ViewState };
+type Props = { path: string; state: ViewState; dimensions?: readonly FilterDimension[] };
+
+const allDimensions = dimensions.map((entry) => entry.value);
 
 function isDimension(value: string): value is FilterDimension {
   return dimensions.some((dimension) => dimension.value === value);
 }
 
-export function AddFilter({ path, state }: Props) {
+export function AddFilter({ path, state, dimensions: offered = allDimensions }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [dimension, setDimension] = useState<FilterDimension>("page");
+  const [dimension, setDimension] = useState<FilterDimension>(offered[0] ?? "page");
   const [negate, setNegate] = useState(false);
   const [value, setValue] = useState("");
   const root = useRef<HTMLDivElement>(null);
@@ -75,11 +77,13 @@ export function AddFilter({ path, state }: Props) {
                 if (isDimension(event.target.value)) setDimension(event.target.value);
               }}
             >
-              {dimensions.map((entry) => (
-                <option key={entry.value} value={entry.value}>
-                  {entry.label}
-                </option>
-              ))}
+              {dimensions
+                .filter((entry) => offered.includes(entry.value))
+                .map((entry) => (
+                  <option key={entry.value} value={entry.value}>
+                    {entry.label}
+                  </option>
+                ))}
             </select>
           </label>
           <label className="grid gap-1 text-xs text-muted">
