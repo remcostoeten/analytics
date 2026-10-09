@@ -8,7 +8,7 @@ The first version of Remco's self-hosted, cookie-free web analytics. It is froze
 
 v1 has three parts: a browser and server SDK that sends events, an ingestion service that validates, enriches and stores them in Postgres, and a Next.js dashboard that reads the same database directly. There is no read API. v2 is being rebuilt at the repo root and is not deployed yet; until it replaces this, v1 gets fixes only and no new features.
 
-- **Production dashboard** at [analytics.remcostoeten.nl](https://analytics.remcostoeten.nl).
+- **Production dashboard** at [v1.analytics.remcostoeten.nl](https://v1.analytics.remcostoeten.nl).
 - Ingestion at `https://ingestion.remcostoeten.nl`, a Hono app on Vercel behind Cloudflare.
 - The SDK is published to npm as [`@remcostoeten/analytics`](https://www.npmjs.com/package/@remcostoeten/analytics) 1.x.
 - Raw IP addresses are never stored; they are hashed with a salt that rotates daily.
