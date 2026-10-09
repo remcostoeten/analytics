@@ -79,6 +79,7 @@ export type ProjectAdmin = {
   create: (project: NewProject) => Stored<Nullable<ProjectRecord>>;
   update: (id: ProjectID, patch: ProjectPatch) => Stored<Nullable<ProjectRecord>>;
   rotate: (id: ProjectID, kind: KeyKind, value: string) => Stored<Nullable<Date>>;
+  remove: (id: ProjectID) => Stored<boolean>;
 };
 
 export type TokenStore = {

@@ -61,6 +61,7 @@ Every terminal is named after its route and takes only that route's own options;
 | `breakdown(dimension, { metrics, limit, cursor })` | `breakdown/:dimension` |
 | `realtime({ include, limit })`, `realtimeEvents({ limit, after })` | `realtime`, `realtime/events` |
 | `liveEvents({ signal })` | an async iterable over `realtime/events`, following the cursor |
+| `liveVisitors({ everyMs, limit, signal })` | on a project, an async iterable over `realtime/visitors`, read every 5 seconds by default |
 | `paths(page, { direction, limit, cursor })` | `paths` |
 | `retention({ interval })`, `lifecycle({ interval })`, `stickiness()` | `retention`, `lifecycle`, `stickiness` |
 | `heatmap({ metric, timezone })`, `map({ level, limit, cursor })` | `heatmap`, `map` |
@@ -75,7 +76,7 @@ A project scope adds `realtimeVisitors`, `realtimeSessions`, `overview`, `annota
 
 ## Admin
 
-`api.projects`, `api.tokens`, `api.alerts`, `api.annotations`, `api.sql` and `api.system` hold the routes that are not reads: project settings and keys, API tokens, alert targets and deliveries, annotations, saved queries with `explain`, `schema` and `history`, and `health`, `session`, `metrics` and `runJob`. `mail`, `webhook` and `discord` build alert targets.
+`api.projects`, `api.tokens`, `api.alerts`, `api.annotations`, `api.sql` and `api.system` hold the routes that are not reads: project settings, keys and the owner-only `remove`, API tokens, alert targets and deliveries, annotations, saved queries with `explain`, `schema` and `history`, and `health`, `session`, `metrics` and `runJob`. `mail`, `webhook` and `discord` build alert targets.
 
 ## Auth and errors
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DeleteProjectPanel } from "@/modules/admin/components/delete-project-panel";
 import { KeysPanel } from "@/modules/admin/components/keys-panel";
 import { ProjectSettingsForm } from "@/modules/admin/components/project-settings-form";
 import { AccessNotice } from "@/modules/session/components/access-notice";
@@ -38,6 +39,9 @@ export default async function Page({ params }: Props) {
         <section className="grid content-start gap-4">
           <h2 className="caps text-muted">Keys</h2>
           <KeysPanel project={project.id} publicKey={project.publicKey} />
+          {access.session.role === "owner" ? (
+            <DeleteProjectPanel project={project.id} name={project.name} />
+          ) : null}
         </section>
       </div>
     </>

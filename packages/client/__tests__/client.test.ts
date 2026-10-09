@@ -267,6 +267,30 @@ describe("read terminals", () => {
       "/v2/projects/skriuw/realtime/events?after=2",
     ]);
   });
+
+  test("liveVisitors polls the rows every interval and stops on abort or a failure", async () => {
+    const controller = new AbortController();
+    let polls = 0;
+    const api = fakeApi(() => {
+      polls += 1;
+      if (polls === 3) return { status: 500, body: { error: { code: "INTERNAL", message: "x" } } };
+      return { status: 200, body: { data: [{ visitor: `v${polls}` }], window: {} } };
+    });
+    const seen: string[] = [];
+    for await (const rows of client(api.fetcher).skriuw.liveVisitors({
+      everyMs: 1,
+      limit: 5,
+      signal: controller.signal,
+    })) {
+      seen.push(rows.ok ? rows.value.data.map((row) => row.visitor).join() : rows.error.code);
+    }
+    expect(seen).toEqual(["v1", "v2", "INTERNAL"]);
+    expect(api.paths()).toEqual(Array(3).fill("/v2/projects/skriuw/realtime/visitors?limit=5"));
+    controller.abort();
+    for await (const rows of client(api.fetcher).skriuw.liveVisitors({ signal: controller.signal }))
+      seen.push(rows.ok ? "again" : rows.error.code);
+    expect(seen).toHaveLength(3);
+  });
 });
 
 describe("admin namespaces", () => {
@@ -278,6 +302,7 @@ describe("admin namespaces", () => {
     await api2.projects.create({ id: "new", name: "New", domain: "new.example" });
     await api2.projects.update("skriuw", { visibility: "private" });
     await api2.projects.rotateKey("skriuw", "secret");
+    await api2.projects.remove("dora");
     await api2.tokens.list();
     await api2.tokens.create({ name: "CI", scope: "read", projectIds: ["skriuw"] });
     await api2.tokens.revoke("tok_1");
@@ -301,6 +326,7 @@ describe("admin namespaces", () => {
       "/v2/projects",
       "/v2/projects/skriuw",
       "/v2/projects/skriuw/keys",
+      "/v2/projects/dora",
       "/v2/tokens",
       "/v2/tokens",
       "/v2/tokens/tok_1",
@@ -320,6 +346,7 @@ describe("admin namespaces", () => {
       "/v2/projects/skriuw/annotations",
     ]);
     expect(JSON.parse(api.calls[4]?.body ?? "")).toEqual({ kind: "secret" });
+    expect(api.calls[5]?.method).toBe("DELETE");
   });
 });
 

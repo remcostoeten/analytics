@@ -412,6 +412,35 @@ describe("admin", () => {
     expect((await ingest("sk_test_closed")).status).toBe(401);
     expect((await ingest(key)).status).not.toBe(401);
   });
+
+  test("deleting a project is owner only, stops its key at once and holds the id for cleanup", async () => {
+    const project = { id: "gone", name: "Gone", domain: "gone.example.test" };
+    const created = (await json(await call(api, "POST", "/v2/projects", owner, project)))
+      .data as Json;
+    const secret = String(created.secretKey);
+    function ingest() {
+      return api.handle(
+        new Request("http://localhost/v2/events", {
+          method: "POST",
+          headers: { authorization: `Bearer ${secret}` },
+          body: JSON.stringify(fixture),
+        }),
+      );
+    }
+    expect((await ingest()).status).not.toBe(401);
+    expect(await status("DELETE", "/v2/projects/gone", anonymous)).toBe(401);
+    expect(await status("DELETE", "/v2/projects/gone", admin)).toBe(403);
+    expect(await status("DELETE", "/v2/projects/gone", token("admin"))).toBe(403);
+    expect(await status("DELETE", "/v2/projects/gone", owner)).toBe(204);
+    expect(await status("GET", "/v2/projects/gone", owner)).toBe(404);
+    expect(await status("DELETE", "/v2/projects/gone", owner)).toBe(404);
+    expect((await ingest()).status).toBe(401);
+    expect(await status("POST", "/v2/projects", owner, project)).toBe(409);
+    const pending = await database.query<{ id: string }>(
+      "SELECT id FROM deleted_projects WHERE id = 'gone'",
+    );
+    expect(pending.rows).toEqual([{ id: "gone" }]);
+  });
 });
 
 describe("tokens", () => {

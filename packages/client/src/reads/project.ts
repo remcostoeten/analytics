@@ -8,14 +8,37 @@ import type {
   QueryResult,
 } from "@spoar/contract";
 
+import type { Result } from "@spoar/shared/result";
+
 import { toBody } from "../body";
 import { basePath, toQuery } from "../scope";
-import type { ClientResult, Metric, Page, ScopeState, Send } from "../types";
+import type { ClientError, ClientResult, Metric, Page, ScopeState, Send } from "../types";
 
 export type LiveRowsOptions = { limit?: number };
 
+export type LiveVisitorsOptions = LiveRowsOptions & { everyMs?: number; signal?: AbortSignal };
+
+const defaultEveryMs = 5000;
+
+function pause(ms: number, signal: AbortSignal | undefined) {
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", stop);
+      resolve();
+    }, ms);
+    function stop() {
+      clearTimeout(timer);
+      resolve();
+    }
+    signal?.addEventListener("abort", stop, { once: true });
+  });
+}
+
 export type ProjectOnlyReads = {
   realtimeVisitors: (options?: LiveRowsOptions) => ClientResult<ActiveVisitors>;
+  liveVisitors: (
+    options?: LiveVisitorsOptions,
+  ) => AsyncGenerator<Result<ActiveVisitors, ClientError>>;
   realtimeSessions: (options?: LiveRowsOptions) => ClientResult<LiveSessions>;
   overview: () => ClientResult<Overview>;
   annotations: (options?: Page) => ClientResult<AnnotationList>;
@@ -32,8 +55,9 @@ export type AllOnlyReads = {
 /**
  * @name projectOnlyReads
  * @description The terminals that exist only under `/v2/projects/:project`: the live visitor and
- * session rows, the dev widget's `overview`, the `annotations` that overlap the scope's range, and
- * SQL over the project's views.
+ * session rows, `liveVisitors` as an async iterable that reads `realtime/visitors` every
+ * `everyMs` (5 seconds by default) until the signal aborts or a call fails, the dev widget's
+ * `overview`, the `annotations` that overlap the scope's range, and SQL over the project's views.
  *
  * @example
  * const reads = projectOnlyReads(send, { project: "skriuw", period: "7d", filter: {} });
@@ -43,13 +67,29 @@ export function projectOnlyReads(send: Send, state: ScopeState): ProjectOnlyRead
   const base = basePath(state);
   const { from, to, period } = toQuery(state);
 
+  function realtimeVisitors(options: LiveRowsOptions = {}): ClientResult<ActiveVisitors> {
+    return send.json<ActiveVisitors>({
+      method: "GET",
+      path: `${base}/realtime/visitors`,
+      query: { limit: options.limit },
+    });
+  }
+
+  async function* liveVisitors(options: LiveVisitorsOptions = {}) {
+    while (!options.signal?.aborted) {
+      const rows = await realtimeVisitors({ limit: options.limit });
+      if (!rows.ok && rows.error.code !== "TIMEOUT") {
+        yield rows;
+        return;
+      }
+      if (rows.ok) yield rows;
+      await pause(options.everyMs ?? defaultEveryMs, options.signal);
+    }
+  }
+
   return {
-    realtimeVisitors: (options = {}) =>
-      send.json<ActiveVisitors>({
-        method: "GET",
-        path: `${base}/realtime/visitors`,
-        query: { limit: options.limit },
-      }),
+    realtimeVisitors,
+    liveVisitors,
     realtimeSessions: (options = {}) =>
       send.json<LiveSessions>({
         method: "GET",
