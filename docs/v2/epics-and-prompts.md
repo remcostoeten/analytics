@@ -49,7 +49,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.2 | Read resources | 4 | E4.1 | `feature/api-reads` |
 | E4.3 | Speed insights | 4 | E3.2, E4.2 | `feature/speed-insights` |
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
-| E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
+| E4.5 | Dashboard on the v2 API, in Cloudflare's Web Analytics layout (decision 24) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E4.8 | Dev widget endpoints | 4 | E4.2, E4.4 | `feature/widget-endpoints` |
@@ -69,7 +69,7 @@ Reach, traffic sources and app performance come first; conversion optimization i
 3. Speed insights and error tracking: keep them on par with Vercel as they change.
 4. Search Console as its own epic. Annotations are built in the API and the admin SDK; E4.5 draws them on the time series.
 5. Reliability, privacy and self-hosting: E5.1 retires 1.x and ships the self-host setup.
-6. E4.5, the dashboard on the v2 API, last, once Remco's design is in.
+6. E4.5, the dashboard on the v2 API, in Cloudflare's Web Analytics layout (decision 24).
 
 ## Phase 0: foundations
 
@@ -367,6 +367,8 @@ Epic E4.4, branch feature/error-tracking. Also read the SDK design tab's Error t
 On hold since Sep 28 until Remco provides a design. Parity tests will compare each view against fixed expected values from a seeded dataset.
 
 **Update, 8 October 2026:** the admin module shipped first on `feature/dashboard-admin`: `apps/dashboard` on Next with sign-in through the API, the project list, creating a project, its settings and key rotation, and API tokens, all through `@spoar/client` rather than Eden Treaty. The views below stay on hold.
+
+**Update, 9 October 2026:** Cloudflare's Web Analytics dashboard is the design (decision 24). The first slice is in `apps/dashboard`: the sidebar shell, the home page with every readable project, the sign-in page in the landing style, and per project the metric rail, filters, time range, a summary chart split by dimension, countries and the source lists. The app is served under `/dashboard` on the landing domain. Still open: speed, issues, realtime, visitors and session trails, annotations on the chart, and the parity tests.
 
 Delivers: the dashboard reading only through Eden Treaty, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
 

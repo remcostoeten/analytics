@@ -3,7 +3,8 @@
 import { notify } from "@remcostoeten/notifier";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/shared/ui/button";
+import { basePath } from "@/shared/config/site";
+import { GithubIcon } from "@/shared/ui/github-icon";
 import { startSignIn } from "../sign-in";
 import { labelPosition } from "../sign-in-state";
 import type { SignInState } from "../sign-in-state";
@@ -11,8 +12,8 @@ import type { SignInState } from "../sign-in-state";
 const errorShownMs = 1400;
 
 const labels: { state: SignInState; text: string }[] = [
-  { state: "idle", text: "Sign in with GitHub" },
-  { state: "busy", text: "Redirecting" },
+  { state: "idle", text: "Continue with GitHub" },
+  { state: "busy", text: "Redirecting to GitHub" },
   { state: "error", text: "Try again" },
 ];
 
@@ -44,15 +45,17 @@ export function SignInButton() {
   }, [state]);
 
   return (
-    <Button
-      className="sign-in"
+    <button
+      type="button"
+      className="auth-button sign-in"
       data-state={state}
       aria-busy={state === "busy"}
       aria-live="polite"
       onClick={async () => {
         if (state === "busy") return;
         setState("busy");
-        const started = await startSignIn(`${window.location.origin}/admin/projects`);
+        const home = `${window.location.origin}${basePath}`;
+        const started = await startSignIn(home, `${home}/sign-in`);
         if (!started.ok) {
           setState("error");
           notify.error(started.error);
@@ -68,11 +71,11 @@ export function SignInButton() {
             className="sign-in-label"
             data-position={labelPosition(label.state, state)}
           >
-            {label.state === "busy" ? <Spinner /> : null}
+            {label.state === "busy" ? <Spinner /> : <GithubIcon className="size-4" />}
             {label.text}
           </span>
         ))}
       </span>
-    </Button>
+    </button>
   );
 }
