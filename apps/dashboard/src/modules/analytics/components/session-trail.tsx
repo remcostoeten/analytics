@@ -57,7 +57,9 @@ export function SessionTrail({ events }: Props) {
         </ol>
       )}
       {events.nextCursor ? (
-        <p className="text-xs text-muted">Showing the first {events.data.length} events.</p>
+        <p className="text-xs text-muted">
+          Showing the first {events.data.length} events; the session has more.
+        </p>
       ) : null}
     </section>
   );

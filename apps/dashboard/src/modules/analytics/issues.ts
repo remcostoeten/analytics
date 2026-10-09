@@ -6,7 +6,7 @@ export const statusLabels: { [Status in IssueStatus]: string } = {
   ignored: "Ignored",
 };
 
-export const statusActions = [
+const statusActions = [
   { status: "resolved", label: "Resolve" },
   { status: "ignored", label: "Ignore" },
   { status: "open", label: "Reopen" },

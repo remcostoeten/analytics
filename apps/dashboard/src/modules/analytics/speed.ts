@@ -1,11 +1,4 @@
-import type {
-  SpeedDevice,
-  SpeedPoint,
-  SpeedResponse,
-  SpeedRoute,
-  VitalMetric,
-  VitalRating,
-} from "@spoar/contract";
+import type { SpeedDevice, SpeedResponse, VitalMetric, VitalRating } from "@spoar/contract";
 
 import type { MetricFormat } from "./metrics";
 import { dimensions } from "./view-state";
@@ -184,29 +177,6 @@ export function speedInterval(period: ViewState["period"]) {
  */
 export function vitalSummary(data: SpeedResponse["data"], metric: VitalMetric) {
   return data.metrics[metric];
-}
-
-/**
- * @name measuredPoints
- * @description The points of a speed series that have a value, for the sparkline and the chart
- * gaps.
- *
- * @example
- * measuredPoints(series.data).length;
- */
-export function measuredPoints(points: SpeedPoint[]) {
-  return points.filter((point): point is SpeedPoint & { value: number } => point.value !== null);
-}
-
-/**
- * @name routeVital
- * @description One route's value for a metric, or null under 20 samples.
- *
- * @example
- * routeVital(row, "lcp");
- */
-export function routeVital(row: SpeedRoute, metric: VitalMetric) {
-  return row[metric];
 }
 
 export const speedDevices = [

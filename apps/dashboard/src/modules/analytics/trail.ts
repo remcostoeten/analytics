@@ -1,4 +1,6 @@
-import type { SessionEvent } from "@spoar/contract";
+import type { ClientError } from "@spoar/client";
+import type { SessionEvent, SessionEvents } from "@spoar/contract";
+import type { Result } from "@spoar/shared/result";
 
 export type TrailStep = {
   id: string;
@@ -77,4 +79,42 @@ export function formatProps(props: SessionEvent["props"]) {
   return Object.entries(props)
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`);
+}
+
+export const trailPageSize = 100;
+
+export const trailMaxPages = 10;
+
+/**
+ * @name collectTrail
+ * @description Reads a session's events page by page until the last page or `maxPages`, since a
+ * session with many web vitals spreads its pageviews over several pages. The result keeps the
+ * first page's session and a `nextCursor` only when pages were left unread.
+ *
+ * @example
+ * const trail = await collectTrail((cursor) => scope.sessionEvents(id, { limit: 100, cursor }), 10);
+ */
+export async function collectTrail(
+  readPage: (cursor: string | undefined) => Promise<Result<SessionEvents, ClientError>>,
+  maxPages: number,
+): Promise<Result<SessionEvents, ClientError>> {
+  const data: SessionEvent[] = [];
+  let first: SessionEvents | null = null;
+  let nextCursor: string | null = null;
+  for (let page = 0; page < maxPages; page += 1) {
+    const read = await readPage(nextCursor ?? undefined);
+    if (!read.ok) return read;
+    first ??= read.value;
+    data.push(...read.value.data);
+    nextCursor = read.value.nextCursor;
+    if (nextCursor === null) break;
+  }
+  const session = first?.session ?? {
+    id: "",
+    visitor: "",
+    startedAt: "",
+    durationMs: 0,
+    bot: { score: 0, reasons: [] },
+  };
+  return { ok: true, value: { session, data, nextCursor } };
 }

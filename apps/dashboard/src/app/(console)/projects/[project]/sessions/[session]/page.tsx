@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { SessionTrail } from "@/modules/analytics/components/session-trail";
 import { formatDateTime, formatDuration } from "@/modules/analytics/format";
 import { listProjects, readScope } from "@/modules/analytics/reads";
+import { collectTrail, trailMaxPages, trailPageSize } from "@/modules/analytics/trail";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
@@ -16,8 +17,6 @@ type Props = {
 
 export const metadata: Metadata = { title: "Session" };
 
-const trailLimit = 100;
-
 export default async function Page({ params, searchParams }: Props) {
   const { project, session: encodedSession } = await params;
   const session = decodeURIComponent(encodedSession);
@@ -28,7 +27,10 @@ export default async function Page({ params, searchParams }: Props) {
   const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
   if (!found) notFound();
 
-  const read = await scope.sessionEvents(session, { limit: trailLimit });
+  const read = await collectTrail(
+    (cursor) => scope.sessionEvents(session, { limit: trailPageSize, cursor }),
+    trailMaxPages,
+  );
   if (!read.ok && read.error.code === "NOT_FOUND") notFound();
 
   return (

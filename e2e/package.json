@@ -6,12 +6,14 @@
 	"scripts": {
 		"serve": "bun serve.ts",
 		"test:e2e": "playwright test",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test parity"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8",
 		"@playwright/test": "1.62.0",
 		"@spoar/api": "workspace:*",
+		"@spoar/client": "workspace:*",
 		"@spoar/devtools": "workspace:*",
 		"@spoar/engine": "workspace:*",
 		"@spoar/sdk": "workspace:*"
