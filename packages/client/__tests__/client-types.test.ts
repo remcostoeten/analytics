@@ -38,6 +38,13 @@ function editorCatches() {
   void api.skriuw.download.visitors({});
   // @ts-expect-error: json is not a download format
   void api.skriuw.download.visitors({ format: "json" });
+
+  // @ts-expect-error: not a route
+  void api.skriuw.key("statz");
+  // @ts-expect-error: download is a namespace, not a route
+  void api.skriuw.key("download");
+  // @ts-expect-error: a key takes the route's own arguments
+  void api.skriuw.key("breakdown", "colour");
 }
 
 describe("client types", () => {

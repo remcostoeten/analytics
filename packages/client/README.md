@@ -47,6 +47,7 @@ Links return a new scope and leave the old one untouched, so one scope can feed 
 | `exclude({ page: "/admin" })` | the same filters, negated |
 | `apply(options)` | a plain options object, for URL state |
 | `toQuery()` | the exact query string the API receives |
+| `key(route, ...args)` | a serialisable cache key for one read, equal for equal requests |
 
 Dimensions are the registry names (`page`, `route`, `referrer_domain`, `country`, `browser`, `device`, `utm_source`, `event`, `release`, ...) plus `prop:<key>`, `trait:<key>` and `group:<type>`. On the combined scope `project` is a dimension too. Metrics are `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth`, `conversion_rate`, and `sum:prop.<key>` or `avg:prop.<key>` over a numeric prop. All of them are literal types, so a typo fails the typecheck.
 
@@ -73,6 +74,23 @@ Every terminal is named after its route and takes only that route's own options;
 A project scope adds `realtimeVisitors`, `realtimeSessions`, `overview`, `annotations`, `issue`, `issueEvents`, `updateIssue`, `errorRules`, `createErrorRule`, `removeErrorRule`, `visitor`, `visitorVisits`, `updateVisitor` and `sessionEvents`. The combined scope adds `projectBreakdown`, `people` and `person`.
 
 `scope.download` has the list routes as files: `breakdown`, `paths`, `map`, `events`, `visitors`, `sessions`, and on a project `visitorVisits` and `sessionEvents`. Each takes `{ format: "csv" | "sql", limit }` and answers the file's text.
+
+## Caching
+
+The client keeps no state: each call is one request. To cache, dedupe or poll, hand `key()` to a cache such as TanStack Query. Keys start with `["spoar", project]`, so invalidating that prefix refreshes every read of a project.
+
+```ts
+const scope = api.skriuw.period("7d");
+
+useQuery({
+  queryKey: scope.key("breakdown", "page", { limit: 10 }),
+  queryFn: async () => {
+    const result = await scope.breakdown("page", { limit: 10 });
+    if (!result.ok) throw new Error(result.error.message);
+    return result.value;
+  },
+});
+```
 
 ## Admin
 

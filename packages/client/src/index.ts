@@ -52,8 +52,8 @@ export type {
   ProjectOnlyReads,
 } from "./reads/project";
 export type { SpeedListOptions, SpeedOptions, SpeedReads } from "./reads/speed";
-export { toQuery } from "./scope";
-export type { Scope } from "./scope";
+export { scopeKey, toQuery } from "./scope";
+export type { QueryEntry, RouteArgs, RouteName, Scope, ScopeKey } from "./scope";
 export type {
   BuiltInDimension,
   BuiltInMetric,
