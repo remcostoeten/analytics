@@ -18,10 +18,11 @@ import type { RealtimeSnapshot } from "../realtime";
 type Props = {
   project: string;
   initial: RealtimeSnapshot;
-  detailHref: (visitor: string) => string;
-  sessionHref: (session: string) => string;
+  base: string;
   canFollow: boolean;
 };
+
+type HrefFor = (id: string) => string;
 
 type CardProps = { label: string; value: string; hint: string };
 
@@ -89,11 +90,7 @@ function Feed({ events }: FeedProps) {
   );
 }
 
-type VisitorsProps = {
-  visitors: ActiveVisitor[];
-  hrefFor: Props["detailHref"];
-  canFollow: boolean;
-};
+type VisitorsProps = { visitors: ActiveVisitor[]; hrefFor: HrefFor; canFollow: boolean };
 
 function Visitors({ visitors, hrefFor, canFollow }: VisitorsProps) {
   if (visitors.length === 0) {
@@ -154,7 +151,7 @@ function Visitors({ visitors, hrefFor, canFollow }: VisitorsProps) {
   );
 }
 
-type SessionsProps = { sessions: LiveSession[]; hrefFor: Props["sessionHref"]; canFollow: boolean };
+type SessionsProps = { sessions: LiveSession[]; hrefFor: HrefFor; canFollow: boolean };
 
 function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
   if (sessions.length === 0) {
@@ -210,8 +207,17 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
   );
 }
 
-export function RealtimePanel({ project, initial, detailHref, sessionHref, canFollow }: Props) {
+export function RealtimePanel({ project, initial, base, canFollow }: Props) {
   const [snapshot, setSnapshot] = useState(initial);
+
+  function detailHref(visitor: string) {
+    return `${base}/visitors/${encodeURIComponent(visitor)}`;
+  }
+
+  function sessionHref(session: string) {
+    return `${base}/sessions/${encodeURIComponent(session)}`;
+  }
+
   const [events, setEvents] = useState<LiveEvent[]>(
     initial.events.ok ? initial.events.value.data : [],
   );

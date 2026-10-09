@@ -27,8 +27,7 @@ export default async function Page({ params }: Props) {
       <RealtimePanel
         project={project}
         initial={initial}
-        detailHref={(visitor) => `${base}/visitors/${encodeURIComponent(visitor)}`}
-        sessionHref={(id) => `${base}/sessions/${encodeURIComponent(id)}`}
+        base={base}
         canFollow={session.user !== null}
       />
     </div>
