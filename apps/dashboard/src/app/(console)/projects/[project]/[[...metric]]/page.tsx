@@ -57,12 +57,26 @@ async function Rail({ stats, scope, view, state, base }: RailProps) {
   );
 }
 
-type SummaryProps = Omit<RailProps, "base"> & { path: string };
+type SummaryProps = Omit<RailProps, "base"> & {
+  path: string;
+  project: string;
+  canAnnotate: boolean;
+};
 
-async function Summary({ stats, scope, view, state, path }: SummaryProps) {
+async function Summary({ stats, scope, view, state, path, project, canAnnotate }: SummaryProps) {
   const data = await stats;
   const total = data ? data[view.stat].value : null;
-  return <SummarySection scope={scope} view={view} state={state} path={path} total={total} />;
+  return (
+    <SummarySection
+      scope={scope}
+      view={view}
+      state={state}
+      path={path}
+      total={total}
+      project={project}
+      canAnnotate={canAnnotate}
+    />
+  );
 }
 
 function RailSkeleton() {
@@ -129,7 +143,13 @@ export default async function Page({ params, searchParams }: Props) {
           key={`summary${path}${viewQuery(state)}`}
           fallback={<SectionSkeleton height={380} />}
         >
-          <Summary {...shared} stats={stats} path={path} />
+          <Summary
+            {...shared}
+            stats={stats}
+            path={path}
+            project={project}
+            canAnnotate={session.isAdmin}
+          />
         </Suspense>
         <Suspense
           key={`country${path}${viewQuery(state)}`}

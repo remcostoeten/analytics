@@ -1,9 +1,14 @@
 "use client";
 
-import type { Interval } from "@spoar/contract";
+import { notify } from "@remcostoeten/notifier";
+import type { Annotation, Interval } from "@spoar/contract";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { formatMetric } from "../format";
+import { removeAnnotation } from "../actions";
+import { kindLabels, placeAnnotations } from "../annotations";
+import type { PlacedAnnotation } from "../annotations";
+import { formatDateTime, formatMetric } from "../format";
 import type { MetricFormat } from "../metrics";
 
 export type ChartPoint = { bucket: string; value: number | null };
@@ -18,6 +23,9 @@ type Props = {
   interval: Interval;
   label: string;
   thresholds?: ChartThreshold[];
+  annotations?: Annotation[];
+  project?: string;
+  editable?: boolean;
 };
 
 const height = 240;
@@ -66,10 +74,22 @@ function linePath(
   return path.trim();
 }
 
-export function SeriesChart({ series, format, interval, label, thresholds = [] }: Props) {
+export function SeriesChart({
+  series,
+  format,
+  interval,
+  label,
+  thresholds = [],
+  annotations = [],
+  project = "",
+  editable = false,
+}: Props) {
+  const router = useRouter();
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
+  const [marker, setMarker] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
     const node = frame.current;
@@ -109,6 +129,12 @@ export function SeriesChart({ series, format, interval, label, thresholds = [] }
   }
 
   const hovered = hover === null ? null : buckets[hover];
+  const placed = placeAnnotations(annotations, buckets);
+  const open = placed.find((entry) => entry.annotation.id === marker) ?? null;
+
+  function markerX(entry: PlacedAnnotation) {
+    return pad.left + entry.index * step;
+  }
 
   return (
     <div ref={frame} className="relative w-full" style={{ height }}>
@@ -191,6 +217,55 @@ export function SeriesChart({ series, format, interval, label, thresholds = [] }
               strokeLinejoin="round"
             />
           ))}
+          {placed.map((entry) => {
+            const left = markerX(entry);
+            const right = entry.endIndex === null ? left : pad.left + entry.endIndex * step;
+            const selected = entry.annotation.id === marker;
+            return (
+              <g
+                key={entry.annotation.id}
+                className="chart-marker"
+                tabIndex={0}
+                role="button"
+                aria-label={`Annotation: ${entry.annotation.title}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setMarker(selected ? null : entry.annotation.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setMarker(selected ? null : entry.annotation.id);
+                  }
+                }}
+              >
+                <title>{entry.annotation.title}</title>
+                {right > left ? (
+                  <rect
+                    x={left}
+                    y={pad.top}
+                    width={right - left}
+                    height={plotHeight}
+                    fill="var(--series-4)"
+                    opacity={0.12}
+                  />
+                ) : null}
+                <line
+                  x1={left}
+                  x2={left}
+                  y1={pad.top}
+                  y2={pad.top + plotHeight}
+                  stroke="var(--series-4)"
+                  strokeWidth={selected ? 2 : 1}
+                />
+                <rect x={left - 8} y={pad.top - 8} width={16} height={16} fill="transparent" />
+                <path
+                  d={`M${left - 5},${pad.top - 9} h10 v7 l-5,4 l-5,-4 Z`}
+                  fill="var(--series-4)"
+                />
+              </g>
+            );
+          })}
           {hover !== null ? (
             <g>
               <line
@@ -245,6 +320,67 @@ export function SeriesChart({ series, format, interval, label, thresholds = [] }
               </p>
             );
           })}
+        </div>
+      ) : null}
+      {open ? (
+        <div
+          className="popover absolute z-20 grid w-64 gap-2 p-3 text-xs"
+          style={{
+            left: Math.min(markerX(open) + 10, Math.max(width - 260, 0)),
+            top: pad.top + 12,
+          }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <span className="grid gap-0.5">
+              <span className="text-sm font-medium">{open.annotation.title}</span>
+              <span className="text-muted">
+                {kindLabels[open.annotation.kind]} · {formatDateTime(open.annotation.date)}
+                {open.annotation.endDate ? ` to ${formatDateTime(open.annotation.endDate)}` : ""}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="chip-remove"
+              aria-label="Close"
+              onClick={() => setMarker(null)}
+            >
+              ×
+            </button>
+          </div>
+          {open.annotation.note ? <p className="text-muted">{open.annotation.note}</p> : null}
+          {open.annotation.url ? (
+            <a
+              href={open.annotation.url}
+              className="text-link underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open link
+            </a>
+          ) : null}
+          {editable && project ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="ghost-button text-err"
+                disabled={removing}
+                onClick={async () => {
+                  setRemoving(true);
+                  const result = await removeAnnotation(project, open.annotation.id);
+                  setRemoving(false);
+                  if (!result.ok) {
+                    notify.error(result.error.message);
+                    return;
+                  }
+                  setMarker(null);
+                  notify.success("Annotation removed");
+                  router.refresh();
+                }}
+              >
+                {removing ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

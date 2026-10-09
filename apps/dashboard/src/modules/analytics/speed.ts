@@ -8,6 +8,7 @@ import type {
 } from "@spoar/contract";
 
 import type { MetricFormat } from "./metrics";
+import { dimensions } from "./view-state";
 import type { FilterDimension, ViewFilters, ViewState } from "./view-state";
 
 export type VitalView = {
@@ -153,10 +154,13 @@ export function speedFilters(filters: ViewFilters): SpeedFilters {
  * unsupportedSpeedFilters(state); // ["browser"]
  */
 export function unsupportedSpeedFilters(state: ViewState): FilterDimension[] {
-  const dimensions = Object.keys(state.filters) as FilterDimension[];
-  return dimensions.filter(
-    (dimension) => !speedFilterDimensions.some((kept) => kept === dimension),
-  );
+  return dimensions
+    .map((entry) => entry.value)
+    .filter(
+      (dimension) =>
+        state.filters[dimension] !== undefined &&
+        !speedFilterDimensions.some((kept) => kept === dimension),
+    );
 }
 
 /**

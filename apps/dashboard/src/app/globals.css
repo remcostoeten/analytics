@@ -845,3 +845,13 @@
   border-color: var(--series-2);
   background: var(--series-2);
 }
+
+.chart-marker {
+  cursor: pointer;
+  outline: none;
+
+  &:hover line,
+  &:focus-visible line {
+    stroke-width: 2;
+  }
+}

@@ -22,6 +22,7 @@ import {
 import type { VitalView } from "@/modules/analytics/speed";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
+import { readSession } from "@/modules/session/session";
 import { ProjectHeader } from "@/modules/shell/components/project-header";
 import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import type { ProjectScope } from "@spoar/client";
@@ -69,7 +70,11 @@ export default async function Page({ params, searchParams }: Props) {
   const base = `/projects/${encodeURIComponent(project)}`;
   const path = `${base}/speed/${view.slug}`;
 
-  const [projects, scope] = await Promise.all([listProjects(), speedScope(project, state)]);
+  const [projects, session, scope] = await Promise.all([
+    listProjects(),
+    readSession(),
+    speedScope(project, state),
+  ]);
   const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
   if (!found) notFound();
 
@@ -111,7 +116,12 @@ export default async function Page({ params, searchParams }: Props) {
         </ProjectHeader>
 
         <Suspense key={`summary${key}`} fallback={<SectionSkeleton height={380} />}>
-          <SpeedSummary {...shared} summary={summary} />
+          <SpeedSummary
+            {...shared}
+            summary={summary}
+            project={project}
+            canAnnotate={session.isAdmin}
+          />
         </Suspense>
         <Suspense key={`routes${key}`} fallback={<SectionSkeleton height={320} />}>
           <SpeedRoutes {...shared} />

@@ -1,7 +1,7 @@
 "use server";
 
-import type { ClientError } from "@spoar/client";
-import type { IssueStatus, UpdatedIssue } from "@spoar/contract";
+import type { AnnotationInput, ClientError } from "@spoar/client";
+import type { Annotation, IssueStatus, UpdatedIssue } from "@spoar/contract";
 import type { Result } from "@spoar/shared/result";
 import type { IssueID } from "@spoar/shared/semantic";
 import { revalidatePath } from "next/cache";
@@ -54,4 +54,43 @@ export async function readRealtime(project: string): Promise<RealtimeSnapshot> {
     scope.realtimeSessions({ limit: 50 }),
   ]);
   return { at: new Date().toISOString(), summary, events, visitors, sessions };
+}
+
+function revalidateProject(project: string) {
+  revalidatePath(`/projects/${encodeURIComponent(project)}`, "layout");
+}
+
+/**
+ * @name createAnnotation
+ * @description Adds a dated label to a project's time series through the admin annotations
+ * routes and refreshes the project's charts.
+ *
+ * @example
+ * await createAnnotation("skriuw", { title: "v2.0 released", date: "2026-10-01", kind: "release" });
+ */
+export async function createAnnotation(
+  project: string,
+  input: AnnotationInput,
+): Promise<Result<Annotation, ClientError>> {
+  const api = await serverClient();
+  const result = await api.annotations.create(project, input);
+  if (result.ok) revalidateProject(project);
+  return result;
+}
+
+/**
+ * @name removeAnnotation
+ * @description Deletes one annotation by id and refreshes the project's charts.
+ *
+ * @example
+ * await removeAnnotation("skriuw", "ann_01J8ZC");
+ */
+export async function removeAnnotation(
+  project: string,
+  id: string,
+): Promise<Result<null, ClientError>> {
+  const api = await serverClient();
+  const result = await api.annotations.remove(project, id);
+  if (result.ok) revalidateProject(project);
+  return result;
 }

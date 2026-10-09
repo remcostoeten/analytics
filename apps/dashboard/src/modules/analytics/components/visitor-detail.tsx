@@ -43,14 +43,14 @@ function device(detail: Detail["data"]["device"]) {
   return [browser, os].filter(Boolean).join(" on ") || detail.type;
 }
 
-const signalLabels = {
-  headless: "Headless browser",
-  webdriver: "WebDriver flag",
-  datacenterAsn: "Datacenter network",
-  pointerEvents: "No pointer input",
-  uaMismatch: "User agent mismatch",
-  uniformDwell: "Uniform dwell times",
-} as const satisfies { [Signal in keyof Detail["data"]["bot"]["signals"]]: string };
+const signals = [
+  { key: "headless", label: "Headless browser" },
+  { key: "webdriver", label: "WebDriver flag" },
+  { key: "datacenterAsn", label: "Datacenter network" },
+  { key: "pointerEvents", label: "No pointer input" },
+  { key: "uaMismatch", label: "User agent mismatch" },
+  { key: "uniformDwell", label: "Uniform dwell times" },
+] as const satisfies readonly { key: keyof Detail["data"]["bot"]["signals"]; label: string }[];
 
 export function VisitorFacts({
   detail,
@@ -59,7 +59,7 @@ export function VisitorFacts({
   detail: Detail["data"];
   sessionHref: Props["sessionHref"];
 }) {
-  const fired = Object.entries(detail.bot.signals).filter(([, value]) => value === true);
+  const fired = signals.filter((signal) => detail.bot.signals[signal.key] === true);
   return (
     <>
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -108,9 +108,9 @@ export function VisitorFacts({
         >
           {detail.bot.verdict} · score {detail.bot.score}
         </span>
-        {fired.map(([signal]) => (
-          <span key={signal} className="rating rating-none">
-            {signalLabels[signal as keyof typeof signalLabels]}
+        {fired.map((signal) => (
+          <span key={signal.key} className="rating rating-none">
+            {signal.label}
           </span>
         ))}
         {detail.isInternal ? <span className="rating rating-none">internal traffic</span> : null}

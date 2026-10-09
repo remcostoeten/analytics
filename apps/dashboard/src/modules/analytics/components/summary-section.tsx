@@ -6,6 +6,7 @@ import { readSplitSeries } from "../reads";
 import type { ProjectScope } from "@spoar/client";
 import { viewQuery } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
+import { AddAnnotation } from "./add-annotation";
 import { SeriesChart } from "./series-chart";
 import type { ChartSeries } from "./series-chart";
 
@@ -15,6 +16,8 @@ type Props = {
   state: ViewState;
   path: string;
   total: number | null;
+  project: string;
+  canAnnotate: boolean;
 };
 
 const splits = [
@@ -44,13 +47,27 @@ async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDi
   return { series, interval: read.value[0]?.series.interval ?? "day" } as const;
 }
 
-export async function SummarySection({ scope, view, state, path, total }: Props) {
-  const read = await readSeries(scope, view, state.split);
+export async function SummarySection({
+  scope,
+  view,
+  state,
+  path,
+  total,
+  project,
+  canAnnotate,
+}: Props) {
+  const [read, annotations] = await Promise.all([
+    readSeries(scope, view, state.split),
+    scope.annotations({ limit: 100 }),
+  ]);
   return (
     <section className="panel-section grid gap-4">
-      <header className="grid gap-1">
-        <h2 className="text-base font-semibold">{view.label} summary</h2>
-        <p className="text-sm text-muted">{view.description}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="grid gap-1">
+          <h2 className="text-base font-semibold">{view.label} summary</h2>
+          <p className="text-sm text-muted">{view.description}</p>
+        </div>
+        {canAnnotate ? <AddAnnotation project={project} /> : null}
       </header>
 
       <nav aria-label="Split by" className="tabs">
@@ -105,6 +122,9 @@ export async function SummarySection({ scope, view, state, path, total }: Props)
               format={view.format}
               interval={read.interval}
               label={view.label}
+              annotations={annotations.ok ? annotations.value.data : []}
+              project={project}
+              editable={canAnnotate}
             />
           )}
         </>

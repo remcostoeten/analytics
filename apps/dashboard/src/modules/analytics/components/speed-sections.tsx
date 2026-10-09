@@ -7,6 +7,7 @@ import { rateScore, rateVital, speedDevice, speedInterval, vitalViews } from "..
 import type { VitalView } from "../speed";
 import { viewQuery, withFilter } from "../view-state";
 import type { ViewState } from "../view-state";
+import { AddAnnotation } from "./add-annotation";
 import { RatingBadge } from "./rating-badge";
 import { SeriesChart } from "./series-chart";
 import type { ChartSeries } from "./series-chart";
@@ -19,7 +20,11 @@ type Props = {
   path: string;
 };
 
-type SummaryProps = Props & { summary: Promise<SpeedResponse["data"] | null> };
+type SummaryProps = Props & {
+  summary: Promise<SpeedResponse["data"] | null>;
+  project: string;
+  canAnnotate: boolean;
+};
 
 function routeHref(path: string, state: ViewState, route: string) {
   return `${path}${viewQuery(withFilter(state, "route", route))}`;
@@ -34,8 +39,15 @@ function vitalCell(view: VitalView, value: number | null) {
   );
 }
 
-export async function SpeedSummary({ scope, view, state, summary }: SummaryProps) {
-  const [data, series] = await Promise.all([
+export async function SpeedSummary({
+  scope,
+  view,
+  state,
+  summary,
+  project,
+  canAnnotate,
+}: SummaryProps) {
+  const [data, series, annotations] = await Promise.all([
     summary,
     scope.speedTimeseries({
       metric: view.slug,
@@ -43,6 +55,7 @@ export async function SpeedSummary({ scope, view, state, summary }: SummaryProps
       device: speedDevice(state.filters),
       interval: speedInterval(state.period),
     }),
+    scope.annotations({ limit: 100 }),
   ]);
   const metric = data?.metrics[view.slug] ?? null;
   const chart: ChartSeries[] = series.ok
@@ -51,11 +64,14 @@ export async function SpeedSummary({ scope, view, state, summary }: SummaryProps
   const measured = series.ok ? series.value.data.some((point) => point.value !== null) : false;
   return (
     <section className="panel-section grid gap-4">
-      <header className="grid gap-1">
-        <h2 className="text-base font-semibold">
-          {view.label} at p{state.percentile}
-        </h2>
-        <p className="text-sm text-muted">{view.description}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="grid gap-1">
+          <h2 className="text-base font-semibold">
+            {view.label} at p{state.percentile}
+          </h2>
+          <p className="text-sm text-muted">{view.description}</p>
+        </div>
+        {canAnnotate ? <AddAnnotation project={project} /> : null}
       </header>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-0.5">
@@ -95,6 +111,9 @@ export async function SpeedSummary({ scope, view, state, summary }: SummaryProps
             { value: view.good, label: "Good" },
             { value: view.poor, label: "Poor" },
           ]}
+          annotations={annotations.ok ? annotations.value.data : []}
+          project={project}
+          editable={canAnnotate}
         />
       )}
     </section>
