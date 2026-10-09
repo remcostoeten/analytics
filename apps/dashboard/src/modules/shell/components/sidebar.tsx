@@ -15,6 +15,7 @@ import {
   GearIcon,
   HomeIcon,
   KeyIcon,
+  PulseIcon,
   SelectorIcon,
 } from "@/shared/ui/icons";
 import { Logo } from "@/shared/ui/logo";
@@ -70,6 +71,12 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
         href: `${projectPath}/speed`,
         icon: GaugeIcon,
         active: section === "speed",
+      },
+      {
+        label: "Realtime",
+        href: `${projectPath}/realtime`,
+        icon: PulseIcon,
+        active: section === "realtime",
       },
     );
     if (signedIn) {

@@ -27,7 +27,14 @@ function formatMillis(ms: number) {
   return `${(ms / 1000).toFixed(ms < 10_000 ? 2 : 1)} s`;
 }
 
-function formatDuration(ms: number) {
+/**
+ * @name formatDuration
+ * @description Milliseconds as seconds, minutes and seconds, or hours and minutes.
+ *
+ * @example
+ * formatDuration(71_000); // "1m 11s"
+ */
+export function formatDuration(ms: number) {
   const seconds = Math.round(ms / 1000);
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
