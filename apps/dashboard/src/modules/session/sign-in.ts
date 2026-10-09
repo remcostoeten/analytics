@@ -14,17 +14,21 @@ function redirectUrl(body: Json): string | null {
 /**
  * @name startSignIn
  * @description Asks the API to begin GitHub sign-in and returns the GitHub URL to send the
- * browser to. After GitHub, the API sets the session cookie and redirects to `callbackURL`.
+ * browser to. After GitHub, the API sets the session cookie and redirects to `callbackURL`, or to
+ * `errorCallbackURL` with an `error` query parameter when the login is refused.
  *
  * @example
- * const started = await startSignIn(`${location.origin}/admin/projects`);
+ * const started = await startSignIn(`${location.origin}/admin/projects`, `${location.origin}/sign-in`);
  * if (started.ok) location.assign(started.value);
  */
-export async function startSignIn(callbackURL: string): Promise<Result<string, string>> {
+export async function startSignIn(
+  callbackURL: string,
+  errorCallbackURL: string,
+): Promise<Result<string, string>> {
   const answer = await request({
     method: "POST",
     url: `${apiEndpoint()}/v2/auth/sign-in/social`,
-    body: { provider: "github", callbackURL },
+    body: { provider: "github", callbackURL, errorCallbackURL },
     fetch: withCredentials(),
   });
   if (!answer.ok) return err(answer.error.message);

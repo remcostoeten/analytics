@@ -38,7 +38,7 @@
 	"private": true,
 	"scripts": {
 		"build": "bun run --filter '*' build",
-		"test": "bun run --filter './v1/**' --sequential test && bun run --filter './apps/*' --filter './examples/*' --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' test",
+		"test": "bun run --filter './v1/**' --sequential test && bun run --filter './apps/*' --filter './examples/*' --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' --filter './e2e' test",
 		"typecheck": "bun run --filter '*' typecheck",
 		"test:e2e": "bun run --cwd e2e test:e2e",
 		"lint": "oxlint --type-aware --deny-warnings apps examples packages tools scripts e2e && bun run lint:v1",

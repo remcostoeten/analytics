@@ -54,7 +54,7 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 | `DATABASE_URL` | The Neon connection string |
 | `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET` | From step 2 |
 | `API_URL` | `https://api.analytics.remcostoeten.nl` |
-| `DASHBOARD_ORIGIN` | `https://dashboard.analytics.remcostoeten.nl`, the only origin allowed to sign in and call the API from a browser |
+| `DASHBOARD_ORIGIN` | `https://docs.analytics.remcostoeten.nl`, the landing origin that serves the dashboard at `/dashboard` and the only origin allowed to sign in and call the API from a browser |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
 | `MAXMIND_LICENSE_KEY` | A free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
@@ -103,7 +103,9 @@ Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Disco
 
 ## 8. The dashboard on Vercel
 
-Project `v2.dashboard` (created 8 October 2026, with `dashboard.analytics.remcostoeten.nl`), same repository, root directory `apps/dashboard`, framework Next.js, build command `bun run build`, install command `bun install`. Variable `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. The API's `DASHBOARD_ORIGIN` is this origin and `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on the custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`. The setup page at `/v2/setup` stays until the dashboard replaces it (decision 21).
+Project `v2.dashboard` (created 8 October 2026, with `dashboard.analytics.remcostoeten.nl`), same repository, root directory `apps/dashboard`, framework Next.js, build command `bun run build`, install command `bun install`. Variable `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. Optional variable `NEXT_PUBLIC_SITE_URL` (defaults to `https://docs.analytics.remcostoeten.nl`) for the links back to the docs.
+
+The app's `basePath` is `/dashboard`, and `v2.analytics-docs` rewrites `/dashboard` and everything under it to this project (decision 24), so people open the dashboard at `https://docs.analytics.remcostoeten.nl/dashboard`. Set `DASHBOARD_URL` on `v2.analytics-docs` to `https://dashboard.analytics.remcostoeten.nl` (the default) and the API's `DASHBOARD_ORIGIN` to the landing origin, because the browser sends sign-in requests from there. `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on a custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`. The setup page at `/v2/setup` stays until the dashboard replaces it (decision 21).
 
 ## 9. First sign-in and token
 

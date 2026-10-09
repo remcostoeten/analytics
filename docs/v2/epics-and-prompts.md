@@ -49,7 +49,7 @@ Finish with `bun run check` green (or the closest existing equivalent before E0.
 | E4.2 | Read resources | 4 | E4.1 | `feature/api-reads` |
 | E4.3 | Speed insights | 4 | E3.2, E4.2 | `feature/speed-insights` |
 | E4.4 | Error tracking | 4 | E3.2, E4.2 | `feature/error-tracking` |
-| E4.5 | Dashboard on the v2 API (on hold for Remco's design) | 4 | E4.2 | `feature/dashboard-v2` |
+| E4.5 | Dashboard on the v2 API, in Cloudflare's Web Analytics layout (decision 24) | 4 | E4.2 | `feature/dashboard-v2` |
 | E4.6 | Docs site: SDK methods, API reference, query page and auth overview | 4 | E4.4 | `feature/docs-site` |
 | E4.7 | Alerts: mail, webhook and Discord channels | 4 | E4.4 | `feature/alerts` |
 | E4.8 | Dev widget endpoints | 4 | E4.2, E4.4 | `feature/widget-endpoints` |
@@ -69,7 +69,7 @@ Reach, traffic sources and app performance come first; conversion optimization i
 3. Speed insights and error tracking: keep them on par with Vercel as they change.
 4. Search Console as its own epic. Annotations are built in the API and the admin SDK; E4.5 draws them on the time series.
 5. Reliability, privacy and self-hosting: E5.1 retires 1.x and ships the self-host setup.
-6. E4.5, the dashboard on the v2 API, last, once Remco's design is in.
+6. E4.5, the dashboard on the v2 API, in Cloudflare's Web Analytics layout (decision 24).
 
 ## Phase 0: foundations
 
@@ -368,11 +368,15 @@ On hold since Sep 28 until Remco provides a design. Parity tests will compare ea
 
 **Update, 8 October 2026:** the admin module shipped first on `feature/dashboard-admin`: `apps/dashboard` on Next with sign-in through the API, the project list, creating a project, its settings and key rotation, and API tokens, all through `@spoar/client` rather than Eden Treaty. The views below stay on hold.
 
-Delivers: the dashboard reading only through Eden Treaty, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
+**Update, 9 October 2026:** Cloudflare's Web Analytics dashboard is the design (decision 24). The first slice is in `apps/dashboard`: the sidebar shell, the home page with every readable project, the sign-in page in the landing style, and per project the metric rail, filters, time range, a summary chart split by dimension, countries and the source lists. The app is served under `/dashboard` on the landing domain.
+
+**Update, 9 October 2026, later:** the remaining views shipped on `feature/dashboard-v2` (PR #123), each as a sidebar entry under the project: Speed (Core Web Vitals per metric and percentile with thresholds, a series chart, and routes and elements that filter on click), Issues (the list by status, the detail with events and stacks, and status changes through a server action for admins), Realtime (a client component polling a server action every five seconds with a visible countdown), Visitors (the list, a visitor page with its visits, and the session trail as an ordered timeline) and annotations drawn as markers on the summary and speed charts, which admins add and remove from the chart. `e2e/parity` seeds a fixed dataset into the API on PGlite and asserts each view's numbers through `@spoar/client`. Still open: the home page's per-project speed score, the Vercel deploy of the new routes, and the API gaps listed in the pull request.
+
+Delivers: the dashboard reading only through `@spoar/client`, public and private projects with the admin filter, sign-in through the API, the old `/api/analytics` and `/api/posthog` routes left in place but unused, and a parity test per migrated view. Done when every view is migrated and parity tests pass.
 
 ```text
 Epic E4.5, branch feature/dashboard-v2. Read the plan sections "Access and sign-in", "REST API", and "Phases". Use toasts from @remcostoeten/notifier, never sonner.
-1. Add an Eden Treaty client in apps/dashboard that forwards the session cookie from server components.
+1. Read through @spoar/client only, via serverClient() and readScope() in apps/dashboard, which forward the session cookie from server components; never fetch the API directly.
 2. Migrate one view at a time, each in its own commit: overview, pages and referrers, geo, devices, visitors and session trails, realtime, speed, issues. Write a parity test per view comparing the old query and the new API on the demo database.
 3. Signed out: list and show public projects only. Signed in: show private projects, the visibility filter and admin controls from /v2/auth/session.
 4. Remove the dashboard's own GitHub OAuth routes once sign-in through the API works. Keep the old API routes until phase 5.

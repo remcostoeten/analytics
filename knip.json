@@ -19,6 +19,7 @@
     "e2e": {
       "entry": [
         "tests/*.spec.ts",
+        "parity/*.test.ts",
         "site/app.ts"
       ]
     },
