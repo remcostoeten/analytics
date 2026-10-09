@@ -17,3 +17,6 @@ test-results
 playwright-report
 .env*
 !.env.example
+
+# Local brand and image explorations
+output/
