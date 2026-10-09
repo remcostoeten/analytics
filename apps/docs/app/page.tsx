@@ -31,6 +31,7 @@ import { PipelineScene } from "@/components/landing/pipeline-scene";
 import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
 import { SiteNav, type NavLink } from "@/components/landing/site-nav";
+import { SqlSection } from "@/components/landing/sql-section";
 import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
 import { VitalsScene } from "@/components/landing/vitals-live";
@@ -411,6 +412,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <SqlSection />
 
       <section className="container-land py-14 sm:py-20">
         <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
