@@ -1,5 +1,12 @@
 # @spoar/client
 
+## 2.0.0-next.2
+
+### Minor Changes
+
+- b5c6add: `projects.remove(id)` deletes a project through the new owner-only `DELETE /v2/projects/:project`, and a project scope gains `liveVisitors({ everyMs, limit, signal })`, an async iterable that reads `realtime/visitors` on an interval until the signal aborts or a call fails.
+- f626396: Every scope has `key(route, ...args)`, and `scopeKey` is exported: a serialisable key holding the project, the route, the scope's query sorted by name and the route's arguments, so a cache such as TanStack Query can dedupe and invalidate reads.
+
 ## 2.0.0-next.1
 
 ### Patch Changes

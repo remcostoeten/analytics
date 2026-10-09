@@ -1,6 +1,6 @@
 {
 	"name": "@spoar/client",
-	"version": "2.0.0-next.1",
+	"version": "2.0.0-next.2",
 	"description": "Typed read and admin client for the v2 analytics API: one chainable scope, one method per route.",
 	"license": "MIT",
 	"repository": {
