@@ -779,3 +779,18 @@
     background: var(--raised);
   }
 }
+
+.status-open {
+  background: color-mix(in srgb, var(--err) 14%, transparent);
+  color: var(--err);
+}
+
+.status-resolved {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+
+.status-ignored {
+  background: var(--raised);
+  color: var(--muted);
+}

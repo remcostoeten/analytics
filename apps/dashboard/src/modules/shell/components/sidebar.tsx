@@ -8,6 +8,7 @@ import type { ComponentType, SVGProps } from "react";
 import { siteUrl } from "@/shared/config/site";
 import {
   BookIcon,
+  BugIcon,
   ChartIcon,
   FolderIcon,
   GaugeIcon,
@@ -18,7 +19,7 @@ import {
 } from "@/shared/ui/icons";
 import { Logo } from "@/shared/ui/logo";
 
-type Props = { projects: PublicProject[]; isAdmin: boolean };
+type Props = { projects: PublicProject[]; isAdmin: boolean; signedIn: boolean };
 
 type Item = {
   label: string;
@@ -45,7 +46,7 @@ function NavLink({ item }: { item: Item }) {
   );
 }
 
-export function Sidebar({ projects, isAdmin }: Props) {
+export function Sidebar({ projects, isAdmin, signedIn }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const project = currentProject(pathname);
@@ -71,6 +72,14 @@ export function Sidebar({ projects, isAdmin }: Props) {
         active: section === "speed",
       },
     );
+    if (signedIn) {
+      workspace.push({
+        label: "Issues",
+        href: `${projectPath}/issues`,
+        icon: BugIcon,
+        active: section === "issues",
+      });
+    }
     if (isAdmin) {
       workspace.push({
         label: "Settings",

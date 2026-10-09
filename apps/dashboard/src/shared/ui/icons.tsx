@@ -118,3 +118,29 @@ export function GaugeIcon(props: Props) {
     </Icon>
   );
 }
+
+export function BugIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M5.5 6.5a2.5 2.5 0 0 1 5 0v3a2.5 2.5 0 0 1-5 0Z" />
+      <path d="M8 9.5V13M5.5 8H3M13 8h-2.5M6 4.5 4.5 3M10 4.5 11.5 3M5.8 11 4 12.5M10.2 11l1.8 1.5" />
+    </Icon>
+  );
+}
+
+export function PulseIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M2 8h2.5l1.5-4 2.5 8 1.5-4H14" />
+    </Icon>
+  );
+}
+
+export function UsersIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <circle cx="6" cy="5.5" r="2.5" />
+      <path d="M1.5 13.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 3.5a2.5 2.5 0 0 1 0 4M12 9.8c1.5.5 2.5 1.8 2.5 3.7" />
+    </Icon>
+  );
+}
