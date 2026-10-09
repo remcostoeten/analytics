@@ -252,7 +252,7 @@
       },
     },
     "tools/oxlint/house": {
-      "name": "@remcostoeten/oxlint-house",
+      "name": "@spoar/oxlint-house",
       "version": "0.0.0",
     },
     "v1/apps/dashboard": {
@@ -1011,8 +1011,6 @@
 
     "@remcostoeten/notifier": ["@remcostoeten/notifier@1.1.0", "", { "peerDependencies": { "motion": ">=12.0.0", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-eE1QkF27gxJATV/wlvI4h/LlEM1Lj7+gYRKG4BRdreZZshFUqKwDj3zUpJU7ldU7oXJb2JkZ+/OBm3txP70vnw=="],
 
-    "@remcostoeten/oxlint-house": ["@remcostoeten/oxlint-house@workspace:tools/oxlint/house"],
-
     "@remcostoeten/tsconfig": ["@remcostoeten/tsconfig@workspace:v1/packages/typescript"],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.11", "", { "os": "android", "cpu": "arm" }, "sha512-A5kXfGKvKWWZE0TtPrfsvT+q4Y5d1QG8gGUzpYjGydM+fARM9MuX90PrXYXe0XbsDVgyxxNzHo6giCj90bsFNw=="],
@@ -1142,6 +1140,8 @@
     "@spoar/example-dashboard": ["@spoar/example-dashboard@workspace:examples/dashboard"],
 
     "@spoar/example-playground": ["@spoar/example-playground@workspace:examples/playground"],
+
+    "@spoar/oxlint-house": ["@spoar/oxlint-house@workspace:tools/oxlint/house"],
 
     "@spoar/scripts": ["@spoar/scripts@workspace:scripts"],
 

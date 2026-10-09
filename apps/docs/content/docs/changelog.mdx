@@ -7,7 +7,7 @@ Unreleased entries come from the pending changesets and ship with the next relea
 
 ## SDK
 
-`@remcostoeten/analytics-sdk`
+`@spoar/sdk`
 
 ### Unreleased
 
@@ -21,7 +21,7 @@ Unreleased entries come from the pending changesets and ship with the next relea
 
 ## Contract
 
-`@remcostoeten/analytics-contract`
+`@spoar/contract`
 
 ### Unreleased
 
@@ -29,7 +29,7 @@ Unreleased entries come from the pending changesets and ship with the next relea
 
 - Access and roles: `TokenScope` adds `sql`, a new `Role` enum has `owner`, `admin`, `analyst` and `viewer`, `Project` and `UpdateProject` carry `sqlEnabled`, and `AuthSession` carries the caller's `role`.
 - Operations: `AdminMetrics` gains `speedChecks`, the Chrome UX Report comparison per project and metric, `JobRun` gains an optional `message`, and `JobName` gains `crux`.
-- Export `clientSignals` from `@remcostoeten/analytics-contract/signals` too, which loads no TypeBox, so the browser SDK can use it without bundling the schemas.
+- Export `clientSignals` from `@spoar/contract/signals` too, which loads no TypeBox, so the browser SDK can use it without bundling the schemas.
 - Add `clientSignals`, the bit layout of a wire event's `signals` field.
 - Error rules: `ErrorRule`, `ErrorRuleList`, `ErrorRuleResponse` and `CreateErrorRule` for ignore patterns and issue mutes, and `JobName` gains `alerts`.
 - `PathsResponse`, `RetentionResponse`, `HeatmapResponse`, `MapResponse` and `LiveEvents` for the paths, retention, heatmap, map and live event routes.

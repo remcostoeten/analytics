@@ -152,7 +152,7 @@ Who may import whom, checked by `scripts/check-boundaries.ts` in CI:
 | `apps/api` | `engine`, `contract`, `shared` |
 | `apps/dashboard` | `client`, `contract` |
 
-Conventions for every package: `package.json`, a `tsconfig.json` extending `@remcostoeten/tsconfig`, `src/`, a README, and tests in a `__tests__/` folder next to the code they test, which is the pattern the lint overrides already match. Ingestion's current `tests/unit` and `tests/integration` move to that pattern as the code moves into `engine`. Files are kebab-case, and an `index.ts` barrel exists only where a folder has several exports.
+Conventions for every package: `package.json`, a `tsconfig.json` extending the root `tsconfig.json`, `src/`, a README, and tests in a `__tests__/` folder next to the code they test, which is the pattern the lint overrides already match. Ingestion's current `tests/unit` and `tests/integration` move to that pattern as the code moves into `engine`. Files are kebab-case, and an `index.ts` barrel exists only where a folder has several exports.
 
 The empty `apps/sdk-demo` folder left from the earlier cleanup gets deleted.
 
