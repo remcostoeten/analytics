@@ -1,11 +1,15 @@
+import { cacheLife } from "next/cache";
 import Link from "next/link";
 
+import { apiEndpoint } from "@/lib/api-endpoint";
 import { dashboardUrl } from "@/lib/dashboard-url";
 import { showcaseProject } from "@/lib/showcase";
+import { showcaseWindow } from "@/lib/showcase-period";
 import { sqlPresets } from "@/lib/sql-presets";
 import { runSqlPreset, sqlShowcaseEnabled } from "@/lib/sql-showcase";
+import { sqlVariants } from "@/lib/sql-variants";
 
-import { CodeWindow } from "./code-window";
+import { highlightCode } from "./code-window";
 import { ArrowUpRightIcon, DatabaseIcon, KeyIcon, TerminalIcon } from "./icons";
 import { SqlShowcase } from "./sql-showcase";
 import type { SqlShowcaseTab } from "./sql-showcase";
@@ -37,16 +41,30 @@ const tools = [
   },
 ];
 
+async function showcaseTabs(project: string, endpoint: string): Promise<SqlShowcaseTab[]> {
+  "use cache";
+  cacheLife("hours");
+  const target = { project, endpoint, window: showcaseWindow() };
+  return Promise.all(
+    sqlPresets.map(async (preset) => ({
+      id: preset.id,
+      title: preset.title,
+      question: preset.question,
+      variants: await Promise.all(
+        sqlVariants(preset, target).map(async (variant) => ({
+          ...variant,
+          rendered: await highlightCode(variant.source, variant.lang),
+        })),
+      ),
+    })),
+  );
+}
+
 export async function SqlSection() {
   if (!sqlShowcaseEnabled()) return null;
   const [first] = sqlPresets;
   const outcome = await runSqlPreset(first.id);
-  const tabs: SqlShowcaseTab[] = sqlPresets.map((preset) => ({
-    id: preset.id,
-    title: preset.title,
-    question: preset.question,
-    code: <CodeWindow title={`queries/${preset.id}.sql`} lang="sql" code={preset.sql} />,
-  }));
+  const tabs = await showcaseTabs(showcaseProject(), apiEndpoint());
 
   return (
     <section id="tools" className="container-land py-14 sm:py-20">
@@ -57,7 +75,8 @@ export async function SqlSection() {
           </h2>
           <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
             Six read-only queries over the last 30 days of {showcaseProject()}, run on the API as
-            you switch between them. The SQL is the SQL you would send.
+            you switch between them. The SQL is the SQL you would send, and the same question reads
+            as a client call or a curl request.
           </p>
         </div>
         <Link href="/query" className="pill-dark w-fit px-5! py-2.5!">

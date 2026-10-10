@@ -1,18 +1,20 @@
 "use client";
 
-import { useActionState, useOptimistic } from "react";
+import { useActionState, useOptimistic, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { SqlOutcome, SqlShowcaseState } from "@/lib/sql-answer";
 import type { SqlPresetId } from "@/lib/sql-presets";
+import type { SqlVariant, SqlVariantId } from "@/lib/sql-variants";
 
+import { CodeFrame } from "./code-frame";
 import { runSqlShowcase } from "./sql-showcase-action";
 
 export type SqlShowcaseTab = {
   id: SqlPresetId;
   title: string;
   question: string;
-  code: ReactNode;
+  variants: (SqlVariant & { rendered: ReactNode })[];
 };
 
 type Props = {
@@ -51,7 +53,9 @@ function describe(outcome: SqlOutcome, pending: boolean) {
 export function SqlShowcase({ tabs, initial }: Props) {
   const [state, dispatch, pending] = useActionState(runSqlShowcase, initial);
   const [active, showActive] = useOptimistic(state.id);
+  const [language, setLanguage] = useState<SqlVariantId>("sql");
   const tab = tabs.find((candidate) => candidate.id === active) ?? tabs[0];
+  const variant = tab.variants.find((candidate) => candidate.id === language) ?? tab.variants[0];
 
   return (
     <form
@@ -85,7 +89,20 @@ export function SqlShowcase({ tabs, initial }: Props) {
         })}
       </div>
       <p className="font-serif text-[1.05rem] text-fg">{tab.question}</p>
-      <div className="min-w-0">{tab.code}</div>
+      <div className="min-w-0">
+        <CodeFrame
+          files={tab.variants.map((candidate) => ({ id: candidate.id, title: candidate.file }))}
+          active={variant.id}
+          lang={variant.lang}
+          code={variant.source}
+          onSelect={(id) => {
+            const next = tab.variants.find((candidate) => candidate.id === id);
+            if (next) setLanguage(next.id);
+          }}
+        >
+          {variant.rendered}
+        </CodeFrame>
+      </div>
       <p
         aria-live="polite"
         className={`font-mono text-[0.72rem] ${state.outcome.status === "failed" && !pending ? "text-err" : "text-muted"}`}

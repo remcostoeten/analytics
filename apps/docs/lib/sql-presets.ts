@@ -5,13 +5,15 @@ export type SqlPreset = {
   title: string;
   question: string;
   sql: string;
+  read: string;
 };
 
 /**
  * @name sqlPresets
  * @description The read-only queries the landing page runs against this site's own project. Every
  * one aggregates over the console views between `:from` and `:to`, so no visitor-level row
- * reaches the page; the plan keeps SQL away from anonymous visitors for that reason.
+ * reaches the page; the plan keeps SQL away from anonymous visitors for that reason. `read` is the
+ * `@spoar/client` read route that answers the same question without SQL.
  *
  * @example
  * sqlPresets[0].id; // "pages"
@@ -27,6 +29,7 @@ WHERE name = 'pageview' AND is_human AND ts >= :from AND ts < :to
 GROUP BY path
 ORDER BY visitors DESC, pageviews DESC
 LIMIT 8`,
+    read: 'breakdown("page", { metrics: ["visitors", "pageviews"], limit: 8 })',
   },
   {
     id: "countries",
@@ -38,6 +41,7 @@ WHERE is_human AND country IS NOT NULL AND ts >= :from AND ts < :to
 GROUP BY country
 ORDER BY visitors DESC
 LIMIT 8`,
+    read: 'breakdown("country", { metrics: ["visitors"], limit: 8 })',
   },
   {
     id: "sources",
@@ -50,6 +54,7 @@ WHERE is_human AND started_at >= :from AND started_at < :to
 GROUP BY source, channel
 ORDER BY sessions DESC
 LIMIT 8`,
+    read: 'breakdown("referrer_domain", { metrics: ["sessions", "bounce_rate"], limit: 8 })',
   },
   {
     id: "devices",
@@ -61,6 +66,7 @@ WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY device, browser
 ORDER BY visitors DESC
 LIMIT 8`,
+    read: 'breakdown("device", { metrics: ["visitors"], limit: 8 })',
   },
   {
     id: "vitals",
@@ -74,6 +80,7 @@ FROM web_vitals
 WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY metric
 ORDER BY metric`,
+    read: "speed()",
   },
   {
     id: "days",
@@ -87,6 +94,7 @@ WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY day
 ORDER BY day DESC
 LIMIT 14`,
+    read: 'timeseries("visitors", { interval: "day" })',
   },
 ];
 
