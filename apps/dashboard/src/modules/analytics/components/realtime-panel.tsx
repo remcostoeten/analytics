@@ -1,10 +1,15 @@
 "use client";
 
-import type { ActiveVisitor, LiveEvent, LiveSession } from "@spoar/contract";
+import type { ClientError } from "@spoar/client";
+import type { ActiveVisitor, LiveEvent, LiveEvents, LiveSession } from "@spoar/contract";
+import { ok } from "@spoar/shared/result";
+import type { Result } from "@spoar/shared/result";
+import { focusManager, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { readRealtime } from "../actions";
+import { browserClient } from "@/shared/api/browser-client";
+
 import {
   formatDimensionValue,
   formatDuration,
@@ -12,7 +17,7 @@ import {
   formatRelative,
   formatTime,
 } from "../format";
-import { feedKeep, mergeEvents, needsSignIn, realtimeIntervalMs } from "../realtime";
+import { feedKeep, feedLimit, mergeEvents, needsSignIn, realtimeIntervalMs } from "../realtime";
 import type { RealtimeSnapshot } from "../realtime";
 
 type Props = {
@@ -23,6 +28,16 @@ type Props = {
 };
 
 type HrefFor = (id: string) => string;
+
+const detailLimit = 50;
+
+function subscribeFocus(listener: () => void) {
+  return focusManager.subscribe(listener);
+}
+
+function readFocus() {
+  return focusManager.isFocused();
+}
 
 type CardProps = { label: string; value: string; hint: string };
 
@@ -208,7 +223,14 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
 }
 
 export function RealtimePanel({ project, initial, base, canFollow }: Props) {
-  const [snapshot, setSnapshot] = useState(initial);
+  const scope = browserClient().project(project);
+  const queryClient = useQueryClient();
+  const polling = {
+    refetchInterval: realtimeIntervalMs,
+    refetchOnWindowFocus: true,
+    staleTime: realtimeIntervalMs,
+    initialDataUpdatedAt: Date.parse(initial.at),
+  };
 
   function detailHref(visitor: string) {
     return `${base}/visitors/${encodeURIComponent(visitor)}`;
@@ -218,44 +240,63 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
     return `${base}/sessions/${encodeURIComponent(session)}`;
   }
 
-  const [events, setEvents] = useState<LiveEvent[]>(
-    initial.events.ok ? initial.events.value.data : [],
-  );
-  const [secondsLeft, setSecondsLeft] = useState(realtimeIntervalMs / 1000);
-  const [paused, setPaused] = useState(false);
+  const eventsKey = scope.key("realtimeEvents", { limit: feedLimit });
+  const summaryRead = useQuery({
+    queryKey: scope.key("realtime"),
+    queryFn: () => scope.realtime(),
+    initialData: initial.summary,
+    ...polling,
+  });
+  const eventsRead = useQuery({
+    queryKey: eventsKey,
+    queryFn: async () => {
+      const read = await scope.realtimeEvents({ limit: feedLimit });
+      if (!read.ok) return read;
+      const shown = queryClient.getQueryData<Result<LiveEvents, ClientError>>(eventsKey);
+      const previous = shown?.ok ? shown.value.data : [];
+      return ok({ ...read.value, data: mergeEvents(previous, read.value.data, feedKeep) });
+    },
+    initialData: initial.events,
+    ...polling,
+  });
+  const visitorsRead = useQuery({
+    queryKey: scope.key("realtimeVisitors", { limit: detailLimit }),
+    queryFn: () => scope.realtimeVisitors({ limit: detailLimit }),
+    initialData: initial.visitors,
+    ...polling,
+  });
+  const sessionsRead = useQuery({
+    queryKey: scope.key("realtimeSessions", { limit: detailLimit }),
+    queryFn: () => scope.realtimeSessions({ limit: detailLimit }),
+    initialData: initial.sessions,
+    ...polling,
+  });
 
-  useEffect(() => {
-    function onVisibility() {
-      setPaused(document.visibilityState === "hidden");
-    }
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
-
+  const paused = !useSyncExternalStore(subscribeFocus, readFocus, () => true);
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (paused) return;
-    const tick = setInterval(() => setSecondsLeft((left) => Math.max(0, left - 1)), 1000);
+    const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(tick);
   }, [paused]);
 
-  useEffect(() => {
-    if (paused || secondsLeft > 0) return;
-    let active = true;
-    async function poll() {
-      const next = await readRealtime(project);
-      if (!active) return;
-      setSnapshot(next);
-      if (next.events.ok) {
-        const polled = next.events.value.data;
-        setEvents((shown) => mergeEvents(shown, polled, feedKeep));
-      }
-      setSecondsLeft(realtimeIntervalMs / 1000);
-    }
-    void poll();
-    return () => {
-      active = false;
-    };
-  }, [project, paused, secondsLeft]);
+  const updatedAt = Math.max(
+    summaryRead.dataUpdatedAt,
+    eventsRead.dataUpdatedAt,
+    visitorsRead.dataUpdatedAt,
+    sessionsRead.dataUpdatedAt,
+  );
+  const secondsLeft = Math.min(
+    realtimeIntervalMs / 1000,
+    Math.max(0, Math.ceil((updatedAt + realtimeIntervalMs - now) / 1000)),
+  );
+  const snapshot = {
+    summary: summaryRead.data,
+    events: eventsRead.data,
+    visitors: visitorsRead.data,
+    sessions: sessionsRead.data,
+  };
+  const events = snapshot.events.ok ? snapshot.events.value.data : [];
 
   const summary = snapshot.summary.ok ? snapshot.summary.value.data : null;
   const visitors = snapshot.visitors.ok ? snapshot.visitors.value.data : null;
@@ -263,7 +304,7 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
 
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="grid gap-2">
+      <aside className="rail">
         <Card
           label="Visitors now"
           value={summary ? formatMetric(summary.visitors, "count") : "–"}
@@ -282,7 +323,7 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
         <p className="px-1 text-xs text-muted" aria-live="polite">
           {paused
             ? "Paused while the tab is hidden"
-            : `Updated ${formatRelative(snapshot.at)} · next in ${secondsLeft}s`}
+            : `Updated ${formatRelative(new Date(updatedAt).toISOString())} · next in ${secondsLeft}s`}
         </p>
       </aside>
 

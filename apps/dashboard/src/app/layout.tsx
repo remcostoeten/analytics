@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 
 import "./globals.css";
 
+import { QueryProvider } from "@/shared/query/provider";
 import { Notifier } from "@/shared/ui/notifier";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default function Layout({ children }: Props) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen">
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Notifier />
       </body>
     </html>

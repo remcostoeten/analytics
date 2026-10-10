@@ -7,6 +7,7 @@ import { cache } from "react";
 import { serverClient } from "@/shared/api/server-client";
 
 import type { MetricView } from "./metrics";
+import { viewScope } from "./scope";
 import { speedFilters } from "./speed";
 import type { FilterDimension, ViewFilters, ViewState } from "./view-state";
 
@@ -36,12 +37,7 @@ export const listProjects = cache(async (): Promise<Result<PublicProject[], stri
  * const stats = await scope.stats();
  */
 export async function readScope(project: string, state: ViewState): Promise<ProjectScope> {
-  const api = await serverClient();
-  return api
-    .project(project)
-    .period(state.period)
-    .traffic(state.bots ? "all" : "human")
-    .where(state.filters);
+  return viewScope(await serverClient(), project, state);
 }
 
 /**

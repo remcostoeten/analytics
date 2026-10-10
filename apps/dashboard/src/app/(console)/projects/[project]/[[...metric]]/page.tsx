@@ -7,6 +7,7 @@ import { AddFilter } from "@/modules/analytics/components/add-filter";
 import { CountrySection, SourcesSection } from "@/modules/analytics/components/breakdown-sections";
 import { FilterChips } from "@/modules/analytics/components/filter-chips";
 import { MetricRail } from "@/modules/analytics/components/metric-rail";
+import type { RailData } from "@/modules/analytics/components/metric-rail";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
 import { SummarySection } from "@/modules/analytics/components/summary-section";
 import { metricView, metricViews } from "@/modules/analytics/metrics";
@@ -20,7 +21,7 @@ import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
 import type { ProjectScope } from "@spoar/client";
-import type { StatsResponse, TimeseriesPoint } from "@spoar/contract";
+import type { StatsResponse } from "@spoar/contract";
 
 type Props = {
   params: Promise<{ project: string; metric?: string[] }>;
@@ -35,31 +36,33 @@ type RailProps = {
   view: MetricView;
   state: ViewState;
   base: string;
+  project: string;
 };
 
-async function Rail({ stats, scope, view, state, base }: RailProps) {
+async function Rail({ stats, scope, view, state, base, project }: RailProps) {
   const [data, ...series] = await Promise.all([
     stats,
     ...metricViews.map((entry) => scope.timeseries(entry.series)),
   ]);
-  const sparklines = new Map<string, TimeseriesPoint[]>();
+  const sparklines: RailData["sparklines"] = {};
   metricViews.forEach((entry, index) => {
     const read = series[index];
-    if (read?.ok) sparklines.set(entry.slug, read.value.data);
+    if (read?.ok) sparklines[entry.slug] = read.value.data;
   });
   return (
     <MetricRail
-      stats={data}
-      sparklines={sparklines}
+      project={project}
+      state={state}
+      base={base}
       current={view}
-      hrefFor={(entry) => `${base}/${entry.slug}${viewQuery(state)}`}
+      initial={{ stats: data, sparklines }}
+      renderedAt={Date.now()}
     />
   );
 }
 
 type SummaryProps = Omit<RailProps, "base"> & {
   path: string;
-  project: string;
   canAnnotate: boolean;
 };
 
@@ -81,7 +84,7 @@ async function Summary({ stats, scope, view, state, path, project, canAnnotate }
 
 function RailSkeleton() {
   return (
-    <div className="grid gap-2" aria-hidden="true">
+    <div className="rail" aria-hidden="true">
       {metricViews.map((view) => (
         <div key={view.slug} className="skeleton h-[104px]" />
       ))}
@@ -111,7 +114,7 @@ export default async function Page({ params, searchParams }: Props) {
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="grid gap-6">
         <Suspense key={`${view.slug}${viewQuery(state)}`} fallback={<RailSkeleton />}>
-          <Rail {...shared} stats={stats} base={base} />
+          <Rail {...shared} stats={stats} base={base} project={project} />
         </Suspense>
         <div className="hidden gap-2 lg:grid">
           <h2 className="text-sm font-semibold">Quick actions</h2>
@@ -131,7 +134,11 @@ export default async function Page({ params, searchParams }: Props) {
       </aside>
 
       <div className="panel">
-        <ProjectHeader title={`Web analytics for ${found.name}`} domain={found.domain}>
+        <ProjectHeader
+          title={`Web analytics for ${found.name}`}
+          domain={found.domain}
+          live={{ project, href: `${base}/realtime` }}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <AddFilter path={path} state={state} />
             <PeriodSelect path={path} state={state} />

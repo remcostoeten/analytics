@@ -55,7 +55,7 @@ async function Rail({ summary, view, state, base }: RailProps) {
 
 function RailSkeleton() {
   return (
-    <div className="grid gap-2" aria-hidden="true">
+    <div className="rail" aria-hidden="true">
       {Array.from({ length: 6 }, (_, index) => (
         <div key={index} className="skeleton h-[104px]" />
       ))}

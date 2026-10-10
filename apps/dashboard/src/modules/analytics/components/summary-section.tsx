@@ -6,7 +6,10 @@ import { readSplitSeries } from "../reads";
 import type { ProjectScope } from "@spoar/client";
 import { viewQuery } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
+import { siteUrl } from "@/shared/config/site";
+
 import { AddAnnotation } from "./add-annotation";
+import { EmptyState } from "./empty-state";
 import { SeriesChart } from "./series-chart";
 import type { ChartSeries } from "./series-chart";
 
@@ -30,6 +33,10 @@ const splits = [
 ] as const satisfies readonly { value: FilterDimension | null; label: string }[];
 
 const seriesLimit = 5;
+
+function isQuiet(series: ChartSeries[]) {
+  return series.every((entry) => entry.points.every((point) => !point.value));
+}
 
 async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDimension | null) {
   if (split === null) {
@@ -60,6 +67,7 @@ export async function SummarySection({
     readSeries(scope, view, state.split),
     scope.annotations({ limit: 100 }),
   ]);
+  const hasFilters = Object.keys(state.filters).length > 0;
   return (
     <section className="panel-section grid gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -87,6 +95,23 @@ export async function SummarySection({
 
       {"error" in read ? (
         <p className="text-sm text-err">Could not read the series: {read.error}</p>
+      ) : isQuiet(read.series) ? (
+        <EmptyState title={`No ${view.label.toLowerCase()} in this range`}>
+          {hasFilters ? (
+            "Remove a filter or widen the time range to see traffic."
+          ) : (
+            <>
+              Once the site sends events they show up here. New site?{" "}
+              <a
+                href={`${siteUrl()}/docs/getting-started/quick-start`}
+                className="text-link underline"
+              >
+                Install the SDK
+              </a>
+              .
+            </>
+          )}
+        </EmptyState>
       ) : (
         <>
           {state.split !== null ? (

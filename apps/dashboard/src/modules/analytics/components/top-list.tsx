@@ -14,8 +14,11 @@ type Props = {
   columns?: boolean;
 };
 
+const rowsPerColumn = 5;
+
 export function TopList({ title, dimension, rows, count, hrefFor, columns = false }: Props) {
   const max = Math.max(1, ...rows.map((row) => row[count] ?? 0));
+  const split = columns && rows.length > rowsPerColumn;
   return (
     <div className="grid content-start gap-2">
       <h3 className="text-sm font-semibold">{title}</h3>
@@ -23,7 +26,8 @@ export function TopList({ title, dimension, rows, count, hrefFor, columns = fals
         <p className="py-2 text-sm text-muted">No data in this range</p>
       ) : (
         <ul
-          className={`grid gap-0.5 ${columns ? "md:grid-flow-col md:grid-rows-5 md:gap-x-10" : ""}`}
+          className={`grid gap-0.5 ${split ? "md:grid-flow-col md:gap-x-10" : ""}`}
+          style={split ? { gridTemplateRows: `repeat(${rowsPerColumn}, auto)` } : undefined}
         >
           {rows.map((row) => {
             const value = row[count] ?? 0;

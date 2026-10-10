@@ -16,7 +16,7 @@ type Props = {
 export function VitalsRail({ data, current, hrefFor }: Props) {
   const score = data?.score ?? null;
   return (
-    <nav aria-label="Web Vitals" className="grid gap-2">
+    <nav aria-label="Web Vitals" className="rail">
       <div className="metric-card metric-static">
         <span className="metric-label text-sm">Real Experience Score</span>
         <span className="flex items-baseline gap-2">
