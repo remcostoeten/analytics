@@ -42,7 +42,7 @@ The proxy avoids the rules filter lists already have. It does not make the reque
 - A blocker that stops all script on the page stops the SDK with it.
 - Opt-out, consent, Do Not Track and Global Privacy Control are checked in the browser before anything is queued, and the proxy does not change that. A visitor who opted out sends nothing, through any path.
 
-When the request is blocked, the browser reports a network error. The client retries after 1, 4 and 16 seconds, then saves the events in `localStorage` and tries again on the next page load, where the blocker stops them again. At most 100 saved events are kept, so a blocked visitor never builds up more than that. See [Duplicates and retries](/docs/edge-cases/duplicates-and-retries).
+When the request is blocked, the browser reports a network error. The client retries, saves up to 100 events for the next page load, and is blocked again there, so a blocked visitor never builds up more than that. See [Duplicates and retries](/docs/edge-cases/duplicates-and-retries).
 
 ## Measuring what is blocked
 

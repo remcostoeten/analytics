@@ -37,9 +37,9 @@ Every event a plugin sends goes through the same consent, opt-out and `beforeSen
 | [`notFound()`](/docs/plugins/not-found) | `not_found` with the referrer on pages marked as not found |
 | [`groups<Groups>()`](/docs/plugins/groups) | `group` when `set` joins a group, and the joined groups on every event |
 
-## Bundle budgets
+## Bundle sizes
 
-`bun run size` gzips each plugin bundled alone and fails the build above its budget: 0.6 KB per plugin, 0.7 KB for `errors` and 2.5 KB for `speedInsights`.
+Each plugin, bundled alone and gzipped, stays under 0.6 KB, except `errors` (0.7 KB) and `speedInsights` (2.5 KB).
 
 ## Writing a plugin
 

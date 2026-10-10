@@ -42,20 +42,14 @@ The speed reads show production by default. Add `environment=preview` for previe
 
 The speed reads show a value only for a metric with at least 20 samples in the range, after filters, and leave the others out of the score. `samples` in the response says how many there are. Widen the range, set `device=all`, or remove filters.
 
-The API stores no speed sample for:
-
-- events from bot, internal or localhost traffic, whatever `traffic` a read asks for;
-- an unknown metric or rating, or a missing metric `id`;
-- a negative value, a CLS above 10, or a timing above 120 seconds.
+Events from bot, internal or localhost traffic, and invalid samples, are never stored as speed samples. [Speed insights](/docs/plugins/speed-insights) lists the rules.
 
 ## Speed for dates more than 30 days ago is missing a filter or the elements
 
-The daily rollup job drops raw speed rows older than 30 days after writing daily percentiles and rating counts per route, device and metric to `rollup_vitals`. The speed reads use the raw rows for the last 30 days and the rollup for older days, where a day's percentile is the mean of its per-route and per-device percentiles, weighted by samples.
+After 30 days, speed data is kept only as daily percentiles per route, device and metric. For days older than that:
 
-The rollup has no page, country, selector, hour or preview rows. For days older than 30 days:
-
-- a read with `filter[page]`, `filter[country]` or `environment=preview` answers from the raw rows only, so older days are empty;
+- filters on page or country, and `environment=preview`, answer empty;
 - `/speed/elements`, `/speed/routes?group=path` and `/speed/timeseries?interval=hour` cover the last 30 days only;
-- `/speed/routes` leaves out rolled-up samples without a route.
+- `/speed/routes` leaves out samples that had no route.
 
-Older days also show nothing when the rollup job has not rolled them up, even if their raw rows are still stored, because the reads take those days from the rollup only. Run `POST /v2/admin/jobs/rollup` with `days` (1 to 90) large enough to cover them.
+If older days are empty without a filter, the daily rollup job has not processed them yet. Whoever runs the API can rerun it for more days; see [Run your own copy](/docs/guides/self-host#7-schedule-the-jobs).

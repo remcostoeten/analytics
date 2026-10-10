@@ -34,7 +34,7 @@ Both use a `text/plain` body with the public key in the `key` query parameter, b
 
 ## Failed batches are saved for the next page load
 
-Outside unloading mode, a batch that fails with a network error, a 429 or a 5xx is retried after 1, 4 and 16 seconds with the same event ids. When the answer carries `Retry-After`, the client waits that long instead, up to 16 seconds. If it still fails, or if it failed in unloading mode, the events are saved in `localStorage`. At most the latest 100 saved events are kept.
+A batch that fails in unloading mode is saved in `localStorage` at once, without retries. Outside unloading mode it is saved after its retries run out; [Duplicates and retries](/docs/edge-cases/duplicates-and-retries#which-failures-are-retried) has the schedule. At most the latest 100 saved events are kept.
 
 The next time the client starts on the same site, it moves the saved events back into the queue and sends them with the first batch. They keep their original timestamps. The API shifts every event's time by the gap between the batch's `sentAt` and the moment it arrived, which corrects the browser's clock without moving an old event to the present.
 

@@ -3,6 +3,8 @@ title: Concepts
 description: Projects, keys, events, pageviews, routes, visitors, sessions, consent and bot scores.
 ---
 
+The terms the rest of the docs use, and what each one means in reports.
+
 ## Projects
 
 A project is one site or app: an id such as `example.com`, a domain, the origins allowed to send events, a retention period in days and a visibility. Projects are `public` by default, which means anyone can read their aggregates. A `private` project answers only to its members and tokens, and answers 404 to everyone else so its name does not leak.
@@ -15,7 +17,7 @@ A project is one site or app: an id such as `example.com`, a domain, the origins
 | Secret key | `sk_` | The server SDK and the proxy | Send events from anywhere, with the visitor's IP and user agent forwarded |
 | API token | `at_` | Scripts, CI and other frontends | Read, administer or run SQL, depending on its scope |
 
-Secret keys and API tokens are shown once, when created or rotated, and stored hashed.
+Keys come from [creating a project](/docs/getting-started/quick-start#1-create-a-project), and API tokens from [Read your data](/docs/guides/read-your-data#1-create-a-token). Secret keys and API tokens are shown once, when created or rotated, and stored hashed.
 
 ## Events
 
@@ -74,10 +76,8 @@ The choice is remembered across page loads and applies to the site's other open 
 
 ## Your own traffic
 
-- Opening any tracked page with `?ra=ignore` (with the `ignoreSelf` plugin) stops that browser from sending anything; `?ra=track` undoes it.
-- Events sent while you are signed in to the dashboard as an owner or admin are stored as internal, and reports leave them out. The API sees the session cookie only on events that come through the proxy or the server client; a browser sending to the API directly carries no cookie.
-- Events from localhost and preview deployments are marked as well.
+`?ra=ignore` with the `ignoreSelf` plugin stops a browser from sending, and events from signed-in admins, localhost and preview deployments are marked so reports leave them out. [Exclude your traffic](/docs/guides/exclude-your-traffic) covers each method.
 
 ## Bot scores
 
-Every event gets a score from 0 (human) to 100 (bot), built from the user agent, the network, the request headers, the optional `botSignals` plugin and, later, the session's behaviour. Events are stored whatever their score, with the reasons, and reports count only events that score under 50. A rescore after tuning the weights changes past reports too.
+Every event gets a score from 0 (human) to 100 (bot). Events are stored whatever their score, and reports count only events that score under 50. [Bots](/docs/edge-cases/bots) lists the signals and their weights.

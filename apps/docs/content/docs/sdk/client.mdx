@@ -26,7 +26,7 @@ description: Everything on the object createAnalytics returns.
 
 ## Delivery
 
-Events are batched: 20 events or 5 seconds, whichever comes first. A batch is cut short to keep its body under 60 KB, the API's limit, and a single event over 60 KB is dropped and reported as a failure with status 413. Batches go out with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. A network error, 429 or 5xx is retried after 1, 4 and 16 seconds, or after the API's `Retry-After` up to 16 seconds, with the same event ids, so the API can drop duplicates. When the page is hidden, batches waiting for a retry are sent once with the rest. Events still unsent are kept for the next page load.
+Events are batched: 20 events or 5 seconds, whichever comes first. A batch is cut short to keep its body under 60 KB, the API's limit, and a single event over 60 KB is dropped and reported as a failure with status 413. Batches go out with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. Failed sends are retried with the same event ids and kept for the next page load; [Duplicates and retries](/docs/edge-cases/duplicates-and-retries) has the schedule.
 
 With Do Not Track or Global Privacy Control on, the client drops every event with the reason `dnt` and stores nothing but the visitor's own consent, opt-out and debug choices.
 

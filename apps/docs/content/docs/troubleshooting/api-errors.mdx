@@ -1,9 +1,9 @@
 ---
 title: Fix API errors
-description: Every error code the API returns, with its status, what causes it and how to fix it.
+description: The API error messages you meet most often, what causes them and what to change.
 ---
 
-Every API error uses the same envelope, with a `code`, a `message`, an optional `details` object, a `requestId` and a `docs` link. This page lists each code from the error catalog in `packages/contract`, then the messages you meet most often and what to change.
+Every API error uses the same envelope, with a `code`, a `message`, an optional `details` object, a `requestId` and a `docs` link. This page lists the messages you meet most often and what to change. The full list of codes, with their status and whether the browser retries them, is in [Overview](/docs/api/overview#errors).
 
 ```json
 {
@@ -16,31 +16,17 @@ Every API error uses the same envelope, with a `code`, a `message`, an optional 
 }
 ```
 
-## Error codes
-
-"Retried" says whether the browser client retries the batch. It retries 429 and every 5xx after 1, 4 and 16 seconds, and drops a batch on any other 4xx.
-
-| Status | Code | Retried | Cause | Fix |
-| --- | --- | --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | No | The body, query or path does not match the schema, or the body is not JSON | Read `message` and `details.fields`, and correct the request |
-| 401 | `UNAUTHORIZED` | No | No credential, or an unknown key, token or cron secret | Send a valid key, API token or session |
-| 401 | `AUTH_REQUIRED` | No | The dev widget bootstrap was called without the admin session cookie | Sign in to the API, then reload the site |
-| 403 | `FORBIDDEN_ORIGIN` | No | A public key was used from an origin missing from the project's allowed origins | Add the exact origin, or send through the proxy |
-| 403 | `ORIGIN_NOT_ALLOWED` | No | The dev widget bootstrap came from an origin no project lists | Add the site's origin to the project's `allowedOrigins` |
-| 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
-| 403 | `WIDGET_REPORTS_DISABLED` | No | SDK client reports were sent while the project's `widgetReports` is off | Turn on `widgetReports` with `PATCH /v2/projects/:project` |
-| 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
-| 409 | `CONFLICT` | No | A project with this id already exists | Pick another id |
-| 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events, or a client report body is over 16 KB | Send smaller batches |
-| 429 | `RATE_LIMITED` | Yes | A rate limit was hit | Wait for the number of seconds in `Retry-After` |
-| 500 | `INTERNAL` | Yes | An unexpected failure | Report the `requestId`; the API's log line carries the same id |
-| 503 | `UNAVAILABLE` | Yes | The database or a configured service is unreachable, or a job is not configured | Check the database and the service named in `message` |
-
-Every response carries the request id in `x-request-id` as well, and cross-origin callers can read it and `Retry-After`.
-
 ## Ingest
 
-`POST /v2/events` answers these errors for the whole batch. A single bad event does not fail the batch: the API answers 202 and lists the event in `rejected` by index, with its own code and message. An event outside the prop limits is rejected this way with `VALIDATION_FAILED`: more than 25 props, a key over 255 characters, or a string value over 255 characters (2048 for `stack` and `breadcrumbs` on `error` events).
+`POST /v2/events` answers the errors below for the whole batch.
+
+A single bad event does not fail the batch. The API answers 202 and lists the event in `rejected` by index, with its own code and message.
+
+An event outside the prop limits is rejected this way with `VALIDATION_FAILED`:
+
+- more than 25 props;
+- a key over 255 characters;
+- a string value over 255 characters, or 2048 for `stack` and `breadcrumbs` on `error` events.
 
 ### 400 "The body is not valid JSON"
 
@@ -68,7 +54,7 @@ Requests with the public key are limited per project and per IP hash: 100 a minu
 
 ### 503 on ingest
 
-The database could not be reached. The browser client retries and then keeps up to 100 events in `localStorage` for the next page load. The server client returns `RA_INGEST_FAILED` with `HTTP 503` and does not retry.
+The database could not be reached. The browser client retries, as described in [Duplicates and retries](/docs/edge-cases/duplicates-and-retries). The server client returns `RA_INGEST_FAILED` with `HTTP 503` and does not retry.
 
 ## Reads
 
@@ -94,7 +80,7 @@ A signed-out caller asked for something beyond public aggregates: visitor-level 
 
 ### 401 "The API token is not valid" or "The API token has expired"
 
-The token is unknown, revoked or past its expiry. The API answers 401 instead of treating the call as anonymous, so a broken script fails. Create a new token with `POST /v2/tokens`.
+The token is unknown, revoked or past its expiry. The API answers 401 instead of treating the call as anonymous, so a broken script fails. [Create a new token](/docs/guides/read-your-data#1-create-a-token).
 
 ### 403 "Visitor-level data needs an analyst, admin or API token"
 
@@ -102,7 +88,12 @@ Viewers see aggregates only. Visitor and session reads need an owner, admin or a
 
 ### 403 "This needs a project admin" or "This needs an organization admin"
 
-Changing a project needs an owner, or an admin or `admin` token that lists the project. Creating projects and tokens needs an owner, or an admin or `admin` token that is not limited to specific projects.
+| To | You need |
+| --- | --- |
+| Change a project | An owner, or an admin or `admin` token that lists the project |
+| Create projects or tokens | An owner, or an admin or `admin` token that lists no projects |
+
+[Auth overview](/docs/api/auth#roles) describes the roles.
 
 ### 403 "You may not run SQL on this project"
 

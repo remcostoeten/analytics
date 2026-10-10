@@ -14,14 +14,16 @@ This guide moves browser events from the API's host to a path on your own site, 
 | Origin check | The page's origin must be in the project's `allowedOrigins` | The proxy refuses cross-site requests itself |
 | Visitor IP and user agent | Read by the API from the browser's request | Forwarded by the proxy as `X-Visitor-IP` and `X-Visitor-UA` |
 | Host, localhost and preview flags | From the browser's `Origin` | From the `Origin` the proxy forwards, or the site's own origin when the browser sent none |
-| Signed-in admin marked internal | No: a cross-origin request carries no cookie | Yes: the proxy forwards the `ra.session_token` cookie and no other |
+| Signed-in admin marked internal | No: a cross-origin request carries no cookie | Yes, see [Exclude your traffic](/docs/guides/exclude-your-traffic#signed-in-admins) |
 | Ad blockers | Often blocked | A request to your own domain |
 
 The secret key sends events for the project from anywhere, so it stays on the server. Never put it in a `NEXT_PUBLIC_`, `PUBLIC_` or `VITE_` variable.
 
 ## 1. Store the secret key
 
-The secret key is shown once, in the response that creates the project. If you no longer have it, rotate it with an `admin` token for the project; the answer holds the new key in `data.key`, and the old key stops working:
+The secret key is shown once, when the project is created ([Create a project](/docs/getting-started/quick-start#1-create-a-project)). If you no longer have it, click **Rotate** next to the secret key on the project's page under **Projects** in the dashboard. The old key stops working at once.
+
+From a script, the same rotation is a call with an `admin` token for the project ([Create a token](/docs/guides/read-your-data#1-create-a-token)); the answer holds the new key in `data.key`:
 
 ```bash
 curl -X POST https://api.example.com/v2/projects/example.com/keys \

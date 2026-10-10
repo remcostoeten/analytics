@@ -127,8 +127,8 @@ Rows have the same shape as the HTTP routes. `@spoar/contract` exports the schem
 
 When you subscribe again, pass the last `cursor` you received for `events` and `logs` as `after`, and you get what you missed. Without `after`, `events` starts with the last five minutes and `logs` with the last 100 lines. Delivery is at least once around a reconnect, so drop ids you already have.
 
-### How it scales
+### Reconnects
 
-The API runs on Vercel Functions, where a WebSocket stays on the instance that accepted it. On each instance, every socket watching the same project and channel shares one poller. `events` and `logs` long-poll Postgres from a cursor, and `visitors` and `sessions` are read every 5 seconds and sent only when they changed. Ten open widgets on one instance cost the same database reads as one. Postgres stays the only source of truth, so a reconnect that lands on another instance or a new deployment resumes from its cursor.
+`visitors` and `sessions` are sent only when they change. A reconnect resumes `events` and `logs` from its cursor, so nothing is missed.
 
 The HTTP routes and server-sent events (`Accept: text/event-stream` on `realtime/events` and `logs`) stay available for clients that cannot open a WebSocket.

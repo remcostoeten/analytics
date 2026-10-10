@@ -1,36 +1,18 @@
 ---
 title: Admin
-description: Manage alert targets and annotations and read stats from server code and scripts with a token, using the `read` scope for the read methods and the `admin` scope for alert targets and annotation writes.
+description: A token-based client for alert targets, annotations and stats in server code and scripts.
 ---
 
-`@spoar/sdk/admin` is for server code, scripts and CI. It calls the API with a token; never ship it to a browser. It is a thin layer over [`@spoar/client`](/docs/sdk/read-client), which covers every read route as a chainable scope; new code should use that package directly.
+`@spoar/sdk/admin` is for server code, scripts and CI. It calls the API with an API token; never ship it to a browser. The read methods need a `read` token, and alert targets and annotation writes need an `admin` token that lists the project. [Read your data](/docs/guides/read-your-data#1-create-a-token) shows how to create one.
 
 ```ts
-import { createAdmin, discord, mail, webhook } from "@spoar/sdk/admin";
+import { createAdmin } from "@spoar/sdk/admin";
 
-type Projects = "remcostoeten.nl" | "skriuw";
-
-const admin = createAdmin<Projects>({
-  endpoint: "https://api.analytics.remcostoeten.nl",
-  token: process.env.RA_ADMIN_TOKEN,
-});
-
-function isHttps(url: string | undefined): url is `https://${string}` {
-  return url?.startsWith("https://") ?? false;
-}
-
-const discordUrl = process.env.DISCORD_WEBHOOK_URL;
-if (!isHttps(discordUrl)) throw new Error("Set DISCORD_WEBHOOK_URL to the Discord webhook URL");
-
-const synced = await admin.alerts.sync("remcostoeten.nl", [
-  mail({ to: ["remco@gmail.com"] }),
-  discord({ url: discordUrl, on: ["issue.regression"] }),
-  webhook({ name: "ops", url: "https://ops.example.com/hooks/analytics" }),
-]);
-
-if (!synced.ok) console.error(synced.error.code, synced.error.message);
-else console.log(synced.value.secrets.ops);
+const admin = createAdmin<"example.com">({ endpoint: "https://api.example.com", token: process.env.RA_TOKEN });
+const week = await admin.stats("example.com", { period: "7d" });
 ```
+
+It is a thin layer over [`@spoar/client`](/docs/sdk/read-client), which covers every read route; new read code should use that package directly.
 
 Every method answers `{ ok: true, value }` or `{ ok: false, error }` and never throws. `error.code` is a code from the [error catalog](/docs/api/overview#errors), or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when the request did not get an answer from the API.
 
@@ -46,6 +28,23 @@ A target is where one project's alerts go on one channel. The builders fill one 
 
 `name` defaults to the channel, so one target per channel needs no name. `on` defaults to every issue event (`issue.new` and `issue.regression`) and `enabled` to `true`. `speed.drop` is opt-in: list it in `on` to hear when yesterday's Real Experience Score fell 10 points or more, to under 90, against the 7 days before.
 
+Keep a project's targets in code and sync them on deploy:
+
+```ts
+import { createAdmin, discord, mail, webhook } from "@spoar/sdk/admin";
+
+const admin = createAdmin<"example.com">({ endpoint: "https://api.example.com", token: process.env.RA_TOKEN });
+
+const synced = await admin.alerts.sync("example.com", [
+  mail({ to: ["you@example.com"] }),
+  discord({ url: "https://discord.com/api/webhooks/...", on: ["issue.regression"] }),
+  webhook({ name: "ops", url: "https://ops.example.com/hooks/analytics" }),
+]);
+
+if (!synced.ok) console.error(synced.error.code, synced.error.message);
+else console.log(synced.value.secrets.ops);
+```
+
 | Method | Does |
 | --- | --- |
 | `alerts.sync(project, targets)` | Makes the project's targets match the list: adds, updates and removes; running it twice changes nothing. Answers `{ created, updated, removed, secrets }` |
@@ -59,36 +58,19 @@ A target is where one project's alerts go on one channel. The builders fill one 
 
 `secrets` holds the signing secret of each new webhook target. It is shown only in the answer to `sync`, `set` and `rotate`; store it where your receiver reads it, such as `RA_WEBHOOK_SECRET`.
 
-## What the editor catches
-
-| Mistake | Caught by |
-| --- | --- |
-| `createAdmin<Projects>` then `sync("remcostoten.nl", ...)` | Type error: not in `Projects` |
-| `on: ["issue.created"]` | Type error: offers `issue.new` and `issue.regression` |
-| `mail({ to: [] })` | Type error: at least one address |
-| `mail({ to: ["remco"] })` | Type error: `${string}@${string}.${string}` |
-| `webhook({ url: "http://..." })` | Type error: `https://` only |
-| Two targets with the same literal `name` | Type error on the list |
-| A mail target on a deployment without `mail()` | `VALIDATION_FAILED`: "mail is not enabled on this deployment" |
-| `annotations.create(project, { date: "1 October" })` | Type error: a `Date`, a calendar date or an ISO 8601 timestamp |
-| `annotations.create(project, { url: "ftp://..." })` | Type error: `http://` or `https://` only |
-| `annotations.create(project, { kind: "campaign" })` | Type error: `release`, `post`, `content`, `incident` or `other` |
-| `annotations.update(project, id, {})` | Type error: at least one change |
-| `endDate` before `date` | `VALIDATION_FAILED` at `/endDate` |
-
 ## Annotations
 
 Annotations are dated labels on a project's time series, such as a release, a post, a content update or an incident. [Annotations](/docs/api/annotations) describes the data model.
 
 ```ts
-const release = await admin.annotations.create("remcostoeten.nl", {
+const release = await admin.annotations.create("example.com", {
   title: "v2.0 released",
   date: new Date(),
   kind: "release",
-  url: "https://github.com/remcostoeten/analytics/releases/tag/v2.0.0",
+  url: "https://example.com/changelog/v2",
 });
 
-await admin.annotations.create("skriuw", {
+await admin.annotations.create("example.com", {
   title: "Posted on Hacker News",
   date: "2026-10-03",
   endDate: "2026-10-05",
@@ -96,12 +78,12 @@ await admin.annotations.create("skriuw", {
 });
 
 if (release.ok) {
-  await admin.annotations.update("remcostoeten.nl", release.value.id, {
+  await admin.annotations.update("example.com", release.value.id, {
     note: "New onboarding flow",
   });
 }
 
-const september = await admin.annotations.list("remcostoeten.nl", {
+const september = await admin.annotations.list("example.com", {
   from: "2026-09-01T00:00:00Z",
   to: "2026-10-01T00:00:00Z",
 });
@@ -130,3 +112,20 @@ The same client reads the stats routes, typed from the contract, for your own da
 | `issues(project, { status?, limit?, cursor? })` | `GET /v2/projects/:project/issues` |
 
 `filter: { country: "NL" }` is sent as `filter[country]=NL`.
+
+## What the editor catches
+
+| Mistake | Caught by |
+| --- | --- |
+| `createAdmin<"example.com">` then `sync("exmple.com", ...)` | Type error: not a project the client was created with |
+| `on: ["issue.created"]` | Type error: offers `issue.new` and `issue.regression` |
+| `mail({ to: [] })` | Type error: at least one address |
+| `mail({ to: ["you"] })` | Type error: `${string}@${string}.${string}` |
+| `webhook({ url: "http://..." })` | Type error: `https://` only |
+| Two targets with the same literal `name` | Type error on the list |
+| A mail target on a deployment without `mail()` | `VALIDATION_FAILED`: "mail is not enabled on this deployment" |
+| `annotations.create(project, { date: "1 October" })` | Type error: a `Date`, a calendar date or an ISO 8601 timestamp |
+| `annotations.create(project, { url: "ftp://..." })` | Type error: `http://` or `https://` only |
+| `annotations.create(project, { kind: "campaign" })` | Type error: `release`, `post`, `content`, `incident` or `other` |
+| `annotations.update(project, id, {})` | Type error: at least one change |
+| `endDate` before `date` | `VALIDATION_FAILED` at `/endDate` |

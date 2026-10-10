@@ -3,12 +3,15 @@ title: Server
 description: Track from route handlers and server actions with the secret key.
 ---
 
+`@spoar/sdk/server` sends events from your server with the project's secret key (`sk_...`), which you get when you [create a project](/docs/getting-started/quick-start#1-create-a-project). `Events` is your event type from [Concepts](/docs/getting-started/concepts#events).
+
 ```ts
 import { createServerAnalytics } from "@spoar/sdk/server";
+import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   secret: process.env.RA_SECRET,
-  endpoint: "https://api.analytics.remcostoeten.nl",
+  endpoint: "https://api.example.com",
 });
 
 export const POST = serverAnalytics.withErrors(async (request) => {
@@ -26,19 +29,29 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 | `captureError(error, context?)` | Records a server error; `context` takes the error context and the request context (`request` or `headers`) in one object |
 | `withErrors(handler)` | Wraps a route handler and records anything it throws, then rethrows |
 
+Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. `error.code` is `RA_NO_SECRET`, `RA_NO_ENDPOINT`, `RA_INGEST_FAILED` or `RA_INGEST_REJECTED`.
+
+## Options
+
+Client options go to `createServerAnalytics`. Call options go in the last argument of a method. Client options left out are read from the JSON in `RA_CONFIG`.
+
 | Option | Where | Does |
 | --- | --- | --- |
 | `secret`, `endpoint` | Client | The secret key (`sk_...`) and the API's base URL |
+| `project` | Client | The project id |
 | `release` | Client | Attached to every event |
-| `origin` | Client or call | The site's origin, such as `https://example.com`, sent as `Origin` when there is no `request` or `headers` to take it from. The API reads the host and the localhost and preview flags from it |
-| `fetch`, `waitUntil` | Client | A custom `fetch`, and a function that keeps the send alive after the response |
-| `request` or `headers` | Call | The incoming request, for the visitor's IP and user agent, the site's origin and the admin session cookie |
+| `origin` | Client or call | The site's origin, such as `https://example.com`, for when there is no `request` or `headers`. The API flags localhost and preview hosts from it. A call's `origin` wins over the request's, which wins over the client's |
+| `fetch` | Client | A custom `fetch` |
+| `waitUntil` | Client or call | Keeps the send alive after the response. On Vercel the runtime's own is used |
+| `request` or `headers` | Call | The incoming request. Forwards the visitor's IP and user agent, the site's origin and the admin session cookie |
 | `visitor`, `session` | Call | The browser's ids, to join the event to its visit |
-| `path`, `groups`, `waitUntil` | Call | The page path (default: the request's path, or `/`), groups, and a per-call `waitUntil` |
+| `path` | Call | The page path. Default: the request's path, or `/` |
+| `groups` | Call | Puts this event in groups, such as `{ company: "acme" }` |
 
-Passing `request` or `headers` forwards the visitor's IP and user agent, so the API can hash and enrich them. It also sends the site's origin as `Origin`, from `x-forwarded-host` and `x-forwarded-proto`, then `host`, then the request URL, and the admin session cookie `ra.session_token` (or `__Secure-ra.session_token`) and no other cookie, so a signed-in admin's events are internal. An `origin` on the call wins over the derived one, which wins over the client's `origin`. Without `request` or `headers` the event has no IP and no user agent, and the API does not use the calling server's own: such an event gets no IP hash, no location and no bot weight for them.
-
-Events from one tick go out together, in one request per origin and session cookie, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` as visitor and session unless the call passes `visitor` and `session`; the entry exports that id as `serverVisitor`. Reads count those events in pageviews, events and breakdowns, but never as a visitor or a session. Any call can pass `groups: { company: "acme" }` in its options to put that event in groups. Options left out are read from the JSON in `RA_CONFIG`.
+- Without `request` or `headers` the event has no IP and no user agent, so it gets no location and no bot score from them. The API never uses your server's own address.
+- Events from one tick go out together, in one request per origin and session cookie.
+- Events without `visitor` and `session` use `server` for both, exported as `serverVisitor`. [Concepts](/docs/getting-started/concepts#visitors-and-sessions) explains how reads count them.
+- The session cookie marks a signed-in admin's events as internal; [Exclude your traffic](/docs/guides/exclude-your-traffic) covers when that applies.
 
 ## Alert webhooks
 
@@ -61,4 +74,9 @@ export const POST = alertRoute({
 - `on` is typed per event, so `event.issue` and `event.speed` autocomplete, and a handler for an unknown event is a type error. An event without a handler is acknowledged and ignored.
 - `verifyAlert(request, secret)` is the same check without the routing, for other frameworks. It answers the parsed body or an error with the code `NO_SECRET`, `BAD_SIGNATURE`, `STALE_TIMESTAMP` or `BAD_BODY`.
 
-The body is `{ v: 1, sentAt, events }`, where each event is `{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }`.
+The body is `{ v: 1, sentAt, events }`. Each event is one of:
+
+| `name` | Shape |
+| --- | --- |
+| `issue.new`, `issue.regression` | `{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }` |
+| `speed.drop` | `{ name, project, speed: { score, previous, rating, worst, samples, from, to, url } }` |

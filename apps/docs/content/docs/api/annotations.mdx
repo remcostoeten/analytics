@@ -19,7 +19,7 @@ An annotation marks a date, or a range of dates, on a project's charts: a releas
 | `url` | string or `null` | An `http://` or `https://` URL of up to 2,048 characters |
 | `createdAt`, `updatedAt` | timestamp | Set by the API |
 
-`date` and `endDate` take a calendar date such as `2026-10-01`, read as the start of that day in UTC, or an ISO 8601 timestamp with an offset such as `2026-10-01T09:30:00+02:00`. Answers always carry UTC timestamps. Annotations live in the `annotations` table (migration 0031) and are removed with their project.
+`date` and `endDate` take a calendar date such as `2026-10-01`, read as the start of that day in UTC, or an ISO 8601 timestamp with an offset such as `2026-10-01T09:30:00+02:00`. Answers always carry UTC timestamps. Annotations are removed with their project.
 
 ## Routes
 
@@ -30,13 +30,13 @@ An annotation marks a date, or a range of dates, on a project's charts: a releas
 | PATCH | `/v2/projects/:project/annotations/:annotation` | admin | Changes the fields sent; `null` clears `endDate`, `note` or `url` |
 | DELETE | `/v2/projects/:project/annotations/:annotation` | admin | Deletes one |
 
-- Reading follows the project: anyone for a public project, and a member or token that lists it for a private one, which answers 404 to anyone else. Writing needs an owner, an admin who lists the project, or an `admin` token that lists it.
+- Reading follows the project: anyone for a public project, and a member or token that lists it for a private one, which answers 404 to anyone else. Writing needs an owner, an admin who lists the project, or an `admin` token that lists it ([Create a token](/docs/guides/read-your-data#1-create-a-token)).
 - The list takes the same range as every read: `from` and `to`, or `period` (`24h`, `7d`, `30d`, `90d`, `12mo`, `all`; default `30d`). An annotation with an `endDate` is listed when any part of it falls in the range. `limit` (1 to 100, default 20) and `cursor` page it.
 - An `endDate` before `date`, on create or after a change, answers `400 VALIDATION_FAILED` with `/endDate` in `details.fields`. An empty `PATCH` body is also `VALIDATION_FAILED`. An id that belongs to another project is `404 NOT_FOUND`.
 
 ```bash
 curl https://api.example.com/v2/projects/example.com/annotations \
-  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+  -H "authorization: Bearer $RA_TOKEN" \
   -H "content-type: application/json" \
   -d '{"title":"v2.0 released","date":"2026-10-01","kind":"release","url":"https://example.com/changelog"}'
 ```

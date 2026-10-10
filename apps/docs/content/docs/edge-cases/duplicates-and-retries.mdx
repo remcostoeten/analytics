@@ -29,7 +29,7 @@ Two calls to `track` with the same name and props are two events with two ids, a
 | Answer | Browser client | Server client |
 | --- | --- | --- |
 | 202 | Done. Events listed in `rejected` failed validation and are not retried; each is reported through `on("error")` as `RA_INGEST_REJECTED` and logged in debug mode | Done. The first rejection is returned as `RA_INGEST_REJECTED` |
-| Network error, 429 or 5xx | Retried after 1, 4 and 16 seconds, or after `Retry-After` when the API sent one, capped at 16 seconds; then saved for the next page load | Not retried. The call resolves with `RA_INGEST_FAILED` |
+| Network error, 429 or 5xx | Retried after 1, 4 and 16 seconds, or after `Retry-After` when the API sent one, capped at 16 seconds; then saved in `localStorage` for the next page load, keeping the latest 100 events | Not retried. The call resolves with `RA_INGEST_FAILED` |
 | Any other 4xx | Dropped | Not retried. The call resolves with `RA_INGEST_FAILED` |
 
 A 202 can hold rejected events next to accepted ones. The API checks each event on its own, so one invalid event is reported by its index and the rest of the batch is stored.

@@ -13,6 +13,8 @@ npm install @spoar/sdk@next
 
 ## Keys and environment
 
+The public and secret key come from [creating a project](/docs/getting-started/quick-start#1-create-a-project).
+
 `.env.local`:
 
 ```bash
@@ -98,7 +100,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-`<Analytics />` wraps itself in `Suspense` because it reads `useSearchParams`, so static pages keep rendering on the server. It sends a pageview on every navigation, including a change of only the query string. See [Next](/docs/sdk/next).
+`<Analytics />` wraps itself in `Suspense` because it reads `useSearchParams`, so static pages keep rendering on the server. It sends a pageview on every navigation, including a change of only the query string.
 
 ## Custom events
 
@@ -131,7 +133,7 @@ export const POST = createProxy({
 });
 ```
 
-The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and forwards the body to `/v2/events`. See [Proxy](/docs/sdk/proxy).
+The proxy adds the secret key and the visitor's details and forwards the body to `/v2/events`. [Proxy](/docs/sdk/proxy) lists what it refuses.
 
 ## Server-side tracking
 
@@ -172,7 +174,7 @@ export async function subscribe(formData: FormData) {
 }
 ```
 
-Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. On Vercel the send is kept alive after the response without extra code. Server events use `server` as visitor and session unless the call passes `visitor` and `session`. See [Server](/docs/sdk/server).
+Every method resolves to a result and never throws. On Vercel the send is kept alive after the response without extra code. [Server](/docs/sdk/server) lists every option.
 
 ## Consent and identity
 
