@@ -1,0 +1,15 @@
+---
+title: Build a dashboard in seven steps
+description: A tutorial that builds the example dashboard from an empty folder, with every step shown as a diff against the one before.
+date: 2026-10-10
+label: feature
+image: /images/changelog/tutorial.webp
+imageAlt: Step 4 of the tutorial, with the diff of the files that step changes
+docs: /docs/tutorial/create-a-project
+---
+
+The docs now have a tutorial that builds the [example dashboard](/examples/dashboard) from nothing. The page tracks itself with `@spoar/sdk`, then reads its own numbers back with `@spoar/client`.
+
+It takes seven steps: create a project and the app, track the page, read the overview, chart visitors, add top lists and filters, keep the view in the URL, and switch projects. Each step shows the files it adds or changes as a diff against the step before.
+
+The tutorial cannot drift from the code. Steps 1 to 6 are snapshot folders in `examples/dashboard/steps`, step 7 is the example itself, and CI typechecks all of them. The read steps show live numbers from this site's own project.

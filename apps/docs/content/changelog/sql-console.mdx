@@ -1,0 +1,15 @@
+---
+title: A SQL console on the landing page
+description: The homepage runs real queries over this site's own analytics, and shows each one as SQL, a client call and curl.
+date: 2026-10-10
+label: feature
+image: /images/changelog/sql-console.webp
+imageAlt: The tools section on the landing page, with the Top pages query, its SQL and the result table
+docs: /docs/api/sql
+---
+
+The docs homepage has a tools section with a read-only SQL console over this site's own project. Pick one of six queries (top pages, countries, sources, devices, Web Vitals and visitors per day) and it runs against the API, with the result shown as a table.
+
+Each query is shown three ways: the SQL, the same read through `@spoar/client`, and a `curl` command. Copy whichever fits what you are building.
+
+The console only runs these presets, never SQL typed by a visitor, because the SQL route stays closed to anonymous callers. The docs server holds a `sql` token for its own project and caches each answer for a minute. To write your own queries, open the [query page](/query) with a token of your own.

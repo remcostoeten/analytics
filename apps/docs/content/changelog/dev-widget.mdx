@@ -1,0 +1,23 @@
+---
+title: The dev widget
+description: A panel on your own live site that shows visitors, sessions, logs, speed and errors as they happen. Only you see it.
+date: 2026-10-03
+label: feature
+image: /images/dev-widget.png
+imageAlt: The dev widget docked to the bottom of a page, with the logs buffer open and one rejected event expanded as JSON
+docs: /docs/sdk/devtools
+---
+
+`@spoar/devtools` puts a terminal-style panel on your site. It loads only for a browser signed in to the API as an owner or admin of the project. Everyone else gets a 401 from `GET /v2/widget/session` and downloads nothing past a loader of under 1 KB.
+
+The panel has six buffers: visitors, sessions, logs, speed, errors and status. Logs stream live from the API, so a rejected event shows up with its JSON and its `RA_*` code while you are still looking at the page that sent it. Every buffer has a filter prompt that takes `key:value` tokens, such as `level:error`, `geo:NL bot:>0.5` or `lcp:>2.5s`.
+
+Add it in a Next app with one component:
+
+```tsx
+import { Devtools } from "@spoar/devtools/next";
+
+<Devtools endpoint="https://api.example.com" project="example.com" />;
+```
+
+Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>.</kbd> to open it, <kbd>1</kbd> to <kbd>6</kbd> to switch buffers, <kbd>j</kbd> and <kbd>k</kbd> to move between rows and <kbd>/</kbd> to filter.
