@@ -19,11 +19,6 @@
 	"installCommand": "bun install",
 	"framework": null,
 	"git": {
-		"deploymentEnabled": {
-			"feature/*": false,
-			"fix/*": false,
-			"chore/*": false,
-			"renovate/*": false
-		}
+		"deploymentEnabled": false
 	}
 }
