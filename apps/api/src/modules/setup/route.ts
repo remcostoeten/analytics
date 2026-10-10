@@ -1,61 +1,35 @@
+import { engineError } from "@spoar/engine";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
-import type { AccessDeps } from "../../access/types";
-import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
-import { setupPage } from "./page";
-import { setupView } from "./service";
-
-function nonce() {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return btoa(String.fromCharCode(...bytes));
-}
-
-function policy(scriptNonce: string) {
-  return [
-    "default-src 'none'",
-    `script-src 'nonce-${scriptNonce}'`,
-    `style-src 'nonce-${scriptNonce}' https://fonts.googleapis.com`,
-    "font-src https://fonts.gstatic.com",
-    "img-src data:",
-    "connect-src 'self'",
-    "form-action 'self'",
-    "base-uri 'none'",
-    "frame-ancestors 'none'",
-  ].join("; ");
-}
 
 /**
  * @name setupModule
- * @description `GET /v2/setup`: the owner's page for sign-in, projects and keys until the
- * dashboard exists. Server-rendered HTML with one inline script, allowed by a per-request nonce
- * in the `Content-Security-Policy`, never cached, and hidden from the OpenAPI document. The forms
- * call the ordinary project routes with the session cookie.
+ * @description `GET /v2/setup`: the address of the retired setup page. It redirects to the
+ * dashboard's admin module when `DASHBOARD_ORIGIN` is set, and answers 404 otherwise, since
+ * projects and keys are now created in the dashboard or with `bun run setup`. Hidden from the
+ * OpenAPI document.
  *
  * @example
- * app.use(setupModule(deps, docsBase));
+ * app.use(setupModule("https://docs.analytics.remcostoeten.nl", docsBase));
  */
-export function setupModule(deps: AccessDeps, docsBase: string) {
-  return new Elysia({ name: "setup" }).use(access(deps, docsBase)).get(
+export function setupModule(dashboardOrigin: Nullable<string>, docsBase: string) {
+  return new Elysia({ name: "setup" }).get(
     "/setup",
-    async ({ request, caller, set }) => {
-      const view = await setupView(deps, caller, new URL(request.url).origin);
-      if (!view.ok) {
-        const failed = failure(view.error, set.headers, docsBase);
-        set.status = failed.status;
-        return failed.body;
-      }
-      const token = nonce();
-      return new Response(setupPage(view.value, token), {
-        headers: {
-          "content-type": "text/html; charset=utf-8",
-          "cache-control": "private, no-store",
-          "content-security-policy": policy(token),
-          "referrer-policy": "no-referrer",
-          "x-content-type-options": "nosniff",
-        },
-      });
+    ({ redirect, set }) => {
+      if (dashboardOrigin) return redirect(`${dashboardOrigin}/dashboard/admin/projects`, 302);
+      const failed = failure(
+        engineError(
+          "NOT_FOUND",
+          "The setup page moved to the dashboard. Set DASHBOARD_ORIGIN to its origin, or create projects with bun run setup.",
+        ),
+        set.headers,
+        docsBase,
+      );
+      set.status = failed.status;
+      return failed.body;
     },
-    { access: "public", detail: { hide: true } },
+    { detail: { hide: true } },
   );
 }

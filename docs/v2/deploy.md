@@ -108,24 +108,15 @@ Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Disco
 
 Project `v2.dashboard` (created 8 October 2026, with `dashboard.analytics.remcostoeten.nl`), same repository, root directory `apps/dashboard`, framework Next.js, build command `bun run build`, install command `bun install`. Variable `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. Optional variable `NEXT_PUBLIC_SITE_URL` (defaults to `https://docs.analytics.remcostoeten.nl`) for the links back to the docs.
 
-The app's `basePath` is `/dashboard`, and `v2.analytics-docs` rewrites `/dashboard` and everything under it to this project (decision 24), so people open the dashboard at `https://docs.analytics.remcostoeten.nl/dashboard`. Set `DASHBOARD_URL` on `v2.analytics-docs` to `https://dashboard.analytics.remcostoeten.nl` (the default) and the API's `DASHBOARD_ORIGIN` to the landing origin, because the browser sends sign-in requests from there. `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on a custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`. The setup page at `/v2/setup` stays until the dashboard replaces it (decision 21).
+The app's `basePath` is `/dashboard`, and `v2.analytics-docs` rewrites `/dashboard` and everything under it to this project (decision 24), so people open the dashboard at `https://docs.analytics.remcostoeten.nl/dashboard`. Set `DASHBOARD_URL` on `v2.analytics-docs` to `https://dashboard.analytics.remcostoeten.nl` (the default) and the API's `DASHBOARD_ORIGIN` to the landing origin, because the browser sends sign-in requests from there. `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on a custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`.
 
 ## 9. First sign-in and token
 
-Open `https://api.analytics.remcostoeten.nl/v2/setup` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The page creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins.
+Open `https://docs.analytics.remcostoeten.nl/dashboard` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The projects page under `/dashboard/admin/projects` creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins. `GET /v2/setup`, the old setup page, redirects there (decision 21).
 
-For a token for scripts and the docs site's query page, run this in that tab's console; it is shown once:
+For a token for scripts and the docs site's query page, create one under `/dashboard/admin/tokens` with the `sql` scope; it is shown once.
 
-```js
-const token = await fetch("/v2/tokens", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ name: "docs query page", scope: "sql" }),
-});
-console.log(await token.json());
-```
-
-## 9. Publishing a new package to npm
+## 10. Publishing a new package to npm
 
 `release.yml` publishes through npm trusted publishing, which only works for a package that already exists on npm with this repository as its trusted publisher. The first version of a new package is published by hand once:
 
