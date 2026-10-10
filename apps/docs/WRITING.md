@@ -51,6 +51,21 @@ Troubleshooting pages are how-to guides keyed by symptom: the heading is what th
 - Show the smallest example that works, then the variations.
 - Label files with their path in the sentence before the block: "`app/providers.tsx`:".
 
+## Changelog posts
+
+`content/changelog` holds one MDX file per post, listed at `/changelog` newest first. A post covers one change a user will notice: a new view, a new package, a release. Every version of every package stays in `content/docs/changelog.mdx`, so a post never lists them.
+
+| Field | Holds |
+| --- | --- |
+| `title` | What changed, as a noun phrase: "The dev widget", not "Introducing the dev widget" |
+| `description` | One sentence on what it does |
+| `date` | The day it reached production, as `YYYY-MM-DD` |
+| `label` | `release`, `feature`, `improvement` or `fix` |
+| `image`, `imageAlt` | A screenshot under `public/images/changelog`, 16:9 at 1600 px wide as WebP, and what it shows |
+| `docs` | The page to read next |
+
+The body is three or four short paragraphs: what it is, how it behaves, the smallest code or the keys that use it.
+
 ## Checks before committing
 
 ```bash
