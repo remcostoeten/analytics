@@ -31,14 +31,12 @@ export function publishManifest(manifest: Manifest): Manifest {
 }
 
 /**
- * @name prereleaseTag
- * @description Reads the npm dist-tag from `.changeset/pre.json`, or `latest` outside pre mode.
- * @example prereleaseTag('{"mode":"pre","tag":"next"}')
+ * @name isPrerelease
+ * @description Tells whether a version has a prerelease part such as `-next.3`; only stable versions publish, always to `latest`.
+ * @example isPrerelease("2.0.0-next.3")
  */
-export function prereleaseTag(preJson: string | null): string {
-  if (!preJson) return "latest";
-  const pre = JSON.parse(preJson) as { mode?: string; tag?: string };
-  return pre.mode === "pre" && pre.tag ? pre.tag : "latest";
+export function isPrerelease(version: string): boolean {
+  return /^\d+\.\d+\.\d+-/.test(version);
 }
 
 function readText(path: string): string | null {
@@ -73,25 +71,40 @@ function pack(directory: string, manifest: Manifest, destination: string): strin
 
 function main(): void {
   const dryRun = process.argv.includes("--dry-run");
-  const tag = prereleaseTag(readText(join(root, ".changeset", "pre.json")));
   const destination = mkdtempSync(join(tmpdir(), "spoar-publish-"));
+  const failed: string[] = [];
   for (const folder of readdirSync(packages)) {
     const directory = join(packages, folder);
     const text = readText(join(directory, "package.json"));
     if (!text) continue;
     const manifest = JSON.parse(text) as Manifest;
     if (manifest.private) continue;
+    const id = `${manifest.name}@${manifest.version}`;
+    if (isPrerelease(manifest.version)) {
+      console.log(`${id} is a prerelease; only stable versions publish`);
+      continue;
+    }
     if (isPublished(manifest.name, manifest.version)) {
-      console.log(`${manifest.name}@${manifest.version} is already on npm`);
+      console.log(`${id} is already on npm`);
       continue;
     }
     const tarball = pack(directory, manifest, destination);
     const file = tarball.startsWith("/") ? tarball : join(destination, tarball);
-    const command = ["npm", "publish", file, "--access", "public", "--tag", tag];
+    const command = ["npm", "publish", file, "--access", "public", "--tag", "latest"];
     if (dryRun) command.push("--dry-run");
     else command.push("--provenance");
-    if (!run(command, root).ok) throw new Error(`npm publish failed for ${manifest.name}`);
-    if (!dryRun) console.log(`New tag: ${manifest.name}@${manifest.version}`);
+    if (!run(command, root).ok) {
+      console.error(
+        `::error::npm publish failed for ${id}. A 404 on PUT means npm rejected the CI identity: check that ${manifest.name} lists remcostoeten/analytics and release.yml as its trusted publisher.`,
+      );
+      failed.push(id);
+      continue;
+    }
+    if (!dryRun) console.log(`New tag: ${id}`);
+  }
+  if (failed.length > 0) {
+    console.error(`Not published: ${failed.join(", ")}`);
+    process.exitCode = 1;
   }
 }
 

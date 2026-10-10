@@ -116,19 +116,25 @@ Open `https://docs.analytics.remcostoeten.nl/dashboard` and sign in with GitHub.
 
 For a token for scripts and the docs site's query page, create one under `/dashboard/admin/tokens` with the `sql` scope; it is shown once.
 
-## 10. Publishing a new package to npm
+## 10. Releasing to npm
 
-`release.yml` publishes through npm trusted publishing, which only works for a package that already exists on npm with this repository as its trusted publisher. The first version of a new package is published by hand once:
+Every push to `master` runs `release.yml`. It first runs `bun run release` (`scripts/publish.ts`), which publishes each public package whose `master` version is stable and not yet on npm, to the `latest` tag with provenance, and turns each published version into a git tag and a GitHub release. It then runs `changeset version` and, when there are pending changesets, force-pushes the result to `changeset-release/master` behind one "version packages" pull request. Merging that pull request is the release: the push it makes publishes the new versions.
+
+There is no `next` tag and no pre mode. Prerelease versions are skipped, never published. A package that fails to publish does not stop the others; the job goes red with a `::error::` line naming it, and the next push to `master` retries it, so fixing the cause and pushing (or running the workflow by hand with `dry-run` off) is all a failed release needs.
+
+A 404 on `PUT https://registry.npmjs.org/@spoar%2f<name>` after the provenance line means npm did not accept the GitHub Actions identity for that package: its trusted publisher is missing or names another repository or workflow. Fix it on npmjs.com under the package's Settings, Trusted Publisher: GitHub Actions, repository `remcostoeten/analytics`, workflow `release.yml`, no environment.
+
+### A new package
+
+Trusted publishing only works for a package that already exists on npm. The first version of a new package is published by hand once:
 
 ```sh
 bun run --filter './packages/*' build
 cd packages/<name>
 cp package.json /tmp/package.json.bak
 bun -e 'import { publishManifest } from "../../scripts/publish.ts"; const m = JSON.parse(await Bun.file("package.json").text()); await Bun.write("package.json", `${JSON.stringify(publishManifest(m), null, "\t")}\n`)'
-npm publish --access public --tag next
+npm publish --access public
 mv /tmp/package.json.bak package.json
 ```
 
-Then on npmjs.com open the package, Settings, Trusted Publisher, and add GitHub Actions with repository `remcostoeten/analytics` and workflow `release.yml`. Run the `release` workflow by hand with `dry-run` off: `scripts/publish.ts` skips the version already on npm and publishes the rest.
-
-The script publishes `packages/*` in folder order and stops at the first failure, so a package that cannot be published blocks the ones after it. The hand-published version gets no git tag or GitHub release.
+Then add the trusted publisher as above. The hand-published version gets no git tag or GitHub release.
