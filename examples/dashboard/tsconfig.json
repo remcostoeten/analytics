@@ -5,5 +5,5 @@
 		"jsx": "react-jsx",
 		"types": ["bun-types"]
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", "__tests__/**/*.ts", "__tests__/**/*.tsx"]
+	"include": ["src/**/*.ts", "src/**/*.tsx", "steps/*/src/**/*.ts", "steps/*/src/**/*.tsx", "__tests__/**/*.ts", "__tests__/**/*.tsx"]
 }

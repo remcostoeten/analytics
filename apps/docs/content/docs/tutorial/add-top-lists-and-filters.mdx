@@ -1,0 +1,54 @@
+---
+title: Add top lists and filters
+description: Step 5 of 7. Show the top pages, referrers, browsers, devices and countries, filter on a click and track each change as a custom event.
+---
+
+This step turns the page into a dashboard you can explore. The view becomes state: a period, a traffic filter and any number of dimension filters. Clicking a row in a top list adds a filter, and every panel reads again with it.
+
+## 1. Add the view state and the panels
+
+<StepDiff
+  step={5}
+  notes={[
+    {
+      file: "src/state.ts",
+      match: "export type ViewState",
+      text: "Everything a read depends on, in one value.",
+    },
+    {
+      file: "src/api.ts",
+      match: "project.period(state.period).traffic(state.traffic).where(state.filters)",
+      text: "where() takes the filters as an object with one value per dimension. Each panel reads from this scope.",
+    },
+    {
+      file: "src/components/breakdown-table.tsx",
+      match: "scope.breakdown(dimension",
+      text: "The top values of one dimension, with visitors, pageviews and each row's share.",
+    },
+    {
+      file: "src/components/country-table.tsx",
+      match: 'scope.map({ level: "country", limit: 25 })',
+      text: "map() groups by place and returns the total number of countries next to the first 25.",
+    },
+    {
+      file: "src/app.tsx",
+      match: 'analytics.track("filter_added", { dimension })',
+      text: "Typed by the Events map from step 2. The page tracks how it is used.",
+    },
+    {
+      file: "src/app.tsx",
+      match: "const scopeKey = JSON.stringify(state)",
+      text: "The read hook runs again when the key changes. Step 6 replaces it with the URL hash.",
+    },
+  ]}
+/>
+
+## 2. What a top list returns
+
+The top pages of this site:
+
+<LiveRead read="breakdown" />
+
+Click a page in the dashboard: a chip appears under the controls, and every panel shows only visits to that page. Click the chip to remove the filter.
+
+Next, [keep the view in the URL](/docs/tutorial/keep-the-view-in-the-url).

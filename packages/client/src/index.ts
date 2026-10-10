@@ -24,6 +24,14 @@ export type {
 export { discord, mail, webhook } from "./admin/targets";
 export type { AlertsAdmin } from "./admin/targets";
 export type { TokensAdmin } from "./admin/tokens";
+export type {
+  BreakdownRow,
+  LiveEvent,
+  Period,
+  StatsResponse,
+  TimeseriesPoint,
+  TrafficFilter,
+} from "@spoar/contract";
 export { createClient } from "./create-client";
 export type { Client, ClientBase } from "./create-client";
 export type {

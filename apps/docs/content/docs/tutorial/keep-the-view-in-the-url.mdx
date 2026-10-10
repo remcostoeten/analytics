@@ -1,0 +1,50 @@
+---
+title: Keep the view in the URL and follow live events
+description: Step 6 of 7. Store the view in the URL hash so it survives a reload and can be shared, and add a live event stream.
+---
+
+The view so far is lost on reload. This step writes it to the URL hash, in the same spelling the API takes, and adds a panel that shows visitors right now and each event as it arrives.
+
+## 1. Store the view and add the live panel
+
+<StepDiff
+  step={6}
+  notes={[
+    {
+      file: "src/state.ts",
+      match: "export function toHash",
+      text: "period, traffic when it is not human, and one filter[<dimension>] per filter: the query string the API itself takes.",
+    },
+    {
+      file: "src/state.ts",
+      match: "export function fromHash",
+      text: "Anything missing or unknown falls back to the default, so an edited or old link still opens.",
+    },
+    {
+      file: "src/app.tsx",
+      match: 'history.replaceState(null, "", hash)',
+      text: "replaceState keeps every filter change out of the back button's history.",
+    },
+    {
+      file: "src/components/realtime.tsx",
+      match: "scope.realtimeEvents({ limit: streamLimit })",
+      text: "The latest 30 events and a cursor that marks where they end.",
+    },
+    {
+      file: "src/components/realtime.tsx",
+      match: "scope.liveEvents({ after, signal: controller.signal })",
+      text: "An async iterable that follows the cursor and yields each new event. Aborting the signal ends the loop.",
+    },
+    {
+      file: "src/components/realtime.tsx",
+      match: "scope.realtime()",
+      text: "Visitors in the last five minutes and pageviews per minute, read again every 30 seconds.",
+    },
+  ]}
+/>
+
+## 2. Try it
+
+Pick a period and a filter, then reload: the view stays. Open `http://localhost:3301` in a second tab, and the first tab's **Latest events** panel shows the new pageview.
+
+Next, [switch projects](/docs/tutorial/switch-projects).

@@ -1,0 +1,52 @@
+const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const whole = new Intl.NumberFormat("en");
+
+/**
+ * @name formatCount
+ * @description Formats a count: whole numbers under ten thousand, compact above (12.3K, 1.2M).
+ *
+ * @example
+ * formatCount(12345); // "12.3K"
+ */
+export function formatCount(value: number) {
+  return value < 10_000 ? whole.format(value) : compact.format(value);
+}
+
+/**
+ * @name formatPercent
+ * @description Formats a share from 0 to 1 as a whole percentage.
+ *
+ * @example
+ * formatPercent(0.412); // "41%"
+ */
+export function formatPercent(share: number) {
+  return `${Math.round(share * 100)}%`;
+}
+
+/**
+ * @name formatDuration
+ * @description Formats milliseconds as seconds under a minute, otherwise minutes and seconds.
+ *
+ * @example
+ * formatDuration(95_000); // "1m 35s"
+ */
+export function formatDuration(ms: number) {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+/**
+ * @name formatChange
+ * @description Formats a change ratio as a signed percentage, or "new" when there is no previous
+ * value to compare with.
+ *
+ * @example
+ * formatChange(0.191); // "+19%"
+ */
+export function formatChange(change: number | null) {
+  if (change === null) return "new";
+  const percent = Math.round(change * 100);
+  if (percent === 0) return "0%";
+  return `${percent > 0 ? "+" : ""}${percent}%`;
+}

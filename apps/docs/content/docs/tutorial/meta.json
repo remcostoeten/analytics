@@ -1,0 +1,12 @@
+{
+  "title": "Build a dashboard",
+  "pages": [
+    "create-a-project",
+    "track-the-page",
+    "read-the-overview",
+    "chart-visitors",
+    "add-top-lists-and-filters",
+    "keep-the-view-in-the-url",
+    "switch-projects"
+  ]
+}

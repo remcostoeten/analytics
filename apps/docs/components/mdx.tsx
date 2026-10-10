@@ -8,6 +8,8 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 
 import { DashboardPreview } from "@/components/dashboard-preview";
 import { Flow, FlowNode } from "@/components/flow";
+import { LiveRead } from "@/components/tutorial/live-read";
+import { StepDiff } from "@/components/tutorial/step-diff";
 import type { MDXComponents } from "mdx/types";
 
 export function getMDXComponents(components?: MDXComponents) {
@@ -21,7 +23,9 @@ export function getMDXComponents(components?: MDXComponents) {
     DashboardPreview,
     Flow,
     FlowNode,
+    LiveRead,
     Step,
+    StepDiff,
     Steps,
     Tab,
     Tabs,

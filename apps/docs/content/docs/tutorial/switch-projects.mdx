@@ -1,0 +1,41 @@
+---
+title: Switch projects without a rebuild
+description: Step 7 of 7. Move the connection settings from build-time variables into a settings bar kept in localStorage.
+---
+
+The settings come from `.env.local`, so another project means another build. This last step adds a settings bar for the API, the project, a read token and a public key, and keeps them in `localStorage`. The result is the [example dashboard](/examples/dashboard) as it is in the repository.
+
+## 1. Add the settings bar
+
+<StepDiff
+  step={7}
+  notes={[
+    {
+      file: "src/settings.ts",
+      match: "export function useSettings",
+      text: "The variables from .env.local are now only the defaults. Whatever someone types in the bar wins and is saved in this browser.",
+    },
+    {
+      file: "src/app.tsx",
+      match: "const connection = `${settings.endpoint}|${settings.project}|${settings.token}`",
+      text: "A new connection builds a new client and scope, and every panel reads again.",
+    },
+    {
+      file: "src/components/settings-bar.tsx",
+      match: 'type={field.secret ? "password" : "text"}',
+      text: "Tokens are hidden on screen, but they are still in this browser's storage. Use a read-only token and only on your own machine.",
+    },
+  ]}
+/>
+
+## 2. Run the finished example
+
+The finished app is in the repository, with tests for the URL state and the read hook:
+
+```bash
+git clone https://github.com/remcostoeten/analytics
+cd analytics && bun install
+bun run --cwd examples/dashboard dev
+```
+
+It opens on `http://localhost:3301`. [Read client](/docs/sdk/read-client) lists every read this dashboard did not use, such as `paths`, `retention` and `lifecycle`, and [Build a minimal dashboard](/docs/getting-started/minimal-dashboard) shows the same reads from a Next.js server component.
