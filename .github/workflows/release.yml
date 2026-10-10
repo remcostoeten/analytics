@@ -72,6 +72,10 @@ jobs:
         id: version
         if: ${{ !cancelled() && steps.publish.outcome != 'skipped' }}
         run: |
+          if ! find .changeset -maxdepth 1 -name '*.md' ! -name README.md | grep -q .; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           bun run changeset version
           if [ -n "$(git status --porcelain)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
