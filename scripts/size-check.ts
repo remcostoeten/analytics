@@ -14,6 +14,7 @@ export type Measured = Budget & {
 
 const sdk = join(import.meta.dir, "..", "packages", "sdk");
 const devtools = join(import.meta.dir, "..", "packages", "devtools", "dist");
+const debugtools = join(import.meta.dir, "..", "packages", "debugtools", "dist");
 const pluginDirectory = join(sdk, "src", "plugins");
 const pluginBudget = 0.6 * 1024;
 
@@ -28,6 +29,8 @@ export const devtoolsBudgets: Budget[] = [
   { file: "react.mjs", limitBytes: 1 * 1024 },
   { file: "next.mjs", limitBytes: 1 * 1024 },
 ];
+
+export const debugtoolsBudgets: Budget[] = devtoolsBudgets;
 
 // The lazy panel chunk of @spoar/devtools, such as mount-panel-CbhGSFvW.mjs.
 const panelChunk = /^mount-panel-[\w-]+\.mjs$/;
@@ -139,6 +142,16 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  const debugMissing = debugtoolsBudgets.find(
+    (budget) => !existsSync(join(debugtools, budget.file)),
+  );
+  if (debugMissing) {
+    console.error(
+      `Build debugtools first: packages/debugtools/dist/${debugMissing.file} is missing`,
+    );
+    process.exitCode = 1;
+    return;
+  }
   const plugins = pluginBudgets(readdirSync(pluginDirectory));
   const bundles = new Map<string, Uint8Array>();
   for (const plugin of plugins) bundles.set(plugin.file, await bundlePlugin(plugin.file));
@@ -147,15 +160,17 @@ async function main() {
     ...measure(plugins, (file) => bundles.get(file) ?? new Uint8Array()),
   ];
   const loaders = measureEntries(devtoolsBudgets, devtools);
+  const debugLoaders = measureEntries(debugtoolsBudgets, debugtools);
   print(results, "");
   print(loaders, "devtools/");
+  print(debugLoaders, "debugtools/");
   for (const file of readdirSync(devtools)
     .filter((name) => panelChunk.test(name))
     .sort()) {
     const bytes = gzipSync(readFileSync(join(devtools, file)), { level: 9 }).length;
     console.log(`${`devtools/${file}`.padEnd(36)} ${kilobytes(bytes)} gzip, lazy panel, no budget`);
   }
-  if ([...results, ...loaders].some((result) => result.over)) process.exitCode = 1;
+  if ([...results, ...loaders, ...debugLoaders].some((result) => result.over)) process.exitCode = 1;
 }
 
 if (import.meta.main) await main();
