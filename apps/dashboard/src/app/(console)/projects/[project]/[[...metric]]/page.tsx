@@ -81,7 +81,7 @@ async function Summary({ stats, scope, view, state, path, project, canAnnotate }
 
 function RailSkeleton() {
   return (
-    <div className="grid gap-2" aria-hidden="true">
+    <div className="rail" aria-hidden="true">
       {metricViews.map((view) => (
         <div key={view.slug} className="skeleton h-[104px]" />
       ))}
@@ -131,7 +131,11 @@ export default async function Page({ params, searchParams }: Props) {
       </aside>
 
       <div className="panel">
-        <ProjectHeader title={`Web analytics for ${found.name}`} domain={found.domain}>
+        <ProjectHeader
+          title={`Web analytics for ${found.name}`}
+          domain={found.domain}
+          live={{ project, href: `${base}/realtime` }}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <AddFilter path={path} state={state} />
             <PeriodSelect path={path} state={state} />

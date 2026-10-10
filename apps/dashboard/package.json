@@ -15,6 +15,7 @@
 		"@spoar/client": "workspace:*",
 		"@spoar/contract": "workspace:*",
 		"@spoar/shared": "workspace:*",
+		"@tanstack/react-query": "5.104.1",
 		"geist": "1.7.2",
 		"next": "16.4.0-canary.59",
 		"react": "19.3.0",

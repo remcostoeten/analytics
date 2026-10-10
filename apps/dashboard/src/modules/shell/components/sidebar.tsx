@@ -122,38 +122,39 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
 
   return (
     <aside className="sidebar">
-      <div className="flex h-12 items-center gap-2 px-4">
-        <Logo className="size-6" />
-        <span className="text-sm font-medium">Spoar</span>
-      </div>
-
-      <div className="px-3 pb-2">
-        <label className="sr-only" htmlFor="project-switcher">
-          Project
-        </label>
-        <div className="relative">
-          <select
-            id="project-switcher"
-            className="switcher"
-            value={project ?? ""}
-            onChange={(event) => {
-              const next = event.target.value;
-              router.push(next ? `/projects/${encodeURIComponent(next)}` : "/");
-            }}
-          >
-            <option value="">All projects</option>
-            {projects.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-          <SelectorIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted" />
+      <div className="sidebar-head">
+        <div className="sidebar-brand">
+          <Logo className="size-6" />
+          <span className="text-sm font-medium">Spoar</span>
+        </div>
+        <div className="sidebar-switch">
+          <label className="sr-only" htmlFor="project-switcher">
+            Project
+          </label>
+          <div className="relative">
+            <select
+              id="project-switcher"
+              className="switcher"
+              value={project ?? ""}
+              onChange={(event) => {
+                const next = event.target.value;
+                router.push(next ? `/projects/${encodeURIComponent(next)}` : "/");
+              }}
+            >
+              <option value="">All projects</option>
+              {projects.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name}
+                </option>
+              ))}
+            </select>
+            <SelectorIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted" />
+          </div>
         </div>
       </div>
 
-      <nav className="grid gap-4 px-3 py-2" aria-label="Dashboard">
-        <ul className="grid gap-0.5">
+      <nav className="sidebar-nav" aria-label="Dashboard">
+        <ul>
           {workspace.map((item) => (
             <li key={item.href}>
               <NavLink item={item} />
@@ -161,9 +162,9 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
           ))}
         </ul>
         {isAdmin ? (
-          <div className="grid gap-1">
-            <p className="px-2 text-xs text-muted">Manage</p>
-            <ul className="grid gap-0.5">
+          <div className="sidebar-group">
+            <p className="sidebar-group-label">Manage</p>
+            <ul>
               {manage.map((item) => (
                 <li key={item.href}>
                   <NavLink item={item} />
@@ -174,7 +175,7 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
         ) : null}
       </nav>
 
-      <div className="mt-auto border-t border-line p-3">
+      <div className="sidebar-foot">
         <a href={`${siteUrl()}/docs`} className="nav-item">
           <BookIcon className="size-4 shrink-0 text-muted" />
           Documentation

@@ -3,7 +3,7 @@
 import { notify } from "@remcostoeten/notifier";
 import type { Annotation, Interval } from "@spoar/contract";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { removeAnnotation } from "../actions";
 import { kindLabels, placeAnnotations } from "../annotations";
@@ -74,6 +74,30 @@ function linePath(
   return path.trim();
 }
 
+function areaPath(
+  points: ChartPoint[],
+  x: (index: number) => number,
+  y: (value: number) => number,
+  floor: number,
+) {
+  let path = "";
+  let start: number | null = null;
+  points.forEach((point, index) => {
+    if (point.value === null) {
+      if (start !== null) path += `L${x(index - 1)},${floor} Z `;
+      start = null;
+      return;
+    }
+    if (start === null) {
+      start = index;
+      path += `M${x(index)},${floor} `;
+    }
+    path += `L${x(index)},${y(point.value)} `;
+  });
+  if (start !== null && points.length > 0) path += `L${x(points.length - 1)},${floor} Z`;
+  return path.trim();
+}
+
 export function SeriesChart({
   series,
   format,
@@ -85,6 +109,7 @@ export function SeriesChart({
   editable = false,
 }: Props) {
   const router = useRouter();
+  const gradientId = useId();
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
@@ -207,15 +232,29 @@ export function SeriesChart({
               </text>
             ) : null,
           )}
+          <defs>
+            {series.map((_, order) => (
+              <linearGradient key={order} id={`${gradientId}-${order}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor={`var(--series-${order + 1})`} stopOpacity={0.22} />
+                <stop offset="1" stopColor={`var(--series-${order + 1})`} stopOpacity={0} />
+              </linearGradient>
+            ))}
+          </defs>
           {series.map((entry, order) => (
-            <path
-              key={entry.label}
-              d={linePath(entry.points, x, y)}
-              fill="none"
-              stroke={`var(--series-${order + 1})`}
-              strokeWidth={2}
-              strokeLinejoin="round"
-            />
+            <g key={entry.label}>
+              <path
+                d={areaPath(entry.points, x, y, pad.top + plotHeight)}
+                fill={`url(#${gradientId}-${order})`}
+                stroke="none"
+              />
+              <path
+                d={linePath(entry.points, x, y)}
+                fill="none"
+                stroke={`var(--series-${order + 1})`}
+                strokeWidth={2}
+                strokeLinejoin="round"
+              />
+            </g>
           ))}
           {placed.map((entry) => {
             const left = markerX(entry);

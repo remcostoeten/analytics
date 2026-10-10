@@ -17,7 +17,7 @@ type Props = {
 
 export function MetricRail({ stats, sparklines, current, hrefFor }: Props) {
   return (
-    <nav aria-label="Metrics" className="grid gap-2">
+    <nav aria-label="Metrics" className="rail">
       {metricViews.map((view) => {
         const stat = stats?.[view.stat];
         const change = stat ? formatChange(stat.change) : null;
