@@ -14,6 +14,8 @@ git diff --quiet HEAD^ HEAD -- ../../
 
 The free plan allows 100 deployments a day, and every v2 merge used one per v1 project.
 
+The v1 dashboard (`v1.analytics`) is served at `v1.analytics.remcostoeten.nl`, a DNS-only CNAME to `cname.vercel-dns.com` at Cloudflare. `analytics.remcostoeten.nl` sits on `v2.analytics-docs` as a 308 redirect to `docs.analytics.remcostoeten.nl`. The GitHub OAuth app v1 signs in with needs its callback URL on the v1 host: `https://v1.analytics.remcostoeten.nl/api/auth/callback`.
+
 ## 2. Generate the secrets
 
 Run each once and keep the output:
