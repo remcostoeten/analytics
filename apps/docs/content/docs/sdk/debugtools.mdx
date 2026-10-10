@@ -1,0 +1,73 @@
+---
+title: Debug console
+description: A query console for admins on their own site, with an editor, a dataset library and an agent pane. It ships as @spoar/debugtools, visitors never download it, and it runs on sample data for now.
+---
+
+`@spoar/debugtools` opens a query console over your live site, visible only to you: a tab bar, a toolbar, a query editor, a dataset library with field search, and an agent pane. It is a separate package from `@spoar/sdk` and from the [dev widget](/docs/sdk/devtools), so neither of their size budgets changes.
+
+<Callout>
+  The console renders sample data for now. Wiring it to your project's data is the next step;
+  until then it shows what the console will look like on your site.
+</Callout>
+
+## Install
+
+```bash
+npm install @spoar/debugtools
+```
+
+`react` and `react-dom` 19 or later are peer dependencies of the React and Next entries.
+
+## Requirements
+
+The console uses the same admin check as the dev widget: your browser holds an API session as an owner or an admin of the project, the site's origin is in the project's allowed origins, and the API shares the site's registrable domain. Visitors without that session load nothing past the loader.
+
+## Entries
+
+| Entry | Use it for |
+| --- | --- |
+| `@spoar/debugtools` | `mount(options)` on any page. The console chunk brings its own React. Returns a function that removes it |
+| `@spoar/debugtools/react` | `<Debugtools />` in a React app. Uses the app's React |
+| `@spoar/debugtools/next` | `<Debugtools />` in the App Router, loaded with `next/dynamic` and `ssr: false` |
+| `@spoar/debugtools/console` | `<Console />` alone, without the loader or the admin check, to embed the console in your own page |
+| `@spoar/debugtools/fixtures` | `consoleFixture`, the sample data the console renders by default |
+
+### Next.js
+
+```tsx
+import { Debugtools } from "@spoar/debugtools/next";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Debugtools endpoint="https://api.example.com" project="example.com" />
+      </body>
+    </html>
+  );
+}
+```
+
+### Any page
+
+```ts
+import { mount } from "@spoar/debugtools";
+
+const unmount = mount({ endpoint: "https://api.example.com", project: "example.com" });
+```
+
+## Options
+
+| Option | Does |
+| --- | --- |
+| `endpoint` | The API origin |
+| `project` | The project id |
+| `fetch` | Replaces `fetch` for the admin check |
+| `data` | Replaces the sample data the console renders |
+
+## Using it
+
+A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console; Escape, the close button or a click outside closes it. On a phone it opens as a sheet from the bottom.
+
+The console renders in a Shadow DOM root on a `<spoar-debugtools>` element, so your site's CSS and the console's never meet.
