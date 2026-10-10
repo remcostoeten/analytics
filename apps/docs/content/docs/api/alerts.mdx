@@ -3,7 +3,9 @@ title: Alerts
 description: Turn on alerts in the deployment config, pick the channels and the mail transport, and set a project's targets.
 ---
 
-Alerts tell people that something happened in a project: a new issue, a regression, or a drop in the Real Experience Score. `alerts()` is a plugin in the deployment's config, and each way to send one (mail, webhook, Discord) is a channel inside it. Nothing is on unless it is listed.
+Alerts tell people that something happened in a project: a new issue, a regression, or a drop in the Real Experience Score.
+
+There are two parts. Whoever runs the API turns alerts on in `apps/api/analytics.config.ts` and picks the channels. A project admin then sets the project's targets: who gets which alerts. On someone else's API, only the second part is yours.
 
 | Word | Means |
 | --- | --- |
@@ -27,7 +29,7 @@ export default defineConfig({
   plugins: [
     alerts({
       channels: [
-        mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <remco@gmail.com>" }),
+        mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <alerts@example.com>" }),
         webhook(),
         discord(),
       ],
@@ -53,12 +55,7 @@ export default defineConfig({
 
 ## How alerts are sent
 
-`POST /v2/admin/jobs/alerts` runs every 10 minutes from the `jobs` workflow:
-
-1. **Queue.** New issues and regressions become alert events, up to 100 per run. Each gets one delivery per enabled target of its project that is subscribed to it, and a retried run never queues twice. Every regression alerts once.
-2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. A failure keeps them pending with the error and the next try from the [retry policy](/docs/api/alert-retries), until the policy runs out and they turn `failed`. One failing target never holds back another.
-
-Mail arrives as one message per target per run, newest alert first, in plain text and HTML. Discord gets one message with an embed per alert. A webhook gets a signed `WebhookBody`; see [alert webhooks](/docs/sdk/server#alert-webhooks) for checking it.
+`POST /v2/admin/jobs/alerts` runs every 10 minutes from the scheduler. Each run queues new issues and regressions, up to 100, and sends each target its due alerts together: one mail, one Discord message or one signed webhook request. A failed send is retried by the [retry policy](/docs/api/alert-retries), and one failing target never holds back another. [Alert webhooks](/docs/sdk/server#alert-webhooks) shows how to check a webhook's signature.
 
 ## Speed drops
 
@@ -70,13 +67,13 @@ alerts({ channels, speedDrop: { points: 15, below: 85, baselineDays: 14 } });
 
 ## A project's targets
 
-Targets are set per project by an admin, over HTTP or with the [admin client](/docs/sdk/admin):
+Targets are set per project by a project admin, over HTTP or with the [admin client](/docs/sdk/admin). Over HTTP, use a token with the `admin` scope that lists the project ([create one](/docs/guides/read-your-data#1-create-a-token)):
 
 ```bash
-curl -X PUT https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
-  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+curl -X PUT https://api.example.com/v2/projects/example.com/alerts/targets \
+  -H "authorization: Bearer $RA_TOKEN" \
   -H "content-type: application/json" \
-  -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
+  -d '{ "targets": [ { "channel": "mail", "to": ["you@example.com"] } ] }'
 ```
 
 A wrong field answers `VALIDATION_FAILED` with the path of each field in `details.fields`, such as `/targets/0/to/0`.

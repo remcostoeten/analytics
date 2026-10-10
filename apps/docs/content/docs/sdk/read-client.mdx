@@ -11,18 +11,24 @@ description: Query every metric from TypeScript with @spoar/client, a chainable 
 bun add @spoar/client@next
 ```
 
+## Auth and errors
+
+Pass `token` for an `at_` [API token](/docs/guides/read-your-data#1-create-a-token) with the `read` scope (`sql` for `query`, `admin` for the admin namespaces), or `credentials: "include"` from a browser signed in to the dashboard. A public project needs neither. A `token` that is the empty string answers `NO_TOKEN` without a request, which is what an unset environment variable looks like.
+
+Every method resolves to `{ ok: true, value }` or `{ ok: false, error }`. `error.code` is a code from the API's [error catalog](/docs/api/overview#errors), or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when no answer came back. `error.status`, `error.details` and `error.requestId` carry what the API sent.
+
 ## Quick start
 
 ```ts
 import { createClient } from "@spoar/client";
 
 const api = createClient({
-  endpoint: "https://api.analytics.remcostoeten.nl",
-  token: process.env.RA_READ_TOKEN,
-  projects: ["skriuw", "dora"],
+  endpoint: "https://api.example.com",
+  token: process.env.RA_TOKEN,
+  projects: ["example.com", "docs.example.com"],
 });
 
-const nl = api.skriuw.period("7d").human().where({ country: "NL" });
+const nl = api.project("example.com").period("7d").human().where({ country: "NL" });
 
 const [stats, pages, series] = await Promise.all([
   nl.stats(),
@@ -36,7 +42,7 @@ else console.table(pages.value.data);
 
 ## Scopes
 
-The client itself is the combined scope over every project the caller may read, on the routes under `/v2`. `api.project("skriuw")`, or `api.skriuw` for a name passed in `projects`, is the scope over one project under `/v2/projects/skriuw`. A project named like a client method is still reachable through `project()`.
+The client itself is the combined scope over every project the caller may read, on the routes under `/v2`. `api.project("example.com")` is the scope over one project under `/v2/projects/example.com`. A project name that is a valid identifier, passed in `projects`, is also a property, such as `api.blog` for `"blog"`. A project named like a client method is still reachable through `project()`.
 
 Links return a new scope and leave the old one untouched, so one scope can feed many reads.
 
@@ -74,7 +80,14 @@ Every terminal is named after its route and takes only that route's own options;
 | `events({ name, limit, cursor })`, `visitors(...)`, `sessions(...)` | `events`, `visitors`, `sessions` |
 | `query(sql, params)` | `query` |
 
-A project scope adds `realtimeVisitors`, `realtimeSessions`, `overview`, `annotations`, `issue`, `issueEvents`, `updateIssue`, `errorRules`, `createErrorRule`, `removeErrorRule`, `visitor`, `visitorVisits`, `updateVisitor` and `sessionEvents`. The combined scope adds `projectBreakdown`, `people` and `person`.
+Some methods exist on only one kind of scope:
+
+| Scope | Extra methods |
+| --- | --- |
+| One project | `realtimeVisitors`, `realtimeSessions`, `overview`, `annotations` |
+| | `issue`, `issueEvents`, `updateIssue`, `errorRules`, `createErrorRule`, `removeErrorRule` |
+| | `visitor`, `visitorVisits`, `updateVisitor`, `sessionEvents` |
+| Combined | `projectBreakdown`, `people`, `person` |
 
 `scope.download` has the list routes as files: `breakdown`, `paths`, `map`, `events`, `visitors`, `sessions`, and on a project `visitorVisits` and `sessionEvents`. Each takes `{ format: "csv" | "sql", limit }` and answers the file's text.
 
@@ -83,7 +96,7 @@ A project scope adds `realtimeVisitors`, `realtimeSessions`, `overview`, `annota
 The client keeps no state: each call is one request. To cache, dedupe or poll, hand `key()` to a cache such as TanStack Query. Keys start with `["spoar", project]`, so invalidating that prefix refreshes every read of a project.
 
 ```ts
-const scope = api.skriuw.period("7d");
+const scope = api.project("example.com").period("7d");
 
 useQuery({
   queryKey: scope.key("breakdown", "page", { limit: 10 }),
@@ -97,12 +110,15 @@ useQuery({
 
 ## Admin
 
-`api.projects`, `api.tokens`, `api.alerts`, `api.annotations`, `api.sql` and `api.system` hold the routes that are not reads: project settings, keys and the owner-only `remove`, API tokens, alert targets and deliveries, annotations, saved queries with `explain`, `schema` and `history`, and `health`, `session`, `metrics` and `runJob`. `mail`, `webhook` and `discord` build alert targets.
+The routes that are not reads sit in namespaces on the client:
 
-## Auth and errors
-
-Pass `token` for an `at_` API token, or `credentials: "include"` from a browser signed in to the dashboard. A public project needs neither. A `token` that is the empty string answers `NO_TOKEN` without a request, which is what an unset environment variable looks like.
-
-Every method resolves to `{ ok: true, value }` or `{ ok: false, error }`. `error.code` is a code from the API's error catalog, or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when no answer came back. `error.status`, `error.details` and `error.requestId` carry what the API sent.
+| Namespace | Covers |
+| --- | --- |
+| `api.projects` | Project settings, keys, and the owner-only `remove` |
+| `api.tokens` | API tokens |
+| `api.alerts` | Alert targets and deliveries. `mail`, `webhook` and `discord` build targets |
+| `api.annotations` | Annotations |
+| `api.sql` | Saved queries, `explain`, `schema` and `history` |
+| `api.system` | `health`, `session`, `metrics` and `runJob` |
 
 See the [API reference](/docs/api/overview) for every route's parameters and response shape; the client's option types are the same as the query parameters there.

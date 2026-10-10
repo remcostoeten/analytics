@@ -1,45 +1,25 @@
 ---
 title: Next
-description: Pageviews with route templates in the App Router.
+description: The `<Analytics />` component, which sends App Router pageviews with route templates.
 ---
 
-`app/providers.tsx`:
+`@spoar/sdk/next` exports one component. [Next.js](/docs/frameworks/nextjs) has the full App Router setup: keys, the client, the provider, the `/_ra` route and server tracking.
 
 ```tsx
-"use client";
-
-import type { ReactNode } from "react";
-import { AnalyticsProvider } from "@spoar/sdk/react";
-import { Analytics } from "@spoar/sdk/next";
-import { analytics } from "@/lib/analytics";
-
-export function Providers({ children }: { children: ReactNode }) {
-  return (
-    <AnalyticsProvider client={analytics}>
-      <Analytics />
-      {children}
-    </AnalyticsProvider>
-  );
-}
+<AnalyticsProvider client={analytics}>
+  <Analytics />
+  {children}
+</AnalyticsProvider>
 ```
 
-`app/layout.tsx`:
+## `<Analytics />`
 
-```tsx
-import type { ReactNode } from "react";
-import { Providers } from "./providers";
+| | |
+| --- | --- |
+| Props | None |
+| Place it | Inside `AnalyticsProvider` from `/react`, in a Client Component |
+| Sends | A pageview on every navigation, including a change of only the query string |
+| Route | The template from `usePathname` and `useParams`, such as `/blog/[slug]`, so reports group by page type |
+| Server rendering | Wraps itself in `Suspense`, because it reads `useSearchParams`, so static pages keep rendering on the server |
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
-}
-```
-
-The provider lives in a Client Component because the client holds functions, which a Server Component layout cannot pass as props.
-
-`<Analytics />` sends each pageview with its route template, such as `/blog/[slug]`, so reports group by page type. Create the client with `pageviews: false` so pageviews are not sent twice.
+Create the client with `pageviews: false`, or every pageview is sent twice: once by the core and once by `<Analytics />`.

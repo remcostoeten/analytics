@@ -3,7 +3,11 @@ title: Overview
 description: Base URL, conventions, shared parameters and errors.
 ---
 
-Every route lives under `/v2`, for example `https://api.analytics.remcostoeten.nl/v2/health`. The live OpenAPI document is served at `/v2/openapi/json`, with interactive docs at `/v2/openapi`; the [API reference](/docs/reference) on this site is generated from the same document.
+Every route lives under `/v2`, for example `https://api.example.com/v2/health`. The live OpenAPI document is served at `/v2/openapi/json`, with interactive docs at `/v2/openapi`; the [API reference](/docs/reference) on this site is generated from the same document.
+
+## Authentication
+
+Aggregate reads of a public project need no credential. Everything else needs a key, an API token or a signed-in session; [Auth overview](/docs/api/auth) says which route needs which, and [Read your data](/docs/guides/read-your-data#1-create-a-token) shows how to create a token.
 
 ## Conventions
 
@@ -26,7 +30,7 @@ Every route lives under `/v2`, for example `https://api.analytics.remcostoeten.n
 
 An unknown dimension answers `400 VALIDATION_FAILED`, in `breakdown/:dimension` and in `filter[<dimension>]` alike.
 
-Events the server client sends without a visitor or session share the id `server`. They count in `pageviews`, `events` and every breakdown of events, but never as a visitor or a session: visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists leave them out.
+Events sent from the server without a visitor count in pageviews, events and breakdowns, but never as a visitor or a session. [Concepts](/docs/getting-started/concepts#visitors-and-sessions) explains why.
 
 ## Errors
 
@@ -39,23 +43,27 @@ Every error uses one envelope:
     "message": "The request does not match the schema",
     "details": { "fields": [{ "path": "/period", "message": "Expected union value" }] },
     "requestId": "req_01J8Z3",
-    "docs": "https://api.analytics.remcostoeten.nl/v2/openapi#errors/VALIDATION_FAILED"
+    "docs": "https://api.example.com/v2/openapi#errors/VALIDATION_FAILED"
   }
 }
 ```
 
-| Status | Code | When |
-| --- | --- | --- |
-| 400 | `VALIDATION_FAILED` | Body, query or path fails the schema; `details` lists each field |
-| 401 | `UNAUTHORIZED` | No or invalid session, token or key |
-| 401 | `AUTH_REQUIRED` | The dev widget bootstrap was called without a session cookie |
-| 403 | `FORBIDDEN_ORIGIN` | Public key used from an origin not in the project's list |
-| 403 | `ORIGIN_NOT_ALLOWED` | The dev widget bootstrap's origin is in no project's allowed origins |
-| 403 | `FORBIDDEN` | The caller's role or token scope does not allow the action |
-| 403 | `WIDGET_REPORTS_DISABLED` | Client reports sent to a project with `widgetReports` off |
-| 404 | `NOT_FOUND` | Unknown route or resource, or a private project without access |
-| 409 | `CONFLICT` | Creating something that exists |
-| 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events, or a client report body over 16 KB |
-| 429 | `RATE_LIMITED` | A rate limit was hit; `Retry-After` says when to try again |
-| 500 | `INTERNAL` | Unexpected failure; the message never includes internals |
-| 503 | `UNAVAILABLE` | The database or a configured service is unreachable, or a job is not configured |
+"Retried" says whether the browser client retries the batch. It retries 429 and every 5xx after 1, 4 and 16 seconds, and drops a batch on any other 4xx; [Duplicates and retries](/docs/edge-cases/duplicates-and-retries) has the details.
+
+| Status | Code | Retried | Cause | Fix |
+| --- | --- | --- | --- | --- |
+| 400 | `VALIDATION_FAILED` | No | The body, query or path does not match the schema, or the body is not JSON | Read `message` and `details.fields`, and correct the request |
+| 401 | `UNAUTHORIZED` | No | No credential, or an unknown key, token or cron secret | Send a valid key, API token or session |
+| 401 | `AUTH_REQUIRED` | No | The dev widget bootstrap was called without the admin session cookie | Sign in to the API, then reload the site |
+| 403 | `FORBIDDEN_ORIGIN` | No | A public key was used from an origin missing from the project's allowed origins | Add the exact origin, or send through the proxy |
+| 403 | `ORIGIN_NOT_ALLOWED` | No | The dev widget bootstrap came from an origin no project lists | Add the site's origin to the project's `allowedOrigins` |
+| 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
+| 403 | `WIDGET_REPORTS_DISABLED` | No | SDK client reports were sent while the project's `widgetReports` is off | Turn on `widgetReports` with `PATCH /v2/projects/:project` |
+| 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
+| 409 | `CONFLICT` | No | Creating something that exists, such as a project with a taken id | Pick another id |
+| 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events, or a client report body is over 16 KB | Send smaller batches |
+| 429 | `RATE_LIMITED` | Yes | A rate limit was hit | Wait for the number of seconds in `Retry-After` |
+| 500 | `INTERNAL` | Yes | An unexpected failure; the message never includes internals | Report the `requestId`; the API's log line carries the same id |
+| 503 | `UNAVAILABLE` | Yes | The database or a configured service is unreachable, or a job is not configured | Check the database and the service named in `message` |
+
+Cross-origin callers can read `x-request-id` and `Retry-After`. [Fix API errors](/docs/troubleshooting/api-errors) covers the messages you meet most often.

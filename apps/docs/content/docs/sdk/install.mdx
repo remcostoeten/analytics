@@ -1,6 +1,6 @@
 ---
 title: Install
-description: Add the SDK, list your events once, and send the first one.
+description: The SDK's package, its entries and their size budgets.
 ---
 
 ```bash
@@ -9,42 +9,7 @@ npm install @spoar/sdk@next
 
 2.0 prereleases are on the `next` tag. Until 2.0.0, `latest` is a 0.0.1 placeholder, and 1.x is the separate `@remcostoeten/analytics` package.
 
-`events.ts` lists every custom event once, for the browser and the server:
-
-```ts
-import type { NoProps } from "@spoar/sdk";
-
-export type Events = {
-  signup: { plan: "free" | "pro" };
-  newsletter_subscribed: NoProps;
-};
-```
-
-`analytics.ts` creates the client:
-
-```ts
-import { createAnalytics } from "@spoar/sdk";
-import { errors, speedInsights } from "@spoar/sdk/plugins";
-import type { Events } from "./events";
-
-export const analytics = createAnalytics<Events>({
-  project: "remcostoeten.nl",
-  key: "pk_...",
-  endpoint: "/_ra",
-  plugins: [speedInsights(), errors()],
-});
-
-analytics.track("signup", { plan: "pro" });
-analytics.track("newsletter_subscribed");
-```
-
-Pageviews are sent on load and on client-side navigation unless `pageviews: false`.
-
-Options left out are read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`, so the key and endpoint can live in the environment:
-
-```bash
-NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_...","endpoint":"/_ra"}'
-```
+To set up a client, configure the keys and serve the `/_ra` proxy route, follow the [Quick start](/docs/getting-started/quick-start). An `endpoint` of `/_ra` sends nothing until that route exists.
 
 ## Entries
 
@@ -56,5 +21,8 @@ NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_...","endpoint":"/
 | `@spoar/sdk/next` | `<Analytics />`, the App Router route adapter |
 | `@spoar/sdk/server` | `createServerAnalytics` for route handlers and server actions |
 | `@spoar/sdk/proxy` | `createProxy` and `createPageCounter` |
+| `@spoar/sdk/admin` | `createAdmin` for scripts and CI, with an API token |
 
-Size budgets, gzipped: core 5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB (`errors` 0.7 KB, `speedInsights` 2.5 KB).
+## Size budgets
+
+Gzipped: core 5 KB, `react` 1.5 KB, `next` 1 KB, each plugin 0.6 KB (`errors` 0.7 KB, `speedInsights` 2.5 KB).

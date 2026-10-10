@@ -22,7 +22,11 @@ Consent is not checked on the server. The API stores what it receives, so an eve
 
 With `consent: "optional"`, the default, events are sent before any choice, and the visitor and session ids are stored as usual.
 
-With `consent: "required"`, events wait in memory and nothing is sent. The visitor and session ids exist in memory, but the SDK does not write them, identify data, registered props or failed batches to storage. The `__ra` key in `localStorage` is not written at all until sending is allowed, except for the visitor's own choices: consent, opt-out and the debug switch. 1.x keys are read at once so the visitor keeps its id, and moved into `__ra` and removed only once sending is allowed. The waiting list has no size limit and lives only as long as the page. A visitor who leaves or reloads before choosing takes those events with them, and in a site where each click loads a new document, events from pages before the choice are never sent.
+With `consent: "required"`, events wait in memory and nothing is sent or stored. The SDK writes nothing to `localStorage` until sending is allowed, except the visitor's own choices: consent, opt-out and the debug switch.
+
+The waiting events live only as long as the page. A visitor who leaves or reloads before choosing takes them along, so on a site where each click loads a new document, events from pages before the choice are never sent.
+
+A visitor who still has 1.x keys keeps their visitor id: the SDK reads those keys at once, and moves them into `__ra` only once sending is allowed.
 
 ## After `consent.grant()`
 
@@ -46,12 +50,12 @@ Choices made in one tab apply to other open tabs of the site at once, through th
 
 | Data | What happens to it |
 | --- | --- |
-| The IP address | Used in memory for the country, region, city and network lookups and for the daily hash, then dropped. Only the hash `sha256(ip + sha256(secret + day))` is stored |
+| The IP address | Used in memory for the country, region, city and network lookups and for the daily hash, then dropped. Only a daily salted hash is stored; see [Sessions and visitors](/docs/edge-cases/sessions-and-visitors) |
 | Cookies | None are set for visitors. The only cookie is the dashboard's admin session |
 | The page's query string | The path is sent without it. Only `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content` are read from it |
 | Query strings, emails, long tokens and long numbers in errors | Removed from error messages, stacks and breadcrumbs |
 
-The `/_ra` proxy adds the visitor's IP to the request as `X-Visitor-IP`, because the API would otherwise see your server's address. The API treats it like any other visitor IP: it is looked up, hashed and dropped. Of the cookies the browser sends to your site, the proxy passes on only the admin session `ra.session_token`, so a signed-in admin's events are marked internal; visitors have no cookie to pass on.
+The `/_ra` proxy adds the visitor's IP to the request as `X-Visitor-IP`, because the API would otherwise see your server's address. The API treats it like any other visitor IP: it is looked up, hashed and dropped. The proxy passes on no visitor cookies; the only cookie it forwards is the admin session, so a signed-in admin's events are marked internal ([Exclude your traffic](/docs/guides/exclude-your-traffic#signed-in-admins)).
 
 The city lookup stores the city's approximate coordinates and postal code, not a street address.
 

@@ -40,19 +40,7 @@ curl "https://api.example.com/v2/projects/example.com/breakdown/bot_reason?traff
   -H "authorization: Bearer $RA_TOKEN"
 ```
 
-| Signal | Adds | Fires on |
-| --- | --- | --- |
-| `ua_crawler` | 100 | A user agent from the list of crawlers, preview fetchers, AI agents, SEO tools and uptime monitors |
-| `ua_automation` | 100 | A user agent naming a test driver, headless browser or HTTP library, such as `HeadlessChrome`, `Playwright` or `curl/`, or no user agent on a browser request |
-| `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` header, or `cf-verified-bot` from Cloudflare |
-| `client_webdriver` | 60 | `navigator.webdriver`, reported by the [botSignals plugin](/docs/plugins/bot-signals) |
-| `session_velocity` | 50 | More than 30 pageviews a minute or near-identical gaps between events, set by the daily rollup job for the previous UTC day |
-| `asn_datacenter` | 40 | An IP address on a hosting provider's network |
-| `ip_fanout` | 40 | More than 20 visitor ids from one IP hash in a day, set by the daily rollup job for the previous UTC day |
-| `headers_inconsistent` | 30 | A browser user agent without the headers that browser sends; skipped for the secret key |
-| `client_headless` | 25 | Headless hints from the botSignals plugin |
-| `client_no_input` | 20 | No input on a page that was never visible, from the botSignals plugin |
-| `headers_missing` | 15 | No `accept-language` header; skipped for the secret key |
+A public project needs no token; for a private one, `$RA_TOKEN` is a `read` token ([Create a token](/docs/guides/read-your-data#1-create-a-token)). [Bots](/docs/edge-cases/bots) lists every signal and its weight.
 
 A real visitor becomes a bot only when signals add up to 50, for example a visitor on a hosting network (40) whose request also lacks browser headers (30). Your own tests with `curl`, Playwright or a headless browser score 100 and never count as human. To see what the default filter leaves out, read with `traffic=bots`.
 
@@ -66,13 +54,13 @@ The API marks three kinds of traffic that `traffic=human` leaves out:
 | `preview` | The `Origin` is a Vercel preview host, or contains `-preview.` or `.preview.`, or starts with `preview-` or `staging-` |
 | `internal` | The event is from `localhost`, carries a signed-in owner's or admin's session cookie, or comes from a visitor marked internal |
 
-The `localhost` and `preview` flags come from the `Origin` header. The proxy forwards the page's `Origin`, or the site's own origin when the browser sent none, so a local development server that posts to its own `/_ra` is flagged as localhost. The server client sends the origin of the `request` or `headers` you pass, or its `origin` option. The session cookie reaches the API only through the proxy or the server client, which forward `ra.session_token` and no other cookie. A browser sending to the API directly carries no cookie, so a signed-in admin's direct events are not marked internal.
+The `localhost` and `preview` flags come from the request's `Origin`. A signed-in admin's events are marked internal only when they arrive through the proxy or the server client; [Exclude your traffic](/docs/guides/exclude-your-traffic#signed-in-admins) explains why.
 
 To keep development traffic out:
 
 - Leave `endpoint` out of your development config. In development mode without an `endpoint`, the client does not send.
 - Add the [ignoreSelf plugin](/docs/plugins/ignore-self) and open the site once with `?ra=ignore` in each browser you use.
-- Mark your visitor as internal. The id is the `visitor` field of the `__ra` key in `localStorage`. The call updates that visitor's stored events and sessions, and later events from the visitor are internal too:
+- Mark your visitor as internal. The id is the `visitor` field of the `__ra` key in `localStorage`. The call needs an `admin` token and updates that visitor's stored and later events:
 
 ```bash
 curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/VISITOR_ID \
@@ -83,7 +71,7 @@ curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/VISITOR_I
 
 ## Server events raise pageviews but not visitors
 
-Events from the server client without a `visitor` and `session` share the id `server`. Reads count them in `pageviews`, `events` and breakdowns, but leave them out of visitors, sessions, bounce rate, session duration, pages per session, conversion rate, paths, retention, lifecycle, stickiness, the map's visitors, and the visitor, session and people lists. Pass the browser's `visitor` and `session` to the server client to count an event with its visitor.
+Server events without a `visitor` and `session` count as pageviews and events but never as a visitor or session ([Visitors and sessions](/docs/getting-started/concepts#visitors-and-sessions)). Pass the browser's `visitor` and `session` to the server client to count an event with its visitor.
 
 ## Days and hours do not line up with your time zone
 

@@ -53,7 +53,7 @@ The `botSignals` plugin sets bits on each event in the browser. A bot can remove
 
 ## Rescoring
 
-`bun run rescore --from 2026-09-01 --to 2026-09-28` from the repository root runs the scoring again over stored events in the database at `DATABASE_URL`. `--dry-run` counts what would change without writing.
+Whoever runs the database can rescore. `bun run rescore --from 2026-09-01 --to 2026-09-28`, from a clone of the repository, runs the scoring again over stored events in the database at `DATABASE_URL`. `--dry-run` counts what would change without writing.
 
 A stored event keeps its user agent and network, so `ua_crawler`, `ua_automation` and `asn_datacenter` are tested again with the current lists. Request headers and client bits are not stored, so the other signals keep the reasons the event had and count at their current weight. A rescore therefore picks up a new crawler name or a changed weight, but cannot add `headers_missing` to an old event.
 

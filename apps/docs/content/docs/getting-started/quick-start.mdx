@@ -5,23 +5,62 @@ description: Create a project, install the SDK, route events through your own do
 
 This page takes a Next.js app from nothing to its first stored event. Other stacks follow the same steps; only step 4 differs, and the [Overview](/docs#what-it-runs-on) lists what each stack uses.
 
+## Before you start
+
+Spoar has no sign-up form. Events go to a project, and only an admin of the API you send to can create one. That gives three roles, which can be the same person:
+
+<Flow>
+  <FlowNode label="Admin">Creates the project and hands out its keys</FlowNode>
+  <FlowNode label="Developer">Puts the public key in the site and the secret key on the server</FlowNode>
+  <FlowNode label="Reader">Opens the dashboard, or reads the numbers with an API token</FlowNode>
+</Flow>
+
+You need one of these:
+
+- **Your own API.** You are the admin. [Run your own copy](/docs/guides/self-host) covers the database, the API and sign-in; step 1 below then creates the project.
+- **Someone else's API.** Ask its admin for a project id, a `pk_` public key and an `sk_` secret key, and skip to step 2. Sign-in on the shared API at `api.analytics.remcostoeten.nl` is limited to allowlisted GitHub logins.
+
 ## 1. Create a project
 
-A project is one site or app. Creating one needs an owner, or an admin or `admin` API token that is not limited to specific projects:
-
-```bash
-curl -X POST https://api.example.com/v2/projects \
-  -H "authorization: Bearer $RA_TOKEN" \
-  -H "content-type: application/json" \
-  -d '{"id":"example.com","name":"Example","domain":"example.com","allowedOrigins":["https://example.com"]}'
-```
-
-The response holds two keys:
+A project is one site or app. Creating one gives you two keys:
 
 | Key | Prefix | Where it goes |
 | --- | --- | --- |
-| `publicKey` | `pk_` | The browser. It is safe to ship and only works from the project's `allowedOrigins` |
-| `secretKey` | `sk_` | Your server's environment. It is shown once and stored hashed; `POST /v2/projects/{project}/keys` rotates it |
+| `publicKey` | `pk_` | The browser. It is safe to ship and only works from the project's allowed origins |
+| `secretKey` | `sk_` | Your server's environment. It is shown once and stored hashed, so copy it right away |
+
+Pick the way that matches what you have:
+
+<Tabs items={["Dashboard", "Command line", "HTTP"]}>
+  <Tab value="Dashboard">
+    Sign in to the dashboard at `/dashboard` with GitHub as an owner or admin, open **Projects** in the sidebar, then **New project**. Fill in the id (`example.com`), the domain and the allowed origins. The next screen shows both keys and the `.env.local` block to paste in step 3.
+
+    Without the dashboard deployed, `<API URL>/v2/setup` on the API does the same after GitHub sign-in.
+  </Tab>
+  <Tab value="Command line">
+    From a clone of the repository, with `DATABASE_URL` pointing at the API's database. On a fresh database, `setup` runs the migrations, allows your GitHub login and creates the first project:
+
+    ```bash
+    DATABASE_URL=postgres://... bun run setup --owner your-github-login --project example.com --domain example.com
+    ```
+
+    It prints the public and secret key. For more projects later, `bun run admin` opens a page on `127.0.0.1:3400` that writes to the same database without sign-in: it creates projects, sets allowed origins and creates `at_live_` API tokens.
+  </Tab>
+  <Tab value="HTTP">
+    Once you have an owner session or an `admin` API token that lists no projects, `POST /v2/projects` creates one:
+
+    ```bash
+    curl -X POST https://api.example.com/v2/projects \
+      -H "authorization: Bearer $RA_TOKEN" \
+      -H "content-type: application/json" \
+      -d '{"id":"example.com","name":"Example","domain":"example.com","allowedOrigins":["https://example.com"]}'
+    ```
+
+    The keys are in the response. This is the route for scripts and CI; your first token comes from the dashboard or `bun run admin`.
+  </Tab>
+</Tabs>
+
+`POST /v2/projects/{project}/keys`, or **Rotate** in the dashboard, replaces a lost secret key.
 
 ## 2. Install the SDK
 
@@ -122,7 +161,7 @@ Open your site once with `?ra=debug` to see an `[ra]` line in the console for ev
 
 In development (`NODE_ENV` is `development` or `test`) the SDK sends nothing unless an `endpoint` is set. Add `?ra=debug` to the URL to print each event to the console.
 
-The event shows up in the project's realtime view within a few seconds:
+The event shows up within a few seconds on the project's **Realtime** page in the dashboard. Without the dashboard, read it with an API token:
 
 ```bash
 curl https://api.example.com/v2/projects/example.com/realtime/events \
@@ -131,6 +170,7 @@ curl https://api.example.com/v2/projects/example.com/realtime/events \
 
 ## Next steps
 
+- Show the numbers on a page of your own: [Build a minimal dashboard](/docs/getting-started/minimal-dashboard).
 - Type your events once for the browser and the server: [Concepts](/docs/getting-started/concepts#events).
 - Track from route handlers, webhooks and jobs: [Server](/docs/sdk/server).
 - Add scroll depth, outbound links, forms and more: [Plugins](/docs/plugins).

@@ -7,13 +7,15 @@ This guide gets your numbers out of the API, for a script, a report or your own 
 
 ## 1. Create a token
 
-A public project answers aggregate reads without a token, so skip this step if that is all you need. A private project, visitor-level reads and SQL need an API token.
+A public project answers aggregate reads without a token, so skip this step if that is all you need. A private project, visitor-level reads and SQL need an API token. An owner, or an admin whose role lists no projects, creates one in one of these places:
 
-Creating one needs an owner, an admin whose role lists no projects, or an existing `admin` token that lists no projects. Send your session cookie from GitHub sign-in, or the token:
+- **The dashboard.** Open **API tokens** in the sidebar, pick a scope and the projects, and copy the token.
+- **`bun run admin`.** For a database you run yourself: a page on `127.0.0.1:3400` that writes the token straight to the database, without sign-in.
+- **HTTP.** For scripts, `POST /v2/tokens` with your session cookie or an existing `admin` token that lists no projects:
 
 ```bash
 curl -X POST https://api.example.com/v2/tokens \
-  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+  -H "authorization: Bearer $RA_TOKEN" \
   -H "content-type: application/json" \
   -d '{"name":"weekly report","scope":"read","projectIds":["example.com"]}'
 ```
@@ -25,7 +27,7 @@ curl -X POST https://api.example.com/v2/tokens \
 | `projectIds` | The projects it may use, or `null` for all |
 | `expiresAt` | An ISO 8601 timestamp, or `null` for no expiry |
 
-The token is in `data.token` in this response only; store it, for example as `RA_TOKEN`. `DELETE /v2/tokens/{token}` revokes it. [Auth overview](/docs/api/auth) explains which roles and scopes pass each access level.
+The token starts with `at_` and is shown once; over HTTP it is in `data.token`. Store it as `RA_TOKEN`, which the examples below use. `DELETE /v2/tokens/{token}` revokes it. [Auth overview](/docs/api/auth) explains which roles and scopes pass each access level.
 
 ## 2. Fetch headline numbers
 
@@ -62,7 +64,7 @@ curl -G https://api.example.com/v2/projects/example.com/breakdown/page \
 }
 ```
 
-- `metrics` picks the columns, comma-separated: `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth`, `conversion_rate`, and `sum:prop.<key>` or `avg:prop.<key>` for numeric props. `conversion_rate` needs a `filter[event]`.
+- `metrics` picks the columns, comma-separated, such as `visitors,bounce_rate`. [Read client](/docs/sdk/read-client#scopes) lists every metric; `conversion_rate` needs a `filter[event]`.
 - `filter[<dimension>]=value` narrows the range, and `!value` excludes. Repeat it for several dimensions. An unknown dimension, in the path or in a filter, answers `400 VALIDATION_FAILED`.
 - `limit` goes up to 100. Pass `nextCursor` back as `cursor` for the next page.
 
@@ -78,46 +80,44 @@ curl -G https://api.example.com/v2/projects/example.com/breakdown/referrer_domai
 
 ## 4. Read from TypeScript
 
-In server code and scripts, `createAdmin` from `/admin` calls the same routes with typed answers. A `read` token is enough for the read methods:
+`@spoar/client` calls the same routes with typed answers, from server code, scripts or the browser:
 
 ```ts
-import { createAdmin } from "@spoar/sdk/admin";
+import { createClient } from "@spoar/client";
 
-const admin = createAdmin<"example.com">({
+const api = createClient({
   endpoint: "https://api.example.com",
   token: process.env.RA_TOKEN,
 });
 
-const pages = await admin.breakdown("example.com", "page", {
-  period: "30d",
-  limit: 10,
-  filter: { country: "NL" },
-});
+const pages = await api
+  .project("example.com")
+  .period("30d")
+  .where({ country: "NL" })
+  .breakdown("page", { limit: 10 });
 
 if (pages.ok) console.table(pages.value.data);
 else console.error(pages.error.code, pages.error.message);
 ```
 
-`stats`, `timeseries`, `lifecycle` and `issues` work the same way. See [Admin](/docs/sdk/admin#reads).
-
-In the browser, or for every read route, `@spoar/client` is the full typed client: one chainable scope per project and a method per route. The [example dashboard](/examples/dashboard) is this guide as a runnable page: stats tiles, a visitors chart, breakdowns, countries and a live stream, each from one client call. See [Read client](/docs/sdk/read-client).
+Every read route has a method, and every metric and dimension is a literal type; [Read client](/docs/sdk/read-client) lists them. The [example dashboard](/examples/dashboard) is this guide as a runnable page, and [Build a minimal dashboard](/docs/getting-started/minimal-dashboard) is the smallest version.
 
 ## 5. Run SQL
 
 For questions the read routes do not answer, run one `SELECT` or `WITH` statement against the views in the `query` schema. This needs a token with the `sql` scope, or a signed-in owner, admin or analyst.
 
-1. Create a token as in step 1 with `"scope":"sql"`.
+1. Create a token as in step 1 with the `sql` scope.
 2. List the views and their columns:
 
    ```bash
-   curl https://api.example.com/v2/query/schema -H "authorization: Bearer $RA_SQL_TOKEN"
+   curl https://api.example.com/v2/query/schema -H "authorization: Bearer $RA_TOKEN"
    ```
 
 3. Run a query on one project. `:from`, `:to` and `:project` are bound from `params`:
 
    ```bash
    curl -X POST https://api.example.com/v2/projects/example.com/query \
-     -H "authorization: Bearer $RA_SQL_TOKEN" \
+     -H "authorization: Bearer $RA_TOKEN" \
      -H "content-type: application/json" \
      -d '{
        "sql": "SELECT props->>'"'"'plan'"'"' AS plan, count(*) AS signups FROM events WHERE name = '"'"'signup'"'"' AND is_human AND ts >= :from AND ts < :to GROUP BY plan ORDER BY signups DESC",
@@ -127,4 +127,4 @@ For questions the read routes do not answer, run one `SELECT` or `WITH` statemen
 
    The answer is `{ columns, rows, rowCount, truncated, durationMs }`. `POST /v2/query` takes the same body and runs over every project the token may query, with `project_id` as a column.
 
-The [query page](/query) runs these routes from the browser: paste the API URL and the `sql` token, leave the project empty to query all of them, and pick the dates. Limits, saved queries and the other SQL routes are on the [SQL console](/docs/api/sql) page.
+The [query page](/query) runs these routes from the browser: paste the API URL and a `sql` token, leave the project empty to query all of them, and pick the dates. Limits, saved queries and the other SQL routes are on the [SQL console](/docs/api/sql) page.

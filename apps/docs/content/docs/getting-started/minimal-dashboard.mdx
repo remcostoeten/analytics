@@ -1,0 +1,112 @@
+---
+title: Build a minimal dashboard
+description: Show a project's visitors, pageviews, bounce rate and top pages on one page of your own Next.js app.
+---
+
+This page adds a stats page to a Next.js app: three headline numbers and the top pages for the last 7 days, read from the API with `@spoar/client`. It assumes the project from the [Quick start](/docs/getting-started/quick-start) already receives events.
+
+If you only want to look at your numbers, the dashboard at `/dashboard` already shows them. Build your own page when the numbers belong inside your product, such as an admin area or a public stats page.
+
+## What you get
+
+<DashboardPreview />
+
+## 1. Get read access
+
+A public project, which is the default, answers aggregate reads without a token. Skip to step 2 if yours is public.
+
+A private project needs an API token with the `read` scope. An admin creates one in one of these places:
+
+- The dashboard: **API tokens** in the sidebar, scope `read`, limited to `example.com`.
+- `bun run admin` on `127.0.0.1:3400`, for a database you run yourself.
+- `POST /v2/tokens`, as described in [Read your data](/docs/guides/read-your-data#1-create-a-token).
+
+The token starts with `at_` and is shown once. Put it in your server's environment, never in a `NEXT_PUBLIC_` variable:
+
+```bash
+RA_TOKEN=at_live_...
+```
+
+## 2. Install the client
+
+```bash
+npm install @spoar/client@next
+```
+
+## 3. Add the page
+
+`app/stats/page.tsx`:
+
+```tsx
+import { createClient } from "@spoar/client";
+
+const api = createClient({
+  endpoint: "https://api.example.com",
+  token: process.env.RA_TOKEN,
+});
+
+function percent(share: number) {
+  return `${Math.round(share * 100)}%`;
+}
+
+export default async function StatsPage() {
+  const week = api.project("example.com").period("7d").human();
+  const [stats, pages] = await Promise.all([
+    week.stats(),
+    week.breakdown("page", { metrics: ["visitors"], limit: 10 }),
+  ]);
+
+  if (!stats.ok) return <p>Could not load stats: {stats.error.message}</p>;
+  if (!pages.ok) return <p>Could not load pages: {pages.error.message}</p>;
+
+  const { visitors, pageviews, bounceRate } = stats.value.data;
+
+  return (
+    <main>
+      <h1>example.com, last 7 days</h1>
+      <dl>
+        <dt>Visitors</dt>
+        <dd>{visitors.value}</dd>
+        <dt>Pageviews</dt>
+        <dd>{pageviews.value}</dd>
+        <dt>Bounce rate</dt>
+        <dd>{percent(bounceRate.value)}</dd>
+      </dl>
+      <h2>Top pages</h2>
+      <ol>
+        {pages.value.data.map((row) => (
+          <li key={row.value}>
+            {row.value}: {row.visitors ?? 0}
+          </li>
+        ))}
+      </ol>
+    </main>
+  );
+}
+```
+
+The page is a Server Component, so the token stays on the server. `human()` leaves out bots and your own internal traffic. Every call answers `{ ok, value }` or `{ ok, error }` and never throws, so a wrong token shows as a message instead of a crash.
+
+## 4. Open it
+
+Run the app and open `/stats`. With no events yet, the numbers are 0 and the list is empty.
+
+| You see | Cause |
+| --- | --- |
+| `NO_TOKEN` | `RA_TOKEN` is set to an empty string |
+| `UNAUTHORIZED` or `NOT_FOUND` | The project is private and the token is missing, revoked or not listed for it. A private project answers 404 so its name does not leak |
+| `NETWORK` | `endpoint` is wrong or the API is down; `<API URL>/v2/health` should answer `"ok": true` |
+
+## Add more
+
+Each of these is one more call on the same `week` scope:
+
+| To show | Call |
+| --- | --- |
+| A visitors chart | `week.timeseries("visitors", { compare: "previous" })` |
+| Top referrers or countries | `week.breakdown("referrer_domain")`, `week.breakdown("country")` |
+| Who is on the site now | `week.realtime()` |
+| Core Web Vitals | `week.speed()` |
+| Filtered numbers | `week.where({ country: "NL" }).stats()` |
+
+The [example dashboard](/examples/dashboard) has all of these as a runnable React page, and [Read client](/docs/sdk/read-client) lists every method.

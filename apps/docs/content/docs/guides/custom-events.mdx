@@ -100,7 +100,9 @@ In React, wrap one element in `TrackClick` to send a named event instead: `<Trac
 
 ## 6. Check that it arrives
 
-Open the site with `?ra=debug` and trigger the event. The console shows an `[ra] RA_EVENT` line with the event, or `RA_DROP` with the reason it was dropped. Then list the latest events:
+Open the site with `?ra=debug` and trigger the event. The console shows an `[ra] RA_EVENT` line with the event, or `RA_DROP` with the reason it was dropped.
+
+Then open the project's **Realtime** page in the dashboard, or list the latest events. A public project needs no token; a private one needs a `read` token ([create one](/docs/guides/read-your-data#1-create-a-token)):
 
 ```bash
 curl https://api.example.com/v2/projects/example.com/realtime/events \
@@ -118,4 +120,4 @@ curl -G https://api.example.com/v2/projects/example.com/breakdown/prop:plan \
   --data-urlencode "period=30d"
 ```
 
-Numeric props can be summed or averaged with `metrics=sum:prop.revenue` or `avg:prop.revenue`. [Read your data](/docs/guides/read-your-data) covers tokens and the other read routes.
+Numeric props can be summed or averaged with `metrics=sum:prop.revenue` or `avg:prop.revenue`. [Read your data](/docs/guides/read-your-data) covers the other read routes.

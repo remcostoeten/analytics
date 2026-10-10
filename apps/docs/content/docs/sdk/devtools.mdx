@@ -7,14 +7,6 @@ description: An overlay panel for admins on their own site, with online visitors
 
 ![The dev widget docked to the bottom of a page, with the logs buffer open and one rejected event expanded as JSON](/images/dev-widget.png)
 
-## How it loads
-
-Every entry renders a loader of under 1 KB gzip. On mount it calls `GET /v2/widget/session` with the browser's cookies. Only when that answers 200, which needs an admin session from signing in to the API, does it import the panel chunk. A visitor without a session gets a 401 and downloads nothing more.
-
-The panel renders into a Shadow DOM root on one `<ra-devtools>` element. Its stylesheet is Tailwind compiled at build time and adopted into that root, so the host's CSS and the widget's CSS never meet. It adds no global styles, no classes on `body` and one global listener, for the keyboard shortcut.
-
-The bootstrap answer carries a bearer token for that one project. The panel sends it on every call and fetches a new one 60 seconds before it expires. [API: Dev widget](/docs/api/dev-widget) describes every route the panel reads, including the `live` WebSocket that streams events, logs, visitors and sessions on one connection.
-
 ## Install
 
 ```bash
@@ -22,6 +14,12 @@ npm install @spoar/devtools
 ```
 
 `react` and `react-dom` 19 or later are peer dependencies of the React and Next entries. `@spoar/sdk` is an optional peer, for the `analytics` option.
+
+## Requirements
+
+- Your browser is signed in to the API with GitHub as an owner, or as an admin of the project. Visitors without that session see nothing.
+- The site's origin is in the project's allowed origins: **Settings** in the dashboard, or `allowedOrigins` on the project.
+- The API shares the site's registrable domain, such as `api.example.com` for `example.com`. The session cookie is `SameSite=Lax`, so a browser does not send it to an API on another site.
 
 ## Entries
 
@@ -42,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {children}
-        <Devtools endpoint="https://api.analytics.remcostoeten.nl" project="remcostoeten.nl" />
+        <Devtools endpoint="https://api.example.com" project="example.com" />
       </body>
     </html>
   );
@@ -56,7 +54,7 @@ import { Devtools } from "@spoar/devtools/react";
 
 import { analytics } from "./analytics";
 
-<Devtools endpoint="https://api.analytics.remcostoeten.nl" project="remcostoeten.nl" analytics={analytics} />;
+<Devtools endpoint="https://api.example.com" project="example.com" analytics={analytics} />;
 ```
 
 ### Any page
@@ -64,7 +62,7 @@ import { analytics } from "./analytics";
 ```ts
 import { mount } from "@spoar/devtools";
 
-const unmount = mount({ endpoint: "https://api.analytics.remcostoeten.nl", project: "remcostoeten.nl" });
+const unmount = mount({ endpoint: "https://api.example.com", project: "example.com" });
 ```
 
 ## Options
@@ -80,7 +78,7 @@ const unmount = mount({ endpoint: "https://api.analytics.remcostoeten.nl", proje
 
 ## Client reports
 
-With `analytics` set, the panel shows dropped events and SDK errors in the logs buffer straight away. It also posts them to `POST /v2/projects/:project/logs/client` in batches of up to 50 every 5 seconds, but only when the project has `widgetReports` on. It is off by default; turn it on with `PATCH /v2/projects/:project` and `{ "widgetReports": true }`.
+With `analytics` set, the panel shows dropped events and SDK errors in the logs buffer straight away. It also posts them to `POST /v2/projects/:project/logs/client` in batches of up to 50 every 5 seconds, but only when the project has `widgetReports` on. It is off by default. Turn on **Widget reports** in the project's **Settings** in the dashboard, or send `PATCH /v2/projects/:project` with `{ "widgetReports": true }` and an `admin` [token](/docs/guides/read-your-data#1-create-a-token).
 
 ## Buffers
 
@@ -110,3 +108,11 @@ Each buffer keeps up to 400 rows. The filter prompt at its foot takes `key:value
 ## Layout
 
 The panel docks to the bottom at full width, resizable from its top edge, or floats, draggable by its header and resizable from its top-left corner. Full width and full height are toggles in the header. The layout is saved per origin in `localStorage`. Below 640 px wide the panel is a bottom sheet.
+
+## How it loads
+
+Every entry renders a loader of under 1 KB gzip. On mount it calls `GET /v2/widget/session` with the browser's cookies. Only when that answers 200, which needs an admin session from signing in to the API, does it import the panel chunk. A visitor without a session gets a 401 and downloads nothing more.
+
+The panel renders into a Shadow DOM root on one `<ra-devtools>` element. Its stylesheet is Tailwind compiled at build time and adopted into that root, so the host's CSS and the widget's CSS never meet. It adds no global styles, no classes on `body` and one global listener, for the keyboard shortcut.
+
+The bootstrap answer carries a bearer token for that one project. The panel sends it on every call and fetches a new one 60 seconds before it expires. [API: Dev widget](/docs/api/dev-widget) describes every route the panel reads, including the `live` WebSocket that streams events, logs, visitors and sessions on one connection.

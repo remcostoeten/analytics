@@ -6,6 +6,7 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
+import { DashboardPreview } from "@/components/dashboard-preview";
 import { Flow, FlowNode } from "@/components/flow";
 import type { MDXComponents } from "mdx/types";
 
@@ -17,6 +18,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Callout,
     Card,
     Cards,
+    DashboardPreview,
     Flow,
     FlowNode,
     Step,

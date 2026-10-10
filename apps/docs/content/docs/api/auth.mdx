@@ -5,6 +5,14 @@ description: Who can call what, how sign-in works, and the keys and tokens each 
 
 Every route declares one access level, and the API decides it on each request from the credential it receives.
 
+## Getting a credential
+
+| You need | How to get it |
+| --- | --- |
+| A public and secret key | An admin creates a project; see [Quick start](/docs/getting-started/quick-start#1-create-a-project) |
+| An API token | An owner or admin creates one in the dashboard, with `bun run admin` or over HTTP; see [Read your data](/docs/guides/read-your-data#1-create-a-token) |
+| Sign-in | Your GitHub login on the API's allowlist. Whoever runs the API adds it with `bun run setup --owner <login>`; see [Run your own copy](/docs/guides/self-host#2-who-may-sign-in) |
+
 ## Callers and credentials
 
 | Caller | Credential | Can do |
@@ -51,7 +59,7 @@ Sign-in goes through the API, so every frontend shares one access check.
 
 ```json
 {
-  "user": { "id": "usr_01J8Z3", "login": "remcostoeten", "name": "Remco Stoeten", "avatarUrl": "https://avatars.githubusercontent.com/u/57683378" },
+  "user": { "id": "usr_01J8Z3", "login": "octocat", "name": "The Octocat", "avatarUrl": "https://avatars.githubusercontent.com/u/583231" },
   "session": { "expiresAt": "2026-10-27T16:40:01.000Z" },
   "role": "owner",
   "isAdmin": true
@@ -60,13 +68,15 @@ Sign-in goes through the API, so every frontend shares one access check.
 
 Signed out, the same route answers `{ "user": null, "session": null, "role": null, "isAdmin": false }`.
 
-Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic, and `traffic=human` leaves them out. The browser client sends without cookies, so the cookie arrives only through the `/_ra` proxy or the server client given the incoming `request` or `headers`; both forward `ra.session_token` (or `__Secure-ra.session_token`) and no other cookie. The site's domain receives that cookie only when `AUTH_COOKIE_DOMAIN` sets it for a shared parent domain. A browser sending to the API directly is not marked internal this way.
+Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic; [Exclude your own traffic](/docs/guides/exclude-your-traffic) explains when the cookie reaches the API.
 
 ## API tokens
 
-Create a token with `POST /v2/tokens` as an owner or admin, list them with `GET /v2/tokens` and revoke one with `DELETE /v2/tokens/:token`. The response to the create call is the only time the token's value is shown.
+Create a token in the dashboard under **API tokens**, or with `POST /v2/tokens` as an owner or admin. List them with `GET /v2/tokens` and revoke one with `DELETE /v2/tokens/:token`. The token is shown once, when it is created.
+
+Send it as a bearer token:
 
 ```bash
-curl https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/stats?period=7d \
+curl "https://api.example.com/v2/projects/example.com/stats?period=7d" \
   -H "authorization: Bearer $RA_TOKEN"
 ```
