@@ -138,3 +138,13 @@ mv /tmp/package.json.bak package.json
 ```
 
 Then add the trusted publisher as above. The hand-published version gets no git tag or GitHub release.
+
+## 11. Deploying on demand
+
+Git deploys are off for all five Vercel projects: each `vercel.json` (`apps/api`, `apps/docs`, `apps/dashboard`, `v1/apps/ingestion`, `v1/apps/dashboard`) sets `"git": { "deploymentEnabled": false }`, so pushes and pull requests create no deployments and the free plan's deployment quota is spent only on purpose. Deploy a project when it should go live:
+
+- Vercel dashboard: open the project, Deployments, Create Deployment, and pick `master` (or a commit). It builds with the project's settings and, from `master`, goes to production.
+- CLI, from the repository root with the project linked: `vercel deploy --prod --cwd apps/api` (likewise `apps/docs`, `apps/dashboard`).
+
+To turn automatic deploys back on for one project, remove its `git` block.
+
