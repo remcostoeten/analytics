@@ -1,13 +1,11 @@
-const fallback = "https://dashboard.analytics.remcostoeten.nl";
-
 /**
  * @name dashboardUrl
- * @description A link into the dashboard app from `DASHBOARD_URL`, without a trailing slash,
- * falling back to production. Server only, since the variable has no public prefix.
+ * @description A same-origin link into the dashboard, which this site serves under `/dashboard`
+ * by rewriting to `DASHBOARD_URL`.
  *
  * @example
- * dashboardUrl(`/admin/projects/${encodeURIComponent(project)}`);
+ * dashboardUrl(`/projects/${encodeURIComponent(project)}`);
  */
 export function dashboardUrl(path = "") {
-  return `${(process.env.DASHBOARD_URL ?? fallback).replace(/\/+$/, "")}${path}`;
+  return `/dashboard${path}`;
 }

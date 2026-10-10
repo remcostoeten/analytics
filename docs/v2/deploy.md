@@ -67,7 +67,7 @@ Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.rem
 
 ## 6. The docs site on Vercel
 
-Project `v2.analytics-docs` (already created, with `docs.analytics.remcostoeten.nl`), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variables `NEXT_PUBLIC_API_URL` (defaults to `https://api.analytics.remcostoeten.nl`) and `DASHBOARD_URL` (defaults to `https://dashboard.analytics.remcostoeten.nl`, where the nav links to sign in). Add a domain such as `docs.analytics.remcostoeten.nl`.
+Project `v2.analytics-docs` (already created, with `docs.analytics.remcostoeten.nl`), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variables `NEXT_PUBLIC_API_URL` (defaults to `https://api.analytics.remcostoeten.nl`) and `DASHBOARD_URL` (defaults to `https://dashboard.analytics.remcostoeten.nl`, the target of the `/dashboard` rewrite). Add a domain such as `docs.analytics.remcostoeten.nl`.
 
 The site tracks itself and shows its own numbers on the landing page. Create its project once, as an owner or with an `admin` token:
 
