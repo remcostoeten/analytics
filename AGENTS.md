@@ -10,9 +10,9 @@ Self-hosted, privacy-first web analytics, owned and designed by Remco. This repo
 
 ## The plan
 
-The plan lives in [`docs/v2/`](docs/v2/README.md): `plan.md` for decisions and architecture, plus the SDK design, API reference, schemas, SQL reference, capabilities and the epics with ready-to-paste prompts. The original doc is https://claude.ai/artifact/LPNHFpymb9EW3nazt2r3sD; the repo copy is what agents read and keep current.
+The plan lives in [`docs/v2/`](docs/v2/README.md): `plan.md` for decisions and architecture, plus the SDK design, API reference, schemas, SQL reference and deployment notes. The original doc is https://claude.ai/artifact/LPNHFpymb9EW3nazt2r3sD; the repo copy is what agents read and keep current.
 
-The decisions table in `docs/v2/plan.md` is binding. If a task conflicts with it, stop and ask Remco. Work is picked up epic by epic from `docs/v2/epics-and-prompts.md`.
+The decisions table in `docs/v2/plan.md` is binding. If a task conflicts with it, stop and ask Remco.
 
 ## Rules
 

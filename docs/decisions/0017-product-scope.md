@@ -16,4 +16,4 @@ Settled on Oct 1, 2026. Source: row 17 of the decisions table in [`docs/v2/plan.
 
 - No actions table and no migration for it.
 - The `experiments` plugin and the `conversion_rate` metric stay, documented as they are, without plans to extend them.
-- The dropped items and their reasons are in [`docs/v2/archive/conversion-scope.md`](../v2/archive/conversion-scope.md).
+- The product focus section in [`docs/v2/plan.md`](../v2/plan.md#product-focus) records the boundary.
