@@ -66,9 +66,11 @@ The API is an Elysia app in `apps/api`. `bun run --cwd apps/api build` downloads
 
 Check that `<API URL>/v2/health` answers `"ok": true`.
 
-## 6. Sign in and create a project
+## 6. Run the dashboard and create a project
 
-Open `<API URL>/v2/setup` and sign in with GitHub. The page lists your projects, creates one with its public and secret key, prints the `.env.local` block and the two Next files to paste, rotates a secret and edits the allowed origins. New projects accept events from `https://<domain>` and `https://www.<domain>`; clear the list to accept any origin. The secret key is shown once.
+The dashboard is a Next app in `apps/dashboard`, served under `/dashboard`. Deploy it with root directory `apps/dashboard` (on Vercel, framework Next.js) and `NEXT_PUBLIC_API_URL` set to your API URL, then set `DASHBOARD_ORIGIN` on the API to the origin the browser opens the dashboard on, so sign-in and the session cookie are accepted. `apps/dashboard/README.md` has the details.
+
+Open `<dashboard origin>/dashboard` and sign in with GitHub. Projects, under Manage, lists your projects, creates one with its public and secret key, prints the `.env.local` block to paste, rotates a secret and edits the allowed origins. New projects accept events from `https://<domain>` and `https://www.<domain>`; clear the list to accept any origin. The secret key is shown once. Without a dashboard, `bun run setup --project <id> --domain <domain>` from step 1 creates a project from the command line.
 
 The first allowed login to sign in becomes the owner. Later logins see their role and a note that an owner must grant access.
 

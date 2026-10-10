@@ -8,7 +8,7 @@ const entities: { [character: string]: string } = {
   "'": "&#39;",
 };
 
-export function escape(value: string) {
+function escape(value: string) {
   return value.replaceAll(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
@@ -29,11 +29,11 @@ function pathMarkup(path: string) {
   return `${prefix}${body}`;
 }
 
-export const mark = `<svg class="mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="tile" width="28" height="28" rx="8"/><path class="trace" pathLength="1" d="M5 19 10 11 14.5 16 18.5 8 23 19"/><circle class="end" cx="23" cy="19" r="2.6"/></svg>`;
+const mark = `<svg class="mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect class="tile" width="28" height="28" rx="8"/><path class="trace" pathLength="1" d="M5 19 10 11 14.5 16 18.5 8 23 19"/><circle class="end" cx="23" cy="19" r="2.6"/></svg>`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#0a0a0a"/><path d="M5 19 10 11 14.5 16 18.5 8 23 19" fill="none" stroke="#fafafa" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="19" r="2.6" fill="#fe5101"/></svg>`;
 
-export const styles = `
+const styles = `
 :root {
   --bg: #fafafa;
   --surface: #ffffff;
@@ -239,7 +239,7 @@ const monthNames = [
   "Dec",
 ];
 
-export function formatDay(iso: string) {
+function formatDay(iso: string) {
   const date = new Date(iso);
   return `${date.getUTCDate()} ${monthNames[date.getUTCMonth()] ?? ""} ${date.getUTCFullYear()}`;
 }
