@@ -20,7 +20,7 @@ The full architecture, ingest pipeline, routes and schema are in [AGENTS.md](AGE
 
 | Part | Source | Deployed to |
 | --- | --- | --- |
-| Dashboard | `apps/dashboard` | Vercel project `analytics`, served at analytics.remcostoeten.nl |
+| Dashboard | `apps/dashboard` | Vercel project `v1.analytics`, served at v1.analytics.remcostoeten.nl |
 | Ingestion | `apps/ingestion` (deploy shell) and `packages/ingestion` (the service) | Vercel project `ingestion`, served at ingestion.remcostoeten.nl behind Cloudflare |
 | SDK | `packages/sdk` | npm, `@remcostoeten/analytics` |
 | Database | `packages/ingestion/src/db` | Neon Postgres, shared by ingestion and dashboard |
