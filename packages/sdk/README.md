@@ -2,12 +2,12 @@
 
 Privacy-first analytics for browsers, servers and React, sending to a self-hosted analytics API. Version 2 is ESM only, has typed events, batches requests, keeps no cookies, and adds features through plugins so an app only ships what it uses.
 
-2.0 prereleases publish under the `next` tag, so install `@spoar/sdk@next` until 2.0.0; `latest` is a 0.0.1 placeholder until then. 1.x is the `@remcostoeten/analytics` package.
+Releases publish to the `latest` tag. 1.x is the `@remcostoeten/analytics` package.
 
 ## Install
 
 ```bash
-npm install @spoar/sdk@next
+npm install @spoar/sdk
 ```
 
 ## Quick start

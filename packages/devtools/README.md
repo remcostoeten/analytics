@@ -28,7 +28,7 @@ import { Devtools } from "@spoar/devtools/next";
 <Devtools endpoint="https://api.analytics.remcostoeten.nl" project="remcostoeten.nl" />;
 ```
 
-Prereleases publish under the `next` tag. For work without an API, `@spoar/devtools/fixtures` serves sample data for every route: pass `fetch: fixtureFetch()`.
+For work without an API, `@spoar/devtools/fixtures` serves sample data for every route: pass `fetch: fixtureFetch()`.
 
 ## Development
 

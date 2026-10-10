@@ -51,9 +51,26 @@ jobs:
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry-run
         run: bun run release --dry-run
+      - name: Publish
+        id: publish
+        if: github.event_name == 'push' || !inputs.dry-run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          status=0
+          bun run release | tee release.log || status=$?
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for tag in $(sed -n 's/^New tag: //p' release.log); do
+            git tag "$tag"
+            git push origin "$tag"
+            gh release create "$tag" --verify-tag --generate-notes --title "$tag"
+          done
+          exit "$status"
       - name: Version packages
         id: version
-        if: github.event_name == 'push' || !inputs.dry-run
+        if: ${{ !cancelled() && steps.publish.outcome != 'skipped' }}
         run: |
           bun run changeset version
           if [ -n "$(git status --porcelain)" ]; then
@@ -62,7 +79,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Version pull request
-        if: steps.version.outputs.changed == 'true'
+        if: ${{ !cancelled() && steps.version.outputs.changed == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -75,17 +92,3 @@ jobs:
           if [ -z "$(gh pr list --head changeset-release/master --state open --json number --jq '.[].number')" ]; then
             gh pr create --base master --head changeset-release/master --title "chore(release): version packages" --body "Merging this publishes the versioned packages to npm." || echo "::warning::Could not open the version pull request; open it by hand from changeset-release/master"
           fi
-      - name: Publish
-        shell: bash
-        if: steps.version.outputs.changed == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bun run release | tee release.log
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for tag in $(sed -n 's/^New tag: //p' release.log); do
-            git tag "$tag"
-            git push origin "$tag"
-            gh release create "$tag" --verify-tag --prerelease --generate-notes --title "$tag"
-          done
