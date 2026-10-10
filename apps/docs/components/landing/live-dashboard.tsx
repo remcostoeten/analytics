@@ -14,7 +14,7 @@ export async function LiveDashboard() {
     <div className="panel-rise relative grid w-full grid-cols-1 overflow-hidden rounded-t-xl border border-b-0 border-line bg-surface text-left shadow-[0_30px_60px_-30px_rgb(var(--shade)/0.35)] sm:grid-cols-[168px_1fr]">
       <aside className="hidden flex-col gap-4 border-r border-line bg-bg/60 p-3 sm:flex">
         <a
-          href={dashboardUrl(`/admin/projects/${encodeURIComponent(showcase.project)}`)}
+          href={dashboardUrl(`/projects/${encodeURIComponent(showcase.project)}`)}
           rel="noreferrer"
           title="Open this project in the dashboard"
           className="group flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5 transition-colors duration-200 hover:border-fg/20"

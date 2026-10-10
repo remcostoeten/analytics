@@ -8,15 +8,19 @@ import { Logo } from "@/components/logo";
 
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 
-type NavLink = {
+export type NavLink = {
   label: string;
   href: string;
+  external?: boolean;
 };
 
 type Props = {
   links: NavLink[];
   loginHref: string;
 };
+
+const menuItem =
+  "block rounded-xl px-3 py-2 text-[0.85rem] text-fg transition-colors hover:bg-fg/5 focus-visible:bg-fg/5 focus-visible:outline-none";
 
 export function SiteNav({ links, loginHref }: Props) {
   const [open, setOpen] = useState(false);
@@ -96,13 +100,15 @@ export function SiteNav({ links, loginHref }: Props) {
           >
             {links.map((link) => (
               <li key={link.href}>
-                <Link
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-xl px-3 py-2 text-[0.85rem] text-fg transition-colors hover:bg-fg/5 focus-visible:bg-fg/5 focus-visible:outline-none"
-                >
-                  {link.label}
-                </Link>
+                {link.external ? (
+                  <a href={link.href} className={menuItem}>
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link href={link.href} onClick={() => setOpen(false)} className={menuItem}>
+                    {link.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

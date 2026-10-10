@@ -30,7 +30,7 @@ import { LiveDashboard } from "@/components/landing/live-dashboard";
 import { PipelineScene } from "@/components/landing/pipeline-scene";
 import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
-import { SiteNav } from "@/components/landing/site-nav";
+import { SiteNav, type NavLink } from "@/components/landing/site-nav";
 import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
 import { VitalsScene } from "@/components/landing/vitals-live";
@@ -244,14 +244,17 @@ async function readSnippet() {
 }
 
 function navLinks() {
-  const links = [
+  const links: NavLink[] = [
     { label: "Documentation", href: "/docs" },
     { label: "SDK reference", href: "/docs/sdk/install" },
     { label: "API reference", href: "/docs/reference" },
     { label: "Query", href: "/query" },
   ];
   if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
-  links.push({ label: "Dashboard", href: dashboardUrl() }, { label: "GitHub", href: github });
+  links.push(
+    { label: "Dashboard", href: dashboardUrl(), external: true },
+    { label: "GitHub", href: github, external: true },
+  );
   return links;
 }
 
@@ -260,7 +263,7 @@ export default async function HomePage() {
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
       <RevealObserver />
-      <SiteNav links={navLinks()} loginHref={dashboardUrl()} />
+      <SiteNav links={navLinks()} loginHref={dashboardUrl("/sign-in")} />
 
       <header className="hero-wash relative isolate flex overflow-x-clip flex-col items-center px-4 pt-32 text-center sm:pt-40">
         <span aria-hidden="true" className="hero-blob hero-blob-a" />
@@ -317,7 +320,7 @@ export default async function HomePage() {
           </a>
           , or{" "}
           <a
-            href={dashboardUrl(`/admin/projects/${encodeURIComponent(showcaseProject())}`)}
+            href={dashboardUrl(`/projects/${encodeURIComponent(showcaseProject())}`)}
             rel="noreferrer"
             className="link-line text-fg"
           >
