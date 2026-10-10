@@ -1,5 +1,4 @@
-import type { Filters } from "@spoar/client";
-import type { Period, TrafficFilter } from "@spoar/contract";
+import type { Filters, Period, TrafficFilter } from "@spoar/client";
 import { useEffect, useMemo, useState } from "react";
 
 import { createTracking } from "./analytics";

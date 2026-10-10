@@ -1,0 +1,37 @@
+---
+title: Chart visitors over time
+description: Step 4 of 7. Read a visitors time series with the previous period and draw it as an SVG line chart.
+---
+
+This step adds a chart of visitors per bucket, with the period before drawn as a dashed line. It uses one more read and no chart library.
+
+## 1. Add the chart
+
+<StepDiff
+  step={4}
+  notes={[
+    {
+      file: "src/components/timeseries-chart.tsx",
+      match: 'scope.timeseries("visitors", { compare: "previous" })',
+      text: "compare: \"previous\" adds a previous value to every point, from the period of the same length before this one.",
+    },
+    {
+      file: "src/components/timeseries-chart.tsx",
+      match: "formatBucket(point.bucket, interval)",
+      text: "The API picks the interval from the period: hours for 24h, days for longer periods. The response says which one it used.",
+    },
+    {
+      file: "src/app.tsx",
+      match: "<TimeseriesChart",
+      text: "Both panels read from the same scope and key, so they always show the same period.",
+    },
+  ]}
+/>
+
+## 2. What the read returns
+
+The last seven points of this site's own series, one per day:
+
+<LiveRead read="timeseries" />
+
+Next, [add top lists and filters](/docs/tutorial/add-top-lists-and-filters).

@@ -1,0 +1,51 @@
+---
+title: Track the page
+description: Step 2 of 7. Send pageviews and typed custom events from the dashboard into its own project with @spoar/sdk.
+---
+
+The dashboard tracks itself into the project it reads, so its own visits are the first data it shows. This step adds the SDK client and a type for every custom event the page will send.
+
+## 1. Add the client
+
+<StepDiff
+  step={2}
+  notes={[
+    {
+      file: "src/events.ts",
+      match: "export type Events",
+      text: "Every custom event name and its properties. A track call with an unknown name or a wrong property fails to compile.",
+    },
+    {
+      file: "src/analytics.ts",
+      match: "endpoint: `${trimEndpoint",
+      text: "The browser client posts to endpoint exactly as given, so it gets the full /v2/events URL.",
+    },
+    {
+      file: "src/analytics.ts",
+      match: 'mode: settings.publicKey ? "production"',
+      text: "Without a public key the client runs in development mode and logs events to the console instead of sending them.",
+    },
+    {
+      file: "src/analytics.ts",
+      match: "plugins: [clicks()]",
+      text: "Pageviews are on by default. clicks() adds a click event for every element with a data-ra-click attribute.",
+    },
+    {
+      file: "src/app.tsx",
+      match: "analytics.shutdown()",
+      text: "shutdown() sends what is still queued, then removes the client's listeners.",
+    },
+  ]}
+/>
+
+The client sends a pageview on load and on every `pushState` navigation. The events in `Events` are sent from step 5, once the page has controls to click.
+
+## 2. Check that events arrive
+
+Reload `http://localhost:3301`, then open the project in the dashboard and pick **Realtime**. The pageview shows up within a few seconds.
+
+If nothing arrives, check the browser's network tab for the `POST` to `/v2/events`. A `403` means `http://localhost:3301` is missing from the project's allowed origins. [Events do not arrive](/docs/troubleshooting/no-events) covers the other causes.
+
+On a real site, send events through your own domain with the [proxy](/docs/guides/proxy), so ad blockers that block third-party hosts do not drop them.
+
+Next, [read the overview](/docs/tutorial/read-the-overview).

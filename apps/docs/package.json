@@ -12,6 +12,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
+		"@pierre/diffs": "1.5.2",
 		"@spoar/client": "workspace:*",
 		"@spoar/sdk": "workspace:*",
 		"fumadocs-core": "16.16.0",

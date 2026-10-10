@@ -1,0 +1,91 @@
+---
+title: Create a project and the app
+description: Step 1 of 7. Create a project, get its keys and start an empty React app on Bun that reads them.
+---
+
+This tutorial builds the [example dashboard](/examples/dashboard) from an empty folder in seven steps: the page tracks itself with `@spoar/sdk`, then reads its own numbers back with `@spoar/client`. Each step shows the files it adds or changes as a diff against the step before. The code is the code in `examples/dashboard`, and every step typechecks in CI.
+
+You need [Bun](https://bun.sh) and an API to send events to: the hosted one at `https://api.analytics.remcostoeten.nl`, or your own from [Self-host](/docs/guides/self-host).
+
+## 1. Create a project
+
+A project is one site or app, and it holds two keys. This tutorial uses the public key (`pk_...`). Sign in to the dashboard at `/dashboard`, open **Projects**, then **New project**:
+
+- Id: `example.com`, or any name you like. The id is how reads find the project.
+- Domain: the site the project tracks.
+- Allowed origins: add `http://localhost:3301`, the address the dashboard runs on in this tutorial. The API rejects events from any other origin with `403 FORBIDDEN_ORIGIN`.
+
+The next screen shows the keys. [Quick start](/docs/getting-started/quick-start#1-create-a-project) covers the other ways to create a project, from `bun run setup` to `POST /v2/projects`.
+
+Projects are public by default, so anyone can read their aggregate numbers without a token. Keep it public for this tutorial. A private project needs an `at_live_` read token, and a token in a browser page is visible to everyone who opens it.
+
+## 2. Start the app
+
+```bash
+mkdir dashboard && cd dashboard
+bun init -y
+bun add @spoar/sdk@next @spoar/client@next react react-dom
+bun add -d @types/react @types/react-dom
+```
+
+`index.html`:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
+```
+
+Copy [`src/styles.css`](https://github.com/remcostoeten/analytics/blob/master/examples/dashboard/src/styles.css) from the example; the class names in this tutorial come from it.
+
+`bunfig.toml` tells Bun to inline variables that start with `BUN_PUBLIC_` into the page:
+
+```toml
+[serve.static]
+env = "BUN_PUBLIC_*"
+```
+
+`.env.local`, with your project id and public key:
+
+```bash
+BUN_PUBLIC_DASHBOARD_API=https://api.analytics.remcostoeten.nl
+BUN_PUBLIC_DASHBOARD_PROJECT=example.com
+BUN_PUBLIC_DASHBOARD_TOKEN=
+BUN_PUBLIC_DASHBOARD_PUBLIC_KEY=pk_...
+```
+
+## 3. Add the first files
+
+<StepDiff
+  step={1}
+  notes={[
+    {
+      file: "src/settings.ts",
+      match: "BUN_PUBLIC_DASHBOARD_API ||",
+      text: "Bun replaces each process.env.BUN_PUBLIC_* with its value when it serves or builds the page.",
+    },
+    {
+      file: "src/app.tsx",
+      match: 'settings.project === ""',
+      text: "Without a project id there is nothing to read, so the page says what to set.",
+    },
+  ]}
+/>
+
+## 4. Run it
+
+```bash
+bun --port=3301 ./index.html
+```
+
+Open `http://localhost:3301`. The page shows your project id as a heading. Next, [track the page](/docs/tutorial/track-the-page).

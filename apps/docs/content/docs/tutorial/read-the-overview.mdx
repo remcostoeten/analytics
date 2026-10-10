@@ -1,0 +1,53 @@
+---
+title: Read the overview
+description: Step 3 of 7. Read visitors, sessions, pageviews, bounce rate and session duration with @spoar/client and show them as tiles.
+---
+
+This step reads data back. `@spoar/client` gives one scope per project; links such as `period` and `traffic` narrow it, and a read method at the end sends the request.
+
+## 1. Read the stats
+
+<StepDiff
+  step={3}
+  notes={[
+    {
+      file: "src/api.ts",
+      match: "return api.project(settings.project)",
+      text: "The scope over one project. Every read in this tutorial starts here.",
+    },
+    {
+      file: "src/use-read.ts",
+      match: "if (result.ok)",
+      text: "Reads return a Result instead of throwing: ok with a value, or not ok with a ClientError that has a code and a message.",
+    },
+    {
+      file: "src/use-read.ts",
+      match: "if (!current) return;",
+      text: "A response for an older key arrives after a newer one was requested, so it is dropped.",
+    },
+    {
+      file: "src/components/stats-tiles.tsx",
+      match: "scope.stats()",
+      text: "One request for all five numbers, each with its change against the period before.",
+    },
+    {
+      file: "src/app.tsx",
+      match: 'project.period("7d").traffic("human")',
+      text: "Links return a new scope and leave the old one as it was. human() and traffic(\"human\") leave out traffic scored as bots.",
+    },
+  ]}
+/>
+
+`ReadFrame` gives every panel the same four states: a skeleton while the first read loads, an error with a retry button, an empty message, and the data.
+
+## 2. What the read returns
+
+The same read against this site's own project:
+
+<LiveRead read="stats" />
+
+Each metric has a `value` and a `change`, the ratio against the previous period of the same length. `change` is `null` when that period had nothing to compare with, and the tile shows "new".
+
+A `period` such as `7d` ends at the start of today in UTC, so today's visits are not counted yet. Use `between(from, to)` to read up to now. [Read client](/docs/sdk/read-client) lists every link and read.
+
+Next, [chart visitors](/docs/tutorial/chart-visitors).

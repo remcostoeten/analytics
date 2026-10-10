@@ -33,6 +33,12 @@
         "tailwindcss",
         "@fontsource-variable/jetbrains-mono"
       ]
+    },
+    "examples/dashboard": {
+      "entry": [
+        "src/main.tsx",
+        "steps/*/src/**/*.{ts,tsx}"
+      ]
     }
   },
   "ignoreExportsUsedInFile": {
