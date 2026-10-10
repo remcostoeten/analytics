@@ -4,7 +4,7 @@ Sep 27, 2026 · @Remco
 
 Rebuild the SDK as `@spoar/sdk@2` on a versioned contract, `POST /v2/events`, served by a new Elysia API built on one reusable engine. The API also owns reads, sign-in, OpenAPI docs, bot scoring, speed insights and error tracking. Projects stay public by default and can be made private. The Hono ingestion keeps serving `/e` for 1.x clients until they are gone.
 
-This tab is the plan. The API reference tab has every route with full examples, Capabilities and gaps compares v2 with other tools, and Epics and prompts splits the work into agent-sized tasks.
+This file is the plan. The API reference has every route with full examples.
 
 ## Decisions needed
 
@@ -35,7 +35,7 @@ Rows marked Settled are decided; the rest are open with a recommended default, a
 | 22 | Example dashboard | Settled, 8 October 2026 | An example dashboard lives in `examples/dashboard`, built on `@spoar/client` and `@spoar/sdk` with plain styling and no design opinions. It is a reference for people reading the API, not the v2 dashboard; E4.5 stays on hold for Remco's design and later reuses its seeded dataset for parity tests | REST API, Phases |
 | 23 | Dashboard admin module first | Settled, 8 October 2026 | `apps/dashboard` starts on Next with the admin module only: sign-in through the API, the project list, creating a project, its settings and key rotation, and API tokens. Server components read through `@spoar/client` with the session cookie forwarded; every change is a server action. The analytics views (E4.5) still wait for Remco's design, and the setup page stays until the dashboard is deployed (decision 21) | Access and sign-in, Phases |
 | 24 | Dashboard design and URL | Settled, 9 October 2026 | E4.5 follows Cloudflare's Web Analytics layout: a sidebar with a project switcher, a home page listing projects with their last 24 hours, and per project a metric rail (visitors, pageviews, sessions, bounce rate, visit duration) beside one panel with filters, a time range, a summary chart split by a dimension and top lists that filter on click. The view lives in the URL. `apps/dashboard` keeps its own Vercel project with `basePath: "/dashboard"`, and `apps/docs` rewrites `/dashboard` to it, so the dashboard and sign-in sit on the landing domain; the API's `DASHBOARD_ORIGIN` is the landing origin | Access and sign-in, Phases |
-| 19 | Publishing `@spoar/contract` | Settled, 4 October 2026 | Private and never published. `@spoar/sdk` and `@spoar/devtools` bundle it through tsdown `noExternal` and list it under `devDependencies`. It only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step. Replaces "published so other projects can type against the API" in Build process. See [finish-plan.md](finish-plan.md) | Monorepo structure, Build, Branching |
+| 19 | Publishing `@spoar/contract` | Settled, 4 October 2026 | Private and never published. `@spoar/sdk` and `@spoar/devtools` bundle it through tsdown `noExternal` and list it under `devDependencies`. It only exists to share types and validation between the SDK and the API, and a second package would mean a second install and a second version to keep in step. Replaces "published so other projects can type against the API" in Build process | Monorepo structure, Build, Branching |
 | 24 | Dashboard query layer | Settled, 8 October 2026 | `@spoar/client` stays stateless: one request per call, no cache. Every scope has `key(route, ...args)`, a serialisable key of the project, the route, the sorted query and the route arguments. The dashboard caches, dedupes, polls and invalidates in client components with TanStack Query on those keys; server components keep reading through `@spoar/client` directly. A framework-free `watch()` store is not built now and can be added later on the same keys | REST API, Phases |
 | 25 | Tools on the landing page | Settled, 10 October 2026 | The docs homepage carries a tools section: a read-only SQL console over this site's own project and links to the dashboard, the query page and the SQL guide. The console runs six preset aggregate queries chosen from a list, never SQL a visitor typed, because SQL stays closed to anonymous callers (Who can run SQL). The docs server holds `RA_SQL_TOKEN`, a `sql` token listing the docs project, runs each preset over the showcase window and caches the answer for a minute, so visitors share one run per preset. Without the variable the section is left out. Free-text SQL stays on the query page with the visitor's own token | REST API, Access and sign-in |
 
@@ -55,7 +55,9 @@ In priority order:
 6. Reliability, privacy and self-hosting.
 7. The v2 dashboard on the v2 API, last.
 
-Not planned: goals, funnels, actions (named events defined after the fact) and experiment statistics or A/B analysis. What already works stays and is documented as it is: the `experiments` plugin with its `experiment_exposure` event and `experiments` visitor field, the `conversion_rate` metric on `filter[event]`, and SQL over the `events` and `pageviews` views. [archive/conversion-scope.md](archive/conversion-scope.md) lists what was dropped and why.
+Of these, Search Console is the only item not built. After it, in order: saved segments (named filter sets reusable across reports and the public dashboard); email reports; webhooks; source maps; share links and embeds; an MCP server; and a Durable Object realtime hub if polling ever falls short. Each gets a decision row before work starts.
+
+Not planned: goals, funnels, actions (named events defined after the fact), experiment statistics or A/B analysis, feature flags, click heatmaps and surveys. What already works stays and is documented as it is: the `experiments` plugin with its `experiment_exposure` event and `experiments` visitor field, the `conversion_rate` metric on `filter[event]`, and SQL over the `events` and `pageviews` views.
 
 ## Starting point
 
@@ -791,6 +793,6 @@ The SDK is phase 3 because it needs a contract to type against and an endpoint t
 
 &#91;embedded content: roadmap · 6 phases, 5 gates\]
 
-Each gate is a check that must pass before the next phase starts. Phase 4 can start in parallel with phase 3 once phase 2's gate passes. The phases are split into 20 epics, each with a ready-to-paste agent prompt, in Epics and prompts.
+Each gate is a check that must pass before the next phase starts. Phase 4 can start in parallel with phase 3 once phase 2's gate passes. Phases 0 to 4 are built and run from `master`; phase 5, retiring 1.x, waits until its traffic is gone.
 
 **Note:** analytics was removed from [remcostoeten/remcostoeten.nl](https://github.com/remcostoeten/remcostoeten.nl) together with the analytics manager, so that site sends no events right now. Reinstall it there, on SDK 2.0 once phase 3 ships or on 1.x in the meantime.
