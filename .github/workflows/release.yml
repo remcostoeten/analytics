@@ -81,7 +81,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e
           bun run release | tee release.log
+          status=${PIPESTATUS[0]}
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for tag in $(sed -n 's/^New tag: //p' release.log); do
@@ -89,3 +92,4 @@ jobs:
             git push origin "$tag"
             gh release create "$tag" --verify-tag --prerelease --generate-notes --title "$tag"
           done
+          exit "$status"

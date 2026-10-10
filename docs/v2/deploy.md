@@ -131,4 +131,4 @@ mv /tmp/package.json.bak package.json
 
 Then on npmjs.com open the package, Settings, Trusted Publisher, and add GitHub Actions with repository `remcostoeten/analytics` and workflow `release.yml`. Run the `release` workflow by hand with `dry-run` off: `scripts/publish.ts` skips the version already on npm and publishes the rest.
 
-The script publishes `packages/*` in folder order and stops at the first failure, so a package that cannot be published blocks the ones after it. The hand-published version gets no git tag or GitHub release.
+The script publishes `packages/*` in folder order and keeps going when npm refuses one, then fails the run and names the packages it could not publish. The ones that did publish still get their git tag and GitHub release. The hand-published version gets neither.
