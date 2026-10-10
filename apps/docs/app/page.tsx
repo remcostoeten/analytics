@@ -9,6 +9,7 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 import { CodeWindow } from "@/components/landing/code-window";
 import { DropTrail } from "@/components/landing/drop-trail";
 import { ErrorsScene } from "@/components/landing/errors-live";
+import { HeroConsole } from "@/components/landing/hero-console";
 import { PrivacyScene, ProxyScene } from "@/components/landing/feature-scenes";
 import {
   ArrowIcon,
@@ -26,7 +27,6 @@ import {
   TerminalIcon,
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
-import { LiveDashboard } from "@/components/landing/live-dashboard";
 import { PipelineScene } from "@/components/landing/pipeline-scene";
 import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
@@ -306,8 +306,8 @@ export default async function HomePage() {
               <span key={tile} className={tile} />
             ))}
           </div>
-          <div className="relative z-10 mx-auto h-[300px] max-w-[860px] px-3 pt-10 sm:h-[440px] sm:px-8 sm:pt-14">
-            <LiveDashboard />
+          <div className="relative z-10 mx-auto h-[460px] max-w-[960px] px-3 pt-10 sm:h-[600px] sm:px-8 sm:pt-14">
+            <HeroConsole />
           </div>
         </div>
         <p className="hero-rise-late mt-6 max-w-lg font-serif text-[0.9rem] text-muted">
