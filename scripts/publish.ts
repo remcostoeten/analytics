@@ -75,6 +75,7 @@ function main(): void {
   const dryRun = process.argv.includes("--dry-run");
   const tag = prereleaseTag(readText(join(root, ".changeset", "pre.json")));
   const destination = mkdtempSync(join(tmpdir(), "spoar-publish-"));
+  const failed: string[] = [];
   for (const folder of readdirSync(packages)) {
     const directory = join(packages, folder);
     const text = readText(join(directory, "package.json"));
@@ -90,9 +91,13 @@ function main(): void {
     const command = ["npm", "publish", file, "--access", "public", "--tag", tag];
     if (dryRun) command.push("--dry-run");
     else command.push("--provenance");
-    if (!run(command, root).ok) throw new Error(`npm publish failed for ${manifest.name}`);
+    if (!run(command, root).ok) {
+      failed.push(`${manifest.name}@${manifest.version}`);
+      continue;
+    }
     if (!dryRun) console.log(`New tag: ${manifest.name}@${manifest.version}`);
   }
+  if (failed.length > 0) throw new Error(`npm publish failed for ${failed.join(", ")}`);
 }
 
 if (import.meta.main) main();
