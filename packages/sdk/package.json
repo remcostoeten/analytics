@@ -84,10 +84,14 @@
 		"web-vitals": "6.2.2"
 	},
 	"peerDependencies": {
+		"@types/react": ">=19",
 		"next": ">=15",
 		"react": ">=19"
 	},
 	"peerDependenciesMeta": {
+		"@types/react": {
+			"optional": true
+		},
 		"next": {
 			"optional": true
 		},
