@@ -16,7 +16,7 @@ Each signal is a yes or no test on one event. The API adds the weights of the si
 | `edge_verified_bot` | 100 | Vercel's `x-vercel-bot` or Cloudflare's `cf-verified-bot` header is `1` or `true` | At ingest |
 | `client_webdriver` | 60 | The [`botSignals`](/docs/plugins/bot-signals) plugin saw `navigator.webdriver` | At ingest |
 | `session_velocity` | 50 | The session has at least 10 pageviews at more than 30 a minute, or at least 6 pageviews with near-identical gaps between them | By the daily rollup job and `bun run rescore` |
-| `asn_datacenter` | 40 | The IP belongs to a hosting network: AWS, Google Cloud, Azure, Hetzner, OVH, DigitalOcean, Linode, Vultr, Oracle, Alibaba, Tencent, Scaleway, Contabo, M247 or Datacamp | At ingest and on rescore |
+| `asn_datacenter` | 40 | The IP belongs to a hosting network: AWS, Google Cloud, Azure, Hetzner, OVH, DigitalOcean, Linode, Vultr, Oracle, Alibaba, Tencent, Scaleway or Contabo. M247, Datacamp and Google's own network are left out, because consumer VPNs exit through them | At ingest and on rescore |
 | `ip_fanout` | 40 | More than 20 visitor ids came from one IP hash to one project on one UTC day | By the daily rollup job and `bun run rescore` |
 | `headers_inconsistent` | 30 | A Chromium 90+ user agent without `sec-ch-ua`, or a modern browser user agent without `sec-fetch-*` headers | At ingest |
 | `client_headless` | 25 | The plugin saw a zero-size window, no languages, or a Chrome user agent without `window.chrome` | At ingest |

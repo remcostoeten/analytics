@@ -10,7 +10,7 @@ Use this page when a pageview or a `track` call does not show up in the API's re
 Two defaults hide most first events:
 
 - **Reports leave out your test traffic.** Reads default to `traffic=human` and `environment=production`. Events from `localhost`, preview deployments, `curl`, headless browsers and signed-in admins are stored but not counted. Add `traffic=all&environment=all` to the read. In the dashboard, click the **Exclude bots** chip to include bots, internal and localhost traffic.
-- **Reports end before today.** Without `from` and `to`, a `period` such as `7d` ends at the start of today in UTC, so today's events are not in `stats` or `timeseries` yet. Pass `from` and `to`, or check the project's **Realtime** page.
+- **Reports end at the start of the current hour.** Without `from` and `to`, a `period` such as `7d` ends at the start of the current UTC hour, so events from the running hour are not in `stats` or `timeseries` yet. Pass `from` and `to`, or check the project's **Realtime** page.
 
 If the events still do not show, work through the sections below.
 
@@ -52,7 +52,7 @@ Check these causes in order:
 3. **The client has not started.** A client created with `autostart: false` sends nothing until `start()`. The client starts only where `window` exists, so a module imported only on the server never sends.
 4. **Consent is missing.** With `consent: "required"`, events are held until `consent.grant()`; `status().queued` grows while they wait. After `consent.revoke()`, events are dropped with the reason `consent`.
 5. **The browser opted out.** `optOut()`, or `?ra=ignore` with the [ignoreSelf plugin](/docs/plugins/ignore-self), drops every event with the reason `opt-out`. Open the site with `?ra=track` or call `optIn()`.
-6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console, and turn the setting off in the browser you test with.
+6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console. Brave turns Global Privacy Control on by default, so Brave visitors send nothing unless the client sets `privacySignals: "ignore"`.
 7. **`beforeSend` returned `null`.** A `beforeSend` option or a plugin hook dropped the event; `RA_DROP` shows the reason `beforeSend`.
 
 Batches sent while the page unloads go out with `sendBeacon`. The client counts them as accepted without reading the response, so a failed beacon does not show in `status()`.

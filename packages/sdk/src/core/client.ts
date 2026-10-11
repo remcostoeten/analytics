@@ -69,7 +69,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
   const quiet = mode === "development" && !config.endpoint;
   const listeners: Registry = { error: new Set(), send: new Set(), drop: new Set() };
   const host = createPluginHost();
-  const dnt = privacySignal(globalThis.navigator);
+  const dnt = config.privacySignals !== "ignore" && privacySignal(globalThis.navigator);
   const saved = createSavedStore(browserStore("localStorage"), allowed);
   const identity = createIdentity(saved, browserStore("sessionStorage"), now, allowed);
   const log = createLog(() => config.debug === true || saved.read().debug === true, console);

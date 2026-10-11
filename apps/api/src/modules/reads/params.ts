@@ -46,18 +46,18 @@ function invalid<Value>(message: string): Result<Value, EngineError> {
   return err(engineError("VALIDATION_FAILED", message));
 }
 
-function startOfDay(at: Date) {
-  return new Date(Math.floor(at.getTime() / dayMs) * dayMs);
+function startOfHour(at: Date) {
+  return new Date(Math.floor(at.getTime() / hourMs) * hourMs);
 }
 
 /**
  * @name readRange
  * @description The range a read covers: `from` and `to` when both are given, otherwise the
- * `period` (default `30d`) ending at the start of today in UTC, or at the start of this hour for
- * `24h`. `all` starts at 2020-01-01.
+ * `period` (default `30d`) ending at the start of the current UTC hour, so today's traffic is
+ * included and every caller in the same hour shares one window. `all` starts at 2020-01-01.
  *
  * @example
- * readRange(url.searchParams, new Date()); // the last 30 whole days
+ * readRange(url.searchParams, new Date()); // the 30 days up to the start of this hour
  */
 export function readRange(params: URLSearchParams, now: Date): Result<Range, EngineError> {
   const from = params.get("from");
@@ -71,11 +71,8 @@ export function readRange(params: URLSearchParams, now: Date): Result<Range, Eng
     return range.from < range.to ? ok(range) : invalid("from must be before to");
   }
   const period = params.get("period") ?? "30d";
-  if (period === "24h") {
-    const end = new Date(Math.floor(now.getTime() / hourMs) * hourMs);
-    return ok({ from: new Date(end.getTime() - dayMs), to: end });
-  }
-  const end = startOfDay(now);
+  const end = startOfHour(now);
+  if (period === "24h") return ok({ from: new Date(end.getTime() - dayMs), to: end });
   if (period === "all") return ok({ from: earliest, to: end });
   if (period === "12mo") {
     const start = new Date(end);
