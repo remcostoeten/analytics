@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { readRealtime } from "@/modules/analytics/actions";
 import { RealtimePanel } from "@/modules/analytics/components/realtime-panel";
-import { listProjects } from "@/modules/analytics/reads";
+import { findProject } from "@/modules/analytics/reads";
 import { readSession } from "@/modules/session/session";
 
 type Props = { params: Promise<{ project: string }> };
@@ -12,10 +12,12 @@ export const metadata: Metadata = { title: "Realtime" };
 
 export default async function Page({ params }: Props) {
   const { project } = await params;
-  const [projects, session] = await Promise.all([listProjects(), readSession()]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
+  const [found, session, initial] = await Promise.all([
+    findProject(project),
+    readSession(),
+    readRealtime(project),
+  ]);
   if (!found) notFound();
-  const initial = await readRealtime(project);
   const base = `/projects/${encodeURIComponent(project)}`;
 
   return (

@@ -103,3 +103,17 @@ export async function speedScope(project: string, state: ViewState): Promise<Pro
   const api = await serverClient();
   return api.project(project).period(state.period).where(speedFilters(state.filters));
 }
+
+/**
+ * @name findProject
+ * @description One project from the caller's readable list, or null when it does not exist or is
+ * hidden from them. Shares the per-request listing with `listProjects`.
+ *
+ * @example
+ * const project = await findProject("skriuw");
+ * if (!project) notFound();
+ */
+export async function findProject(id: string): Promise<PublicProject | null> {
+  const projects = await listProjects();
+  return projects.ok ? (projects.value.find((entry) => entry.id === id) ?? null) : null;
+}
