@@ -1,7 +1,7 @@
 import { createAnalytics } from "@spoar/sdk";
 import type { Analytics } from "@spoar/sdk";
 import { createAdmin } from "@spoar/sdk/admin";
-import { Devtools } from "@spoar/devtools/react";
+import { Debugtools } from "@spoar/debugtools/react";
 import { useEffect, useRef, useState } from "react";
 import { MethodPanel } from "./components/method-panel";
 import { Overview } from "./components/overview";
@@ -186,7 +186,7 @@ export function App() {
           </main>
         </div>
       </div>
-      {settings.project ? <Devtools endpoint={base} project={settings.project} /> : null}
+      {settings.project ? <Debugtools endpoint={base} project={settings.project} /> : null}
     </>
   );
 }

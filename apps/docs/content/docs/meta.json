@@ -15,7 +15,7 @@
     "sdk/server",
     "sdk/proxy",
     "sdk/admin",
-    "sdk/devtools",
+    "sdk/debugtools",
     "sdk/migrating",
     "plugins",
     "frameworks",

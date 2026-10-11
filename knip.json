@@ -22,22 +22,21 @@
         "site/app.ts"
       ]
     },
-    "packages/devtools": {
-      "entry": [
-        "scripts/*.ts"
-      ],
-      "ignore": [
-        "src/styles/panel.css"
-      ],
-      "ignoreDependencies": [
-        "tailwindcss",
-        "@fontsource-variable/jetbrains-mono"
-      ]
-    },
     "examples/dashboard": {
       "entry": [
         "src/main.tsx",
         "steps/*/src/**/*.{ts,tsx}"
+      ]
+    },
+    "packages/debugtools": {
+      "entry": [
+        "scripts/*.ts"
+      ],
+      "ignore": [
+        "src/styles/console.css"
+      ],
+      "ignoreDependencies": [
+        "tailwindcss"
       ]
     }
   },
