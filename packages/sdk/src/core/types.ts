@@ -82,11 +82,14 @@ export type ErrorContext = {
   fingerprint?: string;
 };
 
+export type PrivacySignals = "respect" | "ignore";
+
 export type AnalyticsConfig = {
   project?: string;
   key?: string;
   endpoint?: string;
   consent?: ConsentMode;
+  privacySignals?: PrivacySignals;
   plugins?: Plugin[];
   pageviews?: boolean;
   mode?: Mode;

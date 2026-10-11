@@ -196,6 +196,16 @@ describe("privacy signals and other tabs", () => {
     }
   });
 
+  test("privacySignals ignore keeps sending with Global Privacy Control on", async () => {
+    fresh();
+    Object.defineProperty(navigator, "globalPrivacyControl", { value: true, configurable: true });
+    const { analytics, transport } = client({ privacySignals: "ignore" });
+    analytics.track("counted");
+    await analytics.flush();
+    Reflect.deleteProperty(navigator, "globalPrivacyControl");
+    expect(sent(transport).map((event) => event.name)).toContain("counted");
+  });
+
   test("a revoke in another tab stops this tab at once and is not overwritten", async () => {
     const { analytics, transport } = client();
     analytics.track("before");
