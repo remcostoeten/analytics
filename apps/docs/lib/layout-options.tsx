@@ -13,6 +13,7 @@ export function baseOptions(): BaseLayoutProps {
   if (listExamples().length > 0) {
     links.push({ text: "Examples", url: "/examples", active: "nested-url", on: "nav" });
   }
+  links.push({ text: "Changelog", url: "/changelog", active: "nested-url", on: "nav" });
   return {
     githubUrl: "https://github.com/remcostoeten/analytics",
     nav: {
