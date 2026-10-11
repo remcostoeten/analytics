@@ -10,9 +10,11 @@ import { MetricRail } from "@/modules/analytics/components/metric-rail";
 import type { RailData } from "@/modules/analytics/components/metric-rail";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
 import { SummarySection } from "@/modules/analytics/components/summary-section";
-import { metricView, metricViews } from "@/modules/analytics/metrics";
+import { VitalsCard } from "@/modules/analytics/components/vitals-card";
+import { metricPath, metricView, metricViews } from "@/modules/analytics/metrics";
 import type { MetricView } from "@/modules/analytics/metrics";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { listProjects, readScope, speedScope } from "@/modules/analytics/reads";
+import { speedDevice } from "@/modules/analytics/speed";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
@@ -82,6 +84,17 @@ async function Summary({ stats, scope, view, state, path, project, canAnnotate }
   );
 }
 
+async function Vitals({ project, state, base }: Pick<RailProps, "project" | "state" | "base">) {
+  const scope = await speedScope(project, state);
+  const read = await scope.speed({
+    percentile: state.percentile,
+    device: speedDevice(state.filters),
+  });
+  return (
+    <VitalsCard data={read.ok ? read.value.data : null} href={`${base}/speed${viewQuery(state)}`} />
+  );
+}
+
 function RailSkeleton() {
   return (
     <div className="rail" aria-hidden="true">
@@ -97,7 +110,7 @@ export default async function Page({ params, searchParams }: Props) {
   const view = metricView(metric?.[0]);
   const state = readViewState(await searchParams);
   const base = `/projects/${encodeURIComponent(project)}`;
-  const path = `${base}/${view.slug}`;
+  const path = metricPath(base, view);
 
   const [projects, session, scope] = await Promise.all([
     listProjects(),
@@ -113,6 +126,12 @@ export default async function Page({ params, searchParams }: Props) {
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="grid gap-6">
+        <Suspense
+          key={`vitals${viewQuery(state)}`}
+          fallback={<div className="skeleton h-[118px]" />}
+        >
+          <Vitals project={project} state={state} base={base} />
+        </Suspense>
         <Suspense key={`${view.slug}${viewQuery(state)}`} fallback={<RailSkeleton />}>
           <Rail {...shared} stats={stats} base={base} project={project} />
         </Suspense>
