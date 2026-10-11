@@ -77,7 +77,7 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
           >
             <span className="metric-label text-sm">{view.label}</span>
             <span className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">
+              <span className="metric-value">
                 {stat ? formatMetric(stat.value, view.format) : "–"}
               </span>
               {change ? (

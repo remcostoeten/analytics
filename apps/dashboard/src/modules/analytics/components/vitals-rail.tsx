@@ -20,9 +20,7 @@ export function VitalsRail({ data, current, hrefFor }: Props) {
       <div className="metric-card metric-static">
         <span className="metric-label text-sm">Real Experience Score</span>
         <span className="flex items-baseline gap-2">
-          <span className="text-2xl font-semibold tracking-tight tabular-nums">
-            {score === null ? "–" : score}
-          </span>
+          <span className="metric-value">{score === null ? "–" : score}</span>
           {score !== null ? <RatingBadge rating={rateScore(score)} /> : null}
         </span>
         <span className="text-xs text-muted">
@@ -45,7 +43,7 @@ export function VitalsRail({ data, current, hrefFor }: Props) {
               <span className="text-xs text-muted">{view.label}</span>
             </span>
             <span className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">
+              <span className="metric-value">
                 {summary?.value === null || summary === null
                   ? "–"
                   : formatMetric(summary.value, view.format)}

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Newsreader } from "next/font/google";
 import { redirect } from "next/navigation";
 
 import { SignInButton } from "@/modules/session/components/sign-in-button";
@@ -8,13 +7,6 @@ import { siteUrl } from "@/shared/config/site";
 import { Logo } from "@/shared/ui/logo";
 
 export const metadata: Metadata = { title: "Sign in" };
-
-const serif = Newsreader({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  axes: ["opsz"],
-  variable: "--font-newsreader",
-});
 
 type Props = { searchParams: Promise<{ error?: string | string[] }> };
 
@@ -26,7 +18,7 @@ export default async function Page({ searchParams }: Props) {
   const refused = typeof error === "string" ? error : null;
 
   return (
-    <div className={`auth ${serif.variable} flex min-h-screen flex-col`}>
+    <div className="auth flex min-h-screen flex-col">
       <nav className="flex justify-center px-4 pt-3">
         <div className="flex items-center gap-1 rounded-full border border-line bg-surface/85 p-1.5 shadow-[0_6px_24px_-12px_rgb(60_30_10/0.25)] backdrop-blur-md">
           <a

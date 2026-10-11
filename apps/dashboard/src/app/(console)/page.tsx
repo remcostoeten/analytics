@@ -32,7 +32,7 @@ export default async function Page() {
     <div className="mx-auto grid max-w-[1040px] gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-6">
         <div className="grid gap-1">
-          <h1 className="text-2xl font-normal tracking-tight">Web analytics</h1>
+          <h1 className="font-serif text-3xl tracking-tight">Web analytics</h1>
           <p className="text-sm text-muted">
             Every project you can read, with its traffic over the last 24 hours.
           </p>

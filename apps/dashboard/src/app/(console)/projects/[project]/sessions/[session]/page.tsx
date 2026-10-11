@@ -44,7 +44,7 @@ export default async function Page({ params, searchParams }: Props) {
             Back to visitors
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h1 className="text-xl font-normal tracking-tight">
+            <h1 className="font-serif text-2xl tracking-tight">
               Session <span className="font-mono">{session.slice(0, 8)}</span>
             </h1>
             <span className="font-mono text-xs text-muted">{found.domain}</span>

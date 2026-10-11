@@ -65,7 +65,7 @@ export default async function Page({ params, searchParams }: Props) {
             <>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="grid min-w-0 gap-1">
-                  <h1 className="text-xl font-normal tracking-tight">
+                  <h1 className="font-serif text-2xl tracking-tight">
                     <span className="font-semibold">{splitTitle(read.value.data.title).type}</span>
                     {splitTitle(read.value.data.title).message
                       ? `: ${splitTitle(read.value.data.title).message}`
