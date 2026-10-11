@@ -80,7 +80,7 @@ export async function SpeedSummary({
             {view.short} p{state.percentile}
           </span>
           <span className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tabular-nums">
+            <span className="metric-value">
               {metric?.value === null || metric === null
                 ? "–"
                 : formatMetric(metric.value, view.format)}

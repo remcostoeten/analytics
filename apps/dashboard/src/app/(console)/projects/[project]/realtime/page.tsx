@@ -21,7 +21,7 @@ export default async function Page({ params }: Props) {
   return (
     <div className="mx-auto grid max-w-[1200px] gap-6">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-normal tracking-tight">Realtime for {found.name}</h1>
+        <h1 className="font-serif text-3xl tracking-tight">Realtime for {found.name}</h1>
         <span className="font-mono text-xs text-muted">{found.domain}</span>
       </header>
       <RealtimePanel

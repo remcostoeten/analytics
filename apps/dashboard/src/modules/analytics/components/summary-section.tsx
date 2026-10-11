@@ -139,7 +139,7 @@ export async function SummarySection({
                 ) : null}
                 Total {view.label.toLowerCase()}
               </span>
-              <span className="text-2xl font-semibold tabular-nums">
+              <span className="metric-value">
                 {total === null ? "–" : formatMetric(total, view.format)}
               </span>
             </li>
@@ -156,9 +156,7 @@ export async function SummarySection({
                         <span className="truncate">{entry.label}</span>
                       </span>
                       {value !== null ? (
-                        <span className="text-2xl font-semibold tabular-nums">
-                          {formatMetric(value, view.format)}
-                        </span>
+                        <span className="metric-value">{formatMetric(value, view.format)}</span>
                       ) : null}
                     </li>
                   );
