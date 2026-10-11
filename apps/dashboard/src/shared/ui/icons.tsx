@@ -144,3 +144,22 @@ export function UsersIcon(props: Props) {
     </Icon>
   );
 }
+
+export function GridIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+      <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+      <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+      <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
+    </Icon>
+  );
+}
+
+export function ListIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.5M2.5 8h.5M2.5 12h.5" />
+    </Icon>
+  );
+}

@@ -13,8 +13,10 @@ import {
   FolderIcon,
   GaugeIcon,
   GearIcon,
+  GridIcon,
   HomeIcon,
   KeyIcon,
+  ListIcon,
   PulseIcon,
   SelectorIcon,
   UsersIcon,
@@ -30,7 +32,7 @@ type Item = {
   active: boolean;
 };
 
-const projectSections = ["speed", "issues", "realtime", "visitors", "sessions"];
+const projectSections = ["overview", "speed", "issues", "realtime", "logs", "visitors", "sessions"];
 
 function currentProject(pathname: string) {
   const match = /^\/(?:admin\/)?projects\/([^/]+)/.exec(pathname);
@@ -62,6 +64,12 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
     const section = pathname.slice(projectPath.length).split("/")[1] ?? "";
     workspace.push(
       {
+        label: "Overview",
+        href: `${projectPath}/overview`,
+        icon: GridIcon,
+        active: section === "overview",
+      },
+      {
         label: "Web analytics",
         href: projectPath,
         icon: ChartIcon,
@@ -82,6 +90,12 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
     );
     if (signedIn) {
       workspace.push(
+        {
+          label: "Logs",
+          href: `${projectPath}/logs`,
+          icon: ListIcon,
+          active: section === "logs",
+        },
         {
           label: "Issues",
           href: `${projectPath}/issues`,

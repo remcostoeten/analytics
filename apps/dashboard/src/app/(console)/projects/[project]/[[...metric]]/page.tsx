@@ -70,6 +70,7 @@ type SummaryProps = Omit<RailProps, "base"> & {
 async function Summary({ stats, scope, view, state, path, project, canAnnotate }: SummaryProps) {
   const data = await stats;
   const total = data ? data[view.stat].value : null;
+  const change = data ? data[view.stat].change : null;
   return (
     <SummarySection
       scope={scope}
@@ -77,6 +78,7 @@ async function Summary({ stats, scope, view, state, path, project, canAnnotate }
       state={state}
       path={path}
       total={total}
+      change={change}
       project={project}
       canAnnotate={canAnnotate}
     />

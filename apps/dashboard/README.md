@@ -9,12 +9,14 @@ The v2 dashboard on Next, laid out after Cloudflare's Web Analytics. It is serve
 | `/projects/:id`, `/projects/:id/:metric` | Web analytics for one project: a Core Web Vitals card and the metric rail (refreshed every 30 seconds), filters, time range, summary chart with annotations and per-series totals, a country map with the top countries, and sources. Visitors sit at the project root; the other metrics are `pageviews`, `visits` (sessions), `bounce-rate` and `duration` |
 | `/projects/:id/speed/:vital` | Core Web Vitals per metric and percentile: the vitals rail, thresholds on the chart, routes and slow elements that filter on click |
 | `/projects/:id/issues`, `/projects/:id/issues/:issue` | Grouped errors by status, and one issue with its events, stacks and breadcrumbs; admins resolve, ignore and reopen |
+| `/projects/:id/overview` | Traffic overview in Cloudflare's layout: KPI tiles with sparklines and change, page views over time, a device donut, top countries, the human, bot and internal split, and top paths, hosts, referrers, browsers, operating systems and channels |
 | `/projects/:id/realtime` | Visitors now, live events, active visitors and sessions, polled every five seconds through TanStack Query with a visible countdown |
+| `/projects/:id/logs[/human\|bots\|internal]` | The raw event log: page views by outcome over time, a field sidebar with the top values per field as filters, and 50 events per page that expand to every field, with links to the session and visitor. Defaults to all traffic; needs sign-in |
 | `/projects/:id/visitors`, `/projects/:id/visitors/:visitor` | The visitor list in the range, and one visitor with their facts and visits |
 | `/projects/:id/sessions/:session` | One session as an ordered timeline of pageviews and events |
 | `/admin/projects`, `/admin/tokens` | Projects, their settings and keys, and API tokens, for the owner and admins |
 
-Signed out, the home page and the aggregate views (web analytics, speed, realtime's counts and feed) show public projects only; issues, visitors, session trails and the live visitor rows need sign-in, and the status and annotation controls need an admin. The view lives in the URL: `period`, `bots=include`, `split` for the chart, `items` (5, 10 or 15) for the source lists, `percentile` for speed, `status` for issues, and one parameter per filter such as `country=NL`, `route=/blog/[slug]` or `page=!/admin`. The `device` filter doubles as the speed view's device.
+Signed out, the home page and the aggregate views (web analytics, speed, realtime's counts and feed) show public projects only; issues, logs, visitors, session trails and the live visitor rows need sign-in, and the status and annotation controls need an admin. The view lives in the URL: `period`, `bots=include`, `split` for the chart, `items` (5, 10 or 15) for the source lists, `percentile` for speed, `status` for issues, and one parameter per filter such as `country=NL`, `route=/blog/[slug]` or `page=!/admin`. The `device` filter doubles as the speed view's device.
 
 | Command | Does |
 | --- | --- |
