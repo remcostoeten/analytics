@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { ConnectionStatus } from "@/modules/admin/components/connection-status";
 import { DeleteProjectPanel } from "@/modules/admin/components/delete-project-panel";
 import { KeysPanel } from "@/modules/admin/components/keys-panel";
 import { ProjectSettingsForm } from "@/modules/admin/components/project-settings-form";
@@ -28,6 +29,7 @@ export default async function Page({ params }: Props) {
   }
   const project = found.value.data;
   if (!("publicKey" in project)) notFound();
+  const overview = await api.project(project.id).overview();
   return (
     <>
       <Heading title={project.name} meta={project.id} />
@@ -37,6 +39,14 @@ export default async function Page({ params }: Props) {
           <ProjectSettingsForm project={project} />
         </section>
         <section className="grid content-start gap-4">
+          <h2 className="caps text-muted">Connection</h2>
+          {overview.ok ? (
+            <ConnectionStatus ingest={overview.value.ingest.last24h} />
+          ) : (
+            <p className="text-err text-sm">
+              Could not load the connection status: {overview.error.message}
+            </p>
+          )}
           <h2 className="caps text-muted">Keys</h2>
           <KeysPanel project={project.id} publicKey={project.publicKey} />
           {access.session.role === "owner" ? (
