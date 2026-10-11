@@ -10,7 +10,7 @@ Use this page when a pageview or a `track` call does not show up in the API's re
 Two defaults hide most first events:
 
 - **Reports leave out your test traffic.** Reads default to `traffic=human` and `environment=production`. Events from `localhost`, preview deployments, `curl`, headless browsers and signed-in admins are stored but not counted. Add `traffic=all&environment=all` to the read. In the dashboard, click the **Exclude bots** chip to include bots, internal and localhost traffic.
-- **Reports end before today.** Without `from` and `to`, a `period` such as `7d` ends at the start of today in UTC, so today's events are not in `stats` or `timeseries` yet. Pass `from` and `to`, or check the project's **Realtime** page.
+- **Reports end at the start of the current hour.** Without `from` and `to`, a `period` such as `7d` ends at the start of the current UTC hour, so events from the running hour are not in `stats` or `timeseries` yet. Pass `from` and `to`, or check the project's **Realtime** page.
 
 If the events still do not show, work through the sections below.
 
