@@ -66,7 +66,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | Parameter | Values | Default |
 | --- | --- | --- |
 | `from`, `to` | ISO 8601 timestamps | last 30 days |
-| `period` | `24h`, `7d`, `30d`, `90d`, `12mo`, `all`; ignored when `from` and `to` are set | `30d` |
+| `period` | `24h`, `7d`, `30d`, `90d`, `12mo`, `all`, each ending at the start of the current UTC hour; ignored when `from` and `to` are set | `30d` |
 | `traffic` | `human` (bot score under 50, no internal or localhost), `all` | `human` |
 | `environment` | `production` (no preview deployments), `preview` (preview deployments only), `all` | `production` |
 | `filter[<dimension>]` | a value, or `!value` to exclude; repeatable across dimensions | none |

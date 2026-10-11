@@ -157,8 +157,8 @@ describe("GET /v2/projects/:project/stats", () => {
         bounceRate: { value: 0.667, previous: 1, change: -0.333 },
         sessionDurationMs: { value: 40000, previous: 0, change: null },
       },
-      range: { from: "2026-09-20T00:00:00.000Z", to: "2026-09-27T00:00:00.000Z" },
-      previousRange: { from: "2026-09-13T00:00:00.000Z", to: "2026-09-20T00:00:00.000Z" },
+      range: { from: "2026-09-20T16:00:00.000Z", to: "2026-09-27T16:00:00.000Z" },
+      previousRange: { from: "2026-09-13T16:00:00.000Z", to: "2026-09-20T16:00:00.000Z" },
       traffic: "human",
       environment: "production",
       filters: {},
@@ -198,6 +198,7 @@ describe("GET /v2/projects/:project/timeseries", () => {
       { bucket: "2026-09-24T00:00:00.000Z", value: 1 },
       { bucket: "2026-09-25T00:00:00.000Z", value: 0 },
       { bucket: "2026-09-26T00:00:00.000Z", value: 0 },
+      { bucket: "2026-09-27T00:00:00.000Z", value: 0 },
     ]);
     expect(series).toMatchObject({
       metric: "visitors",
@@ -211,10 +212,12 @@ describe("GET /v2/projects/:project/timeseries", () => {
       "/v2/projects/site/timeseries?metric=pageviews&period=7d&compare=previous",
       TimeseriesResponse,
     );
-    expect((series.data as Json[]).map((point) => point.previous)).toEqual([0, 1, 0, 0, 0, 0, 0]);
+    expect((series.data as Json[]).map((point) => point.previous)).toEqual([
+      0, 1, 0, 0, 0, 0, 0, 0,
+    ]);
     expect(series.previousRange).toEqual({
-      from: "2026-09-13T00:00:00.000Z",
-      to: "2026-09-20T00:00:00.000Z",
+      from: "2026-09-13T16:00:00.000Z",
+      to: "2026-09-20T16:00:00.000Z",
     });
   });
 

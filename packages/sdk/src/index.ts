@@ -19,6 +19,7 @@ export type {
   NoProps,
   Plugin,
   PluginClient,
+  PrivacySignals,
   Props,
   PropsArgs,
   Status,
