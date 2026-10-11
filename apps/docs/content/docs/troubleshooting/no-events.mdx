@@ -52,7 +52,7 @@ Check these causes in order:
 3. **The client has not started.** A client created with `autostart: false` sends nothing until `start()`. The client starts only where `window` exists, so a module imported only on the server never sends.
 4. **Consent is missing.** With `consent: "required"`, events are held until `consent.grant()`; `status().queued` grows while they wait. After `consent.revoke()`, events are dropped with the reason `consent`.
 5. **The browser opted out.** `optOut()`, or `?ra=ignore` with the [ignoreSelf plugin](/docs/plugins/ignore-self), drops every event with the reason `opt-out`. Open the site with `?ra=track` or call `optIn()`.
-6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console, and turn the setting off in the browser you test with.
+6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console. Brave turns Global Privacy Control on by default, so Brave visitors send nothing unless the client sets `privacySignals: "ignore"`.
 7. **`beforeSend` returned `null`.** A `beforeSend` option or a plugin hook dropped the event; `RA_DROP` shows the reason `beforeSend`.
 
 Batches sent while the page unloads go out with `sendBeacon`. The client counts them as accepted without reading the response, so a failed beacon does not show in `status()`.
