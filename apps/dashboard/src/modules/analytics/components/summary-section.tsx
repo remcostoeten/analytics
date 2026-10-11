@@ -9,10 +9,11 @@ import type { FilterDimension, ViewState } from "../view-state";
 import { siteUrl } from "@/shared/config/site";
 
 import { AddAnnotation } from "./add-annotation";
+import { ChangeBadge } from "./change-badge";
 import { EmptyState } from "./empty-state";
 import { SeriesChart } from "./series-chart";
 import { SplitMenu } from "./split-menu";
-import type { ChartSeries } from "./series-chart";
+import type { ChartPoint, ChartSeries } from "./series-chart";
 
 type Props = {
   scope: ProjectScope;
@@ -20,6 +21,7 @@ type Props = {
   state: ViewState;
   path: string;
   total: number | null;
+  change: number | null;
   project: string;
   canAnnotate: boolean;
 };
@@ -49,10 +51,14 @@ function isQuiet(series: ChartSeries[]) {
 
 async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDimension | null) {
   if (split === null) {
-    const read = await scope.timeseries(view.series);
+    const read = await scope.timeseries(view.series, { compare: "previous" });
     if (!read.ok) return { error: read.error.message } as const;
     const series: ChartSeries[] = [{ label: view.label, points: read.value.data }];
-    return { series, totals: [], interval: read.value.interval } as const;
+    const previous = read.value.data.map((point) => ({
+      bucket: point.bucket,
+      value: point.previous ?? null,
+    }));
+    return { series, previous, totals: [], interval: read.value.interval } as const;
   }
   const read = await readSplitSeries(scope, view, split, seriesLimit);
   if (!read.ok) return { error: read.error } as const;
@@ -61,7 +67,13 @@ async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDi
     points: entry.series.data,
   }));
   const totals = read.value.map((entry) => (view.format === "count" ? entry.total : null));
-  return { series, totals, interval: read.value[0]?.series.interval ?? "day" } as const;
+  const previous: ChartPoint[] = [];
+  return {
+    series,
+    previous,
+    totals,
+    interval: read.value[0]?.series.interval ?? "day",
+  } as const;
 }
 
 export async function SummarySection({
@@ -70,6 +82,7 @@ export async function SummarySection({
   state,
   path,
   total,
+  change,
   project,
   canAnnotate,
 }: Props) {
@@ -139,10 +152,21 @@ export async function SummarySection({
                 ) : null}
                 Total {view.label.toLowerCase()}
               </span>
-              <span className="metric-value">
-                {total === null ? "–" : formatMetric(total, view.format)}
+              <span className="flex items-baseline gap-2">
+                <span className="metric-value">
+                  {total === null ? "–" : formatMetric(total, view.format)}
+                </span>
+                <ChangeBadge change={change} lowerIsBetter={view.lowerIsBetter} />
               </span>
             </li>
+            {read.previous.some((point) => point.value) ? (
+              <li className="legend-cell self-end">
+                <span className="flex items-center gap-1.5 text-xs text-muted">
+                  <span className="h-0 w-3 border-t border-dashed border-muted" />
+                  Previous period
+                </span>
+              </li>
+            ) : null}
             {state.split !== null
               ? read.series.map((entry, order) => {
                   const value = read.totals[order] ?? null;
@@ -170,6 +194,7 @@ export async function SummarySection({
               series={read.series}
               format={view.format}
               interval={read.interval}
+              previous={read.previous}
               label={view.label}
               annotations={annotations.ok ? annotations.value.data : []}
               project={project}

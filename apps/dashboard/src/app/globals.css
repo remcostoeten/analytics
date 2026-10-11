@@ -948,6 +948,29 @@
   }
 }
 
+.chart-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: chart-draw 900ms var(--ease-out) both;
+}
+
+.chart-area,
+.chart-previous {
+  animation: chart-fade 700ms ease-out 200ms both;
+}
+
+@keyframes chart-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes chart-fade {
+  from {
+    opacity: 0;
+  }
+}
+
 .chart-tooltip {
   pointer-events: none;
   position: absolute;
