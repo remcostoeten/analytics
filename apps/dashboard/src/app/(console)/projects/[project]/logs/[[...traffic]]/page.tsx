@@ -50,7 +50,7 @@ export default async function Page({ params, searchParams }: Props) {
     <div className="grid gap-4">
       <header className="log-toolbar">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">Logs</h1>
+          <h1 className="font-serif text-3xl tracking-tight">Logs</h1>
           <span className="font-mono text-xs text-muted">{found.domain}</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">

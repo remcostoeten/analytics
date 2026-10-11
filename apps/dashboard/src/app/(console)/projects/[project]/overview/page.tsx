@@ -43,7 +43,7 @@ export default async function Page({ params, searchParams }: Props) {
     <div className="mx-auto grid max-w-[1400px] gap-4">
       <header className="grid gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="text-lg font-semibold tracking-tight">Traffic overview</h1>
+          <h1 className="font-serif text-3xl tracking-tight">Traffic overview</h1>
           <span className="font-mono text-xs text-muted">{found.domain}</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
