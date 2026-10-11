@@ -8,7 +8,7 @@ import { browserClient } from "@/shared/api/browser-client";
 import { TrendIcon } from "@/shared/ui/icons";
 
 import { formatChange, formatMetric } from "../format";
-import { metricViews } from "../metrics";
+import { metricPath, metricViews } from "../metrics";
 import type { MetricView } from "../metrics";
 import { viewScope } from "../scope";
 import { viewQuery } from "../view-state";
@@ -70,7 +70,7 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
         return (
           <Link
             key={view.slug}
-            href={`${base}/${view.slug}${viewQuery(state)}`}
+            href={`${metricPath(base, view)}${viewQuery(state)}`}
             aria-current={selected ? "page" : undefined}
             className="metric-card"
             prefetch={false}

@@ -37,7 +37,7 @@ export const metricViews = [
     description: "Every page load and client-side navigation that sent a pageview.",
   },
   {
-    slug: "sessions",
+    slug: "visits",
     label: "Sessions",
     stat: "sessions",
     series: "sessions",
@@ -77,4 +77,18 @@ export const metricViews = [
  */
 export function metricView(slug: string | undefined): MetricView {
   return metricViews.find((view) => view.slug === slug) ?? metricViews[0];
+}
+
+/**
+ * @name metricPath
+ * @description The URL of a metric's view under a project. The first metric lives at the project
+ * root, because `/visitors` under a project is the visitor list; for the same reason the sessions
+ * metric's slug is `visits`, since `/sessions` holds the session trails.
+ *
+ * @example
+ * metricPath("/projects/skriuw", metricView("visitors")); // "/projects/skriuw"
+ * metricPath("/projects/skriuw", metricView("visits")); // "/projects/skriuw/visits"
+ */
+export function metricPath(base: string, view: MetricView) {
+  return view.slug === metricViews[0].slug ? base : `${base}/${view.slug}`;
 }

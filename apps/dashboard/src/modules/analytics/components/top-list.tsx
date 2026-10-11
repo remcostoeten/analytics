@@ -11,24 +11,17 @@ type Props = {
   rows: BreakdownRow[];
   count: CountMetric;
   hrefFor: (value: string) => string;
-  columns?: boolean;
 };
 
-const rowsPerColumn = 5;
-
-export function TopList({ title, dimension, rows, count, hrefFor, columns = false }: Props) {
+export function TopList({ title, dimension, rows, count, hrefFor }: Props) {
   const max = Math.max(1, ...rows.map((row) => row[count] ?? 0));
-  const split = columns && rows.length > rowsPerColumn;
   return (
     <div className="grid content-start gap-2">
       <h3 className="text-sm font-semibold">{title}</h3>
       {rows.length === 0 ? (
         <p className="py-2 text-sm text-muted">No data in this range</p>
       ) : (
-        <ul
-          className={`grid gap-0.5 ${split ? "md:grid-flow-col md:gap-x-10" : ""}`}
-          style={split ? { gridTemplateRows: `repeat(${rowsPerColumn}, auto)` } : undefined}
-        >
+        <ul className="grid gap-0.5">
           {rows.map((row) => {
             const value = row[count] ?? 0;
             const label = formatDimensionValue(dimension, row.value);
