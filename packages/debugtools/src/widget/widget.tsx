@@ -1,17 +1,26 @@
+import type { Nullable } from "@spoar/shared/semantic";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { Console } from "../console";
+import { LiveConsole } from "../live/live-console";
+import { Panel } from "../panel/panel";
+import type { LauncherSide } from "../options";
 import type { ConsoleSections } from "../sections";
+import type { ConsoleSource } from "../source";
 import type { ConsoleData, ConsoleTheme } from "../types";
 
 type Props = {
+  label?: string;
+  source?: Nullable<ConsoleSource>;
   data?: ConsoleData;
   sections?: ConsoleSections;
   theme?: ConsoleTheme;
+  launcher?: LauncherSide;
 };
 
 const fullHeight = { "--spc-height": "100%" } as CSSProperties;
+const embeddedClass = "rounded-none border-0";
 const focusClass =
   "focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-console-muted";
 
@@ -19,7 +28,19 @@ function isToggle(event: KeyboardEvent) {
   return (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "k";
 }
 
-export function Widget({ data, sections, theme = "dark" }: Props) {
+function typing(event: KeyboardEvent) {
+  const target = event.composedPath()[0];
+  return target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement;
+}
+
+export function Widget({
+  label = "",
+  source,
+  data,
+  sections,
+  theme = "dark",
+  launcher = "left",
+}: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -29,7 +50,7 @@ export function Widget({ data, sections, theme = "dark" }: Props) {
         setOpen((value) => !value);
         return;
       }
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && !typing(event)) setOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -39,7 +60,7 @@ export function Widget({ data, sections, theme = "dark" }: Props) {
     return (
       <button
         type="button"
-        className={`spd fixed bottom-4 left-4 inline-flex h-8 items-center gap-2 rounded-full border border-console-edge bg-console-bg pr-3 pl-2.5 font-console-sans text-xs leading-none font-medium text-console-fg shadow-[0_10px_30px_-12px_var(--spc-shadow)] transition-[transform,border-color] duration-150 ease-console hover:border-console-edge-hover active:scale-[0.97] ${focusClass}`}
+        className={`spd fixed bottom-4 ${launcher === "right" ? "right-4" : "left-4"} inline-flex h-8 items-center gap-2 rounded-full border border-console-edge bg-console-bg pr-3 pl-2.5 font-console-sans text-xs leading-none font-medium text-console-fg shadow-[0_10px_30px_-12px_var(--spc-shadow)] transition-[transform,border-color] duration-150 ease-console hover:border-console-edge-hover active:scale-[0.97] ${focusClass}`}
         aria-label="Open the debug console"
         data-theme={theme}
         onClick={() => setOpen(true)}
@@ -57,34 +78,24 @@ export function Widget({ data, sections, theme = "dark" }: Props) {
   }
 
   return (
-    <div
-      className="spd fixed inset-0 flex animate-console-fade items-center justify-center bg-console-scrim px-4 py-6 motion-reduce:animate-none max-[640px]:items-end max-[640px]:p-0"
-      data-theme={theme}
-      onClick={() => setOpen(false)}
-    >
-      <div
-        className="relative h-[min(760px,100%)] w-[min(1200px,100%)] animate-console-sheet motion-reduce:animate-none max-[640px]:h-[88%]"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Debug console"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <button
-          type="button"
-          className={`absolute -top-3 -right-3 z-1 grid size-7 place-items-center rounded-full border border-console-edge bg-console-surface text-sm leading-none text-console-muted hover:text-console-fg max-[640px]:-top-10 max-[640px]:right-3 ${focusClass}`}
-          aria-label="Close the debug console"
-          onClick={() => setOpen(false)}
-        >
-          ×
-        </button>
+    <Panel label={label} theme={theme} onClose={() => setOpen(false)}>
+      {source && !data ? (
+        <LiveConsole
+          source={source}
+          sections={sections}
+          theme={theme}
+          style={fullHeight}
+          className={embeddedClass}
+        />
+      ) : (
         <Console
           data={data}
           sections={sections}
           theme={theme}
           style={fullHeight}
-          className="shadow-[0_40px_100px_-30px_var(--spc-shadow)] max-[640px]:rounded-b-none max-[640px]:rounded-t-[14px]"
+          className={embeddedClass}
         />
-      </div>
-    </div>
+      )}
+    </Panel>
   );
 }

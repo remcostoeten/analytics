@@ -50,7 +50,7 @@ analytics/
 │  ├─ engine/         ingest pipeline, signals, enrichers, dimensions, adapters, db (phase 2)
 │  ├─ client/         @spoar/client, the typed read and admin client
 │  ├─ sdk/            @spoar/sdk 2.0 (phase 3)
-│  └─ debugtools/     @spoar/debugtools, the admin debug console on fixture data (decision 30)
+│  └─ debugtools/     @spoar/debugtools, the admin debug console (decisions 30 to 33)
 ├─ tools/oxlint/      lint plugins
 ├─ scripts/           size, OpenAPI and boundary checks, migrate, publish
 ├─ e2e/               Playwright across SDK, API and dashboard

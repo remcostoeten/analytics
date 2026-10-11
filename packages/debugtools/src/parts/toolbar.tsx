@@ -52,10 +52,10 @@ type ToolbarProps = {
 const controlClass =
   "inline-flex h-6.5 items-center gap-1.5 rounded-[5px] px-2 whitespace-nowrap transition-[background-color,color] duration-[120ms]";
 const segmentClass = `${controlClass} text-console-muted hover:bg-console-hover hover:text-console-fg aria-pressed:bg-console-raised aria-pressed:text-console-fg`;
-const buttonClass = `${controlClass} border text-console-muted border-console-line enabled:hover:bg-console-hover enabled:hover:text-console-fg disabled:cursor-default disabled:text-console-faint`;
-const quietClass = `${buttonClass} @max-[520px]:hidden`;
-const runClass = `${controlClass} border border-console-fg bg-console-fg text-console-bg hover:bg-console-strong hover:text-console-bg active:scale-[0.97] group-data-[running=true]:border-console-muted group-data-[running=true]:bg-console-muted`;
-const dividerClass = "mx-1 h-4.5 w-px flex-none bg-console-line @max-[520px]:hidden";
+export const buttonClass = `${controlClass} border text-console-muted border-console-line enabled:hover:bg-console-hover enabled:hover:text-console-fg disabled:cursor-default disabled:text-console-faint`;
+export const quietClass = `${buttonClass} @max-[520px]:hidden`;
+export const runClass = `${controlClass} border border-console-fg bg-console-fg text-console-bg hover:bg-console-strong hover:text-console-bg active:scale-[0.97] group-data-[running=true]:border-console-muted group-data-[running=true]:bg-console-muted`;
+export const dividerClass = "mx-1 h-4.5 w-px flex-none bg-console-line @max-[520px]:hidden";
 
 export function Toolbar({ mode, timeRange, running, onMode, onRun }: ToolbarProps) {
   return (

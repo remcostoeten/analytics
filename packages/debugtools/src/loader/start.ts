@@ -1,19 +1,22 @@
+import type { WidgetSession } from "@spoar/contract";
 import { noop } from "@spoar/shared/noop";
+import type { Nullable } from "@spoar/shared/semantic";
 
-import type { DebugtoolsOptions } from "../options";
+import type { DebugtoolsOptions, WidgetGrant } from "../options";
 
-type Mount = (options: DebugtoolsOptions) => () => void;
+type Mount = (options: DebugtoolsOptions, grant: Nullable<WidgetGrant>) => () => void;
 
 /**
- * @name isAdmin
- * @description Asks `GET /v2/widget/session` whether the browser holds an admin session for the
- * project, with the session cookie. Resolves to `true` only on a 200; a network failure and
- * every other status resolve to `false`, so a signed-out visitor stops here.
+ * @name requestGrant
+ * @description Asks `GET /v2/widget/session` for a widget token, with the session cookie. Resolves
+ * to the token and its expiry only on a 200; a network failure and every other status resolve to
+ * null, so a signed-out visitor stops here.
  *
  * @example
- * if (await isAdmin({ endpoint: "https://api.example.com", project: "site" })) open();
+ * const grant = await requestGrant({ endpoint: "https://api.example.com", project: "site" });
+ * if (grant) open(grant.token);
  */
-export async function isAdmin(options: DebugtoolsOptions): Promise<boolean> {
+export async function requestGrant(options: DebugtoolsOptions): Promise<Nullable<WidgetGrant>> {
   const send = options.fetch ?? fetch;
   let base = options.endpoint;
   while (base.endsWith("/")) base = base.slice(0, -1);
@@ -23,16 +26,21 @@ export async function isAdmin(options: DebugtoolsOptions): Promise<boolean> {
       credentials: "include",
       headers: { accept: "application/json" },
     });
-    return response.status === 200;
+    if (response.status !== 200) return null;
+    // The API validates this response against the contract's WidgetSession schema.
+    const session = (await response.json()) as WidgetSession;
+    return { token: session.token, expiresAt: session.expiresAt };
   } catch {
-    return false;
+    return null;
   }
 }
 
 /**
  * @name startDebugtools
  * @description Runs the admin check and, only when it passes, imports the console chunk through
- * `load` and mounts it. Returns a function that cancels a pending start or unmounts the console.
+ * `load` and mounts it with the widget grant. With `auth: "session"` there is no widget check: the
+ * host is the dashboard, which already holds the session cookie. Returns a function that cancels
+ * a pending start or unmounts the console.
  *
  * @example
  * const stop = startDebugtools(options, () => import("../widget/mount-widget").then((m) => m.mountWidget));
@@ -43,11 +51,12 @@ export function startDebugtools(
 ): () => void {
   let stopped = false;
   let unmount = noop;
-  void isAdmin(options)
-    .then(async (admin) => {
-      if (!admin || stopped) return;
+  const granted = options.auth === "session" ? Promise.resolve(null) : requestGrant(options);
+  void granted
+    .then(async (grant) => {
+      if (stopped || (options.auth !== "session" && !grant)) return;
       const mount = await load();
-      if (!stopped) unmount = mount(options);
+      if (!stopped) unmount = mount(options, grant);
     })
     .catch(noop);
   return () => {

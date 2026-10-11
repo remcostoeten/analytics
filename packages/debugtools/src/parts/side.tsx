@@ -53,19 +53,28 @@ type RecentProps = {
   queries: string[][];
   keywords: ReadonlySet<string>;
   behind: boolean;
+  onPick?: (query: string[]) => void;
 };
 
-function RecentQueries({ queries, keywords, behind }: RecentProps) {
+export function RecentQueries({ queries, keywords, behind, onPick }: RecentProps) {
   return (
     <div
-      className={`spc-fade min-h-0 flex-1 overflow-hidden px-3 py-2.5 font-console-mono text-[11.5px] ${behind ? "opacity-55" : ""}`}
+      className={`spc-fade min-h-0 flex-1 px-3 py-2.5 font-console-mono text-[11.5px] ${onPick ? `overflow-y-auto ${hideScrollbarClass}` : "overflow-hidden"} ${behind ? "opacity-55" : ""}`}
       aria-hidden={behind}
     >
       {queries.map((query, index) => (
         <div
           key={index}
-          className="flex items-start gap-2.5 border-b border-console-divider pt-2 pb-3 text-console-dim"
+          className={`relative flex items-start gap-2.5 border-b border-console-divider pt-2 pb-3 text-console-dim ${onPick ? "hover:bg-console-hover" : ""}`}
         >
+          {onPick ? (
+            <button
+              type="button"
+              className="absolute inset-0"
+              aria-label={`Load query ${index + 1}`}
+              onClick={() => onPick(query)}
+            />
+          ) : null}
           <Icon name="code" size={12} />
           <div className="min-w-0 flex-1 overflow-hidden whitespace-pre">
             {query.map((line, row) => (

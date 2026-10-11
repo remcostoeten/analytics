@@ -7,6 +7,7 @@ import { consoleFixture } from "./fixtures";
 import { DefaultLogo, Icon } from "./icons";
 import { Editor } from "./parts/editor";
 import { Library } from "./parts/library";
+import { rootClass } from "./parts/pane";
 import { Side } from "./parts/side";
 import { Nav, Toolbar } from "./parts/toolbar";
 import type { EditorMode } from "./parts/toolbar";
@@ -28,9 +29,6 @@ type Props = {
   className?: string;
   style?: CSSProperties;
 };
-
-const rootClass =
-  "spc-console @container relative flex h-[var(--spc-height,640px)] flex-col overflow-hidden rounded-[10px] border border-console-line bg-console-bg text-left font-console-sans text-[13px] leading-[1.4] text-console-fg antialiased";
 
 export function Console({
   data = consoleFixture,
@@ -108,7 +106,7 @@ export function Console({
             <Library
               datasets={data.datasets}
               quickQueries={data.quickQueries}
-              onQuickQuery={restart}
+              onQuickQuery={() => restart()}
               className={split ? "border-r border-console-divider @max-[860px]:hidden" : undefined}
             />
           ) : null}
