@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AddFilter } from "@/modules/analytics/components/add-filter";
@@ -12,7 +11,7 @@ import {
   SpeedSummary,
 } from "@/modules/analytics/components/speed-sections";
 import { VitalsRail } from "@/modules/analytics/components/vitals-rail";
-import { listProjects, speedScope } from "@/modules/analytics/reads";
+import { speedScope } from "@/modules/analytics/reads";
 import {
   speedDevice,
   speedFilterDimensions,
@@ -23,7 +22,7 @@ import type { VitalView } from "@/modules/analytics/speed";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
-import { ProjectHeader } from "@/modules/shell/components/project-header";
+import { ProjectHeading } from "@/modules/shell/components/project-heading";
 import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import type { ProjectScope } from "@spoar/client";
 import type { SpeedResponse } from "@spoar/contract";
@@ -70,13 +69,8 @@ export default async function Page({ params, searchParams }: Props) {
   const base = `/projects/${encodeURIComponent(project)}`;
   const path = `${base}/speed/${view.slug}`;
 
-  const [projects, session, scope] = await Promise.all([
-    listProjects(),
-    readSession(),
-    speedScope(project, state),
-  ]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
-  if (!found) notFound();
+  const scope = await speedScope(project, state);
+  const canAnnotate = readSession().then((session) => session.isAdmin);
 
   const summary: Promise<SpeedResponse["data"] | null> = scope
     .speed({ percentile: state.percentile, device: speedDevice(state.filters) })
@@ -98,7 +92,7 @@ export default async function Page({ params, searchParams }: Props) {
       </aside>
 
       <div className="panel">
-        <ProjectHeader title={`Speed for ${found.name}`} domain={found.domain}>
+        <ProjectHeading project={project} title="Speed for">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <AddFilter path={path} state={state} dimensions={speedFilterDimensions} />
             <div className="flex flex-wrap items-center gap-2">
@@ -113,15 +107,10 @@ export default async function Page({ params, searchParams }: Props) {
             traffic={false}
           />
           <DeviceTabs path={path} state={state} />
-        </ProjectHeader>
+        </ProjectHeading>
 
         <Suspense key={`summary${key}`} fallback={<SectionSkeleton height={380} />}>
-          <SpeedSummary
-            {...shared}
-            summary={summary}
-            project={project}
-            canAnnotate={session.isAdmin}
-          />
+          <SpeedSummary {...shared} summary={summary} project={project} canAnnotate={canAnnotate} />
         </Suspense>
         <Suspense key={`routes${key}`} fallback={<SectionSkeleton height={320} />}>
           <SpeedRoutes {...shared} />

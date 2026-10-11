@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { listProjects } from "@/modules/analytics/reads";
 import { formatMetric } from "@/modules/analytics/format";
 import { readSession } from "@/modules/session/session";
+import { PageSkeleton } from "@/modules/shell/components/skeletons";
 import { serverClient } from "@/shared/api/server-client";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
@@ -19,7 +21,7 @@ function createdAgo(timestamp: string) {
   return created.format(Math.round(days / 365), "year");
 }
 
-export default async function Page() {
+async function Home() {
   const api = await serverClient();
   const [projects, session, traffic] = await Promise.all([
     listProjects(),
@@ -110,5 +112,13 @@ export default async function Page() {
         </ul>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Home />
+    </Suspense>
   );
 }

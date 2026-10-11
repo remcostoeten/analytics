@@ -8,7 +8,7 @@ import { IssueStatusControls } from "@/modules/analytics/components/issue-status
 import { StatusBadge } from "@/modules/analytics/components/status-badge";
 import { formatDateTime, formatMetric, formatRelative } from "@/modules/analytics/format";
 import { splitTitle } from "@/modules/analytics/issues";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { findProject, readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
@@ -41,15 +41,13 @@ export default async function Page({ params, searchParams }: Props) {
   const state = readViewState(await searchParams);
   const listPath = `/projects/${encodeURIComponent(project)}/issues`;
 
-  const [projects, session, scope] = await Promise.all([
-    listProjects(),
+  const scope = await readScope(project, state);
+  const [found, session, read] = await Promise.all([
+    findProject(project),
     readSession(),
-    readScope(project, state),
+    scope.issue(issueId),
   ]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
   if (!found) notFound();
-
-  const read = await scope.issue(issueId);
   if (!read.ok && read.error.code === "NOT_FOUND") notFound();
 
   return (

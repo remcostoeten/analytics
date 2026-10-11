@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { IssueList, IssueStatusTabs } from "@/modules/analytics/components/issue-list";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
-import { ProjectHeader } from "@/modules/shell/components/project-header";
+import { ProjectHeading } from "@/modules/shell/components/project-heading";
 import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 
 type Props = { params: Promise<{ project: string }>; searchParams: Promise<SearchParams> };
@@ -20,20 +19,18 @@ export default async function Page({ params, searchParams }: Props) {
   const cursor = Array.isArray(query.cursor) ? query.cursor[0] : query.cursor;
   const path = `/projects/${encodeURIComponent(project)}/issues`;
 
-  const [projects, scope] = await Promise.all([listProjects(), readScope(project, state)]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
-  if (!found) notFound();
+  const scope = await readScope(project, state);
 
   return (
     <div className="mx-auto grid max-w-[1200px] gap-6">
       <div className="panel">
-        <ProjectHeader title={`Issues for ${found.name}`} domain={found.domain}>
+        <ProjectHeading project={project} title="Issues for">
           <p className="text-sm text-muted">
             Errors grouped by type, message and the top in-app frame, most recently seen first.
             Issues are not narrowed by the time range or filters.
           </p>
           <IssueStatusTabs path={path} state={state} />
-        </ProjectHeader>
+        </ProjectHeading>
         <Suspense
           key={`${viewQuery(state)}${cursor ?? ""}`}
           fallback={<SectionSkeleton height={320} />}

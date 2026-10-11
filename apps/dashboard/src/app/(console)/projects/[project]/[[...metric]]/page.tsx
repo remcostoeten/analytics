@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { AddFilter } from "@/modules/analytics/components/add-filter";
@@ -13,12 +12,12 @@ import { SummarySection } from "@/modules/analytics/components/summary-section";
 import { VitalsCard } from "@/modules/analytics/components/vitals-card";
 import { metricPath, metricView, metricViews } from "@/modules/analytics/metrics";
 import type { MetricView } from "@/modules/analytics/metrics";
-import { listProjects, readScope, speedScope } from "@/modules/analytics/reads";
+import { findProject, readScope, speedScope } from "@/modules/analytics/reads";
 import { speedDevice } from "@/modules/analytics/speed";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
-import { ProjectHeader } from "@/modules/shell/components/project-header";
+import { ProjectHeading } from "@/modules/shell/components/project-heading";
 import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
@@ -105,6 +104,33 @@ function RailSkeleton() {
   );
 }
 
+async function QuickActions({ project }: Pick<RailProps, "project">) {
+  const [found, session] = await Promise.all([findProject(project), readSession()]);
+  if (!found) return null;
+  return (
+    <div className="hidden gap-2 lg:grid">
+      <h2 className="text-sm font-semibold">Quick actions</h2>
+      <a href={`https://${found.domain}`} className="quick-link">
+        Open {found.domain}
+        <ExternalIcon className="size-3" />
+      </a>
+      {session.isAdmin ? (
+        <Link href={`/admin/projects/${encodeURIComponent(project)}`} className="quick-link">
+          Project settings
+        </Link>
+      ) : null}
+      <a href={`${siteUrl()}/docs`} className="quick-link">
+        Documentation
+      </a>
+    </div>
+  );
+}
+
+async function AnnotatedSummary(props: Omit<SummaryProps, "canAnnotate">) {
+  const session = await readSession();
+  return <Summary {...props} canAnnotate={session.isAdmin} />;
+}
+
 export default async function Page({ params, searchParams }: Props) {
   const { project, metric } = await params;
   const view = metricView(metric?.[0]);
@@ -112,14 +138,7 @@ export default async function Page({ params, searchParams }: Props) {
   const base = `/projects/${encodeURIComponent(project)}`;
   const path = metricPath(base, view);
 
-  const [projects, session, scope] = await Promise.all([
-    listProjects(),
-    readSession(),
-    readScope(project, state),
-  ]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
-  if (!found) notFound();
-
+  const scope = await readScope(project, state);
   const stats = scope.stats().then((read) => (read.ok ? read.value.data : null));
   const shared = { scope, view, state };
 
@@ -135,27 +154,15 @@ export default async function Page({ params, searchParams }: Props) {
         <Suspense key={`${view.slug}${viewQuery(state)}`} fallback={<RailSkeleton />}>
           <Rail {...shared} stats={stats} base={base} project={project} />
         </Suspense>
-        <div className="hidden gap-2 lg:grid">
-          <h2 className="text-sm font-semibold">Quick actions</h2>
-          <a href={`https://${found.domain}`} className="quick-link">
-            Open {found.domain}
-            <ExternalIcon className="size-3" />
-          </a>
-          {session.isAdmin ? (
-            <Link href={`/admin/projects/${encodeURIComponent(project)}`} className="quick-link">
-              Project settings
-            </Link>
-          ) : null}
-          <a href={`${siteUrl()}/docs`} className="quick-link">
-            Documentation
-          </a>
-        </div>
+        <Suspense fallback={null}>
+          <QuickActions project={project} />
+        </Suspense>
       </aside>
 
       <div className="panel">
-        <ProjectHeader
-          title={`Web analytics for ${found.name}`}
-          domain={found.domain}
+        <ProjectHeading
+          project={project}
+          title="Web analytics for"
           live={{ project, href: `${base}/realtime` }}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -163,19 +170,13 @@ export default async function Page({ params, searchParams }: Props) {
             <PeriodSelect path={path} state={state} />
           </div>
           <FilterChips path={path} state={state} />
-        </ProjectHeader>
+        </ProjectHeading>
 
         <Suspense
           key={`summary${path}${viewQuery(state)}`}
           fallback={<SectionSkeleton height={380} />}
         >
-          <Summary
-            {...shared}
-            stats={stats}
-            path={path}
-            project={project}
-            canAnnotate={session.isAdmin}
-          />
+          <AnnotatedSummary {...shared} stats={stats} path={path} project={project} />
         </Suspense>
         <Suspense
           key={`country${path}${viewQuery(state)}`}
