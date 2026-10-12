@@ -2,15 +2,14 @@ import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { CodeWindow } from "@/components/landing/code-window";
 import { ArrowIcon } from "@/components/landing/icons";
+import { SiteShell } from "@/components/landing/site-shell";
 import { getExample, listExamples } from "@/lib/examples";
-import { baseOptions } from "@/lib/layout-options";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -59,7 +58,7 @@ export default async function ExamplePage({ params }: Props) {
     example.files.map((file) => readSource(example.directory, file)),
   );
   return (
-    <HomeLayout {...baseOptions()}>
+    <SiteShell>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
         <header className="flex max-w-xl flex-col gap-3">
           <span className="caps text-muted">Example / {example.stack}</span>
@@ -95,6 +94,6 @@ export default async function ExamplePage({ params }: Props) {
           </Tabs>
         </section>
       </main>
-    </HomeLayout>
+    </SiteShell>
   );
 }
