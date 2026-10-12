@@ -6,6 +6,12 @@ import Link from "next/link";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import { CodeWindow } from "@/components/landing/code-window";
+import {
+  DrawCookieOffIcon,
+  DrawDatabaseIcon,
+  DrawGaugeIcon,
+  DrawHashIcon,
+} from "@/components/landing/draw-icons";
 import { DropTrail } from "@/components/landing/drop-trail";
 import { ErrorsScene } from "@/components/landing/errors-live";
 import { HeroConsole } from "@/components/landing/hero-console";
@@ -17,12 +23,9 @@ import {
   BugIcon,
   ChevronIcon,
   ClockIcon,
-  DatabaseIcon,
   EyeOffIcon,
   GaugeIcon,
-  KeyIcon,
   RouteIcon,
-  ShieldIcon,
   TerminalIcon,
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
@@ -65,7 +68,7 @@ const tiles = [
 const steps = [
   {
     title: "Install the SDK",
-    text: "Create the client in one file. The browser core has no framework dependency, so it runs in React, Next, Vue, Svelte, Astro or plain TypeScript, and the server entry runs anywhere with fetch.",
+    text: "One file creates the client. It runs in any framework, and on any server with fetch.",
     badge: "npm install @spoar/sdk",
     tone: "tone-lilac",
     visual: <InstallVisual />,
@@ -165,24 +168,24 @@ const features: {
 
 const principles: { icon: Icon; title: string; text: string }[] = [
   {
-    icon: EyeOffIcon,
+    icon: DrawCookieOffIcon,
     title: "No visitor cookies",
-    text: "Visitors and sessions live in localStorage and sessionStorage. Nothing to put in a cookie banner.",
+    text: "Visitors live in localStorage.",
   },
   {
-    icon: KeyIcon,
+    icon: DrawHashIcon,
     title: "No raw IP addresses",
-    text: "Hashed with a salt that rotates every UTC day, then dropped. Visitor counts never use it.",
+    text: "Hashed daily, then dropped.",
   },
   {
-    icon: DatabaseIcon,
+    icon: DrawDatabaseIcon,
     title: "Your database",
-    text: "Events land in a Postgres you run, on Neon or your own server. Nothing is sent anywhere else.",
+    text: "A Postgres you run.",
   },
   {
-    icon: ShieldIcon,
+    icon: DrawGaugeIcon,
     title: "Bot scoring",
-    text: "User agent, headless and no-input signals combine into one score per event.",
+    text: "One bot score per event.",
   },
 ];
 
@@ -322,7 +325,7 @@ export default async function HomePage() {
             <li
               key={step.title}
               style={stagger(index)}
-              className="reveal flex flex-col gap-4 md:row-span-2 md:grid md:grid-rows-subgrid"
+              className="step reveal flex flex-col gap-4 md:row-span-2 md:grid md:grid-rows-subgrid"
             >
               <div className="px-1">
                 <h3 className="font-serif text-[1.3rem] font-normal">{step.title}</h3>
@@ -333,10 +336,10 @@ export default async function HomePage() {
               <div
                 className={`step-card ${step.tone} group/step relative flex h-60 items-center justify-center rounded-2xl p-6`}
               >
-                <span className="absolute top-3 left-3 rounded-full bg-surface/70 px-2.5 py-1 font-mono text-[0.62rem] text-fg">
+                <span className="step-badge absolute top-3 left-3 rounded-full bg-surface/70 px-2.5 py-1 font-mono text-[0.62rem] text-fg">
                   {step.badge}
                 </span>
-                {step.visual}
+                <div className="step-visual flex w-full justify-center">{step.visual}</div>
               </div>
             </li>
           ))}
@@ -411,9 +414,13 @@ export default async function HomePage() {
             Private <em className="dark-accent">by design</em>, not by setting
           </h2>
           <ul className="mt-14 grid gap-10 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {principles.map((item) => (
-              <li key={item.title} className="principle flex flex-col gap-3">
-                <item.icon className="size-5 text-[#f6efe9]/80" />
+            {principles.map((item, index) => (
+              <li
+                key={item.title}
+                style={stagger(index)}
+                className="principle reveal flex flex-col gap-3"
+              >
+                <item.icon className="size-7 text-[#f6efe9]/80" />
                 <h3 className="font-serif text-[1.1rem] text-[#f6efe9]">{item.title}</h3>
                 <p className="font-serif text-[0.9rem] leading-relaxed text-[#f6efe9]/60">
                   {item.text}

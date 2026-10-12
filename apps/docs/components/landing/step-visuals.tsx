@@ -21,6 +21,8 @@ type Target = {
 
 type BarStyle = CSSProperties & { "--i": number; "--w": string };
 
+type MarkStyle = CSSProperties & { "--i": number; "--ox": string; "--oy": string };
+
 const orbitSize = 196;
 const orbitRadius = 74;
 const center = orbitSize / 2;
@@ -50,7 +52,10 @@ export function InstallVisual() {
       className="orbit relative shrink-0 translate-y-1.5"
       style={{ width: orbitSize, height: orbitSize }}
     >
-      <svg viewBox={`0 0 ${orbitSize} ${orbitSize}`} className="absolute inset-0 size-full">
+      <svg
+        viewBox={`0 0 ${orbitSize} ${orbitSize}`}
+        className="orbit-lines absolute inset-0 size-full"
+      >
         {targets.map((target, index) => {
           const point = orbitPoint(index, targets.length);
           return (
@@ -77,14 +82,17 @@ export function InstallVisual() {
       </svg>
       {targets.map((target, index) => {
         const point = orbitPoint(index, targets.length);
+        const style: MarkStyle = {
+          ...stagger(index),
+          "--ox": `${-point.x}px`,
+          "--oy": `${-point.y}px`,
+          left: `calc(50% + ${point.x}px)`,
+          top: `calc(50% + ${point.y}px)`,
+        };
         return (
           <span
             key={target.name}
-            style={{
-              ...stagger(index),
-              left: `calc(50% + ${point.x}px)`,
-              top: `calc(50% + ${point.y}px)`,
-            }}
+            style={style}
             className="orbit-mark absolute flex size-10 -translate-1/2 items-center justify-center rounded-xl border border-line bg-surface shadow-[0_6px_16px_-10px_rgb(var(--shade)/0.35)]"
           >
             {target.mark}
@@ -105,7 +113,7 @@ export function ProxyVisual() {
         yoursite.com<span className="text-accent">/_ra</span>
       </div>
       <span className="proxy-request absolute top-0.5 left-[9px] z-20 size-2 rounded-full bg-accent shadow-[0_0_0_3px_rgb(254_81_1/0.18)]" />
-      <div className="rounded-xl border border-line bg-surface p-3 pt-5 font-mono text-[0.62rem] leading-[1.7] shadow-[0_12px_28px_-16px_rgb(var(--shade)/0.4)]">
+      <div className="proxy-card rounded-xl border border-line bg-surface p-3 pt-5 font-mono text-[0.62rem] leading-[1.7] shadow-[0_12px_28px_-16px_rgb(var(--shade)/0.4)]">
         <div className="text-muted">app/_ra/route.ts</div>
         <div className="mt-1.5">
           <span className="text-muted">export const</span> <span className="text-fg">POST</span>{" "}

@@ -232,14 +232,6 @@ export function SearchIcon(props: Props) {
   );
 }
 
-export function PlusIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
 export function DotsIcon(props: Props) {
   return (
     <svg {...frame(props)}>
@@ -262,14 +254,6 @@ export function ListIcon(props: Props) {
       <rect x="4" y="5" width="4" height="4" rx="1" />
       <rect x="4" y="15" width="4" height="4" rx="1" />
       <path d="M11 7h9M11 17h9" />
-    </svg>
-  );
-}
-
-export function TrendIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <path d="m4 17 5-5 4 3 7-8" />
     </svg>
   );
 }
