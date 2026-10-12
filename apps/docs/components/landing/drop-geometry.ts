@@ -1,4 +1,5 @@
 import { BufferGeometry, Float32BufferAttribute, Shape, ShapeUtils } from "three";
+import { resolveDropShape, type DropShape } from "./drop-shape";
 
 function outlinePoints() {
   const shape = new Shape();
@@ -22,11 +23,12 @@ function outlinePoints() {
  * @description Builds a closed, rounded volume from the Spoar silhouette.
  * @example const geometry = createDropGeometry();
  */
-export function createDropGeometry() {
+export function createDropGeometry(input?: Partial<DropShape>) {
+  const shape = resolveDropShape(input);
   const outline = outlinePoints();
   const segments = outline.length;
   const rings = 48;
-  const positions = [0, -0.25, 0.72];
+  const positions = [0, -0.25, 0.72 * shape.thickness];
   const indices: number[] = [];
 
   for (let ring = 1; ring < rings; ring++) {
@@ -34,18 +36,20 @@ export function createDropGeometry() {
     const radius = Math.sin(angle);
     const depth = Math.cos(angle);
     for (const point of outline) {
-      const x = point.x * radius;
+      const fullness = 1 + shape.fullness * Math.exp(-((point.y + 0.55) ** 2) / 0.45);
+      const tipLean = shape.lean * Math.max(0, (point.y + 0.25) / 1.65) ** 2;
+      const x = (point.x * shape.width * fullness + tipLean) * radius;
       const y = -0.25 + (point.y + 0.25) * radius;
       const foldX = 0.55 * Math.sin((y + 0.1) * 2.1);
       const fold = Math.exp(-((x + foldX) ** 2) / 0.006);
       const taper = Math.max(0, 1 - (y / 1.4) ** 4);
-      const z = depth * (0.72 - 0.065 * fold * taper * radius);
+      const z = depth * (0.72 - 0.065 * shape.fold * fold * taper * radius) * shape.thickness;
       positions.push(x, y, z);
     }
   }
 
   const back = positions.length / 3;
-  positions.push(0, -0.25, -0.72);
+  positions.push(0, -0.25, -0.72 * shape.thickness);
   for (let segment = 0; segment < segments; segment++) {
     const next = (segment + 1) % segments;
     indices.push(0, 1 + segment, 1 + next);

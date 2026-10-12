@@ -27,3 +27,13 @@ export function registerDiffThemes() {
   registerCustomTheme(codeThemes.light.name, async () => codeThemes.light);
   registerCustomTheme(codeThemes.dark.name, async () => codeThemes.dark);
 }
+
+/**
+ * @name pierreThemes
+ * @description Pierre's own light and dark themes, bundled with `@pierre/diffs`, for the source
+ * browser and the query editor. They need no registration.
+ *
+ * @example
+ * <File options={{ theme: pierreThemes }} file={file} />
+ */
+export const pierreThemes = { light: "pierre-light", dark: "pierre-dark" };

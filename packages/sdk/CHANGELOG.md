@@ -1,5 +1,15 @@
 # @spoar/sdk
 
+## 2.0.0
+
+### Major Changes
+
+- Stable release of SDK 2.0 with the typed browser client, plugins, React and Next integrations, server tracking, proxy support and admin client.
+
+### Patch Changes
+
+- Declare `@types/react` as an optional peer dependency so the `./react` and `./next` declarations resolve to the consuming app's React types.
+
 ## 2.0.0-next.3
 
 ### Patch Changes

@@ -1,0 +1,107 @@
+#nd-docs-layout {
+  --color-fd-primary: var(--docs-accent);
+  --color-fd-primary-foreground: var(--surface);
+  --color-fd-accent: color-mix(in srgb, var(--docs-wash) 35%, var(--bg));
+  --color-fd-accent-foreground: var(--fg);
+  background:
+    radial-gradient(ellipse 65% 380px at 60% 0%, color-mix(in srgb, var(--docs-wash) 22%, transparent), transparent),
+    var(--bg);
+}
+
+#nd-sidebar {
+  border-inline-end: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 40%, var(--bg));
+}
+
+#nd-docs-layout [data-layout-main] {
+  padding: 24px;
+}
+
+#nd-docs-layout #nd-page {
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: clamp(24px, 4vw, 48px);
+  box-shadow: 0 8px 32px -24px color-mix(in srgb, var(--fg) 25%, transparent);
+}
+
+#nd-docs-layout article h1 + p {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 28px;
+  margin-bottom: 12px;
+}
+
+#nd-docs-layout .prose :where(h2, h3) {
+  color: var(--fg);
+}
+
+@media (max-width: 767px) {
+  #nd-docs-layout [data-layout-main] {
+    padding: 12px;
+  }
+
+  #nd-docs-layout #nd-page {
+    border-radius: 14px;
+    padding: 24px 20px;
+  }
+}
+
+#nd-sidebar :is(a, button)[data-active] {
+  border-radius: 8px;
+}
+
+#nd-sidebar a[data-active="true"] {
+  background: color-mix(in srgb, var(--docs-wash) 40%, var(--bg));
+  color: var(--docs-accent);
+}
+
+#nd-sidebar a[data-active="true"]::before {
+  background: var(--docs-accent);
+}
+
+#nd-docs-layout article h1 {
+  font-family: var(--font-newsreader, Georgia), "Times New Roman", serif;
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+#nd-docs-layout article h1 + p {
+  max-width: 62ch;
+  line-height: 1.7;
+}
+
+#nd-docs-layout .prose {
+  line-height: 1.8;
+}
+
+#nd-docs-layout .prose h2 {
+  margin-top: 2.5em;
+}
+
+#nd-docs-layout .prose :is(figure, table) {
+  background: var(--surface);
+}
+
+#nd-docs-layout .prose thead {
+  background: color-mix(in srgb, var(--docs-wash) 18%, var(--surface));
+}
+
+#nd-docs-layout :focus-visible {
+  outline: 2px solid var(--docs-accent);
+  outline-offset: 3px;
+}
+
+#nd-sidebar :is(a, button):focus-visible {
+  outline: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--docs-wash) 40%, var(--bg));
+  color: var(--docs-accent);
+}
+
+#nd-docs-layout ::selection {
+  background: var(--docs-wash);
+  color: var(--fg);
+}

@@ -4,25 +4,40 @@ import { useTheme } from "fumadocs-ui/provider/base";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Logo } from "@/components/logo";
+import { DropTrail } from "./drop-trail";
+import { NavArtTile, type NavArt } from "./nav-art";
 
-import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
+import { ArrowIcon, ChevronIcon, CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 
 export type NavLink = {
   label: string;
   href: string;
-  external?: boolean;
+  description: string;
+  art: NavArt;
+};
+
+export type NavGroup = {
+  title: string;
+  links: NavLink[];
 };
 
 type Props = {
-  links: NavLink[];
+  groups: NavGroup[];
   loginHref: string;
 };
 
 const menuItem =
-  "block rounded-xl px-3 py-2 text-[0.85rem] text-fg transition-colors hover:bg-fg/5 focus-visible:bg-fg/5 focus-visible:outline-none";
+  "nav-item flex items-start gap-3 rounded-xl px-2.5 py-2 transition-colors hover:bg-fg/5 focus-visible:bg-fg/5 focus-visible:outline-none";
 
-export function SiteNav({ links, loginHref }: Props) {
+const headerLogoShape = {
+  width: 1.1,
+  fullness: 0.13,
+  lean: -0.16,
+  thickness: 0.8,
+  fold: 2,
+};
+
+export function SiteNav({ groups, loginHref }: Props) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -57,18 +72,41 @@ export function SiteNav({ links, loginHref }: Props) {
             aria-label="Spoar home"
             className="mr-6 flex items-center gap-2 rounded-full py-1 pr-2 pl-1.5 text-[0.85rem] font-medium tracking-tight text-fg"
           >
-            <Logo className="size-6" />
+            <DropTrail
+              size={36}
+              shape={headerLogoShape}
+              scrollDriven
+              color="#a18acb"
+              metalness={0.3}
+              roughness={0.32}
+              clearcoat={0.35}
+            />
             Spoar
           </Link>
-          <Link href="/docs" className="pill-ghost">
-            Docs
-          </Link>
-          <a href={loginHref} className="pill-ghost">
+          <button
+            ref={trigger}
+            type="button"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-label={open ? "Close docs menu" : "Open docs menu"}
+            onClick={() => setOpen((value) => !value)}
+            className="pill-ghost nav-toggle order-last gap-1 max-sm:size-8 max-sm:px-0! sm:order-none"
+          >
+            <span className="max-sm:hidden">Docs</span>
+            <ChevronIcon className="nav-chevron size-3.5 max-sm:hidden" />
+            <span className="contents sm:hidden">
+              <span className="nav-toggle-icons" aria-hidden="true">
+                <MenuIcon className="nav-menu-icon size-4" />
+                <CloseIcon className="nav-close-icon size-4" />
+              </span>
+            </span>
+          </button>
+          <a href={loginHref} className="pill-login">
             Log in
+            <span className="pill-login-icon" aria-hidden="true">
+              <ArrowIcon className="size-3" />
+            </span>
           </a>
-          <Link href="/docs/getting-started/quick-start" className="pill-dark">
-            Get started
-          </Link>
           <button
             type="button"
             aria-label="Toggle dark mode"
@@ -78,40 +116,35 @@ export function SiteNav({ links, loginHref }: Props) {
             <MoonIcon className="theme-moon size-4" />
             <SunIcon className="theme-sun size-4" />
           </button>
-          <button
-            ref={trigger}
-            type="button"
-            aria-expanded={open}
-            aria-controls={menuId}
-            aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((value) => !value)}
-            className="pill-ghost nav-toggle size-8 px-0!"
-          >
-            <span className="nav-toggle-icons" aria-hidden="true">
-              <MenuIcon className="nav-menu-icon size-4" />
-              <CloseIcon className="nav-close-icon size-4" />
-            </span>
-          </button>
         </div>
         {open ? (
-          <ul
+          <div
             id={menuId}
-            className="nav-popover animate-menu-in absolute inset-x-0 top-[calc(100%+8px)] flex flex-col gap-0.5 rounded-2xl border border-line bg-surface p-1.5 shadow-[0_16px_40px_-20px_rgb(var(--shade)/0.35)]"
+            className="nav-popover animate-menu-in absolute inset-x-0 top-[calc(100%+8px)] grid gap-1 rounded-2xl border border-line bg-surface p-1.5 shadow-[0_16px_40px_-20px_rgb(var(--shade)/0.35)] max-sm:max-h-[calc(100dvh-5rem)] max-sm:overflow-y-auto sm:right-auto sm:left-1/2 sm:-ml-[18.5rem] sm:w-[37rem] sm:grid-cols-2"
           >
-            {links.map((link) => (
-              <li key={link.href}>
-                {link.external ? (
-                  <a href={link.href} className={menuItem}>
-                    {link.label}
-                  </a>
-                ) : (
-                  <Link href={link.href} onClick={() => setOpen(false)} className={menuItem}>
-                    {link.label}
-                  </Link>
-                )}
-              </li>
+            {groups.map((group) => (
+              <section key={group.title} className="p-1">
+                <h2 className="px-3 pt-2 pb-1 text-[0.65rem] font-medium tracking-[0.08em] text-muted uppercase">
+                  {group.title}
+                </h2>
+                <ul className="flex flex-col gap-0.5">
+                  {group.links.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} onClick={() => setOpen(false)} className={menuItem}>
+                        <NavArtTile art={link.art} />
+                        <span className="min-w-0">
+                          <span className="block text-[0.85rem] text-fg">{link.label}</span>
+                          <span className="block text-[0.75rem] leading-snug text-muted">
+                            {link.description}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         ) : null}
       </div>
     </nav>

@@ -197,3 +197,12 @@ export function EyeOffIcon(props: Props) {
     </svg>
   );
 }
+
+export function WindowIcon(props: Props) {
+  return (
+    <svg {...frame(props)}>
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <path d="M3 9.5h18M6.5 7h.01M9.5 7h.01" />
+    </svg>
+  );
+}

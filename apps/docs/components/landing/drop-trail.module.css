@@ -64,6 +64,19 @@
   animation-play-state: paused;
 }
 
+.stage[data-header="true"] {
+  flex-shrink: 0;
+}
+
+.stage[data-header="true"] .halo,
+.stage[data-header="true"] .shadow {
+  display: none;
+}
+
+.stage[data-header="true"] .reveal {
+  animation: none;
+}
+
 @keyframes arrive {
   from {
     opacity: 0;

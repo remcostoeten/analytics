@@ -1,5 +1,11 @@
 # @spoar/devtools
 
+## 0.1.0
+
+### Minor Changes
+
+- Stable release of the admin dev widget with online visitors, sessions, log streaming, route speed, error groups, an overview panel, React and Next loaders, fixtures and a Shadow DOM panel.
+
 ## 0.1.0-next.2
 
 ### Patch Changes

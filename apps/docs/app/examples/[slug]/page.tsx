@@ -1,13 +1,13 @@
 import { readFile } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { join } from "node:path";
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { CodeWindow } from "@/components/landing/code-window";
+import { SourceBrowser } from "@/components/examples/source-browser";
 import { ArrowIcon } from "@/components/landing/icons";
 import { getExample, listExamples } from "@/lib/examples";
 import { baseOptions } from "@/lib/layout-options";
@@ -17,18 +17,6 @@ type Props = {
 };
 
 const repositoryUrl = "https://github.com/remcostoeten/analytics/tree/master/examples";
-
-const languages: { [extension: string]: string } = {
-  ".ts": "ts",
-  ".tsx": "tsx",
-  ".js": "js",
-  ".jsx": "jsx",
-  ".mjs": "js",
-  ".json": "json",
-  ".css": "css",
-  ".html": "html",
-  ".md": "md",
-};
 
 export function generateStaticParams() {
   const params = listExamples().map((example) => ({ slug: example.slug }));
@@ -40,10 +28,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const example = getExample((await params).slug);
   if (!example) return {};
   return { title: example.title, description: example.description };
-}
-
-function languageOf(file: string) {
-  return languages[extname(file)] ?? "txt";
 }
 
 async function readSource(directory: string, file: string) {
@@ -67,13 +51,24 @@ export default async function ExamplePage({ params }: Props) {
             {example.title}
           </h1>
           <p className="text-[0.9rem] leading-relaxed text-muted">{example.description}</p>
-          <a
-            href={`${repositoryUrl}/${example.directory}`}
-            className="link-line inline-flex w-fit items-center gap-1.5 text-sm text-fg"
-          >
-            Open on GitHub
-            <ArrowIcon className="size-3" />
-          </a>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {example.tutorial ? (
+              <Link
+                href={example.tutorial}
+                className="link-line inline-flex w-fit items-center gap-1.5 text-sm text-fg"
+              >
+                Build it step by step
+                <ArrowIcon className="size-3" />
+              </Link>
+            ) : null}
+            <a
+              href={`${repositoryUrl}/${example.directory}`}
+              className="link-line inline-flex w-fit items-center gap-1.5 text-sm text-fg"
+            >
+              Open on GitHub
+              <ArrowIcon className="size-3" />
+            </a>
+          </div>
         </header>
         {example.preview ? (
           <section>
@@ -86,13 +81,12 @@ export default async function ExamplePage({ params }: Props) {
           </section>
         ) : null}
         <section>
-          <Tabs items={example.files}>
-            {example.files.map((file, index) => (
-              <Tab key={file} value={file}>
-                <CodeWindow title={file} lang={languageOf(file)} code={sources[index] ?? ""} />
-              </Tab>
-            ))}
-          </Tabs>
+          <SourceBrowser
+            files={example.files.map((file, index) => ({
+              name: file,
+              contents: sources[index] ?? "",
+            }))}
+          />
         </section>
       </main>
     </HomeLayout>

@@ -9,6 +9,8 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 import { CodeWindow } from "@/components/landing/code-window";
 import { DropTrail } from "@/components/landing/drop-trail";
 import { ErrorsScene } from "@/components/landing/errors-live";
+import { TermTip } from "@/components/landing/term-tip";
+import { WordSwap } from "@/components/landing/word-swap";
 import { PrivacyScene, ProxyScene } from "@/components/landing/feature-scenes";
 import {
   ArrowIcon,
@@ -17,20 +19,23 @@ import {
   BugIcon,
   ChevronIcon,
   ClockIcon,
-  DatabaseIcon,
   EyeOffIcon,
   GaugeIcon,
-  KeyIcon,
   RouteIcon,
-  ShieldIcon,
   TerminalIcon,
 } from "@/components/landing/icons";
 import { InstallCommand } from "@/components/landing/install-command";
 import { LiveDashboard } from "@/components/landing/live-dashboard";
 import { PipelineScene } from "@/components/landing/pipeline-scene";
+import {
+  HashIcon,
+  NoCookieIcon,
+  OwnDatabaseIcon,
+  ScoreIcon,
+} from "@/components/landing/principle-icons";
 import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
-import { SiteNav, type NavLink } from "@/components/landing/site-nav";
+import { LandingNav } from "@/components/landing/landing-nav";
 import { SqlSection } from "@/components/landing/sql-section";
 import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
@@ -73,7 +78,16 @@ const tiles = [
 const steps = [
   {
     title: "Install the SDK",
-    text: "Create the client in one file. The browser core has no framework dependency, so it runs in React, Next, Vue, Svelte, Astro or plain TypeScript, and the server entry runs anywhere with fetch.",
+    text: (
+      <>
+        Initialize the{" "}
+        <TermTip tip="@spoar/sdk is a small browser package that sends pageviews and events to your ingestion API. It contains no database logic.">
+          SDK
+        </TermTip>{" "}
+        in your project root. This will signal events to the ingestion server which allows you to
+        get insights through your database
+      </>
+    ),
     badge: "npm install @spoar/sdk",
     tone: "tone-lilac",
     visual: <InstallVisual />,
@@ -173,31 +187,25 @@ const features: {
 
 const principles: { icon: Icon; title: string; text: string }[] = [
   {
-    icon: EyeOffIcon,
+    icon: NoCookieIcon,
     title: "No visitor cookies",
-    text: "Visitors and sessions live in localStorage and sessionStorage. Nothing to put in a cookie banner.",
+    text: "Visitor ids live in localStorage, not cookies.",
   },
   {
-    icon: KeyIcon,
+    icon: HashIcon,
     title: "No raw IP addresses",
-    text: "Hashed with a salt that rotates every UTC day, then dropped. Visitor counts never use it.",
+    text: "Hashed with a daily salt, then dropped.",
   },
   {
-    icon: DatabaseIcon,
+    icon: OwnDatabaseIcon,
     title: "Your database",
-    text: "Events land in a Postgres you run, on Neon or your own server. Nothing is sent anywhere else.",
+    text: "Events stay in a Postgres you run.",
   },
   {
-    icon: ShieldIcon,
+    icon: ScoreIcon,
     title: "Bot scoring",
-    text: "User agent, headless and no-input signals combine into one score per event.",
+    text: "Every event gets one score from several signals.",
   },
-];
-
-const story = [
-  "Spoar started in February 2026 as a Hono ingestion service, a Next dashboard that read the same Postgres directly, and an SDK published as @remcostoeten/analytics. It ran on my own sites and still does.",
-  "That version had no read API: every chart was a query inside the dashboard, and the SDK and the server shared no types. So v2 is a rebuild on one contract of TypeBox schemas that the SDK, the API and the client all import, with one Elysia API for ingest, reads and sign-in.",
-  "Projects are public by default because I want my own numbers in the open. The dashboard at the top of this page is this site's, and the list below it is every project the production API serves.",
 ];
 
 const questions = [
@@ -244,18 +252,16 @@ async function readSnippet() {
   return readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
 }
 
-function navLinks() {
-  const links: NavLink[] = [
+function footerLinks() {
+  const links = [
     { label: "Documentation", href: "/docs" },
     { label: "SDK reference", href: "/docs/sdk/install" },
     { label: "API reference", href: "/docs/reference" },
     { label: "Query", href: "/query" },
+    { label: "Changelog", href: "/changelog" },
   ];
   if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
-  links.push(
-    { label: "Dashboard", href: dashboardUrl(), external: true },
-    { label: "GitHub", href: github, external: true },
-  );
+  links.push({ label: "Dashboard", href: dashboardUrl() }, { label: "GitHub", href: github });
   return links;
 }
 
@@ -264,13 +270,14 @@ export default async function HomePage() {
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
       <RevealObserver />
-      <SiteNav links={navLinks()} loginHref={dashboardUrl("/sign-in")} />
+      <LandingNav loginHref={dashboardUrl("/sign-in")} />
 
       <header className="hero-wash relative isolate flex overflow-x-clip flex-col items-center px-4 pt-32 text-center sm:pt-40">
         <span aria-hidden="true" className="hero-blob hero-blob-a" />
         <span aria-hidden="true" className="hero-blob hero-blob-b" />
         <h1 className="hero-rise font-serif max-w-4xl text-[3rem] leading-[1.02] font-light tracking-[-0.02em] text-fg sm:text-[4.6rem] lg:text-[5.5rem]">
-          Web analytics on your own Postgres
+          Monitor <WordSwap words={["analytics", "errors", "performance"]} /> without relying on a
+          third party
         </h1>
         <p className="hero-rise-late mt-6 max-w-lg font-serif text-[1.05rem] leading-relaxed text-muted">
           A typed SDK, one API for ingest and reads, and a database you run. No cookies for
@@ -336,7 +343,7 @@ export default async function HomePage() {
         <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-md">
             <h2 className="font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
-              Spoar in three steps
+              Spoar in <em className="accent-text">three steps</em>
             </h2>
             <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
               One project, two keys, one route. From an empty app to the first stored event.
@@ -375,7 +382,7 @@ export default async function HomePage() {
       <section className="container-land py-10">
         <div className="feature-shell rounded-[28px] border border-line px-5 py-14 sm:px-10 sm:py-20">
           <h2 className="reveal text-center font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[3rem]">
-            What Spoar records, and how
+            What Spoar records, <em className="accent-text">and how</em>
           </h2>
           <div className="mt-16 flex flex-col gap-24 sm:mt-20 sm:gap-32">
             {features.map((feature) => (
@@ -419,7 +426,7 @@ export default async function HomePage() {
         <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-md">
             <h2 className="font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
-              One file to set it up
+              <em className="accent-text">One file</em> to set it up
             </h2>
             <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
               Create the client, add the plugins you want, and call track with typed props.
@@ -440,9 +447,13 @@ export default async function HomePage() {
             Private <em className="dark-accent">by design</em>, not by setting
           </h2>
           <ul className="mt-14 grid gap-10 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {principles.map((item) => (
-              <li key={item.title} className="principle flex flex-col gap-3">
-                <item.icon className="size-5 text-[#f6efe9]/80" />
+            {principles.map((item, index) => (
+              <li
+                key={item.title}
+                className="principle reveal flex flex-col gap-3"
+                style={stagger(index)}
+              >
+                <item.icon className="size-6 text-[#f6efe9]/80" />
                 <h3 className="font-serif text-[1.1rem] text-[#f6efe9]">{item.title}</h3>
                 <p className="font-serif text-[0.9rem] leading-relaxed text-[#f6efe9]/60">
                   {item.text}
@@ -450,30 +461,6 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="container-land grid gap-10 py-16 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-        <div className="reveal">
-          <h2 className="font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
-            Why it exists
-          </h2>
-          <p className="mt-4 font-serif text-[0.95rem] text-muted">
-            Remco Stoeten, who builds and runs it.{" "}
-            <a href={`${github}/blob/master/v1/README.md`} className="link-line text-fg">
-              v1 is still in the repository
-            </a>
-          </p>
-        </div>
-        <div className="flex flex-col gap-5">
-          {story.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="reveal font-serif text-[1.05rem] leading-relaxed text-fg/85"
-            >
-              {paragraph}
-            </p>
-          ))}
         </div>
       </section>
 
@@ -513,7 +500,7 @@ export default async function HomePage() {
           <div className="dark-shell flex flex-col items-center gap-5 rounded-[24px] px-6 pt-4 pb-12 text-center">
             <DropTrail />
             <h2 className="font-serif text-[2.1rem] leading-[1.1] font-light text-[#f6efe9] sm:text-[2.5rem]">
-              Own your analytics
+              Own <em className="dark-accent">your analytics</em>
             </h2>
             <p className="max-w-sm font-serif text-[0.95rem] text-[#f6efe9]/65">
               From an empty app to the first stored event in the quick start.
@@ -534,7 +521,7 @@ export default async function HomePage() {
               Spoar
             </Link>
             <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 font-serif text-[0.9rem] text-fg/75">
-              {navLinks().map((link) => (
+              {footerLinks().map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="link-line">
                     {link.label}

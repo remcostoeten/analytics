@@ -131,7 +131,7 @@ export async function SummarySection({
           ) : (
             <div className="grid gap-0.5">
               <span className="flex items-center gap-1.5 text-xs text-muted">
-                <span className="size-2 rounded-full bg-[var(--series-1)]" />
+                <span className="size-2 rounded-full bg-(--series-1)" />
                 Total {view.label.toLowerCase()}
               </span>
               <span className="text-2xl font-semibold tabular-nums">

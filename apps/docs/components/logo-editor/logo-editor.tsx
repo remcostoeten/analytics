@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import type { LogoPalette } from "@/components/logo-palette";
+import { defaultDropShape } from "../landing/drop-shape";
+import type { DropImageExporter } from "../landing/drop-scene";
+import { ShapeControls } from "./shape-controls";
 
 import type { LogoPreviewMode } from "./preview-mode";
 import { LogoPreview } from "./logo-preview";
@@ -28,13 +31,15 @@ const colorFields = [
 
 export function LogoEditor() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const exportRef = useRef<DropImageExporter | undefined>(undefined);
   const [source, setSource] = useState<ImageData>();
   const [palette, setPalette] = useState<LogoPalette>(defaultPalette);
   const [background, setBackground] = useState("checker");
   const [original, setOriginal] = useState(false);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState(false);
-  const [preview, setPreview] = useState<LogoPreviewMode>("svg");
+  const [preview, setPreview] = useState<LogoPreviewMode>("3d");
+  const [shape, setShape] = useState(defaultDropShape);
   const [metalness, setMetalness] = useState(1);
   const [roughness, setRoughness] = useState(0.2);
   const settings = JSON.stringify({ source: "/brand/drop-mark.webp", ...palette }, null, 2);
@@ -51,6 +56,7 @@ export function CustomDrop() {
       }}
       metalness={${metalness}}
       roughness={${roughness}}
+      shape={${JSON.stringify(shape)}}
       size={320}
     />
   );
@@ -136,6 +142,24 @@ export function CustomDrop() {
     }
   }
 
+  async function downloadModel() {
+    if (!exportRef.current) {
+      setMessage("The 3D model is not ready. Wait for the preview to load.");
+      return;
+    }
+    try {
+      const blob = await exportRef.current();
+      if (!blob) {
+        setMessage("Your browser could not export the model. Please try again.");
+        return;
+      }
+      saveLogoFile(blob, "custom-drop.png");
+      setMessage("Downloaded custom-drop.png at 1024 × 1024 px.");
+    } catch {
+      setMessage("Your browser could not export the model. Please try again.");
+    }
+  }
+
   return (
     <main className={styles.editor}>
       <header className={styles.header}>
@@ -143,9 +167,9 @@ export function CustomDrop() {
         <span>Brand tools / 01</span>
       </header>
       <div className={styles.title}>
-        <p>YOUR DROP, YOUR COLORS</p>
-        <h1>Logo palette</h1>
-        <p>Adjust the colors. Keep the folds, highlights and transparent background.</p>
+        <p>SPOAR / BRAND TOOLS</p>
+        <h1>Logo studio</h1>
+        <p>Shape the drop, tune its finish, and check it at the size you’ll use.</p>
       </div>
       <div className={styles.workspace}>
         <LogoPreview
@@ -157,6 +181,8 @@ export function CustomDrop() {
           background={background}
           metalness={metalness}
           roughness={roughness}
+          shape={shape}
+          exportRef={exportRef}
           loadError={loadError}
           onPreviewChange={(value) => {
             setPreview(value);
@@ -165,7 +191,17 @@ export function CustomDrop() {
           onOriginalChange={(value) => setOriginal(value)}
           onBackgroundChange={(value) => setBackground(value)}
         />
-        <section className={styles.controls} aria-label="Palette controls">
+        <section className={styles.controls} aria-label="Logo controls">
+          {preview === "3d" && (
+            <ShapeControls
+              shape={shape}
+              onChange={(value) => {
+                setShape(value);
+                setOriginal(false);
+                setMessage("");
+              }}
+            />
+          )}
           <div className={styles.sectionHeading}>
             <h2>Palette</h2>
             <button
@@ -284,6 +320,7 @@ export function CustomDrop() {
             ready={Boolean(source)}
             onCopy={(text) => copyCode(text)}
             onDownload={(format) => download(format)}
+            onDownloadModel={() => downloadModel()}
           />
           <p className={styles.status} role="status">
             {message}

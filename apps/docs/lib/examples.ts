@@ -8,6 +8,7 @@ export type Example = {
   directory: string;
   files: string[];
   preview?: string;
+  tutorial?: string;
 };
 
 const examples: Example[] = [
@@ -18,6 +19,7 @@ const examples: Example[] = [
     description:
       "Stats tiles, a visitors chart, breakdowns, countries and a live stream for one project, read through the typed client, with the page tracking itself through the SDK.",
     directory: "dashboard",
+    tutorial: "/docs/tutorial/create-a-project",
     files: [
       "src/app.tsx",
       "src/api.ts",

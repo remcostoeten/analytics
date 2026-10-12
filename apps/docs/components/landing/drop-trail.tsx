@@ -1,27 +1,45 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
 
 import type { DropAppearance } from "./drop-appearance";
-import type { createDropScene } from "./drop-scene";
+import type { createDropScene, DropImageExporter } from "./drop-scene";
+import type { DropShape } from "./drop-shape";
 
 import styles from "./drop-trail.module.css";
 
 type Props = DropAppearance & {
   size?: number;
+  shape?: Partial<DropShape>;
+  rotating?: boolean;
+  scrollDriven?: boolean;
+  exportRef?: RefObject<DropImageExporter | undefined>;
 };
 
 function loadDropScene() {
   return import("./drop-scene");
 }
 
-export function DropTrail({ color, palette, metalness, roughness, size }: Props = {}) {
+export function DropTrail({
+  color,
+  palette,
+  metalness,
+  roughness,
+  clearcoat,
+  size,
+  shape,
+  rotating = true,
+  scrollDriven = false,
+  exportRef,
+}: Props = {}) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<ReturnType<typeof createDropScene> | undefined>(undefined);
   const syncAppearance = useEffectEvent(() => {
-    sceneRef.current?.setAppearance({ color, palette, metalness, roughness });
+    sceneRef.current?.setShape(shape);
+    sceneRef.current?.setAppearance({ color, palette, metalness, roughness, clearcoat });
+    sceneRef.current?.setRotating(rotating);
   });
 
   useEffect(() => {
@@ -34,6 +52,9 @@ export function DropTrail({ color, palette, metalness, roughness, size }: Props 
     palette?.amount,
     metalness,
     roughness,
+    clearcoat,
+    shape,
+    rotating,
   ]);
 
   useEffect(() => {
@@ -60,8 +81,9 @@ export function DropTrail({ color, palette, metalness, roughness, size }: Props 
       loadDropScene()
         .then(({ createDropScene: createScene }) => {
           if (disposed) return;
-          scene = createScene(canvas);
+          scene = createScene(canvas, { scrollDriven });
           sceneRef.current = scene;
+          if (exportRef) exportRef.current = scene.exportPng;
           syncAppearance();
           stage.dataset.rendered = "true";
           sync();
@@ -86,6 +108,7 @@ export function DropTrail({ color, palette, metalness, roughness, size }: Props 
       scene?.dispose();
       scene = undefined;
       sceneRef.current = undefined;
+      if (exportRef) exportRef.current = undefined;
     }
 
     observer.observe(stage);
@@ -99,18 +122,24 @@ export function DropTrail({ color, palette, metalness, roughness, size }: Props 
       document.removeEventListener("visibilitychange", sync);
       scene?.dispose();
       sceneRef.current = undefined;
+      if (exportRef) exportRef.current = undefined;
       delete stage.dataset.entered;
       delete stage.dataset.paused;
       delete stage.dataset.rendered;
     };
-  }, []);
+  }, [exportRef, scrollDriven]);
 
   return (
     <div
       ref={stageRef}
       aria-hidden="true"
       className={styles.stage}
-      style={size ? { height: size + 44 } : undefined}
+      data-header={scrollDriven || undefined}
+      style={
+        size
+          ? { height: scrollDriven ? size : size + 44, width: scrollDriven ? size : undefined }
+          : undefined
+      }
     >
       <span className={styles.halo} />
       <span className={styles.shadow} />

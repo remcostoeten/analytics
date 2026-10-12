@@ -71,7 +71,7 @@ export async function SqlSection() {
       <div className="reveal flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
         <div className="max-w-md">
           <h2 className="font-serif text-[2.4rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.9rem]">
-            Ask the data
+            Ask <em className="accent-text">the data</em>
           </h2>
           <p className="mt-4 font-serif text-[1rem] leading-relaxed text-muted">
             Six read-only queries over the last 30 days of {showcaseProject()}, run on the API as

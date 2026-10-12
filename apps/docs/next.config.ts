@@ -22,6 +22,9 @@ const config: NextConfig = {
       { source: "/dashboard/:path*", destination: `${dashboard}/dashboard/:path*` },
     ];
   },
+  async redirects() {
+    return [{ source: "/docs/changelog", destination: "/changelog", permanent: true }];
+  },
 };
 
 export default withMDX(config);

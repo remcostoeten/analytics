@@ -3,6 +3,7 @@
 @import "fumadocs-ui/css/preset.css";
 @import "fumadocs-openapi/css/preset.css";
 @import "./landing-interactions.css";
+@import "./docs-theme.css";
 
 @theme inline {
   --color-bg: var(--bg);
@@ -27,6 +28,7 @@
   --animate-notice-in: notice-in 180ms var(--ease-out);
   --animate-live: live 1s ease-in-out infinite;
   --animate-rise: rise 420ms var(--ease-out) both;
+  --animate-settle: settle 200ms var(--ease-out);
 
   @keyframes menu-in {
     from {
@@ -55,11 +57,13 @@
 
 @layer base {
   :root {
-    --bg: #fafafa;
+    --bg: #fdf7f3;
     --surface: #ffffff;
-    --fg: #0a0a0a;
-    --muted: #6b6b6b;
-    --line: #d9d9d9;
+    --fg: #1d1816;
+    --muted: #6e6460;
+    --line: #eee2da;
+    --docs-accent: #6b46c1;
+    --docs-wash: #e4d4fa;
     --accent: #fe5101;
     --ok: #1fae78;
     --warn: #b7791f;
@@ -70,11 +74,13 @@
   }
 
   .dark {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --fg: #ededed;
-    --muted: #8a8a8a;
-    --line: #262626;
+    --bg: #13100f;
+    --surface: #1b1716;
+    --fg: #f3ece8;
+    --muted: #a3958e;
+    --line: #2e2725;
+    --docs-accent: #c9adf7;
+    --docs-wash: #352a52;
     --ok: #54f2b3;
     --warn: #f5b544;
     color-scheme: dark;
@@ -256,12 +262,6 @@
   color: var(--fg);
 }
 
-#nd-sidebar {
-  border-right: 1px dashed var(--line);
-}
-
-
-
 #nd-docs-layout article h1 {
   letter-spacing: -0.02em;
 }
@@ -392,6 +392,13 @@
   }
 }
 
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -454,6 +461,9 @@
   --ink: #2f2927;
   --violet: #b08ce8;
   --violet-ink: #6b46c1;
+  --accent-text-from: #7a4fd1;
+  --accent-text-to: #d0653f;
+  --accent-text-glow: rgb(176 140 232 / 0);
   --glass-edge: rgb(255 255 255 / 0.7);
   --shade: 60 30 10;
   --wash-top: #fff3ee;
@@ -496,6 +506,9 @@
   --ink: #0b0908;
   --violet: #b896f2;
   --violet-ink: #c9adf7;
+  --accent-text-from: #d9c2ff;
+  --accent-text-to: #ffc9a8;
+  --accent-text-glow: rgb(217 194 255 / 0.28);
   --glass-edge: rgb(255 255 255 / 0.08);
   --shade: 0 0 0;
   --wash-top: #241815;
@@ -686,6 +699,57 @@
   }
 }
 
+@utility pill-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  padding: 4px 4px 4px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--pill-fg);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 0 0 1px color-mix(in srgb, var(--lilac) 55%, transparent),
+    0 6px 16px -8px rgb(255 140 90 / 0.55);
+  transition:
+    background-color 150ms ease,
+    box-shadow 200ms ease,
+    transform 120ms var(--ease-out);
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: var(--pill-hover);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      0 0 0 2px var(--lilac),
+      0 8px 20px -8px rgb(255 140 90 / 0.65);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.pill-login-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--pill-fg);
+  color: var(--pill-bg);
+  transition: transform 200ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pill-login:hover .pill-login-icon {
+    transform: translateX(2px);
+  }
+}
+
 @utility pill-ghost {
   display: inline-flex;
   align-items: center;
@@ -836,6 +900,14 @@
   color: transparent;
 }
 
+@utility accent-text {
+  font-style: italic;
+  background: linear-gradient(90deg, var(--accent-text-from), var(--accent-text-to));
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.04em;
+  filter: drop-shadow(0 0 18px var(--accent-text-glow));
+}
 
 @utility footer-wash {
   background: linear-gradient(to bottom, var(--surface), var(--footer-mid) 35%, var(--footer-end));
@@ -1038,6 +1110,26 @@
 
   .landing[data-reveal] .reveal-scale[data-shown=""] {
     animation: reveal-scale 800ms var(--ease-out) calc(var(--i, 0) * 70ms) both;
+  }
+
+  .landing[data-reveal] .reveal:not([data-shown="instant"]) .draw-icon > * {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .landing[data-reveal] .principle[data-shown=""] {
+    animation-delay: calc(var(--i, 0) * 180ms);
+  }
+
+  .landing[data-reveal] .reveal[data-shown=""] .draw-icon > * {
+    animation: draw 550ms var(--ease-out) calc(var(--i, 0) * 450ms + 300ms + var(--d, 0) * 160ms)
+      forwards;
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 

@@ -1,6 +1,6 @@
 import type { BaseLayoutProps, LinkItemType } from "fumadocs-ui/layouts/shared";
 
-import { Logo } from "@/components/logo";
+import Image from "next/image";
 import { listExamples } from "@/lib/examples";
 
 export function baseOptions(): BaseLayoutProps {
@@ -9,6 +9,7 @@ export function baseOptions(): BaseLayoutProps {
     { text: "SDK", url: "/docs/sdk/install", active: "nested-url", on: "nav" },
     { text: "API reference", url: "/docs/reference", active: "nested-url", on: "nav" },
     { text: "Query", url: "/query", active: "nested-url", on: "nav" },
+    { text: "Changelog", url: "/changelog", active: "nested-url", on: "nav" },
   ];
   if (listExamples().length > 0) {
     links.push({ text: "Examples", url: "/examples", active: "nested-url", on: "nav" });
@@ -17,9 +18,14 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: "https://github.com/remcostoeten/analytics",
     nav: {
       title: (
-        <span className="flex items-center gap-2 font-medium tracking-tight">
-          <Logo className="size-5" />
-          Spoar
+        <span className="flex items-center gap-2.5 font-medium tracking-tight">
+          <Image src="/brand/drop-mark.svg" alt="" width={36} height={36} className="shrink-0" />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-base">Spoar</span>
+            <span className="text-[0.625rem] font-normal tracking-[0.08em] text-fd-muted-foreground uppercase">
+              Documentation
+            </span>
+          </span>
         </span>
       ),
       transparentMode: "top",

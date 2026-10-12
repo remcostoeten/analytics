@@ -1,8 +1,10 @@
-import type { Ref } from "react";
+import { useState, type Ref, type RefObject } from "react";
 
 import { DropTrail } from "@/components/landing/drop-trail";
 import { Logo } from "@/components/logo";
 import type { LogoPalette } from "@/components/logo-palette";
+import type { DropShape } from "../landing/drop-shape";
+import type { DropImageExporter } from "../landing/drop-scene";
 
 import type { LogoPreviewMode } from "./preview-mode";
 import styles from "./logo-editor.module.css";
@@ -16,6 +18,8 @@ type Props = {
   background: string;
   metalness: number;
   roughness: number;
+  shape: DropShape;
+  exportRef: RefObject<DropImageExporter | undefined>;
   loadError: boolean;
   onPreviewChange: (value: LogoPreviewMode) => void;
   onOriginalChange: (value: boolean) => void;
@@ -31,11 +35,15 @@ export function LogoPreview({
   background,
   metalness,
   roughness,
+  shape,
+  exportRef,
   loadError,
   onPreviewChange,
   onOriginalChange,
   onBackgroundChange,
 }: Props) {
+  const [rotating, setRotating] = useState(false);
+  const [size, setSize] = useState(320);
   return (
     <section className={styles.previewPanel} aria-label="Logo preview">
       <div className={styles.previewToolbar}>
@@ -67,9 +75,28 @@ export function LogoPreview({
           </button>
         </div>
         <button type="button" aria-pressed={original} onClick={() => onOriginalChange(!original)}>
-          {original ? "Show my palette" : "Compare original"}
+          {original ? "Show my logo" : "Compare original"}
         </button>
       </div>
+      {preview === "3d" && (
+        <div className={styles.previewToolbar}>
+          <div className={styles.backgrounds} aria-label="Preview size">
+            {[32, 64, 320].map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={size === value}
+                onClick={() => setSize(value)}
+              >
+                {value === 320 ? "Detail" : `${value} px`}
+              </button>
+            ))}
+          </div>
+          <button type="button" aria-pressed={rotating} onClick={() => setRotating(!rotating)}>
+            {rotating ? "Front view" : "Rotate model"}
+          </button>
+        </div>
+      )}
       <div className={styles.stage} data-background={background}>
         {preview === "svg" && (
           <div
@@ -85,7 +112,10 @@ export function LogoPreview({
             palette={original ? undefined : palette}
             metalness={original ? 1 : metalness}
             roughness={original ? 0.2 : roughness}
-            size={320}
+            shape={original ? undefined : shape}
+            rotating={rotating}
+            size={size}
+            exportRef={exportRef}
           />
         )}
         <canvas

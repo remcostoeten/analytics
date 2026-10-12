@@ -1,0 +1,93 @@
+{
+	"name": "@spoar/debugtools",
+	"version": "0.0.0",
+	"description": "A debug console for admins on their own site, in the layout of a query console: editor, dataset library and an agent pane.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/remcostoeten/analytics.git",
+		"directory": "packages/debugtools"
+	},
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./react": {
+			"types": "./src/react/index.ts",
+			"default": "./src/react/index.ts"
+		},
+		"./next": {
+			"types": "./src/next/index.tsx",
+			"default": "./src/next/index.tsx"
+		},
+		"./console": {
+			"types": "./src/console-entry.ts",
+			"default": "./src/console-entry.ts"
+		},
+		"./fixtures": {
+			"types": "./src/fixtures/index.ts",
+			"default": "./src/fixtures/index.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
+			},
+			"./react": {
+				"types": "./dist/react.d.mts",
+				"default": "./dist/react.mjs"
+			},
+			"./next": {
+				"types": "./dist/next.d.mts",
+				"default": "./dist/next.mjs"
+			},
+			"./console": {
+				"types": "./dist/console.d.mts",
+				"default": "./dist/console.mjs"
+			},
+			"./fixtures": {
+				"types": "./dist/fixtures.d.mts",
+				"default": "./dist/fixtures.mjs"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
+	},
+	"peerDependencies": {
+		"next": ">=15",
+		"react": ">=19",
+		"react-dom": ">=19"
+	},
+	"peerDependenciesMeta": {
+		"next": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		},
+		"react-dom": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@happy-dom/global-registrator": "20.14.5",
+		"@spoar/shared": "workspace:*",
+		"@types/react": "19.2.14",
+		"@types/react-dom": "19.2.3",
+		"next": "16.4.0-canary.59",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"tsdown": "catalog:tsdown"
+	}
+}
