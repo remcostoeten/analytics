@@ -83,13 +83,13 @@ export async function SqlSection() {
           Run your own
         </Link>
       </div>
-      <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-12 [&>*]:min-w-0">
+      <div className="mt-12 flex flex-col gap-10">
         <div className="reveal-scale visual-frame rounded-2xl p-3 sm:p-6">
           <SqlShowcase tabs={tabs} initial={{ id: first.id, outcome }} />
         </div>
-        <ul className="reveal flex flex-col divide-y divide-line">
+        <ul className="reveal grid gap-6 sm:grid-cols-3 sm:gap-8">
           {tools.map((tool) => (
-            <li key={tool.title} className="flex gap-4 py-5 first:pt-0">
+            <li key={tool.title} className="flex gap-4">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--lilac)] text-[#6b46c1]">
                 <tool.icon className="size-4" />
               </span>

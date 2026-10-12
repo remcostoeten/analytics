@@ -23,6 +23,9 @@ export type Showcase = {
 export type ShowcaseProject = PublicProject & {
   visitors: Nullable<number>;
   pageviews: Nullable<number>;
+  sessions: Nullable<number>;
+  bounceRate: Nullable<number>;
+  duration: Nullable<number>;
   change: Nullable<number>;
   series: TimeseriesPoint[];
 };
@@ -129,6 +132,9 @@ export async function readProjects(): Promise<ShowcaseProjects> {
         createdAt: project.createdAt,
         visitors: stats.ok ? stats.value.data.visitors.value : null,
         pageviews: stats.ok ? stats.value.data.pageviews.value : null,
+        sessions: stats.ok ? stats.value.data.sessions.value : null,
+        bounceRate: stats.ok ? stats.value.data.bounceRate.value : null,
+        duration: stats.ok ? stats.value.data.sessionDurationMs.value : null,
         change: stats.ok ? stats.value.data.visitors.change : null,
         series: series.ok ? series.value.data : [],
       };
