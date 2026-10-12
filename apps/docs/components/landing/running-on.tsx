@@ -1,5 +1,5 @@
 import { apiEndpoint } from "@/lib/api-endpoint";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatDuration, formatShare } from "@/lib/format";
 import { readProjects, showcaseQuery, type ShowcaseProject } from "@/lib/showcase";
 
 import { CodeWindow } from "./code-window";
@@ -33,7 +33,11 @@ export async function RunningOn() {
                 <span className="col-span-2">Project</span>
                 <span>30 days</span>
                 <span className="text-right">Visitors</span>
-                <span className="text-right">Pageviews</span>
+                {metrics.map((metric) => (
+                  <span key={metric.label} className={`text-right ${metric.className}`}>
+                    {metric.label}
+                  </span>
+                ))}
                 <span className="w-4" />
               </div>
             </div>
@@ -61,6 +65,40 @@ export async function RunningOn() {
 function statsHref(id: string, query: string) {
   return `${apiEndpoint()}/v2/projects/${encodeURIComponent(id)}/stats?${query}`;
 }
+
+type Metric = {
+  label: string;
+  read: (project: ShowcaseProject) => number | null;
+  format: (value: number) => string;
+  className: string;
+};
+
+const metrics: Metric[] = [
+  {
+    label: "Pageviews",
+    read: (project) => project.pageviews,
+    format: formatCount,
+    className: "hidden sm:block",
+  },
+  {
+    label: "Sessions",
+    read: (project) => project.sessions,
+    format: formatCount,
+    className: "hidden lg:block",
+  },
+  {
+    label: "Bounce",
+    read: (project) => project.bounceRate,
+    format: formatShare,
+    className: "hidden lg:block",
+  },
+  {
+    label: "Duration",
+    read: (project) => project.duration,
+    format: formatDuration,
+    className: "hidden lg:block",
+  },
+];
 
 type Props = {
   project: ShowcaseProject;
@@ -108,10 +146,18 @@ function ProjectRow({ project, href, gradient }: Props) {
         </span>
         <span className="text-[0.68rem] text-muted sm:sr-only">visitors, 30 days</span>
       </span>
-      <span className="hidden text-right font-mono text-[0.9rem] leading-none text-muted tabular-nums sm:block">
-        {project.pageviews === null ? "?" : formatCount(project.pageviews)}
-        <span className="sr-only"> pageviews</span>
-      </span>
+      {metrics.map((metric) => {
+        const value = metric.read(project);
+        return (
+          <span
+            key={metric.label}
+            className={`text-right font-mono text-[0.9rem] leading-none text-muted tabular-nums ${metric.className}`}
+          >
+            {value === null ? "?" : metric.format(value)}
+            <span className="sr-only"> {metric.label.toLowerCase()}</span>
+          </span>
+        );
+      })}
       <ArrowUpRightIcon className="size-4 shrink-0 text-muted transition-[color,translate] duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg" />
     </a>
   );
