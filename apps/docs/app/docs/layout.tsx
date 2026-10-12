@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { DocsSidebarFolder } from "@/components/sidebar-folder";
 import { DocsSidebarItem } from "@/components/sidebar-item";
 import { DocsSidebarSeparator } from "@/components/sidebar-separator";
+import { SiteHomeLink } from "@/components/site-home-link";
 import { baseOptions } from "@/lib/layout-options";
 import { sidebarTabs } from "@/lib/sidebar-tabs";
 import { source } from "@/lib/source";
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {...baseOptions()}
       tabs={sidebarTabs(tree)}
       sidebar={{
+        banner: <SiteHomeLink />,
         components: {
           Item: DocsSidebarItem,
           Folder: DocsSidebarFolder,
