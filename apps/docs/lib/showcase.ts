@@ -10,6 +10,7 @@ import type { Nullable } from "@spoar/shared/semantic";
 import { cacheLife } from "next/cache";
 
 import { apiEndpoint } from "./api-endpoint";
+import { siteProject } from "./site-project";
 import { showcaseReads, showcaseWindow } from "./showcase-period";
 
 export type Showcase = {
@@ -35,23 +36,15 @@ export type ShowcaseProjects = {
   list: Nullable<ProjectList>;
 };
 
-const fallbackProject = "docs.analytics.remcostoeten.nl";
-
 /**
  * @name showcaseProject
- * @description The project the landing page shows: the one this site tracks itself into, from
- * `NEXT_PUBLIC_RA_CONFIG`, else the production docs project.
+ * @description The project the landing page shows: the one this site tracks itself into.
  *
  * @example
  * showcaseProject(); // "docs.analytics.remcostoeten.nl"
  */
 export function showcaseProject() {
-  try {
-    const config: { project?: string } = JSON.parse(process.env.NEXT_PUBLIC_RA_CONFIG ?? "{}");
-    return config.project || fallbackProject;
-  } catch {
-    return fallbackProject;
-  }
+  return siteProject();
 }
 
 /**

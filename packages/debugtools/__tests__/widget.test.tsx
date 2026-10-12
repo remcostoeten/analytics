@@ -10,11 +10,11 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup();
 });
 
-function render() {
+function render(open = false) {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
-  act(() => root.render(<Widget />));
+  act(() => root.render(<Widget open={open} />));
   cleanups.push(() => {
     act(() => root.unmount());
     container.remove();
@@ -53,5 +53,10 @@ describe("Widget", () => {
       container.querySelector<HTMLButtonElement>('[aria-label="Close the debug console"]')?.click(),
     );
     expect(container.querySelector("[role=dialog]")).toBeNull();
+  });
+
+  test("starts open with the open prop", () => {
+    const container = render(true);
+    expect(container.querySelector("[role=dialog]")).not.toBeNull();
   });
 });

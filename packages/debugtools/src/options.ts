@@ -22,4 +22,6 @@ export type DebugtoolsOptions = {
   data?: ConsoleData;
   sections?: ConsoleSections;
   theme?: ConsoleTheme;
+  demo?: boolean;
+  open?: boolean;
 };

@@ -7,6 +7,7 @@ import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
 import { DashboardPreview } from "@/components/dashboard-preview";
+import { DevWidgetToggle } from "@/components/dev-widget";
 import { Flow, FlowNode } from "@/components/flow";
 import { LiveRead } from "@/components/tutorial/live-read";
 import { StepDiff } from "@/components/tutorial/step-diff";
@@ -21,6 +22,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Card,
     Cards,
     DashboardPreview,
+    DevWidgetToggle,
     Flow,
     FlowNode,
     LiveRead,

@@ -65,6 +65,16 @@ describe("startDebugtools", () => {
     expect(loaded).toBe(false);
   });
 
+  test("mounts the demo console without a grant for a signed-out visitor", async () => {
+    const calls: string[] = [];
+    startDebugtools({ ...options(401), demo: true }, async () => (_, grant) => {
+      calls.push(`mount ${grant === null}`);
+      return () => undefined;
+    });
+    await settle();
+    expect(calls).toEqual(["mount true"]);
+  });
+
   test("mounts without a widget check for the session auth", async () => {
     const seen: string[] = [];
     const calls: string[] = [];
