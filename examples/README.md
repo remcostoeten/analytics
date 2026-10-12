@@ -4,5 +4,5 @@ Each folder here is a small app that uses `@spoar/sdk` the way a real project wo
 
 | Example | Stack | Does |
 | --- | --- | --- |
-| `playground` | React on Bun | Every API route and SDK method, runnable against any endpoint, with a stats page and a devtools panel |
+| `playground` | React on Bun | Every API route and SDK method, runnable against any endpoint, with a stats page and the debug console |
 | `dashboard` | React on Bun | A dashboard for one project on `@spoar/client`: stats tiles, a visitors chart, breakdowns, countries and live events; tracks itself through `@spoar/sdk`. Port 3301 |

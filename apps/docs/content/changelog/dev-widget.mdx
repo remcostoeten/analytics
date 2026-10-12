@@ -5,7 +5,7 @@ date: 2026-10-03
 label: feature
 image: /images/dev-widget.png
 imageAlt: The dev widget docked to the bottom of a page, with the logs buffer open and one rejected event expanded as JSON
-docs: /docs/sdk/devtools
+docs: /docs/sdk/debugtools
 ---
 
 `@spoar/devtools` puts a terminal-style panel on your site. It loads only for a browser signed in to the API as an owner or admin of the project. Everyone else gets a 401 from `GET /v2/widget/session` and downloads nothing past a loader of under 1 KB.
@@ -21,3 +21,5 @@ import { Devtools } from "@spoar/devtools/next";
 ```
 
 Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>.</kbd> to open it, <kbd>1</kbd> to <kbd>6</kbd> to switch buffers, <kbd>j</kbd> and <kbd>k</kbd> to move between rows and <kbd>/</kbd> to filter.
+
+`@spoar/debugtools` replaced the dev widget on 11 October 2026. The docs link above points to its page.

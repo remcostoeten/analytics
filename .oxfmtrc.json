@@ -8,6 +8,6 @@
     "__tests__/fixtures/**",
     "tools/oxlint/anti-slop/**",
     "**/*.{json,jsonc,md,mdx,css,html,yml,yaml,toml,webmanifest}",
-    "packages/devtools/src/styles/compiled.ts"
+    "packages/debugtools/src/styles/compiled.ts"
   ]
 }
