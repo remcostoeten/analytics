@@ -60,9 +60,6 @@ export function SiteNav({ links, loginHref }: Props) {
             <Logo className="size-6" />
             Spoar
           </Link>
-          <Link href="/docs" className="pill-ghost">
-            Docs
-          </Link>
           <a href={loginHref} className="pill-ghost">
             Log in
           </a>
