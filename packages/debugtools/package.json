@@ -1,6 +1,6 @@
 {
 	"name": "@spoar/debugtools",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "A debug console for admins on their own site, in the layout of a query console: editor, dataset library and an agent pane.",
 	"license": "MIT",
 	"repository": {
