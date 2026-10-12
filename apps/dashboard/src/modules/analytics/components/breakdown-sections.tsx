@@ -18,7 +18,7 @@ type Props = {
 const countryRows = 10;
 const mapRows = 100;
 
-const sources = [
+export const sources = [
   { dimension: "referrer_domain", title: "Referrers" },
   { dimension: "page", title: "Paths" },
   { dimension: "host", title: "Hosts" },

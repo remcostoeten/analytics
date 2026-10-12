@@ -19,7 +19,7 @@ type Props = { scope: ProjectScope; state: ViewState; base: string; path: string
 
 const tileViews = metricViews.slice(0, 4);
 
-const topLists = [
+export const topLists = [
   { dimension: "page", title: "Top paths" },
   { dimension: "host", title: "Top hosts" },
   { dimension: "referrer_domain", title: "Top referrers" },

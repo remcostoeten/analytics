@@ -1,5 +1,5 @@
-import { AnalyticsSkeleton } from "@/modules/shell/components/skeletons";
+import { SpeedSkeleton } from "@/modules/analytics/components/skeletons";
 
 export default function Loading() {
-  return <AnalyticsSkeleton />;
+  return <SpeedSkeleton />;
 }

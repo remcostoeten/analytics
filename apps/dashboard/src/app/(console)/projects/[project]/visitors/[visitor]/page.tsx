@@ -8,7 +8,7 @@ import { findProject, readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { ListSectionSkeleton } from "@/modules/analytics/components/skeletons";
 
 type Props = {
   params: Promise<{ project: string; visitor: string }>;
@@ -55,7 +55,7 @@ export default async function Page({ params, searchParams }: Props) {
           )}
         </header>
         {read.ok ? (
-          <Suspense fallback={<SectionSkeleton height={320} />}>
+          <Suspense fallback={<ListSectionSkeleton rows={8} />}>
             <VisitList scope={scope} visitor={read.value.data.id} sessionHref={sessionHref} />
           </Suspense>
         ) : null}

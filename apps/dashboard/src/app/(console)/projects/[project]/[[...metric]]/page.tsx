@@ -8,6 +8,13 @@ import { FilterChips } from "@/modules/analytics/components/filter-chips";
 import { MetricRail } from "@/modules/analytics/components/metric-rail";
 import type { RailData } from "@/modules/analytics/components/metric-rail";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
+import {
+  CountrySkeleton,
+  MetricRailSkeleton,
+  SourcesSkeleton,
+  SummarySkeleton,
+  VitalsCardSkeleton,
+} from "@/modules/analytics/components/skeletons";
 import { SummarySection } from "@/modules/analytics/components/summary-section";
 import { VitalsCard } from "@/modules/analytics/components/vitals-card";
 import { metricPath, metricView, metricViews } from "@/modules/analytics/metrics";
@@ -18,7 +25,6 @@ import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
 import { ProjectHeading } from "@/modules/shell/components/project-heading";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
 import type { ProjectScope } from "@spoar/client";
@@ -73,16 +79,6 @@ async function Vitals({ project, state, base }: Pick<RailProps, "project" | "sta
   );
 }
 
-function RailSkeleton() {
-  return (
-    <div className="rail" aria-hidden="true">
-      {metricViews.map((view) => (
-        <div key={view.slug} className="skeleton h-[104px]" />
-      ))}
-    </div>
-  );
-}
-
 async function QuickActions({ project }: Pick<RailProps, "project">) {
   const [found, session] = await Promise.all([findProject(project), readSession()]);
   if (!found) return null;
@@ -119,13 +115,10 @@ export default async function Page({ params, searchParams }: Props) {
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="grid gap-6">
-        <Suspense
-          key={`vitals${viewQuery(state)}`}
-          fallback={<div className="skeleton h-[118px]" />}
-        >
+        <Suspense key={`vitals${viewQuery(state)}`} fallback={<VitalsCardSkeleton />}>
           <Vitals project={project} state={state} base={base} />
         </Suspense>
-        <Suspense key={`${view.slug}${viewQuery(state)}`} fallback={<RailSkeleton />}>
+        <Suspense key={`${view.slug}${viewQuery(state)}`} fallback={<MetricRailSkeleton />}>
           <Rail {...shared} stats={stats} base={base} project={project} />
         </Suspense>
         <Suspense fallback={null}>
@@ -146,10 +139,7 @@ export default async function Page({ params, searchParams }: Props) {
           <FilterChips path={path} state={state} />
         </ProjectHeading>
 
-        <Suspense
-          key={`summary${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={380} />}
-        >
+        <Suspense key={`summary${path}${viewQuery(state)}`} fallback={<SummarySkeleton />}>
           <SummarySection
             {...shared}
             path={path}
@@ -161,15 +151,12 @@ export default async function Page({ params, searchParams }: Props) {
             canAnnotate={readSession().then((session) => session.isAdmin)}
           />
         </Suspense>
-        <Suspense
-          key={`country${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={200} />}
-        >
+        <Suspense key={`country${path}${viewQuery(state)}`} fallback={<CountrySkeleton />}>
           <CountrySection {...shared} path={path} />
         </Suspense>
         <Suspense
           key={`sources${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={420} />}
+          fallback={<SourcesSkeleton rows={state.items} />}
         >
           <SourcesSection {...shared} path={path} />
         </Suspense>

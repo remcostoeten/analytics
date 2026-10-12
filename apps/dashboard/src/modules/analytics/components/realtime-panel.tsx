@@ -299,7 +299,7 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
   const sessions = snapshot.sessions.ok ? snapshot.sessions.value.data : null;
 
   return (
-    <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="mx-auto grid w-full max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="rail">
         <Card
           label="Visitors now"

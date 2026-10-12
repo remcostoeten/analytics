@@ -1,18 +1,24 @@
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 
 import { ProjectConsole } from "@/modules/console/components/project-console";
 import { readSession } from "@/modules/session/session";
 
 type Props = { children: ReactNode; params: Promise<{ project: string }> };
 
-export default async function Layout({ children, params }: Props) {
+async function ConsoleGate({ params }: Pick<Props, "params">) {
   const [{ project }, session] = await Promise.all([params, readSession()]);
-  const canQuery = session.role !== null && session.role !== "viewer";
+  if (session.role === null || session.role === "viewer") return null;
+  return <ProjectConsole project={project} />;
+}
 
+export default function Layout({ children, params }: Props) {
   return (
     <>
       {children}
-      {canQuery ? <ProjectConsole project={project} /> : null}
+      <Suspense fallback={null}>
+        <ConsoleGate params={params} />
+      </Suspense>
     </>
   );
 }

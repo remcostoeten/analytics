@@ -9,12 +9,16 @@ import { FieldSidebar } from "@/modules/analytics/components/field-sidebar";
 import { FilterChips } from "@/modules/analytics/components/filter-chips";
 import { OutcomeSection } from "@/modules/analytics/components/outcome-section";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
+import {
+  EventLogSkeleton,
+  FieldsSkeleton,
+  OutcomeChartSkeleton,
+} from "@/modules/analytics/components/skeletons";
 import { logPath, logTraffic, trafficOptions } from "@/modules/analytics/logs";
 import { readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ProjectDomain } from "@/modules/shell/components/project-domain";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 
 type Props = {
   params: Promise<{ project: string; traffic?: string[] }>;
@@ -22,14 +26,6 @@ type Props = {
 };
 
 export const metadata: Metadata = { title: "Logs" };
-
-function FieldsSkeleton() {
-  return (
-    <div className="field-sidebar" aria-hidden="true">
-      <div className="skeleton h-[420px]" />
-    </div>
-  );
-}
 
 export default async function Page({ params, searchParams }: Props) {
   const { project, traffic: segments } = await params;
@@ -81,12 +77,12 @@ export default async function Page({ params, searchParams }: Props) {
         </Suspense>
         <div className="grid min-w-0 content-start gap-4">
           <div className="panel">
-            <Suspense key={`outcomes${key}`} fallback={<SectionSkeleton height={280} />}>
+            <Suspense key={`outcomes${key}`} fallback={<OutcomeChartSkeleton />}>
               <OutcomeSection scope={scope} />
             </Suspense>
           </div>
           <div className="panel">
-            <Suspense key={`log${key}${cursor ?? ""}`} fallback={<SectionSkeleton height={480} />}>
+            <Suspense key={`log${key}${cursor ?? ""}`} fallback={<EventLogSkeleton />}>
               <EventLog scope={scoped} state={state} path={path} base={base} cursor={cursor} />
             </Suspense>
           </div>

@@ -1,5 +1,5 @@
-import { PanelSkeleton } from "@/modules/shell/components/skeletons";
+import { DetailSkeleton } from "@/modules/analytics/components/skeletons";
 
 export default function Loading() {
-  return <PanelSkeleton height={360} />;
+  return <DetailSkeleton back="Back to issues" facts={6} columns="sm:grid-cols-3 lg:grid-cols-6" />;
 }
