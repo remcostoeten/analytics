@@ -1,5 +1,11 @@
 # @spoar/client
 
+## 2.0.1
+
+### Patch Changes
+
+- 5b0507e: The `period` description now says a period ends at the start of the current UTC hour, matching the API, so today's traffic is included without `from` and `to`.
+
 ## 2.0.0
 
 ### Minor Changes

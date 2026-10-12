@@ -1,5 +1,15 @@
 # @spoar/sdk
 
+## 2.1.0
+
+### Minor Changes
+
+- bd74ebe: New `privacySignals` option. `"ignore"` keeps sending when the browser has Do Not Track or Global Privacy Control on; the default `"respect"` drops those events as before. Brave turns Global Privacy Control on by default, so its visitors were never counted.
+
+### Patch Changes
+
+- beee5bb: The pageviews plugin counts a page restored from the back/forward cache again, and waits until a prerendered page is opened before counting it.
+
 ## 2.0.0
 
 ### Major Changes
