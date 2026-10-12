@@ -157,11 +157,7 @@ export function VisitorFacts({
             <ul className="grid gap-0.5">
               {detail.recentSessions.map((session) => (
                 <li key={session.id}>
-                  <Link
-                    href={sessionHref(session.id)}
-                    className="top-row top-row-link"
-                    prefetch={false}
-                  >
+                  <Link href={sessionHref(session.id)} className="top-row top-row-link">
                     <span className="min-w-0 flex-1 truncate font-mono text-xs">
                       {session.entryPage}
                       {session.exitPage !== session.entryPage ? ` › ${session.exitPage}` : ""}
@@ -207,7 +203,6 @@ export async function VisitList({ scope, visitor, sessionHref }: Props) {
                   <Link
                     href={sessionHref(visit.sessionId)}
                     className="font-medium text-fg hover:underline"
-                    prefetch={false}
                   >
                     Visit {visit.visitNumber}
                   </Link>

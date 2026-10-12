@@ -23,7 +23,6 @@ export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) 
           aria-current={state.status === status.value ? "page" : undefined}
           className="tab"
           scroll={false}
-          prefetch={false}
         >
           {status.label}
         </Link>
@@ -72,7 +71,6 @@ export async function IssueList({ scope, state, path, cursor }: Props) {
                       <Link
                         href={`${path}/${encodeURIComponent(issue.id)}${viewQuery(state)}`}
                         className="grid gap-0.5 hover:underline"
-                        prefetch={false}
                       >
                         <span className="flex items-baseline gap-2">
                           <span className="font-medium">{type}</span>
@@ -121,7 +119,6 @@ export async function IssueList({ scope, state, path, cursor }: Props) {
           <Link
             href={`${path}${viewQuery(state)}${viewQuery(state) ? "&" : "?"}cursor=${encodeURIComponent(read.value.nextCursor)}`}
             className="ghost-button"
-            prefetch={false}
           >
             Next page
           </Link>

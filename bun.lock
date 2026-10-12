@@ -99,6 +99,7 @@
       "version": "0.0.0",
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
+        "@next/playwright": "16.4.0-canary.59",
         "@playwright/test": "1.62.0",
         "@spoar/api": "workspace:*",
         "@spoar/client": "workspace:*",
@@ -2326,6 +2327,8 @@
     "@spoar/docs/zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
 
     "@spoar/e2e/@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
+
+    "@spoar/e2e/@next/playwright": ["@next/playwright@16.4.0-canary.59", "", { "peerDependencies": { "@playwright/test": ">=1.0.0" }, "optionalPeers": ["@playwright/test"] }, "sha512-GClzaHKuhfOYN+1MXosCqbpqBLMUnLnlrLQSznkCj3fU6RhB5xZLODTECsKmALI4eTFvbADQRBMtQ+zJzjvypQ=="],
 
     "@spoar/engine/@electric-sql/pglite": ["@electric-sql/pglite@0.5.8", "", {}, "sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q=="],
 

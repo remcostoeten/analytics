@@ -111,7 +111,6 @@ export async function SummarySection({
             aria-current={state.split === split.value ? "page" : undefined}
             className="tab"
             scroll={false}
-            prefetch={false}
           >
             {split.label}
           </Link>

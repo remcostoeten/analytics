@@ -58,7 +58,6 @@ export default async function Page({ params, searchParams }: Props) {
                   <Link
                     href={`${base}/visitors/${encodeURIComponent(read.value.session.visitor)}${viewQuery(state)}`}
                     className="font-mono hover:underline"
-                    prefetch={false}
                   >
                     {read.value.session.visitor.slice(0, 8)}
                   </Link>

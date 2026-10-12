@@ -40,7 +40,6 @@ export function CountryMap({ rows, count, hrefFor }: Props) {
               key={shape.code}
               href={hrefFor(shape.code)}
               aria-label={`Filter by ${shape.name}`}
-              prefetch={false}
             >
               <path d={shape.path} className="map-country" style={{ fill: fill(value / max) }}>
                 <title>{`${shape.name}: ${formatMetric(value, "count")}`}</title>

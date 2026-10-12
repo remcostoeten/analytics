@@ -50,7 +50,6 @@ export async function VisitorList({ scope, state, path, cursor }: Props) {
                     <Link
                       href={`${path}/${encodeURIComponent(row.id)}${viewQuery(state)}`}
                       className="hover:underline"
-                      prefetch={false}
                     >
                       {row.id.slice(0, 8)}
                     </Link>
@@ -94,7 +93,6 @@ export async function VisitorList({ scope, state, path, cursor }: Props) {
           <Link
             href={`${path}${viewQuery(state)}${viewQuery(state) ? "&" : "?"}cursor=${encodeURIComponent(read.value.nextCursor)}`}
             className="ghost-button"
-            prefetch={false}
           >
             Next page
           </Link>

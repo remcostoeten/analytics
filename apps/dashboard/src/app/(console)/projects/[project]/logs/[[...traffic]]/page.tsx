@@ -64,7 +64,6 @@ export default async function Page({ params, searchParams }: Props) {
                   href={`${logPath(base, option.value)}${viewQuery(state)}`}
                   aria-current={option.value === traffic ? "page" : undefined}
                   className="segment"
-                  prefetch={false}
                 >
                   {option.label}
                 </Link>

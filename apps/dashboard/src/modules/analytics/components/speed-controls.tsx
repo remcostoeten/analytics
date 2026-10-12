@@ -43,7 +43,6 @@ export function DeviceTabs({ path, state }: Props) {
           aria-current={current === device.value ? "page" : undefined}
           className="tab"
           scroll={false}
-          prefetch={false}
         >
           {device.label}
         </Link>

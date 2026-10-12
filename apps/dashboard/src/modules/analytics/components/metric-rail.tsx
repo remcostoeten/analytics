@@ -70,7 +70,6 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
             href={`${metricPath(base, view)}${viewQuery(state)}`}
             aria-current={selected ? "page" : undefined}
             className="metric-card"
-            prefetch={false}
           >
             <span className="metric-label text-sm">{view.label}</span>
             <span className="flex items-baseline gap-2">

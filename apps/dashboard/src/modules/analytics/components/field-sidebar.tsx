@@ -52,7 +52,6 @@ export async function FieldSidebar({ scope, state, path }: Props) {
                           href={hrefFor(field, row.value)}
                           aria-current={active === row.value ? "true" : undefined}
                           className="field-value"
-                          prefetch={false}
                         >
                           <span className="min-w-0 flex-1 truncate">
                             {formatDimensionValue(field, row.value)}

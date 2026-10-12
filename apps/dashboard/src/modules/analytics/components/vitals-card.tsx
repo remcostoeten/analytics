@@ -10,7 +10,7 @@ const shown = vitalViews.filter((view) => ["lcp", "inp", "cls"].includes(view.sl
 
 export function VitalsCard({ data, href }: Props) {
   return (
-    <Link href={href} className="metric-card" prefetch={false}>
+    <Link href={href} className="metric-card">
       <span className="metric-label text-sm">Core Web Vitals</span>
       <span className="grid gap-2 pt-1">
         {shown.map((view) => {
