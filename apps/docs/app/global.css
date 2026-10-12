@@ -3,6 +3,7 @@
 @import "fumadocs-ui/css/preset.css";
 @import "fumadocs-openapi/css/preset.css";
 @import "./landing-interactions.css";
+@import "./landing-motion.css";
 
 @theme inline {
   --color-bg: var(--bg);
