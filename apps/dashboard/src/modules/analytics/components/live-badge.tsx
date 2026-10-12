@@ -22,7 +22,7 @@ export function LiveBadge({ project, href }: Props) {
   const count = read.data?.ok ? read.data.value.data.visitors : null;
   if (count === null) return null;
   return (
-    <Link href={href} className="live-badge" prefetch={false}>
+    <Link href={href} className="live-badge">
       <span className="live-dot" aria-hidden="true" />
       {formatMetric(count, "count")} online now
     </Link>

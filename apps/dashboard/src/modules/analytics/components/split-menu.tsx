@@ -55,7 +55,7 @@ export function SplitMenu({ options }: Props) {
                 aria-current={option.active ? "page" : undefined}
                 className="menu-item"
                 scroll={false}
-                prefetch={false}
+
                 onClick={() => setOpen(false)}
               >
                 {option.label}

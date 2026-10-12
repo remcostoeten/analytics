@@ -43,7 +43,6 @@ export function TopList({ title, dimension, rows, count, hrefFor }: Props) {
                     href={hrefFor(row.value)}
                     title={`Filter by ${label}`}
                     className="top-row top-row-link"
-                    prefetch={false}
                   >
                     {cells}
                   </Link>

@@ -75,14 +75,12 @@ function Detail({ row, base, state }: { row: EventRow; base: string; state: View
         <Link
           href={`${base}/sessions/${encodeURIComponent(row.session)}${viewQuery(state)}`}
           className="text-link underline"
-          prefetch={false}
         >
           Open session
         </Link>
         <Link
           href={`${base}/visitors/${encodeURIComponent(row.visitor)}${viewQuery(state)}`}
           className="text-link underline"
-          prefetch={false}
         >
           Open visitor
         </Link>
@@ -160,7 +158,7 @@ export async function EventLog({ scope, state, path, base, cursor }: Props) {
         </span>
         <span className="flex gap-2">
           {cursor ? (
-            <Link href={`${path}${query}`} className="ghost-button" prefetch={false}>
+            <Link href={`${path}${query}`} className="ghost-button">
               Newest
             </Link>
           ) : null}
@@ -168,7 +166,6 @@ export async function EventLog({ scope, state, path, base, cursor }: Props) {
             <Link
               href={`${path}${query}${query ? "&" : "?"}cursor=${encodeURIComponent(read.value.nextCursor)}`}
               className="ghost-button"
-              prefetch={false}
             >
               Older events
             </Link>

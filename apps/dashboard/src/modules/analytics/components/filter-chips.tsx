@@ -30,12 +30,7 @@ function Chip({ field, operator, value, href, inactive = false }: ChipProps) {
       <span>{field}</span>
       <span className="text-muted">{operator}</span>
       <span className="font-medium">{value}</span>
-      <Link
-        href={href}
-        aria-label={`Remove ${field} filter`}
-        className="chip-remove"
-        prefetch={false}
-      >
+      <Link href={href} aria-label={`Remove ${field} filter`} className="chip-remove">
         <CloseIcon className="size-3" />
       </Link>
     </span>

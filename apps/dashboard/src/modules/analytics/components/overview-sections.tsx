@@ -55,7 +55,6 @@ export async function KpiTiles({
             key={view.slug}
             href={`${metricPath(base, view)}${viewQuery(state)}`}
             className="kpi-tile"
-            prefetch={false}
           >
             <span className="text-xs text-muted">{view.label}</span>
             <span className="flex items-baseline gap-2">

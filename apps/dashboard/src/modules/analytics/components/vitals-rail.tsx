@@ -36,7 +36,6 @@ export function VitalsRail({ data, current, hrefFor }: Props) {
             href={hrefFor(view)}
             aria-current={selected ? "page" : undefined}
             className="metric-card"
-            prefetch={false}
           >
             <span className="flex items-baseline justify-between gap-2">
               <span className="metric-label text-sm">{view.short}</span>
