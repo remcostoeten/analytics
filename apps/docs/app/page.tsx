@@ -186,12 +186,6 @@ const principles: { icon: Icon; title: string; text: string }[] = [
   },
 ];
 
-const story = [
-  "Spoar started in February 2026 as a Hono ingestion service, a Next dashboard that read the same Postgres directly, and an SDK published as @remcostoeten/analytics. It ran on my own sites and still does.",
-  "That version had no read API: every chart was a query inside the dashboard, and the SDK and the server shared no types. So v2 is a rebuild on one contract of TypeBox schemas that the SDK, the API and the client all import, with one Elysia API for ingest, reads and sign-in.",
-  "Projects are public by default because I want my own numbers in the open. The dashboard at the top of this page is this site's, and the list below it is every project the production API serves.",
-];
-
 const questions = [
   {
     question: "What is Spoar?",
@@ -427,30 +421,6 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="container-land grid gap-10 py-16 sm:py-24 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-        <div className="reveal">
-          <h2 className="font-serif text-[2.3rem] leading-[1.1] font-light tracking-[-0.015em] sm:text-[2.6rem]">
-            Why it exists
-          </h2>
-          <p className="mt-4 font-serif text-[0.95rem] text-muted">
-            Remco Stoeten, who builds and runs it.{" "}
-            <a href={`${githubUrl}/blob/master/v1/README.md`} className="link-line text-fg">
-              v1 is still in the repository
-            </a>
-          </p>
-        </div>
-        <div className="flex flex-col gap-5">
-          {story.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="reveal font-serif text-[1.05rem] leading-relaxed text-fg/85"
-            >
-              {paragraph}
-            </p>
-          ))}
         </div>
       </section>
 
