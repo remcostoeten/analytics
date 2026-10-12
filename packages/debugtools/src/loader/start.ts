@@ -39,8 +39,9 @@ export async function requestGrant(options: DebugtoolsOptions): Promise<Nullable
  * @name startDebugtools
  * @description Runs the admin check and, only when it passes, imports the console chunk through
  * `load` and mounts it with the widget grant. With `auth: "session"` there is no widget check: the
- * host is the dashboard, which already holds the session cookie. Returns a function that cancels
- * a pending start or unmounts the console.
+ * host is the dashboard, which already holds the session cookie. With `demo` a failed check still
+ * loads the console, on fixture data. Returns a function that cancels a pending start or unmounts
+ * the console.
  *
  * @example
  * const stop = startDebugtools(options, () => import("../widget/mount-widget").then((m) => m.mountWidget));
@@ -54,7 +55,7 @@ export function startDebugtools(
   const granted = options.auth === "session" ? Promise.resolve(null) : requestGrant(options);
   void granted
     .then(async (grant) => {
-      if (stopped || (options.auth !== "session" && !grant)) return;
+      if (stopped || (options.auth !== "session" && !grant && !options.demo)) return;
       const mount = await load();
       if (!stopped) unmount = mount(options, grant);
     })

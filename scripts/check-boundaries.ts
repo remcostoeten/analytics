@@ -31,7 +31,13 @@ export const allowedImports: { [workspace: string]: string[] } = {
     "packages/debugtools",
     "packages/shared",
   ],
-  "apps/docs": ["packages/sdk", "packages/client", "packages/contract", "packages/shared"],
+  "apps/docs": [
+    "packages/sdk",
+    "packages/debugtools",
+    "packages/client",
+    "packages/contract",
+    "packages/shared",
+  ],
   examples: ["packages/sdk", "packages/debugtools", "packages/client", "packages/contract"],
 };
 

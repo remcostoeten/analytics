@@ -4,6 +4,7 @@ import { Analytics } from "@spoar/sdk/next";
 import { AnalyticsProvider } from "@spoar/sdk/react";
 import type { ReactNode } from "react";
 
+import { DevWidgetHost } from "@/components/dev-widget";
 import { analytics } from "@/lib/analytics";
 
 type Props = {
@@ -15,6 +16,7 @@ export function Providers({ children }: Props) {
     <AnalyticsProvider client={analytics}>
       <Analytics />
       {children}
+      <DevWidgetHost />
     </AnalyticsProvider>
   );
 }

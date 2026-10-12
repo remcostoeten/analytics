@@ -5,6 +5,12 @@ description: A SQL console for admins on their own site, docked to the bottom of
 
 `@spoar/debugtools` opens a SQL console over your live site, visible only to you: a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search and your recent queries. It runs [SQL](/docs/api/sql) against the project the page tracks. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
 
+## Try it here
+
+This site runs the console. Signed in as an admin of this site's project you see live data; anyone else sees sample data.
+
+<DevWidgetToggle />
+
 ## Install
 
 ```bash
@@ -78,6 +84,8 @@ mount({
 | `data` | Shows this fixture data instead of the project's |
 | `sections` | Turns parts of the console on or off: `nav`, `toolbar`, `editor`, `results`, `library`, `recent` and `agent`. Everything is on except `agent` |
 | `theme` | `"dark"` (the default), `"light"`, or `"system"` to follow the visitor's `prefers-color-scheme` |
+| `demo` | When the admin check fails, shows the console on fixture data instead of nothing. For a page that shows the console to everyone, such as these docs |
+| `open` | Opens the console as soon as it mounts instead of showing the launcher |
 
 ## Using it
 

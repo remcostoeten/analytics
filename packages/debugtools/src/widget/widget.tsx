@@ -17,6 +17,7 @@ type Props = {
   sections?: ConsoleSections;
   theme?: ConsoleTheme;
   launcher?: LauncherSide;
+  open?: boolean;
 };
 
 const fullHeight = { "--spc-height": "100%" } as CSSProperties;
@@ -40,8 +41,9 @@ export function Widget({
   sections,
   theme = "dark",
   launcher = "left",
+  open: initial = false,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initial);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {

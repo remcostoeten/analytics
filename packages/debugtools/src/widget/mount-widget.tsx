@@ -27,8 +27,8 @@ function adopt(root: ShadowRoot) {
  * @description Renders the launcher and the console into a Shadow DOM root on a new
  * `<spoar-debugtools>` element at the end of `body`. The compiled stylesheet is adopted into that
  * root, so host CSS and widget CSS never meet. The console reads the project through the widget
- * grant, or the session cookie when there is none. Returns a function that unmounts React and
- * removes the element.
+ * grant, or the session cookie with `auth: "session"`; a demo start without a grant shows the
+ * fixture data. Returns a function that unmounts React and removes the element.
  *
  * @example
  * const unmount = mountWidget({ endpoint: "https://api.example.com", project: "site" }, grant);
@@ -44,15 +44,17 @@ export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGr
   shadow.append(container);
   document.body.append(host);
   const root = createRoot(container);
+  const live = grant !== null || options.auth === "session";
   root.render(
     <StrictMode>
       <Widget
-        label={options.project}
-        source={clientSource(options, grant)}
+        label={live ? options.project : `${options.project} demo`}
+        source={live ? clientSource(options, grant) : null}
         data={options.data}
         sections={options.sections}
         theme={options.theme}
         launcher={options.launcher}
+        open={options.open}
       />
     </StrictMode>,
   );

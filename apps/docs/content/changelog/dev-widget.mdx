@@ -8,18 +8,20 @@ imageAlt: The dev widget docked to the bottom of a page, with the logs buffer op
 docs: /docs/sdk/debugtools
 ---
 
-`@spoar/devtools` puts a terminal-style panel on your site. It loads only for a browser signed in to the API as an owner or admin of the project. Everyone else gets a 401 from `GET /v2/widget/session` and downloads nothing past a loader of under 1 KB.
+The dev widget puts a panel on your site. It loads only for a browser signed in to the API as an owner or admin of the project. Everyone else gets a 401 from `GET /v2/widget/session` and downloads nothing past a loader of under 1 KB.
 
-The panel has six buffers: visitors, sessions, logs, speed, errors and status. Logs stream live from the API, so a rejected event shows up with its JSON and its `RA_*` code while you are still looking at the page that sent it. Every buffer has a filter prompt that takes `key:value` tokens, such as `level:error`, `geo:NL bot:>0.5` or `lcp:>2.5s`.
+It shipped as `@spoar/devtools`, a terminal-style panel with six buffers: visitors, sessions, logs, speed, errors and status. On 11 October 2026 `@spoar/debugtools` replaced it with a SQL console over the same project data, with a time range, a dataset library and your recent queries.
+
+Try it on this site. Signed in as an admin of this site's project you see live data; anyone else sees sample data.
+
+<DevWidgetToggle />
 
 Add it in a Next app with one component:
 
 ```tsx
-import { Devtools } from "@spoar/devtools/next";
+import { Debugtools } from "@spoar/debugtools/next";
 
-<Devtools endpoint="https://api.example.com" project="example.com" />;
+<Debugtools endpoint="https://api.example.com" project="example.com" />;
 ```
 
-Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>.</kbd> to open it, <kbd>1</kbd> to <kbd>6</kbd> to switch buffers, <kbd>j</kbd> and <kbd>k</kbd> to move between rows and <kbd>/</kbd> to filter.
-
-`@spoar/debugtools` replaced the dev widget on 11 October 2026. The docs link above points to its page.
+Press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>K</kbd> (or <kbd>Cmd</kbd> <kbd>Shift</kbd> <kbd>K</kbd>) to open or close it, and <kbd>Esc</kbd> to close it.
