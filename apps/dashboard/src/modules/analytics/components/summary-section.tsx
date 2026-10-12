@@ -20,11 +20,12 @@ type Props = {
   view: MetricView;
   state: ViewState;
   path: string;
-  total: number | null;
-  change: number | null;
+  headline: Promise<Headline>;
   project: string;
-  canAnnotate: boolean;
+  canAnnotate: Promise<boolean>;
 };
+
+export type Headline = { total: number | null; change: number | null };
 
 type Split = { value: FilterDimension | null; label: string };
 
@@ -81,14 +82,15 @@ export async function SummarySection({
   view,
   state,
   path,
-  total,
-  change,
+  headline,
   project,
   canAnnotate,
 }: Props) {
-  const [read, annotations] = await Promise.all([
+  const [read, annotations, { total, change }, editable] = await Promise.all([
     readSeries(scope, view, state.split),
     scope.annotations({ limit: 100 }),
+    headline,
+    canAnnotate,
   ]);
   const hasFilters = Object.keys(state.filters).length > 0;
   return (
@@ -98,7 +100,7 @@ export async function SummarySection({
           <h2 className="text-base font-semibold">{view.label} summary</h2>
           <p className="text-sm text-muted">{view.description}</p>
         </div>
-        {canAnnotate ? <AddAnnotation project={project} /> : null}
+        {editable ? <AddAnnotation project={project} /> : null}
       </header>
 
       <nav aria-label="Split by" className="tabs">
@@ -198,7 +200,7 @@ export async function SummarySection({
               label={view.label}
               annotations={annotations.ok ? annotations.value.data : []}
               project={project}
-              editable={canAnnotate}
+              editable={editable}
             />
           )}
         </>
