@@ -14,7 +14,7 @@ type Props = {
 };
 
 const views: { value: View; label: string }[] = [
-  { value: "cards", label: "Cards" },
+  { value: "cards", label: "List" },
   { value: "json", label: "JSON" },
 ];
 

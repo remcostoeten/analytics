@@ -358,6 +358,17 @@
   user-select: none;
 }
 
+.code-window.code-wrap code {
+  width: auto;
+}
+
+.code-window.code-wrap .line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-inline-start: calc(14px + var(--gutter, 2ch) + 20px);
+  text-indent: calc(-1 * (var(--gutter, 2ch) + 20px));
+}
+
 .code-window .line.is-marked {
   border-left-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
@@ -779,39 +790,20 @@
   box-shadow: 0 30px 60px -36px rgb(120 50 60 / 0.45);
 }
 
-@utility project-card {
-  box-shadow: 0 1px 2px rgb(var(--shade) / 0.04);
+@utility project-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  column-gap: 1rem;
 
-  &:hover,
-  &:focus-visible {
-    outline: none;
-    border-color: color-mix(in srgb, var(--violet) 45%, var(--line));
-    box-shadow: 0 24px 48px -28px rgb(var(--shade) / 0.35);
+  @variant sm {
+    grid-template-columns: auto minmax(0, 1fr) 9rem 6.5rem 5.5rem auto;
+    column-gap: 1.25rem;
   }
 }
 
-.landing .project-card {
+.landing .project-list {
   --spark-from: var(--violet);
-}
-
-.landing .project-card-glow {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(60% 55% at 100% 0%, color-mix(in srgb, var(--peach) 70%, transparent), transparent 70%),
-    radial-gradient(55% 60% at 0% 100%, color-mix(in srgb, var(--lilac) 70%, transparent), transparent 70%);
-  opacity: 0.55;
-  transition: opacity 300ms ease;
-  pointer-events: none;
-}
-
-.landing .project-card:is(:hover, :focus-visible) .project-card-glow {
-  opacity: 1;
-}
-
-.dark .landing .project-card-glow {
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0.035), transparent 45%);
-  opacity: 1;
+  box-shadow: 0 1px 2px rgb(var(--shade) / 0.04);
 }
 
 .landing .spark-dot {

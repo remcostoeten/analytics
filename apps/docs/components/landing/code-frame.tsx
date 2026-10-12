@@ -16,6 +16,7 @@ type Props = {
   lang: string;
   code: string;
   onSelect?: (id: string) => void;
+  wrap?: boolean;
   children: ReactNode;
 };
 
@@ -32,7 +33,7 @@ function FileName({ title, short = false }: { title: string; short?: boolean }) 
   );
 }
 
-export function CodeFrame({ files, active, lang, code, onSelect, children }: Props) {
+export function CodeFrame({ files, active, lang, code, onSelect, wrap = false, children }: Props) {
   const source = code.trimEnd();
   const gutter: GutterStyle = { "--gutter": `${String(source.split("\n").length).length}ch` };
   const current = files.find((file) => file.id === active) ?? files[0];
@@ -40,7 +41,7 @@ export function CodeFrame({ files, active, lang, code, onSelect, children }: Pro
 
   return (
     <div
-      className="code-window min-w-0 overflow-hidden rounded-[10px] border border-line"
+      className={`code-window min-w-0 overflow-hidden rounded-[10px] border border-line ${wrap ? "code-wrap" : ""}`}
       style={gutter}
     >
       <div className="flex items-stretch justify-between border-b border-dashed border-line pr-2">

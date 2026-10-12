@@ -27,17 +27,28 @@ export async function RunningOn() {
           </div>
         }
         cards={
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project, index) => (
-              <li key={project.id} style={stagger(index)} className="reveal">
-                <ProjectCard
-                  project={project}
-                  href={statsHref(project.id, query)}
-                  gradient={`spark-${index}`}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="project-list overflow-hidden rounded-2xl border border-line bg-surface">
+            <div aria-hidden="true" className="hidden border-b border-line sm:block">
+              <div className="project-row px-5 py-2.5 font-mono text-[0.62rem] tracking-[0.08em] text-muted uppercase">
+                <span className="col-span-2">Project</span>
+                <span>30 days</span>
+                <span className="text-right">Visitors</span>
+                <span className="text-right">Pageviews</span>
+                <span className="w-4" />
+              </div>
+            </div>
+            <ul className="divide-y divide-line">
+              {projects.map((project, index) => (
+                <li key={project.id} style={stagger(index)} className="reveal">
+                  <ProjectRow
+                    project={project}
+                    href={statsHref(project.id, query)}
+                    gradient={`spark-${index}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         }
         json={
           <CodeWindow title="GET /v2/projects" lang="json" code={JSON.stringify(list, null, 2)} />
@@ -57,57 +68,51 @@ type Props = {
   gradient: string;
 };
 
-function ProjectCard({ project, href, gradient }: Props) {
+function ProjectRow({ project, href, gradient }: Props) {
   const values = project.series.map((point) => point.value);
   return (
     <a
       href={href}
       rel="noreferrer"
-      className="project-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-[translate,box-shadow,border-color] duration-200 hover:-translate-y-0.5"
+      className="project-row group items-center px-5 py-3.5 transition-colors duration-200 hover:bg-fg/[0.03] focus-visible:bg-fg/[0.03] focus-visible:outline-none"
     >
-      <span aria-hidden="true" className="project-card-glow" />
-      <span className="relative flex items-start gap-3 p-5 pb-0">
-        <span className="tile-glow flex size-10 shrink-0 items-center justify-center rounded-xl font-serif text-[1.15rem] text-white">
-          {project.name.charAt(0).toUpperCase()}
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-serif text-[1.15rem] leading-tight text-fg">
-            {project.name}
-          </span>
-          <span className="flex items-center gap-1.5 truncate font-mono text-[0.68rem] text-muted">
-            <span className="animate-live size-1.5 shrink-0 rounded-full bg-ok" />
-            {project.domain}
-          </span>
-        </span>
-        <ArrowUpRightIcon className="size-4 shrink-0 text-muted transition-[color,translate] duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg" />
+      <span className="tile-glow flex size-8 shrink-0 items-center justify-center rounded-lg font-serif text-[0.95rem] text-white">
+        {project.name.charAt(0).toUpperCase()}
       </span>
-      <span className="relative mt-6 flex items-end justify-between gap-4 px-5">
-        <span className="flex flex-col gap-1">
-          <span className="flex items-baseline gap-2">
-            {project.visitors === null ? (
-              <span className="font-mono text-[2rem] leading-none font-medium text-fg tabular-nums">
-                ?
-              </span>
-            ) : (
-              <CountUp
-                value={project.visitors}
-                className="font-mono text-[2rem] leading-none font-medium text-fg tabular-nums"
-              />
-            )}
-            <Change value={project.change} />
-          </span>
-          <span className="text-[0.72rem] text-muted">visitors, 30 days</span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="truncate font-serif text-[1.05rem] leading-tight text-fg">
+          {project.name}
         </span>
-        {project.pageviews === null ? null : (
-          <span className="flex flex-col items-end gap-1">
-            <span className="font-mono text-[0.95rem] leading-none text-fg tabular-nums">
-              {formatCount(project.pageviews)}
-            </span>
-            <span className="text-[0.72rem] text-muted">pageviews</span>
-          </span>
-        )}
+        <span
+          title={project.domain}
+          className="flex min-w-0 items-center gap-1.5 font-mono text-[0.68rem] text-muted"
+        >
+          <span className="animate-live size-1.5 shrink-0 rounded-full bg-ok" />
+          <span className="truncate">{project.domain}</span>
+        </span>
       </span>
       <Sparkline values={values} gradient={gradient} />
+      <span className="flex flex-col items-end gap-1">
+        <span className="flex items-center gap-2">
+          <Change value={project.change} />
+          {project.visitors === null ? (
+            <span className="font-mono text-[1.15rem] leading-none font-medium text-fg tabular-nums">
+              ?
+            </span>
+          ) : (
+            <CountUp
+              value={project.visitors}
+              className="font-mono text-[1.15rem] leading-none font-medium text-fg tabular-nums"
+            />
+          )}
+        </span>
+        <span className="text-[0.68rem] text-muted sm:sr-only">visitors, 30 days</span>
+      </span>
+      <span className="hidden text-right font-mono text-[0.9rem] leading-none text-muted tabular-nums sm:block">
+        {project.pageviews === null ? "?" : formatCount(project.pageviews)}
+        <span className="sr-only"> pageviews</span>
+      </span>
+      <ArrowUpRightIcon className="size-4 shrink-0 text-muted transition-[color,translate] duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg" />
     </a>
   );
 }
@@ -149,12 +154,12 @@ function smoothPath(points: { x: number; y: number }[]) {
 }
 
 function Sparkline({ values, gradient }: { values: number[]; gradient: string }) {
-  if (values.length < 2) return <span className="mt-5 block h-16" />;
+  if (values.length < 2) return <span className="hidden h-9 sm:block" />;
   const points = sparkPoints(values);
   const line = smoothPath(points);
   const last = points[points.length - 1];
   return (
-    <span aria-hidden="true" className="relative mt-5 block h-16">
+    <span aria-hidden="true" className="relative hidden h-9 sm:block">
       <svg
         viewBox={`0 0 ${sparkWidth} ${sparkHeight}`}
         preserveAspectRatio="none"
