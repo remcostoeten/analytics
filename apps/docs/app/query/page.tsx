@@ -1,10 +1,9 @@
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { QueryConsole } from "@/components/query-console";
+import { SiteShell } from "@/components/landing/site-shell";
 import { apiEndpoint } from "@/lib/api-endpoint";
-import { baseOptions } from "@/lib/layout-options";
 
 export const metadata: Metadata = {
   title: "Query",
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function QueryPage() {
   return (
-    <HomeLayout {...baseOptions()}>
+    <SiteShell>
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
         <header className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold text-fd-foreground">Query</h1>
@@ -29,6 +28,6 @@ export default function QueryPage() {
         </header>
         <QueryConsole endpoint={apiEndpoint()} />
       </main>
-    </HomeLayout>
+    </SiteShell>
   );
 }

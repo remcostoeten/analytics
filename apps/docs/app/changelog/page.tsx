@@ -1,10 +1,9 @@
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { listPosts, postLabel } from "@/lib/changelog";
+import { SiteShell } from "@/components/landing/site-shell";
 import { formatPostDate } from "@/lib/changelog-date";
-import { baseOptions } from "@/lib/layout-options";
 
 export const metadata: Metadata = {
   title: "Changelog",
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 export default function ChangelogPage() {
   const posts = listPosts();
   return (
-    <HomeLayout {...baseOptions()}>
+    <SiteShell>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
         <header className="flex max-w-xl flex-col gap-3">
           <span className="caps text-muted">Changelog</span>
@@ -67,6 +66,6 @@ export default function ChangelogPage() {
           </ol>
         </section>
       </main>
-    </HomeLayout>
+    </SiteShell>
   );
 }

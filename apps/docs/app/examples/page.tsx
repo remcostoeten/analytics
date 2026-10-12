@@ -1,11 +1,10 @@
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { outlineButton } from "@/components/landing/control";
+import { SiteShell } from "@/components/landing/site-shell";
 import { listExamples } from "@/lib/examples";
-import { baseOptions } from "@/lib/layout-options";
 
 export const metadata: Metadata = {
   title: "Examples",
@@ -16,7 +15,7 @@ export default function ExamplesPage() {
   const examples = listExamples();
   if (examples.length === 0) notFound();
   return (
-    <HomeLayout {...baseOptions()}>
+    <SiteShell>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
         <header className="flex max-w-xl flex-col gap-3">
           <span className="caps text-muted">Examples</span>
@@ -52,6 +51,6 @@ export default function ExamplesPage() {
           </ul>
         </section>
       </main>
-    </HomeLayout>
+    </SiteShell>
   );
 }

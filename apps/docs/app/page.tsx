@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { cacheLife } from "next/cache";
-import { Newsreader } from "next/font/google";
 import Link from "next/link";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
@@ -30,7 +29,8 @@ import { InstallCommand } from "@/components/landing/install-command";
 import { PipelineScene } from "@/components/landing/pipeline-scene";
 import { RevealObserver } from "@/components/landing/reveal-observer";
 import { RunningOn } from "@/components/landing/running-on";
-import { SiteNav, type NavLink } from "@/components/landing/site-nav";
+import { serif } from "@/components/landing/serif";
+import { SiteNav } from "@/components/landing/site-nav";
 import { SqlSection } from "@/components/landing/sql-section";
 import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
@@ -38,20 +38,12 @@ import { VitalsScene } from "@/components/landing/vitals-live";
 import { Logo } from "@/components/logo";
 import { apiEndpoint } from "@/lib/api-endpoint";
 import { dashboardUrl } from "@/lib/dashboard-url";
-import { listExamples } from "@/lib/examples";
 import { showcaseProject, showcaseQuery } from "@/lib/showcase";
-
-const serif = Newsreader({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  axes: ["opsz"],
-  variable: "--font-newsreader",
-});
+import { githubUrl, siteLinks } from "@/lib/site-links";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 
 const quickStart = "/docs/getting-started/quick-start";
-const github = "https://github.com/remcostoeten/analytics";
 
 const chips: { icon: Icon; label: string; href: string }[] = [
   { icon: BoxIcon, label: "Track typed events", href: "/docs/guides/custom-events" },
@@ -244,27 +236,12 @@ async function readSnippet() {
   return readFile(join(process.cwd(), "content/snippets/analytics.ts.txt"), "utf8");
 }
 
-function navLinks() {
-  const links: NavLink[] = [
-    { label: "Documentation", href: "/docs" },
-    { label: "SDK reference", href: "/docs/sdk/install" },
-    { label: "API reference", href: "/docs/reference" },
-    { label: "Query", href: "/query" },
-  ];
-  if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
-  links.push(
-    { label: "Dashboard", href: dashboardUrl(), external: true },
-    { label: "GitHub", href: github, external: true },
-  );
-  return links;
-}
-
 export default async function HomePage() {
   const example = await readSnippet();
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
       <RevealObserver />
-      <SiteNav links={navLinks()} loginHref={dashboardUrl("/sign-in")} />
+      <SiteNav links={siteLinks()} loginHref={dashboardUrl("/sign-in")} />
 
       <header className="hero-wash relative isolate flex overflow-x-clip flex-col items-center px-4 pt-32 text-center sm:pt-40">
         <span aria-hidden="true" className="hero-blob hero-blob-a" />
@@ -460,7 +437,7 @@ export default async function HomePage() {
           </h2>
           <p className="mt-4 font-serif text-[0.95rem] text-muted">
             Remco Stoeten, who builds and runs it.{" "}
-            <a href={`${github}/blob/master/v1/README.md`} className="link-line text-fg">
+            <a href={`${githubUrl}/blob/master/v1/README.md`} className="link-line text-fg">
               v1 is still in the repository
             </a>
           </p>
@@ -484,7 +461,7 @@ export default async function HomePage() {
           </h2>
           <p className="mt-4 font-serif text-[0.95rem] text-muted">
             Still have a question?{" "}
-            <a href={`${github}/issues`} className="link-line text-fg">
+            <a href={`${githubUrl}/issues`} className="link-line text-fg">
               Open an issue
             </a>
           </p>
@@ -534,7 +511,7 @@ export default async function HomePage() {
               Spoar
             </Link>
             <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 font-serif text-[0.9rem] text-fg/75">
-              {navLinks().map((link) => (
+              {siteLinks().map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="link-line">
                     {link.label}
