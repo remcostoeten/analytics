@@ -11,7 +11,6 @@ export const githubUrl = "https://github.com/remcostoeten/analytics";
 export function siteLinks() {
   const links: NavLink[] = [
     { label: "Documentation", href: "/docs" },
-    { label: "API reference", href: "/docs/reference" },
     { label: "Query", href: "/query" },
   ];
   if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
