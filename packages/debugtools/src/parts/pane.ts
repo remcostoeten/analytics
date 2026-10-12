@@ -1,3 +1,6 @@
+export const rootClass =
+  "spc-console @container relative flex h-[var(--spc-height,640px)] flex-col overflow-hidden rounded-[10px] border border-console-line bg-console-bg text-left font-console-sans text-[13px] leading-[1.4] text-console-fg antialiased";
+
 export const paneClass = "relative flex min-h-0 min-w-0 flex-col";
 
 export const paneHeadClass =

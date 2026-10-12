@@ -1,4 +1,8 @@
 export { Console } from "./console";
+export { LiveConsole } from "./live/live-console";
+export { clientSource, timeRanges } from "./source";
+export type { ConsoleSource, TimeRange } from "./source";
+export type { DebugtoolsOptions, WidgetGrant } from "./options";
 export { defaultSections, resolveSections } from "./sections";
 export type { ConsoleSection, ConsoleSections, ResolvedSections } from "./sections";
 export { highlightLine, parseEmphasis } from "./highlight";

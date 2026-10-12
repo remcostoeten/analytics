@@ -29,11 +29,12 @@ function matches(value: string, search: string) {
 type Props = {
   datasets: Dataset[];
   quickQueries: QuickQuery[];
-  onQuickQuery: () => void;
+  onQuickQuery: (query: QuickQuery, dataset: Dataset) => void;
+  onField?: (field: string) => void;
   className?: string;
 };
 
-export function Library({ datasets, quickQueries, onQuickQuery, className }: Props) {
+export function Library({ datasets, quickQueries, onQuickQuery, onField, className }: Props) {
   const [selected, setSelected] = useState(datasets[0]?.name ?? "");
   const [datasetSearch, setDatasetSearch] = useState("");
   const [fieldSearch, setFieldSearch] = useState("");
@@ -102,7 +103,9 @@ export function Library({ datasets, quickQueries, onQuickQuery, className }: Pro
                 type="button"
                 className={buttonRowClass}
                 aria-current={index === 0}
-                onClick={onQuickQuery}
+                onClick={() => {
+                  if (dataset) onQuickQuery(query, dataset);
+                }}
               >
                 <Icon name={query.icon} size={13} className="text-console-dim" />
                 <span className={labelClass}>{query.label}</span>
@@ -110,17 +113,34 @@ export function Library({ datasets, quickQueries, onQuickQuery, className }: Pro
               </button>
             ))}
             <span className={captionClass}>Fields</span>
-            {visibleFields.map((field) => (
-              <div key={field.name} className={`${rowClass} cursor-default`}>
-                <span
-                  className="grid size-3.5 place-items-center rounded-[3px] bg-console-raised text-[9px] text-console-dim"
-                  title={field.kind}
+            {visibleFields.map((field) => {
+              const content = (
+                <>
+                  <span
+                    className="grid size-3.5 place-items-center rounded-[3px] bg-console-raised text-[9px] text-console-dim"
+                    title={field.kind}
+                  >
+                    {kindBadge[field.kind]}
+                  </span>
+                  <span className={labelClass}>{field.name}</span>
+                </>
+              );
+              return onField ? (
+                <button
+                  key={field.name}
+                  type="button"
+                  className={buttonRowClass}
+                  title={`Insert ${field.name}`}
+                  onClick={() => onField(field.name)}
                 >
-                  {kindBadge[field.kind]}
-                </span>
-                <span className={labelClass}>{field.name}</span>
-              </div>
-            ))}
+                  {content}
+                </button>
+              ) : (
+                <div key={field.name} className={`${rowClass} cursor-default`}>
+                  {content}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -309,6 +309,37 @@ describe("GET /v2/widget/session", () => {
     );
   });
 
+  test("a widget token runs SQL on its one project, an admin API token does not", async () => {
+    const started = await body("/v2/widget/session", WidgetSession, {
+      origin: site,
+      cookie: "ra.session_token=owner",
+    });
+    const bearer = {
+      authorization: `Bearer ${String(started.token)}`,
+      "content-type": "application/json",
+    };
+    const sql = JSON.stringify({ sql: "select count(*)::int as events from events" });
+    const own = await call(`/v2/projects/${project}/query`, bearer, { method: "POST", body: sql });
+    expect(own.status).toBe(200);
+    expect(((await own.json()) as Json).columns).toEqual(["events"]);
+    expect((await call("/v2/query/schema", bearer)).status).toBe(200);
+    expect((await call("/v2/queries/history", bearer)).status).toBe(200);
+    await failed(
+      await call("/v2/projects/other/query", bearer, { method: "POST", body: sql }),
+      403,
+      "FORBIDDEN",
+    );
+    await failed(
+      await call(
+        `/v2/projects/${project}/query`,
+        { ...admin, "content-type": "application/json" },
+        { method: "POST", body: sql },
+      ),
+      403,
+      "FORBIDDEN",
+    );
+  });
+
   test("GET /v2/tokens never lists widget tokens", async () => {
     await body("/v2/widget/session", WidgetSession, {
       origin: site,

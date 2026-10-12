@@ -14,6 +14,7 @@
 		"@remcostoeten/notifier": "1.2.1",
 		"@spoar/client": "workspace:*",
 		"@spoar/contract": "workspace:*",
+		"@spoar/debugtools": "workspace:*",
 		"@spoar/shared": "workspace:*",
 		"@tanstack/react-query": "5.104.1",
 		"geist": "1.7.2",

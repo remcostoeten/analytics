@@ -1,14 +1,9 @@
 ---
 title: Debug console
-description: A query console for admins on their own site, with an editor, a dataset library and an agent pane. It ships as @spoar/debugtools, visitors never download it, and it runs on sample data for now.
+description: A SQL console for admins on their own site, docked to the bottom of the page. It ships as @spoar/debugtools and visitors never download it.
 ---
 
-`@spoar/debugtools` opens a query console over your live site, visible only to you: a tab bar, a toolbar, a query editor, a dataset library with field search, and an agent pane. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
-
-<Callout>
-  The console renders sample data for now. Wiring it to your project's data is the next step;
-  until then it shows what the console will look like on your site.
-</Callout>
+`@spoar/debugtools` opens a SQL console over your live site, visible only to you: a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search and your recent queries. It runs [SQL](/docs/api/sql) against the project the page tracks. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
 
 ## Install
 
@@ -22,6 +17,8 @@ npm install @spoar/debugtools
 
 The loader asks [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for an admin check first: your browser holds an API session as an owner or an admin of the project, the site's origin is in the project's allowed origins, and the API shares the site's registrable domain. Visitors without that session load nothing past the loader.
 
+The check answers a widget token (`wt_`) for that one project, and the console sends it with every query, fetching a new one a minute before it expires. Queries need the project's `sqlEnabled` switch on; without it the console shows the 403.
+
 ## Entries
 
 | Entry | Use it for |
@@ -32,7 +29,7 @@ The loader asks [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for 
 | `@spoar/debugtools/console` | `<Console />` alone, without the loader or the admin check, to embed the console in your own page. Bring its styles with one of the two stylesheet entries below |
 | `@spoar/debugtools/tailwind.css` | The console's theme tokens and base styles for an app that runs Tailwind v4 |
 | `@spoar/debugtools/styles.css` | The compiled stylesheet for an app without Tailwind |
-| `@spoar/debugtools/fixtures` | `consoleFixture`, the sample data the console renders by default |
+| `@spoar/debugtools/fixtures` | `consoleFixture`, sample data for `<Console />` and the `data` option |
 
 ### Next.js
 
@@ -75,14 +72,20 @@ mount({
 | --- | --- |
 | `endpoint` | The API origin |
 | `project` | The project id |
-| `fetch` | Replaces `fetch` for the admin check |
-| `data` | Replaces the sample data the console renders |
+| `auth` | `"widget"` (the default) runs the admin check and sends the widget token. `"session"` skips the check and sends the browser's session cookie, for a page on the API's own domain such as the dashboard |
+| `launcher` | `"left"` (the default) or `"right"`: the corner the pill sits in |
+| `fetch` | Replaces `fetch` for the admin check and the queries |
+| `data` | Shows this fixture data instead of the project's |
 | `sections` | Turns parts of the console on or off: `nav`, `toolbar`, `editor`, `results`, `library`, `recent` and `agent`. Everything is on except `agent` |
 | `theme` | `"dark"` (the default), `"light"`, or `"system"` to follow the visitor's `prefers-color-scheme` |
 
 ## Using it
 
-A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console; Escape, the close button or a click outside closes it. On a phone it opens as a sheet from the bottom.
+A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console; Escape or the close button closes it.
+
+The console opens as a panel docked to the bottom of the page. Drag its top edge to resize it. The title bar has buttons to maximise it to the viewport, pop it out as a floating window that you drag by its title bar and resize from its corner, and dock it back. The browser remembers the mode, height, position and size.
+
+Write SQL in the editor and press Run or Ctrl+Enter. `:from` and `:to` are bound to the time range in the toolbar and `:project` to the project. The dataset library lists the views and columns you can query, and a dataset's quick query fills the editor with its latest rows.
 
 The console renders in a Shadow DOM root on a `<spoar-debugtools>` element, so your site's CSS and the console's never meet.
 

@@ -42,6 +42,7 @@
         "@remcostoeten/notifier": "1.2.1",
         "@spoar/client": "workspace:*",
         "@spoar/contract": "workspace:*",
+        "@spoar/debugtools": "workspace:*",
         "@spoar/shared": "workspace:*",
         "@tanstack/react-query": "5.104.1",
         "geist": "1.7.2",
@@ -159,6 +160,8 @@
       "version": "0.0.0",
       "devDependencies": {
         "@happy-dom/global-registrator": "20.14.5",
+        "@spoar/client": "workspace:*",
+        "@spoar/contract": "workspace:*",
         "@spoar/shared": "workspace:*",
         "@tailwindcss/postcss": "4.3.3",
         "@types/react": "19.2.14",
