@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { listProjects } from "@/modules/analytics/reads";
 import { formatMetric } from "@/modules/analytics/format";
 import { readSession } from "@/modules/session/session";
+import { PageSkeleton } from "@/modules/shell/components/skeletons";
 import { serverClient } from "@/shared/api/server-client";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
@@ -19,7 +21,7 @@ function createdAgo(timestamp: string) {
   return created.format(Math.round(days / 365), "year");
 }
 
-export default async function Page() {
+async function Home() {
   const api = await serverClient();
   const [projects, session, traffic] = await Promise.all([
     listProjects(),
@@ -32,7 +34,7 @@ export default async function Page() {
     <div className="mx-auto grid max-w-[1040px] gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-6">
         <div className="grid gap-1">
-          <h1 className="text-2xl font-normal tracking-tight">Web analytics</h1>
+          <h1 className="font-serif text-3xl tracking-tight">Web analytics</h1>
           <p className="text-sm text-muted">
             Every project you can read, with its traffic over the last 24 hours.
           </p>
@@ -110,5 +112,13 @@ export default async function Page() {
         </ul>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Home />
+    </Suspense>
   );
 }

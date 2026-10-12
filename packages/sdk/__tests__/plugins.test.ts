@@ -504,6 +504,29 @@ describe("pageviews", () => {
   });
 });
 
+describe("pageviews on restore and prerender", () => {
+  test("counts a page restored from the back/forward cache again", async () => {
+    const { analytics, transport } = client({ pageviews: true });
+    dispatchEvent(Object.assign(new Event("pageshow"), { persisted: false }));
+    dispatchEvent(Object.assign(new Event("pageshow"), { persisted: true }));
+    await analytics.flush();
+    expect(sent(transport)).toHaveLength(2);
+    await analytics.shutdown();
+  });
+
+  test("waits for a prerendered page to be opened", async () => {
+    Object.defineProperty(document, "prerendering", { value: true, configurable: true });
+    const { analytics, transport } = client({ pageviews: true });
+    await analytics.flush();
+    expect(sent(transport)).toEqual([]);
+    Reflect.deleteProperty(document, "prerendering");
+    document.dispatchEvent(new Event("prerenderingchange"));
+    await analytics.flush();
+    expect(sent(transport)).toHaveLength(1);
+    await analytics.shutdown();
+  });
+});
+
 describe("groups", () => {
   type Workspaces = { company: { plan: "free" | "pro" }; team: NoProps };
 

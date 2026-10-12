@@ -5,14 +5,14 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { browserClient } from "@/shared/api/browser-client";
-import { TrendIcon } from "@/shared/ui/icons";
 
-import { formatChange, formatMetric } from "../format";
-import { metricViews } from "../metrics";
+import { metricPath, metricViews } from "../metrics";
 import type { MetricView } from "../metrics";
 import { viewScope } from "../scope";
 import { viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
+import { AnimatedNumber } from "./animated-number";
+import { ChangeBadge } from "./change-badge";
 import { Sparkline } from "./sparkline";
 
 export type RailData = {
@@ -63,31 +63,23 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
     <nav aria-label="Metrics" className="rail">
       {metricViews.map((view, index) => {
         const stat = stats.data?.[view.stat];
-        const change = stat ? formatChange(stat.change) : null;
-        const rising = (stat?.change ?? 0) >= 0;
-        const good = view.lowerIsBetter ? !rising : rising;
         const selected = view.slug === current.slug;
         return (
           <Link
             key={view.slug}
-            href={`${base}/${view.slug}${viewQuery(state)}`}
+            href={`${metricPath(base, view)}${viewQuery(state)}`}
             aria-current={selected ? "page" : undefined}
             className="metric-card"
             prefetch={false}
           >
             <span className="metric-label text-sm">{view.label}</span>
             <span className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">
-                {stat ? formatMetric(stat.value, view.format) : "–"}
-              </span>
-              {change ? (
-                <span
-                  className={`flex items-center gap-0.5 text-xs ${good ? "text-ok" : "text-err"}`}
-                >
-                  <TrendIcon down={!rising} className="size-3" />
-                  {change}
-                </span>
-              ) : null}
+              {stat ? (
+                <AnimatedNumber value={stat.value} format={view.format} className="metric-value" />
+              ) : (
+                <span className="metric-value">–</span>
+              )}
+              <ChangeBadge change={stat?.change ?? null} lowerIsBetter={view.lowerIsBetter} />
             </span>
             <Sparkline points={sparklines[index]?.data ?? []} />
           </Link>

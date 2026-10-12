@@ -23,6 +23,7 @@ type Props = {
   interval: Interval;
   label: string;
   thresholds?: ChartThreshold[];
+  previous?: ChartPoint[];
   annotations?: Annotation[];
   project?: string;
   editable?: boolean;
@@ -104,6 +105,7 @@ export function SeriesChart({
   interval,
   label,
   thresholds = [],
+  previous = [],
   annotations = [],
   project = "",
   editable = false,
@@ -127,8 +129,9 @@ export function SeriesChart({
   }, []);
 
   const buckets = series[0]?.points.map((point) => point.bucket) ?? [];
-  const values = series.flatMap((entry) =>
-    entry.points.flatMap((point) => (point.value === null ? [] : [point.value])),
+  const comparing = previous.some((point) => point.value !== null && point.value > 0);
+  const values = [...series, ...(comparing ? [{ label: "", points: previous }] : [])].flatMap(
+    (entry) => entry.points.flatMap((point) => (point.value === null ? [] : [point.value])),
   );
   const peak = Math.max(0, ...values, ...thresholds.map((threshold) => threshold.value));
   const tickStep = niceStep(peak, format);
@@ -240,12 +243,24 @@ export function SeriesChart({
               </linearGradient>
             ))}
           </defs>
+          {comparing ? (
+            <path
+              d={linePath(previous, x, y)}
+              fill="none"
+              stroke="var(--muted)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              strokeLinejoin="round"
+              className="chart-previous"
+            />
+          ) : null}
           {series.map((entry, order) => (
             <g key={entry.label}>
               <path
                 d={areaPath(entry.points, x, y, pad.top + plotHeight)}
                 fill={`url(#${gradientId}-${order})`}
                 stroke="none"
+                className="chart-area"
               />
               <path
                 d={linePath(entry.points, x, y)}
@@ -253,6 +268,8 @@ export function SeriesChart({
                 stroke={`var(--series-${order + 1})`}
                 strokeWidth={2}
                 strokeLinejoin="round"
+                pathLength={1}
+                className="chart-line"
               />
             </g>
           ))}
@@ -285,7 +302,7 @@ export function SeriesChart({
                     y={pad.top}
                     width={right - left}
                     height={plotHeight}
-                    fill="var(--series-4)"
+                    fill="var(--link)"
                     opacity={0.12}
                   />
                 ) : null}
@@ -294,14 +311,11 @@ export function SeriesChart({
                   x2={left}
                   y1={pad.top}
                   y2={pad.top + plotHeight}
-                  stroke="var(--series-4)"
+                  stroke="var(--link)"
                   strokeWidth={selected ? 2 : 1}
                 />
                 <rect x={left - 8} y={pad.top - 8} width={16} height={16} fill="transparent" />
-                <path
-                  d={`M${left - 5},${pad.top - 9} h10 v7 l-5,4 l-5,-4 Z`}
-                  fill="var(--series-4)"
-                />
+                <path d={`M${left - 5},${pad.top - 9} h10 v7 l-5,4 l-5,-4 Z`} fill="var(--link)" />
               </g>
             );
           })}
@@ -359,6 +373,15 @@ export function SeriesChart({
               </p>
             );
           })}
+          {comparing ? (
+            <p className="flex items-center gap-2 text-xs text-muted">
+              <span className="h-0 w-2 shrink-0 border-t border-dashed border-muted" />
+              <span className="min-w-0 flex-1 truncate">Previous period</span>
+              <span className="tabular-nums">
+                {formatMetric(previous[hover]?.value ?? 0, format)}
+              </span>
+            </p>
+          ) : null}
         </div>
       ) : null}
       {open ? (

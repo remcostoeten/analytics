@@ -8,7 +8,7 @@ import { IssueStatusControls } from "@/modules/analytics/components/issue-status
 import { StatusBadge } from "@/modules/analytics/components/status-badge";
 import { formatDateTime, formatMetric, formatRelative } from "@/modules/analytics/format";
 import { splitTitle } from "@/modules/analytics/issues";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { findProject, readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
@@ -41,15 +41,13 @@ export default async function Page({ params, searchParams }: Props) {
   const state = readViewState(await searchParams);
   const listPath = `/projects/${encodeURIComponent(project)}/issues`;
 
-  const [projects, session, scope] = await Promise.all([
-    listProjects(),
+  const scope = await readScope(project, state);
+  const [found, session, read] = await Promise.all([
+    findProject(project),
     readSession(),
-    readScope(project, state),
+    scope.issue(issueId),
   ]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
   if (!found) notFound();
-
-  const read = await scope.issue(issueId);
   if (!read.ok && read.error.code === "NOT_FOUND") notFound();
 
   return (
@@ -65,7 +63,7 @@ export default async function Page({ params, searchParams }: Props) {
             <>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="grid min-w-0 gap-1">
-                  <h1 className="text-xl font-normal tracking-tight">
+                  <h1 className="font-serif text-2xl tracking-tight">
                     <span className="font-semibold">{splitTitle(read.value.data.title).type}</span>
                     {splitTitle(read.value.data.title).message
                       ? `: ${splitTitle(read.value.data.title).message}`

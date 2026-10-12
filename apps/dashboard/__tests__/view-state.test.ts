@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { formatChange, formatDimensionValue, formatMetric } from "../src/modules/analytics/format";
-import { metricView } from "../src/modules/analytics/metrics";
+import { metricPath, metricView } from "../src/modules/analytics/metrics";
 import { readViewState, viewQuery, withFilter } from "../src/modules/analytics/view-state";
 import type { ViewState } from "../src/modules/analytics/view-state";
 
@@ -12,6 +12,7 @@ const defaults: ViewState = {
   filters: {},
   percentile: 75,
   status: "open",
+  items: 5,
 };
 
 describe("readViewState", () => {
@@ -46,6 +47,11 @@ describe("readViewState", () => {
     });
   });
 
+  test("reads the list length", () => {
+    expect(readViewState({ items: "15" }).items).toBe(15);
+    expect(readViewState({ items: "7" }).items).toBe(5);
+  });
+
   test("ignores unknown values and bare negations", () => {
     expect(
       readViewState({
@@ -77,6 +83,7 @@ describe("viewQuery", () => {
       page: "/x y",
       percentile: "50",
       status: "ignored",
+      items: "10",
     });
     const query = Object.fromEntries(new URLSearchParams(viewQuery(state)));
     expect(readViewState(query)).toEqual(state);
@@ -119,5 +126,10 @@ describe("format", () => {
   test("resolves metric slugs", () => {
     expect(metricView("bounce-rate").series).toBe("bounce_rate");
     expect(metricView("nope").slug).toBe("visitors");
+  });
+
+  test("keeps the first metric at the project root", () => {
+    expect(metricPath("/projects/a", metricView("visitors"))).toBe("/projects/a");
+    expect(metricPath("/projects/a", metricView("visits"))).toBe("/projects/a/visits");
   });
 });

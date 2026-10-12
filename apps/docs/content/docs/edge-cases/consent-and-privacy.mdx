@@ -9,7 +9,7 @@ Consent is checked in the browser, before an event leaves it, and personal data 
 
 Every event passes the same checks in the browser, in this order:
 
-1. If the browser has opted out, or has Do Not Track or Global Privacy Control on, the event is dropped.
+1. If the browser has opted out, or has Do Not Track or Global Privacy Control on and `privacySignals` is not `"ignore"`, the event is dropped.
 2. Plugins and `beforeSend` may change or drop it.
 3. If the client has not started, or consent is required and no choice was made yet, the event is held in memory.
 4. Otherwise the consent state decides: the event is queued for sending, or dropped.
