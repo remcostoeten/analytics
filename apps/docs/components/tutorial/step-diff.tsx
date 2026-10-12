@@ -3,7 +3,8 @@ import type { DiffLineAnnotation } from "@pierre/diffs/ssr";
 import { preloadFileDiff } from "@pierre/diffs/ssr";
 import { cacheLife } from "next/cache";
 
-import { diffThemes, registerDiffThemes } from "@/lib/diff-themes";
+import { diffOptions } from "@/lib/diff-options";
+import { registerDiffThemes } from "@/lib/diff-themes";
 import { stepChanges } from "@/lib/tutorial";
 import type { StepNote, TutorialStep } from "@/lib/tutorial";
 
@@ -35,7 +36,7 @@ async function preloadStep(step: TutorialStep, notes: StepNote[]): Promise<Prelo
       }));
       const preloaded = await preloadFileDiff<{ text: string }>({
         fileDiff,
-        options: { theme: diffThemes, diffStyle: "unified", overflow: "wrap" },
+        options: diffOptions(added, "unified"),
         annotations,
       });
       return {
