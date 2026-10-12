@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { prereleaseTag, publishManifest } from "../publish";
+import { isPrerelease, publishManifest } from "../publish";
 
 describe("publishManifest", () => {
   test("moves publishConfig.exports into exports and drops devDependencies", () => {
@@ -30,13 +30,14 @@ describe("publishManifest", () => {
   });
 });
 
-describe("prereleaseTag", () => {
-  test("reads the pre mode tag", () => {
-    expect(prereleaseTag('{"mode":"pre","tag":"next"}')).toBe("next");
+describe("isPrerelease", () => {
+  test("flags versions with a prerelease part", () => {
+    expect(isPrerelease("2.0.0-next.3")).toBe(true);
+    expect(isPrerelease("0.1.0-beta.0")).toBe(true);
   });
 
-  test("falls back to latest", () => {
-    expect(prereleaseTag(null)).toBe("latest");
-    expect(prereleaseTag('{"mode":"exit","tag":"next"}')).toBe("latest");
+  test("passes stable versions", () => {
+    expect(isPrerelease("2.0.0")).toBe(false);
+    expect(isPrerelease("0.1.0")).toBe(false);
   });
 });

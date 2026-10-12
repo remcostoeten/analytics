@@ -108,7 +108,7 @@ Alerts are on in `apps/api/analytics.config.ts` with the mail, webhook and Disco
 
 Project `v2.dashboard` (created 8 October 2026, with `dashboard.analytics.remcostoeten.nl`), same repository, root directory `apps/dashboard`, framework Next.js, build command `bun run build`, install command `bun install`. Variable `NEXT_PUBLIC_API_URL` set to `https://api.analytics.remcostoeten.nl`. Optional variable `NEXT_PUBLIC_SITE_URL` (defaults to `https://docs.analytics.remcostoeten.nl`) for the links back to the docs.
 
-The app's `basePath` is `/dashboard`, and `v2.analytics-docs` rewrites `/dashboard` and everything under it to this project (decision 24), so people open the dashboard at `https://docs.analytics.remcostoeten.nl/dashboard`. Set `DASHBOARD_URL` on `v2.analytics-docs` to `https://dashboard.analytics.remcostoeten.nl` (the default) and the API's `DASHBOARD_ORIGIN` to the landing origin, because the browser sends sign-in requests from there. `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on a custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`.
+The app's `basePath` is `/dashboard`, and `v2.analytics-docs` rewrites `/dashboard` and everything under it to this project (decision 24), so people open the dashboard at `https://docs.analytics.remcostoeten.nl/dashboard`. Set `DASHBOARD_URL` on `v2.analytics-docs` to `https://dashboard.analytics.remcostoeten.nl` (the default) and the API's `DASHBOARD_ORIGIN` to the landing origin, because the browser sends sign-in requests from there. `AUTH_COOKIE_DOMAIN` covers both hosts; sign-in only works on a custom domain, never on the `vercel.app` one, because the session cookie is set on `.remcostoeten.nl`. The rewrite is a `beforeFiles` rewrite on purpose: as an `afterFiles` rewrite, Vercel first turns the dashboard's RSC prefetches into `.rsc` and `.segments/…` paths for the docs app, and the dashboard answers those with 404.
 
 ## 9. First sign-in and token
 
@@ -116,19 +116,35 @@ Open `https://docs.analytics.remcostoeten.nl/dashboard` and sign in with GitHub.
 
 For a token for scripts and the docs site's query page, create one under `/dashboard/admin/tokens` with the `sql` scope; it is shown once.
 
-## 10. Publishing a new package to npm
+## 10. Releasing to npm
 
-`release.yml` publishes through npm trusted publishing, which only works for a package that already exists on npm with this repository as its trusted publisher. The first version of a new package is published by hand once:
+Every push to `master` runs `release.yml`. It first runs `bun run release` (`scripts/publish.ts`), which publishes each public package whose `master` version is stable and not yet on npm, to the `latest` tag with provenance, and turns each published version into a git tag and a GitHub release. It then runs `changeset version` and, when there are pending changesets, force-pushes the result to `changeset-release/master` behind one "version packages" pull request. Merging that pull request is the release: the push it makes publishes the new versions.
+
+There is no `next` tag and no pre mode. Prerelease versions are skipped, never published. A package that fails to publish does not stop the others; the job goes red with a `::error::` line naming it, and the next push to `master` retries it, so fixing the cause and pushing (or running the workflow by hand with `dry-run` off) is all a failed release needs.
+
+A 404 on `PUT https://registry.npmjs.org/@spoar%2f<name>` after the provenance line means npm did not accept the GitHub Actions identity for that package: its trusted publisher is missing or names another repository or workflow. Fix it on npmjs.com under the package's Settings, Trusted Publisher: GitHub Actions, repository `remcostoeten/analytics`, workflow `release.yml`, no environment.
+
+### A new package
+
+Trusted publishing only works for a package that already exists on npm. The first version of a new package is published by hand once:
 
 ```sh
 bun run --filter './packages/*' build
 cd packages/<name>
 cp package.json /tmp/package.json.bak
 bun -e 'import { publishManifest } from "../../scripts/publish.ts"; const m = JSON.parse(await Bun.file("package.json").text()); await Bun.write("package.json", `${JSON.stringify(publishManifest(m), null, "\t")}\n`)'
-npm publish --access public --tag next
+npm publish --access public
 mv /tmp/package.json.bak package.json
 ```
 
-Then on npmjs.com open the package, Settings, Trusted Publisher, and add GitHub Actions with repository `remcostoeten/analytics` and workflow `release.yml`. Run the `release` workflow by hand with `dry-run` off: `scripts/publish.ts` skips the version already on npm and publishes the rest.
+Then add the trusted publisher as above. The hand-published version gets no git tag or GitHub release.
 
-The script publishes `packages/*` in folder order and stops at the first failure, so a package that cannot be published blocks the ones after it. The hand-published version gets no git tag or GitHub release.
+## 11. Deploying on demand
+
+Git deploys are off for all five Vercel projects: each `vercel.json` (`apps/api`, `apps/docs`, `apps/dashboard`, `v1/apps/ingestion`, `v1/apps/dashboard`) sets `"git": { "deploymentEnabled": false }`, so pushes and pull requests create no deployments and the free plan's deployment quota is spent only on purpose. Deploy a project when it should go live:
+
+- Vercel dashboard: open the project, Deployments, Create Deployment, and pick `master` (or a commit). It builds with the project's settings and, from `master`, goes to production.
+- CLI, from the repository root with the project linked: `vercel deploy --prod --cwd apps/api` (likewise `apps/docs`, `apps/dashboard`).
+
+To turn automatic deploys back on for one project, remove its `git` block.
+

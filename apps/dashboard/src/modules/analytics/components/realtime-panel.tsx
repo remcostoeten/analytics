@@ -45,7 +45,7 @@ function Card({ label, value, hint }: CardProps) {
   return (
     <div className="metric-card metric-static">
       <span className="metric-label text-sm">{label}</span>
-      <span className="text-2xl font-semibold tracking-tight tabular-nums">{value}</span>
+      <span className="metric-value">{value}</span>
       <span className="text-xs text-muted">{hint}</span>
     </div>
   );

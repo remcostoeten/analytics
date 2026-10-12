@@ -53,7 +53,7 @@ describe("web analytics", () => {
   test("the summary series has one bucket per day", async () => {
     const series = unwrap(await client.project(project).period("7d").timeseries("visitors"));
     expect(series.interval).toBe("day");
-    expect(series.data.map((point) => point.value)).toEqual([0, 0, 0, 0, 1, 1, 2]);
+    expect(series.data.map((point) => point.value)).toEqual([0, 0, 0, 0, 1, 1, 2, 0]);
   });
 
   test("the top list of paths ranks by visitors", async () => {
@@ -109,8 +109,9 @@ describe("speed", () => {
       2000,
       4500,
       null,
+      null,
     ]);
-    expect(series.data.map((point) => point.samples)).toEqual([0, 0, 0, 0, 30, 25, 0]);
+    expect(series.data.map((point) => point.samples)).toEqual([0, 0, 0, 0, 30, 25, 0, 0]);
   });
 
   test("routes and elements filter on the route only", async () => {

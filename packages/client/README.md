@@ -5,7 +5,7 @@ The typed client for the v2 analytics API. One chainable scope per project, one 
 ## Install
 
 ```sh
-bun add @spoar/client@next
+bun add @spoar/client
 ```
 
 ## Quick start

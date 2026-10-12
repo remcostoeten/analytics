@@ -20,7 +20,10 @@ export type ViewState = {
   filters: ViewFilters;
   percentile: Percentile;
   status: IssueStatus;
+  items: ListSize;
 };
+
+export type ListSize = 5 | 10 | 15;
 
 export type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -46,6 +49,8 @@ export const dimensions = [
 
 export const percentiles = [50, 75, 90, 95, 99] as const satisfies readonly Percentile[];
 
+export const listSizes = [5, 10, 15] as const satisfies readonly ListSize[];
+
 export const issueStatuses = [
   { value: "open", label: "Open" },
   { value: "resolved", label: "Resolved" },
@@ -56,7 +61,8 @@ const defaults = {
   period: "7d",
   percentile: 75,
   status: "open",
-} as const satisfies Pick<ViewState, "period" | "percentile" | "status">;
+  items: 5,
+} as const satisfies Pick<ViewState, "period" | "percentile" | "status" | "items">;
 
 function single(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -74,6 +80,10 @@ function isPercentile(value: number): value is Percentile {
   return percentiles.some((percentile) => percentile === value);
 }
 
+function isListSize(value: number): value is ListSize {
+  return listSizes.some((size) => size === value);
+}
+
 function isIssueStatus(value: string | undefined): value is IssueStatus {
   return issueStatuses.some((status) => status.value === value);
 }
@@ -82,7 +92,8 @@ function isIssueStatus(value: string | undefined): value is IssueStatus {
  * @name readViewState
  * @description Reads the analytics view from the URL: `period`, `bots=include`, `split` for the
  * summary chart, one parameter per filtered dimension (a leading `!` excludes the value), and
- * `percentile` and `status` for the speed and issue views. Unknown or empty values fall
+ * `percentile` and `status` for the speed and issue views, and `items` for the length of the
+ * source lists. Unknown or empty values fall
  * back to the defaults.
  *
  * @example
@@ -93,6 +104,7 @@ export function readViewState(params: SearchParams): ViewState {
   const split = single(params.split);
   const percentile = Number(single(params.percentile));
   const status = single(params.status);
+  const items = Number(single(params.items));
   const filters: ViewFilters = {};
   for (const { value } of dimensions) {
     const filter = single(params[value]);
@@ -105,6 +117,7 @@ export function readViewState(params: SearchParams): ViewState {
     filters,
     percentile: isPercentile(percentile) ? percentile : defaults.percentile,
     status: isIssueStatus(status) ? status : defaults.status,
+    items: isListSize(items) ? items : defaults.items,
   };
 }
 
@@ -127,6 +140,7 @@ export function viewQuery(state: ViewState) {
   }
   if (state.percentile !== defaults.percentile) query.set("percentile", String(state.percentile));
   if (state.status !== defaults.status) query.set("status", state.status);
+  if (state.items !== defaults.items) query.set("items", String(state.items));
   const text = query.toString();
   return text ? `?${text}` : "";
 }

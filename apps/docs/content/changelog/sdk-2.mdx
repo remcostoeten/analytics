@@ -1,0 +1,17 @@
+---
+title: SDK 2.0 is stable
+description: "@spoar/sdk 2.0 and @spoar/client 2.0 are on the npm latest tag, so a plain install gets them."
+date: 2026-10-10
+label: release
+docs: /docs/sdk/install
+---
+
+`@spoar/sdk` 2.0 is the first stable release of the rewrite. Every version now publishes to the `latest` tag and the `next` tag is retired.
+
+```bash
+npm install @spoar/sdk
+```
+
+2.0 is ESM only, with a typed browser client, plugins, and the `./react`, `./next`, `./server`, `./proxy` and `./admin` entries. The browser client batches events, keeps visitors without cookies, honours consent, Do Not Track and Global Privacy Control, and drops nothing silently: rejected events reach `on("error")` with their code.
+
+`@spoar/client` 2.0 ships alongside it, the typed client for every read and admin route. Coming from 1.x, [Migrating](/docs/sdk/migrating) lists what changed. Every change by version is in the [package changelog](/docs/changelog).

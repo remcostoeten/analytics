@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { SessionTrail } from "@/modules/analytics/components/session-trail";
 import { formatDateTime, formatDuration } from "@/modules/analytics/format";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { findProject, readScope } from "@/modules/analytics/reads";
 import { collectTrail, trailMaxPages, trailPageSize } from "@/modules/analytics/trail";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
@@ -23,14 +23,15 @@ export default async function Page({ params, searchParams }: Props) {
   const state = readViewState(await searchParams);
   const base = `/projects/${encodeURIComponent(project)}`;
 
-  const [projects, scope] = await Promise.all([listProjects(), readScope(project, state)]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
+  const scope = await readScope(project, state);
+  const [found, read] = await Promise.all([
+    findProject(project),
+    collectTrail(
+      (cursor) => scope.sessionEvents(session, { limit: trailPageSize, cursor }),
+      trailMaxPages,
+    ),
+  ]);
   if (!found) notFound();
-
-  const read = await collectTrail(
-    (cursor) => scope.sessionEvents(session, { limit: trailPageSize, cursor }),
-    trailMaxPages,
-  );
   if (!read.ok && read.error.code === "NOT_FOUND") notFound();
 
   return (
@@ -44,7 +45,7 @@ export default async function Page({ params, searchParams }: Props) {
             Back to visitors
           </Link>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h1 className="text-xl font-normal tracking-tight">
+            <h1 className="font-serif text-2xl tracking-tight">
               Session <span className="font-mono">{session.slice(0, 8)}</span>
             </h1>
             <span className="font-mono text-xs text-muted">{found.domain}</span>

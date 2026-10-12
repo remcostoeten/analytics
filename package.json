@@ -61,6 +61,7 @@
 		"db:down": "docker compose down",
 		"rescore": "bun scripts/rescore.ts",
 		"size": "bun scripts/size-check.ts",
+		"world-map": "bun run --cwd scripts world-map",
 		"release": "bun scripts/publish.ts",
 		"check": "bun run typecheck && bun run lint && bun run format:check && bun run boundaries && bun run deps && bun run knip && bun run test",
 		"dev:v1": "bun run --cwd v1/apps/dashboard dev",

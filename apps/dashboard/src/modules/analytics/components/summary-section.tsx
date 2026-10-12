@@ -9,9 +9,11 @@ import type { FilterDimension, ViewState } from "../view-state";
 import { siteUrl } from "@/shared/config/site";
 
 import { AddAnnotation } from "./add-annotation";
+import { ChangeBadge } from "./change-badge";
 import { EmptyState } from "./empty-state";
 import { SeriesChart } from "./series-chart";
-import type { ChartSeries } from "./series-chart";
+import { SplitMenu } from "./split-menu";
+import type { ChartPoint, ChartSeries } from "./series-chart";
 
 type Props = {
   scope: ProjectScope;
@@ -19,9 +21,12 @@ type Props = {
   state: ViewState;
   path: string;
   total: number | null;
+  change: number | null;
   project: string;
   canAnnotate: boolean;
 };
+
+type Split = { value: FilterDimension | null; label: string };
 
 const splits = [
   { value: null, label: "All" },
@@ -30,7 +35,13 @@ const splits = [
   { value: "country", label: "Country" },
   { value: "page", label: "Path" },
   { value: "browser", label: "Browser" },
-] as const satisfies readonly { value: FilterDimension | null; label: string }[];
+] as const satisfies readonly Split[];
+
+const moreSplits = [
+  { value: "os", label: "Operating system" },
+  { value: "device", label: "Device type" },
+  { value: "channel", label: "Channel" },
+] as const satisfies readonly Split[];
 
 const seriesLimit = 5;
 
@@ -40,10 +51,14 @@ function isQuiet(series: ChartSeries[]) {
 
 async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDimension | null) {
   if (split === null) {
-    const read = await scope.timeseries(view.series);
+    const read = await scope.timeseries(view.series, { compare: "previous" });
     if (!read.ok) return { error: read.error.message } as const;
     const series: ChartSeries[] = [{ label: view.label, points: read.value.data }];
-    return { series, interval: read.value.interval } as const;
+    const previous = read.value.data.map((point) => ({
+      bucket: point.bucket,
+      value: point.previous ?? null,
+    }));
+    return { series, previous, totals: [], interval: read.value.interval } as const;
   }
   const read = await readSplitSeries(scope, view, split, seriesLimit);
   if (!read.ok) return { error: read.error } as const;
@@ -51,7 +66,14 @@ async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDi
     label: formatDimensionValue(split, entry.value),
     points: entry.series.data,
   }));
-  return { series, interval: read.value[0]?.series.interval ?? "day" } as const;
+  const totals = read.value.map((entry) => (view.format === "count" ? entry.total : null));
+  const previous: ChartPoint[] = [];
+  return {
+    series,
+    previous,
+    totals,
+    interval: read.value[0]?.series.interval ?? "day",
+  } as const;
 }
 
 export async function SummarySection({
@@ -60,6 +82,7 @@ export async function SummarySection({
   state,
   path,
   total,
+  change,
   project,
   canAnnotate,
 }: Props) {
@@ -91,6 +114,13 @@ export async function SummarySection({
             {split.label}
           </Link>
         ))}
+        <SplitMenu
+          options={moreSplits.map((split) => ({
+            label: split.label,
+            href: `${path}${viewQuery({ ...state, split: split.value })}`,
+            active: state.split === split.value,
+          }))}
+        />
       </nav>
 
       {"error" in read ? (
@@ -114,31 +144,49 @@ export async function SummarySection({
         </EmptyState>
       ) : (
         <>
-          {state.split !== null ? (
-            <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legend">
-              {read.series.map((entry, order) => (
-                <li key={entry.label} className="grid gap-0.5">
-                  <span className="flex items-center gap-1.5 text-xs text-muted">
-                    <span
-                      className="size-2 rounded-full"
-                      style={{ background: `var(--series-${order + 1})` }}
-                    />
-                    {entry.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="grid gap-0.5">
+          <ul className="legend" aria-label="Legend">
+            <li className="legend-cell">
               <span className="flex items-center gap-1.5 text-xs text-muted">
-                <span className="size-2 rounded-full bg-(--series-1)" />
+                {state.split === null ? (
+                  <span className="size-2 rounded-full bg-(--series-1)" />
+                ) : null}
                 Total {view.label.toLowerCase()}
               </span>
-              <span className="text-2xl font-semibold tabular-nums">
-                {total === null ? "–" : formatMetric(total, view.format)}
+              <span className="flex items-baseline gap-2">
+                <span className="metric-value">
+                  {total === null ? "–" : formatMetric(total, view.format)}
+                </span>
+                <ChangeBadge change={change} lowerIsBetter={view.lowerIsBetter} />
               </span>
-            </div>
-          )}
+            </li>
+            {read.previous.some((point) => point.value) ? (
+              <li className="legend-cell self-end">
+                <span className="flex items-center gap-1.5 text-xs text-muted">
+                  <span className="h-0 w-3 border-t border-dashed border-muted" />
+                  Previous period
+                </span>
+              </li>
+            ) : null}
+            {state.split !== null
+              ? read.series.map((entry, order) => {
+                  const value = read.totals[order] ?? null;
+                  return (
+                    <li key={entry.label} className="legend-cell">
+                      <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ background: `var(--series-${order + 1})` }}
+                        />
+                        <span className="truncate">{entry.label}</span>
+                      </span>
+                      {value !== null ? (
+                        <span className="metric-value">{formatMetric(value, view.format)}</span>
+                      ) : null}
+                    </li>
+                  );
+                })
+              : null}
+          </ul>
           {read.series.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted">No data in this range</p>
           ) : (
@@ -146,6 +194,7 @@ export async function SummarySection({
               series={read.series}
               format={view.format}
               interval={read.interval}
+              previous={read.previous}
               label={view.label}
               annotations={annotations.ok ? annotations.value.data : []}
               project={project}

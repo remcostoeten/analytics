@@ -4,6 +4,8 @@ import type { MetricView } from "../metrics";
 import { readTopList } from "../reads";
 import { dimensionLabel, viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
+import { CountryMap } from "./country-map";
+import { ListSizeSelect } from "./list-size-select";
 import { TopList } from "./top-list";
 
 type Props = {
@@ -12,6 +14,9 @@ type Props = {
   state: ViewState;
   path: string;
 };
+
+const countryRows = 10;
+const mapRows = 100;
 
 const sources = [
   { dimension: "referrer_domain", title: "Referrers" },
@@ -27,21 +32,31 @@ function hrefFor(path: string, state: ViewState, dimension: FilterDimension) {
 }
 
 export async function CountrySection({ scope, view, state, path }: Props) {
-  const read = await readTopList(scope, "country", view.count, 10);
+  const read = await readTopList(scope, "country", view.count, mapRows);
+  const href = hrefFor(path, state, "country");
   return (
     <section className="panel-section grid gap-4">
       <h2 className="text-base font-semibold">
         {view.label} by {dimensionLabel("country").toLowerCase()}
       </h2>
       {read.ok ? (
-        <TopList
-          title="Top countries"
-          dimension="country"
-          rows={read.value.data}
-          count={view.count}
-          hrefFor={hrefFor(path, state, "country")}
-          columns
-        />
+        <div className="country-grid">
+          <CountryMap rows={read.value.data} count={view.count} hrefFor={href} />
+          <div className="grid content-start gap-3">
+            <TopList
+              title="Top countries"
+              dimension="country"
+              rows={read.value.data.slice(0, countryRows)}
+              count={view.count}
+              hrefFor={href}
+            />
+            {read.value.data.length > countryRows ? (
+              <p className="text-xs text-muted">
+                Top {countryRows} of {read.value.data.length} countries
+              </p>
+            ) : null}
+          </div>
+        </div>
       ) : (
         <p className="text-sm text-err">Could not read countries: {read.error}</p>
       )}
@@ -53,12 +68,15 @@ export async function SourcesSection({ scope, view, state, path }: Props) {
   const reads = await Promise.all(
     sources.map(async (source) => ({
       ...source,
-      read: await readTopList(scope, source.dimension, view.count, 5),
+      read: await readTopList(scope, source.dimension, view.count, state.items),
     })),
   );
   return (
     <section className="panel-section grid gap-4">
-      <h2 className="text-base font-semibold">{view.label} by source</h2>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">{view.label} by source</h2>
+        <ListSizeSelect path={path} state={state} />
+      </header>
       <div className="source-grid">
         {reads.map(({ dimension, title, read }) => (
           <div key={dimension} className="source-cell">

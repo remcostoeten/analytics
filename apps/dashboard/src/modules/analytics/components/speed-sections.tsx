@@ -23,7 +23,7 @@ type Props = {
 type SummaryProps = Props & {
   summary: Promise<SpeedResponse["data"] | null>;
   project: string;
-  canAnnotate: boolean;
+  canAnnotate: Promise<boolean>;
 };
 
 function routeHref(path: string, state: ViewState, route: string) {
@@ -47,7 +47,7 @@ export async function SpeedSummary({
   project,
   canAnnotate,
 }: SummaryProps) {
-  const [data, series, annotations] = await Promise.all([
+  const [data, series, annotations, editable] = await Promise.all([
     summary,
     scope.speedTimeseries({
       metric: view.slug,
@@ -56,6 +56,7 @@ export async function SpeedSummary({
       interval: speedInterval(state.period),
     }),
     scope.annotations({ limit: 100 }),
+    canAnnotate,
   ]);
   const metric = data?.metrics[view.slug] ?? null;
   const chart: ChartSeries[] = series.ok
@@ -71,7 +72,7 @@ export async function SpeedSummary({
           </h2>
           <p className="text-sm text-muted">{view.description}</p>
         </div>
-        {canAnnotate ? <AddAnnotation project={project} /> : null}
+        {editable ? <AddAnnotation project={project} /> : null}
       </header>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-0.5">
@@ -80,7 +81,7 @@ export async function SpeedSummary({
             {view.short} p{state.percentile}
           </span>
           <span className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tabular-nums">
+            <span className="metric-value">
               {metric?.value === null || metric === null
                 ? "–"
                 : formatMetric(metric.value, view.format)}
@@ -113,7 +114,7 @@ export async function SpeedSummary({
           ]}
           annotations={annotations.ok ? annotations.value.data : []}
           project={project}
-          editable={canAnnotate}
+          editable={editable}
         />
       )}
     </section>

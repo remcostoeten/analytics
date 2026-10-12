@@ -75,10 +75,10 @@ Server events without a `visitor` and `session` count as pageviews and events bu
 
 ## Days and hours do not line up with your time zone
 
-Reports use UTC. `timeseries` starts each hour, day, week and month bucket in UTC, and a `period` without `from` and `to` ends at the start of today in UTC. For a range in your own time zone, pass `from` and `to` as your local midnights converted to UTC. The `heatmap` read takes a `timezone` parameter with an IANA name, such as `Europe/Amsterdam`.
+Reports use UTC. `timeseries` starts each hour, day, week and month bucket in UTC, and a `period` without `from` and `to` ends at the start of the current UTC hour. For a range in your own time zone, pass `from` and `to` as your local midnights converted to UTC. The `heatmap` read takes a `timezone` parameter with an IANA name, such as `Europe/Amsterdam`.
 
 Event times are corrected for the visitor's clock: the API shifts each timestamp by the gap between when the client says it sent the batch and when the API received it.
 
 ## Today's numbers are missing or lag behind
 
-A `period` read ends at the start of today in UTC, and `24h` ends at the start of the current hour, so the running day or hour is left out. Pass `from` and `to` to include it, or read `realtime` for the last five minutes. Aggregate reads of a public project are also cached for 60 seconds.
+A `period` read ends at the start of the current UTC hour, so events from the running hour are left out until the next hour starts. Pass `from` and `to` to include them, or read `realtime` for the last five minutes. Aggregate reads of a public project are also cached for 60 seconds.

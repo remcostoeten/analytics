@@ -718,7 +718,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -3930,7 +3930,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -4427,7 +4427,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -4840,7 +4840,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -5684,7 +5684,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -6144,7 +6144,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -6540,7 +6540,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -6864,7 +6864,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -7166,7 +7166,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -7525,7 +7525,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -8299,7 +8299,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -9174,7 +9174,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -9613,7 +9613,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -10033,7 +10033,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -12502,7 +12502,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -13137,7 +13137,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -14891,7 +14891,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -15987,7 +15987,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -16474,7 +16474,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -16867,7 +16867,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -17355,7 +17355,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -18157,7 +18157,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -18514,7 +18514,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -19854,7 +19854,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -20304,7 +20304,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -20690,7 +20690,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -21004,7 +21004,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -21296,7 +21296,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -21645,7 +21645,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -22399,7 +22399,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -23264,7 +23264,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -23693,7 +23693,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -24103,7 +24103,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {
@@ -24785,7 +24785,7 @@
                 "12mo",
                 "all"
               ],
-              "description": "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default."
+              "description": "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default."
             }
           },
           {

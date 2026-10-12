@@ -32,7 +32,7 @@ export type Interval = Static<typeof Interval>;
 
 export const Period = oneOf(["24h", "7d", "30d", "90d", "12mo", "all"], {
   description:
-    "A range ending at the start of today in UTC (`24h` ends at the start of this hour). Ignored when `from` and `to` are sent; `30d` by default.",
+    "A range ending at the start of the current UTC hour, so today is included. Ignored when `from` and `to` are sent; `30d` by default.",
 });
 export type Period = Static<typeof Period>;
 

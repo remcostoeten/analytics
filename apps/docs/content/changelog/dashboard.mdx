@@ -1,0 +1,17 @@
+---
+title: The dashboard at /dashboard
+description: Web analytics, speed, issues, realtime, visitors and session trails for every project, plus the admin pages for projects and keys.
+date: 2026-10-10
+label: feature
+image: /images/changelog/dashboard.webp
+imageAlt: The web analytics view of the playground project, with the metric rail beside a visitors chart carrying two annotations
+docs: /docs/getting-started/quick-start
+---
+
+The v2 dashboard is live under `/dashboard` on this domain. Sign in with GitHub and the home page lists your projects with their last 24 hours.
+
+Each project follows the layout of Cloudflare's Web Analytics. A rail of visitors, pageviews, sessions, bounce rate and visit duration sits beside one chart that splits by referrer, host, country, path or browser, with top lists below it. Clicking a row in a top list filters the whole view on it. The filters and the time range live in the URL, so a view can be bookmarked or sent to someone.
+
+Next to web analytics are the speed view with Core Web Vitals per route, issues for grouped errors, a realtime view that refreshes on its own, and visitors with the trail of each session. Annotations mark deploys and campaigns on the charts.
+
+The admin pages replace the old setup page: create a project, set its allowed origins, rotate its keys and issue API tokens.

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronIcon } from "@/components/landing/icons";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { changelog } from "@/generated/changelog";
+import { listPosts, postLabel } from "@/lib/changelog";
+import { formatPostDate } from "@/lib/changelog-date";
 import { dashboardUrl } from "@/lib/dashboard-url";
 
 const serif = Newsreader({
@@ -57,6 +59,7 @@ function ReleaseVersion({ version }: { version: Version }) {
 }
 
 export default function ChangelogPage() {
+  const posts = listPosts();
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
       <LandingNav loginHref={dashboardUrl("/sign-in")} />
@@ -72,6 +75,56 @@ export default function ChangelogPage() {
               yourself.
             </p>
           </header>
+
+          <section aria-labelledby="posts-heading" className="flex flex-col gap-6">
+            <div>
+              <span className="caps text-muted">Posts</span>
+              <h2
+                id="posts-heading"
+                className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
+              >
+                New in Spoar
+              </h2>
+            </div>
+            <ol className="flex flex-col">
+              {posts.map((post) => {
+                const { date, week } = formatPostDate(post.date);
+                return (
+                  <li
+                    key={post.slug}
+                    className="grid gap-4 border-t border-line py-8 md:grid-cols-[14rem_1fr] md:gap-10"
+                  >
+                    <div className="flex flex-col gap-1 text-sm">
+                      <time dateTime={post.date} className="text-fg">
+                        {date}
+                      </time>
+                      <span className="text-muted">{week}</span>
+                    </div>
+                    <Link
+                      href={`/changelog/${post.slug}`}
+                      className="group flex max-w-[44rem] flex-col gap-3"
+                    >
+                      <span className="caps text-muted">{postLabel(post.label)}</span>
+                      <h3 className="font-serif text-[1.6rem] leading-[1.2] font-light tracking-[-0.01em] text-fg group-hover:underline">
+                        {post.title}
+                      </h3>
+                      <p className="font-serif text-[1.02rem] leading-relaxed text-muted">
+                        {post.description}
+                      </p>
+                      {post.image ? (
+                        <img
+                          src={post.image}
+                          alt={post.imageAlt ?? ""}
+                          loading="lazy"
+                          className="mt-2 aspect-video w-full rounded-2xl border border-line bg-surface object-cover object-top"
+                        />
+                      ) : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
 
           <section aria-labelledby="releases-heading" className="flex flex-col gap-6">
             <div>
@@ -105,7 +158,7 @@ export default function ChangelogPage() {
                       {earlier.length > 0 ? (
                         <details className="group rounded-2xl border border-line">
                           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm text-muted transition-colors duration-150 ease-[ease] select-none group-open:border-b group-open:border-line hover:text-fg [&::-webkit-details-marker]:hidden">
-                            {earlier.length} earlier {earlier.length === 1 ? "release" : "releases"}
+                            {earlier.length} earlier {earlier.length > 1 ? "releases" : "release"}
                             <ChevronIcon className="size-4 shrink-0 transition-transform duration-200 ease-(--ease-out) group-open:rotate-180" />
                           </summary>
                           <div className="flex flex-col gap-10 px-5 py-6 group-open:animate-settle">

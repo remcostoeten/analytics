@@ -17,10 +17,14 @@ const config: NextConfig = {
     cachedNavigations: true,
   },
   async rewrites() {
-    return [
-      { source: "/dashboard", destination: `${dashboard}/dashboard` },
-      { source: "/dashboard/:path*", destination: `${dashboard}/dashboard/:path*` },
-    ];
+    return {
+      beforeFiles: [
+        { source: "/dashboard", destination: `${dashboard}/dashboard` },
+        { source: "/dashboard/:path*", destination: `${dashboard}/dashboard/:path*` },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async redirects() {
     return [{ source: "/docs/changelog", destination: "/changelog", permanent: true }];

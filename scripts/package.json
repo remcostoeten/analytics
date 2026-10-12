@@ -5,11 +5,19 @@
 	"type": "module",
 	"scripts": {
 		"typecheck": "tsgo --noEmit",
-		"test": "bun test"
+		"test": "bun test",
+		"world-map": "bun world-map.ts"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8",
-		"@electric-sql/pglite-socket": "0.2.11"
+		"@electric-sql/pglite-socket": "0.2.11",
+		"@types/d3-geo": "3.1.1",
+		"@types/topojson-client": "3.1.5",
+		"@types/topojson-specification": "1.0.5",
+		"d3-geo": "3.1.1",
+		"i18n-iso-countries": "7.14.0",
+		"topojson-client": "3.1.0",
+		"world-atlas": "2.0.2"
 	},
 	"dependencies": {
 		"@spoar/engine": "workspace:*",
