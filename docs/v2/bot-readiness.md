@@ -27,11 +27,10 @@ These follow from the current signals and weights. Each one is a hypothesis to c
 
 | Risk | Combination | Score | Who it hits |
 | --- | --- | --- | --- |
-| VPN in a background tab | `asn_datacenter` (40) + `client_no_input` (20) | 60 | A visitor on a VPN that exits through M247, Datacamp, Google, AWS or another listed network, who opens a link in a background tab. The pageview is sent on load while the tab is hidden, so the `botSignals` plugin marks it as never visible with no input |
+| VPN in a background tab | `asn_datacenter` (40) + `client_no_input` (20) | 60 | A visitor on a VPN that exits through AWS or another listed network (M247, Datacamp and Google 15169 were removed from the list for this reason), who opens a link in a background tab. The pageview is sent on load while the tab is hidden, so the `botSignals` plugin marks it as never visible with no input |
 | Shared IP in a background tab | `ip_fanout` (40) + `client_no_input` (20) | 60 | Mobile carrier NAT, offices and campuses with more than 20 visitors on one IP in a day. Applied by the daily job, so it lands a day later |
 | Shared IP without a language header | `ip_fanout` (40) + `headers_missing` (15) | 55 | Same networks, with a privacy browser or extension that strips `accept-language` |
 | VPN without a language header | `asn_datacenter` (40) + `headers_missing` (15) | 55 | Same as the first row |
-| Prerendered pages | `client_no_input` on its own | 20 | Pages that Chrome or Next.js prerenders and the visitor never opens. These stay human at 20, but they are counted as pageviews. This is a counting question, not a bot question |
 
 A session's score is the highest score of its events, so one event at 60 marks the whole session as bot.
 
@@ -50,8 +49,8 @@ DATABASE_URL=... bun run rescore --from 2026-09-01 --to 2026-10-01 --include-leg
 ```sql
 select
   bot_detected as v1_bot,
-  asn in (16509, 14618, 8987, 15169, 396982, 8075, 24940, 213230, 16276, 14061,
-          63949, 20473, 31898, 45102, 132203, 12876, 51167, 9009, 60068, 212238) as hosting,
+  asn in (16509, 14618, 8987, 396982, 8075, 24940, 213230, 16276, 14061,
+          63949, 20473, 31898, 45102, 132203, 12876, 51167) as hosting,
   count(*) as events,
   count(distinct visitor_id) as visitors
 from events

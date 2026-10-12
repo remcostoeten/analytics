@@ -14,6 +14,7 @@ export const tracked = Boolean(process.env.NEXT_PUBLIC_RA_CONFIG);
  */
 export const analytics = createAnalytics({
   pageviews: false,
+  privacySignals: "ignore",
   mode: tracked ? "auto" : "development",
   plugins: [speedInsights(), errors()],
 });

@@ -11,7 +11,7 @@ import { viewScope } from "./scope";
 import { speedFilters } from "./speed";
 import type { FilterDimension, ViewFilters, ViewState } from "./view-state";
 
-export type SplitSeries = { value: string; series: TimeseriesResponse };
+export type SplitSeries = { value: string; total: number | null; series: TimeseriesResponse };
 
 /**
  * @name listProjects
@@ -56,13 +56,16 @@ export async function readSplitSeries(
 ): Promise<Result<SplitSeries[], string>> {
   const top = await scope.breakdown(dimension, { limit, metrics: [view.count] });
   if (!top.ok) return err(top.error.message);
-  const values = top.value.data.map((row) => row.value).filter((value) => value !== "");
+  const rows = top.value.data.filter((row) => row.value !== "");
   const series = await Promise.all(
-    values.map(async (value) => {
+    rows.map(async (row) => {
       const filter: ViewFilters = {};
-      filter[dimension] = value;
+      filter[dimension] = row.value;
       const read = await scope.where(filter).timeseries(view.series);
-      return read.ok ? ok({ value, series: read.value }) : err(read.error.message);
+      const total = row[view.count] ?? null;
+      return read.ok
+        ? ok({ value: row.value, total, series: read.value })
+        : err(read.error.message);
     }),
   );
   const failed = series.find((entry) => !entry.ok);
@@ -99,4 +102,18 @@ export async function readTopList(
 export async function speedScope(project: string, state: ViewState): Promise<ProjectScope> {
   const api = await serverClient();
   return api.project(project).period(state.period).where(speedFilters(state.filters));
+}
+
+/**
+ * @name findProject
+ * @description One project from the caller's readable list, or null when it does not exist or is
+ * hidden from them. Shares the per-request listing with `listProjects`.
+ *
+ * @example
+ * const project = await findProject("skriuw");
+ * if (!project) notFound();
+ */
+export async function findProject(id: string): Promise<PublicProject | null> {
+  const projects = await listProjects();
+  return projects.ok ? (projects.value.find((entry) => entry.id === id) ?? null) : null;
 }
