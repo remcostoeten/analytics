@@ -6,7 +6,7 @@ import { readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ProjectHeading } from "@/modules/shell/components/project-heading";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { ListSectionSkeleton } from "@/modules/analytics/components/skeletons";
 
 type Props = { params: Promise<{ project: string }>; searchParams: Promise<SearchParams> };
 
@@ -33,7 +33,7 @@ export default async function Page({ params, searchParams }: Props) {
         </ProjectHeading>
         <Suspense
           key={`${viewQuery(state)}${cursor ?? ""}`}
-          fallback={<SectionSkeleton height={320} />}
+          fallback={<ListSectionSkeleton rows={8} />}
         >
           <IssueList scope={scope} state={state} path={path} cursor={cursor} />
         </Suspense>

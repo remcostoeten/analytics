@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { findProject } from "@/modules/analytics/reads";
 
 import { ProjectHeader } from "./project-header";
+import { TitleBones } from "./skeletons";
 
 type Props = {
   project: string;
@@ -28,7 +29,7 @@ export function ProjectHeading(props: Props) {
     <Suspense
       fallback={
         <header className="panel-section panel-head grid gap-3">
-          <div className="skeleton h-9 w-72 max-w-full" aria-hidden="true" />
+          <TitleBones />
           {props.children}
         </header>
       }

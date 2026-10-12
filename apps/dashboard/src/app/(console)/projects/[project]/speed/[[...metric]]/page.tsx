@@ -10,6 +10,11 @@ import {
   SpeedRoutes,
   SpeedSummary,
 } from "@/modules/analytics/components/speed-sections";
+import {
+  SpeedSummarySkeleton,
+  SpeedTableSkeleton,
+  VitalsRailSkeleton,
+} from "@/modules/analytics/components/skeletons";
 import { VitalsRail } from "@/modules/analytics/components/vitals-rail";
 import { speedScope } from "@/modules/analytics/reads";
 import {
@@ -23,7 +28,6 @@ import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams, ViewState } from "@/modules/analytics/view-state";
 import { readSession } from "@/modules/session/session";
 import { ProjectHeading } from "@/modules/shell/components/project-heading";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 import type { ProjectScope } from "@spoar/client";
 import type { SpeedResponse } from "@spoar/contract";
 
@@ -52,16 +56,6 @@ async function Rail({ summary, view, state, base }: RailProps) {
   );
 }
 
-function RailSkeleton() {
-  return (
-    <div className="rail" aria-hidden="true">
-      {Array.from({ length: 6 }, (_, index) => (
-        <div key={index} className="skeleton h-[104px]" />
-      ))}
-    </div>
-  );
-}
-
 export default async function Page({ params, searchParams }: Props) {
   const { project, metric } = await params;
   const view = vitalView(metric?.[0]);
@@ -86,7 +80,7 @@ export default async function Page({ params, searchParams }: Props) {
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="grid gap-6">
-        <Suspense key={key} fallback={<RailSkeleton />}>
+        <Suspense key={key} fallback={<VitalsRailSkeleton />}>
           <Rail summary={summary} view={view} state={state} base={base} />
         </Suspense>
       </aside>
@@ -109,13 +103,13 @@ export default async function Page({ params, searchParams }: Props) {
           <DeviceTabs path={path} state={state} />
         </ProjectHeading>
 
-        <Suspense key={`summary${key}`} fallback={<SectionSkeleton height={380} />}>
+        <Suspense key={`summary${key}`} fallback={<SpeedSummarySkeleton />}>
           <SpeedSummary {...shared} summary={summary} project={project} canAnnotate={canAnnotate} />
         </Suspense>
-        <Suspense key={`routes${key}`} fallback={<SectionSkeleton height={320} />}>
+        <Suspense key={`routes${key}`} fallback={<SpeedTableSkeleton title="Routes" />}>
           <SpeedRoutes {...shared} />
         </Suspense>
-        <Suspense key={`elements${key}`} fallback={<SectionSkeleton height={240} />}>
+        <Suspense key={`elements${key}`} fallback={<SpeedTableSkeleton />}>
           <SpeedElements {...shared} />
         </Suspense>
       </div>

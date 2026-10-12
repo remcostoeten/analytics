@@ -12,6 +12,11 @@ import {
   TrafficSection,
 } from "@/modules/analytics/components/overview-sections";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
+import {
+  KpiRowSkeleton,
+  OverviewCardSkeleton,
+  TopGridSkeleton,
+} from "@/modules/analytics/components/skeletons";
 import { readScope } from "@/modules/analytics/reads";
 import { ProjectDomain } from "@/modules/shell/components/project-domain";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
@@ -20,10 +25,6 @@ import type { SearchParams } from "@/modules/analytics/view-state";
 type Props = { params: Promise<{ project: string }>; searchParams: Promise<SearchParams> };
 
 export const metadata: Metadata = { title: "Traffic overview" };
-
-function CardSkeleton({ height }: { height: number }) {
-  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
-}
 
 export default async function Page({ params, searchParams }: Props) {
   const { project } = await params;
@@ -53,45 +54,36 @@ export default async function Page({ params, searchParams }: Props) {
         <FilterChips path={path} state={state} />
       </header>
 
-      <Suspense
-        key={`tiles${key}`}
-        fallback={
-          <div className="kpi-row">
-            {[0, 1, 2, 3].map((index) => (
-              <CardSkeleton key={index} height={108} />
-            ))}
-          </div>
-        }
-      >
+      <Suspense key={`tiles${key}`} fallback={<KpiRowSkeleton />}>
         <KpiTiles scope={scope} state={state} base={base} stats={stats} />
       </Suspense>
 
       <div className="card">
-        <Suspense key={`traffic${key}`} fallback={<CardSkeleton height={300} />}>
+        <Suspense key={`traffic${key}`} fallback={<OverviewCardSkeleton part="traffic" />}>
           <TrafficSection scope={scope} />
         </Suspense>
       </div>
 
       <div className="overview-split">
         <div className="card">
-          <Suspense key={`device${key}`} fallback={<CardSkeleton height={260} />}>
+          <Suspense key={`device${key}`} fallback={<OverviewCardSkeleton part="device" />}>
             <DeviceSection {...shared} />
           </Suspense>
         </div>
         <div className="card">
-          <Suspense key={`country${key}`} fallback={<CardSkeleton height={260} />}>
+          <Suspense key={`country${key}`} fallback={<OverviewCardSkeleton part="country" />}>
             <CountrySection {...shared} base={base} />
           </Suspense>
         </div>
       </div>
 
       <div className="card">
-        <Suspense key={`outcomes${key}`} fallback={<CardSkeleton height={88} />}>
+        <Suspense key={`outcomes${key}`} fallback={<OverviewCardSkeleton part="outcomes" />}>
           <OutcomeBar scope={scope} />
         </Suspense>
       </div>
 
-      <Suspense key={`top${key}`} fallback={<CardSkeleton height={720} />}>
+      <Suspense key={`top${key}`} fallback={<TopGridSkeleton />}>
         <TopGrid {...shared} />
       </Suspense>
     </div>

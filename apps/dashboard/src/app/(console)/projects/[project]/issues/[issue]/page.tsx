@@ -13,7 +13,7 @@ import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
 import { readSession } from "@/modules/session/session";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { ListSectionSkeleton } from "@/modules/analytics/components/skeletons";
 
 type Props = {
   params: Promise<{ project: string; issue: string }>;
@@ -105,7 +105,7 @@ export default async function Page({ params, searchParams }: Props) {
           )}
         </header>
         {read.ok ? (
-          <Suspense fallback={<SectionSkeleton height={320} />}>
+          <Suspense fallback={<ListSectionSkeleton rows={8} />}>
             <IssueEvents scope={scope} issue={read.value.data.id} />
           </Suspense>
         ) : null}

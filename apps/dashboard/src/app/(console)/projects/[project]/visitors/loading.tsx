@@ -1,5 +1,5 @@
-import { PanelSkeleton } from "@/modules/shell/components/skeletons";
+import { VisitorsSkeleton } from "@/modules/analytics/components/skeletons";
 
 export default function Loading() {
-  return <PanelSkeleton height={360} />;
+  return <VisitorsSkeleton />;
 }
