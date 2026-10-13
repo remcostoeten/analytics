@@ -23,12 +23,22 @@ export const allowedImports: { [workspace: string]: string[] } = {
   "packages/engine": ["packages/contract", "packages/shared"],
   "packages/client": ["packages/shared", "packages/contract"],
   "packages/sdk": ["packages/shared", "packages/contract", "packages/client"],
-  "packages/devtools": ["packages/shared", "packages/contract", "packages/sdk"],
-  "packages/debugtools": ["packages/shared"],
+  "packages/debugtools": ["packages/shared", "packages/contract", "packages/client"],
   "apps/api": ["packages/engine", "packages/contract", "packages/shared"],
-  "apps/dashboard": ["packages/client", "packages/contract", "packages/shared"],
-  "apps/docs": ["packages/sdk", "packages/client", "packages/contract", "packages/shared"],
-  examples: ["packages/sdk", "packages/devtools", "packages/client", "packages/contract"],
+  "apps/dashboard": [
+    "packages/client",
+    "packages/contract",
+    "packages/debugtools",
+    "packages/shared",
+  ],
+  "apps/docs": [
+    "packages/sdk",
+    "packages/debugtools",
+    "packages/client",
+    "packages/contract",
+    "packages/shared",
+  ],
+  examples: ["packages/sdk", "packages/debugtools", "packages/client", "packages/contract"],
 };
 
 const sourcePattern = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;

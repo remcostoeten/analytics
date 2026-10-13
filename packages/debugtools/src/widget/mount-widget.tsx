@@ -1,8 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import type { DebugtoolsOptions } from "../options";
-import { widgetCss } from "./styles";
+import type { Nullable } from "@spoar/shared/semantic";
+
+import type { DebugtoolsOptions, WidgetGrant } from "../options";
+import { clientSource } from "../source";
+import { css } from "../styles/compiled";
 import { Widget } from "./widget";
 
 const hostTag = "spoar-debugtools";
@@ -10,26 +13,27 @@ const hostTag = "spoar-debugtools";
 function adopt(root: ShadowRoot) {
   if ("adoptedStyleSheets" in root && "replaceSync" in CSSStyleSheet.prototype) {
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync(widgetCss);
+    sheet.replaceSync(css);
     root.adoptedStyleSheets = [sheet];
     return;
   }
   const style = document.createElement("style");
-  style.textContent = widgetCss;
+  style.textContent = css;
   root.append(style);
 }
 
 /**
  * @name mountWidget
  * @description Renders the launcher and the console into a Shadow DOM root on a new
- * `<spoar-debugtools>` element at the end of `body`. The launcher stylesheet is adopted into that
- * root and React hoists the console's own stylesheet into it, so host CSS and widget CSS never
- * meet. Returns a function that unmounts React and removes the element.
+ * `<spoar-debugtools>` element at the end of `body`. The compiled stylesheet is adopted into that
+ * root, so host CSS and widget CSS never meet. The console reads the project through the widget
+ * grant, or the session cookie with `auth: "session"`; a demo start without a grant shows the
+ * fixture data. Returns a function that unmounts React and removes the element.
  *
  * @example
- * const unmount = mountWidget({ endpoint: "https://api.example.com", project: "site" });
+ * const unmount = mountWidget({ endpoint: "https://api.example.com", project: "site" }, grant);
  */
-export function mountWidget(options: DebugtoolsOptions): () => void {
+export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGrant>): () => void {
   const host = document.createElement(hostTag);
   host.style.position = "fixed";
   host.style.inset = "auto";
@@ -40,9 +44,18 @@ export function mountWidget(options: DebugtoolsOptions): () => void {
   shadow.append(container);
   document.body.append(host);
   const root = createRoot(container);
+  const live = grant !== null || options.auth === "session";
   root.render(
     <StrictMode>
-      <Widget data={options.data} />
+      <Widget
+        label={live ? options.project : `${options.project} demo`}
+        source={live ? clientSource(options, grant) : null}
+        data={options.data}
+        sections={options.sections}
+        theme={options.theme}
+        launcher={options.launcher}
+        open={options.open}
+      />
     </StrictMode>,
   );
   return () => {

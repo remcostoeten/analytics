@@ -20,11 +20,7 @@ export function DeviceDonut({ rows, hrefFor }: Props) {
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Legend">
         {slices.map((slice, order) => (
           <li key={slice.value}>
-            <Link
-              href={hrefFor(slice.value)}
-              className="flex items-center gap-1.5 hover:underline"
-              prefetch={false}
-            >
+            <Link href={hrefFor(slice.value)} className="flex items-center gap-1.5 hover:underline">
               <span
                 className="size-2 rounded-full"
                 style={{ background: `var(--series-${order + 1})` }}

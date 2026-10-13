@@ -1,5 +1,4 @@
 import { DocsBody } from "fumadocs-ui/layouts/docs/page";
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,8 +6,8 @@ import { notFound } from "next/navigation";
 import { ArrowIcon } from "@/components/landing/icons";
 import { getMDXComponents } from "@/components/mdx";
 import { getPost, listPosts, postLabel } from "@/lib/changelog";
+import { SiteShell } from "@/components/landing/site-shell";
 import { formatPostDate } from "@/lib/changelog-date";
-import { baseOptions } from "@/lib/layout-options";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -34,7 +33,7 @@ export default async function ChangelogPostPage({ params }: Props) {
   const { date, week } = formatPostDate(post.date);
   const MDX = post.body;
   return (
-    <HomeLayout {...baseOptions()}>
+    <SiteShell>
       <main className="framed mx-auto w-[min(760px,calc(100%-32px))] flex-1">
         <header className="flex flex-col gap-3">
           <Link href="/changelog" className="link-line w-fit text-[0.8rem] text-muted">
@@ -73,6 +72,6 @@ export default async function ChangelogPostPage({ params }: Props) {
           </Link>
         </footer>
       </main>
-    </HomeLayout>
+    </SiteShell>
   );
 }

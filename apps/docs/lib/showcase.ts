@@ -10,6 +10,7 @@ import type { Nullable } from "@spoar/shared/semantic";
 import { cacheLife } from "next/cache";
 
 import { apiEndpoint } from "./api-endpoint";
+import { siteProject } from "./site-project";
 import { showcaseReads, showcaseWindow } from "./showcase-period";
 
 export type Showcase = {
@@ -23,6 +24,9 @@ export type Showcase = {
 export type ShowcaseProject = PublicProject & {
   visitors: Nullable<number>;
   pageviews: Nullable<number>;
+  sessions: Nullable<number>;
+  bounceRate: Nullable<number>;
+  duration: Nullable<number>;
   change: Nullable<number>;
   series: TimeseriesPoint[];
 };
@@ -32,31 +36,15 @@ export type ShowcaseProjects = {
   list: Nullable<ProjectList>;
 };
 
-export type ProjectDetail = {
-  stats: Nullable<StatsResponse["data"]>;
-  pages: BreakdownRow[];
-  sources: BreakdownRow[];
-  countries: BreakdownRow[];
-  devices: BreakdownRow[];
-};
-
-const fallbackProject = "docs.analytics.remcostoeten.nl";
-
 /**
  * @name showcaseProject
- * @description The project the landing page shows: the one this site tracks itself into, from
- * `NEXT_PUBLIC_RA_CONFIG`, else the production docs project.
+ * @description The project the landing page shows: the one this site tracks itself into.
  *
  * @example
  * showcaseProject(); // "docs.analytics.remcostoeten.nl"
  */
 export function showcaseProject() {
-  try {
-    const config: { project?: string } = JSON.parse(process.env.NEXT_PUBLIC_RA_CONFIG ?? "{}");
-    return config.project || fallbackProject;
-  } catch {
-    return fallbackProject;
-  }
+  return siteProject();
 }
 
 /**
@@ -137,41 +125,13 @@ export async function readProjects(): Promise<ShowcaseProjects> {
         createdAt: project.createdAt,
         visitors: stats.ok ? stats.value.data.visitors.value : null,
         pageviews: stats.ok ? stats.value.data.pageviews.value : null,
+        sessions: stats.ok ? stats.value.data.sessions.value : null,
+        bounceRate: stats.ok ? stats.value.data.bounceRate.value : null,
+        duration: stats.ok ? stats.value.data.sessionDurationMs.value : null,
         change: stats.ok ? stats.value.data.visitors.change : null,
         series: series.ok ? series.value.data : [],
       };
     }),
   );
   return { projects, list: list.value };
-}
-
-/**
- * @name readProjectDetail
- * @description One public project's last 30 days in more depth, read when a visitor opens its
- * card: the full stats, the top pages, referrers, countries and devices, cached for a minute. An
- * id that is not in the public list answers null.
- *
- * @example
- * const detail = await readProjectDetail("docs.analytics.remcostoeten.nl");
- */
-export async function readProjectDetail(id: string): Promise<Nullable<ProjectDetail>> {
-  "use cache";
-  cacheLife("minutes");
-  const { projects } = await readProjects();
-  if (!projects.some((project) => project.id === id)) return null;
-  const reads = scope(id);
-  const [stats, pages, sources, countries, devices] = await Promise.all([
-    reads.stats(),
-    reads.breakdown("page", { metrics: ["visitors"], limit: 5 }),
-    reads.breakdown("referrer_domain", { metrics: ["visitors"], limit: 5 }),
-    reads.breakdown("country", { metrics: ["visitors"], limit: 5 }),
-    reads.breakdown("device", { metrics: ["visitors"], limit: 3 }),
-  ]);
-  return {
-    stats: stats.ok ? stats.value.data : null,
-    pages: pages.ok ? pages.value.data : [],
-    sources: sources.ok ? sources.value.data : [],
-    countries: countries.ok ? countries.value.data : [],
-    devices: devices.ok ? devices.value.data : [],
-  };
 }

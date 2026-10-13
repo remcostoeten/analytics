@@ -10,11 +10,11 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup();
 });
 
-function render() {
+function render(open = false) {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
-  act(() => root.render(<Widget />));
+  act(() => root.render(<Widget open={open} />));
   cleanups.push(() => {
     act(() => root.unmount());
     container.remove();
@@ -31,7 +31,7 @@ function press(init: KeyboardEventInit) {
 describe("Widget", () => {
   test("shows the launcher until opened", () => {
     const container = render();
-    expect(container.querySelector(".spd-launcher")).not.toBeNull();
+    expect(container.querySelector('[aria-label="Open the debug console"]')).not.toBeNull();
     expect(container.querySelector("[role=dialog]")).toBeNull();
   });
 
@@ -45,9 +45,18 @@ describe("Widget", () => {
 
   test("opens from the launcher and closes from the close button", () => {
     const container = render();
-    act(() => container.querySelector<HTMLButtonElement>(".spd-launcher")?.click());
+    act(() =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Open the debug console"]')?.click(),
+    );
     expect(container.querySelector("[role=dialog]")).not.toBeNull();
-    act(() => container.querySelector<HTMLButtonElement>(".spd-close")?.click());
+    act(() =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Close the debug console"]')?.click(),
+    );
     expect(container.querySelector("[role=dialog]")).toBeNull();
+  });
+
+  test("starts open with the open prop", () => {
+    const container = render(true);
+    expect(container.querySelector("[role=dialog]")).not.toBeNull();
   });
 });

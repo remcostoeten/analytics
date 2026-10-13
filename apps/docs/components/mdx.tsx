@@ -7,8 +7,8 @@ import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
 import { DashboardPreview } from "@/components/dashboard-preview";
+import { DevWidgetToggle } from "@/components/dev-widget";
 import { Flow, FlowNode } from "@/components/flow";
-import { EventJourney, KeyPlacement, PluginJourney } from "@/components/setup-illustrations";
 import { LiveRead } from "@/components/tutorial/live-read";
 import { StepDiff } from "@/components/tutorial/step-diff";
 import type { MDXComponents } from "mdx/types";
@@ -22,12 +22,10 @@ export function getMDXComponents(components?: MDXComponents) {
     Card,
     Cards,
     DashboardPreview,
-    EventJourney,
+    DevWidgetToggle,
     Flow,
     FlowNode,
-    KeyPlacement,
     LiveRead,
-    PluginJourney,
     Step,
     StepDiff,
     Steps,

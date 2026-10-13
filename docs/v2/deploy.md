@@ -145,6 +145,7 @@ Git deploys are off for all five Vercel projects: each `vercel.json` (`apps/api`
 
 - Vercel dashboard: open the project, Deployments, Create Deployment, and pick `master` (or a commit). It builds with the project's settings and, from `master`, goes to production.
 - CLI, from the repository root with the project linked: `vercel deploy --prod --cwd apps/api` (likewise `apps/docs`, `apps/dashboard`).
+- `bun run deploy`: fetches `origin/master`, shows each v2 project's live production deployment (state, commit, age, how many commits it is behind and how many touch its paths, and a newer failed or canceled attempt), asks which to deploy, confirms, starts production deploys of `master` and follows them until `READY` or `ERROR`. It reads `VERCEL_TOKEN`, or the token `vercel login` saved. `--status` only prints the table, `bun run deploy dashboard docs` skips the picker, `--yes` skips the confirmation, and `VERCEL_TEAM` overrides the team.
 
 To turn automatic deploys back on for one project, remove its `git` block.
 

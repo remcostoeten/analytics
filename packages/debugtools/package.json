@@ -1,6 +1,6 @@
 {
 	"name": "@spoar/debugtools",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "A debug console for admins on their own site, in the layout of a query console: editor, dataset library and an agent pane.",
 	"license": "MIT",
 	"repository": {
@@ -30,7 +30,9 @@
 		"./fixtures": {
 			"types": "./src/fixtures/index.ts",
 			"default": "./src/fixtures/index.ts"
-		}
+		},
+		"./styles.css": "./dist/styles.css",
+		"./tailwind.css": "./src/styles/tailwind.css"
 	},
 	"files": [
 		"dist"
@@ -56,11 +58,14 @@
 			"./fixtures": {
 				"types": "./dist/fixtures.d.mts",
 				"default": "./dist/fixtures.mjs"
-			}
+			},
+			"./styles.css": "./dist/styles.css",
+			"./tailwind.css": "./dist/tailwind.css"
 		}
 	},
 	"scripts": {
-		"build": "tsdown",
+		"build": "tsdown && bun scripts/build-styles.ts --dist",
+		"styles": "bun scripts/build-styles.ts",
 		"typecheck": "tsgo --noEmit",
 		"test": "bun test"
 	},
@@ -82,12 +87,17 @@
 	},
 	"devDependencies": {
 		"@happy-dom/global-registrator": "20.14.5",
+		"@spoar/client": "workspace:*",
+		"@spoar/contract": "workspace:*",
 		"@spoar/shared": "workspace:*",
+		"@tailwindcss/postcss": "4.3.3",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
 		"next": "16.4.0-canary.59",
+		"postcss": "8.5.28",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
+		"tailwindcss": "4.3.3",
 		"tsdown": "catalog:tsdown"
 	}
 }

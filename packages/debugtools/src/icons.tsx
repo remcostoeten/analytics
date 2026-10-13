@@ -17,7 +17,12 @@ export type IconName =
   | "trend"
   | "rows"
   | "user"
-  | "agent";
+  | "agent"
+  | "dock"
+  | "float"
+  | "maximize"
+  | "restore"
+  | "close";
 
 const paths: { [Name in IconName]: ReactNode } = {
   builder: (
@@ -80,17 +85,33 @@ const paths: { [Name in IconName]: ReactNode } = {
       <path d="M1.5 14c.5-2.4 2.3-3.75 4.5-3.75s4 1.35 4.5 3.75M11 3.5l1 1.5 1.5.5-1.5.5-1 1.5-.5-1.5L9 5l1.5-.5z" />
     </>
   ),
+  dock: (
+    <>
+      <rect x="2" y="2.75" width="12" height="10.5" rx="1.5" />
+      <path d="M2 9.5h12" />
+    </>
+  ),
+  float: (
+    <>
+      <rect x="2" y="2.75" width="12" height="10.5" rx="1.5" />
+      <rect x="7.5" y="6.5" width="4.5" height="4" rx="0.75" />
+    </>
+  ),
+  maximize: <path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9" />,
+  restore: <path d="M13.5 2.5 9.5 6.5M9.5 3v3.5H13M2.5 13.5l4-4M6.5 13V9.5H3" />,
+  close: <path d="m4 4 8 8M12 4l-8 8" />,
 };
 
 type Props = {
   name: IconName;
   size?: number;
+  className?: string;
 };
 
-export function Icon({ name, size = 14 }: Props) {
+export function Icon({ name, size = 14, className }: Props) {
   return (
     <svg
-      className="spc-icon"
+      className={className ? `block flex-none ${className}` : "block flex-none"}
       width={size}
       height={size}
       viewBox="0 0 16 16"

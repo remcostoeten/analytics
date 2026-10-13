@@ -7,7 +7,7 @@ const shared: UserConfig = {
   dts: { eager: true },
   sourcemap: true,
   minify: true,
-  deps: { alwaysBundle: [/^@spoar\/shared/] },
+  deps: { alwaysBundle: [/^@spoar\/shared/, /^@spoar\/contract/, /^@spoar\/client/] },
 };
 
 const client: UserConfig = { ...shared, banner: { js: '"use client";' } };
@@ -17,7 +17,14 @@ export default defineConfig([
     ...shared,
     entry: { index: "src/index.ts" },
     deps: {
-      alwaysBundle: [/^@spoar\/shared/, /^react($|\/)/, /^react-dom($|\/)/, /^scheduler/],
+      alwaysBundle: [
+        /^@spoar\/shared/,
+        /^@spoar\/contract/,
+        /^@spoar\/client/,
+        /^react($|\/)/,
+        /^react-dom($|\/)/,
+        /^scheduler/,
+      ],
     },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     clean: true,

@@ -62,29 +62,6 @@ async function Rail({ stats, scope, view, state, base, project }: RailProps) {
   );
 }
 
-type SummaryProps = Omit<RailProps, "base"> & {
-  path: string;
-  canAnnotate: boolean;
-};
-
-async function Summary({ stats, scope, view, state, path, project, canAnnotate }: SummaryProps) {
-  const data = await stats;
-  const total = data ? data[view.stat].value : null;
-  const change = data ? data[view.stat].change : null;
-  return (
-    <SummarySection
-      scope={scope}
-      view={view}
-      state={state}
-      path={path}
-      total={total}
-      change={change}
-      project={project}
-      canAnnotate={canAnnotate}
-    />
-  );
-}
-
 async function Vitals({ project, state, base }: Pick<RailProps, "project" | "state" | "base">) {
   const scope = await speedScope(project, state);
   const read = await scope.speed({
@@ -126,11 +103,6 @@ async function QuickActions({ project }: Pick<RailProps, "project">) {
       </a>
     </div>
   );
-}
-
-async function AnnotatedSummary(props: Omit<SummaryProps, "canAnnotate">) {
-  const session = await readSession();
-  return <Summary {...props} canAnnotate={session.isAdmin} />;
 }
 
 export default async function Page({ params, searchParams }: Props) {
@@ -178,7 +150,16 @@ export default async function Page({ params, searchParams }: Props) {
           key={`summary${path}${viewQuery(state)}`}
           fallback={<SectionSkeleton height={430} />}
         >
-          <AnnotatedSummary {...shared} stats={stats} path={path} project={project} />
+          <SummarySection
+            {...shared}
+            path={path}
+            project={project}
+            headline={stats.then((data) => ({
+              total: data ? data[view.stat].value : null,
+              change: data ? data[view.stat].change : null,
+            }))}
+            canAnnotate={readSession().then((session) => session.isAdmin)}
+          />
         </Suspense>
         <Suspense
           key={`country${path}${viewQuery(state)}`}

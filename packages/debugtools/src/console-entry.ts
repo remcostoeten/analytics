@@ -1,4 +1,10 @@
 export { Console } from "./console";
+export { LiveConsole } from "./live/live-console";
+export { clientSource, timeRanges } from "./source";
+export type { ConsoleSource, TimeRange } from "./source";
+export type { DebugtoolsOptions, WidgetGrant } from "./options";
+export { defaultSections, resolveSections } from "./sections";
+export type { ConsoleSection, ConsoleSections, ResolvedSections } from "./sections";
 export { highlightLine, parseEmphasis } from "./highlight";
 export { cycleLength, defaultPace, frameAt, scriptLengths } from "./timeline";
 export type { Frame, Pace, ScriptLengths } from "./timeline";
@@ -8,6 +14,7 @@ export type {
   AgentStep,
   AgentStepKind,
   ConsoleData,
+  ConsoleTheme,
   Dataset,
   DatasetField,
   FieldKind,

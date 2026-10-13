@@ -1,0 +1,257 @@
+.landing .console-run {
+  transition: transform 160ms var(--ease-out);
+}
+
+.landing .console-run:active {
+  transform: scale(0.97);
+  transition-duration: 100ms;
+}
+
+.landing :is(.console-item, .console-tab, .console-open) {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.landing :is(.console-run, .console-item, .console-tab, .console-open):focus-visible {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.45);
+}
+
+.landing .console-tab-indicator {
+  transition:
+    transform 240ms var(--ease-in-out),
+    opacity 150ms ease;
+}
+
+.landing .console-tab-indicator[data-hidden] {
+  opacity: 0;
+}
+
+.landing .console-progress {
+  opacity: 0;
+  transform-origin: left;
+}
+
+.landing .console-bar {
+  width: var(--w);
+  transform-origin: left;
+}
+
+.landing .console-column {
+  height: var(--h);
+  transform-origin: bottom;
+}
+
+.landing .console-workbench[data-animate] {
+  .console-swap {
+    animation: console-swap 220ms var(--ease-out) both;
+  }
+
+  .console-progress {
+    animation: console-progress 420ms var(--ease-in-out) both;
+  }
+
+  .console-meta {
+    animation: console-fade 200ms ease 300ms both;
+  }
+
+  .console-row {
+    animation: console-row 260ms var(--ease-out) calc(var(--i, 0) * 40ms + 280ms) both;
+  }
+
+  .console-bar {
+    animation: bar-grow 420ms var(--ease-out) calc(var(--i, 0) * 40ms + 300ms) both;
+  }
+
+  .console-column {
+    animation: console-column 360ms var(--ease-out) calc(var(--i, 0) * 12ms + 280ms) both;
+  }
+}
+
+@keyframes console-swap {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(3px);
+  }
+}
+
+@keyframes console-progress {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+  70% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes console-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes console-row {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes console-column {
+  from {
+    opacity: 0.4;
+    transform: scaleY(0.04);
+  }
+}
+
+.landing .draw-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing[data-reveal] .step:not([data-shown]) :is(.step-card *, .step-card *::after) {
+    animation-play-state: paused;
+  }
+
+  .landing[data-reveal] .step[data-shown=""] {
+    --step: calc(var(--i, 0) * 110ms);
+
+    .step-card {
+      animation: step-card 760ms var(--ease-in-out) var(--step) both;
+    }
+
+    .step-badge {
+      animation: step-badge 420ms var(--ease-out) calc(var(--step) + 380ms) both;
+    }
+
+    .orbit-core {
+      animation: step-pop 520ms var(--ease-out) calc(var(--step) + 220ms) both;
+    }
+
+    .orbit-mark {
+      animation:
+        orbit-out 640ms var(--ease-out) calc(var(--step) + 300ms + var(--i, 0) * 45ms) both,
+        orbit-bob 4800ms ease-in-out calc(var(--i, 0) * -640ms) infinite;
+    }
+
+    .orbit-lines {
+      animation: console-fade 600ms ease calc(var(--step) + 520ms) both;
+    }
+
+    :is(.proxy-card, .read-visual) {
+      animation: step-rise 560ms var(--ease-out) calc(var(--step) + 240ms) both;
+    }
+
+    .proxy-route {
+      animation: step-badge 420ms var(--ease-out) calc(var(--step) + 460ms) both;
+    }
+  }
+
+  .landing[data-reveal] .principle:not([data-shown]) .draw-path {
+    stroke-dashoffset: 1;
+  }
+
+  .landing[data-reveal] .principle[data-shown=""] .draw-path {
+    animation: draw-path 720ms var(--ease-in-out)
+      calc(var(--i, 0) * 140ms + var(--d, 0) * 180ms + 160ms) both;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing .step-visual {
+      animation: step-drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+
+@keyframes step-card {
+  from {
+    clip-path: inset(7% 7% 7% 7% round 16px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 16px);
+  }
+}
+
+@keyframes step-badge {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes step-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes orbit-out {
+  from {
+    opacity: 0;
+    transform: translate(var(--ox), var(--oy)) scale(0.6);
+  }
+}
+
+@keyframes step-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes step-drift {
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes draw-path {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing .console-item:not([aria-pressed="true"]):hover {
+    background-color: rgb(255 255 255 / 0.04);
+    color: var(--console-fg);
+  }
+
+  .landing .console-tab:not([aria-pressed="true"]):hover,
+  .landing .console-open:hover {
+    color: var(--console-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing .console-run {
+    transform: none !important;
+  }
+
+  .landing .console-tab-indicator {
+    transition: opacity 150ms ease;
+  }
+}

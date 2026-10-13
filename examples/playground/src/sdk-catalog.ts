@@ -10,7 +10,7 @@ export type SdkEntry =
   | "@spoar/sdk/server"
   | "@spoar/sdk/proxy"
   | "@spoar/sdk/admin"
-  | "@spoar/devtools";
+  | "@spoar/debugtools";
 
 export type Kit = {
   analytics: () => Analytics;
@@ -41,7 +41,7 @@ export const entryNotes: { [Entry in SdkEntry]: string } = {
   "@spoar/sdk/proxy": "A first-party `/_ra` route that forwards browser events to the API.",
   "@spoar/sdk/admin":
     "Typed reads and settings over the HTTP API with an API token. Runs in this page.",
-  "@spoar/devtools": "The admin dev widget for your own site.",
+  "@spoar/debugtools": "The admin debug console for your own site.",
 };
 
 function toJson<Value>(value: Value): Json {
@@ -711,17 +711,17 @@ export const sdkMethods: SdkMethod[] = [
   ),
 
   codeOnly(
-    "@spoar/devtools",
+    "@spoar/debugtools",
     "mount",
     "mount(options): () => void",
-    "Mounts the dev widget in a Shadow DOM panel and returns an unmount function.",
-    `${importLine("mount", "@spoar/devtools")}\n\nconst unmount = mount({\n  endpoint: "https://api.analytics.remcostoeten.nl",\n  project: "PROJECT",\n});`,
+    "Mounts the debug console in a Shadow DOM root and returns an unmount function.",
+    `${importLine("mount", "@spoar/debugtools")}\n\nconst unmount = mount({\n  endpoint: "https://api.analytics.remcostoeten.nl",\n  project: "PROJECT",\n});`,
   ),
   codeOnly(
-    "@spoar/devtools",
-    "Devtools",
-    "<Devtools endpoint project />",
-    "The widget as a React component, from `@spoar/devtools/react` or `@spoar/devtools/next`.",
-    `${importLine("Devtools", "@spoar/devtools/next")}\n\n<Devtools endpoint="https://api.analytics.remcostoeten.nl" project="PROJECT" />`,
+    "@spoar/debugtools",
+    "Debugtools",
+    "<Debugtools endpoint project />",
+    "The console as a React component, from `@spoar/debugtools/react` or `@spoar/debugtools/next`.",
+    `${importLine("Debugtools", "@spoar/debugtools/next")}\n\n<Debugtools endpoint="https://api.analytics.remcostoeten.nl" project="PROJECT" />`,
   ),
 ];

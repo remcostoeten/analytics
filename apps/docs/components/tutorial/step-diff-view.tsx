@@ -5,7 +5,8 @@ import { FileDiff } from "@pierre/diffs/react";
 import { useState } from "react";
 import type { CSSProperties } from "react";
 
-import { diffThemes, registerDiffThemes } from "@/lib/diff-themes";
+import { diffOptions } from "@/lib/diff-options";
+import { registerDiffThemes } from "@/lib/diff-themes";
 
 // Server rendering reuses the prerendered HTML; loading themes there blocks the prerender.
 if (typeof window !== "undefined") registerDiffThemes();
@@ -24,12 +25,23 @@ type Props = {
 
 type DiffStyle = "unified" | "split";
 
-type DiffVariables = CSSProperties & { "--diffs-font-family": string; "--diffs-font-size": string };
+type DiffVariables = CSSProperties & Record<`--diffs-${string}`, string>;
 
 const diffStyleVariables: DiffVariables = {
   colorScheme: "inherit",
   "--diffs-font-family": "var(--font-mono)",
   "--diffs-font-size": "13px",
+  "--diffs-line-height": "1.7",
+  "--diffs-addition-color-override": "var(--ok)",
+  "--diffs-deletion-color-override": "var(--err)",
+  "--diffs-bg-addition-override": "color-mix(in srgb, var(--ok) 70%, var(--surface))",
+  "--diffs-bg-deletion-override": "color-mix(in srgb, var(--err) 70%, var(--surface))",
+  "--diffs-bg-addition-number-override": "color-mix(in srgb, var(--ok) 70%, var(--surface))",
+  "--diffs-bg-deletion-number-override": "color-mix(in srgb, var(--err) 70%, var(--surface))",
+  "--diffs-bg-context-override": "var(--surface)",
+  "--diffs-bg-context-gutter-override": "var(--surface)",
+  "--diffs-fg-number-addition-override": "var(--muted)",
+  "--diffs-fg-number-deletion-override": "var(--muted)",
 };
 
 const styles: { value: DiffStyle; label: string }[] = [
@@ -75,7 +87,7 @@ export function StepDiffView({ changes }: Props) {
           lineAnnotations={change.annotations}
           prerenderedHTML={diffStyle === "unified" ? change.prerenderedHTML : undefined}
           renderAnnotation={(annotation) => <Note text={annotation.metadata.text} />}
-          options={{ theme: diffThemes, diffStyle, overflow: "wrap" }}
+          options={diffOptions(change.added, diffStyle)}
           className="overflow-hidden rounded-[10px] border border-line"
           style={diffStyleVariables}
         />

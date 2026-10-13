@@ -13,30 +13,6 @@ export function formatCount(value: number) {
 }
 
 /**
- * @name formatPercent
- * @description Formats a share from 0 to 1 as a whole percentage.
- *
- * @example
- * formatPercent(0.412); // "41%"
- */
-export function formatPercent(share: number) {
-  return `${Math.round(share * 100)}%`;
-}
-
-/**
- * @name formatDuration
- * @description Formats milliseconds as seconds under a minute, otherwise minutes and seconds.
- *
- * @example
- * formatDuration(95_000); // "1m 35s"
- */
-export function formatDuration(ms: number) {
-  const seconds = Math.round(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-}
-
-/**
  * @name countryName
  * @description Turns an ISO 3166-1 alpha-2 code into the English country name, or returns the
  * code when the runtime does not know it.
@@ -63,4 +39,30 @@ export function countryName(code: string) {
 export function formatVital(metric: string, value: number) {
   if (metric === "cls") return value.toFixed(2);
   return value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(1)} s`;
+}
+
+/**
+ * @name formatShare
+ * @description Formats a share from 0 to 1 as a whole percentage.
+ *
+ * @example
+ * formatShare(0.426); // "43%"
+ */
+export function formatShare(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+/**
+ * @name formatDuration
+ * @description Formats a duration in milliseconds as seconds under a minute, else minutes and
+ * seconds.
+ *
+ * @example
+ * formatDuration(83_000); // "1m 23s"
+ */
+export function formatDuration(ms: number) {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const rest = seconds % 60;
+  return rest === 0 ? `${seconds / 60}m` : `${Math.floor(seconds / 60)}m ${rest}s`;
 }

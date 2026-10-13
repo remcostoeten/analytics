@@ -1,0 +1,15 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./theme.css";
+
+@source "../**/*.{ts,tsx}";
+@source not "./compiled.ts";
+@source not inline("collapse container");
+
+@layer base {
+  :host {
+    all: initial;
+  }
+}

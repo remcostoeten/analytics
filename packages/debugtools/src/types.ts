@@ -1,3 +1,5 @@
+export type ConsoleTheme = "dark" | "light" | "system";
+
 export type FieldKind = "string" | "number" | "boolean" | "time";
 
 export type DatasetField = {

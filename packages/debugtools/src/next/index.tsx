@@ -21,4 +21,6 @@ export function Debugtools(props: DebugtoolsOptions) {
   return <Lazy {...props} />;
 }
 
-export type { DebugtoolsOptions } from "../options";
+export type { ConsoleAuth, DebugtoolsOptions, LauncherSide } from "../options";
+export type { ConsoleSection, ConsoleSections } from "../sections";
+export type { ConsoleTheme } from "../types";

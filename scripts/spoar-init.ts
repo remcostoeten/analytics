@@ -63,7 +63,7 @@ Options:
   --secret-key <key>     Write the secret to .env.local when used with --write-env
   --write-env             Write .env.local as well as .env.local.example
   --directory <path>     App directory (default: current directory)
-  --no-install           Do not install @spoar/sdk@next
+  --no-install           Do not install @spoar/sdk@latest
   --force                Replace generated files
   --dry-run              Show changes without writing or installing
   --help                 Show this help`;
@@ -457,13 +457,13 @@ async function writeChanges(directory: string, files: FileChange[], force: boole
 async function installSDK(directory: string, packageJSON: PackageJSON) {
   if (packageHas(packageJSON, "@spoar/sdk")) return "@spoar/sdk is already installed";
   const manager = packageManager(directory, packageJSON);
-  const result = Bun.spawnSync([...manager.args, "@spoar/sdk@next"], {
+  const result = Bun.spawnSync([manager.command, ...manager.args, "@spoar/sdk@latest"], {
     cwd: directory,
     stdout: "inherit",
     stderr: "inherit",
   });
-  if (result.exitCode !== 0) throw new Error("Could not install @spoar/sdk@next");
-  return `Installed @spoar/sdk@next with ${manager.command}`;
+  if (result.exitCode !== 0) throw new Error("Could not install @spoar/sdk@latest");
+  return `Installed @spoar/sdk@latest with ${manager.command}`;
 }
 
 function nextInstructions(detection: Detection): string {
@@ -504,7 +504,7 @@ async function main() {
   for (const file of files) console.log(`  ${relativeLabel(options.directory, file.path)}`);
 
   if (options.dryRun) {
-    if (!options.noInstall) console.log("  install @spoar/sdk@next");
+    if (!options.noInstall) console.log("  install @spoar/sdk@latest");
     console.log(`\n${nextInstructions(detection)}`);
     return;
   }

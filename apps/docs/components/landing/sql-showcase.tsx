@@ -64,9 +64,13 @@ export function SqlShowcase({ tabs, initial }: Props) {
         showActive(next?.id ?? state.id);
         dispatch(form);
       }}
-      className="flex min-w-0 flex-col gap-5"
+      className="flex min-w-0 flex-col gap-4"
     >
-      <div role="group" aria-label="Queries" className="flex flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label="Queries"
+        className="flex w-full max-w-full gap-0.5 self-start overflow-x-auto rounded-full border border-line bg-bg/40 p-1 [scrollbar-width:none] sm:w-fit"
+      >
         {tabs.map((candidate) => {
           const selected = candidate.id === tab.id;
           return (
@@ -77,10 +81,8 @@ export function SqlShowcase({ tabs, initial }: Props) {
               value={candidate.id}
               aria-pressed={selected}
               disabled={pending && selected}
-              className={`rounded-full border px-3.5 py-1.5 font-serif text-[0.9rem] transition-colors duration-200 ${
-                selected
-                  ? "border-fg bg-fg text-surface"
-                  : "border-line text-muted hover:border-fg/40 hover:text-fg"
+              className={`shrink-0 rounded-full px-3 py-1 font-serif text-[0.86rem] whitespace-nowrap transition-colors duration-200 ${
+                selected ? "bg-fg text-surface" : "text-muted hover:text-fg"
               }`}
             >
               {candidate.title}
@@ -89,29 +91,34 @@ export function SqlShowcase({ tabs, initial }: Props) {
         })}
       </div>
       <p className="font-serif text-[1.05rem] text-fg">{tab.question}</p>
-      <div className="min-w-0">
-        <CodeFrame
-          files={tab.variants.map((candidate) => ({ id: candidate.id, title: candidate.file }))}
-          active={variant.id}
-          lang={variant.lang}
-          code={variant.source}
-          onSelect={(id) => {
-            const next = tab.variants.find((candidate) => candidate.id === id);
-            if (next) setLanguage(next.id);
-          }}
-        >
-          {variant.rendered}
-        </CodeFrame>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6">
+        <div className="min-w-0">
+          <CodeFrame
+            files={tab.variants.map((candidate) => ({ id: candidate.id, title: candidate.file }))}
+            active={variant.id}
+            lang={variant.lang}
+            code={variant.source}
+            wrap
+            onSelect={(id) => {
+              const next = tab.variants.find((candidate) => candidate.id === id);
+              if (next) setLanguage(next.id);
+            }}
+          >
+            {variant.rendered}
+          </CodeFrame>
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
+          <p
+            aria-live="polite"
+            className={`font-mono text-[0.72rem] ${state.outcome.status === "failed" && !pending ? "text-err" : "text-muted"}`}
+          >
+            {describe(state.outcome, pending)}
+          </p>
+          {state.outcome.status === "done" ? (
+            <Rows outcome={state.outcome} faded={pending || active !== state.id} />
+          ) : null}
+        </div>
       </div>
-      <p
-        aria-live="polite"
-        className={`font-mono text-[0.72rem] ${state.outcome.status === "failed" && !pending ? "text-err" : "text-muted"}`}
-      >
-        {describe(state.outcome, pending)}
-      </p>
-      {state.outcome.status === "done" ? (
-        <Rows outcome={state.outcome} faded={pending || active !== state.id} />
-      ) : null}
     </form>
   );
 }
@@ -147,7 +154,7 @@ function Rows({
               {row.map((cell, column) => (
                 <td
                   key={columns[column]}
-                  className={`px-3 py-1.5 ${asNumber(cell) !== null ? "text-right font-mono text-fg" : "text-fg/85"}`}
+                  className={`px-3 py-1 ${asNumber(cell) !== null ? "text-right font-mono text-fg" : "text-fg/85"}`}
                 >
                   {display(cell)}
                 </td>

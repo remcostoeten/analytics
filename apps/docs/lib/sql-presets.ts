@@ -23,13 +23,16 @@ export const sqlPresets: readonly SqlPreset[] = [
     id: "pages",
     title: "Top pages",
     question: "Which pages did people read, and how many of them?",
-    sql: `SELECT path, count(DISTINCT visitor_id) AS visitors, count(*) AS pageviews
+    sql: `SELECT path,
+  count(DISTINCT visitor_id) AS visitors,
+  count(*) AS pageviews
 FROM events
-WHERE name = 'pageview' AND is_human AND ts >= :from AND ts < :to
+WHERE name = 'pageview' AND is_human
+  AND ts >= :from AND ts < :to
 GROUP BY path
 ORDER BY visitors DESC, pageviews DESC
-LIMIT 8`,
-    read: 'breakdown("page", { metrics: ["visitors", "pageviews"], limit: 8 })',
+LIMIT 5`,
+    read: 'breakdown("page", { metrics: ["visitors", "pageviews"], limit: 5 })',
   },
   {
     id: "countries",
@@ -37,24 +40,29 @@ LIMIT 8`,
     question: "Where do the visitors come from?",
     sql: `SELECT country, count(DISTINCT visitor_id) AS visitors
 FROM events
-WHERE is_human AND country IS NOT NULL AND ts >= :from AND ts < :to
+WHERE is_human AND country IS NOT NULL
+  AND ts >= :from AND ts < :to
 GROUP BY country
 ORDER BY visitors DESC
-LIMIT 8`,
-    read: 'breakdown("country", { metrics: ["visitors"], limit: 8 })',
+LIMIT 5`,
+    read: 'breakdown("country", { metrics: ["visitors"], limit: 5 })',
   },
   {
     id: "sources",
     title: "Sources",
     question: "Which sites send sessions here, and how many bounce?",
-    sql: `SELECT coalesce(referrer_domain, 'direct') AS source, channel, count(*) AS sessions,
-  cast(round(100.0 * count(*) FILTER (WHERE is_bounce) / count(*)) AS integer) AS bounce_pct
+    sql: `SELECT coalesce(referrer_domain, 'direct') AS source,
+  channel,
+  count(*) AS sessions,
+  cast(round(100.0 * count(*) FILTER (WHERE is_bounce)
+    / count(*)) AS integer) AS bounce_pct
 FROM sessions
-WHERE is_human AND started_at >= :from AND started_at < :to
+WHERE is_human
+  AND started_at >= :from AND started_at < :to
 GROUP BY source, channel
 ORDER BY sessions DESC
-LIMIT 8`,
-    read: 'breakdown("referrer_domain", { metrics: ["sessions", "bounce_rate"], limit: 8 })',
+LIMIT 5`,
+    read: 'breakdown("referrer_domain", { metrics: ["sessions", "bounce_rate"], limit: 5 })',
   },
   {
     id: "devices",
@@ -65,8 +73,8 @@ FROM events
 WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY device, browser
 ORDER BY visitors DESC
-LIMIT 8`,
-    read: 'breakdown("device", { metrics: ["visitors"], limit: 8 })',
+LIMIT 5`,
+    read: 'breakdown("device", { metrics: ["visitors"], limit: 5 })',
   },
   {
     id: "vitals",
@@ -75,7 +83,8 @@ LIMIT 8`,
     sql: `SELECT metric,
   round(percentile_cont(0.75) WITHIN GROUP (ORDER BY value)) AS p75,
   count(*) AS samples,
-  cast(round(100.0 * count(*) FILTER (WHERE rating = 'good') / count(*)) AS integer) AS good_pct
+  cast(round(100.0 * count(*) FILTER (WHERE rating = 'good')
+    / count(*)) AS integer) AS good_pct
 FROM web_vitals
 WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY metric
@@ -85,7 +94,7 @@ ORDER BY metric`,
   {
     id: "days",
     title: "Per day",
-    question: "How did the last two weeks go, day by day?",
+    question: "How did the last week go, day by day?",
     sql: `SELECT date_trunc('day', ts) AS day,
   count(DISTINCT visitor_id) AS visitors,
   count(*) FILTER (WHERE name = 'pageview') AS pageviews
@@ -93,7 +102,7 @@ FROM events
 WHERE is_human AND ts >= :from AND ts < :to
 GROUP BY day
 ORDER BY day DESC
-LIMIT 14`,
+LIMIT 7`,
     read: 'timeseries("visitors", { interval: "day" })',
   },
 ];

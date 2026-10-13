@@ -136,7 +136,7 @@ function Visitors({ visitors, hrefFor, canFollow }: VisitorsProps) {
             <tr key={row.visitor}>
               <td className="font-mono text-xs">
                 {canFollow ? (
-                  <Link href={hrefFor(row.visitor)} className="hover:underline" prefetch={false}>
+                  <Link href={hrefFor(row.visitor)} className="hover:underline">
                     {row.visitor.slice(0, 8)}
                   </Link>
                 ) : (
@@ -183,11 +183,7 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="flex flex-wrap items-center gap-2">
               {canFollow ? (
-                <Link
-                  href={hrefFor(session.id)}
-                  className="font-mono hover:underline"
-                  prefetch={false}
-                >
+                <Link href={hrefFor(session.id)} className="font-mono hover:underline">
                   {session.id.slice(0, 8)}
                 </Link>
               ) : (

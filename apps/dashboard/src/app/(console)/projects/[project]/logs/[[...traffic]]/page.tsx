@@ -10,9 +10,10 @@ import { FilterChips } from "@/modules/analytics/components/filter-chips";
 import { OutcomeSection } from "@/modules/analytics/components/outcome-section";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
 import { logPath, logTraffic, trafficOptions } from "@/modules/analytics/logs";
-import { listProjects, readScope } from "@/modules/analytics/reads";
+import { readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
+import { ProjectDomain } from "@/modules/shell/components/project-domain";
 import { SectionSkeleton } from "@/modules/shell/components/skeletons";
 
 type Props = {
@@ -40,9 +41,7 @@ export default async function Page({ params, searchParams }: Props) {
   const base = `/projects/${encodeURIComponent(project)}`;
   const path = logPath(base, traffic);
 
-  const [projects, scope] = await Promise.all([listProjects(), readScope(project, state)]);
-  const found = projects.ok ? projects.value.find((entry) => entry.id === project) : undefined;
-  if (!found) notFound();
+  const scope = await readScope(project, state);
   const scoped = scope.traffic(traffic);
   const key = `${path}${viewQuery(state)}`;
 
@@ -51,7 +50,9 @@ export default async function Page({ params, searchParams }: Props) {
       <header className="log-toolbar">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-serif text-3xl tracking-tight">Logs</h1>
-          <span className="font-mono text-xs text-muted">{found.domain}</span>
+          <Suspense fallback={null}>
+            <ProjectDomain project={project} />
+          </Suspense>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -63,7 +64,6 @@ export default async function Page({ params, searchParams }: Props) {
                   href={`${logPath(base, option.value)}${viewQuery(state)}`}
                   aria-current={option.value === traffic ? "page" : undefined}
                   className="segment"
-                  prefetch={false}
                 >
                   {option.label}
                 </Link>

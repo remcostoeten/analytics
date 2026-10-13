@@ -1,241 +1,71 @@
 import type { Metadata } from "next";
-import { Newsreader } from "next/font/google";
 import Link from "next/link";
 
-import { ChevronIcon } from "@/components/landing/icons";
-import { LandingNav } from "@/components/landing/landing-nav";
-import { changelog } from "@/generated/changelog";
 import { listPosts, postLabel } from "@/lib/changelog";
+import { SiteShell } from "@/components/landing/site-shell";
 import { formatPostDate } from "@/lib/changelog-date";
-import { dashboardUrl } from "@/lib/dashboard-url";
-
-const serif = Newsreader({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  axes: ["opsz"],
-  variable: "--font-newsreader",
-});
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description:
-    "Product updates and package releases for Spoar, privacy-first web analytics you host yourself.",
-  alternates: { canonical: "/changelog" },
+  description: "New features and changes in Spoar, one post per change.",
 };
-
-function inlineChange(text: string) {
-  return text.split(/(`[^`]+`)/g).map((part, index) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-}
-
-type Version = (typeof changelog.releases)[number]["versions"][number];
-
-function ReleaseVersion({ version }: { version: Version }) {
-  return (
-    <div className="max-w-[44rem]">
-      <h4 className="font-mono text-sm text-fg">{version.version}</h4>
-      <div className="mt-4 flex flex-col gap-6">
-        {version.sections.map((section) => (
-          <div key={section.title}>
-            <p className="caps text-muted">{section.title}</p>
-            <ul className="mt-3 flex list-disc flex-col gap-4 pl-5 font-serif text-[1.02rem] leading-[1.7] text-fg marker:text-muted [&_code]:rounded [&_code]:bg-line/40 [&_code]:px-1 [&_code]:py-px [&_code]:font-mono [&_code]:text-[0.85em]">
-              {section.changes.map((change) => (
-                <li key={change} className="[&>p+p]:mt-3">
-                  {change.split("\n\n").map((paragraph) => (
-                    <p key={paragraph}>{inlineChange(paragraph)}</p>
-                  ))}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function ChangelogPage() {
   const posts = listPosts();
   return (
-    <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
-      <LandingNav loginHref={dashboardUrl("/sign-in")} />
-      <main className="hero-wash flex-1 px-4 pt-32 pb-20 font-serif sm:pt-40 sm:pb-28">
-        <div className="container-land flex flex-col gap-14 sm:gap-20">
-          <header className="max-w-2xl">
-            <span className="caps text-muted">Changelog</span>
-            <h1 className="mt-3 font-serif text-[2.8rem] leading-[1.04] font-light tracking-[-0.025em] text-fg sm:text-[4.2rem]">
-              What changed in <em className="accent-text">Spoar</em>
-            </h1>
-            <p className="mt-5 max-w-xl font-serif text-[1.05rem] leading-relaxed text-muted">
-              Releases, dashboard updates and API changes for privacy-first web analytics you host
-              yourself.
-            </p>
-          </header>
-
-          <section aria-labelledby="posts-heading" className="flex flex-col gap-6">
-            <div>
-              <span className="caps text-muted">Posts</span>
-              <h2
-                id="posts-heading"
-                className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
-              >
-                New in Spoar
-              </h2>
-            </div>
-            <ol className="flex flex-col">
-              {posts.map((post) => {
-                const { date, week } = formatPostDate(post.date);
-                return (
-                  <li
-                    key={post.slug}
-                    className="grid gap-4 border-t border-line py-8 md:grid-cols-[14rem_1fr] md:gap-10"
-                  >
-                    <div className="flex flex-col gap-1 text-sm">
-                      <time dateTime={post.date} className="text-fg">
-                        {date}
-                      </time>
-                      <span className="text-muted">{week}</span>
-                    </div>
-                    <Link
-                      href={`/changelog/${post.slug}`}
-                      className="group flex max-w-[44rem] flex-col gap-3"
-                    >
-                      <span className="caps text-muted">{postLabel(post.label)}</span>
-                      <h3 className="font-serif text-[1.6rem] leading-[1.2] font-light tracking-[-0.01em] text-fg group-hover:underline">
-                        {post.title}
-                      </h3>
-                      <p className="font-serif text-[1.02rem] leading-relaxed text-muted">
-                        {post.description}
-                      </p>
-                      {post.image ? (
-                        <img
-                          src={post.image}
-                          alt={post.imageAlt ?? ""}
-                          loading="lazy"
-                          className="mt-2 aspect-video w-full rounded-2xl border border-line bg-surface object-cover object-top"
-                        />
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-
-          <section aria-labelledby="releases-heading" className="flex flex-col gap-6">
-            <div>
-              <span className="caps text-muted">Packages</span>
-              <h2
-                id="releases-heading"
-                className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
-              >
-                Package releases
-              </h2>
-            </div>
-            <div className="flex flex-col gap-12 sm:gap-16">
-              {changelog.releases.map((release) => {
-                const [latest, ...earlier] = release.versions;
-                return (
-                  <article
-                    key={release.name}
-                    className="grid gap-6 border-t border-line pt-8 md:grid-cols-[14rem_1fr] md:gap-10"
-                  >
-                    <div className="md:sticky md:top-28 md:self-start">
-                      <h3 className="font-mono text-[0.95rem] text-fg">{release.name}</h3>
-                      <a
-                        href={`https://www.npmjs.com/package/${release.name}`}
-                        className="link-line mt-2 inline-block text-sm text-muted"
-                      >
-                        View on npm
-                      </a>
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-8">
-                      {latest ? <ReleaseVersion version={latest} /> : null}
-                      {earlier.length > 0 ? (
-                        <details className="group rounded-2xl border border-line">
-                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm text-muted transition-colors duration-150 ease-[ease] select-none group-open:border-b group-open:border-line hover:text-fg [&::-webkit-details-marker]:hidden">
-                            {earlier.length} earlier {earlier.length > 1 ? "releases" : "release"}
-                            <ChevronIcon className="size-4 shrink-0 transition-transform duration-200 ease-(--ease-out) group-open:rotate-180" />
-                          </summary>
-                          <div className="flex flex-col gap-10 px-5 py-6 group-open:animate-settle">
-                            {earlier.map((version) => (
-                              <ReleaseVersion key={version.version} version={version} />
-                            ))}
-                          </div>
-                        </details>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
-          {changelog.updates.length > 0 ? (
-            <section aria-labelledby="updates-heading" className="flex flex-col gap-6">
-              <div>
-                <span className="caps text-muted">Repository</span>
-                <h2
-                  id="updates-heading"
-                  className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
-                >
-                  Recent product updates
-                </h2>
-              </div>
-              <div className="flex flex-col divide-y divide-line border-y border-line">
-                {changelog.updates.map((group) => (
-                  <section key={group.date} className="grid gap-4 py-6 sm:grid-cols-[9rem_1fr]">
-                    <h3 className="font-mono text-xs text-muted">{group.date}</h3>
-                    <ul className="flex flex-col gap-3">
-                      {group.updates.map((update) => (
-                        <li
-                          key={`${update.scope}-${update.title}`}
-                          className="font-serif text-[0.95rem] leading-relaxed text-fg"
-                        >
-                          <span className="mr-2 font-mono text-xs text-muted">{update.scope}</span>
-                          {update.title}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          <p className="text-sm text-muted">
-            Read the{" "}
-            <Link href="/docs" className="link-line text-fg">
-              documentation
-            </Link>{" "}
-            or browse the project on{" "}
-            <a href="https://github.com/remcostoeten/analytics" className="link-line text-fg">
-              GitHub
-            </a>
+    <SiteShell>
+      <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
+        <header className="flex max-w-xl flex-col gap-3">
+          <span className="caps text-muted">Changelog</span>
+          <h1 className="text-[1.75rem] leading-[1.2] font-medium tracking-[-0.015em] text-fg">
+            What changed in Spoar
+          </h1>
+          <p className="text-[0.9rem] leading-relaxed text-muted">
+            One post per change worth knowing about. Every package version is listed in the{" "}
+            <Link href="/docs/changelog" className="link-line text-fg">
+              package changelog
+            </Link>
             .
           </p>
-        </div>
+        </header>
+        <section>
+          <ol className="flex flex-col">
+            {posts.map((post) => {
+              const { date, week } = formatPostDate(post.date);
+              return (
+                <li
+                  key={post.slug}
+                  className="grid gap-3 border-t border-line py-8 first:border-t-0 first:pt-0 md:grid-cols-[180px_1fr] md:gap-8"
+                >
+                  <div className="flex flex-col gap-1 text-[0.8rem]">
+                    <time dateTime={post.date} className="text-fg">
+                      {date}
+                    </time>
+                    <span className="text-muted">{week}</span>
+                  </div>
+                  <Link href={`/changelog/${post.slug}`} className="group flex flex-col gap-3">
+                    <span className="caps text-muted">{postLabel(post.label)}</span>
+                    <h2 className="text-[1.15rem] leading-[1.3] font-medium tracking-[-0.01em] text-fg group-hover:underline">
+                      {post.title}
+                    </h2>
+                    <p className="max-w-xl text-[0.875rem] leading-relaxed text-muted">
+                      {post.description}
+                    </p>
+                    {post.image ? (
+                      <img
+                        src={post.image}
+                        alt={post.imageAlt ?? ""}
+                        loading="lazy"
+                        className="mt-2 aspect-video w-full rounded-[10px] border border-line bg-surface object-cover object-top"
+                      />
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
       </main>
-      <footer className="footer-wash px-4 pt-12 pb-10">
-        <div className="container-land flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-          <Link href="/" className="font-medium tracking-tight">
-            Spoar
-          </Link>
-          <p className="font-serif text-sm text-muted">
-            <Link href="/docs" className="link-line text-fg">
-              Documentation
-            </Link>{" "}
-            ·{" "}
-            <a href="https://github.com/remcostoeten/analytics" className="link-line text-fg">
-              GitHub
-            </a>
-          </p>
-        </div>
-      </footer>
-    </div>
+    </SiteShell>
   );
 }

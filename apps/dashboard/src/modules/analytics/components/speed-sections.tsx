@@ -172,7 +172,6 @@ export async function SpeedRoutes({ scope, view, state, path }: Props) {
                       href={routeHref(path, state, row.route)}
                       title={`Filter by ${row.route}`}
                       className="hover:underline"
-                      prefetch={false}
                     >
                       {row.route}
                     </Link>
@@ -249,7 +248,6 @@ export async function SpeedElements({ scope, view, state, path }: Props) {
                       href={routeHref(path, state, row.route)}
                       title={`Filter by ${formatDimensionValue("route", row.route)}`}
                       className="hover:underline"
-                      prefetch={false}
                     >
                       {row.route}
                     </Link>

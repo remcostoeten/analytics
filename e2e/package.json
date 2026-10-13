@@ -11,10 +11,10 @@
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8",
+		"@next/playwright": "16.4.0-canary.59",
 		"@playwright/test": "1.62.0",
 		"@spoar/api": "workspace:*",
 		"@spoar/client": "workspace:*",
-		"@spoar/devtools": "workspace:*",
 		"@spoar/engine": "workspace:*",
 		"@spoar/sdk": "workspace:*"
 	}

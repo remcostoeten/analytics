@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"generate": "bun scripts/generate-reference.ts && bun scripts/generate-changelog.ts && fumadocs-mdx",
+		"generate": "bun scripts/generate-reference.ts && fumadocs-mdx",
 		"dev": "bun run generate && next dev --port 3200",
 		"build": "bun run generate && next build",
 		"start": "next start --port 3200",
@@ -13,8 +13,8 @@
 	},
 	"dependencies": {
 		"@pierre/diffs": "1.5.2",
-		"@pierre/trees": "1.0.0-beta.6",
 		"@spoar/client": "workspace:*",
+		"@spoar/debugtools": "workspace:*",
 		"@spoar/sdk": "workspace:*",
 		"fumadocs-core": "16.16.0",
 		"fumadocs-mdx": "15.4.6",
