@@ -1,24 +1,140 @@
 ---
 title: Options
-description: What createAnalytics accepts.
+description: Every option createAnalytics accepts, with its type, default and an example.
+icon: Settings2
 ---
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `project`, `key` | from the environment | Project slug and public key (`pk_...`). An empty `key` leaves the `key` query parameter out, which works only behind the proxy |
-| `endpoint` | `/_ra` | A same-origin path behind the proxy, or the API's `/v2/events` URL |
-| `consent` | `"optional"` | `"required"` holds everything until `consent.grant()` and then sends it |
-| `privacySignals` | `"respect"` | `"ignore"` keeps sending when the browser has Do Not Track or Global Privacy Control on. Brave turns Global Privacy Control on by default |
-| `plugins` | `[]` | Plugins to start with |
-| `pageviews` | `true` | Automatic pageviews; set `false` when a router adapter sends them |
-| `mode` | `"auto"` | `"development"` logs instead of sending unless `endpoint` is set; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser and `?ra=nodebug` off again, keeping the visitor id |
-| `release` | none | Attached to every event, and used to tie errors to a deploy |
-| `environment` | none | Attached to errors |
-| `beforeSend` | none | `(event) => event \| null` to change or drop any event |
-| `autostart` | `true` in browsers | `false` to call `start()` yourself |
-| `transport` | `fetch` and `sendBeacon` | A custom `Transport` with `send(envelope, unloading)` |
+```ts
+import { createAnalytics } from "@spoar/sdk";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_live_...",
+  endpoint: "/_ra",
+});
+```
+
+All options are optional. Explicit options win over the [build config](#environment).
+
+## Connection
+
+### `project`
+
+`string`. The project slug, as shown in the dashboard. Read from the build config when left out.
+
+### `key`
+
+`string`. The project's public key (`pk_...`). Safe to ship to the browser. An empty `key` leaves the `key` query parameter out, which only works behind the [proxy](/docs/sdk/proxy).
+
+### `endpoint`
+
+`string`, default `"/_ra"`. Where batches are sent. Either a same-origin path served by the proxy, or the API's full `/v2/events` URL.
+
+```ts
+createAnalytics({ endpoint: "https://api.analytics.remcostoeten.nl/v2/events" });
+```
+
+### `transport`
+
+`Transport`, default `fetch` with `sendBeacon` when the page is hidden. Replace it to send batches yourself.
+
+```ts
+type Transport = {
+  send: (envelope: Envelope, unloading: boolean) => Promise<SendResult>;
+};
+```
+
+```ts
+createAnalytics({
+  transport: {
+    async send(envelope) {
+      const res = await fetch("/my-route", { method: "POST", body: JSON.stringify(envelope) });
+      return res.ok
+        ? { ok: true, result: await res.json() }
+        : { ok: false, retry: res.status >= 500, status: res.status };
+    },
+  },
+});
+```
+
+## Privacy
+
+### `consent`
+
+`"optional" | "required"`, default `"optional"`. With `"required"` nothing is sent until `analytics.consent.grant()` is called; held events are then sent.
+
+```ts
+const analytics = createAnalytics({ consent: "required" });
+acceptButton.onclick = () => analytics.consent.grant();
+```
+
+### `privacySignals`
+
+`"respect" | "ignore"`, default `"respect"`. With `"respect"`, a browser with Do Not Track or Global Privacy Control on sends nothing. `"ignore"` sends anyway. Brave turns Global Privacy Control on by default, so Brave visitors are not counted unless you set `"ignore"`.
+
+## Behavior
+
+### `plugins`
+
+`Plugin[]`, default `[]`. Plugins to start with. See [Plugins](/docs/sdk/plugins).
+
+```ts
+import { errors, speedInsights } from "@spoar/sdk/plugins";
+
+createAnalytics({ plugins: [errors(), speedInsights()] });
+```
+
+### `pageviews`
+
+`boolean`, default `true`. Sends a pageview on load and on history changes. Set `false` when a router adapter such as [`<Analytics />`](/docs/sdk/next) sends them, or each pageview is counted twice.
+
+### `autostart`
+
+`boolean`, default `true` in browsers. With `false`, nothing runs until you call `analytics.start()`.
+
+### `mode`
+
+`"auto" | "development" | "production"`, default `"auto"`. In `"development"` events are logged to the console instead of sent, unless `endpoint` is set. `"auto"` picks from `NODE_ENV`.
+
+### `debug`
+
+`boolean`, default `false`. Prints `[ra]` lines to the console. Open any page with `?ra=debug` to switch it on in that browser and `?ra=nodebug` to switch it off. The visitor id is kept.
+
+## Metadata
+
+### `release`
+
+`string`. Attached to every event, and used to tie errors to a deploy.
+
+```ts
+createAnalytics({ release: process.env.NEXT_PUBLIC_GIT_SHA });
+```
+
+### `environment`
+
+`string`. Attached to errors, for example `"production"` or `"staging"`.
+
+### `beforeSend`
+
+`(event: WireEvent) => WireEvent | null`. Runs on every event before it is queued. Return a changed event, or `null` to drop it.
+
+```ts
+createAnalytics({
+  beforeSend(event) {
+    if (event.path.startsWith("/admin")) return null;
+    return event;
+  },
+});
+```
 
 ## Environment
 
-When an option is left out, the client reads JSON from the first of `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` and `VITE_RA_CONFIG` that is set. Explicit options win.
+When an option is left out, the client reads a JSON object from the first of `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` and `VITE_RA_CONFIG` that is set.
+
+```bash
+NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_live_...","endpoint":"/_ra"}'
+```
+
+```ts
+export const analytics = createAnalytics();
+```

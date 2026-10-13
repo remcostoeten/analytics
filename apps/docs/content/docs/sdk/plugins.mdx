@@ -1,9 +1,10 @@
 ---
 title: Plugins
-description: Opt-in features, each in its own file so an app only ships what it uses.
+description: Every plugin exported from @spoar/sdk/plugins, with its signature and a usage example.
+icon: Puzzle
 ---
 
-Import plugins from `@spoar/sdk/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`:
+Import plugins from `@spoar/sdk/plugins` and pass them in `plugins`, or add one later with `analytics.use(plugin)`.
 
 ```ts
 import { createAnalytics } from "@spoar/sdk";
@@ -17,8 +18,190 @@ export const analytics = createAnalytics({
 });
 ```
 
-Each plugin has its own page in the Plugins section, with its options, the events it sends and their props:
+Each plugin has its own page with the events it sends and their props. The [overview](/docs/plugins) has one table of every plugin and explains how to write your own.
 
-- [Overview](/docs/plugins): every plugin in one table, and how to write your own.
-- [Groups](/docs/plugins/groups): companies, workspaces and teams as the `group:<type>` dimension.
-- [Speed insights](/docs/plugins/speed-insights), [Errors](/docs/plugins/errors), [Experiments](/docs/plugins/experiments) and the rest are listed in the overview.
+## Plugins
+
+### `pageviews()`
+
+```ts
+pageviews(): Plugin
+```
+
+Sends a `pageview` on load and on client-side navigation. It is on by default, so add it yourself only after setting `pageviews: false`. See [Pageviews](/docs/plugins/pageviews).
+
+```ts
+createAnalytics({ pageviews: false, plugins: [pageviews()] });
+```
+
+### `speedInsights(options?)`
+
+```ts
+speedInsights(options?: { sampleRate?: number; random?: () => number; load?: () => Promise<Vitals> }): Plugin
+```
+
+Sends `web_vital` for LCP, INP, CLS, FCP and TTFB. `sampleRate` is the share of page loads that measure, from 0 to 1, and defaults to 1. `random` and `load` exist for tests. See [Speed insights](/docs/plugins/speed-insights).
+
+```ts
+createAnalytics({ plugins: [speedInsights({ sampleRate: 0.5 })] });
+```
+
+### `errors()`
+
+```ts
+errors(): Plugin
+```
+
+Sends `error` for uncaught errors and unhandled rejections, with the last 20 breadcrumbs. Messages, stacks and breadcrumbs are scrubbed of query strings, emails, tokens and long numbers. See [Errors](/docs/plugins/errors).
+
+```ts
+createAnalytics({ plugins: [errors()] });
+```
+
+### `scrub(text)`
+
+```ts
+scrub(text: string): string
+```
+
+The scrubbing function `errors()` uses, exported for your own error reporting.
+
+```ts
+scrub("GET /api/users?token=abc failed for ada@example.com"); // "GET /api/users[x] failed for [x]"
+```
+
+### `scrollDepth()`
+
+```ts
+scrollDepth(): Plugin
+```
+
+Sends `scroll_depth` with the deepest percentage reached on a page. See [Scroll depth](/docs/plugins/scroll-depth).
+
+```ts
+createAnalytics({ plugins: [scrollDepth()] });
+```
+
+### `engagement()`
+
+```ts
+engagement(): Plugin
+```
+
+Sends `engagement` with the milliseconds a page was visible. See [Engagement](/docs/plugins/engagement).
+
+```ts
+createAnalytics({ plugins: [engagement()] });
+```
+
+### `clicks()`
+
+```ts
+clicks(): Plugin
+```
+
+Sends `click` for elements with `data-ra-click`. See [Clicks](/docs/plugins/clicks).
+
+```ts
+createAnalytics({ plugins: [clicks()] });
+```
+
+### `outboundLinks()`
+
+```ts
+outboundLinks(): Plugin
+```
+
+Sends `outbound_click` for links to other hosts and `file_download` for file links. See [Outbound links](/docs/plugins/outbound-links).
+
+```ts
+createAnalytics({ plugins: [outboundLinks()] });
+```
+
+### `forms()`
+
+```ts
+forms(): Plugin
+```
+
+Sends `form_submit` with the form id and action path. See [Forms](/docs/plugins/forms).
+
+```ts
+createAnalytics({ plugins: [forms()] });
+```
+
+### `ignoreSelf()`
+
+```ts
+ignoreSelf(): Plugin
+```
+
+Sends nothing. Opening any page with `?ra=ignore` opts that browser out. See [Ignore self](/docs/plugins/ignore-self).
+
+```ts
+createAnalytics({ plugins: [ignoreSelf()] });
+```
+
+### `botSignals()`
+
+```ts
+botSignals(): Plugin
+```
+
+Sends nothing of its own. It adds bot hint bits to every event. See [Bot signals](/docs/plugins/bot-signals).
+
+```ts
+createAnalytics({ plugins: [botSignals()] });
+```
+
+### `experiments(assigned)`
+
+```ts
+experiments(assigned: { [experiment: string]: string }): Plugin
+```
+
+Sends `experiment_exposure` per experiment and adds an `experiment:<id>` prop to every event. See [Experiments](/docs/plugins/experiments).
+
+```ts
+createAnalytics({ plugins: [experiments({ hero: "b" })] });
+```
+
+### `notFound()`
+
+```ts
+notFound(): Plugin
+```
+
+Sends `not_found` with the referrer on pages marked as not found. See [Not found](/docs/plugins/not-found).
+
+```ts
+createAnalytics({ plugins: [notFound()] });
+```
+
+### `groups<Groups>()`
+
+```ts
+groups<Map extends GroupMap = GroupMap>(): Groups<Map>
+```
+
+Returns a plugin with `set(type, id, traits?)` and `leave(type)`. Joined groups are added to every event as the `group:<type>` dimension. See [Groups](/docs/plugins/groups).
+
+```ts
+const workspace = groups<{ company: { plan: "free" | "pro" } }>();
+
+createAnalytics({ plugins: [workspace] });
+workspace.set("company", "acme", { plan: "pro" });
+```
+
+### `speedProps(metric, sampleRate, connection)`
+
+```ts
+speedProps(metric: Measured, sampleRate: number, connection: string | null): Props
+```
+
+Turns a web-vitals metric into `web_vital` props. `speedInsights()` uses it, and it is exported for custom measuring.
+
+## Types
+
+- `SpeedOptions`: the options of `speedInsights`.
+- `Groups<Map>` and `TraitsArgs<Map, Type>`: the plugin type `groups()` returns and the typed arguments of its `set`.

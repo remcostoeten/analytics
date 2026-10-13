@@ -1,6 +1,7 @@
 ---
 title: Alert retries
 description: How often and for how long a failed alert delivery is tried again, and how to change it.
+icon: Wrench
 ---
 
 Every channel retries a failed delivery, since a webhook or Discord can be down as well as a mail server. Retrying is the delivery queue's job: each run of the alerts job sends what is due, so a failure is never retried twice over.

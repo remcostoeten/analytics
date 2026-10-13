@@ -21,6 +21,8 @@
 		"fumadocs-openapi": "12.2.0",
 		"fumadocs-ui": "16.16.0",
 		"geist": "1.7.2",
+		"lucide-react": "1.56.0",
+		"motion": "14.2.0",
 		"next": "16.4.0-canary.59",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",

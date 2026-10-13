@@ -1,23 +1,14 @@
 ---
 title: Read client
 description: Query every metric from TypeScript with @spoar/client, a chainable scope per project with one typed method per read route, plus the admin namespaces.
+icon: Gauge
 ---
 
-`@spoar/client` is the typed client for the v2 API, for the dashboard, scripts, CI and anything else that reads numbers. It is separate from `@spoar/sdk`, which only sends events. Every call resolves to a `Result` and never throws.
-
-## Install
+`@spoar/client` is the typed client for the v2 API. Use it in the dashboard, scripts, CI and anything else that reads numbers. It is separate from `@spoar/sdk`, which only sends events. Every call resolves to a `Result` and never throws.
 
 ```sh
 bun add @spoar/client
 ```
-
-## Auth and errors
-
-Pass `token` for an `at_` [API token](/docs/guides/read-your-data#1-create-a-token) with the `read` scope (`sql` for `query`, `admin` for the admin namespaces), or `credentials: "include"` from a browser signed in to the dashboard. A public project needs neither. A `token` that is the empty string answers `NO_TOKEN` without a request, which is what an unset environment variable looks like.
-
-Every method resolves to `{ ok: true, value }` or `{ ok: false, error }`. `error.code` is a code from the API's [error catalog](/docs/api/overview#errors), or `NO_TOKEN`, `NETWORK`, `TIMEOUT`, `ABORTED`, `BAD_URL` or `BAD_RESPONSE` when no answer came back. `error.status`, `error.details` and `error.requestId` carry what the API sent.
-
-## Quick start
 
 ```ts
 import { createClient } from "@spoar/client";
@@ -40,70 +31,283 @@ if (!pages.ok) console.error(pages.error.code, pages.error.message);
 else console.table(pages.value.data);
 ```
 
+## createClient
+
+```ts
+createClient<const Projects extends string>(options: ClientOptions<Projects>): Client<Projects>
+
+type ClientOptions<Projects> = {
+  endpoint: string;
+  token?: string;
+  credentials?: "include" | "same-origin" | "omit";
+  projects?: readonly Projects[];
+  fetch?: Fetcher;
+  timeoutMs?: number;
+};
+```
+
+- `endpoint`: the API's base URL.
+- `token`: an `at_` [API token](/docs/guides/read-your-data#1-create-a-token). It needs the `read` scope, `sql` for `query`, and `admin` for the admin namespaces. An empty string answers `NO_TOKEN` without a request, which is what an unset environment variable looks like.
+- `credentials`: pass `"include"` from a browser that is signed in to the dashboard. A public project needs neither a token nor credentials.
+- `projects`: the project names you read. They type the `project` argument of the admin methods and become properties, so `api.blog` is the scope for `"blog"`. A name that is not a valid identifier, or that matches a client method, stays reachable through `api.project(name)`.
+- `fetch`: replaces the global `fetch`.
+- `timeoutMs`: how long one request may take before it fails with `TIMEOUT`.
+
+## Results and errors
+
+Every method resolves to one of two shapes:
+
+```ts
+type Result<Value> =
+  | { ok: true; value: Value }
+  | { ok: false; error: ClientError };
+
+type ClientError = {
+  code: string;
+  message: string;
+  status: number | null;
+  details: ErrorDetails | null;
+  requestId: string | null;
+};
+```
+
+`code` is a code from the API's [error catalog](/docs/api/overview#errors), or one of these when no answer came back:
+
+- `NO_TOKEN`: `token` is an empty string.
+- `NETWORK`: the request did not reach the API.
+- `TIMEOUT`: the request ran past `timeoutMs`.
+- `ABORTED`: an `AbortSignal` cancelled the request.
+- `BAD_URL`: `endpoint` is not a valid URL.
+- `BAD_RESPONSE`: the answer was not the expected JSON.
+
+`status`, `details` and `requestId` carry what the API sent.
+
 ## Scopes
 
-Reads and admin calls have different shapes. Every read route takes the same range, traffic, environment and filters, so reads hang off a scope you narrow once and reuse across many reads. Admin routes create, change and remove one record at a time, so they are namespaces with verbs, such as `api.projects.list()` and `api.tokens.create(...)`.
+Every read route takes the same range, traffic, environment and filters. You narrow a scope once and reuse it for many reads. Each link returns a new scope and leaves the old one untouched.
 
 ```ts
 const view = api.blog.period("7d").human().where({ country: "NL" });
 await view.stats();
 await view.visitors();
-
-await api.projects.get("blog");
 ```
 
-The client itself is the combined scope over every project the caller may read, on the routes under `/v2`. `api.project("example.com")` is the scope over one project under `/v2/projects/example.com`. A project name that is a valid identifier, passed in `projects`, is also a property, such as `api.blog` for `"blog"`. A project named like a client method is still reachable through `project()`.
+The client itself is the combined scope over every project the caller may read, on the routes under `/v2`. `api.project("example.com")` is the scope over one project, under `/v2/projects/example.com`.
 
-Links return a new scope and leave the old one untouched, so one scope can feed many reads.
+### period
 
-| Link | Sets |
-| --- | --- |
-| `period("24h" \| "7d" \| "30d" \| "90d" \| "12mo" \| "all")` | `period`, clearing an explicit range |
-| `between(from, to)` | `from` and `to`, as `Date` or ISO 8601 strings, clearing `period` |
-| `traffic("human" \| "bots" \| "internal" \| "all")`, `human()` | `traffic` |
-| `environment("production" \| "preview" \| "all")` | `environment` |
-| `where({ country: "NL", page: "!/admin" })` | one `filter[<dimension>]` per key; a leading `!` excludes |
-| `exclude({ page: "/admin" })` | the same filters, negated |
-| `apply(options)` | a plain options object, for URL state |
-| `toQuery()` | the exact query string the API receives |
-| `key(route, ...args)` | a serialisable cache key for one read, equal for equal requests |
+```ts
+period(period: "24h" | "7d" | "30d" | "90d" | "12mo" | "all"): Scope
+```
 
-Dimensions are the registry names (`page`, `route`, `referrer_domain`, `country`, `browser`, `device`, `utm_source`, `event`, `release`, ...) plus `prop:<key>`, `trait:<key>` and `group:<type>`. On the combined scope `project` is a dimension too. Metrics are `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth`, `conversion_rate`, and `sum:prop.<key>` or `avg:prop.<key>` over a numeric prop. All of them are literal types, so a typo fails the typecheck.
+Sets `period` and clears an explicit range.
+
+### between
+
+```ts
+between(from: Date | string, to: Date | string): Scope
+```
+
+Sets `from` and `to`, as `Date` or ISO 8601 strings, and clears `period`.
+
+### traffic and human
+
+```ts
+traffic(traffic: "human" | "bots" | "internal" | "all"): Scope
+human(): Scope
+```
+
+`human()` is `traffic("human")`.
+
+### environment
+
+```ts
+environment(environment: "production" | "preview" | "all"): Scope
+```
+
+### where and exclude
+
+```ts
+where(filters: Filters): Scope
+exclude(filters: Filters): Scope
+```
+
+`where` adds one `filter[<dimension>]` per key. A value that starts with `!` excludes it. `exclude` adds the same filters, negated. Filters merge, and the newest value for a dimension wins.
+
+```ts
+api.blog.where({ country: "NL", page: "!/admin" });
+api.blog.exclude({ page: "/admin" });
+```
+
+Dimensions are the registry names (`page`, `route`, `referrer_domain`, `country`, `browser`, `device`, `utm_source`, `event`, `release` and the rest), plus `prop:<key>`, `trait:<key>` and `group:<type>`. On the combined scope, `project` is a dimension too.
+
+### apply
+
+```ts
+apply(options: ReadOptions): Scope
+```
+
+Sets a plain options object on the scope. Use it to restore state kept in the URL.
+
+### toQuery
+
+```ts
+toQuery(): Query
+```
+
+Returns the exact query parameters the API receives.
+
+```ts
+api.blog.period("7d").where({ country: "NL" }).toQuery();
+// { period: "7d", "filter[country]": "NL" }
+```
+
+### key
+
+```ts
+key(route: string, ...args: unknown[]): readonly ["spoar", project, route, query, ...args]
+```
+
+Returns a serialisable cache key for one read. Two scopes that send the same request give equal keys, whatever order you chained the links in. See [Caching](#caching).
+
+## Metrics
+
+A metric is one of `visitors`, `sessions`, `pageviews`, `events`, `bounce_rate`, `session_duration`, `pages_per_session`, `time_on_page`, `scroll_depth` or `conversion_rate`. For a numeric prop, use `sum:prop.<key>` or `avg:prop.<key>`. Metrics and dimensions are literal types, so a typo fails the typecheck.
 
 ## Reads
 
-Every terminal is named after its route and takes only that route's own options; the scope supplies the rest.
+Each read is named after its route. It takes only that route's own options, and the scope supplies the rest. Methods that take a `Page` accept `{ limit?: number; cursor?: string }`.
 
-| Method | Route |
-| --- | --- |
-| `stats()` | `stats` |
-| `timeseries(metric, { interval, compare })` | `timeseries` |
-| `breakdown(dimension, { metrics, limit, cursor })` | `breakdown/:dimension` |
-| `realtime({ include, limit })`, `realtimeEvents({ limit, after })` | `realtime`, `realtime/events` |
-| `liveEvents({ signal })` | an async iterable over `realtime/events`, following the cursor |
-| `liveVisitors({ everyMs, limit, signal })` | on a project, an async iterable over `realtime/visitors`, read every 5 seconds by default |
-| `paths(page, { direction, limit, cursor })` | `paths` |
-| `retention({ interval })`, `lifecycle({ interval })`, `stickiness()` | `retention`, `lifecycle`, `stickiness` |
-| `heatmap({ metric, timezone })`, `map({ level, limit, cursor })` | `heatmap`, `map` |
-| `speed(...)`, `speedTimeseries(...)`, `speedRoutes(...)`, `speedElements(...)` | `speed/*` |
-| `issues({ status, limit, cursor })` | `issues` |
-| `events({ name, limit, cursor })`, `visitors(...)`, `sessions(...)` | `events`, `visitors`, `sessions` |
-| `query(sql, params)` | `query` |
+### stats
 
-Some methods exist on only one kind of scope:
+```ts
+stats(): Result<StatsResponse>
+```
 
-| Scope | Extra methods |
-| --- | --- |
-| One project | `realtimeVisitors`, `realtimeSessions`, `overview`, `annotations` |
-| | `issue`, `issueEvents`, `updateIssue`, `errorRules`, `createErrorRule`, `removeErrorRule` |
-| | `visitor`, `visitorVisits`, `updateVisitor`, `sessionEvents` |
-| Combined | `projectBreakdown`, `people`, `person` |
+Totals for the scope's range.
 
-`scope.download` has the list routes as files: `breakdown`, `paths`, `map`, `events`, `visitors`, `sessions`, and on a project `visitorVisits` and `sessionEvents`. Each takes `{ format: "csv" | "sql", limit }` and answers the file's text.
+### timeseries
+
+```ts
+timeseries(metric: Metric, options?: { interval?: Interval; compare?: "previous" }): Result<TimeseriesResponse>
+```
+
+One metric over time. `compare: "previous"` adds the previous period.
+
+### breakdown
+
+```ts
+breakdown(dimension: Dimension, options?: Page & { metrics?: Metric[] }): Result<BreakdownResponse>
+```
+
+Rows grouped by one dimension, on the route `breakdown/:dimension`.
+
+### realtime
+
+```ts
+realtime(options?: { include?: "visitors"; limit?: number }): Result<RealtimeResponse>
+realtimeEvents(options?: { limit?: number; after?: string }): Result<LiveEvents>
+```
+
+### liveEvents
+
+```ts
+liveEvents(options?: { limit?: number; after?: string; signal?: AbortSignal }): AsyncGenerator<Result<LiveEvent>>
+```
+
+An async iterable over `realtime/events` that follows the cursor.
+
+```ts
+const controller = new AbortController();
+for await (const next of api.blog.liveEvents({ signal: controller.signal })) {
+  if (next.ok) console.log(next.value);
+}
+```
+
+### liveVisitors
+
+```ts
+liveVisitors(options?: { limit?: number; everyMs?: number; signal?: AbortSignal }): AsyncGenerator<Result<ActiveVisitors>>
+```
+
+On a project scope only. An async iterable that reads `realtime/visitors` every `everyMs`, 5000 by default, until the signal aborts or a call fails.
+
+### paths
+
+```ts
+paths(page: string, options?: Page & { direction?: PathDirection }): Result<PathsResponse>
+```
+
+### retention, lifecycle and stickiness
+
+```ts
+retention(options?: { interval?: Interval }): Result<RetentionResponse>
+lifecycle(options?: { interval?: Interval }): Result<LifecycleResponse>
+stickiness(): Result<StickinessResponse>
+```
+
+### heatmap and map
+
+```ts
+heatmap(options?: { metric?: HeatmapMetric; timezone?: string }): Result<HeatmapResponse>
+map(options?: Page & { level?: MapLevel }): Result<MapResponse>
+```
+
+### speed
+
+```ts
+speed(options?: SpeedOptions): Result<SpeedResponse>
+speedTimeseries(options?: SpeedOptions): Result<SpeedTimeseries>
+speedRoutes(options?: SpeedListOptions): Result<SpeedRouteList>
+speedElements(options?: SpeedListOptions): Result<SpeedElementList>
+```
+
+These read the `speed/*` routes.
+
+### issues
+
+```ts
+issues(options?: Page & { status?: IssueStatus }): Result<IssueList>
+```
+
+### events, visitors and sessions
+
+```ts
+events(options?: Page & { name?: string }): Result<EventList>
+visitors(options?: Page): Result<VisitorList>
+sessions(options?: Page): Result<SessionList>
+```
+
+### query
+
+```ts
+query(sql: string, params?: QueryParams): Result<QueryResult>
+```
+
+Runs [SQL](/docs/api/sql) over the project's views. Needs a token with the `sql` scope.
+
+## Methods on one kind of scope
+
+A project scope adds:
+
+- `realtimeVisitors(options?)`, `realtimeSessions(options?)`, `overview()` and `annotations(page?)`.
+- `issue(id)`, `issueEvents(id, page?)`, `updateIssue(id, changes)`, `errorRules()`, `createErrorRule(rule)` and `removeErrorRule(rule)`.
+- `visitor(id)`, `visitorVisits(id, page?)`, `updateVisitor(id, changes)` and `sessionEvents(id, page?)`.
+
+The combined scope adds `projectBreakdown(...)`, `people(page?)` and `person(userId)`.
+
+## Downloads
+
+`scope.download` returns the list routes as files: `breakdown`, `paths`, `map`, `events`, `visitors` and `sessions`. On a project it also has `visitorVisits` and `sessionEvents`. Each takes `{ format: "csv" | "sql", limit?: number }` plus that route's own options, and resolves to the file's text.
+
+```ts
+const csv = await api.blog.period("30d").download.breakdown("page", { format: "csv", limit: 500 });
+if (csv.ok) await Bun.write("pages.csv", csv.value);
+```
 
 ## Caching
 
-The client keeps no state: each call is one request. To cache, dedupe or poll, hand `key()` to a cache such as TanStack Query. Keys start with `["spoar", project]`, so invalidating that prefix refreshes every read of a project.
+The client keeps no state, so each call is one request. To cache, dedupe or poll, give `key()` to a cache such as TanStack Query. Keys start with `["spoar", project]`, so invalidating that prefix refreshes every read of a project.
 
 ```ts
 const scope = api.project("example.com").period("7d");
@@ -118,19 +322,66 @@ useQuery({
 });
 ```
 
-## Admin
+## Admin namespaces
 
-The namespaces hold the routes that are not reads. A `project` argument is typed by the names passed in `projects`.
+Routes that are not reads create, change and remove one record at a time, so they are namespaces with verbs. A `project` argument is typed by the names in `projects`.
 
-| Namespace | Methods |
-| --- | --- |
-| `api.projects` | `list(query?)`, `get(project)`, `create(project)`, `update(project, changes)`, `rotateKey(project, kind)`, and the owner-only `remove(project)` |
-| `api.tokens` | `list()`, `create(token)`, `revoke(token)` |
-| `api.alerts` | `sync(project, targets)`, `list(project)`, `set(project, target)`, `remove(project, name)`, `test(project, name)`, `rotate(project, name)`, `deliveries(project, query?)`, `status()` |
-| `api.annotations` | `list(project, query?)`, `create(project, annotation)`, `update(project, id, changes)`, `remove(project, id)` |
-| `api.sql` | `explain(sql, params?)`, `schema()`, `history()`, `saved()`, `save(query)`, `get(query)`, `update(query, changes)`, `remove(query)` |
-| `api.system` | `health()`, `session()`, `metrics()`, `runJob(job, { days })` |
+```ts
+await api.projects.list();
+await api.tokens.create({ name: "ci", scope: "read" });
+```
 
-`mail`, `webhook` and `discord` build alert targets for `alerts.sync` and `alerts.set`.
+### projects
 
-See the [API reference](/docs/api/overview) for every route's parameters and response shape; the client's option types are the same as the query parameters there.
+- `list(query?)`
+- `get(project)`
+- `create(project)`
+- `update(project, changes)`
+- `rotateKey(project, kind)`
+- `remove(project)`, which only an owner may call
+
+### tokens
+
+- `list()`
+- `create(token)`
+- `revoke(token)`
+
+### alerts
+
+- `sync(project, targets)`
+- `list(project)`
+- `set(project, target)`
+- `remove(project, name)`
+- `test(project, name)`
+- `rotate(project, name)`
+- `deliveries(project, query?)`
+- `status()`
+
+`mail`, `webhook` and `discord` build the targets for `sync` and `set`. [Admin](/docs/sdk/admin) shows them in use.
+
+### annotations
+
+- `list(project, query?)`
+- `create(project, annotation)`
+- `update(project, id, changes)`
+- `remove(project, id)`
+
+### sql
+
+- `explain(sql, params?)`
+- `schema()`
+- `history()`
+- `saved()`
+- `save(query)`
+- `get(query)`
+- `update(query, changes)`
+- `remove(query)`
+
+### system
+
+- `health()`
+- `session()`
+- `metrics()`
+- `runJob(job, { days })`
+
+The [API reference](/docs/api/overview) lists every route's parameters and response shape. The client's option types match the query parameters there.

@@ -1,13 +1,14 @@
 ---
 title: Debug console
 description: A SQL console for admins on their own site, docked to the bottom of the page. It ships as @spoar/debugtools and visitors never download it.
+icon: Bug
 ---
 
-`@spoar/debugtools` opens a SQL console over your live site, visible only to you: a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search and your recent queries. It runs [SQL](/docs/api/sql) against the project the page tracks. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
+`@spoar/debugtools` opens a SQL console over your live site. Only you see it. It has a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search, and your recent queries. It runs [SQL](/docs/api/sql) against the project the page tracks. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
 
 ## Try it here
 
-This site runs the console. Signed in as an admin of this site's project you see live data; anyone else sees sample data.
+This site runs the console. Signed in as an admin of this site's project, you see live data. Anyone else sees sample data.
 
 <DevWidgetToggle />
 
@@ -21,23 +22,41 @@ npm install @spoar/debugtools
 
 ## Requirements
 
-The loader asks [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for an admin check first: your browser holds an API session as an owner or an admin of the project, the site's origin is in the project's allowed origins, and the API shares the site's registrable domain. Visitors without that session load nothing past the loader.
+The loader first calls [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for an admin check. The check passes when all three hold:
 
-The check answers a widget token (`wt_`) for that one project, and the console sends it with every query, fetching a new one a minute before it expires. Queries need the project's `sqlEnabled` switch on; without it the console shows the 403.
+- Your browser has an API session as an owner or an admin of the project.
+- The site's origin is in the project's allowed origins.
+- The API shares the site's registrable domain.
+
+Visitors without that session load nothing past the loader.
+
+A passing check returns a widget token (`wt_`) for that one project. The console sends it with every query and fetches a new one a minute before it expires. Queries need the project's `sqlEnabled` switch on. Without it the console shows the 403.
 
 ## Entries
 
-| Entry | Use it for |
-| --- | --- |
-| `@spoar/debugtools` | `mount(options)` on any page. The console chunk brings its own React. Returns a function that removes it |
-| `@spoar/debugtools/react` | `<Debugtools />` in a React app. Uses the app's React |
-| `@spoar/debugtools/next` | `<Debugtools />` in the App Router, loaded with `next/dynamic` and `ssr: false` |
-| `@spoar/debugtools/console` | `<Console />` alone, without the loader or the admin check, to embed the console in your own page. Bring its styles with one of the two stylesheet entries below |
-| `@spoar/debugtools/tailwind.css` | The console's theme tokens and base styles for an app that runs Tailwind v4 |
-| `@spoar/debugtools/styles.css` | The compiled stylesheet for an app without Tailwind |
-| `@spoar/debugtools/fixtures` | `consoleFixture`, sample data for `<Console />` and the `data` option |
+### mount
 
-### Next.js
+```ts
+import { mount } from "@spoar/debugtools";
+
+mount(options: DebugtoolsOptions): () => void
+```
+
+Starts the console on any page, with no React on the host. The loader runs the admin check, then downloads the console chunk, which brings its own React. It returns a function that removes the console.
+
+```ts
+const unmount = mount({ endpoint: "https://api.example.com", project: "example.com" });
+```
+
+### Debugtools in React
+
+```tsx
+import { Debugtools } from "@spoar/debugtools/react";
+```
+
+A component that takes the same options as `mount`. It uses your app's React.
+
+### Debugtools in Next.js
 
 ```tsx
 import { Debugtools } from "@spoar/debugtools/next";
@@ -54,15 +73,69 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-### Any page
+For the App Router. It loads the console with `next/dynamic` and `ssr: false`.
 
-```ts
-import { mount } from "@spoar/debugtools";
+### Console
 
-const unmount = mount({ endpoint: "https://api.example.com", project: "example.com" });
+```tsx
+import { Console } from "@spoar/debugtools/console";
 ```
 
-To show the agent pane, or to drop a section you have no use for, pass `sections`:
+The console alone, with no loader and no admin check. Use it to embed the console in your own page. It needs one of the stylesheet entries below.
+
+### Stylesheets
+
+- `@spoar/debugtools/tailwind.css`: the console's theme tokens and base styles, for an app that runs Tailwind v4.
+- `@spoar/debugtools/styles.css`: the compiled stylesheet, for an app without Tailwind.
+
+### Fixtures
+
+```ts
+import { consoleFixture } from "@spoar/debugtools/fixtures";
+```
+
+Sample data for `<Console />` and for the `data` option.
+
+## Options
+
+```ts
+type DebugtoolsOptions = {
+  endpoint: string;
+  project: string;
+  auth?: "widget" | "session";
+  launcher?: "left" | "right";
+  fetch?: Fetcher;
+  data?: ConsoleData;
+  sections?: ConsoleSections;
+  theme?: "dark" | "light" | "system";
+  demo?: boolean;
+  open?: boolean;
+};
+```
+
+### endpoint and project
+
+`endpoint` is the API origin. `project` is the project id.
+
+### auth
+
+Default `"widget"`. With `"widget"`, the console runs the admin check and sends the widget token. With `"session"`, it skips the check and sends the browser's session cookie. Use `"session"` on a page on the API's own domain, such as the dashboard.
+
+### launcher
+
+Default `"left"`. The corner the **Console** pill sits in, `"left"` or `"right"`.
+
+### fetch
+
+Replaces `fetch` for the admin check and the queries.
+
+### data
+
+Shows this fixture data instead of the project's.
+
+### sections
+
+Turns parts of the console on or off: `nav`, `toolbar`, `editor`, `results`, `library`, `recent` and `agent`. Every section is on except `agent`.
 
 ```ts
 mount({
@@ -72,28 +145,31 @@ mount({
 });
 ```
 
-## Options
+### theme
 
-| Option | Does |
-| --- | --- |
-| `endpoint` | The API origin |
-| `project` | The project id |
-| `auth` | `"widget"` (the default) runs the admin check and sends the widget token. `"session"` skips the check and sends the browser's session cookie, for a page on the API's own domain such as the dashboard |
-| `launcher` | `"left"` (the default) or `"right"`: the corner the pill sits in |
-| `fetch` | Replaces `fetch` for the admin check and the queries |
-| `data` | Shows this fixture data instead of the project's |
-| `sections` | Turns parts of the console on or off: `nav`, `toolbar`, `editor`, `results`, `library`, `recent` and `agent`. Everything is on except `agent` |
-| `theme` | `"dark"` (the default), `"light"`, or `"system"` to follow the visitor's `prefers-color-scheme` |
-| `demo` | When the admin check fails, shows the console on fixture data instead of nothing. For a page that shows the console to everyone, such as these docs |
-| `open` | Opens the console as soon as it mounts instead of showing the launcher |
+Default `"dark"`. Use `"light"`, or `"system"` to follow the visitor's `prefers-color-scheme`.
 
-## Using it
+### demo
 
-A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console; Escape or the close button closes it.
+Default `false`. When the admin check fails, shows the console on fixture data instead of nothing. Use it on a page that shows the console to everyone, such as these docs.
 
-The console opens as a panel docked to the bottom of the page. Drag its top edge to resize it. The title bar has buttons to maximise it to the viewport, pop it out as a floating window that you drag by its title bar and resize from its corner, and dock it back. The browser remembers the mode, height, position and size.
+### open
 
-Write SQL in the editor and press Run or Ctrl+Enter. `:from` and `:to` are bound to the time range in the toolbar and `:project` to the project. The dataset library lists the views and columns you can query, and a dataset's quick query fills the editor with its latest rows.
+Default `false`. Opens the console as soon as it mounts, instead of showing the launcher.
+
+## Using the console
+
+A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console. Escape or the close button closes it.
+
+The console opens as a panel docked to the bottom of the page. Drag its top edge to resize it. The title bar has three buttons:
+
+- Maximize the console to the viewport.
+- Pop it out as a floating window. Drag it by the title bar and resize it from a corner.
+- Dock it back.
+
+The browser remembers the mode, height, position and size.
+
+Write SQL in the editor and press Run or Ctrl+Enter. `:from` and `:to` are bound to the time range in the toolbar, and `:project` to the project. The dataset library lists the views and columns you can query. A dataset's quick query fills the editor with its latest rows.
 
 The console renders in a Shadow DOM root on a `<spoar-debugtools>` element, so your site's CSS and the console's never meet.
 

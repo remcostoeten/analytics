@@ -1,5 +1,6 @@
 {
   "title": "Frameworks",
+  "icon": "Layers",
   "pages": [
     "nextjs",
     "react",

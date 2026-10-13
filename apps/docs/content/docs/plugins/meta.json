@@ -1,5 +1,6 @@
 {
   "title": "Plugins",
+  "icon": "Puzzle",
   "pages": [
     "pageviews",
     "speed-insights",
