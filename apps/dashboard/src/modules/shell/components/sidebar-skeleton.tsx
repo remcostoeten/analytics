@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 import { Logo } from "@/shared/ui/logo";
 
@@ -24,9 +25,23 @@ function NavRows({ count }: { count: number }) {
   );
 }
 
-export function SidebarSkeleton() {
+function PathRows() {
   const pathname = usePathname();
   const admin = pathname.startsWith("/admin");
+  return (
+    <>
+      <NavRows count={workspaceRows(pathname)} />
+      {admin ? (
+        <div className="sidebar-group">
+          <p className="sidebar-group-label">Manage</p>
+          <NavRows count={2} />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export function SidebarSkeleton() {
   return (
     <aside className="sidebar" aria-busy="true">
       <div className="sidebar-panel">
@@ -40,13 +55,9 @@ export function SidebarSkeleton() {
           </div>
         </div>
         <nav className="sidebar-nav" aria-label="Dashboard" aria-hidden="true">
-          <NavRows count={workspaceRows(pathname)} />
-          {admin ? (
-            <div className="sidebar-group">
-              <p className="sidebar-group-label">Manage</p>
-              <NavRows count={2} />
-            </div>
-          ) : null}
+          <Suspense fallback={<NavRows count={1} />}>
+            <PathRows />
+          </Suspense>
         </nav>
         <SidebarFoot />
       </div>
