@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { useRouter } from "next/navigation";
 
 import { speedDevice, speedDevices } from "../speed";

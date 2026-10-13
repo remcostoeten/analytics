@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 type Option = { label: string; href: string; active: boolean };

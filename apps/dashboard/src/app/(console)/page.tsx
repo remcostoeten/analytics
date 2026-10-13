@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Suspense } from "react";
+import { connection } from "next/server";
+import { Link } from "@/shared/ui/link";
+import { cache, Suspense } from "react";
 
 import { listProjects } from "@/modules/analytics/reads";
 import { formatMetric } from "@/modules/analytics/format";
@@ -21,14 +22,41 @@ function createdAgo(timestamp: string) {
   return created.format(Math.round(days / 365), "year");
 }
 
-async function Home() {
+async function fetchTraffic() {
   const api = await serverClient();
-  const [projects, session, traffic] = await Promise.all([
-    listProjects(),
-    readSession(),
-    api.period("24h").projectBreakdown({ metrics: ["pageviews", "visitors"], limit: 100 }),
-  ]);
-  const rows = new Map(traffic.ok ? traffic.value.data.map((row) => [row.value, row]) : []);
+  const traffic = await api
+    .period("24h")
+    .projectBreakdown({ metrics: ["pageviews", "visitors"], limit: 100 });
+  return new Map(traffic.ok ? traffic.value.data.map((row) => [row.value, row]) : []);
+}
+
+const readTraffic = cache(fetchTraffic);
+
+async function CreatedAgo({ timestamp }: { timestamp: string }) {
+  await connection();
+  return <> · created {createdAgo(timestamp)}</>;
+}
+
+type Props = { project: string; metric: "pageviews" | "visitors" };
+
+async function Traffic({ project, metric }: Props) {
+  const row = (await readTraffic()).get(project);
+  return <dd className="text-xl tabular-nums">{formatMetric(row?.[metric] ?? 0, "count")}</dd>;
+}
+
+function TrafficCell({ project, metric, label }: Props & { label: string }) {
+  return (
+    <div className="grid gap-1">
+      <dt className="text-xs text-muted">{label}</dt>
+      <Suspense fallback={<dd className="skeleton h-7 w-12" />}>
+        <Traffic project={project} metric={metric} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Home() {
+  const [projects, session] = await Promise.all([listProjects(), readSession()]);
 
   return (
     <div className="mx-auto grid max-w-[1040px] gap-6">
@@ -60,7 +88,6 @@ async function Home() {
       ) : (
         <ul className="grid gap-2">
           {projects.value.map((project) => {
-            const row = rows.get(project.id);
             const href = `/projects/${encodeURIComponent(project.id)}`;
             return (
               <li key={project.id} className="site-row">
@@ -78,7 +105,10 @@ async function Home() {
                     </a>
                   </span>
                   <span className="text-xs text-muted">
-                    {project.domain} · created {createdAgo(project.createdAt)}
+                    {project.domain}
+                    <Suspense fallback={null}>
+                      <CreatedAgo timestamp={project.createdAt} />
+                    </Suspense>
                   </span>
                   <span className="flex flex-wrap gap-3 text-xs">
                     <Link href={href} className="text-link underline">
@@ -93,18 +123,16 @@ async function Home() {
                   </span>
                 </div>
                 <dl className="contents">
-                  <div className="grid gap-1">
-                    <dt className="text-xs text-muted">Page views (last 24 hours)</dt>
-                    <dd className="text-xl tabular-nums">
-                      {formatMetric(row?.pageviews ?? 0, "count")}
-                    </dd>
-                  </div>
-                  <div className="grid gap-1">
-                    <dt className="text-xs text-muted">Visitors (last 24 hours)</dt>
-                    <dd className="text-xl tabular-nums">
-                      {formatMetric(row?.visitors ?? 0, "count")}
-                    </dd>
-                  </div>
+                  <TrafficCell
+                    project={project.id}
+                    metric="pageviews"
+                    label="Page views (last 24 hours)"
+                  />
+                  <TrafficCell
+                    project={project.id}
+                    metric="visitors"
+                    label="Visitors (last 24 hours)"
+                  />
                 </dl>
               </li>
             );

@@ -1,5 +1,5 @@
 import type { SpeedResponse } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { vitalSummary, vitalViews } from "../speed";
 import { ShareBar } from "./share-bar";

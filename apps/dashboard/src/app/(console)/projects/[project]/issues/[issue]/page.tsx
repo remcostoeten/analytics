@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -13,7 +13,8 @@ import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
 import { readSession } from "@/modules/session/session";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { FactsSkeleton, SectionSkeleton } from "@/modules/shell/components/skeletons";
+import type { ProjectScope } from "@spoar/client";
 
 type Props = {
   params: Promise<{ project: string; issue: string }>;
@@ -35,20 +36,77 @@ function Fact({ label, value, title }: FactProps) {
   );
 }
 
+type IssueRead = ReturnType<ProjectScope["issue"]>;
+
+async function Summary({ issue, project }: { issue: IssueRead; project: string }) {
+  const [read, session] = await Promise.all([issue, readSession()]);
+  if (!read.ok && read.error.code === "NOT_FOUND") notFound();
+  if (!read.ok) return <ReadNotice error={read.error} what="this issue" />;
+  const data = read.value.data;
+  const title = splitTitle(data.title);
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="grid min-w-0 gap-1">
+          <h1 className="font-serif text-2xl tracking-tight">
+            <span className="font-semibold">{title.type}</span>
+            {title.message ? `: ${title.message}` : ""}
+          </h1>
+          {data.culprit ? <p className="font-mono text-xs text-muted">{data.culprit}</p> : null}
+          <StatusBadge status={data.status} regression={data.isRegression} />
+        </div>
+        {session.isAdmin ? (
+          <IssueStatusControls project={project} issue={data.id} status={data.status} />
+        ) : null}
+      </div>
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <Fact label="Events" value={formatMetric(data.count, "count")} />
+        <Fact label="Users" value={formatMetric(data.visitors, "count")} />
+        <Fact
+          label="Last seen"
+          value={formatRelative(data.lastSeen)}
+          title={formatDateTime(data.lastSeen)}
+        />
+        <Fact
+          label="First seen"
+          value={formatRelative(data.firstSeen)}
+          title={formatDateTime(data.firstSeen)}
+        />
+        <Fact label="First release" value={data.firstRelease ?? "–"} />
+        <Fact label="Last release" value={data.lastRelease ?? "–"} />
+      </dl>
+    </>
+  );
+}
+
+async function Events({ issue, scope }: { issue: IssueRead; scope: Promise<ProjectScope> }) {
+  const [read, resolved] = await Promise.all([issue, scope]);
+  if (!read.ok) return null;
+  return <IssueEvents scope={resolved} issue={read.value.data.id} />;
+}
+
+function SummarySkeleton() {
+  return (
+    <>
+      <div className="grid gap-1" aria-hidden="true">
+        <div className="skeleton h-8 w-96 max-w-full" />
+        <div className="skeleton h-5 w-20" />
+      </div>
+      <FactsSkeleton facts={6} />
+    </>
+  );
+}
+
 export default async function Page({ params, searchParams }: Props) {
   const { project, issue: encodedIssue } = await params;
   const issueId = decodeURIComponent(encodedIssue);
   const state = readViewState(await searchParams);
   const listPath = `/projects/${encodeURIComponent(project)}/issues`;
 
-  const scope = await readScope(project, state);
-  const [found, session, read] = await Promise.all([
-    findProject(project),
-    readSession(),
-    scope.issue(issueId),
-  ]);
+  const found = await findProject(project);
   if (!found) notFound();
-  if (!read.ok && read.error.code === "NOT_FOUND") notFound();
+  const scope = readScope(project, state);
+  const issue = scope.then((resolved) => resolved.issue(issueId));
 
   return (
     <div className="mx-auto grid max-w-[1200px] gap-6">
@@ -57,58 +115,13 @@ export default async function Page({ params, searchParams }: Props) {
           <Link href={`${listPath}${viewQuery(state)}`} className="text-xs text-link underline">
             Back to issues
           </Link>
-          {!read.ok ? (
-            <ReadNotice error={read.error} what="this issue" />
-          ) : (
-            <>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="grid min-w-0 gap-1">
-                  <h1 className="font-serif text-2xl tracking-tight">
-                    <span className="font-semibold">{splitTitle(read.value.data.title).type}</span>
-                    {splitTitle(read.value.data.title).message
-                      ? `: ${splitTitle(read.value.data.title).message}`
-                      : ""}
-                  </h1>
-                  {read.value.data.culprit ? (
-                    <p className="font-mono text-xs text-muted">{read.value.data.culprit}</p>
-                  ) : null}
-                  <StatusBadge
-                    status={read.value.data.status}
-                    regression={read.value.data.isRegression}
-                  />
-                </div>
-                {session.isAdmin ? (
-                  <IssueStatusControls
-                    project={project}
-                    issue={read.value.data.id}
-                    status={read.value.data.status}
-                  />
-                ) : null}
-              </div>
-              <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                <Fact label="Events" value={formatMetric(read.value.data.count, "count")} />
-                <Fact label="Users" value={formatMetric(read.value.data.visitors, "count")} />
-                <Fact
-                  label="Last seen"
-                  value={formatRelative(read.value.data.lastSeen)}
-                  title={formatDateTime(read.value.data.lastSeen)}
-                />
-                <Fact
-                  label="First seen"
-                  value={formatRelative(read.value.data.firstSeen)}
-                  title={formatDateTime(read.value.data.firstSeen)}
-                />
-                <Fact label="First release" value={read.value.data.firstRelease ?? "–"} />
-                <Fact label="Last release" value={read.value.data.lastRelease ?? "–"} />
-              </dl>
-            </>
-          )}
-        </header>
-        {read.ok ? (
-          <Suspense fallback={<SectionSkeleton height={320} />}>
-            <IssueEvents scope={scope} issue={read.value.data.id} />
+          <Suspense fallback={<SummarySkeleton />}>
+            <Summary issue={issue} project={project} />
           </Suspense>
-        ) : null}
+        </header>
+        <Suspense fallback={<SectionSkeleton height={320} />}>
+          <Events issue={issue} scope={scope} />
+        </Suspense>
       </div>
     </div>
   );

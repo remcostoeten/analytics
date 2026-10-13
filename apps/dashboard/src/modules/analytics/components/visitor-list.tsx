@@ -1,5 +1,5 @@
 import type { ProjectScope } from "@spoar/client";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
 

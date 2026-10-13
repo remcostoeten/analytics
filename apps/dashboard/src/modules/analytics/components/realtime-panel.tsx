@@ -5,7 +5,7 @@ import type { ActiveVisitor, LiveEvent, LiveEvents, LiveSession } from "@spoar/c
 import { ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
 import { focusManager, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { browserClient } from "@/shared/api/browser-client";

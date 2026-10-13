@@ -42,7 +42,7 @@ export async function startSignIn(
  *
  * @example
  * await signOut();
- * router.refresh();
+ * window.location.reload();
  */
 export async function signOut(): Promise<Result<null, string>> {
   const answer = await request({

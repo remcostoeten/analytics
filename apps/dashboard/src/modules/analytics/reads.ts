@@ -1,8 +1,13 @@
-import type { BreakdownResponse, PublicProject, TimeseriesResponse } from "@spoar/contract";
+import type {
+  BreakdownResponse,
+  ProjectList,
+  PublicProject,
+  TimeseriesResponse,
+} from "@spoar/contract";
 import type { ProjectScope } from "@spoar/client";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
-import { cache } from "react";
+import { cacheLife } from "next/cache";
 
 import { serverClient } from "@/shared/api/server-client";
 
@@ -15,17 +20,21 @@ export type SplitSeries = { value: string; total: number | null; series: Timeser
 
 /**
  * @name listProjects
- * @description Every project the caller may read, once per request: public ones when signed out,
- * private ones too for members.
+ * @description Every project the caller may read: public ones when signed out, private ones too
+ * for members, with every setting for admins. Cached per session for five minutes in the browser,
+ * so the sidebar and headings render with a route's prefetched shell. A server action that
+ * revalidates clears it.
  *
  * @example
  * const projects = await listProjects();
  */
-export const listProjects = cache(async (): Promise<Result<PublicProject[], string>> => {
+export async function listProjects(): Promise<Result<ProjectList["data"], string>> {
+  "use cache: private";
+  cacheLife("minutes");
   const api = await serverClient();
   const listed = await api.projects.list();
   return listed.ok ? ok(listed.value.data) : err(listed.error.message);
-});
+}
 
 /**
  * @name readScope

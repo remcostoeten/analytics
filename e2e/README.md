@@ -8,7 +8,7 @@ Playwright tests of the built SDK against the v2 API. `serve.ts` starts one Bun 
 
 Each test uses its own `<run>` path segment, so tests can share the database and run in parallel.
 
-Playwright also starts the dashboard with `next dev` on port 3300 against that API. `tests/dashboard.spec.ts` uses `instant()` from `@next/playwright` to check that a page load shows the static shell and that sidebar navigations show the next page's skeleton before any API data arrives, as in the Next.js instant navigation guide.
+Playwright also builds the dashboard and starts it with `next start` on port 3300 against that API, with `EXPOSE_TESTING_API=1` so the build exposes the Next.js testing API. The variable must be set for both `next build` and `next start`: the page-load lock reads the config again at start. `E2E_DASHBOARD_PORT` moves the dashboard to another port when 3300 is taken. `tests/dashboard.spec.ts` uses `instant()` from `@next/playwright`, as in the Next.js instant navigation guide: a page load of each route serves that route's own skeleton, and a client navigation to each route renders its heading and controls from the prefetched shell while the API data stays behind its skeleton until the lock is released. A first test fails when the build serves full pages to a locked request, so the others cannot pass without the lock.
 
 | Command | Does |
 | --- | --- |
@@ -21,5 +21,5 @@ Playwright also starts the dashboard with `next dev` on port 3300 against that A
 | Project | Checks |
 | --- | --- |
 | `headless` | Pageviews, SPA navigation, custom events and send on hide through both transports; required consent; `?ra=ignore`; web vitals, with stored LCP, INP and CLS within 10% of the browser's own measurements; uncaught errors; a headless browser scoring 50 or more; the dev widget, where the `ra_e2e_admin` cookie stands in for the owner's session |
-| `headless`, dashboard | The web analytics shell on a page load, and instant sidebar navigation into speed and issues |
+| `headless`, dashboard | For home, every project view and the admin pages: the route's skeleton on a locked page load and its shell on a locked client navigation. For the visitor, session and issue pages: the skeleton on a locked page load |
 | `headed` | A headed browser without the automation flag, with scripted mouse and keyboard input, scoring under 50 |

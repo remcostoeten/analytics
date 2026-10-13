@@ -1,5 +1,5 @@
 import type { AuthSession } from "@spoar/contract";
-import { cache } from "react";
+import { cacheLife } from "next/cache";
 
 import { serverClient } from "@/shared/api/server-client";
 
@@ -10,22 +10,24 @@ export type Access =
 
 const signedOut: AuthSession = { user: null, session: null, role: null, isAdmin: false };
 
-async function fetchSession(): Promise<AuthSession> {
-  const api = await serverClient();
-  const result = await api.system.session();
-  return result.ok ? result.value : signedOut;
-}
-
 /**
  * @name readSession
  * @description Asks the API who the forwarded cookie belongs to. A failed call reads as signed
- * out, so the page renders the sign-in prompt instead of an error. Runs once per request.
+ * out, so the page renders the sign-in prompt instead of an error. Cached per session for five
+ * minutes in the browser, so the top bar, sidebar and access checks render with a route's
+ * prefetched shell; signing out reloads the page.
  *
  * @example
  * const session = await readSession();
  * if (session.isAdmin) showSettings();
  */
-export const readSession = cache(fetchSession);
+export async function readSession(): Promise<AuthSession> {
+  "use cache: private";
+  cacheLife("minutes");
+  const api = await serverClient();
+  const result = await api.system.session();
+  return result.ok ? result.value : signedOut;
+}
 
 /**
  * @name readAccess

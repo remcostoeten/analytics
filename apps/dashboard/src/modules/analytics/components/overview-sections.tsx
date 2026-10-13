@@ -1,6 +1,6 @@
 import type { ProjectScope } from "@spoar/client";
 import type { StatsResponse } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { formatMetric } from "../format";
 import { readOutcomes, sumPoints } from "../logs";

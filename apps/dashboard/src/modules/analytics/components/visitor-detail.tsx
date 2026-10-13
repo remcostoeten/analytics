@@ -1,7 +1,7 @@
 import type { ProjectScope } from "@spoar/client";
 import type { VisitorDetail as Detail } from "@spoar/contract";
 import type { VisitorID } from "@spoar/shared/semantic";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
 

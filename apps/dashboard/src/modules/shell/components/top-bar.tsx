@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { readSession } from "@/modules/session/session";
 import { SignOutButton } from "@/modules/session/components/sign-out-button";

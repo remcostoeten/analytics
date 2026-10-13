@@ -1,6 +1,6 @@
 import type { ProjectScope } from "@spoar/client";
 import type { SpeedResponse } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue, formatMetric } from "../format";
 import { rateScore, rateVital, speedDevice, speedInterval, vitalViews } from "../speed";

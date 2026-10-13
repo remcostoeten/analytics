@@ -1,5 +1,5 @@
 import type { ClientError } from "@spoar/client";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 type Props = { error: ClientError; what: string };
 

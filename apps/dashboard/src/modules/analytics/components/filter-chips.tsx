@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { CloseIcon } from "@/shared/ui/icons";
 
