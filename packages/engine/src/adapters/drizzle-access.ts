@@ -1,10 +1,11 @@
 import { ok } from "@spoar/shared/result";
-import { eq, isNull, sql } from "drizzle-orm";
+import { asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
 
 import {
   apiTokens,
   authMember,
   authOrganization,
+  authSession,
   authUser,
   dashboardUsers,
   deletedProjects,
@@ -14,6 +15,7 @@ import type {
   AlertStore,
   AnnotationStore,
   Membership,
+  MemberRecord,
   MemberStore,
   ProjectAdmin,
   ProjectRecord,
@@ -219,14 +221,17 @@ export function drizzleTokens(db: Database): TokenStore {
 
 /**
  * @name drizzleMembers
- * @description The `MemberStore`: the `dashboard_users` sign-in allowlist, GitHub logins, and
- * membership of the single organization. The first user to join creates the organization as its
- * owner and claims the projects without one; later users join as viewers of no projects until an
- * owner lists theirs.
+ * @description The `MemberStore`: the `dashboard_users` sign-in allowlist, GitHub logins with the
+ * role and projects granted to each, and membership of the single organization. An entry with a
+ * GitHub id only admits that id, so a renamed account's old login cannot be claimed by someone
+ * else; an entry without one takes the id of the first sign-in. The first user to join creates the
+ * organization as its owner and claims the projects without one; later users join with the role
+ * and projects of their entry. Changing an entry also changes the member it belongs to, and
+ * removing one deletes the account and its sessions.
  *
  * @example
  * const members = drizzleMembers(db);
- * const membership = await members.join(user.id, "remcostoeten");
+ * const membership = await members.join(user.id, "remcostoeten", "1234");
  */
 export function drizzleMembers(db: Database): MemberStore {
   async function membership(userId: string): Promise<Membership | null> {
@@ -237,14 +242,75 @@ export function drizzleMembers(db: Database): MemberStore {
     return row ?? null;
   }
 
+  const entryColumns = {
+    login: dashboardUsers.githubLogin,
+    githubId: dashboardUsers.githubId,
+    role: dashboardUsers.role,
+    projectIds: dashboardUsers.projectIds,
+    addedAt: dashboardUsers.addedAt,
+    memberRole: authMember.role,
+    memberProjectIds: authMember.projectIds,
+    memberId: authMember.id,
+    userId: authUser.id,
+  };
+
+  function entries() {
+    return db
+      .select(entryColumns)
+      .from(dashboardUsers)
+      .leftJoin(
+        authUser,
+        sql`lower(${authUser.githubLogin}) = lower(${dashboardUsers.githubLogin})`,
+      )
+      .leftJoin(authMember, eq(authMember.userId, authUser.id));
+  }
+
+  type EntryRow = Awaited<ReturnType<typeof entries>>[number];
+
+  async function records(rows: EntryRow[]): Promise<MemberRecord[]> {
+    const userIds = rows.flatMap((row) => (row.userId === null ? [] : [row.userId]));
+    const sessions =
+      userIds.length === 0
+        ? []
+        : await db
+            .select({ userId: authSession.userId, last: max(authSession.createdAt) })
+            .from(authSession)
+            .where(inArray(authSession.userId, userIds))
+            .groupBy(authSession.userId);
+    const lastSignIn = new Map(sessions.map((row) => [row.userId, row.last]));
+    return rows.map((row) => {
+      const joined = row.memberId !== null;
+      return {
+        login: row.login,
+        githubId: row.githubId,
+        role: joined ? (row.memberRole ?? row.role) : row.role,
+        projectIds: joined ? row.memberProjectIds : row.projectIds,
+        joined,
+        addedAt: row.addedAt,
+        lastSignInAt: (row.userId === null ? null : lastSignIn.get(row.userId)) ?? null,
+      };
+    });
+  }
+
+  function byLogin(login: string) {
+    return sql`lower(${dashboardUsers.githubLogin}) = ${login.toLowerCase()}`;
+  }
+
+  async function entryOf(login: string) {
+    const rows = await entries().where(byLogin(login));
+    const [found] = await records(rows);
+    return found ?? null;
+  }
+
   return {
-    allowedLogin: (login) =>
+    allowedLogin: (login, githubId) =>
       attempt("Could not read the allowlist", async () => {
-        const rows = await db
-          .select({ login: dashboardUsers.githubLogin })
+        const [row] = await db
+          .select({ githubId: dashboardUsers.githubId })
           .from(dashboardUsers)
-          .where(sql`lower(${dashboardUsers.githubLogin}) = ${login.toLowerCase()}`);
-        return rows.length > 0;
+          .where(byLogin(login));
+        if (!row) return false;
+        return row.githubId === null || githubId === null || row.githubId === githubId;
       }),
     loginOf: (userId) =>
       attempt("Could not read the user", async () => {
@@ -255,13 +321,17 @@ export function drizzleMembers(db: Database): MemberStore {
         return row?.login ?? null;
       }),
     membership: (userId) => attempt("Could not read the membership", () => membership(userId)),
-    join: (userId, name) =>
+    join: (userId, login, githubId) =>
       attempt("Could not add the member", async () => {
         const existing = await membership(userId);
         if (existing) return existing;
+        const [grant] = await db
+          .select({ role: dashboardUsers.role, projectIds: dashboardUsers.projectIds })
+          .from(dashboardUsers)
+          .where(byLogin(login));
         const created = await db
           .insert(authOrganization)
-          .values({ id: organizationId, name, slug: "main" })
+          .values({ id: organizationId, name: login, slug: "main" })
           .onConflictDoNothing()
           .returning({ id: authOrganization.id });
         const owner = created.length > 0;
@@ -271,16 +341,70 @@ export function drizzleMembers(db: Database): MemberStore {
             id: `mem_${crypto.randomUUID()}`,
             organizationId,
             userId,
-            role: owner ? "owner" : "viewer",
-            projectIds: owner ? null : [],
+            role: owner ? "owner" : (grant?.role ?? "viewer"),
+            projectIds: owner ? null : (grant?.projectIds ?? []),
           })
           .onConflictDoNothing();
+        if (githubId !== null) {
+          await db
+            .update(dashboardUsers)
+            .set({ githubId })
+            .where(sql`${byLogin(login)} AND ${dashboardUsers.githubId} IS NULL`);
+        }
         if (owner) {
           await db.update(projects).set({ orgId: organizationId }).where(isNull(projects.orgId));
         }
         const joined = await membership(userId);
         if (!joined) throw new Error("The membership was not stored");
         return joined;
+      }),
+    list: () =>
+      attempt("Could not list the members", async () => {
+        return records(await entries().orderBy(asc(dashboardUsers.addedAt)));
+      }),
+    find: (login) => attempt("Could not read the member", () => entryOf(login)),
+    allow: (member) =>
+      attempt("Could not allow the member", async () => {
+        const added = await db
+          .insert(dashboardUsers)
+          .values({
+            githubLogin: member.login,
+            githubId: member.githubId,
+            role: member.role,
+            projectIds: member.projectIds,
+          })
+          .onConflictDoNothing()
+          .returning({ login: dashboardUsers.githubLogin });
+        return added.length > 0;
+      }),
+    change: (login, patch) =>
+      attempt("Could not change the member", async () => {
+        const current = await entryOf(login);
+        if (!current) return null;
+        const changes = {
+          ...(patch.role === undefined ? {} : { role: patch.role }),
+          ...(patch.projectIds === undefined ? {} : { projectIds: patch.projectIds }),
+        };
+        if (Object.keys(changes).length === 0) return current;
+        await db.update(dashboardUsers).set(changes).where(byLogin(login));
+        await db
+          .update(authMember)
+          .set(changes)
+          .where(
+            sql`${authMember.userId} IN (SELECT ${authUser.id} FROM ${authUser} WHERE lower(${authUser.githubLogin}) = ${login.toLowerCase()})`,
+          );
+        return entryOf(login);
+      }),
+    remove: (login) =>
+      attempt("Could not remove the member", async () => {
+        const removed = await db
+          .delete(dashboardUsers)
+          .where(byLogin(login))
+          .returning({ login: dashboardUsers.githubLogin });
+        await db
+          .delete(authUser)
+          .where(sql`lower(${authUser.githubLogin}) = ${login.toLowerCase()}`);
+        return removed.length > 0;
       }),
   };
 }

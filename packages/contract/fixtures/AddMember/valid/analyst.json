@@ -1,0 +1,5 @@
+{
+  "login": "octocat",
+  "role": "analyst",
+  "projectIds": ["docs"]
+}

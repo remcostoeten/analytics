@@ -306,6 +306,11 @@ describe("admin namespaces", () => {
     await api2.tokens.list();
     await api2.tokens.create({ name: "CI", scope: "read", projectIds: ["skriuw"] });
     await api2.tokens.revoke("tok_1");
+    await api2.members.list();
+    await api2.members.lookup("octocat");
+    await api2.members.add({ login: "octocat", role: "analyst" });
+    await api2.members.update("octocat", { role: "viewer" });
+    await api2.members.remove("octocat");
     await api2.system.health();
     await api2.system.session();
     await api2.system.metrics();
@@ -330,6 +335,11 @@ describe("admin namespaces", () => {
       "/v2/tokens",
       "/v2/tokens",
       "/v2/tokens/tok_1",
+      "/v2/members",
+      "/v2/members/lookup/octocat",
+      "/v2/members",
+      "/v2/members/octocat",
+      "/v2/members/octocat",
       "/v2/health",
       "/v2/auth/session",
       "/v2/admin/metrics",

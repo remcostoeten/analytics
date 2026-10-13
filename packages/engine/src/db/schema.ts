@@ -165,6 +165,11 @@ export const rollupDaily = pgTable(
 
 export const dashboardUsers = pgTable("dashboard_users", {
   githubLogin: text("github_login").primaryKey(),
+  githubId: text("github_id"),
+  role: text("role", { enum: ["admin", "analyst", "viewer"] })
+    .notNull()
+    .default("viewer"),
+  projectIds: text("project_ids").array().default([]),
   addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -304,6 +309,7 @@ export const authUser = pgTable("auth_user", {
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   githubLogin: text("github_login"),
+  githubId: text("github_id"),
 });
 
 export const authOrganization = pgTable("auth_organization", {
