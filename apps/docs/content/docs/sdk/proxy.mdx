@@ -1,9 +1,10 @@
 ---
 title: Proxy
 description: A same-origin ingest path that ad blockers do not block.
+icon: Shield
 ---
 
-`createProxy` from `@spoar/sdk/proxy` returns a `(request) => Response` handler for a path on your own domain, such as `/_ra`. In the Next App Router, `app/%5Fra/route.ts` serves `/_ra`:
+`@spoar/sdk/proxy` serves a path on your own domain, such as `/_ra`, so the browser sends events to your site and the proxy forwards them to the API. In the Next App Router, `app/%5Fra/route.ts` serves `/_ra`:
 
 ```ts
 import { createProxy } from "@spoar/sdk/proxy";
@@ -14,17 +15,29 @@ export const POST = createProxy({
 });
 ```
 
-## Options
+## `createProxy(options?)`
 
-| Option | Type | Default | Does |
-| --- | --- | --- | --- |
-| `secret` | `string` | `RA_CONFIG.secret` | The project's secret key (`sk_...`), from [creating a project](/docs/getting-started/quick-start#1-create-a-project) |
-| `endpoint` | `string` | `RA_CONFIG.endpoint` | The API's base URL. The proxy posts to `<endpoint>/v2/events` |
-| `fetch` | `(url, init) => Promise<Response>` | global `fetch` | A custom `fetch` |
+```ts
+createProxy(options?: ProxyConfig): (request: Request) => Promise<Response>
 
-Options left out are read from the JSON in `RA_CONFIG`.
+type ProxyConfig = {
+  secret?: string;
+  endpoint?: string;
+  fetch?: Fetcher;
+};
+```
 
-## What it refuses
+Returns a `(request) => Response` handler for any runtime with the fetch API.
+
+### Options
+
+- `secret`: `string`. The project's secret key (`sk_...`), from [creating a project](/docs/getting-started/quick-start#1-create-a-project). Defaults to `RA_CONFIG.secret`.
+- `endpoint`: `string`. The API's base URL. The proxy posts to `<endpoint>/v2/events`. Defaults to `RA_CONFIG.endpoint`.
+- `fetch`: `(url, init) => Promise<Response>`. A custom `fetch`. Defaults to the global `fetch`.
+
+Options left out are read from the JSON in the `RA_CONFIG` environment variable.
+
+### What it refuses
 
 | Request | Answer |
 | --- | --- |
@@ -34,8 +47,37 @@ Options left out are read from the JSON in `RA_CONFIG`.
 | A body over 60 KB | `413 PAYLOAD_TOO_LARGE` |
 | The API cannot be reached | `502 UNAVAILABLE` |
 
-Everything else is forwarded to the API with the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and the API's answer is returned unchanged. [How it works](/docs/getting-started/how-it-works#at-the-proxy) lists each forwarded header and why.
+### What it forwards
 
-## Page counter
+Every other request goes to the API with the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie. The proxy returns the API's answer unchanged. [How it works](/docs/getting-started/how-it-works#at-the-proxy) lists each forwarded header and why.
 
-`createPageCounter` counts HTML page loads in middleware as `page_request` events. Comparing them with pageviews estimates how many visitors block the client.
+## `createPageCounter(options?)`
+
+```ts
+createPageCounter(options?: ServerConfig): (request: Request, waitUntil?: WaitUntil) => Promise<ServerResult> | null
+```
+
+Counts HTML page loads in middleware as `page_request` events. Blockers cannot stop these, so comparing them with browser pageviews estimates how many visitors block the client. The returned function gives `null` for a request that is not a page load. Options are the [server options](/docs/sdk/server#options).
+
+```ts
+const countPage = createPageCounter({
+  secret: process.env.RA_SECRET,
+  endpoint: "https://api.example.com",
+});
+
+export function middleware(request: Request, event: { waitUntil: WaitUntil }) {
+  countPage(request, event.waitUntil);
+}
+```
+
+## `isPageRequest(request)`
+
+```ts
+isPageRequest(request: Request): boolean
+```
+
+Returns `true` for a browser loading an HTML page: a `GET` request that is not a prefetch, whose `Sec-Fetch-Dest` is `document`, or that accepts `text/html` when that header is missing.
+
+```ts
+isPageRequest(request); // true for a normal page load
+```

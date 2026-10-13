@@ -1,6 +1,7 @@
 ---
 title: Send events through your own domain
 description: Serve /_ra from your site with createProxy so events are first-party requests that ad blockers let through.
+icon: Shield
 ---
 
 This guide moves browser events from the API's host to a path on your own site, `/_ra`. Ad blockers drop requests to third-party analytics hosts; a same-origin path is a first-party request. It needs a server or function on the same origin as the site. A fully static site without one sends to the API directly, with the public key.

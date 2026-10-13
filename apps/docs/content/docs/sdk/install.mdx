@@ -1,27 +1,48 @@
 ---
 title: Install
-description: The SDK's package, its entries and their size budgets.
+description: Install @spoar/sdk and pick the entry point for your setup.
+icon: Terminal
 ---
 
 ```bash
 npm install @spoar/sdk
 ```
 
+```bash
+bun add @spoar/sdk
+```
+
 Releases publish to the `latest` tag. 1.x is the separate `@remcostoeten/analytics` package.
 
-To set up a client, configure the keys and serve the `/_ra` proxy route, follow the [Quick start](/docs/getting-started/quick-start). An `endpoint` of `/_ra` sends nothing until that route exists.
+The smallest working setup:
+
+```ts
+import { createAnalytics } from "@spoar/sdk";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_live_...",
+  endpoint: "/_ra",
+});
+
+analytics.track("hello");
+```
+
+An `endpoint` of `/_ra` sends nothing until that route exists. The [Quick start](/docs/getting-started/quick-start) covers the keys and the proxy route.
 
 ## Entries
 
-| Import | Contains |
-| --- | --- |
-| `@spoar/sdk` | `createAnalytics`, `definePlugin` and the types |
-| `@spoar/sdk/plugins` | Every plugin, each in its own file |
-| `@spoar/sdk/react` | `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews`, `computeRoute` |
-| `@spoar/sdk/next` | `<Analytics />`, the App Router route adapter |
-| `@spoar/sdk/server` | `createServerAnalytics` for route handlers and server actions |
-| `@spoar/sdk/proxy` | `createProxy` and `createPageCounter` |
-| `@spoar/sdk/admin` | `createAdmin` for scripts and CI, with an API token |
+| Import | Use it for | Exports |
+| --- | --- | --- |
+| `@spoar/sdk` | Any browser code | `createAnalytics`, `definePlugin`, types |
+| `@spoar/sdk/plugins` | Opt-in features | Every plugin, each in its own file |
+| `@spoar/sdk/react` | React apps | `AnalyticsProvider`, `useAnalytics`, `TrackClick`, `ErrorBoundary`, `useRoutePageviews`, `computeRoute` |
+| `@spoar/sdk/next` | Next.js App Router | `<Analytics />` |
+| `@spoar/sdk/server` | Route handlers and server actions | `createServerAnalytics` |
+| `@spoar/sdk/proxy` | Serving the `/_ra` route | `createProxy`, `createPageCounter` |
+| `@spoar/sdk/admin` | Scripts and CI with an API token | `createAdmin` |
+
+Each entry has a page: [Options](/docs/sdk/options), [Client methods](/docs/sdk/client), [Plugins](/docs/sdk/plugins), [React](/docs/sdk/react), [Next](/docs/sdk/next), [Server](/docs/sdk/server), [Proxy](/docs/sdk/proxy) and [Admin](/docs/sdk/admin).
 
 ## Size budgets
 

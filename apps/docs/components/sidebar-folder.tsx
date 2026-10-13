@@ -26,7 +26,7 @@ type Props = {
 };
 
 const itemClass =
-  "relative flex w-full flex-row items-center gap-2 py-1.5 pe-2 text-start text-[0.8125rem] text-fd-muted-foreground wrap-anywhere transition-colors hover:text-fd-foreground data-[active=true]:font-medium data-[active=true]:text-fd-foreground [&_svg]:size-3.5 [&_svg]:shrink-0";
+  "relative flex w-full flex-row items-center gap-2.5 rounded-md py-1.5 pe-2 text-start text-[0.8125rem] text-fd-muted-foreground wrap-anywhere transition-colors duration-150 hover:bg-fd-accent/50 hover:text-fd-foreground data-[active=true]:font-medium data-[active=true]:text-fd-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&_svg[data-icon]]:size-3.5 [&_svg[data-icon]]:text-fd-muted-foreground";
 
 export function DocsSidebarFolder({ item, children }: Props) {
   const pathname = usePathname();

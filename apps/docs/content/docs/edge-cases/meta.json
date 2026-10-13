@@ -1,5 +1,6 @@
 {
   "title": "Edge cases",
+  "icon": "TriangleAlert",
   "pages": [
     "single-page-apps",
     "page-unload",

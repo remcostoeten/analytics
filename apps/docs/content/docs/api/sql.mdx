@@ -1,6 +1,7 @@
 ---
 title: SQL console
 description: Read-only SQL against documented views, scoped to the projects you may query.
+icon: Terminal
 ---
 
 `POST /v2/projects/:project/query` runs one `SELECT` or `WITH` statement against the views in the `query` schema, already limited to that project. `POST /v2/query` does the same across every project you may run SQL on, with `project_id` as a column. The [query page](/query) on this site runs these routes with a token.

@@ -1,35 +1,267 @@
 ---
 title: Client methods
-description: Everything on the object createAnalytics returns.
+description: Every method on the object createAnalytics returns, with signatures and examples.
+icon: Code
 ---
 
-`createAnalytics<Events>(options)` returns the client. Every method is safe to call before consent, during server rendering and after `shutdown()`; nothing throws.
+```ts
+import { createAnalytics } from "@spoar/sdk";
 
-| Method | Does |
-| --- | --- |
-| `track(name, props?)` | Sends a custom event; `props` is typed per event name from your `Events` map, and required only when the event has props |
-| `page(props?)` | Sends a pageview now |
-| `identify(userId, traits?)` | Links this visitor to a user, only with consent |
-| `register(props)` | Adds props to every later event |
-| `captureError(error, context?)` | Records an error with `level`, `tags` and `fingerprint` from `context` |
-| `captureMessage(message, context?)` | Records a message as an error event, `warning` level by default |
-| `scope(tags)` | The same client, adding `tags` to everything it sends |
-| `use(plugin)` | Adds a plugin and returns its remover |
-| `consent.grant()`, `consent.revoke()`, `consent.status()` | Consent, remembered across reloads and applied to the site's other open tabs at once; `status()` is `granted`, `denied` or `unset` |
-| `optOut()`, `optIn()`, `isOptedOut()` | Stops or resumes all sending from this browser, in every open tab of the site |
-| `reset()` | New visitor and session, and clears the route; call it on logout |
-| `flush()` | Sends the queue now and resolves to `{ accepted, duplicates, failed }` |
-| `shutdown()` | Flushes, then removes plugins and listeners |
-| `on("error" \| "send" \| "drop", handler)` | Delivery problems (`RA_INGEST_FAILED` for a failed batch, `RA_INGEST_REJECTED` for each event the API rejected inside a 202), sends, and dropped events with their reason |
-| `status()` | Queue size, consent, endpoint, route, last error and last send |
-| `start()` | Starts a client created with `autostart: false` |
+type Events = {
+  signup: { plan: "free" | "pro" };
+  logout: {};
+};
+
+export const analytics = createAnalytics<Events>({ project: "example.com", key: "pk_live_..." });
+```
+
+You can call every method before consent, during server rendering and after `shutdown()`. Nothing throws. The `Events` map is optional. Without it `track` accepts any name and any props.
+
+## Events
+
+### `track(name, props?)`
+
+```ts
+track(name: string, props?: Props): void
+```
+
+Sends a custom event. With an `Events` map, `props` is typed per event name and required only when the event has props.
+
+```ts
+analytics.track("signup", { plan: "pro" });
+analytics.track("logout");
+```
+
+### `page(props?)`
+
+```ts
+page(props?: Props): void
+```
+
+Sends a pageview now. Needed only with `pageviews: false` and no router adapter.
+
+```ts
+analytics.page({ section: "pricing" });
+```
+
+### `register(props)`
+
+```ts
+register(props: Props): void
+```
+
+Adds props to every later event.
+
+```ts
+analytics.register({ theme: "dark" });
+```
+
+### `scope(tags)`
+
+```ts
+scope(tags: Props): Analytics
+```
+
+Returns the same client, adding `tags` to everything it sends.
+
+```ts
+const checkout = analytics.scope({ area: "checkout" });
+checkout.track("signup", { plan: "free" });
+```
+
+## Visitors
+
+### `identify(userId, traits?)`
+
+```ts
+identify(userId: string, traits?: Props): void
+```
+
+Links this visitor to a user. Sent only with consent.
+
+```ts
+analytics.identify("user_42", { company: "Acme" });
+```
+
+### `reset()`
+
+```ts
+reset(): void
+```
+
+Starts a new visitor and session and clears the route. Call it on logout.
+
+```ts
+async function logout() {
+  await signOut();
+  analytics.reset();
+}
+```
+
+## Errors
+
+### `captureError(error, context?)`
+
+```ts
+captureError(error: unknown, context?: ErrorContext): void
+
+type ErrorContext = {
+  level?: "error" | "warning" | "info";
+  tags?: Props;
+  fingerprint?: string;
+};
+```
+
+Records an error. `fingerprint` groups errors that are the same problem.
+
+```ts
+try {
+  await charge();
+} catch (error) {
+  analytics.captureError(error, { tags: { step: "charge" }, fingerprint: "charge-failed" });
+}
+```
+
+### `captureMessage(message, context?)`
+
+```ts
+captureMessage(message: string, context?: ErrorContext): void
+```
+
+Records a message as an error event, at `"warning"` level unless `context.level` says otherwise.
+
+```ts
+analytics.captureMessage("Coupon expired", { level: "info" });
+```
+
+## Consent and opt-out
+
+### `consent`
+
+```ts
+consent.grant(): void
+consent.revoke(): void
+consent.status(): "granted" | "denied" | "unset"
+```
+
+The choice is remembered across reloads and applied to the site's other open tabs at once. With `consent: "required"`, `grant()` releases the held events.
+
+```ts
+if (analytics.consent.status() === "unset") showBanner();
+```
+
+### `optOut()`, `optIn()`, `isOptedOut()`
+
+```ts
+optOut(): void
+optIn(): void
+isOptedOut(): boolean
+```
+
+Stops or resumes all sending from this browser, in every open tab of the site. Use it for a "do not track me" toggle that is separate from the consent banner.
+
+```ts
+toggle.checked = analytics.isOptedOut();
+toggle.onchange = () => (toggle.checked ? analytics.optOut() : analytics.optIn());
+```
 
 ## Delivery
 
-Events are batched: 20 events or 5 seconds, whichever comes first. A batch is cut short to keep its body under 60 KB, the API's limit, and a single event over 60 KB is dropped and reported as a failure with status 413. Batches go out with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. Failed sends are retried with the same event ids and kept for the next page load; [Duplicates and retries](/docs/edge-cases/duplicates-and-retries) has the schedule.
+### `flush()`
 
-With Do Not Track or Global Privacy Control on, the client drops every event with the reason `dnt` and stores nothing but the visitor's own consent, opt-out and debug choices. Set `privacySignals: "ignore"` to send anyway; Brave turns Global Privacy Control on by default, so without it Brave visitors are not counted.
+```ts
+flush(): Promise<{ accepted: number; duplicates: number; failed: number }>
+```
+
+Sends the queue now.
+
+```ts
+const { accepted, failed } = await analytics.flush();
+```
+
+### `shutdown()`
+
+```ts
+shutdown(): Promise<void>
+```
+
+Flushes, then removes plugins and listeners.
+
+### `start()`
+
+```ts
+start(): void
+```
+
+Starts a client created with `autostart: false`.
+
+### `status()`
+
+```ts
+status(): {
+  queued: number;
+  consent: "granted" | "denied" | "unset";
+  endpoint: string;
+  route: string | null;
+  lastError: string | null;
+  lastSend: string | null;
+}
+```
+
+A snapshot for debugging.
+
+### `on(name, handler)`
+
+```ts
+on("error", (code: string, detail: string) => void): () => void
+on("send", (envelope: Envelope) => void): () => void
+on("drop", (event: WireEvent, reason: string) => void): () => void
+```
+
+Returns a function that removes the handler.
+
+| Name | Fires when |
+| --- | --- |
+| `error` | A batch failed (`RA_INGEST_FAILED`) or the API rejected an event inside a 202 (`RA_INGEST_REJECTED`, once per event) |
+| `send` | A batch was sent |
+| `drop` | An event was dropped, with the reason, such as `dnt` |
+
+```ts
+const off = analytics.on("error", (code, detail) => console.warn(code, detail));
+```
+
+## Plugins and routes
+
+### `use(plugin)`
+
+```ts
+use(plugin: Plugin): () => void
+```
+
+Adds a plugin and returns a function that removes it. See [Plugins](/docs/sdk/plugins).
+
+```ts
+const remove = analytics.use(errors());
+```
+
+### `route(template)`
+
+```ts
+route(template: string | null): void
+```
+
+Sets the route template reports group by, such as `/blog/[slug]`. Router adapters call it. In a router without an adapter, call it yourself or use [`useRoutePageviews`](/docs/sdk/react).
+
+```ts
+analytics.route("/blog/[slug]");
+```
+
+## Delivery behavior
+
+Events are batched: 20 events or 5 seconds, whichever comes first. A batch is cut short to keep its body under 60 KB, the API's limit, and a single event over 60 KB is dropped and reported as a failure with status 413. Batches go out with `fetch` and `keepalive`, and with `sendBeacon` when the page is hidden. Failed sends are retried with the same event ids and kept for the next page load. [Duplicates and retries](/docs/edge-cases/duplicates-and-retries) has the schedule.
+
+With Do Not Track or Global Privacy Control on, the client drops every event with the reason `dnt` and stores nothing but the visitor's own consent, opt-out and debug choices. Set `privacySignals: "ignore"` to send anyway.
 
 ## Identity
 
-The visitor is a random id in `localStorage` and the session a random id in `sessionStorage`. No cookies are set for visitors. `reset()` replaces both. The `__ra` key in `localStorage` is written only once sending is allowed; before that, only the visitor's own consent, opt-out and debug choices are stored.
+The visitor is a random id in `localStorage` and the session a random id in `sessionStorage`. No cookies are set for visitors. `reset()` replaces both. The `__ra` key in `localStorage` is written only once sending is allowed.

@@ -1,25 +1,40 @@
 ---
 title: Next
-description: The `<Analytics />` component, which sends App Router pageviews with route templates.
+description: The <Analytics /> component, which sends App Router pageviews with route templates.
+icon: Zap
 ---
 
 `@spoar/sdk/next` exports one component. [Next.js](/docs/frameworks/nextjs) has the full App Router setup: keys, the client, the provider, the `/_ra` route and server tracking.
 
 ```tsx
-<AnalyticsProvider client={analytics}>
-  <Analytics />
-  {children}
-</AnalyticsProvider>
+import { AnalyticsProvider } from "@spoar/sdk/react";
+import { Analytics } from "@spoar/sdk/next";
+import { analytics } from "./analytics";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AnalyticsProvider client={analytics}>
+      <Analytics />
+      {children}
+    </AnalyticsProvider>
+  );
+}
 ```
 
 ## `<Analytics />`
 
-| | |
-| --- | --- |
-| Props | None |
-| Place it | Inside `AnalyticsProvider` from `/react`, in a Client Component |
-| Sends | A pageview on every navigation, including a change of only the query string |
-| Route | The template from `usePathname` and `useParams`, such as `/blog/[slug]`, so reports group by page type |
-| Server rendering | Wraps itself in `Suspense`, because it reads `useSearchParams`, so static pages keep rendering on the server |
+```ts
+Analytics(): JSX.Element
+```
 
-Create the client with `pageviews: false`, or every pageview is sent twice: once by the core and once by `<Analytics />`.
+Takes no props. Place it inside `AnalyticsProvider`, in a Client Component.
+
+- It sends a pageview on every navigation, including a change of only the query string.
+- It sets the route template from `usePathname` and `useParams`, such as `/blog/[slug]`, so reports group by page type.
+- It wraps itself in `Suspense` because it reads `useSearchParams`. Static pages keep rendering on the server.
+
+Create the client with `pageviews: false`, or each pageview is sent twice, once by the core and once by `<Analytics />`.
+
+```ts
+export const analytics = createAnalytics({ pageviews: false });
+```

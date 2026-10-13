@@ -1,12 +1,15 @@
 ---
 title: Migrating from 1.x
-description: Where each 1.x function went.
+description: Where each 1.x function went in 2.0, and what happens to stored 1.x visitor data.
+icon: Rocket
 ---
+
+Find the 1.x name in the left column and replace it with the 2.0 equivalent on the right. The package changes from `@remcostoeten/analytics` to `@spoar/sdk`.
 
 | 1.x | 2.0 |
 | --- | --- |
 | `<Analytics projectId="my-app" />` from the root entry | `createAnalytics({ project, key, endpoint })` once, `AnalyticsProvider client={analytics}`, and `<Analytics />` from `./next` |
-| `NEXT_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`; `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
+| `NEXT_PUBLIC_ANALYTICS_URL` or `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`. `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
 | `@remcostoeten/analytics/browser` | The root entry, which has no React dependency |
 | `trackEvent(name, meta)`, `track(type, meta)` | `analytics.track(name, props)`, typed by your `Events` |
 | `trackPageView()` | `analytics.page()`, or automatic |
@@ -23,7 +26,9 @@ description: Where each 1.x function went.
 | `AnalyticsErrorBoundary` | `ErrorBoundary` from `./react` |
 | `useTrack()` | `useAnalytics<Events>()` |
 | `trackServer`, `trackServerEvent`, `createServerTrack` | `createServerAnalytics<Events>()` |
-| `flushOfflineQueue` | Automatic; `analytics.flush()` sends now |
+| `flushOfflineQueue` | Automatic. `analytics.flush()` sends now |
 | CommonJS and ESM builds | ESM only |
 
-The 1.x visitor id, opt-out, identity, traits and experiments in `localStorage` are read on first load and move into the single `__ra` key once consent allows storing, so returning visitors keep their id.
+## Stored visitor data
+
+The client reads the 1.x visitor id, opt-out, identity, traits and experiments from `localStorage` on first load. Once consent allows storing, it moves them into the single `__ra` key. Returning visitors keep their id.

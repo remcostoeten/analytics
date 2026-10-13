@@ -1,6 +1,7 @@
 ---
 title: Server
-description: Track from route handlers and server actions with the secret key.
+description: Track events, identify users and capture errors from route handlers and server actions with the secret key, and verify alert webhooks.
+icon: Server
 ---
 
 `@spoar/sdk/server` sends events from your server with the project's secret key (`sk_...`), which you get when you [create a project](/docs/getting-started/quick-start#1-create-a-project). `Events` is your event type from [Concepts](/docs/getting-started/concepts#events).
@@ -21,41 +22,200 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 });
 ```
 
-| Method | Does |
-| --- | --- |
-| `track(name, props?, options?)` | Sends a custom event |
-| `identify(userId, traits?, options?)` | Links a user to the visitor in `options` |
-| `group(type, id, traits?, options?)` | Sends a `group` event in that group; `createServerAnalytics<Events, Groups>` types `type` and `traits` |
-| `captureError(error, context?)` | Records a server error; `context` takes the error context and the request context (`request` or `headers`) in one object |
-| `withErrors(handler)` | Wraps a route handler and records anything it throws, then rethrows |
+## Result
 
-Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. `error.code` is `RA_NO_SECRET`, `RA_NO_ENDPOINT`, `RA_INGEST_FAILED` or `RA_INGEST_REJECTED`.
+Every method resolves to a `ServerResult` and never throws.
 
-## Options
+```ts
+type ServerResult = {
+  accepted: number;
+  duplicates: number;
+  failed: number;
+} & ({ ok: true; error: null } | { ok: false; error: { code: ServerErrorCode; message: string } });
 
-Client options go to `createServerAnalytics`. Call options go in the last argument of a method. Client options left out are read from the JSON in `RA_CONFIG`.
+type ServerErrorCode =
+  | "RA_NO_SECRET"
+  | "RA_NO_ENDPOINT"
+  | "RA_INGEST_FAILED"
+  | "RA_INGEST_REJECTED";
+```
 
-| Option | Where | Does |
-| --- | --- | --- |
-| `secret`, `endpoint` | Client | The secret key (`sk_...`) and the API's base URL |
-| `project` | Client | The project id |
-| `release` | Client | Attached to every event |
-| `origin` | Client or call | The site's origin, such as `https://example.com`, for when there is no `request` or `headers`. The API flags localhost and preview hosts from it. A call's `origin` wins over the request's, which wins over the client's |
-| `fetch` | Client | A custom `fetch` |
-| `waitUntil` | Client or call | Keeps the send alive after the response. On Vercel the runtime's own is used |
-| `request` or `headers` | Call | The incoming request. Forwards the visitor's IP and user agent, the site's origin and the admin session cookie |
-| `visitor`, `session` | Call | The browser's ids, to join the event to its visit |
-| `path` | Call | The page path. Default: the request's path, or `/` |
-| `groups` | Call | Puts this event in groups, such as `{ company: "acme" }` |
+## Client options
 
-- Without `request` or `headers` the event has no IP and no user agent, so it gets no location and no bot score from them. The API never uses your server's own address.
+Pass these to `createServerAnalytics<Events, Groups>(options)`. Options you leave out are read from the JSON in `RA_CONFIG`. The optional `Groups` type parameter types `group` and the `groups` call option.
+
+```ts
+type ServerConfig = {
+  project?: string;
+  secret?: string;
+  endpoint?: string;
+  release?: string;
+  origin?: string;
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
+  waitUntil?: (promise: Promise<unknown>) => void;
+};
+```
+
+- `secret`: the project's secret key (`sk_...`).
+- `endpoint`: the API's base URL.
+- `project`: the project id.
+- `release`: attached to every event.
+- `origin`: the site's origin, such as `https://example.com`. Use it when a call has no `request` or `headers`. The API flags localhost and preview hosts from it. A call's `origin` wins over the request's, which wins over the client's.
+- `fetch`: a custom `fetch`.
+- `waitUntil`: keeps the send alive after the response. On Vercel the runtime's own is used.
+
+## Methods
+
+Each method takes an optional last argument, the call options described in the next section.
+
+### `track(name, props?, context?)`
+
+```ts
+track(name: string, props?: Props, context?: RequestContext): Promise<ServerResult>
+```
+
+Sends a custom event. With an `Events` map, `props` is typed per event name and required only when the event has props.
+
+```ts
+await serverAnalytics.track("signup", { plan: "pro" }, { request });
+```
+
+### `identify(userId, traits?, context?)`
+
+```ts
+identify(userId: string, traits?: Props, context?: RequestContext): Promise<ServerResult>
+```
+
+Links a user to the visitor named in `context`.
+
+```ts
+await serverAnalytics.identify("user_42", { company: "Acme" }, { request });
+```
+
+### `group(type, id, traits?, context?)`
+
+```ts
+group(type: string, id: string, traits?: Props, context?: RequestContext): Promise<ServerResult>
+```
+
+Sends a `group` event in that group. With a `Groups` map, `type` and `traits` are typed.
+
+```ts
+await serverAnalytics.group("company", "acme", { plan: "pro" }, { request });
+```
+
+### `captureError(error, context?)`
+
+```ts
+captureError(error: unknown, context?: ErrorContext & RequestContext): Promise<ServerResult>
+```
+
+Records a server error. `context` takes `level`, `tags` and `fingerprint` together with the call options, in one object.
+
+```ts
+await serverAnalytics.captureError(error, { tags: { job: "invoice" }, request });
+```
+
+### `captureMessage(message, context?)`
+
+```ts
+captureMessage(message: string, context?: ErrorContext & RequestContext): Promise<ServerResult>
+```
+
+Records a message as an error event.
+
+```ts
+await serverAnalytics.captureMessage("Webhook retry limit reached", { level: "warning" });
+```
+
+### `scope(tags)`
+
+```ts
+scope(tags: Props): ServerAnalytics
+```
+
+Returns the same client, adding `tags` to everything it sends.
+
+```ts
+const billing = serverAnalytics.scope({ area: "billing" });
+```
+
+### `withErrors(handler)`
+
+```ts
+withErrors(handler: (request: Request, ...args) => Response | Promise<Response>): typeof handler
+```
+
+Wraps a route handler. It records anything the handler throws, then rethrows.
+
+### `flush()` and `shutdown()`
+
+```ts
+flush(): Promise<ServerResult>
+shutdown(): Promise<ServerResult>
+```
+
+`flush` sends the queue now. `shutdown` flushes and stops the client.
+
+## Call options
+
+Call options go in the last argument of a method.
+
+```ts
+type RequestContext = {
+  request?: Request;
+  headers?: Headers;
+  visitor?: string;
+  session?: string;
+  path?: string;
+  origin?: string;
+  groups?: { [type: string]: string };
+  waitUntil?: (promise: Promise<unknown>) => void;
+};
+```
+
+- `request` or `headers`: the incoming request. The SDK forwards the visitor's IP and user agent, the site's origin and the admin session cookie.
+- `visitor`, `session`: the browser's ids, to join the event to its visit.
+- `path`: the page path. Defaults to the request's path, or `/`.
+- `origin`: the site's origin. Overrides the request's and the client's.
+- `groups`: puts this event in groups, such as `{ company: "acme" }`.
+- `waitUntil`: overrides the client's option for this call.
+
+Behavior to know:
+
+- Without `request` or `headers`, the event has no IP and no user agent, so it gets no location and no bot score from them. The API never uses your server's own address.
 - Events from one tick go out together, in one request per origin and session cookie.
 - Events without `visitor` and `session` use `server` for both, exported as `serverVisitor`. [Concepts](/docs/getting-started/concepts#visitors-and-sessions) explains how reads count them.
-- The session cookie marks a signed-in admin's events as internal; [Exclude your traffic](/docs/guides/exclude-your-traffic) covers when that applies.
+- The session cookie marks a signed-in admin's events as internal. [Exclude your traffic](/docs/guides/exclude-your-traffic) covers when that applies.
+
+### `visitorDetails(headers)`
+
+```ts
+visitorDetails(headers: Headers): { ip: string | null; userAgent: string | null }
+```
+
+Reads the visitor's IP from `cf-connecting-ip`, then `x-real-ip`, then the first `x-forwarded-for` entry. This is the same order the API uses.
+
+```ts
+import { visitorDetails } from "@spoar/sdk/server";
+
+const { ip, userAgent } = visitorDetails(request.headers);
+```
 
 ## Alert webhooks
 
-A webhook [alert target](/docs/api/alerts) posts a signed `WebhookBody` to your app. `alertRoute` turns it into a route handler with one typed function per event; in Next.js it is the whole `route.ts`:
+A webhook [alert target](/docs/api/alerts) posts a signed `WebhookBody` to your app. Two functions handle it.
+
+### `alertRoute(options)`
+
+```ts
+alertRoute(options: {
+  secret: string | undefined;
+  on: { [Name in AlertEventName]?: (event: AlertEventOf<Name>) => void | Promise<void> };
+}): (request: Request) => Promise<Response>
+```
+
+Turns a webhook into a route handler with one typed function per event. In Next.js it is the whole `route.ts`.
 
 ```ts
 import { alertRoute } from "@spoar/sdk/server";
@@ -70,9 +230,35 @@ export const POST = alertRoute({
 });
 ```
 
-- It checks `x-analytics-signature`, the HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's secret, and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed. A request that fails gets `401` and no handler runs; an empty `secret` answers `500`.
-- `on` is typed per event, so `event.issue` and `event.speed` autocomplete, and a handler for an unknown event is a type error. An event without a handler is acknowledged and ignored.
-- `verifyAlert(request, secret)` is the same check without the routing, for other frameworks. It answers the parsed body or an error with the code `NO_SECRET`, `BAD_SIGNATURE`, `STALE_TIMESTAMP` or `BAD_BODY`.
+- It verifies the request, runs the handler for each event in order and answers `200 { ok: true }`.
+- A request that fails verification gets `401` and no handler runs. An empty `secret` answers `500`.
+- `on` is typed per event, so `event.issue` and `event.speed` autocomplete and a handler for an unknown event is a type error.
+- An event without a handler is acknowledged and ignored.
+
+### `verifyAlert(request, secret)`
+
+```ts
+verifyAlert(
+  request: Request,
+  secret: string | undefined,
+): Promise<{ ok: true; value: WebhookBody } | { ok: false; error: { code: AlertVerifyCode; message: string } }>
+
+type AlertVerifyCode = "NO_SECRET" | "BAD_SIGNATURE" | "STALE_TIMESTAMP" | "BAD_BODY";
+```
+
+The same check without the routing, for other frameworks. It reads the request body and never throws.
+
+- `x-analytics-signature` must be `sha256=` followed by the hex HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's secret. The comparison runs in constant time.
+- `x-analytics-timestamp` is in Unix seconds and must be at most 5 minutes from now, so a captured request cannot be replayed.
+- Events this SDK does not know are left out of the result.
+
+```ts
+const verified = await verifyAlert(request, process.env.RA_WEBHOOK_SECRET);
+if (!verified.ok) return new Response(verified.error.message, { status: 401 });
+for (const event of verified.value.events) console.log(event.name);
+```
+
+### Webhook body
 
 The body is `{ v: 1, sentAt, events }`. Each event is one of:
 
