@@ -14,7 +14,6 @@
 		"oxlint": "catalog:oxlint",
 		"oxlint-tsgolint": "catalog:oxlint",
 		"sherif": "1.13.0",
-		"turbo": "2.11.7",
 		"typescript": "catalog:ts"
 	},
 	"catalogs": {
@@ -38,10 +37,9 @@
 	},
 	"private": true,
 	"scripts": {
-		"build": "turbo run build",
-		"dev": "turbo run dev --filter='./apps/*'",
-		"test": "bun run --filter './v1/**' --sequential test && turbo run test --filter='./apps/*' --filter='./examples/*' --filter='./packages/*' --filter='./scripts' --filter='./tools/oxlint/*' --filter='./e2e'",
-		"typecheck": "turbo run typecheck",
+		"build": "bun run --filter '*' build",
+		"test": "bun run --filter './v1/**' --sequential test && bun run --filter './apps/*' --filter './examples/*' --filter './packages/*' --filter './scripts' --filter './tools/oxlint/*' --filter './e2e' test",
+		"typecheck": "bun run --filter '*' typecheck",
 		"test:e2e": "bun run --cwd e2e test:e2e",
 		"lint": "oxlint --type-aware --deny-warnings apps examples packages tools scripts e2e && bun run lint:v1",
 		"lint:fix": "oxlint --type-aware --fix apps examples packages tools scripts e2e",
