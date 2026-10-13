@@ -760,11 +760,11 @@
 
   .landing .principle:hover > svg {
     translate: 0 -3px;
-    color: #fff;
+    color: var(--accent);
   }
 
   .landing .principle:hover h3 {
-    color: #fff;
+    color: var(--accent);
   }
 
   .landing .faq summary:hover .faq-chevron {
@@ -1008,13 +1008,15 @@
   transform: translateY(0.35em);
   filter: blur(6px);
   transition:
-    opacity 450ms var(--ease-out),
-    transform 450ms var(--ease-out),
-    filter 450ms var(--ease-out);
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    filter 200ms var(--ease-out);
 }
 
 .word-swap-item[data-active="true"] {
   opacity: 1;
   transform: none;
   filter: drop-shadow(0 0 18px var(--accent-text-glow));
+  transition-duration: 480ms;
+  transition-delay: 90ms;
 }

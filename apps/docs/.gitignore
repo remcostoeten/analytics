@@ -4,3 +4,4 @@ generated/
 content/docs/reference/
 next-env.d.ts
 tsconfig.tsbuildinfo
+.vercel

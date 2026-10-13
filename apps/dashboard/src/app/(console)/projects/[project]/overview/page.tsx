@@ -58,7 +58,7 @@ export default async function Page({ params, searchParams }: Props) {
         fallback={
           <div className="kpi-row">
             {[0, 1, 2, 3].map((index) => (
-              <CardSkeleton key={index} height={108} />
+              <CardSkeleton key={index} height={132} />
             ))}
           </div>
         }
@@ -67,26 +67,26 @@ export default async function Page({ params, searchParams }: Props) {
       </Suspense>
 
       <div className="card">
-        <Suspense key={`traffic${key}`} fallback={<CardSkeleton height={300} />}>
+        <Suspense key={`traffic${key}`} fallback={<CardSkeleton height={328} />}>
           <TrafficSection scope={scope} />
         </Suspense>
       </div>
 
       <div className="overview-split">
         <div className="card">
-          <Suspense key={`device${key}`} fallback={<CardSkeleton height={260} />}>
+          <Suspense key={`device${key}`} fallback={<CardSkeleton height={300} />}>
             <DeviceSection {...shared} />
           </Suspense>
         </div>
         <div className="card">
-          <Suspense key={`country${key}`} fallback={<CardSkeleton height={260} />}>
+          <Suspense key={`country${key}`} fallback={<CardSkeleton height={300} />}>
             <CountrySection {...shared} base={base} />
           </Suspense>
         </div>
       </div>
 
       <div className="card">
-        <Suspense key={`outcomes${key}`} fallback={<CardSkeleton height={88} />}>
+        <Suspense key={`outcomes${key}`} fallback={<CardSkeleton height={108} />}>
           <OutcomeBar scope={scope} />
         </Suspense>
       </div>

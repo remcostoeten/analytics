@@ -52,11 +52,13 @@ async function Rail({ summary, view, state, base }: RailProps) {
   );
 }
 
+const vitalHeights = [101, 91, 91, 91, 91, 91];
+
 function RailSkeleton() {
   return (
     <div className="rail" aria-hidden="true">
-      {Array.from({ length: 6 }, (_, index) => (
-        <div key={index} className="skeleton h-[104px]" />
+      {vitalHeights.map((height, index) => (
+        <div key={index} className="skeleton" style={{ height }} />
       ))}
     </div>
   );
@@ -109,10 +111,10 @@ export default async function Page({ params, searchParams }: Props) {
           <DeviceTabs path={path} state={state} />
         </ProjectHeading>
 
-        <Suspense key={`summary${key}`} fallback={<SectionSkeleton height={380} />}>
+        <Suspense key={`summary${key}`} fallback={<SectionSkeleton height={424} />}>
           <SpeedSummary {...shared} summary={summary} project={project} canAnnotate={canAnnotate} />
         </Suspense>
-        <Suspense key={`routes${key}`} fallback={<SectionSkeleton height={320} />}>
+        <Suspense key={`routes${key}`} fallback={<SectionSkeleton height={282} />}>
           <SpeedRoutes {...shared} />
         </Suspense>
         <Suspense key={`elements${key}`} fallback={<SectionSkeleton height={240} />}>

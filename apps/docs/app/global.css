@@ -382,7 +382,33 @@
 @keyframes hero-rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px);
+  }
+}
+
+@keyframes hero-word {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+    filter: blur(8px);
+  }
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes panel-curtain {
+  from {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(16px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: none;
   }
 }
 
@@ -411,24 +437,17 @@
   }
 }
 
-.hero-rise {
-  animation: hero-rise 520ms var(--ease-out) both;
+.hero-word {
+  display: inline-block;
+  animation: hero-word 700ms var(--ease-out) calc(var(--i, 0) * 45ms) both;
 }
 
-.hero-rise-late {
-  animation: hero-rise 520ms var(--ease-out) 120ms both;
+.hero-rise {
+  animation: hero-rise 600ms var(--ease-out) calc(320ms + var(--i, 0) * 60ms) both;
 }
 
 .panel-rise {
-  animation:
-    hero-rise 600ms var(--ease-out) 200ms both,
-    panel-float 9s ease-in-out 1s infinite;
-}
-
-@keyframes panel-float {
-  50% {
-    translate: 0 -4px;
-  }
+  animation: panel-curtain 900ms var(--ease-out) 520ms both;
 }
 
 .spark-line {
@@ -438,6 +457,14 @@
 
 .spark-fill {
   animation: fade-in 600ms ease 1300ms both;
+}
+
+.panel-rise .spark-line {
+  animation-delay: 1200ms;
+}
+
+.panel-rise .spark-fill {
+  animation-delay: 2000ms;
 }
 
 .bar-grow {
@@ -583,17 +610,25 @@
 }
 
 .landing .mosaic > div > span {
+  position: relative;
+  overflow: hidden;
+  animation: tile-in 600ms var(--ease-out) calc(300ms + var(--i, 0) * 50ms) both;
+}
+
+.landing .mosaic > div > span::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
   background: linear-gradient(var(--tile-angle, 100deg), var(--tile-from), var(--tile-to));
-  background-size: 180% 180%;
   animation: tile-drift var(--tile-pace, 14s) ease-in-out var(--tile-start, 0s) infinite alternate;
 }
 
 @keyframes tile-drift {
   from {
-    background-position: 0% 0%;
+    translate: -12% -12%;
   }
   to {
-    background-position: 100% 100%;
+    translate: 12% 12%;
   }
 }
 
@@ -856,6 +891,14 @@
 
 .landing .project-card {
   --spark-from: var(--violet);
+}
+
+.landing .project-track {
+  scrollbar-width: none;
+}
+
+.landing .project-track::-webkit-scrollbar {
+  display: none;
 }
 
 .landing .project-card-glow {

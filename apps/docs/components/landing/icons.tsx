@@ -162,15 +162,6 @@ export function MoonIcon(props: Props) {
   );
 }
 
-export function ClockIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v4l2.5 2" />
-    </svg>
-  );
-}
-
 export function DatabaseIcon(props: Props) {
   return (
     <svg {...frame(props)}>
@@ -185,15 +176,6 @@ export function KeyIcon(props: Props) {
     <svg {...frame(props)}>
       <circle cx="8" cy="15" r="3.5" />
       <path d="m10.5 12.5 8-8M16 7l2 2M14 9l1.5 1.5" />
-    </svg>
-  );
-}
-
-export function EyeOffIcon(props: Props) {
-  return (
-    <svg {...frame(props)}>
-      <path d="M3 12s3.5-6 9-6c1.6 0 3 .5 4.2 1.2M21 12s-3.5 6-9 6c-1.6 0-3-.5-4.2-1.2" />
-      <path d="M4 20 20 4" />
     </svg>
   );
 }

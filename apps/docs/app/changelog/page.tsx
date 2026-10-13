@@ -175,35 +175,37 @@ export default function ChangelogPage() {
             </div>
           </section>
 
-          <section aria-labelledby="updates-heading" className="flex flex-col gap-6">
-            <div>
-              <span className="caps text-muted">Repository</span>
-              <h2
-                id="updates-heading"
-                className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
-              >
-                Recent product updates
-              </h2>
-            </div>
-            <div className="flex flex-col divide-y divide-line border-y border-line">
-              {changelog.updates.map((group) => (
-                <section key={group.date} className="grid gap-4 py-6 sm:grid-cols-[9rem_1fr]">
-                  <h3 className="font-mono text-xs text-muted">{group.date}</h3>
-                  <ul className="flex flex-col gap-3">
-                    {group.updates.map((update) => (
-                      <li
-                        key={`${update.scope}-${update.title}`}
-                        className="font-serif text-[0.95rem] leading-relaxed text-fg"
-                      >
-                        <span className="mr-2 font-mono text-xs text-muted">{update.scope}</span>
-                        {update.title}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          </section>
+          {changelog.updates.length > 0 ? (
+            <section aria-labelledby="updates-heading" className="flex flex-col gap-6">
+              <div>
+                <span className="caps text-muted">Repository</span>
+                <h2
+                  id="updates-heading"
+                  className="mt-2 font-serif text-[2.2rem] leading-[1.1] font-light tracking-[-0.015em] text-fg sm:text-[2.7rem]"
+                >
+                  Recent product updates
+                </h2>
+              </div>
+              <div className="flex flex-col divide-y divide-line border-y border-line">
+                {changelog.updates.map((group) => (
+                  <section key={group.date} className="grid gap-4 py-6 sm:grid-cols-[9rem_1fr]">
+                    <h3 className="font-mono text-xs text-muted">{group.date}</h3>
+                    <ul className="flex flex-col gap-3">
+                      {group.updates.map((update) => (
+                        <li
+                          key={`${update.scope}-${update.title}`}
+                          className="font-serif text-[0.95rem] leading-relaxed text-fg"
+                        >
+                          <span className="mr-2 font-mono text-xs text-muted">{update.scope}</span>
+                          {update.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <p className="text-sm text-muted">
             Read the{" "}

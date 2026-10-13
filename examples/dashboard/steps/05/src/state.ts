@@ -6,7 +6,7 @@ export type ViewState = {
   filters: Filters;
 };
 
-export const periods: readonly Period[] = ["24h", "7d", "30d", "90d"];
+export const periods: readonly Period[] = ["24h", "7d", "30d", "90d", "12mo", "all"];
 
 export const defaultState: ViewState = { period: "7d", traffic: "human", filters: {} };
 

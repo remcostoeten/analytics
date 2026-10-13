@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { listProjects } from "@/modules/analytics/reads";
 import { formatMetric } from "@/modules/analytics/format";
 import { readSession } from "@/modules/session/session";
-import { PageSkeleton } from "@/modules/shell/components/skeletons";
+import { HomeSkeleton } from "@/modules/shell/components/skeletons";
 import { serverClient } from "@/shared/api/server-client";
 import { siteUrl } from "@/shared/config/site";
 import { ExternalIcon } from "@/shared/ui/icons";
@@ -117,7 +117,7 @@ async function Home() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={<HomeSkeleton />}>
       <Home />
     </Suspense>
   );

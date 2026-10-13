@@ -25,7 +25,7 @@ export const metadata: Metadata = { title: "Logs" };
 function FieldsSkeleton() {
   return (
     <div className="field-sidebar" aria-hidden="true">
-      <div className="skeleton h-[420px]" />
+      <div className="skeleton h-[408px]" />
     </div>
   );
 }
@@ -81,7 +81,7 @@ export default async function Page({ params, searchParams }: Props) {
         </Suspense>
         <div className="grid min-w-0 content-start gap-4">
           <div className="panel">
-            <Suspense key={`outcomes${key}`} fallback={<SectionSkeleton height={280} />}>
+            <Suspense key={`outcomes${key}`} fallback={<SectionSkeleton height={310} />}>
               <OutcomeSection scope={scope} />
             </Suspense>
           </div>

@@ -323,7 +323,7 @@ function Rows({
                       className="bar-grow absolute inset-y-0 left-0 rounded-sm bg-accent/12"
                       style={{
                         width: `${((row.visitors ?? 0) / max) * 100}%`,
-                        animationDelay: `${500 + index * 80}ms`,
+                        animationDelay: `${1200 + index * 60}ms`,
                       }}
                     />
                     <span className="relative block truncate px-1.5 font-mono text-[0.65rem] leading-5 text-fg">

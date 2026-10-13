@@ -32,6 +32,14 @@ type GeneratedChangelog = {
   updates: UpdateGroup[];
 };
 
+const generatedTypes = `type ChangeSection = { title: string; changes: string[] };
+type PackageVersion = { version: string; sections: ChangeSection[] };
+type PackageChangelog = { name: string; versions: PackageVersion[] };
+type CommitUpdate = { type: string; scope: string; title: string };
+type UpdateGroup = { date: string; updates: CommitUpdate[] };
+type GeneratedChangelog = { releases: PackageChangelog[]; updates: UpdateGroup[] };
+`;
+
 const root = join(import.meta.dir, "..", "..", "..");
 const output = join(import.meta.dir, "..", "generated", "changelog.ts");
 const packages = [
@@ -149,7 +157,10 @@ async function main() {
   );
   const data: GeneratedChangelog = { releases, updates: readUpdates() };
   await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, `export const changelog = ${JSON.stringify(data, null, 2)} as const;\n`);
+  await writeFile(
+    output,
+    `${generatedTypes}\nexport const changelog: GeneratedChangelog = ${JSON.stringify(data, null, 2)};\n`,
+  );
 }
 
 await main();

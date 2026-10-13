@@ -1,0 +1,5 @@
+import { LogsSkeleton } from "@/modules/shell/components/skeletons";
+
+export default function Loading() {
+  return <LogsSkeleton />;
+}
