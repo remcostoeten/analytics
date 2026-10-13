@@ -8,6 +8,7 @@ export type Example = {
   directory: string;
   files: string[];
   preview?: string;
+  tutorial?: string;
 };
 
 const examples: Example[] = [
@@ -18,15 +19,28 @@ const examples: Example[] = [
     description:
       "Stats tiles, a visitors chart, breakdowns, countries and a live stream for one project, read through the typed client, with the page tracking itself through the SDK.",
     directory: "dashboard",
+    tutorial: "/docs/tutorial/create-a-project",
     files: [
       "src/app.tsx",
+      "src/main.tsx",
       "src/api.ts",
       "src/use-read.ts",
       "src/state.ts",
-      "src/components/stats-tiles.tsx",
-      "src/components/breakdown-table.tsx",
-      "src/components/realtime.tsx",
+      "src/settings.ts",
       "src/analytics.ts",
+      "src/events.ts",
+      "src/format.ts",
+      "src/components/settings-bar.tsx",
+      "src/components/controls.tsx",
+      "src/components/read-frame.tsx",
+      "src/components/stats-tiles.tsx",
+      "src/components/timeseries-chart.tsx",
+      "src/components/breakdown-table.tsx",
+      "src/components/country-table.tsx",
+      "src/components/realtime.tsx",
+      "src/styles.css",
+      "index.html",
+      "package.json",
     ],
   },
 ];

@@ -149,7 +149,7 @@ export async function SummarySection({
             <li className="legend-cell">
               <span className="flex items-center gap-1.5 text-xs text-muted">
                 {state.split === null ? (
-                  <span className="size-2 rounded-full bg-[var(--series-1)]" />
+                  <span className="size-2 rounded-full bg-(--series-1)" />
                 ) : null}
                 Total {view.label.toLowerCase()}
               </span>

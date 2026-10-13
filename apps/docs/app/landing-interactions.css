@@ -63,6 +63,240 @@
   transform-origin: calc(100% - 20px) top;
 }
 
+.landing .nav-chevron {
+  transition: transform 160ms var(--ease-out);
+}
+
+.landing .nav-toggle[aria-expanded="true"] .nav-chevron {
+  transform: rotate(180deg);
+}
+
+@media (width >= 40rem) {
+  .landing .nav-popover {
+    transform-origin: center top;
+  }
+}
+
+.landing .nav-art {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--dash) 16%, var(--surface)),
+    color-mix(in srgb, var(--accent) 7%, var(--surface))
+  );
+  color: var(--fg);
+  transition:
+    border-color 150ms ease,
+    transform 200ms var(--ease-out);
+}
+
+.landing .nav-art .art-accent {
+  color: var(--accent);
+}
+
+.landing .nav-art :is(.art-travel, .art-node, .art-bar, .art-drop, .art-layer-top, .art-layer-mid, .art-snap, .art-ripple, .art-brace-l, .art-brace-r, .art-dots, .art-card, .art-led) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.landing .nav-art .art-bar {
+  transform-origin: center bottom;
+}
+
+.landing .nav-art .art-ripple {
+  opacity: 0;
+}
+
+.landing .nav-art .art-draw {
+  stroke-dasharray: 1;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .nav-art {
+  border-color: color-mix(in srgb, var(--dash) 55%, var(--line));
+  transform: translateY(-1px);
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-travel {
+  animation: art-travel 700ms ease-in-out both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-node {
+  animation: art-pop 500ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-node:nth-of-type(2) {
+  animation-delay: 90ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-node:nth-of-type(3) {
+  animation-delay: 180ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-bar {
+  animation: art-grow 600ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-bar:nth-of-type(2) {
+  animation-delay: 80ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-bar:nth-of-type(3) {
+  animation-delay: 160ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-drop {
+  animation: art-drop 550ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-layer-top {
+  transform: translateY(-2px);
+  transition: transform 260ms var(--ease-out);
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-layer-mid {
+  transform: translateY(-1px);
+  transition: transform 260ms var(--ease-out) 40ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-snap {
+  animation: art-snap 500ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-ripple {
+  animation: art-ripple 700ms ease-out both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-draw {
+  animation: art-draw 700ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-led {
+  animation: art-blink 900ms steps(1) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-led:nth-of-type(2) {
+  animation-delay: 200ms;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-brace-l {
+  transform: translateX(-1.5px);
+  transition: transform 220ms var(--ease-out);
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-brace-r {
+  transform: translateX(1.5px);
+  transition: transform 220ms var(--ease-out);
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-dots {
+  animation: art-pop 450ms var(--ease-out) 60ms both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-cursor {
+  animation: art-cursor 1s steps(1) infinite;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-card {
+  animation: art-lift 500ms var(--ease-out) both;
+}
+
+.landing .nav-item:is(:hover, :focus-visible) .art-card:nth-of-type(3) {
+  animation-delay: 90ms;
+}
+
+.landing .nav-art :is(.art-layer-top, .art-layer-mid, .art-brace-l, .art-brace-r) {
+  transition: transform 200ms var(--ease-out);
+}
+
+@keyframes art-travel {
+  25% {
+    transform: translate(3.6px, -0.7px);
+  }
+  50% {
+    transform: translate(6.9px, -2.7px);
+  }
+  75% {
+    transform: translate(10px, -6.1px);
+  }
+  to {
+    transform: translate(13px, -11px);
+  }
+}
+
+@keyframes art-pop {
+  40% {
+    transform: scale(1.3);
+  }
+}
+
+@keyframes art-grow {
+  from {
+    transform: scaleY(0.2);
+  }
+}
+
+@keyframes art-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes art-snap {
+  from {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes art-ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes art-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes art-blink {
+  0%,
+  50% {
+    opacity: 0.2;
+  }
+  25%,
+  75% {
+    opacity: 1;
+  }
+}
+
+@keyframes art-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes art-lift {
+  40% {
+    transform: translateY(-2px);
+  }
+}
+
 .landing .nav-popover a {
   transition:
     transform 150ms var(--ease-out),
@@ -126,30 +360,59 @@
 
 @keyframes orbit-bob {
   50% {
-    translate: -50% calc(-50% - 4px);
+    translate: 0 -4px;
   }
 }
 
-.landing .proxy-route,
-.landing .proxy-line {
+@media (prefers-reduced-motion: no-preference) {
+  .landing[data-reveal] .reveal:not([data-shown]) .piece {
+    opacity: 0;
+  }
+
+  .landing[data-reveal] .reveal[data-shown=""] .piece {
+    animation: piece-in 560ms var(--ease-out) calc(var(--i, 0) * 80ms + 220ms) both;
+  }
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.94);
+  }
+}
+
+.landing .proxy-hops {
+  --span: 148px;
+}
+
+.landing .proxy-node {
   transition:
-    transform 200ms var(--ease-out),
-    background-color 200ms ease;
+    scale 320ms var(--ease-out),
+    box-shadow 320ms ease;
+  transition-delay: calc(var(--i, 0) * 35ms);
 }
 
-.landing .proxy-request {
+.landing .proxy-dot {
   opacity: 0;
-  animation: proxy-request 4200ms var(--ease-in-out) 600ms infinite;
+  animation: proxy-dot 4200ms var(--ease-in-out) 600ms infinite;
 }
 
-.landing .proxy-line {
-  animation: proxy-line 4200ms ease 600ms infinite;
-}
-
-.landing .proxy-response {
+.landing .proxy-key,
+.landing .proxy-ok {
   opacity: 0;
-  translate: 0 6px;
-  animation: proxy-response 4200ms var(--ease-out) 600ms infinite;
+  translate: 0 4px;
+}
+
+.landing .proxy-key {
+  animation: proxy-key 4200ms var(--ease-out) 600ms infinite;
+}
+
+.landing .proxy-ok {
+  animation: proxy-ok 4200ms var(--ease-out) 600ms infinite;
+}
+
+.landing .read-method {
+  animation: read-method 5200ms ease calc(var(--i, 0) * -1733ms) infinite;
 }
 
 .landing .read-bar {
@@ -163,79 +426,76 @@
   animation: read-status 5200ms ease 400ms infinite;
 }
 
-.landing .read-sql::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  translate: -110% 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 14%, transparent),
-    transparent
-  );
-  animation: read-sweep 5200ms var(--ease-in-out) 400ms infinite;
-}
-
-@keyframes proxy-request {
+@keyframes proxy-dot {
   0% {
     opacity: 0;
-    translate: 0 0;
+    translate: -50% -50%;
   }
   4% {
     opacity: 1;
   }
-  22% {
+  34%,
+  44% {
     opacity: 1;
-    translate: 0 50px;
+    translate: calc(var(--span) * 0.5 - 50%) -50%;
   }
-  30%,
-  100% {
-    opacity: 0;
-    translate: 0 50px;
-  }
-}
-
-@keyframes proxy-line {
-  0%,
-  18% {
-    background-color: transparent;
-  }
-  26%,
-  68% {
-    background-color: color-mix(in srgb, var(--accent) 10%, transparent);
+  74% {
+    opacity: 1;
+    translate: calc(var(--span) - 50%) -50%;
   }
   80%,
   100% {
-    background-color: transparent;
+    opacity: 0;
+    translate: calc(var(--span) - 50%) -50%;
   }
 }
 
-@keyframes proxy-response {
+@keyframes proxy-key {
   0%,
-  26% {
+  36% {
     opacity: 0;
-    translate: 0 6px;
+    translate: -50% 4px;
   }
-  34%,
-  70% {
+  42%,
+  92% {
+    opacity: 1;
+    translate: -50% 0;
+  }
+  100% {
+    opacity: 0;
+    translate: -50% 4px;
+  }
+}
+
+@keyframes proxy-ok {
+  0%,
+  74% {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  80%,
+  96% {
     opacity: 1;
     translate: 0 0;
   }
-  80%,
   100% {
     opacity: 0;
-    translate: 0 6px;
+    translate: 0 4px;
   }
 }
 
-@keyframes read-sweep {
-  0% {
-    translate: -110% 0;
+@keyframes read-method {
+  0%,
+  30% {
+    background-color: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
   }
-  16%,
+  34%,
   100% {
-    translate: 110% 0;
+    background-color: color-mix(in srgb, var(--surface) 70%, transparent);
+    border-color: var(--line);
+    color: var(--muted);
   }
 }
 
@@ -488,8 +748,9 @@
     scale: 1.06;
   }
 
-  .landing .step-card:hover .proxy-route {
-    transform: translateY(-2px);
+  .landing .step-card:hover .proxy-node {
+    scale: 1.06;
+    box-shadow: 0 10px 20px -10px rgb(var(--shade) / 0.45);
   }
 
   .landing .scene:hover .blocked-card {
@@ -499,11 +760,11 @@
 
   .landing .principle:hover > svg {
     translate: 0 -3px;
-    color: #fff;
+    color: var(--accent);
   }
 
   .landing .principle:hover h3 {
-    color: #fff;
+    color: var(--accent);
   }
 
   .landing .faq summary:hover .faq-chevron {
@@ -518,12 +779,18 @@
   .landing .chip > svg,
   .copy-feedback > svg,
   .landing .nav-toggle-icons > svg,
-  .landing .nav-popover a,
-  .landing .proxy-route {
+  .landing .nav-chevron,
+  .landing .nav-art,
+  .landing .nav-art *,
+  .landing .nav-popover a {
     transform: none !important;
   }
 
-  .landing :is(.orbit-mark, .orbit-core, .station-tile) {
+  .landing .nav-art * {
+    animation: none !important;
+  }
+
+  .landing :is(.orbit-mark, .orbit-core, .station-tile, .proxy-node) {
     scale: none !important;
     rotate: none !important;
   }
@@ -532,9 +799,23 @@
     width: var(--w);
   }
 
-  .landing :is(.read-status, .proxy-response) {
+  .landing :is(.read-status, .proxy-key, .proxy-ok) {
     opacity: 1;
     translate: none;
+  }
+
+  .landing .proxy-key {
+    translate: -50% 0;
+  }
+
+  .landing .proxy-dot {
+    display: none;
+  }
+
+  .landing .read-method:first-child {
+    background-color: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
   }
 
   .landing .faq::details-content {
@@ -677,4 +958,65 @@
 .landing .json-peek pre {
   max-height: 380px;
   overflow-y: auto;
+}
+
+.term-tip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+  outline-offset: 2px;
+}
+
+.term-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 16rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--font-sans, inherit);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 4px);
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+  pointer-events: none;
+}
+
+.term-tip:is(:hover, :focus-visible) .term-tip-bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.word-swap {
+  display: inline-grid;
+  vertical-align: bottom;
+  text-align: left;
+}
+
+.word-swap-item {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(0.35em);
+  filter: blur(6px);
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    filter 200ms var(--ease-out);
+}
+
+.word-swap-item[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  filter: drop-shadow(0 0 18px var(--accent-text-glow));
+  transition-duration: 480ms;
+  transition-delay: 90ms;
 }

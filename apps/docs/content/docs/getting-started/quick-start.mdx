@@ -1,33 +1,39 @@
 ---
 title: Quick start
-description: Create a project, install the SDK, route events through your own domain and check that they arrive.
+description: Connect your website to Spoar and see your first pageview in the dashboard.
 ---
 
-This page takes a Next.js app from nothing to its first stored event. Other stacks follow the same steps; only step 4 differs, and the [Overview](/docs#what-it-runs-on) lists what each stack uses.
+Spoar records visits to your website so you can see which pages people open, where they come from and how your site performs. You add the SDK, a small library, to your app. It sends events to your Spoar API, which stores them for the dashboard.
+
+<EventJourney />
+
+This guide connects an existing **Next.js App Router** app. You'll create a project, add the SDK and a forwarding route, then open your site to record a visit. Using another stack? Choose your [framework guide](/docs/frameworks) for its setup code.
 
 ## Before you start
 
-Spoar has no sign-up form. Events go to a project, and only an admin of the API you send to can create one. That gives three roles, which can be the same person:
+You need a running Spoar API before your website can send it events. Spoar is self-hosted, so installing the SDK alone doesn't create an account or a database.
 
-<Flow>
-  <FlowNode label="Admin">Creates the project and hands out its keys</FlowNode>
-  <FlowNode label="Developer">Puts the public key in the site and the secret key on the server</FlowNode>
-  <FlowNode label="Reader">Opens the dashboard, or reads the numbers with an API token</FlowNode>
-</Flow>
+<Cards>
+  <Card title="I'm setting up Spoar myself" href="/docs/guides/self-host">
+    Start with the self-hosting guide to set up the database, API and sign-in. Then return here to connect your website.
+  </Card>
+  <Card title="I already have a Spoar API" href="#1-create-a-project">
+    Have its base URL ready, such as `https://api.example.com`. Create a project below, or ask its admin for your project id and keys.
+  </Card>
+</Cards>
 
-You need one of these:
-
-- **Your own API.** You are the admin. [Run your own copy](/docs/guides/self-host) covers the database, the API and sign-in; step 1 below then creates the project.
-- **Someone else's API.** Ask its admin for a project id, a `pk_` public key and an `sk_` secret key, and skip to step 2. Sign-in on the shared API at `api.analytics.remcostoeten.nl` is limited to allowlisted GitHub logins.
+Already have your project id and both keys? [Skip to installation](#2-install-the-sdk). Sign-in on the shared API at `api.analytics.remcostoeten.nl` is limited to allowlisted GitHub logins, so it isn't an open registration service.
 
 ## 1. Create a project
 
-A project is one site or app. Creating one gives you two keys:
+A project groups the events for one site or app. We'll use `example.com` throughout this guide. Replace it with your own project id.
+
+Creating a project gives you two keys. Save both before leaving the screen:
 
 | Key | Prefix | Where it goes |
 | --- | --- | --- |
 | `publicKey` | `pk_` | The browser. It is safe to ship and only works from the project's allowed origins |
-| `secretKey` | `sk_` | Your server's environment. It is shown once and stored hashed, so copy it right away |
+| `secretKey` | `sk_` | Your server's environment. It is shown once and stored hashed, so copy it right away. It sends events, but does not read reports |
 
 Pick the way that matches what you have:
 
@@ -35,7 +41,7 @@ Pick the way that matches what you have:
   <Tab value="Dashboard">
     Sign in to the dashboard at `/dashboard` with GitHub as an owner or admin, open **Projects** in the sidebar, then **New project**. Fill in the id (`example.com`), the domain and the allowed origins. The next screen shows both keys and the `.env.local` block to paste in step 3.
 
-    Without the dashboard deployed, `<API URL>/v2/setup` on the API does the same after GitHub sign-in.
+    Allowed origins are the addresses permitted to send directly with the public key, including the protocol, such as `https://example.com`. Without a deployed dashboard, use the command-line option. The old `/v2/setup` page now redirects to the dashboard when configured.
   </Tab>
   <Tab value="Command line">
     From a clone of the repository, with `DATABASE_URL` pointing at the API's database. On a fresh database, `setup` runs the migrations, allows your GitHub login and creates the first project:
@@ -64,24 +70,39 @@ Pick the way that matches what you have:
 
 ## 2. Install the SDK
 
+Run this in your Next.js app's directory. The `next` tag installs Spoar v2, which this guide uses.
+
 ```bash
 npm install @spoar/sdk
 ```
 
 ## 3. Configure it
 
-Put the browser options in one environment variable, and the secret in another that never reaches the browser:
+Create or update `.env.local` at the root of your app. These settings tell the SDK which project receives the events and where to send them.
+
+<KeyPlacement />
 
 ```bash
 NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
 RA_SECRET=sk_...
+RA_ENDPOINT=https://api.example.com
 ```
 
-Vite reads `VITE_RA_CONFIG` and Astro and SvelteKit read `PUBLIC_RA_CONFIG`, with the same JSON.
+Replace `example.com`, `pk_...`, `sk_...` and `https://api.example.com` with your project's values. Keep `/_ra` as written: you'll add that route in step 5. Restart your development server after changing `.env.local`.
+
+`RA_ENDPOINT` is your Spoar API's base URL. The forwarding route below reads it explicitly. The browser only needs the local path `/_ra`.
+
+<Accordions>
+  <Accordion title="Using Vite, Astro or SvelteKit?">
+    Vite reads `VITE_RA_CONFIG`. Astro and SvelteKit read `PUBLIC_RA_CONFIG`, with the same JSON. The [framework guides](/docs/frameworks) show the matching client and server setup.
+  </Accordion>
+</Accordions>
 
 ## 4. Create the client
 
-`lib/analytics.ts`:
+This step connects three files: the client defines what to track, the provider starts tracking, and the layout includes it on every page. If your app uses a `src` directory, put these files under `src`.
+
+First, create `lib/analytics.ts`. The two plugins record page performance and JavaScript errors alongside pageviews:
 
 ```ts
 import { createAnalytics } from "@spoar/sdk";
@@ -93,7 +114,7 @@ export const analytics = createAnalytics({
 });
 ```
 
-`app/providers.tsx`:
+Create `app/providers.tsx` to start the client in the browser. If you already have a providers component, add the analytics provider there:
 
 ```tsx
 "use client";
@@ -113,7 +134,7 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 ```
 
-`app/layout.tsx`:
+Wrap your page content with `Providers` in `app/layout.tsx`. Keep your existing fonts, metadata and other layout content:
 
 ```tsx
 import type { ReactNode } from "react";
@@ -134,39 +155,72 @@ The provider lives in a Client Component because the client holds functions, whi
 
 `<Analytics />` sends a pageview on every navigation with the route template, such as `/blog/[slug]`, which is why the client is created with `pageviews: false`.
 
-Without Next.js, the client alone is enough. Import `lib/analytics.ts` once from your entry file and leave `pageviews` on: it sends a pageview on load and on every `pushState` navigation.
+Without Next.js, import `lib/analytics.ts` once from your entry file and leave `pageviews` on. It sends a pageview on load and on every `pushState` navigation. Use your [framework guide](/docs/frameworks) for the corresponding integration.
 
 ## 5. Serve `/_ra` from your own domain
 
-Browsers with ad blockers drop requests to third-party analytics hosts. A same-origin path avoids that. In the App Router, `app/%5Fra/route.ts` serves `/_ra` (a folder starting with `_` is private in Next.js, so the underscore is URL-encoded):
+Add the middle step from the illustration: a proxy, or forwarding route, on your own website. The browser sends events to `/_ra`, and your server forwards them to Spoar with the secret key. This can help requests reach Spoar when ad blockers block its analytics hostname.
+
+Create `app/%5Fra/route.ts`. Use the folder name `%5Fra` exactly: Next.js treats folders starting with `_` as private, so the underscore must be URL-encoded.
 
 ```ts
 import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
   secret: process.env.RA_SECRET,
-  endpoint: "https://api.example.com",
+  endpoint: process.env.RA_ENDPOINT,
 });
 ```
 
-The proxy accepts only same-site `POST` requests up to 60 KB, adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie, and forwards the body to `/v2/events`. The [proxy page](/docs/sdk/proxy) covers other runtimes.
+The browser path is `/_ra`. The proxy sends to `https://api.example.com/v2/events`, adding `/v2/events` to your `RA_ENDPOINT` automatically.
+
+<Accordions>
+  <Accordion title="What does the proxy forward?">
+    It accepts only same-site `POST` requests up to 60 KB. It adds the secret key, the visitor's IP and user agent, the page's origin and the admin session cookie. The API uses the IP for enrichment and hashing, but never stores the raw address. The [proxy reference](/docs/sdk/proxy) covers the checks and other runtimes.
+  </Accordion>
+</Accordions>
 
 ## 6. Send an event and check it
 
+You don't need a custom event to test this. Opening a page sends a pageview automatically.
+
+1. Open your running website with `?ra=debug` added to its URL, such as `http://localhost:3000/?ra=debug`.
+2. Open the browser console. An `[ra]` line explains when an event is queued, dropped or fails to send.
+3. Wait at least five seconds for the batch to send, then open your project's **Realtime** page in the dashboard.
+4. Include test traffic using the dashboard's **Exclude bots** chip. Localhost, preview and signed-in admin visits are filtered out by default.
+
+<Callout title="Nothing showing up yet?">
+  Check for a request to `/_ra` in your browser's Network panel. A `404` usually means the route is missing. A `401` usually means the secret key is wrong. If the request succeeds but the dashboard is empty, check the traffic filters. [Find missing events](/docs/troubleshooting/no-events) walks through each case.
+</Callout>
+
+The `endpoint` in step 3 allows events to send during development. Without an explicit endpoint, the SDK logs events locally in `development` or `test` mode. `analytics.status()` also reports the queue size, consent, endpoint, route, last error and last send time.
+
+The browser remembers debug mode. Open your site with `?ra=nodebug` to turn it off.
+
+<Accordions>
+  <Accordion title="Check events without the dashboard">
+    Read the latest events through the API with `traffic=all` to include your test visit:
+
+    ```bash
+    curl "https://api.example.com/v2/projects/example.com/realtime/events?traffic=all" \
+      -H "authorization: Bearer $RA_TOKEN"
+    ```
+
+    For private projects, `$RA_TOKEN` must be an API token with the `read` scope. It is separate from the `sk_` key used to send events. Public projects need no token. See [Create a token](/docs/guides/read-your-data#1-create-a-token).
+  </Accordion>
+</Accordions>
+
+## Track something beyond a page visit
+
+Once you can see your pageview, add a custom event where an action completes in your browser code. For example, after a successful signup:
+
 ```ts
+import { analytics } from "@/lib/analytics";
+
 analytics.track("signup", { plan: "pro" });
 ```
 
-Open your site once with `?ra=debug` to see an `[ra]` line in the console for every event, every dropped event and every failed send. The browser remembers the setting. `analytics.status()` returns the queue size, consent, endpoint, route, last error and last send time.
-
-In development (`NODE_ENV` is `development` or `test`) the SDK sends nothing unless an `endpoint` is set. Add `?ra=debug` to the URL to print each event to the console.
-
-The event shows up within a few seconds on the project's **Realtime** page in the dashboard. Without the dashboard, read it with an API token:
-
-```bash
-curl https://api.example.com/v2/projects/example.com/realtime/events \
-  -H "authorization: Bearer $RA_TOKEN"
-```
+`signup` names the action. `{ plan: "pro" }` adds a detail you can use when reading your events. Pageviews continue to be recorded automatically.
 
 ## Next steps
 

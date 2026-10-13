@@ -1,5 +1,5 @@
-import { PanelSkeleton } from "@/modules/shell/components/skeletons";
+import { OverviewSkeleton } from "@/modules/shell/components/skeletons";
 
 export default function Loading() {
-  return <PanelSkeleton height={420} />;
+  return <OverviewSkeleton />;
 }

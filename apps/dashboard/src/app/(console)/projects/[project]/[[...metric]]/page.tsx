@@ -77,7 +77,7 @@ function RailSkeleton() {
   return (
     <div className="rail" aria-hidden="true">
       {metricViews.map((view) => (
-        <div key={view.slug} className="skeleton h-[104px]" />
+        <div key={view.slug} className="skeleton h-[116px]" />
       ))}
     </div>
   );
@@ -121,7 +121,7 @@ export default async function Page({ params, searchParams }: Props) {
       <aside className="grid gap-6">
         <Suspense
           key={`vitals${viewQuery(state)}`}
-          fallback={<div className="skeleton h-[118px]" />}
+          fallback={<div className="skeleton h-[114px]" />}
         >
           <Vitals project={project} state={state} base={base} />
         </Suspense>
@@ -148,7 +148,7 @@ export default async function Page({ params, searchParams }: Props) {
 
         <Suspense
           key={`summary${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={380} />}
+          fallback={<SectionSkeleton height={430} />}
         >
           <SummarySection
             {...shared}
@@ -163,13 +163,13 @@ export default async function Page({ params, searchParams }: Props) {
         </Suspense>
         <Suspense
           key={`country${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={200} />}
+          fallback={<SectionSkeleton height={320} />}
         >
           <CountrySection {...shared} path={path} />
         </Suspense>
         <Suspense
           key={`sources${path}${viewQuery(state)}`}
-          fallback={<SectionSkeleton height={420} />}
+          fallback={<SectionSkeleton height={570} />}
         >
           <SourcesSection {...shared} path={path} />
         </Suspense>

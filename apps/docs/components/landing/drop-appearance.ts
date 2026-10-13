@@ -5,4 +5,5 @@ export type DropAppearance = {
   palette?: LogoPalette;
   metalness?: number;
   roughness?: number;
+  clearcoat?: number;
 };

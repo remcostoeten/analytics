@@ -53,6 +53,7 @@
 		"changeset": "changeset",
 		"migrate": "bun scripts/migrate.ts",
 		"setup": "bun scripts/setup.ts",
+		"spoar:init": "bun scripts/spoar-init.ts",
 		"admin": "bun --env-file=apps/api/.env.playground scripts/admin.ts",
 		"db": "docker compose up -d --wait && DATABASE_URL=postgres://postgres:postgres@localhost:5435/analytics bun scripts/migrate.ts",
 		"db:down": "docker compose down",

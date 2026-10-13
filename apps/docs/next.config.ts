@@ -26,6 +26,9 @@ const config: NextConfig = {
       fallback: [],
     };
   },
+  async redirects() {
+    return [{ source: "/docs/changelog", destination: "/changelog", permanent: true }];
+  },
 };
 
 export default withMDX(config);

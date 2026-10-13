@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/modules/shell/components/skeletons";
+import { AdminSkeleton } from "@/modules/shell/components/skeletons";
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <AdminSkeleton height={320} />;
 }

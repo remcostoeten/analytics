@@ -3,13 +3,11 @@ title: How it works
 description: What happens to an event between the browser and the database, and where each privacy guarantee comes from.
 ---
 
-<Flow>
-  <FlowNode label="Browser SDK">Batches events, sends them with `fetch` or `sendBeacon`</FlowNode>
-  <FlowNode label="/_ra proxy">Same-origin route in your app, forwards to the API</FlowNode>
-  <FlowNode label="API /v2/events">Checks key and origin, scores bots</FlowNode>
-  <FlowNode label="Engine">Enriches with geo, device and channel</FlowNode>
-  <FlowNode label="Postgres">Stores the row; reads, dashboard and SQL answer from it</FlowNode>
-</Flow>
+When someone opens a page on your site, the SDK records a pageview. That event travels through your app to the Spoar API. The API checks and stores it, and the dashboard reads it back.
+
+<EventJourney />
+
+The sections below follow that event in more detail, including what is sent, which checks run and what is stored.
 
 The server SDK skips the proxy and posts to `/v2/events` with the secret key.
 

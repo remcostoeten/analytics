@@ -9,6 +9,7 @@ type Props = {
   ready: boolean;
   onCopy: (text: string) => Promise<void>;
   onDownload: (format: "png" | "webp") => void;
+  onDownloadModel: () => Promise<void>;
 };
 
 export function LogoExport({
@@ -19,13 +20,17 @@ export function LogoExport({
   ready,
   onCopy,
   onDownload,
+  onDownloadModel,
 }: Props) {
   if (preview === "svg") return <SvgExport palette={palette} onCopy={(text) => onCopy(text)} />;
   return preview === "3d" ? (
     <div className={styles.export}>
-      <h2>Use the 3D component</h2>
+      <h2>Use your logo</h2>
       <div className={styles.downloads}>
-        <button type="button" className={styles.primary} onClick={() => void onCopy(componentCode)}>
+        <button type="button" className={styles.primary} onClick={() => void onDownloadModel()}>
+          Download 3D PNG
+        </button>
+        <button type="button" onClick={() => void onCopy(componentCode)}>
           Copy JSX
         </button>
         <button
@@ -38,7 +43,12 @@ export function LogoExport({
         </button>
       </div>
       <p className={styles.hint}>
-        Paste into this project to use your palette. Props update the model and its reflection live.
+        PNG exports the current 3D view at 1024 × 1024 px with transparency, without the floor
+        reflection.
+      </p>
+      <p className={styles.hint}>
+        Paste into this project to use your shape and finish. The model and its reflection update
+        live.
       </p>
       <details className={styles.settings}>
         <summary>Component code</summary>

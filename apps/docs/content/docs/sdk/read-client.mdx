@@ -42,6 +42,16 @@ else console.table(pages.value.data);
 
 ## Scopes
 
+Reads and admin calls have different shapes. Every read route takes the same range, traffic, environment and filters, so reads hang off a scope you narrow once and reuse across many reads. Admin routes create, change and remove one record at a time, so they are namespaces with verbs, such as `api.projects.list()` and `api.tokens.create(...)`.
+
+```ts
+const view = api.blog.period("7d").human().where({ country: "NL" });
+await view.stats();
+await view.visitors();
+
+await api.projects.get("blog");
+```
+
 The client itself is the combined scope over every project the caller may read, on the routes under `/v2`. `api.project("example.com")` is the scope over one project under `/v2/projects/example.com`. A project name that is a valid identifier, passed in `projects`, is also a property, such as `api.blog` for `"blog"`. A project named like a client method is still reachable through `project()`.
 
 Links return a new scope and leave the old one untouched, so one scope can feed many reads.
@@ -110,15 +120,17 @@ useQuery({
 
 ## Admin
 
-The routes that are not reads sit in namespaces on the client:
+The namespaces hold the routes that are not reads. A `project` argument is typed by the names passed in `projects`.
 
-| Namespace | Covers |
+| Namespace | Methods |
 | --- | --- |
-| `api.projects` | Project settings, keys, and the owner-only `remove` |
-| `api.tokens` | API tokens |
-| `api.alerts` | Alert targets and deliveries. `mail`, `webhook` and `discord` build targets |
-| `api.annotations` | Annotations |
-| `api.sql` | Saved queries, `explain`, `schema` and `history` |
-| `api.system` | `health`, `session`, `metrics` and `runJob` |
+| `api.projects` | `list(query?)`, `get(project)`, `create(project)`, `update(project, changes)`, `rotateKey(project, kind)`, and the owner-only `remove(project)` |
+| `api.tokens` | `list()`, `create(token)`, `revoke(token)` |
+| `api.alerts` | `sync(project, targets)`, `list(project)`, `set(project, target)`, `remove(project, name)`, `test(project, name)`, `rotate(project, name)`, `deliveries(project, query?)`, `status()` |
+| `api.annotations` | `list(project, query?)`, `create(project, annotation)`, `update(project, id, changes)`, `remove(project, id)` |
+| `api.sql` | `explain(sql, params?)`, `schema()`, `history()`, `saved()`, `save(query)`, `get(query)`, `update(query, changes)`, `remove(query)` |
+| `api.system` | `health()`, `session()`, `metrics()`, `runJob(job, { days })` |
+
+`mail`, `webhook` and `discord` build alert targets for `alerts.sync` and `alerts.set`.
 
 See the [API reference](/docs/api/overview) for every route's parameters and response shape; the client's option types are the same as the query parameters there.

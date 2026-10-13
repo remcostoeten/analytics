@@ -108,3 +108,14 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 - Git deploys are off for every Vercel project (`"git": { "deploymentEnabled": false }` in each `vercel.json`), to stay inside the free plan's deployment quota. Remco deploys on demand from the Vercel dashboard or `vercel deploy --prod`; `docs/v2/deploy.md` section 11.
 - v1's Vercel projects are `ingestion` from `v1/apps/ingestion` and `analytics` (the dashboard) from `v1/apps/dashboard`.
 - `apps/api` is the Vercel project `v2.ingestion`, `apps/docs` is `v2.analytics-docs` and `apps/dashboard` is `v2.dashboard` (`docs/v2/deploy.md`).
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

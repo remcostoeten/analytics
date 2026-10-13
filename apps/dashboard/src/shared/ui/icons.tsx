@@ -163,3 +163,29 @@ export function ListIcon(props: Props) {
     </Icon>
   );
 }
+
+export function PanelIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <rect x="2" y="3" width="12" height="10" rx="2" />
+      <path d="M6 3v10" />
+    </Icon>
+  );
+}
+
+export function SunIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="8" r="2.75" />
+      <path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.05 1.05M11.55 11.55l1.05 1.05M3.4 12.6l1.05-1.05M11.55 4.45l1.05-1.05" />
+    </Icon>
+  );
+}
+
+export function MoonIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1Z" />
+    </Icon>
+  );
+}

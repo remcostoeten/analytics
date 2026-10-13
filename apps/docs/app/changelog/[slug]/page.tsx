@@ -67,7 +67,7 @@ export default async function ChangelogPostPage({ params }: Props) {
               <ArrowIcon className="size-3" />
             </Link>
           ) : null}
-          <Link href="/docs/changelog" className="link-line text-muted">
+          <Link href="/changelog#releases-heading" className="link-line text-muted">
             Package changelog
           </Link>
         </footer>
