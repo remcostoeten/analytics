@@ -1,14 +1,12 @@
 "use client";
 
 import { notify } from "@remcostoeten/notifier";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
 import { signOut } from "../sign-in";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   return (
@@ -23,7 +21,7 @@ export function SignOutButton() {
           notify.error(ended.error);
           return;
         }
-        router.refresh();
+        window.location.reload();
       }}
     >
       Sign out

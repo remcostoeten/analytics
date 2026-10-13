@@ -1,7 +1,7 @@
 "use client";
 
 import type { PublicProject } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 

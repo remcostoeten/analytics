@@ -1,5 +1,5 @@
-import { AdminSkeleton } from "@/modules/shell/components/skeletons";
+import { ProjectsSkeleton } from "@/modules/shell/components/skeletons";
 
 export default function Loading() {
-  return <AdminSkeleton height={320} />;
+  return <ProjectsSkeleton />;
 }

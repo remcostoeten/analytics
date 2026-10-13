@@ -1,11 +1,11 @@
 import type { Project, PublicProject } from "@spoar/contract";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { ProjectList } from "@/modules/admin/components/project-list";
+import { listProjects } from "@/modules/analytics/reads";
 import { AccessNotice } from "@/modules/session/components/access-notice";
 import { readAccess } from "@/modules/session/session";
-import { serverClient } from "@/shared/api/server-client";
 import { Heading } from "@/shared/ui/heading";
 
 export const metadata: Metadata = { title: "Projects" };
@@ -17,12 +17,11 @@ function withSettings(project: Project | PublicProject): project is Project {
 export default async function Page() {
   const access = await readAccess();
   if (access.state !== "admin") return <AccessNotice access={access} />;
-  const api = await serverClient();
-  const listed = await api.projects.list();
+  const listed = await listProjects();
   if (!listed.ok) {
-    return <p className="text-err text-sm">Could not list projects: {listed.error.message}</p>;
+    return <p className="text-err text-sm">Could not list projects: {listed.error}</p>;
   }
-  const projects = listed.value.data.filter(withSettings);
+  const projects = listed.value.filter(withSettings);
   return (
     <>
       <Heading

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue, formatMetric } from "../format";
 import type { MetricView } from "../metrics";

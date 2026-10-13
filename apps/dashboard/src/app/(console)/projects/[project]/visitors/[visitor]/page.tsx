@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -8,7 +8,8 @@ import { findProject, readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import { ReadNotice } from "@/modules/session/components/read-notice";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { FactsSkeleton, SectionSkeleton } from "@/modules/shell/components/skeletons";
+import type { ProjectScope } from "@spoar/client";
 
 type Props = {
   params: Promise<{ project: string; visitor: string }>;
@@ -17,16 +18,40 @@ type Props = {
 
 export const metadata: Metadata = { title: "Visitor" };
 
+type Detail = ReturnType<ProjectScope["visitor"]>;
+
+type DetailProps = { detail: Detail; sessionHref: (session: string) => string };
+
+async function Facts({ detail, sessionHref }: DetailProps) {
+  const read = await detail;
+  if (!read.ok && read.error.code === "NOT_FOUND") notFound();
+  return read.ok ? (
+    <VisitorFacts detail={read.value.data} sessionHref={sessionHref} />
+  ) : (
+    <ReadNotice error={read.error} what="this visitor" />
+  );
+}
+
+async function Visits({
+  detail,
+  sessionHref,
+  scope,
+}: DetailProps & { scope: Promise<ProjectScope> }) {
+  const [read, resolved] = await Promise.all([detail, scope]);
+  if (!read.ok) return null;
+  return <VisitList scope={resolved} visitor={read.value.data.id} sessionHref={sessionHref} />;
+}
+
 export default async function Page({ params, searchParams }: Props) {
   const { project, visitor: encodedVisitor } = await params;
   const visitor = decodeURIComponent(encodedVisitor);
   const state = readViewState(await searchParams);
   const base = `/projects/${encodeURIComponent(project)}`;
 
-  const scope = await readScope(project, state);
-  const [found, read] = await Promise.all([findProject(project), scope.visitor(visitor)]);
+  const found = await findProject(project);
   if (!found) notFound();
-  if (!read.ok && read.error.code === "NOT_FOUND") notFound();
+  const scope = readScope(project, state);
+  const detail = scope.then((resolved) => resolved.visitor(visitor));
 
   function sessionHref(session: string) {
     return `${base}/sessions/${encodeURIComponent(session)}${viewQuery(state)}`;
@@ -48,17 +73,13 @@ export default async function Page({ params, searchParams }: Props) {
             </h1>
             <span className="font-mono text-xs text-muted">{found.domain}</span>
           </div>
-          {!read.ok ? (
-            <ReadNotice error={read.error} what="this visitor" />
-          ) : (
-            <VisitorFacts detail={read.value.data} sessionHref={sessionHref} />
-          )}
-        </header>
-        {read.ok ? (
-          <Suspense fallback={<SectionSkeleton height={320} />}>
-            <VisitList scope={scope} visitor={read.value.data.id} sessionHref={sessionHref} />
+          <Suspense fallback={<FactsSkeleton facts={6} />}>
+            <Facts detail={detail} sessionHref={sessionHref} />
           </Suspense>
-        ) : null}
+        </header>
+        <Suspense fallback={<SectionSkeleton height={320} />}>
+          <Visits detail={detail} sessionHref={sessionHref} scope={scope} />
+        </Suspense>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 

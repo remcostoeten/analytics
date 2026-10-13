@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 import { CreateTokenForm } from "@/modules/admin/components/create-token-form";
 import { TokenList } from "@/modules/admin/components/token-list";
+import { listTokens } from "@/modules/admin/reads";
 import { AccessNotice } from "@/modules/session/components/access-notice";
 import { readAccess } from "@/modules/session/session";
-import { serverClient } from "@/shared/api/server-client";
 import { Heading } from "@/shared/ui/heading";
 
 export const metadata: Metadata = { title: "API tokens" };
@@ -12,12 +12,11 @@ export const metadata: Metadata = { title: "API tokens" };
 export default async function Page() {
   const access = await readAccess();
   if (access.state !== "admin") return <AccessNotice access={access} />;
-  const api = await serverClient();
-  const listed = await api.tokens.list();
+  const listed = await listTokens();
   if (!listed.ok) {
     return <p className="text-err text-sm">Could not list tokens: {listed.error.message}</p>;
   }
-  const tokens = listed.value.data;
+  const tokens = listed.value;
   return (
     <>
       <Heading

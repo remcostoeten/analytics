@@ -7,6 +7,9 @@ const config: NextConfig = {
   basePath,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === "1",
+  },
 };
 
 export default config;

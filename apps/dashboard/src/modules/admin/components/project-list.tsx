@@ -1,5 +1,5 @@
 import type { Project } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 type Props = { projects: Project[] };
 

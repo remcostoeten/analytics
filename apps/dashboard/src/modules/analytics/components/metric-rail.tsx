@@ -2,7 +2,7 @@
 
 import type { StatsResponse, TimeseriesPoint } from "@spoar/contract";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { browserClient } from "@/shared/api/browser-client";
 

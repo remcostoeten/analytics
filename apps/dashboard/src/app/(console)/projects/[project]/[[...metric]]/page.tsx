@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 import { Suspense } from "react";
 
 import { AddFilter } from "@/modules/analytics/components/add-filter";

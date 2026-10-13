@@ -1,6 +1,6 @@
 import type { ProjectScope } from "@spoar/client";
 import type { EventRow } from "@spoar/contract";
-import Link from "next/link";
+import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue } from "../format";
 import { eventOutcome, logPageSize } from "../logs";

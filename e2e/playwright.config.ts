@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { apiPort, dashboardPort, sitePort } from "./ports";
+import { dashboardPort } from "./dashboard-port";
+import { apiPort, sitePort } from "./ports";
 
 const executablePath = process.env.E2E_CHROMIUM_PATH;
 const launchOptions = executablePath ? { executablePath } : {};
@@ -20,11 +21,11 @@ export default defineConfig({
       stdout: "pipe",
     },
     {
-      command: "bun run --cwd ../apps/dashboard dev",
+      command: `bun run --cwd ../apps/dashboard build && bun run --cwd ../apps/dashboard next start --port ${dashboardPort}`,
       url: `http://localhost:${dashboardPort}/dashboard/sign-in`,
-      env: { NEXT_PUBLIC_API_URL: `http://localhost:${apiPort}` },
+      env: { NEXT_PUBLIC_API_URL: `http://localhost:${apiPort}`, EXPOSE_TESTING_API: "1" },
       reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
+      timeout: 300_000,
     },
   ],
   projects: [
