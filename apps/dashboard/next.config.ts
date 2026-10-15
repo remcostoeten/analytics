@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-import { basePath } from "./src/shared/config/site";
+import { basePath, siteUrl } from "./src/shared/config/site";
 
 const config: NextConfig = {
   reactStrictMode: true,
@@ -9,6 +9,9 @@ const config: NextConfig = {
   partialPrefetching: true,
   experimental: {
     exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === "1",
+    serverActions: {
+      allowedOrigins: [new URL(siteUrl()).host],
+    },
   },
 };
 
