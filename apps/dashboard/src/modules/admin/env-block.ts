@@ -1,4 +1,5 @@
 export type Keys = {
+  project: string;
   endpoint: string;
   publicKey: string;
   secretKey: string | null;
@@ -6,18 +7,18 @@ export type Keys = {
 
 /**
  * @name envBlock
- * @description The environment lines a site needs to send events: the API endpoint, the public
- * browser key and, when it was just created or rotated, the secret server key.
+ * @description The environment lines a site needs to send events, in the names the SDK reads:
+ * `NEXT_PUBLIC_RA_CONFIG` for the browser, `RA_SECRET` when the secret key was just created or
+ * rotated, and `RA_ENDPOINT` for the proxy.
  *
  * @example
- * envBlock({ endpoint, publicKey: "pk_live_...", secretKey: null });
- * // "NEXT_PUBLIC_SPOAR_ENDPOINT=...\nNEXT_PUBLIC_SPOAR_KEY=pk_live_..."
+ * envBlock({ project: "example.com", endpoint, publicKey: "pk_live_...", secretKey: null });
+ * // "NEXT_PUBLIC_RA_CONFIG='{\"project\":\"example.com\",...}'\nRA_ENDPOINT=..."
  */
 export function envBlock(keys: Keys) {
-  const entries = [
-    `NEXT_PUBLIC_SPOAR_ENDPOINT=${keys.endpoint}`,
-    `NEXT_PUBLIC_SPOAR_KEY=${keys.publicKey}`,
-  ];
-  if (keys.secretKey !== null) entries.push(`SPOAR_SECRET_KEY=${keys.secretKey}`);
+  const config = JSON.stringify({ project: keys.project, key: keys.publicKey, endpoint: "/_ra" });
+  const entries = [`NEXT_PUBLIC_RA_CONFIG='${config}'`];
+  if (keys.secretKey !== null) entries.push(`RA_SECRET=${keys.secretKey}`);
+  entries.push(`RA_ENDPOINT=${keys.endpoint}`);
   return entries.join("\n");
 }

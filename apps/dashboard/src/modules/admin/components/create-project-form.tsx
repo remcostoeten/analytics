@@ -37,6 +37,7 @@ const empty: Draft = {
 
 function Created({ project }: { project: CreatedProject }) {
   const env = envBlock({
+    project: project.data.id,
     endpoint: apiEndpoint(),
     publicKey: project.data.publicKey,
     secretKey: project.data.secretKey,
