@@ -1,5 +1,7 @@
 import { annotationsAdmin } from "./admin/annotations";
 import type { AnnotationsAdmin } from "./admin/annotations";
+import { membersAdmin } from "./admin/members";
+import type { MembersAdmin } from "./admin/members";
 import { projectsAdmin } from "./admin/projects";
 import type { ProjectsAdmin } from "./admin/projects";
 import { sqlAdmin } from "./admin/sql";
@@ -19,6 +21,7 @@ export type ClientBase<Projects extends string> = AllScope & {
   project: (project: Projects) => ProjectScope;
   projects: ProjectsAdmin<Projects>;
   tokens: TokensAdmin;
+  members: MembersAdmin;
   alerts: AlertsAdmin<Projects>;
   annotations: AnnotationsAdmin<Projects>;
   sql: SqlAdmin;
@@ -37,7 +40,7 @@ export type Client<Projects extends string> = ClientBase<Projects> & ProjectProp
  * every project the caller may read, `project(id)` is the scope over one project, and each
  * project named in `projects` is also a property, so `client.skriuw.stats()` works. Scopes chain
  * (`period`, `between`, `traffic`, `human`, `environment`, `where`, `exclude`) and end in one
- * read route. `projects`, `tokens`, `alerts`, `annotations`, `sql` and `system` hold the admin
+ * read route. `projects`, `tokens`, `members`, `alerts`, `annotations`, `sql` and `system` hold the admin
  * routes. Every call resolves to `{ ok: true, value }` or `{ ok: false, error }` and never throws;
  * `error.code` is a code from the contract's error catalog or `NETWORK`, `TIMEOUT`, `ABORTED`,
  * `BAD_URL` or `BAD_RESPONSE`. Pass `token` for an `at_` API token, or `credentials: "include"`
@@ -62,6 +65,7 @@ export function createClient<const Projects extends string = string>(
     project,
     projects: projectsAdmin<Projects>(send),
     tokens: tokensAdmin(send),
+    members: membersAdmin(send),
     alerts: alertsAdmin<Projects>(send),
     annotations: annotationsAdmin<Projects>(send),
     sql: sqlAdmin(send),

@@ -2,13 +2,17 @@
 
 import type { ClientError } from "@spoar/client";
 import type {
+  AddMember,
   CreatedProject,
   CreatedToken,
   CreateProject,
   CreateToken,
+  GithubLookup,
   KeyKind,
+  MemberResponse,
   RotatedKey,
   UpdatedProject,
+  UpdateMember,
   UpdateProject,
 } from "@spoar/contract";
 import type { Result } from "@spoar/shared/result";
@@ -115,5 +119,64 @@ export async function revokeToken(token: TokenID): Promise<Result<null, ClientEr
   const api = await serverClient();
   const result = await api.tokens.revoke(token);
   if (result.ok) revalidatePath("/admin/tokens");
+  return result;
+}
+
+/**
+ * @name lookupGithubLogin
+ * @description Asks the API whether a GitHub login exists, for the add form's live check. The
+ * answer holds GitHub's casing, numeric id, name and avatar.
+ *
+ * @example
+ * const found = await lookupGithubLogin("octocat");
+ */
+export async function lookupGithubLogin(login: string): Promise<Result<GithubLookup, ClientError>> {
+  const api = await serverClient();
+  return api.members.lookup(login);
+}
+
+/**
+ * @name addMember
+ * @description Allows a GitHub login to sign in with a role and projects, owner only. The API
+ * checks the login against GitHub and stores its numeric id.
+ *
+ * @example
+ * await addMember({ login: "octocat", role: "analyst", projectIds: ["docs"] });
+ */
+export async function addMember(input: AddMember): Promise<Result<MemberResponse, ClientError>> {
+  const api = await serverClient();
+  const result = await api.members.add(input);
+  if (result.ok) revalidatePath("/admin/members");
+  return result;
+}
+
+/**
+ * @name updateMember
+ * @description Changes the role or projects of a member, owner only.
+ *
+ * @example
+ * await updateMember("octocat", { role: "viewer" });
+ */
+export async function updateMember(
+  login: string,
+  changes: UpdateMember,
+): Promise<Result<MemberResponse, ClientError>> {
+  const api = await serverClient();
+  const result = await api.members.update(login, changes);
+  if (result.ok) revalidatePath("/admin/members");
+  return result;
+}
+
+/**
+ * @name removeMember
+ * @description Takes a login off the sign-in list and signs it out, owner only.
+ *
+ * @example
+ * await removeMember("octocat");
+ */
+export async function removeMember(login: string): Promise<Result<null, ClientError>> {
+  const api = await serverClient();
+  const result = await api.members.remove(login);
+  if (result.ok) revalidatePath("/admin/members");
   return result;
 }

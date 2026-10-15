@@ -30,6 +30,8 @@ import { tokensModule } from "./modules/tokens/route";
 import { liveModule } from "./modules/live/route";
 import type { LiveOptions } from "./modules/live/route";
 import { logsModule } from "./modules/logs/route";
+import type { GithubDirectory } from "./modules/members/github";
+import { membersModule } from "./modules/members/route";
 import { widgetModule } from "./modules/widget/route";
 import { projectForOrigin } from "./modules/widget/service";
 import type { WidgetDeps } from "./modules/widget/service";
@@ -55,6 +57,7 @@ export type AppOptions = {
   authHandler: Nullable<(request: Request) => Promise<Response>>;
   ops?: Nullable<OpsStore>;
   alerts?: Nullable<AlertsDeps>;
+  github?: Nullable<GithubDirectory>;
   crux?: Nullable<CruxOptions>;
   internalSecret?: Nullable<string>;
   history?: Nullable<HistorySource>;
@@ -138,6 +141,11 @@ export function createApp(options: AppOptions) {
     .use(projectsModule(options.access, options.docsBase))
     .use(setupModule(options.dashboardOrigin, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
+    .use(
+      options.github
+        ? membersModule(options.access, options.github, options.docsBase)
+        : new Elysia({ name: "members-off" }),
+    )
     .use(readsModule(options.access, reads, options.docsBase))
     .use(speedModule(options.access, options.reads, options.docsBase))
     .use(issuesModule(options.access, options.reads, options.docsBase))

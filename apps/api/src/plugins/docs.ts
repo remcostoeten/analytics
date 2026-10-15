@@ -68,6 +68,7 @@ export const apiTags = [
   },
   { name: "Projects", description: "Projects, their visibility and keys" },
   { name: "Tokens", description: "API tokens for scripts and CI" },
+  { name: "Members", description: "The GitHub logins that may sign in, with their roles" },
   { name: "Reads", description: "Aggregate reads for one project" },
   {
     name: "Visitor-level reads",

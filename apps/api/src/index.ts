@@ -20,6 +20,7 @@ import config from "../analytics.config";
 import { createApp } from "./app";
 import { betterAuthSessions, createAuth } from "./auth/better-auth";
 import { candidatePaths, openGeo } from "./geo";
+import { githubDirectory } from "./modules/members/github";
 
 const production = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
 const ipSecret = process.env.IP_HASH_SECRET ?? "";
@@ -131,6 +132,7 @@ export default createApp({
     limiter: adapters.limiter,
     reportsPerMinute: Number(process.env.CLIENT_REPORT_LIMIT ?? 60),
   },
+  github: githubDirectory({ send: fetch, token: process.env.GITHUB_TOKEN || null }),
   history: {
     repo: "remcostoeten/analytics",
     send: fetch,

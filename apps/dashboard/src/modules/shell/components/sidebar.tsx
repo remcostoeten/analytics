@@ -25,7 +25,12 @@ import { Logo } from "@/shared/ui/logo";
 
 import { SidebarToggle } from "./sidebar-toggle";
 
-type Props = { projects: PublicProject[]; isAdmin: boolean; signedIn: boolean };
+type Props = {
+  projects: PublicProject[];
+  isAdmin: boolean;
+  isOwner: boolean;
+  signedIn: boolean;
+};
 
 type Item = {
   label: string;
@@ -64,7 +69,7 @@ function NavLink({ item }: { item: Item }) {
   );
 }
 
-export function Sidebar({ projects, isAdmin, signedIn }: Props) {
+export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const project = currentProject(pathname);
@@ -146,6 +151,16 @@ export function Sidebar({ projects, isAdmin, signedIn }: Props) {
       icon: KeyIcon,
       active: pathname === "/admin/tokens",
     },
+    ...(isOwner
+      ? [
+          {
+            label: "Members",
+            href: "/admin/members",
+            icon: UsersIcon,
+            active: pathname === "/admin/members",
+          },
+        ]
+      : []),
   ];
 
   return (

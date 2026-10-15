@@ -28,9 +28,9 @@ export type AuthOptions = {
   secure: boolean;
 };
 
-async function allowed(members: MemberStore, login: unknown) {
+async function allowed(members: MemberStore, login: unknown, githubId: unknown) {
   if (typeof login !== "string" || login === "") return false;
-  const result = await members.allowedLogin(login);
+  const result = await members.allowedLogin(login, typeof githubId === "string" ? githubId : null);
   return result.ok && result.value;
 }
 
@@ -38,7 +38,8 @@ async function allowed(members: MemberStore, login: unknown) {
  * @name createAuth
  * @description Better Auth under `/v2/auth`: GitHub sign-in, sessions in the `auth_*` tables and
  * the organization plugin with the owner, admin, analyst and viewer roles. Only GitHub logins in
- * `dashboard_users` may create an account or a session, and each new account joins the single
+ * `dashboard_users` may create an account or a session, and an entry that holds a GitHub id only
+ * admits that id, and each new account joins the single
  * organization. The GitHub login is copied from the profile into `githubLogin`, which stays open
  * to provider input because Better Auth drops `input: false` fields from the profile, and an
  * update that touches it is refused instead. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
@@ -68,13 +69,19 @@ export function createAuth(options: AuthOptions) {
       },
     }),
     user: {
-      additionalFields: { githubLogin: { type: "string", required: false } },
+      additionalFields: {
+        githubLogin: { type: "string", required: false },
+        githubId: { type: "string", required: false },
+      },
     },
     socialProviders: {
       github: {
         clientId: options.github.clientId,
         clientSecret: options.github.clientSecret,
-        mapProfileToUser: (profile) => ({ githubLogin: profile.login }),
+        mapProfileToUser: (profile) => ({
+          githubLogin: profile.login,
+          githubId: String(profile.id),
+        }),
       },
     },
     plugins: [
@@ -96,22 +103,26 @@ export function createAuth(options: AuthOptions) {
       user: {
         create: {
           before: async (user) =>
-            (await allowed(members, user.githubLogin)) ? { data: user } : false,
+            (await allowed(members, user.githubLogin, user.githubId)) ? { data: user } : false,
           after: async (user) => {
             const login = typeof user.githubLogin === "string" ? user.githubLogin : user.name;
-            const joined = await members.join(user.id, login);
+            const githubId = typeof user.githubId === "string" ? user.githubId : null;
+            const joined = await members.join(user.id, login, githubId);
             if (!joined.ok) throw new Error(joined.error.message);
           },
         },
         update: {
-          before: async (user) => ("githubLogin" in user ? false : { data: user }),
+          before: async (user) =>
+            "githubLogin" in user || "githubId" in user ? false : { data: user },
         },
       },
       session: {
         create: {
           before: async (session) => {
             const login = await members.loginOf(session.userId);
-            return login.ok && (await allowed(members, login.value)) ? { data: session } : false;
+            return login.ok && (await allowed(members, login.value, null))
+              ? { data: session }
+              : false;
           },
         },
       },
@@ -138,7 +149,7 @@ export function betterAuthSessions(auth: Auth, members: MemberStore): SessionRea
     if (!found) return null;
     const { user, session } = found;
     const login = typeof user.githubLogin === "string" ? user.githubLogin : null;
-    if (!(await allowed(members, login))) return null;
+    if (!(await allowed(members, login, null))) return null;
     return {
       userId: user.id,
       name: user.name,

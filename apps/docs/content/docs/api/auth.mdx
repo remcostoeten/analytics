@@ -54,7 +54,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 Sign-in goes through the API, so every frontend shares one access check.
 
 1. The browser goes to the API's GitHub sign-in route under `/v2/auth`.
-2. GitHub redirects back to the API. The API checks the GitHub login against the `dashboard_users` allowlist, stores a session, and sets an httpOnly, Secure, `SameSite=Lax` cookie for the parent domain.
+2. GitHub redirects back to the API. The API checks the GitHub login against the `dashboard_users` allowlist, and its numeric id when the entry holds one, stores a session, and sets an httpOnly, Secure, `SameSite=Lax` cookie for the parent domain.
 3. Server components forward that cookie on API calls; browser calls use `credentials: "include"`. CORS allows credentials only for the configured `DASHBOARD_ORIGIN`.
 4. `GET /v2/auth/session` answers who is signed in, their role and `isAdmin`.
 
