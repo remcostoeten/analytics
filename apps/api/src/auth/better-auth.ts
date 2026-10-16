@@ -50,7 +50,7 @@ async function allowed(members: MemberStore, login: unknown) {
 export function createAuth(options: AuthOptions) {
   const { members } = options;
   return betterAuth({
-    appName: "Analytics",
+    appName: "Spoar",
     baseURL: options.baseURL,
     basePath: "/v2/auth",
     secret: options.secret,

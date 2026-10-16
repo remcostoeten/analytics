@@ -31,7 +31,7 @@ export type Events = {
 `.env` holds the browser options, with the public key only:
 
 ```bash
-VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"https://api.example.com/v2/events"}'
+VITE_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"https://api.example.com/v2/events"}'
 ```
 
 `src/lib/analytics.ts`:
@@ -53,24 +53,24 @@ Import it from `src/main.ts` so it starts with the app. A static build sends to 
 `.env`:
 
 ```bash
-PUBLIC_RA_KEY=pk_...
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+PUBLIC_SPOAR_KEY=pk_...
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
-`RA_SECRET` has no `PUBLIC_` prefix, so SvelteKit keeps it out of browser code. These names are used on this page only; the SDK does not read them itself.
+`SPOAR_SECRET` has no `PUBLIC_` prefix, so SvelteKit keeps it out of browser code. These names are used on this page only; the SDK does not read them itself.
 
 `src/lib/analytics.ts`:
 
 ```ts
-import { PUBLIC_RA_KEY } from "$env/static/public";
+import { PUBLIC_SPOAR_KEY } from "$env/static/public";
 import { createAnalytics } from "@spoar/sdk";
 import { errors, speedInsights } from "@spoar/sdk/plugins";
 import type { Events } from "./events";
 
 export const analytics = createAnalytics<Events>({
   project: "example.com",
-  key: PUBLIC_RA_KEY,
+  key: PUBLIC_SPOAR_KEY,
   endpoint: "/ra",
   pageviews: false,
   plugins: [speedInsights(), errors()],
@@ -104,11 +104,11 @@ The client starts itself only where `window` exists, so this module is safe to i
 `src/routes/ra/+server.ts` serves `/ra` on your own domain, so ad blockers see a first-party request:
 
 ```ts
-import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
+import { SPOAR_ENDPOINT, SPOAR_SECRET } from "$env/static/private";
 import { createProxy } from "@spoar/sdk/proxy";
 import type { RequestHandler } from "./$types";
 
-const proxy = createProxy({ secret: RA_SECRET, endpoint: RA_ENDPOINT });
+const proxy = createProxy({ secret: SPOAR_SECRET, endpoint: SPOAR_ENDPOINT });
 
 export const POST: RequestHandler = ({ request }) => proxy(request);
 ```
@@ -120,13 +120,13 @@ Any same-origin path works; the client's `endpoint` has to match it. See [Proxy]
 `src/lib/server/analytics.ts`:
 
 ```ts
-import { RA_ENDPOINT, RA_SECRET } from "$env/static/private";
+import { SPOAR_ENDPOINT, SPOAR_SECRET } from "$env/static/private";
 import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "$lib/events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: RA_SECRET,
-  endpoint: RA_ENDPOINT,
+  secret: SPOAR_SECRET,
+  endpoint: SPOAR_ENDPOINT,
 });
 ```
 
@@ -155,7 +155,7 @@ Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never
 <button onclick={() => analytics.track("signup", { plan: "pro" })}>Upgrade</button>
 ```
 
-The `clicks()` plugin sends `click` events from `data-ra-click` attributes without code; see [Plugins](/docs/plugins).
+The `clicks()` plugin sends `click` events from `data-spoar-click` attributes without code; see [Plugins](/docs/plugins).
 
 ## Consent and identity
 

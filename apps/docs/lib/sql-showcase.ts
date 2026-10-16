@@ -8,16 +8,20 @@ import type { SqlOutcome } from "./sql-answer";
 import { findSqlPreset } from "./sql-presets";
 import type { SqlPresetId } from "./sql-presets";
 
+function sqlToken() {
+  return process.env.SPOAR_SQL_TOKEN ?? process.env.RA_SQL_TOKEN;
+}
+
 /**
  * @name sqlShowcaseEnabled
- * @description Whether the landing page may run SQL: true once `RA_SQL_TOKEN`, an API token with
+ * @description Whether the landing page may run SQL: true once `SPOAR_SQL_TOKEN`, an API token with
  * the `sql` scope that lists this site's project, is set. Without it the section is left out.
  *
  * @example
  * if (!sqlShowcaseEnabled()) return null;
  */
 export function sqlShowcaseEnabled() {
-  return Boolean(process.env.RA_SQL_TOKEN);
+  return Boolean(sqlToken());
 }
 
 /**
@@ -33,7 +37,7 @@ export async function runSqlPreset(id: SqlPresetId): Promise<SqlOutcome> {
   "use cache";
   cacheLife("minutes");
   const preset = findSqlPreset(id);
-  const token = process.env.RA_SQL_TOKEN;
+  const token = sqlToken();
   if (!preset || !token) return { status: "failed", message: "SQL on this page is not set up." };
   const url = `${apiEndpoint()}/v2/projects/${encodeURIComponent(showcaseProject())}/query`;
   try {

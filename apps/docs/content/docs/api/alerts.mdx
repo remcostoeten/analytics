@@ -72,7 +72,7 @@ Targets are set per project by a project admin, over HTTP or with the [admin cli
 
 ```bash
 curl -X PUT https://api.example.com/v2/projects/example.com/alerts/targets \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{ "targets": [ { "channel": "mail", "to": ["you@example.com"] } ] }'
 ```

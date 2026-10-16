@@ -18,10 +18,10 @@ The public and secret key come from [creating a project](/docs/getting-started/q
 Pass the options to `createAnalytics`, or put them in the environment as JSON. With Vite:
 
 ```bash
-VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+VITE_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
 ```
 
-The client reads `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG` through literal `process.env` or `import.meta.env` access, the forms bundlers replace at build time. With another bundler, either define one of those or pass the options explicitly. Explicit options win.
+The client reads `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG` through literal `process.env` or `import.meta.env` access, the forms bundlers replace at build time. With another bundler, either define one of those or pass the options explicitly. Explicit options win.
 
 Only the public key (`pk_...`) goes in browser code. Use `/_ra` as the endpoint when a server on the same origin runs `createProxy` (see [Server](/docs/frameworks/server)), or the API's `https://api.example.com/v2/events` otherwise.
 
@@ -78,7 +78,7 @@ analytics.track("newsletter_subscribed");
 With the `clicks()` plugin, markup can send `click` events without code:
 
 ```html
-<button data-ra-click="upgrade" data-ra-prop-plan="pro">Upgrade</button>
+<button data-spoar-click="upgrade" data-spoar-prop-plan="pro">Upgrade</button>
 ```
 
 See [Plugins](/docs/plugins) for the other plugins.

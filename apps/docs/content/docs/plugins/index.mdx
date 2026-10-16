@@ -29,14 +29,14 @@ Every event a plugin sends goes through the same consent, opt-out and `beforeSen
 | [`speedInsights(options?)`](/docs/plugins/speed-insights) | `web_vital` for LCP, INP, CLS, FCP and TTFB | The Performance API, for a sample of page loads |
 | [`scrollDepth()`](/docs/plugins/scroll-depth) | `scroll_depth` with the deepest percentage reached on a page | The page height and scroll position |
 | [`engagement()`](/docs/plugins/engagement) | `engagement` with the milliseconds a page was visible | `document.visibilityState` |
-| [`clicks()`](/docs/plugins/clicks) | `click` for elements with `data-ra-click` | Clicks on the document |
+| [`clicks()`](/docs/plugins/clicks) | `click` for elements with `data-spoar-click` | Clicks on the document |
 | [`outboundLinks()`](/docs/plugins/outbound-links) | `outbound_click` for other hosts and `file_download` for files | Clicks on the document, compared by host |
 | [`forms()`](/docs/plugins/forms) | `form_submit` with the form id and action path | `submit` on the document |
 | [`errors()`](/docs/plugins/errors) | `error` for uncaught errors and rejections, with breadcrumbs | `window` errors and `unhandledrejection`, and a wrapped `fetch` |
-| [`ignoreSelf()`](/docs/plugins/ignore-self) | Nothing; `?ra=ignore` opts this browser out | `?ra=` in the URL, and `localStorage` for the opt-out |
+| [`ignoreSelf()`](/docs/plugins/ignore-self) | Nothing; `?spoar=ignore` opts this browser out | `?spoar=` in the URL, and `localStorage` for the opt-out |
 | [`botSignals()`](/docs/plugins/bot-signals) | Nothing of its own; adds bot hint bits to every event | `navigator` and page visibility |
 | [`experiments(assigned)`](/docs/plugins/experiments) | `experiment_exposure` per experiment, and an `experiment:<id>` prop on every event | Nothing; assignments are kept in memory |
-| [`notFound()`](/docs/plugins/not-found) | `not_found` with the referrer on pages marked as not found | The `ra-not-found` meta tag and `document.referrer` |
+| [`notFound()`](/docs/plugins/not-found) | `not_found` with the referrer on pages marked as not found | The `spoar-not-found` meta tag and `document.referrer` |
 | [`groups<Groups>()`](/docs/plugins/groups) | `group` when `set` joins a group, and the joined groups on every event | Nothing; group membership is kept in memory |
 
 ## Bundle sizes

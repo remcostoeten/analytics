@@ -1,5 +1,5 @@
 {
-	"name": "remco-analytics",
+	"name": "spoar",
 	"version": "0.0.1",
 	"type": "module",
 	"packageManager": "bun@1.3.14",

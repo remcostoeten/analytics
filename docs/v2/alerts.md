@@ -102,7 +102,7 @@ type Projects = "remcostoeten.nl" | "skriuw";
 
 const admin = createAdmin<Projects>({
   endpoint: "https://api.analytics.remcostoeten.nl",
-  token: process.env.RA_ADMIN_TOKEN,
+  token: process.env.SPOAR_ADMIN_TOKEN,
 });
 
 function isHttps(url: string | undefined): url is `https://${string}` {
@@ -133,7 +133,7 @@ Every admin method is one route, so `curl`, a dashboard and other languages beha
 
 ```bash
 curl -X PUT https://api.analytics.remcostoeten.nl/v2/projects/remcostoeten.nl/alerts/targets \
-  -H "authorization: Bearer $RA_ADMIN_TOKEN" \
+  -H "authorization: Bearer $SPOAR_ADMIN_TOKEN" \
   -H "content-type: application/json" \
   -d '{ "targets": [ { "channel": "mail", "to": ["remco@gmail.com"] } ] }'
 ```
@@ -148,7 +148,7 @@ A webhook target posts a signed `WebhookBody`. `alertRoute` in `/server` turns i
 import { alertRoute } from "@spoar/sdk/server";
 
 export const POST = alertRoute({
-  secret: process.env.RA_WEBHOOK_SECRET,
+  secret: process.env.SPOAR_WEBHOOK_SECRET,
   on: {
     "issue.new": async (event) => notifyTeam(event.issue.title),
     "issue.regression": async (event) => openTicket(event.issue),
@@ -156,7 +156,7 @@ export const POST = alertRoute({
 });
 ```
 
-- It checks `x-analytics-signature` (an HMAC of `<timestamp>.<body>`) and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed; a bad request gets `401` and none of the handlers run.
+- It checks `x-spoar-signature` (an HMAC of `<timestamp>.<body>`) and rejects a timestamp more than 5 minutes off, so a captured request cannot be replayed; a bad request gets `401` and none of the handlers run.
 - `on` is typed per event, so `event.issue` autocompletes; an event without a handler is acknowledged and ignored.
 - `verifyAlert(request, secret)` is the same check without the routing, for other frameworks.
 - The admin client also reads: `admin.stats`, `admin.breakdown`, `admin.issues`, `admin.lifecycle` and the other read routes, typed from the contract, for your own dashboard pages and server components.

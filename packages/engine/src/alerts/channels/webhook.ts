@@ -14,7 +14,8 @@ export type WebhookOptions = { retry?: Partial<RetryPolicy>; fetch?: Fetcher };
 /**
  * @name webhook
  * @description Enables the webhook channel: each batch is one signed `POST` of a `WebhookBody`
- * with `x-analytics-signature` (see `signBody`) and `x-analytics-timestamp` in Unix seconds.
+ * with `x-spoar-signature` (see `signBody`) and `x-spoar-timestamp` in Unix seconds, repeated as
+ * `x-analytics-signature` and `x-analytics-timestamp` for receivers built before the rename.
  *
  * @example
  * alerts({ channels: [webhook({ retry: { attempts: 10 } })] });
@@ -36,10 +37,13 @@ export function webhook(options: WebhookOptions = {}): ChannelDriver<"webhook"> 
         events: newestFirst(batch.deliveries.map((delivery) => delivery.event)),
       };
       const timestamp = Math.floor(now.getTime() / 1000);
+      const signature = await signBody(JSON.stringify(body), secret, timestamp);
       const sent = await postJson(batch.target.settings.url, body, {
         headers: {
-          "user-agent": "remcostoeten-analytics",
-          "x-analytics-signature": await signBody(JSON.stringify(body), secret, timestamp),
+          "user-agent": "spoar",
+          "x-spoar-signature": signature,
+          "x-spoar-timestamp": String(timestamp),
+          "x-analytics-signature": signature,
           "x-analytics-timestamp": String(timestamp),
         },
         fetch: options.fetch,

@@ -15,7 +15,7 @@ import { createClient } from "@spoar/client";
 
 const api = createClient({
   endpoint: "https://api.example.com",
-  token: process.env.RA_TOKEN,
+  token: process.env.SPOAR_TOKEN,
   projects: ["example.com", "docs.example.com"],
 });
 

@@ -69,7 +69,7 @@ Props are one flat object. The SDK trims them before the event is queued:
 
 `stack` and `breadcrumbs` on `error` events may be up to 2048 characters. The API applies the same limits to events from any sender and rejects an event outside them with `VALIDATION_FAILED`, so events from the SDK always pass.
 
-In development mode the console shows `[ra] RA_PROPS_LIMITED` with the keys that were left out or cut. For values that belong on every event, such as an app version or an A/B bucket, call `analytics.register({ appVersion: "2.4.0" })` once instead of adding them to each call; registered props count toward the 25.
+In development mode the console shows `[spoar] RA_PROPS_LIMITED` with the keys that were left out or cut. For values that belong on every event, such as an app version or an A/B bucket, call `analytics.register({ appVersion: "2.4.0" })` once instead of adding them to each call; registered props count toward the 25.
 
 ## 5. Count clicks without code
 
@@ -92,22 +92,22 @@ export const analytics = createAnalytics({
 Mark the elements:
 
 ```html
-<a href="/pricing" data-ra-click="pricing-cta" data-ra-prop-position="hero">See pricing</a>
+<a href="/pricing" data-spoar-click="pricing-cta" data-spoar-prop-position="hero">See pricing</a>
 ```
 
-A click sends a `click` event with `{ label: "pricing-cta", position: "hero" }`. Every value is a string, and each `data-ra-prop-*` name becomes a camelCase prop.
+A click sends a `click` event with `{ label: "pricing-cta", position: "hero" }`. Every value is a string, and each `data-spoar-prop-*` name becomes a camelCase prop.
 
 In React, wrap one element in `TrackClick` to send a named event instead: `<TrackClick name="signup" props={{ plan: "pro" }}><button>Upgrade</button></TrackClick>`.
 
 ## 6. Check that it arrives
 
-Open the site with `?ra=debug` and trigger the event. The console shows an `[ra] RA_EVENT` line with the event, or `RA_DROP` with the reason it was dropped.
+Open the site with `?spoar=debug` and trigger the event. The console shows an `[spoar] RA_EVENT` line with the event, or `RA_DROP` with the reason it was dropped.
 
 Then open the project's **Realtime** page in the dashboard, or list the latest events. A public project needs no token; a private one needs a `read` token ([create one](/docs/guides/read-your-data#1-create-a-token)):
 
 ```bash
 curl https://api.example.com/v2/projects/example.com/realtime/events \
-  -H "authorization: Bearer $RA_TOKEN"
+  -H "authorization: Bearer $SPOAR_TOKEN"
 ```
 
 ## 7. Report on a prop
@@ -116,7 +116,7 @@ curl https://api.example.com/v2/projects/example.com/realtime/events \
 
 ```bash
 curl -G https://api.example.com/v2/projects/example.com/breakdown/prop:plan \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   --data-urlencode "filter[event]=signup" \
   --data-urlencode "period=30d"
 ```

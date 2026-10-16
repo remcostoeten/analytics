@@ -31,7 +31,7 @@ export function Controls({ state, onPeriod, onTraffic, onRemoveFilter }: Props) 
           <select
             id="period"
             value={state.period}
-            data-ra-click="period"
+            data-spoar-click="period"
             onChange={(event) => {
               const next = periods.find((period) => period === event.target.value);
               if (next) onPeriod(next);
@@ -48,8 +48,8 @@ export function Controls({ state, onPeriod, onTraffic, onRemoveFilter }: Props) 
           <button
             type="button"
             className={state.traffic === "human" ? "active" : ""}
-            data-ra-click="traffic"
-            data-ra-prop-traffic="human"
+            data-spoar-click="traffic"
+            data-spoar-prop-traffic="human"
             onClick={() => onTraffic("human")}
           >
             Human
@@ -57,8 +57,8 @@ export function Controls({ state, onPeriod, onTraffic, onRemoveFilter }: Props) 
           <button
             type="button"
             className={state.traffic === "all" ? "active" : ""}
-            data-ra-click="traffic"
-            data-ra-prop-traffic="all"
+            data-spoar-click="traffic"
+            data-spoar-prop-traffic="all"
             onClick={() => onTraffic("all")}
           >
             All traffic
