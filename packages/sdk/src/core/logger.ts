@@ -5,7 +5,7 @@ export type Log = {
 
 /**
  * @name createLog
- * @description Console output with `[ra]` and a code such as `RA_PROPS_LIMITED`, so it is easy to
+ * @description Console output with `[spoar]` and a code such as `RA_PROPS_LIMITED`, so it is easy to
  * filter. Warnings print once per code; with `debug` off, informational lines stay silent.
  *
  * @example
@@ -18,11 +18,11 @@ export function createLog(debug: () => boolean, output: Pick<Console, "warn" | "
     warn: (code, message) => {
       if (warned.has(code) && !debug()) return;
       warned.add(code);
-      output.warn(`[ra] ${code}: ${message}`);
+      output.warn(`[spoar] ${code}: ${message}`);
     },
     info: (code, message, detail) => {
       if (debug())
-        output.info(`[ra] ${code}: ${message}`, ...(detail === undefined ? [] : [detail]));
+        output.info(`[spoar] ${code}: ${message}`, ...(detail === undefined ? [] : [detail]));
     },
   };
 }

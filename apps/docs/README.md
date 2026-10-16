@@ -15,5 +15,5 @@ The site tracks itself through `@spoar/sdk`: `lib/analytics.ts` creates the clie
 | Variable | Default | Does |
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_URL` | `https://api.analytics.remcostoeten.nl` | The API the landing page reads from and the query page starts with |
-| `NEXT_PUBLIC_RA_CONFIG` | unset | The browser SDK options as JSON: `project`, `key` (`pk_`) and `endpoint` (`/_ra`). Unset, the site sends nothing and the landing page shows `docs.analytics.remcostoeten.nl` |
-| `RA_SECRET` | unset | The project's `sk_` key, which the `/_ra` proxy adds before forwarding to the API |
+| `NEXT_PUBLIC_SPOAR_CONFIG` | unset | The browser SDK options as JSON: `project`, `key` (`pk_`) and `endpoint` (`/_ra`). Unset, the site sends nothing and the landing page shows `docs.analytics.remcostoeten.nl` |
+| `SPOAR_SECRET` | unset | The project's `sk_` key, which the `/_ra` proxy adds before forwarding to the API |

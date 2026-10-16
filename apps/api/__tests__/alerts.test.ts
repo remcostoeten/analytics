@@ -373,11 +373,11 @@ describe("POST /v2/admin/jobs/alerts", () => {
     const secret = await database.query<{ webhook_secret: string }>(
       "SELECT webhook_secret FROM alert_targets WHERE name = 'ops'",
     );
-    expect(headers.get("x-analytics-signature")).toBe(
+    expect(headers.get("x-spoar-signature")).toBe(
       await signBody(
         body,
         secret.rows[0]?.webhook_secret ?? "",
-        Number(headers.get("x-analytics-timestamp")),
+        Number(headers.get("x-spoar-timestamp")),
       ),
     );
     const parsed: WebhookBody = JSON.parse(body);

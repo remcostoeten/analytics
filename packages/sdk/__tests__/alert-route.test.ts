@@ -70,13 +70,14 @@ async function signed(
   payload: string = JSON.stringify(body),
   key = secret,
   timestamp = Math.floor(Date.now() / 1000),
+  prefix = "x-spoar",
 ) {
   return new Request("https://remcostoeten.nl/api/alerts", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-analytics-timestamp": String(timestamp),
-      "x-analytics-signature": await signBody(payload, key, timestamp),
+      [`${prefix}-timestamp`]: String(timestamp),
+      [`${prefix}-signature`]: await signBody(payload, key, timestamp),
     },
     body: payload,
   });
@@ -85,6 +86,11 @@ async function signed(
 describe("verifyAlert", () => {
   test("accepts a signed body and reads it", async () => {
     expect(await verifyAlert(await signed(), secret)).toEqual({ ok: true, value: body });
+  });
+
+  test("accepts the older x-analytics headers", async () => {
+    const request = await signed(undefined, secret, undefined, "x-analytics");
+    expect(await verifyAlert(request, secret)).toEqual({ ok: true, value: body });
   });
 
   test("rejects a body signed with another secret", async () => {

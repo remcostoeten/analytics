@@ -265,7 +265,7 @@ async function deliver(server: Server, message: MailMessage, options: SmtpOption
  * written `%40` and `%3A`. A missing or malformed URL does not stop the API: `ready` reports it.
  *
  * @example
- * mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <remco@gmail.com>" });
+ * mail({ transport: smtp(process.env.MAIL_URL), from: "Spoar <remco@gmail.com>" });
  */
 export function smtp(url: string | undefined, options: SmtpOptions = {}): MailTransport {
   const server = parseServer(url);

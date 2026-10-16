@@ -9,12 +9,12 @@ Find the 1.x name in the left column and replace it with the 2.0 equivalent on t
 | 1.x | 2.0 |
 | --- | --- |
 | `<Analytics projectId="my-app" />` from the root entry | `createAnalytics({ project, key, endpoint })` once, `AnalyticsProvider client={analytics}`, and `<Analytics />` from `./next` |
-| `NEXT_PUBLIC_ANALYTICS_URL` or `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`. `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
+| `NEXT_PUBLIC_ANALYTICS_URL` or `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`. `NEXT_PUBLIC_SPOAR_CONFIG` holds JSON options |
 | `@remcostoeten/analytics/browser` | The root entry, which has no React dependency |
 | `trackEvent(name, meta)`, `track(type, meta)` | `analytics.track(name, props)`, typed by your `Events` |
 | `trackPageView()` | `analytics.page()`, or automatic |
 | `trackError(error)`, `observeErrors`, `trackErrors` prop | `analytics.captureError(error)` and the `errors()` plugin |
-| `trackClick`, `observeClicks`, `data-analytics` | `TrackClick`, or the `clicks()` plugin with `data-ra-click` |
+| `trackClick`, `observeClicks`, `data-analytics` | `TrackClick`, or the `clicks()` plugin with `data-spoar-click` |
 | `observePerformance` | `speedInsights()` |
 | `observeScroll`, `observeTimeOnPage` | `scrollDepth()`, `engagement()` |
 | `observeOutboundLinks`, `observeForms` | `outboundLinks()`, `forms()` |
@@ -32,3 +32,19 @@ Find the 1.x name in the left column and replace it with the 2.0 equivalent on t
 ## Stored visitor data
 
 The client reads the 1.x visitor id, opt-out, identity, traits and experiments from `localStorage` on first load. Once consent allows storing, it moves them into the single `__ra` key. Returning visitors keep their id.
+
+## Names from before Spoar
+
+Early 2.x releases used an `ra` prefix. The SDK reads the old names too, so nothing breaks, and the Spoar names win when both are set.
+
+| Before | Now |
+| --- | --- |
+| `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG`, `VITE_RA_CONFIG` | `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG`, `VITE_SPOAR_CONFIG` |
+| `RA_CONFIG` for the server client and the proxy | `SPOAR_CONFIG` |
+| `RA_SECRET`, `RA_ENDPOINT` in your own code | `SPOAR_SECRET`, `SPOAR_ENDPOINT`; the SDK only sees what you pass, so rename them when you like |
+| `?ra=debug`, `?ra=ignore` and the other flags | `?spoar=debug`, `?spoar=ignore` |
+| `data-ra-click`, `data-ra-prop-*` | `data-spoar-click`, `data-spoar-prop-*` |
+| `<meta name="ra-not-found">` | `<meta name="spoar-not-found">` |
+| `x-analytics-signature`, `x-analytics-timestamp` on alert webhooks | `x-spoar-signature`, `x-spoar-timestamp`; the API sends both, and `verifyAlert` accepts either |
+
+The `RA_*` codes in console lines, `analytics.on("error")` and server results, the `__ra` storage keys and the `/_ra` default endpoint keep their names.

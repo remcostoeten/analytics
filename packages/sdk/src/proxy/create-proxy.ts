@@ -37,13 +37,16 @@ function crossSite(request: Request) {
  * the visitor's IP and user agent as `X-Visitor-IP` and `X-Visitor-UA`, the page's `Origin` (the
  * site's own origin when the browser sent none) so ingest can flag localhost and preview hosts,
  * and the admin session cookie alone so a signed-in admin's events are internal. It returns the
- * API's answer. Options missing here are read from the JSON in `RA_CONFIG`.
+ * API's answer. Options missing here are read from the JSON in `SPOAR_CONFIG` (or the older `RA_CONFIG`).
  *
  * @example
- * export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
+ * export const POST = createProxy({ secret: env.SPOAR_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
  */
 export function createProxy(options: ProxyConfig = {}): (request: Request) => Promise<Response> {
-  const config = mergeConfig(parseConfig(readEnv(() => process.env.RA_CONFIG)), options);
+  const config = mergeConfig(
+    parseConfig(readEnv(() => process.env.SPOAR_CONFIG ?? process.env.RA_CONFIG)),
+    options,
+  );
   const send: Fetcher = config.fetch ?? ((url, init) => fetch(url, init));
 
   return async function proxy(request: Request) {

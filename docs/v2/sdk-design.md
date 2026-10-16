@@ -57,7 +57,7 @@ Config:
 | `plugins` | `[]` | Plugins to start with; `pageviews` is always included unless `pageviews: false` |
 | `pageviews` | `true` | Automatic pageviews on load and navigation |
 | `mode` | `"auto"` | `"development"` logs and sends nothing unless `endpoint` is set explicitly; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` logs in the console; also switched on with `?ra=debug` and off with `?ra=nodebug`, which keeps the visitor id |
+| `debug` | `false` | `[spoar]` logs in the console; also switched on with `?spoar=debug` and off with `?spoar=nodebug`, which keeps the visitor id |
 | `release`, `environment` | none | Attached to every event and error |
 | `beforeSend` | none | `(event) => event \| null` to change or drop any event |
 | `strict` | `false` | `true` rejects event names that are not in `Events` at compile time |
@@ -153,7 +153,7 @@ import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
   project: "remcostoeten.nl",
-  secret: env.RA_SECRET,
+  secret: env.SPOAR_SECRET,
   endpoint: "https://api.analytics.remcostoeten.nl",
 });
 
@@ -171,7 +171,7 @@ Passing `request` (or `headers`) forwards the visitor's user agent and IP, the s
 ```ts
 import { createProxy } from "@spoar/sdk/proxy";
 
-export const POST = createProxy({ secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
+export const POST = createProxy({ secret: env.SPOAR_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
 
 The proxy refuses bodies over 60 KB, adds the secret and the visitor's IP and user agent, and forwards the page's `Origin` (or the site's own origin) and the admin session cookie and no other cookie.
@@ -266,7 +266,7 @@ bunx @spoar/sdk sourcemaps upload --release "$GITHUB_SHA" --dir .next/static
 | Automatic capture of uncaught errors and rejections | Yes, `errors` plugin |
 | Manual capture of errors and messages | Yes, `captureError`, `captureMessage` |
 | Tags, extra data, level, user | Yes, context argument, scopes and `identify` |
-| Breadcrumbs | Yes, last 20 navigations, clicks, fetches and `[ra]` events |
+| Breadcrumbs | Yes, last 20 navigations, clicks, fetches and `[spoar]` events |
 | Release and environment | Yes, config options |
 | Source maps | Yes, upload CLI, in a later phase |
 | Grouping and custom fingerprints | Yes |
@@ -329,7 +329,7 @@ export function notFound(): Plugin {
   return definePlugin({
     name: "not-found",
     setup: (client) => {
-      if (!document.querySelector("meta[name=ra-not-found]")) return noop;
+      if (!document.querySelector("meta[name=spoar-not-found]")) return noop;
       client.track("not_found", { referrer: document.referrer });
       return noop;
     },

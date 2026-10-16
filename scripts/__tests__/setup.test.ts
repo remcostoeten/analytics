@@ -84,7 +84,7 @@ describe("scripts/setup.ts against a Postgres server", () => {
       "accepting events from https://blog.nl and https://www.blog.nl",
     );
     expect(result.stdout).toMatch(
-      /NEXT_PUBLIC_RA_CONFIG='\{"project":"blog","key":"pk_live_[0-9a-f]{16}","endpoint":"\/_ra"\}'\nRA_SECRET=sk_live_[0-9a-f]{32}\nRA_ENDPOINT=https:\/\/api\.example\.test/,
+      /NEXT_PUBLIC_SPOAR_CONFIG='\{"project":"blog","key":"pk_live_[0-9a-f]{16}","endpoint":"\/_ra"\}'\nSPOAR_SECRET=sk_live_[0-9a-f]{32}\nSPOAR_ENDPOINT=https:\/\/api\.example\.test/,
     );
 
     const users = await database.query("SELECT github_login FROM dashboard_users");

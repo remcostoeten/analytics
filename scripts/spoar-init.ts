@@ -38,7 +38,7 @@ type Detection = {
   appDirectory: string | null;
   pagesDirectory: string | null;
   libDirectory: string;
-  environmentName: "NEXT_PUBLIC_RA_CONFIG" | "PUBLIC_RA_CONFIG" | "VITE_RA_CONFIG";
+  environmentName: "NEXT_PUBLIC_SPOAR_CONFIG" | "PUBLIC_SPOAR_CONFIG" | "VITE_SPOAR_CONFIG";
   directEndpoint: boolean;
 };
 
@@ -180,10 +180,10 @@ function detectFramework(
                   : "unknown");
   const environmentName =
     framework === "next-app" || framework === "next-pages"
-      ? "NEXT_PUBLIC_RA_CONFIG"
+      ? "NEXT_PUBLIC_SPOAR_CONFIG"
       : framework === "astro" || framework === "sveltekit"
-        ? "PUBLIC_RA_CONFIG"
-        : "VITE_RA_CONFIG";
+        ? "PUBLIC_SPOAR_CONFIG"
+        : "VITE_SPOAR_CONFIG";
   return {
     framework,
     appDirectory: framework === "next-app" ? appDirectory : null,
@@ -276,8 +276,8 @@ function proxyFile(): string {
   return `import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 `;
 }
@@ -287,8 +287,8 @@ function pagesProxyFile(): string {
 import { createProxy } from "@spoar/sdk/proxy";
 
 const proxy = createProxy({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
@@ -331,7 +331,7 @@ function environmentFile(
   const browser = `${detection.environmentName}='${config}'`;
   return detection.directEndpoint
     ? `${browser}\n`
-    : `${browser}\nRA_SECRET=${secret}\nRA_ENDPOINT=${options.endpoint}\n`;
+    : `${browser}\nSPOAR_SECRET=${secret}\nSPOAR_ENDPOINT=${options.endpoint}\n`;
 }
 
 function patchLayout(content: string, providersPath: string): string | null {

@@ -18,12 +18,12 @@ The public and secret key come from [creating a project](/docs/getting-started/q
 `.env`:
 
 ```bash
-PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/ra"}'
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+PUBLIC_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/ra"}'
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
-The client reads `PUBLIC_RA_CONFIG` from `import.meta.env`, which Astro exposes to browser code because of the `PUBLIC_` prefix. `RA_SECRET` has no prefix, so it stays on the server. `RA_SECRET` and `RA_ENDPOINT` are names used on this page; the SDK does not read them itself.
+The client reads `PUBLIC_SPOAR_CONFIG` from `import.meta.env`, which Astro exposes to browser code because of the `PUBLIC_` prefix. `SPOAR_SECRET` has no prefix, so it stays on the server. `SPOAR_SECRET` and `SPOAR_ENDPOINT` are names used on this page; the SDK does not read them itself.
 
 A fully static site without a server adapter has no endpoint of its own: set `endpoint` to `https://api.example.com/v2/events` and skip the proxy section.
 
@@ -92,10 +92,10 @@ In a client script:
 </script>
 ```
 
-For static markup, the `clicks()` plugin in the client above sends a `click` event for any element with `data-ra-click`, plus its `data-ra-prop-*` attributes:
+For static markup, the `clicks()` plugin in the client above sends a `click` event for any element with `data-spoar-click`, plus its `data-spoar-prop-*` attributes:
 
 ```html
-<button data-ra-click="upgrade" data-ra-prop-plan="pro">Upgrade</button>
+<button data-spoar-click="upgrade" data-spoar-prop-plan="pro">Upgrade</button>
 ```
 
 In a framework island (React, Vue, Svelte), import the same module and call `analytics.track`.
@@ -111,8 +111,8 @@ import { createProxy } from "@spoar/sdk/proxy";
 export const prerender = false;
 
 const proxy = createProxy({
-  secret: import.meta.env.RA_SECRET,
-  endpoint: import.meta.env.RA_ENDPOINT,
+  secret: import.meta.env.SPOAR_SECRET,
+  endpoint: import.meta.env.SPOAR_ENDPOINT,
 });
 
 export const POST: APIRoute = ({ request }) => proxy(request);
@@ -129,8 +129,8 @@ import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: import.meta.env.RA_SECRET,
-  endpoint: import.meta.env.RA_ENDPOINT,
+  secret: import.meta.env.SPOAR_SECRET,
+  endpoint: import.meta.env.SPOAR_ENDPOINT,
 });
 ```
 

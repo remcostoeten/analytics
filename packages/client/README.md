@@ -15,7 +15,7 @@ import { createClient } from "@spoar/client";
 
 const api = createClient({
   endpoint: "https://api.analytics.remcostoeten.nl",
-  token: process.env.RA_READ_TOKEN,
+  token: process.env.SPOAR_READ_TOKEN,
   projects: ["skriuw", "dora"],
 });
 

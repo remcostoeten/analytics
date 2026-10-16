@@ -34,7 +34,7 @@ Edit the list on the project's page under **Projects** in the dashboard, or with
 
 ```bash
 curl -X PATCH https://api.example.com/v2/projects/example.com \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"allowedOrigins":["https://example.com","https://www.example.com"]}'
 ```
@@ -60,12 +60,12 @@ This body comes from the API, so the proxy runs but posts to the wrong URL. The 
 
 ## `/_ra` answers 500: "The analytics proxy needs a secret and an endpoint"
 
-`createProxy` has no secret or no endpoint, after merging its options with the JSON in `RA_CONFIG`. The SDK does not read `RA_SECRET` or `RA_ENDPOINT` itself, so check that the variable you pass is set in the environment where the route runs:
+`createProxy` has no secret or no endpoint, after merging its options with the JSON in `SPOAR_CONFIG`. The SDK does not read `SPOAR_SECRET` or `SPOAR_ENDPOINT` itself, so check that the variable you pass is set in the environment where the route runs:
 
 ```ts
 export const POST = createProxy({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 

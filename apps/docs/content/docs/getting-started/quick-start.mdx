@@ -58,7 +58,7 @@ Pick the way that matches what you have:
 
     ```bash
     curl -X POST https://api.example.com/v2/projects \
-      -H "authorization: Bearer $RA_TOKEN" \
+      -H "authorization: Bearer $SPOAR_TOKEN" \
       -H "content-type: application/json" \
       -d '{"id":"example.com","name":"Example","domain":"example.com","allowedOrigins":["https://example.com"]}'
     ```
@@ -84,18 +84,18 @@ Create or update `.env.local` at the root of your app. These settings tell the S
 <KeyPlacement />
 
 ```bash
-NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+NEXT_PUBLIC_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
 Replace `example.com`, `pk_...`, `sk_...` and `https://api.example.com` with your project's values. Keep `/_ra` as written: you'll add that route in step 5. Restart your development server after changing `.env.local`.
 
-`RA_ENDPOINT` is your Spoar API's base URL. The forwarding route below reads it explicitly. The browser only needs the local path `/_ra`.
+`SPOAR_ENDPOINT` is your Spoar API's base URL. The forwarding route below reads it explicitly. The browser only needs the local path `/_ra`.
 
 <Accordions>
   <Accordion title="Using Vite, Astro or SvelteKit?">
-    Vite reads `VITE_RA_CONFIG`. Astro and SvelteKit read `PUBLIC_RA_CONFIG`, with the same JSON. The [framework guides](/docs/frameworks) show the matching client and server setup.
+    Vite reads `VITE_SPOAR_CONFIG`. Astro and SvelteKit read `PUBLIC_SPOAR_CONFIG`, with the same JSON. The [framework guides](/docs/frameworks) show the matching client and server setup.
   </Accordion>
 </Accordions>
 
@@ -168,12 +168,12 @@ Create `app/%5Fra/route.ts`. Use the folder name `%5Fra` exactly: Next.js treats
 import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 
-The browser path is `/_ra`. The proxy sends to `https://api.example.com/v2/events`, adding `/v2/events` to your `RA_ENDPOINT` automatically.
+The browser path is `/_ra`. The proxy sends to `https://api.example.com/v2/events`, adding `/v2/events` to your `SPOAR_ENDPOINT` automatically.
 
 <Accordions>
   <Accordion title="What does the proxy forward?">
@@ -185,8 +185,8 @@ The browser path is `/_ra`. The proxy sends to `https://api.example.com/v2/event
 
 You don't need a custom event to test this. Opening a page sends a pageview automatically.
 
-1. Open your running website with `?ra=debug` added to its URL, such as `http://localhost:3000/?ra=debug`.
-2. Open the browser console. An `[ra]` line explains when an event is queued, dropped or fails to send.
+1. Open your running website with `?spoar=debug` added to its URL, such as `http://localhost:3000/?spoar=debug`.
+2. Open the browser console. An `[spoar]` line explains when an event is queued, dropped or fails to send.
 3. Wait at least five seconds for the batch to send, then open your project's **Realtime** page in the dashboard.
 4. Include test traffic using the dashboard's **Exclude bots** chip. Localhost, preview and signed-in admin visits are filtered out by default.
 
@@ -196,7 +196,7 @@ You don't need a custom event to test this. Opening a page sends a pageview auto
 
 The `endpoint` in step 3 allows events to send during development. Without an explicit endpoint, the SDK logs events locally in `development` or `test` mode. `analytics.status()` also reports the queue size, consent, endpoint, route, last error and last send time.
 
-The browser remembers debug mode. Open your site with `?ra=nodebug` to turn it off.
+The browser remembers debug mode. Open your site with `?spoar=nodebug` to turn it off.
 
 <Accordions>
   <Accordion title="Check events without the dashboard">
@@ -204,10 +204,10 @@ The browser remembers debug mode. Open your site with `?ra=nodebug` to turn it o
 
     ```bash
     curl "https://api.example.com/v2/projects/example.com/realtime/events?traffic=all" \
-      -H "authorization: Bearer $RA_TOKEN"
+      -H "authorization: Bearer $SPOAR_TOKEN"
     ```
 
-    For private projects, `$RA_TOKEN` must be an API token with the `read` scope. It is separate from the `sk_` key used to send events. Public projects need no token. See [Create a token](/docs/guides/read-your-data#1-create-a-token).
+    For private projects, `$SPOAR_TOKEN` must be an API token with the `read` scope. It is separate from the `sk_` key used to send events. Public projects need no token. See [Create a token](/docs/guides/read-your-data#1-create-a-token).
   </Accordion>
 </Accordions>
 

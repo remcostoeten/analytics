@@ -11,8 +11,8 @@ This guide sends events that happen on your server, such as a completed payment 
 The server client authenticates with the project's secret key, the same one the proxy uses. Put it and the API's base URL in the server's environment:
 
 ```bash
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
 If you do not have the secret key, [Send events through your own domain](/docs/guides/proxy#1-store-the-secret-key) shows how to rotate it.
@@ -28,8 +28,8 @@ import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 
@@ -119,7 +119,7 @@ if (!result.ok) console.warn(result.error.code, result.error.message);
 | `RA_INGEST_FAILED` | The API answered with an error status, or could not be reached; the message holds the status or the network error |
 | `RA_INGEST_REJECTED` | The API stored the batch but rejected at least one event; the message holds the first event's code |
 
-The client also prints each code once to the console as `[ra] <code>: <message>`.
+The client also prints each code once to the console as `[spoar] <code>: <message>`.
 
 ## Visitors and sessions
 

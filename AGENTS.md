@@ -28,6 +28,7 @@ Load the `generic-program-rules` skill before writing code, prose, commits or su
 - Never store raw IP addresses. The SDK never contains database logic. No cookies for tracked visitors; the admin session cookie is the only cookie.
 - Oxlint and oxfmt only; never ESLint or Prettier. Fix lint findings properly, never by disabling rules.
 - Prose has no em dashes and no marketing language.
+- The product is Spoar. New names use `spoar`, `SPOAR_` and `x-spoar-`. The older `ra`, `RA_` and `x-analytics-` names that installs already use stay readable as aliases; the `RA_*` codes, `__ra` storage keys, the `ra` cookie prefix and the `/_ra` default endpoint keep their names until a major release.
 
 ## Branching
 

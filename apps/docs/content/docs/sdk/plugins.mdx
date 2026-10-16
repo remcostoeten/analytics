@@ -100,7 +100,7 @@ createAnalytics({ plugins: [engagement()] });
 clicks(): Plugin
 ```
 
-Sends `click` for elements with `data-ra-click`. See [Clicks](/docs/plugins/clicks).
+Sends `click` for elements with `data-spoar-click`. See [Clicks](/docs/plugins/clicks).
 
 ```ts
 createAnalytics({ plugins: [clicks()] });
@@ -136,7 +136,7 @@ createAnalytics({ plugins: [forms()] });
 ignoreSelf(): Plugin
 ```
 
-Sends nothing. Opening any page with `?ra=ignore` opts that browser out. See [Ignore self](/docs/plugins/ignore-self).
+Sends nothing. Opening any page with `?spoar=ignore` opts that browser out. See [Ignore self](/docs/plugins/ignore-self).
 
 ```ts
 createAnalytics({ plugins: [ignoreSelf()] });

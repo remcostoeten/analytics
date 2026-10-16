@@ -41,10 +41,10 @@ analytics.track("signup", { plan: "pro" });
 analytics.track("newsletter_subscribed");
 ```
 
-Pageviews are sent on load and on client-side navigation unless `pageviews: false`. Options left out are read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`, so the key and endpoint can live in the environment:
+Pageviews are sent on load and on client-side navigation unless `pageviews: false`. Options left out are read from the JSON in `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG`, so the key and endpoint can live in the environment:
 
 ```bash
-NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_live_...","endpoint":"/_ra"}'
+NEXT_PUBLIC_SPOAR_CONFIG='{"project":"remcostoeten.nl","key":"pk_live_...","endpoint":"/_ra"}'
 ```
 
 ## Client
@@ -73,7 +73,7 @@ NEXT_PUBLIC_RA_CONFIG='{"project":"remcostoeten.nl","key":"pk_live_...","endpoin
 | `plugins` | `[]` | Plugins to start with |
 | `pageviews` | `true` | Automatic pageviews |
 | `mode` | `"auto"` | `"development"` logs instead of sending unless `endpoint` is set; `"auto"` reads `NODE_ENV` |
-| `debug` | `false` | `[ra]` console output; `?ra=debug` switches it on in one browser, `?ra=nodebug` off again without touching the visitor id |
+| `debug` | `false` | `[spoar]` console output; `?spoar=debug` switches it on in one browser, `?spoar=nodebug` off again without touching the visitor id |
 | `release` | none | Attached to every event |
 | `beforeSend` | none | `(event) => event \| null` to change or drop any event |
 | `autostart` | `true` in browsers | `false` to call `start()` yourself |
@@ -92,14 +92,14 @@ Import from `@spoar/sdk/plugins`; each is one file and none imports another.
 | `speedInsights({ sampleRate })` | `web_vital` for LCP, INP, CLS, FCP and TTFB through the lazily loaded `web-vitals` attribution build |
 | `scrollDepth()` | `scroll_depth` with the deepest percentage reached |
 | `engagement()` | `engagement` with the milliseconds the page was visible |
-| `clicks()` | `click` for elements with `data-ra-click`, plus their `data-ra-prop-*` attributes |
+| `clicks()` | `click` for elements with `data-spoar-click`, plus their `data-spoar-prop-*` attributes |
 | `outboundLinks()` | `outbound_click` for other hosts and `file_download` by file extension |
 | `forms()` | `form_submit` with the form id and action path, nothing from the fields |
 | `errors()` | `error` for uncaught errors and rejections, with 20 scrubbed breadcrumbs |
-| `ignoreSelf()` | Nothing; `?ra=ignore` opts this browser out and `?ra=track` back in |
+| `ignoreSelf()` | Nothing; `?spoar=ignore` opts this browser out and `?spoar=track` back in |
 | `botSignals()` | Adds webdriver, headless and no-input bits to every event's `signals` |
 | `experiments({ id: variant })` | Registers `experiment:<id>` on every event and sends one `experiment_exposure` per experiment on each page load |
-| `notFound()` | `not_found` with the referrer on pages with `<meta name="ra-not-found">` |
+| `notFound()` | `not_found` with the referrer on pages with `<meta name="spoar-not-found">` |
 
 ## React and Next
 
@@ -129,7 +129,7 @@ export default function RootLayout({ children }: Props) {
 import { createServerAnalytics } from "@spoar/sdk/server";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: process.env.RA_SECRET,
+  secret: process.env.SPOAR_SECRET,
   endpoint: "https://api.analytics.remcostoeten.nl",
 });
 
@@ -140,7 +140,7 @@ export const POST = serverAnalytics.withErrors(async (request) => {
 });
 ```
 
-Passing `request` or `headers` forwards the visitor's IP and user agent, the site's origin as `Origin` (so ingest flags localhost and preview hosts) and the admin session cookie `ra.session_token` alone (so a signed-in admin's events are internal). Without either, no IP or user agent is sent and the API does not use the server's own; an `origin` option on the client or the call gives such events a host. Events from one tick go out together, one request per origin and session cookie, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` (exported as `serverVisitor`) as visitor and session unless the call passes `visitor` and `session`; reads count them in pageviews, events and breakdowns but never as a visitor or a session. Options left out are read from the JSON in `RA_CONFIG`.
+Passing `request` or `headers` forwards the visitor's IP and user agent, the site's origin as `Origin` (so ingest flags localhost and preview hosts) and the admin session cookie `ra.session_token` alone (so a signed-in admin's events are internal). Without either, no IP or user agent is sent and the API does not use the server's own; an `origin` option on the client or the call gives such events a host. Events from one tick go out together, one request per origin and session cookie, and `waitUntil` from the options, the call or Vercel's runtime keeps the send alive after the response. Every method resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Server events use `server` (exported as `serverVisitor`) as visitor and session unless the call passes `visitor` and `session`; reads count them in pageviews, events and breakdowns but never as a visitor or a session. Options left out are read from the JSON in `SPOAR_CONFIG`.
 
 ## Proxy
 
@@ -149,7 +149,7 @@ A same-origin path gets events past ad blockers. In the Next App Router, `app/%5
 ```ts
 import { createProxy } from "@spoar/sdk/proxy";
 
-export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
+export const POST = createProxy({ secret: process.env.SPOAR_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
 ```
 
 The proxy refuses other methods, cross-site requests and bodies over 60 KB, the API's own limit. It forwards the body with the secret, the visitor's IP and user agent, the page's `Origin` (or the site's own origin when the browser sent none) and the admin session cookie `ra.session_token` and no other cookie, so proxied events get their host, localhost and preview flags, and a signed-in admin's events are internal. `createPageCounter` counts HTML page loads in middleware as `page_request` events, which the dashboard compares with pageviews to estimate the blocked share.
@@ -159,12 +159,12 @@ The proxy refuses other methods, cross-site requests and bodies over 60 KB, the 
 | 1.x | 2.0 |
 | --- | --- |
 | `<Analytics projectId="my-app" />` from the root entry | `createAnalytics({ project, key, endpoint })` once, `AnalyticsProvider client={analytics}`, and `<Analytics />` from `./next` |
-| `NEXT_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`; `NEXT_PUBLIC_RA_CONFIG` holds JSON options |
+| `NEXT_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`, posting to `{url}/e` | `endpoint`, usually `/_ra` behind `createProxy`, or the API's `/v2/events`; `NEXT_PUBLIC_SPOAR_CONFIG` holds JSON options |
 | `@spoar/sdk/browser` | The root entry, which has no React dependency |
 | `trackEvent(name, meta)`, `track(type, meta)` | `analytics.track(name, props)`, typed by your `Events` |
 | `trackPageView()` | `analytics.page()`, or automatic |
 | `trackError(error)`, `observeErrors`, `trackErrors` prop | `analytics.captureError(error)` and the `errors()` plugin |
-| `trackClick`, `observeClicks`, `data-analytics` | `TrackClick`, or the `clicks()` plugin with `data-ra-click` |
+| `trackClick`, `observeClicks`, `data-analytics` | `TrackClick`, or the `clicks()` plugin with `data-spoar-click` |
 | `observePerformance` (web vitals) | `speedInsights()` |
 | `observeScroll`, `observeTimeOnPage` | `scrollDepth()`, `engagement()` |
 | `observeOutboundLinks`, `observeForms` | `outboundLinks()`, `forms()` |

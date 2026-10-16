@@ -51,7 +51,7 @@ function describe(error: unknown) {
  * other tabs, and runs plugins, with `pageviews` on by default. Calls made before `start()` or,
  * with `consent: "required"`, before `consent.grant()` are held and replayed. In development mode
  * without an explicit `endpoint` it logs events instead of sending them. Options missing here are
- * read from the JSON in `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`.
+ * read from the JSON in `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG`.
  *
  * @example
  * const analytics = createAnalytics<Events>({ project: "remcostoeten.nl", key: "pk_test", endpoint: "/_ra" });

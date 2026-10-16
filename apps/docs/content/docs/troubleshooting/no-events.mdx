@@ -16,7 +16,7 @@ If the events still do not show, work through the sections below.
 
 ## You do not know where the event stops
 
-Open any page of your site once with `?ra=debug`. The browser stores the setting in the `__ra` key in `localStorage`, and the console prints an `[ra]` line for each step:
+Open any page of your site once with `?spoar=debug`. The browser stores the setting in the `__ra` key in `localStorage`, and the console prints an `[spoar]` line for each step:
 
 | Line | Means |
 | --- | --- |
@@ -28,7 +28,7 @@ Open any page of your site once with `?ra=debug`. The browser stores the setting
 | `RA_NO_KEY` | The client started with an empty `key`; printed without debug too |
 | `RA_PROPS_LIMITED` | In development mode, a prop was left out or cut; printed without debug too |
 
-To switch debug off, open a page with `?ra=nodebug`. The visitor id, consent and opt-out stay as they are.
+To switch debug off, open a page with `?spoar=nodebug`. The visitor id, consent and opt-out stay as they are.
 
 `analytics.status()` returns the client's state without debug:
 
@@ -51,7 +51,7 @@ Check these causes in order:
 2. **The client runs in development mode.** When `NODE_ENV` is `development` or `test` and no `endpoint` is set, in the options or in the config variable, the client keeps events local. Set `endpoint`, or create the client with `mode: "production"`. See [Options](/docs/sdk/options).
 3. **The client has not started.** A client created with `autostart: false` sends nothing until `start()`. The client starts only where `window` exists, so a module imported only on the server never sends.
 4. **Consent is missing.** With `consent: "required"`, events are held until `consent.grant()`; `status().queued` grows while they wait. After `consent.revoke()`, events are dropped with the reason `consent`.
-5. **The browser opted out.** `optOut()`, or `?ra=ignore` with the [ignoreSelf plugin](/docs/plugins/ignore-self), drops every event with the reason `opt-out`. Open the site with `?ra=track` or call `optIn()`.
+5. **The browser opted out.** `optOut()`, or `?spoar=ignore` with the [ignoreSelf plugin](/docs/plugins/ignore-self), drops every event with the reason `opt-out`. Open the site with `?spoar=track` or call `optIn()`.
 6. **The browser sends Do Not Track or Global Privacy Control.** The client drops every event with the reason `dnt` while `navigator.doNotTrack` is `"1"` or `navigator.globalPrivacyControl` is `true`. Check both in the console. Brave turns Global Privacy Control on by default, so Brave visitors send nothing unless the client sets `privacySignals: "ignore"`.
 7. **`beforeSend` returned `null`.** A `beforeSend` option or a plugin hook dropped the event; `RA_DROP` shows the reason `beforeSend`.
 
@@ -80,7 +80,7 @@ A 404 usually means the endpoint is wrong. The browser client posts to `endpoint
 
 An empty `key` usually means the config variable was not read. Check that:
 
-- the variable is named `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG` for your stack;
+- the variable is named `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG` for your stack;
 - your code reads it as a literal `process.env.NAME` or `import.meta.env.NAME`, which bundlers replace at build time;
 - its value is valid JSON. The client ignores anything else.
 
@@ -91,7 +91,7 @@ Through the proxy the key does not matter, because the proxy authenticates with 
 ## The API answers 202 but the event is missing
 
 1. **The event was rejected.** A 202 answers `{ accepted, duplicates, rejected }`. Each entry in `rejected` has the event's `index`, a `code` and a `message`; the rest of the batch is stored. To see rejections:
-   - in the browser, open the page with `?ra=debug` and look for `RA_INGEST_REJECTED`, or listen with `analytics.on("error")`;
+   - in the browser, open the page with `?spoar=debug` and look for `RA_INGEST_REJECTED`, or listen with `analytics.on("error")`;
    - on the server, the client returns `RA_INGEST_REJECTED` with the first rejection.
 
    Batches sent with `sendBeacon` while the page unloads are not read, so their rejections are not reported.
@@ -107,16 +107,16 @@ The live feed answers the last five minutes. Add `traffic=all` so bot, internal 
 
 ```bash
 curl "https://api.example.com/v2/projects/example.com/realtime/events?traffic=all" \
-  -H "authorization: Bearer $RA_TOKEN"
+  -H "authorization: Bearer $SPOAR_TOKEN"
 ```
 
-A public project needs no token. For a private one, `$RA_TOKEN` is an API token (`at_...`) with the `read` scope; [Create a token](/docs/guides/read-your-data#1-create-a-token) shows how. The secret key (`sk_...`) only sends events, so a private project answers 404 to it.
+A public project needs no token. For a private one, `$SPOAR_TOKEN` is an API token (`at_...`) with the `read` scope; [Create a token](/docs/guides/read-your-data#1-create-a-token) shows how. The secret key (`sk_...`) only sends events, so a private project answers 404 to it.
 
 With a token that has the `sql` scope, the [SQL console](/docs/api/sql) shows why events were scored or flagged:
 
 ```bash
 curl -X POST https://api.example.com/v2/projects/example.com/query \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"sql":"SELECT received_at, name, path, bot_score, bot_reasons, is_internal, is_localhost, is_preview FROM events ORDER BY received_at DESC LIMIT 20"}'
 ```

@@ -37,7 +37,7 @@ An annotation marks a date, or a range of dates, on a project's charts: a releas
 
 ```bash
 curl https://api.example.com/v2/projects/example.com/annotations \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"title":"v2.0 released","date":"2026-10-01","kind":"release","url":"https://example.com/changelog"}'
 ```

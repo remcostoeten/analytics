@@ -18,7 +18,7 @@ The public and secret key come from [creating a project](/docs/getting-started/q
 With Vite, `.env`:
 
 ```bash
-VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+VITE_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
 ```
 
 Only the public key (`pk_...`) belongs in browser code. It works only from the project's `allowedOrigins`. The secret key (`sk_...`) stays on a server; see [Server](/docs/frameworks/server).

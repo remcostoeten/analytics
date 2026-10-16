@@ -230,14 +230,14 @@ describe("privacy signals and other tabs", () => {
     expect(analytics.isOptedOut()).toBe(false);
   });
 
-  test("?ra=nodebug clears debug and keeps the visitor", async () => {
-    history.replaceState(null, "", "/?ra=debug");
+  test("?spoar=nodebug clears debug and keeps the visitor", async () => {
+    history.replaceState(null, "", "/?spoar=debug");
     const debugging = client();
     debugging.analytics.track("first");
     const visitor = JSON.parse(localStorage.getItem("__ra") ?? "{}").visitor;
     expect(JSON.parse(localStorage.getItem("__ra") ?? "{}").debug).toBe(true);
     await debugging.analytics.shutdown();
-    history.replaceState(null, "", "/?ra=nodebug");
+    history.replaceState(null, "", "/?spoar=nodebug");
     const quiet = client();
     await quiet.analytics.shutdown();
     expect(JSON.parse(localStorage.getItem("__ra") ?? "{}")).toMatchObject({

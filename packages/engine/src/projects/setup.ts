@@ -57,8 +57,8 @@ export function suggestProjectId(domain: string): ProjectID | null {
 /**
  * @name envBlock
  * @description The three environment variables a Next app needs for `@spoar/sdk`:
- * `NEXT_PUBLIC_RA_CONFIG` with the project, the public key and `/_ra` as the endpoint,
- * `RA_SECRET` and `RA_ENDPOINT`.
+ * `NEXT_PUBLIC_SPOAR_CONFIG` with the project, the public key and `/_ra` as the endpoint,
+ * `SPOAR_SECRET` and `SPOAR_ENDPOINT`.
  *
  * @example
  * console.log(envBlock({ project: "blog", publicKey, secretKey, endpoint: "https://api.example.com" }));
@@ -66,8 +66,8 @@ export function suggestProjectId(domain: string): ProjectID | null {
 export function envBlock(keys: InstallKeys): string {
   const config = JSON.stringify({ project: keys.project, key: keys.publicKey, endpoint: "/_ra" });
   return [
-    `NEXT_PUBLIC_RA_CONFIG='${config}'`,
-    `RA_SECRET=${keys.secretKey}`,
-    `RA_ENDPOINT=${keys.endpoint}`,
+    `NEXT_PUBLIC_SPOAR_CONFIG='${config}'`,
+    `SPOAR_SECRET=${keys.secretKey}`,
+    `SPOAR_ENDPOINT=${keys.endpoint}`,
   ].join("\n");
 }

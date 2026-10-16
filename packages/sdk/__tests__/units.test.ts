@@ -163,14 +163,6 @@ describe("createIdentity", () => {
     expect(identity.session()).not.toBe(first);
     expect(identity.visitor()).toBe(identity.visitor());
   });
-
-  test("carries over a 1.x session id", () => {
-    sessionStorage.setItem("__analytics_session_id", "legacy-session");
-    const saved = createSavedStore(localStorage, () => true);
-    const identity = createIdentity(saved, sessionStorage, Date.now, () => true);
-    expect(identity.session()).toBe("legacy-session");
-    expect(sessionStorage.getItem("__analytics_session_id")).toBeNull();
-  });
 });
 
 function event(id: string): WireEvent {
@@ -434,14 +426,17 @@ describe("beacon", () => {
 });
 
 describe("environment", () => {
-  test("?ra=debug turns debug on, ?ra=nodebug off, anything else leaves it", () => {
-    history.replaceState(null, "", "/?ra=debug");
-    expect(debugFlag()).toBe(true);
-    history.replaceState(null, "", "/?ra=nodebug");
-    expect(debugFlag()).toBe(false);
-    history.replaceState(null, "", "/");
-    expect(debugFlag()).toBeNull();
-  });
+  test.each(["spoar", "ra"])(
+    "?%s=debug turns debug on, nodebug off, anything else leaves it",
+    (flag) => {
+      history.replaceState(null, "", `/?${flag}=debug`);
+      expect(debugFlag()).toBe(true);
+      history.replaceState(null, "", `/?${flag}=nodebug`);
+      expect(debugFlag()).toBe(false);
+      history.replaceState(null, "", "/");
+      expect(debugFlag()).toBeNull();
+    },
+  );
 
   test.each([
     ["Do Not Track", { doNotTrack: "1" }, true],

@@ -6,9 +6,9 @@ import { definePlugin } from "../core/plugin-host";
 /**
  * @name notFound
  * @description Sends `not_found` with the referrer when the page carries
- * `<meta name="ra-not-found">`, so broken links show up with where they came from. It checks on
- * start and on every pageview and reports each URL (path and query) once in a row, so the first
- * pageview after start does not report the same page again.
+ * `<meta name="spoar-not-found">` (or the older `ra-not-found`), so broken links show up with
+ * where they came from. It checks on start and on every pageview and reports each URL (path and
+ * query) once in a row, so the first pageview after start does not report the same page again.
  *
  * @example
  * createAnalytics({ ...config, plugins: [notFound()] });
@@ -23,7 +23,7 @@ export function notFound() {
         const url = pagePath() + location.search;
         if (url === last) return;
         last = url;
-        if (document.querySelector("meta[name=ra-not-found]")) {
+        if (document.querySelector("meta[name=spoar-not-found],meta[name=ra-not-found]")) {
           client.track("not_found", { referrer: document.referrer || null });
         }
       }

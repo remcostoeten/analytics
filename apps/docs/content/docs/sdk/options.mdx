@@ -98,7 +98,7 @@ createAnalytics({ plugins: [errors(), speedInsights()] });
 
 ### `debug`
 
-`boolean`, default `false`. Prints `[ra]` lines to the console. Open any page with `?ra=debug` to switch it on in that browser and `?ra=nodebug` to switch it off. The visitor id is kept.
+`boolean`, default `false`. Prints `[spoar]` lines to the console. Open any page with `?spoar=debug` to switch it on in that browser and `?spoar=nodebug` to switch it off. The visitor id is kept.
 
 ## Metadata
 
@@ -129,10 +129,10 @@ createAnalytics({
 
 ## Environment
 
-When an option is left out, the client reads a JSON object from the first of `NEXT_PUBLIC_RA_CONFIG`, `PUBLIC_RA_CONFIG` and `VITE_RA_CONFIG` that is set.
+When an option is left out, the client reads a JSON object from the first of `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` and `VITE_SPOAR_CONFIG` that is set.
 
 ```bash
-NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_live_...","endpoint":"/_ra"}'
+NEXT_PUBLIC_SPOAR_CONFIG='{"project":"example.com","key":"pk_live_...","endpoint":"/_ra"}'
 ```
 
 ```ts
