@@ -1,6 +1,7 @@
 import type { AnnotationStore, Engine, Logger, OpsStore } from "@spoar/engine";
 import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
+import type { ElysiaAdapter } from "elysia";
 
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
@@ -62,6 +63,8 @@ export type AppOptions = {
   commit?: Nullable<string>;
   widget?: Nullable<WidgetDeps>;
   live?: LiveOptions;
+  adapter?: ElysiaAdapter;
+  liveSocket?: boolean;
 };
 
 const defaultLive: LiveOptions = { snapshotMs: 5_000, retryMs: 2_000, authMs: 10_000 };
@@ -94,7 +97,7 @@ export function createApp(options: AppOptions) {
     const found = await projectForOrigin(options.access, origin);
     return found.ok && found.value !== null;
   }
-  const api = new Elysia({ prefix: "/v2" })
+  const api = new Elysia({ prefix: "/v2", adapter: options.adapter })
     .use(requestId())
     .use(
       cors({
@@ -177,11 +180,11 @@ export function createApp(options: AppOptions) {
         : new Elysia({ name: "logs-off" }),
     )
     .use(
-      widget
+      widget && options.liveSocket !== false
         ? liveModule(options.access, reads, widget, options.live ?? defaultLive)
         : new Elysia({ name: "live-off" }),
     );
-  return new Elysia()
+  return new Elysia({ adapter: options.adapter })
     .use(
       landingModule({
         version,
