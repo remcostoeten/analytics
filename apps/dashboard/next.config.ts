@@ -13,6 +13,24 @@ const config: NextConfig = {
       allowedOrigins: [new URL(siteUrl()).host],
     },
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/robots.txt",
+        destination: `${basePath}/robots.txt`,
+        basePath: false,
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default config;
