@@ -1,6 +1,7 @@
 import type { AnnotationStore, Engine, Logger, OpsStore } from "@spoar/engine";
 import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
+import type { ElysiaAdapter } from "elysia";
 
 import { resolveCaller } from "./access/caller";
 import { isSignedInAdmin } from "./access/rules";
@@ -42,6 +43,7 @@ import { requestId } from "./plugins/request-id";
 const version = "2.0.0-next";
 
 export type AppOptions = {
+  adapter?: Nullable<ElysiaAdapter>;
   engine: (logger: Logger) => Engine;
   logger: (requestId: string) => Logger;
   clock: () => Date;
@@ -181,7 +183,7 @@ export function createApp(options: AppOptions) {
         ? liveModule(options.access, reads, widget, options.live ?? defaultLive)
         : new Elysia({ name: "live-off" }),
     );
-  return new Elysia()
+  return new Elysia({ adapter: options.adapter ?? undefined })
     .use(
       landingModule({
         version,

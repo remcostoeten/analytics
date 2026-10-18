@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "spoar-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [{ "pattern": "api.analytics.remcostoeten.nl", "custom_domain": true }],
+  "observability": { "enabled": true },
+  "vars": {
+    "NODE_ENV": "production",
+    "API_URL": "https://api.analytics.remcostoeten.nl",
+    "AUTH_COOKIE_DOMAIN": ".remcostoeten.nl",
+    "DASHBOARD_ORIGIN": "https://docs.analytics.remcostoeten.nl",
+  },
+}

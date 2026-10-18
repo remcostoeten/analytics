@@ -67,6 +67,20 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 
 Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true`.
 
+## 5b. The API on Cloudflare Workers
+
+Decision 35 replaces section 5 while Vercel is paused. The Worker is `spoar-api` from `apps/api/wrangler.jsonc`; it sets `NODE_ENV`, `API_URL`, `DASHBOARD_ORIGIN` and `AUTH_COOKIE_DOMAIN` as plain variables. From `apps/api`:
+
+1. `bunx wrangler login`.
+2. Add each secret with `bunx wrangler secret put <NAME>`: `DATABASE_URL`, `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and the optional `MAIL_URL`, `MAIL_FROM`, `INTERNAL_PROJECT_SECRET`, `CRUX_API_KEY` and `GITHUB_TOKEN`. Use the same values as on Vercel, or existing sessions and IP hashes stop matching. `MAXMIND_LICENSE_KEY` is not needed.
+3. In the Cloudflare dashboard, delete the DNS record for `api.analytics.remcostoeten.nl` that points at Vercel. The custom domain route in `wrangler.jsonc` creates its own record on deploy.
+4. `bun run deploy:worker`. It deploys with the current commit as `COMMIT_SHA`.
+5. Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true` with `ipHeader: "cf-connecting-ip"`, then send an event from a tracked site.
+
+`bun run dev:worker` runs the Worker locally on port 8787; put local values in `apps/api/.dev.vars`, which git ignores. `bunx wrangler tail` streams production logs.
+
+The free plan allows 100,000 requests a day across all Workers and 10 ms of CPU per request. Requests over the daily limit fail, so watch the Workers usage page in the first days.
+
 ## 6. The docs site on Vercel
 
 Project `v2.analytics-docs` (already created, with `docs.analytics.remcostoeten.nl`), same repository, root directory `apps/docs`, framework Next.js, build command `bun run build`, install command `bun install`. Optional variables `NEXT_PUBLIC_API_URL` (defaults to `https://api.analytics.remcostoeten.nl`) and `DASHBOARD_URL` (defaults to `https://dashboard.analytics.remcostoeten.nl`, the target of the `/dashboard` rewrite). Add a domain such as `docs.analytics.remcostoeten.nl`.

@@ -1,6 +1,6 @@
 # apps/api
 
-The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-reference.md` for the routes and `docs/decisions/0016-elysia-on-vercel.md` for why Elysia.
+The v2 API on Elysia, deployed as a Cloudflare Worker (`wrangler.jsonc`, `src/worker.ts`, decision 35) and runnable on Bun (`src/server.ts`) for local work and self-hosting. `docs/v2/deploy.md` section 5b has the deploy steps. See `docs/v2/api-reference.md` for the routes and `docs/decisions/0016-elysia-on-vercel.md` for why Elysia.
 
 ## Routes so far
 
