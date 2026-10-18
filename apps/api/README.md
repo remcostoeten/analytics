@@ -66,4 +66,14 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 - `bun run dev` serves on port 3100.
 - `bun run build` downloads the GeoLite2 City and ASN files into `data/`, from MaxMind when `MAXMIND_LICENSE_KEY` is set and from a community mirror otherwise.
 - `bun test` runs the integration tests through `app.handle` on PGlite, including a check that `openapi.json` matches the routes.
+- `bun run dev:worker` serves the Cloudflare Worker build through Wrangler, reading secrets from `.dev.vars`.
+- `bun run deploy:worker` deploys the Worker named in `wrangler.jsonc`. Set each variable from Environment with `wrangler secret put <NAME>` first.
 - `bun run openapi` writes the OpenAPI document to `openapi.json`; the docs site reads it and the `openapi` workflow fails a pull request that breaks it.
+
+## Cloudflare Workers
+
+`src/worker.ts` serves the same app on Workers. It differs from the Vercel build in three ways:
+
+- Geo comes from Cloudflare's location for the connecting address, so `MAXMIND_LICENSE_KEY` and the `data/` files are not used. An event forwarded by a proxy, where the visitor's address is not the connecting one, gets no location.
+- The `live` WebSocket route is not served. The realtime HTTP routes still are.
+- The commit on the landing page comes from `WORKERS_CI_COMMIT_SHA` or `COMMIT_SHA`.

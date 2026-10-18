@@ -16,7 +16,7 @@ export type RealtimeSnapshot = {
   sessions: Result<LiveSessions, ClientError>;
 };
 
-export const realtimeIntervalMs = 5_000;
+export const realtimeIntervalMs = 30_000;
 
 export const feedLimit = 50;
 

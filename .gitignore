@@ -20,3 +20,6 @@ playwright-report
 
 # Local brand and image explorations
 output/
+
+.dev.vars
+.wrangler/
