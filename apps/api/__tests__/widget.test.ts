@@ -274,12 +274,12 @@ describe("GET /v2/widget/session", () => {
     expect(response.headers.get("access-control-allow-credentials")).toBe("true");
   });
 
-  test("403 DEBUG_CONSOLE_DISABLED while the project's switch is off", async () => {
+  test("403 FORBIDDEN while the project's debugConsole switch is off", async () => {
     const response = await call("/v2/widget/session", {
       origin: "https://other.example",
       cookie: "ra.session_token=owner",
     });
-    await failed(response, 403, "DEBUG_CONSOLE_DISABLED");
+    await failed(response, 403, "FORBIDDEN");
   });
 
   test("403 FORBIDDEN for a member who cannot administer the project", async () => {

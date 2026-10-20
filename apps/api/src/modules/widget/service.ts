@@ -80,8 +80,7 @@ export function hasSessionCookie(headers: Headers): boolean {
  * @description The debug console's bootstrap for a site origin: reads the session cookie first
  * (`AUTH_REQUIRED` without one, before any database read), finds the project whose allowed origins
  * list the origin (`ORIGIN_NOT_ALLOWED` when none does), checks its `debugConsole` switch
- * (`DEBUG_CONSOLE_DISABLED` while off) and that the member may administer it (`FORBIDDEN`
- * otherwise), and mints a 15-minute `wt_` widget token with the `admin` scope bound to the project.
+ * and that the member may administer it (`FORBIDDEN` otherwise), and mints a 15-minute `wt_` widget token with the `admin` scope bound to the project.
  * The token is stored as its hash and never listed by `GET /v2/tokens`.
  *
  * @example
@@ -102,7 +101,7 @@ export async function startWidget(
     return err(engineError("ORIGIN_NOT_ALLOWED", "No project lists this origin"));
   }
   if (!project.debugConsole) {
-    return err(engineError("DEBUG_CONSOLE_DISABLED", `The debug console is off for ${project.id}`));
+    return err(engineError("FORBIDDEN", `The debug console is off for ${project.id}`));
   }
   const caller = await memberCaller(signedIn, deps);
   if (!caller.ok) return caller;

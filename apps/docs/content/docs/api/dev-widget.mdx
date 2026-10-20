@@ -30,7 +30,7 @@ The widget calls `GET /v2/widget/session` from your site with `credentials: "inc
 | `200` | You are signed in and may administer the project |
 | `401 AUTH_REQUIRED` | No session cookie reached the API |
 | `403 ORIGIN_NOT_ALLOWED` | No project lists the page's origin |
-| `403 DEBUG_CONSOLE_DISABLED` | The project's `debugConsole` switch is off |
+| `403 FORBIDDEN` | The project's `debugConsole` switch is off |
 | `403 FORBIDDEN` | You are signed in but cannot administer this project |
 
 The session cookie is `SameSite=Lax`, so browsers send it to the API only from the same site, such as `www.example.com` calling `api.example.com`. A site on another domain reaches `401 AUTH_REQUIRED` even when you are signed in.
