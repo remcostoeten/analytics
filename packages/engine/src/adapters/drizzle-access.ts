@@ -60,6 +60,7 @@ const projectColumns = {
   publicVisitorData: projects.publicVisitorData,
   sqlEnabled: projects.sqlEnabled,
   widgetReports: projects.widgetReports,
+  debugConsole: projects.debugConsole,
   allowedOrigins: projects.allowedOrigins,
   retentionDays: projects.retentionDays,
   publicKey: projects.publicKey,

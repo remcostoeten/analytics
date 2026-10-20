@@ -20,6 +20,7 @@ type Draft = {
   publicVisitorData: boolean;
   sqlEnabled: boolean;
   widgetReports: boolean;
+  debugConsole: boolean;
 };
 
 function draftOf(project: Project): Draft {
@@ -31,6 +32,7 @@ function draftOf(project: Project): Draft {
     publicVisitorData: project.publicVisitorData,
     sqlEnabled: project.sqlEnabled,
     widgetReports: project.widgetReports,
+    debugConsole: project.debugConsole,
   };
 }
 
@@ -47,6 +49,7 @@ function changesOf(project: Project, draft: Draft): UpdateProject {
     changes.publicVisitorData = draft.publicVisitorData;
   if (draft.sqlEnabled !== project.sqlEnabled) changes.sqlEnabled = draft.sqlEnabled;
   if (draft.widgetReports !== project.widgetReports) changes.widgetReports = draft.widgetReports;
+  if (draft.debugConsole !== project.debugConsole) changes.debugConsole = draft.debugConsole;
   return changes;
 }
 
@@ -188,6 +191,13 @@ export function ProjectSettingsForm({ project }: Props) {
           hint="Accept SDK outcome reports from the dev widget."
           checked={draft.widgetReports}
           onChange={(widgetReports) => setDraft({ ...draft, widgetReports })}
+        />
+        <Toggle
+          id="debugConsole"
+          label="Debug console"
+          hint="Admins may open the debug console with Ctrl+Shift+K on sites that render <Analytics debugConsole />."
+          checked={draft.debugConsole}
+          onChange={(debugConsole) => setDraft({ ...draft, debugConsole })}
         />
       </div>
       <div className="flex items-center gap-3">

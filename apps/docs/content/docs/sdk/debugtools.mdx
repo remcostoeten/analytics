@@ -12,6 +12,20 @@ This site runs the console. Signed in as an admin of this site's project, you se
 
 <DevWidgetToggle />
 
+## With @spoar/sdk
+
+On a Next.js site that already uses `@spoar/sdk`, set `debugConsole` on `<Analytics>`. `@spoar/sdk` depends on `@spoar/debugtools`, so there is nothing else to install.
+
+```tsx
+import { Analytics } from "@spoar/sdk/next";
+
+<Analytics debugConsole />;
+```
+
+Then turn on **Debug console** in the project's settings in the dashboard. Visitors get a keyboard listener and send no request. Press Ctrl+Shift+K (Cmd+Shift+K on a Mac) on the site: a popup on the API checks your session and hands the site a widget token, then closes. After that, the console opens on its own in that browser until the session ends. The popup works on any domain, because the session cookie is sent to the API's own page.
+
+The console talks to the API behind an absolute `endpoint`, or to the hosted API when events go through the `/_ra` proxy. Pass `debugConsole={{ api: "https://api.example.com" }}` for a self-hosted API.
+
 ## Install
 
 ```bash
@@ -22,10 +36,11 @@ npm install @spoar/debugtools
 
 ## Requirements
 
-The loader first calls [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for an admin check. The check passes when all three hold:
+The entries below call [`GET /v2/widget/session`](/docs/api/dev-widget#signing-in) for an admin check on every page load. The check passes when all four hold:
 
 - Your browser has an API session as an owner or an admin of the project.
 - The site's origin is in the project's allowed origins.
+- The project's `debugConsole` switch is on.
 - The API shares the site's registrable domain.
 
 Visitors without that session load nothing past the loader.

@@ -58,7 +58,7 @@ Every error uses one envelope:
 | 401 | `AUTH_REQUIRED` | No | The dev widget bootstrap was called without the admin session cookie | Sign in to the API, then reload the site |
 | 403 | `FORBIDDEN_ORIGIN` | No | A public key was used from an origin missing from the project's allowed origins | Add the exact origin, or send through the proxy |
 | 403 | `ORIGIN_NOT_ALLOWED` | No | The dev widget bootstrap came from an origin no project lists | Add the site's origin to the project's `allowedOrigins` |
-| 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
+| 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action, or the debug console was opened while the project's `debugConsole` is off | Use a role or token with more access, or turn on **Debug console** in the project's settings |
 | 403 | `WIDGET_REPORTS_DISABLED` | No | SDK client reports were sent while the project's `widgetReports` is off | Turn on `widgetReports` with `PATCH /v2/projects/:project` |
 | 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
 | 409 | `CONFLICT` | No | Creating something that exists, such as a project with a taken id | Pick another id |

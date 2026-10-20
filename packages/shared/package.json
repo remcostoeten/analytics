@@ -4,6 +4,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
+		"./console": "./src/console.ts",
 		"./http": "./src/http/index.ts",
 		"./noop": "./src/noop.ts",
 		"./records": "./src/records.ts",

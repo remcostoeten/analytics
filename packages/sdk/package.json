@@ -81,6 +81,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
+		"@spoar/debugtools": "workspace:*",
 		"web-vitals": "6.2.2"
 	},
 	"peerDependencies": {

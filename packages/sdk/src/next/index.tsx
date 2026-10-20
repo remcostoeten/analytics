@@ -1,8 +1,15 @@
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
 
 import { computeRoute } from "../react/route";
 import { useRoutePageviews } from "../react/use-route-pageviews";
+import type { DebugConsole } from "./debug-console";
+
+const Gate = lazy(() => import("./debug-console"));
+
+type Props = {
+  debugConsole?: DebugConsole;
+};
 
 function Tracker() {
   const pathname = usePathname();
@@ -22,15 +29,25 @@ function Tracker() {
  * only the query string, with the route template, such as `/blog/[slug]`, computed from
  * `usePathname` and `useParams`. It wraps itself in `Suspense` because `useSearchParams` needs a
  * boundary, so static pages keep rendering on the server. Place it inside `AnalyticsProvider` and
- * create the client with `pageviews: false`.
+ * create the client with `pageviews: false`. `debugConsole` lazily loads a small gate that lets
+ * project admins open the debug console with Ctrl+Shift+K once the project's `debugConsole` switch
+ * is on; visitors never download the console or send a request for it.
  *
  * @example
- * <AnalyticsProvider client={analytics}><Analytics />{children}</AnalyticsProvider>
+ * <AnalyticsProvider client={analytics}><Analytics debugConsole />{children}</AnalyticsProvider>
  */
-export function Analytics() {
+export function Analytics({ debugConsole = false }: Props) {
   return (
-    <Suspense fallback={null}>
-      <Tracker />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <Tracker />
+      </Suspense>
+      {debugConsole ? (
+        <Suspense fallback={null}>
+          <Gate option={debugConsole} />
+        </Suspense>
+      ) : null}
+    </>
   );
 }
+export type { DebugConsole } from "./debug-console";

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { requestGrant, startDebugtools } from "../src/loader/start";
 import type { DebugtoolsOptions } from "../src/options";
 
-const session = { token: "wt_abc", expiresAt: "2026-10-11T12:15:00.000Z" };
+const session = { project: "site", token: "wt_abc", expiresAt: "2026-10-11T12:15:00.000Z" };
 
 function options(status: number, seen: string[] = []): DebugtoolsOptions {
   return {
