@@ -21,6 +21,7 @@ export const errorCodes = [
   "ORIGIN_NOT_ALLOWED",
   "FORBIDDEN",
   "WIDGET_REPORTS_DISABLED",
+  "DEBUG_CONSOLE_DISABLED",
   "NOT_FOUND",
   "CONFLICT",
   "PAYLOAD_TOO_LARGE",
@@ -73,6 +74,12 @@ export const errorCatalog = {
     retryable: false,
     level: "info",
     docs: "SDK client reports were sent to a project whose widgetReports switch is off.",
+  },
+  DEBUG_CONSOLE_DISABLED: {
+    status: 403,
+    retryable: false,
+    level: "info",
+    docs: "The debug console was opened on a project whose debugConsole switch is off.",
   },
   NOT_FOUND: {
     status: 404,

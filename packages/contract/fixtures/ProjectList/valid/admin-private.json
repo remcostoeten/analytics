@@ -8,6 +8,7 @@
       "publicVisitorData": false,
       "sqlEnabled": true,
       "widgetReports": false,
+      "debugConsole": false,
       "allowedOrigins": [
         "https://portal.example.nl"
       ],

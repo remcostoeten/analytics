@@ -32,7 +32,7 @@ import { liveModule } from "./modules/live/route";
 import type { LiveOptions } from "./modules/live/route";
 import { logsModule } from "./modules/logs/route";
 import { widgetModule } from "./modules/widget/route";
-import { projectForOrigin } from "./modules/widget/service";
+import { hasSessionCookie, projectForOrigin } from "./modules/widget/service";
 import type { WidgetDeps } from "./modules/widget/service";
 import { cors } from "./plugins/cors";
 import { internalCapture } from "./plugins/capture";
@@ -93,7 +93,8 @@ export function createApp(options: AppOptions) {
   const ops = options.ops ?? null;
   const widget = options.widget ?? null;
   const reads = widget ? { ...options.reads, widget: widget.store } : options.reads;
-  async function widgetOrigin(origin: string) {
+  async function widgetOrigin(origin: string, headers: Headers) {
+    if (!hasSessionCookie(headers)) return false;
     const found = await projectForOrigin(options.access, origin);
     return found.ok && found.value !== null;
   }
@@ -171,7 +172,7 @@ export function createApp(options: AppOptions) {
     )
     .use(
       widget
-        ? widgetModule(options.access, reads, widget, options.docsBase)
+        ? widgetModule(options.access, reads, widget, options.docsBase, options.dashboardOrigin)
         : new Elysia({ name: "widget-off" }),
     )
     .use(

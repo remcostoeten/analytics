@@ -11,6 +11,7 @@ The [debug console](/docs/sdk/debugtools) calls `GET /v2/widget/session` before 
 | Method | Path | Access | Does |
 | --- | --- | --- | --- |
 | GET | `/v2/widget/session` | session cookie | Finds the project from `Origin` and answers a 15-minute widget token |
+| GET | `/v2/widget/connect` | session cookie | The same check as a popup page on the API, which posts the token to the site in `?origin=` |
 | GET | `/v2/projects/:project/realtime/visitors` | detail | One row per visitor seen in the last 5 minutes |
 | GET | `/v2/projects/:project/realtime/sessions` | detail | One row per session active in the last 5 minutes, with its page trail and signal |
 | GET | `/v2/projects/:project/overview` | project | The statusline numbers in one answer, cached 10 seconds |
@@ -22,16 +23,19 @@ The [API reference](/docs/reference) has the request and response schema of ever
 
 ## Signing in
 
-The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API finds the project whose `allowedOrigins` lists the page's `Origin`, reads the admin session cookie, checks that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `admin` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. Call the route again before `expiresAt` to refresh.
+The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API reads the admin session cookie, finds the project whose `allowedOrigins` lists the page's `Origin`, checks that its `debugConsole` switch is on and that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `admin` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. Call the route again before `expiresAt` to refresh.
 
 | Answer | When |
 | --- | --- |
 | `200` | You are signed in and may administer the project |
 | `401 AUTH_REQUIRED` | No session cookie reached the API |
 | `403 ORIGIN_NOT_ALLOWED` | No project lists the page's origin |
+| `403 DEBUG_CONSOLE_DISABLED` | The project's `debugConsole` switch is off |
 | `403 FORBIDDEN` | You are signed in but cannot administer this project |
 
 The session cookie is `SameSite=Lax`, so browsers send it to the API only from the same site, such as `www.example.com` calling `api.example.com`. A site on another domain reaches `401 AUTH_REQUIRED` even when you are signed in.
+
+`GET /v2/widget/connect?origin=https://example.org` covers other domains. `<Analytics debugConsole />` opens it in a popup on Ctrl+Shift+K. The popup is a page on the API's own origin, so the cookie is sent. The API runs the same checks for the origin in the query and answers a page that posts `{ type: "spoar:console", project, token, expiresAt }` to the window that opened it, with that origin as the `targetOrigin`, so only a window on that site receives the token. The popup then closes. When a check fails, the page says why and links a signed-out caller to the dashboard's sign-in.
 
 Widget tokens never appear in `GET /v2/tokens`, cannot call organization-wide routes such as `POST /v2/tokens`, and are deleted by the cleanup job once they expire.
 

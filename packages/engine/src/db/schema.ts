@@ -183,6 +183,7 @@ export const projects = pgTable("projects", {
   orgId: text("org_id").references(() => authOrganization.id, { onDelete: "set null" }),
   sqlEnabled: boolean("sql_enabled").notNull().default(true),
   widgetReports: boolean("widget_reports").notNull().default(false),
+  debugConsole: boolean("debug_console").notNull().default(false),
 });
 
 export const deletedProjects = pgTable("deleted_projects", {

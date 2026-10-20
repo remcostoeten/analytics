@@ -119,7 +119,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
         detail: {
           summary: "Change project settings",
           description:
-            "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, allowed origins and retention.",
+            "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, allowed origins and retention.",
           tags,
         },
       },

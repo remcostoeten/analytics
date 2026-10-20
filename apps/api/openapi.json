@@ -326,6 +326,7 @@
                   "ORIGIN_NOT_ALLOWED",
                   "FORBIDDEN",
                   "WIDGET_REPORTS_DISABLED",
+                  "DEBUG_CONSOLE_DISABLED",
                   "NOT_FOUND",
                   "CONFLICT",
                   "PAYLOAD_TOO_LARGE",
@@ -333,7 +334,7 @@
                   "INTERNAL",
                   "UNAVAILABLE"
                 ],
-                "description": "- `VALIDATION_FAILED` (400): Body, query or path fails the schema; details lists each field.\n- `UNAUTHORIZED` (401): No or invalid session, token or key.\n- `AUTH_REQUIRED` (401): The widget bootstrap was called without a signed-in session cookie.\n- `FORBIDDEN_ORIGIN` (403): The public key was used from an origin that is not in the project's allowed origins.\n- `ORIGIN_NOT_ALLOWED` (403): The widget bootstrap's Origin is not in any project's allowed origins.\n- `FORBIDDEN` (403): The token scope or the signed-in member's role does not allow the action.\n- `WIDGET_REPORTS_DISABLED` (403): SDK client reports were sent to a project whose widgetReports switch is off.\n- `NOT_FOUND` (404): Unknown route, project, visitor or session, or a private project without access.\n- `CONFLICT` (409): A project with this id already exists.\n- `PAYLOAD_TOO_LARGE` (413): The ingest body is over 60 KB or has more than 50 events, or a client report body is over 16 KB.\n- `RATE_LIMITED` (429): The per-IP-hash limit was hit; wait for the Retry-After header.\n- `INTERNAL` (500): Unexpected failure; the message never includes internals.\n- `UNAVAILABLE` (503): The database is unreachable, or a feature the route needs is not configured: a job's store, alerts, CRUX_API_KEY, SMTP or Resend; ingest clients retry."
+                "description": "- `VALIDATION_FAILED` (400): Body, query or path fails the schema; details lists each field.\n- `UNAUTHORIZED` (401): No or invalid session, token or key.\n- `AUTH_REQUIRED` (401): The widget bootstrap was called without a signed-in session cookie.\n- `FORBIDDEN_ORIGIN` (403): The public key was used from an origin that is not in the project's allowed origins.\n- `ORIGIN_NOT_ALLOWED` (403): The widget bootstrap's Origin is not in any project's allowed origins.\n- `FORBIDDEN` (403): The token scope or the signed-in member's role does not allow the action.\n- `WIDGET_REPORTS_DISABLED` (403): SDK client reports were sent to a project whose widgetReports switch is off.\n- `DEBUG_CONSOLE_DISABLED` (403): The debug console was opened on a project whose debugConsole switch is off.\n- `NOT_FOUND` (404): Unknown route, project, visitor or session, or a private project without access.\n- `CONFLICT` (409): A project with this id already exists.\n- `PAYLOAD_TOO_LARGE` (413): The ingest body is over 60 KB or has more than 50 events, or a client report body is over 16 KB.\n- `RATE_LIMITED` (429): The per-IP-hash limit was hit; wait for the Retry-After header.\n- `INTERNAL` (500): Unexpected failure; the message never includes internals.\n- `UNAVAILABLE` (503): The database is unreachable, or a feature the route needs is not configured: a job's store, alerts, CRUX_API_KEY, SMTP or Resend; ingest clients retry."
               },
               "message": {
                 "minLength": 1,
@@ -573,6 +574,7 @@
                               "ORIGIN_NOT_ALLOWED",
                               "FORBIDDEN",
                               "WIDGET_REPORTS_DISABLED",
+                              "DEBUG_CONSOLE_DISABLED",
                               "NOT_FOUND",
                               "CONFLICT",
                               "PAYLOAD_TOO_LARGE",
@@ -580,7 +582,7 @@
                               "INTERNAL",
                               "UNAVAILABLE"
                             ],
-                            "description": "- `VALIDATION_FAILED` (400): Body, query or path fails the schema; details lists each field.\n- `UNAUTHORIZED` (401): No or invalid session, token or key.\n- `AUTH_REQUIRED` (401): The widget bootstrap was called without a signed-in session cookie.\n- `FORBIDDEN_ORIGIN` (403): The public key was used from an origin that is not in the project's allowed origins.\n- `ORIGIN_NOT_ALLOWED` (403): The widget bootstrap's Origin is not in any project's allowed origins.\n- `FORBIDDEN` (403): The token scope or the signed-in member's role does not allow the action.\n- `WIDGET_REPORTS_DISABLED` (403): SDK client reports were sent to a project whose widgetReports switch is off.\n- `NOT_FOUND` (404): Unknown route, project, visitor or session, or a private project without access.\n- `CONFLICT` (409): A project with this id already exists.\n- `PAYLOAD_TOO_LARGE` (413): The ingest body is over 60 KB or has more than 50 events, or a client report body is over 16 KB.\n- `RATE_LIMITED` (429): The per-IP-hash limit was hit; wait for the Retry-After header.\n- `INTERNAL` (500): Unexpected failure; the message never includes internals.\n- `UNAVAILABLE` (503): The database is unreachable, or a feature the route needs is not configured: a job's store, alerts, CRUX_API_KEY, SMTP or Resend; ingest clients retry."
+                            "description": "- `VALIDATION_FAILED` (400): Body, query or path fails the schema; details lists each field.\n- `UNAUTHORIZED` (401): No or invalid session, token or key.\n- `AUTH_REQUIRED` (401): The widget bootstrap was called without a signed-in session cookie.\n- `FORBIDDEN_ORIGIN` (403): The public key was used from an origin that is not in the project's allowed origins.\n- `ORIGIN_NOT_ALLOWED` (403): The widget bootstrap's Origin is not in any project's allowed origins.\n- `FORBIDDEN` (403): The token scope or the signed-in member's role does not allow the action.\n- `WIDGET_REPORTS_DISABLED` (403): SDK client reports were sent to a project whose widgetReports switch is off.\n- `DEBUG_CONSOLE_DISABLED` (403): The debug console was opened on a project whose debugConsole switch is off.\n- `NOT_FOUND` (404): Unknown route, project, visitor or session, or a private project without access.\n- `CONFLICT` (409): A project with this id already exists.\n- `PAYLOAD_TOO_LARGE` (413): The ingest body is over 60 KB or has more than 50 events, or a client report body is over 16 KB.\n- `RATE_LIMITED` (429): The per-IP-hash limit was hit; wait for the Retry-After header.\n- `INTERNAL` (500): Unexpected failure; the message never includes internals.\n- `UNAVAILABLE` (503): The database is unreachable, or a feature the route needs is not configured: a job's store, alerts, CRUX_API_KEY, SMTP or Resend; ingest clients retry."
                           },
                           "message": {
                             "minLength": 1,
@@ -1537,6 +1539,7 @@
                           "publicVisitorData": false,
                           "sqlEnabled": true,
                           "widgetReports": false,
+                          "debugConsole": false,
                           "allowedOrigins": [
                             "https://portal.example.nl"
                           ],
@@ -1570,6 +1573,7 @@
                               "publicVisitorData",
                               "sqlEnabled",
                               "widgetReports",
+                              "debugConsole",
                               "allowedOrigins",
                               "retentionDays",
                               "publicKey",
@@ -1614,6 +1618,10 @@
                               },
                               "widgetReports": {
                                 "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
+                                "type": "boolean"
+                              },
+                              "debugConsole": {
+                                "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                                 "type": "boolean"
                               },
                               "allowedOrigins": {
@@ -2019,6 +2027,7 @@
                         "publicVisitorData": false,
                         "sqlEnabled": true,
                         "widgetReports": false,
+                        "debugConsole": false,
                         "allowedOrigins": [
                           "https://docs.remcostoeten.nl"
                         ],
@@ -2049,6 +2058,7 @@
                             "publicVisitorData",
                             "sqlEnabled",
                             "widgetReports",
+                            "debugConsole",
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
@@ -2098,6 +2108,10 @@
                             },
                             "widgetReports": {
                               "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "debugConsole": {
+                              "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -2288,6 +2302,7 @@
                             "publicVisitorData",
                             "sqlEnabled",
                             "widgetReports",
+                            "debugConsole",
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
@@ -2332,6 +2347,10 @@
                             },
                             "widgetReports": {
                               "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "debugConsole": {
+                              "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -2492,7 +2511,7 @@
       },
       "patch": {
         "summary": "Change project settings",
-        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, allowed origins and retention.",
+        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, allowed origins and retention.",
         "tags": [
           "Projects"
         ],
@@ -2558,6 +2577,10 @@
                     "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
                     "type": "boolean"
                   },
+                  "debugConsole": {
+                    "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                    "type": "boolean"
+                  },
                   "allowedOrigins": {
                     "description": "Origins that may send events with the public key, matched exactly, such as `https://remcostoeten.nl`. An empty list allows every origin.",
                     "type": "array",
@@ -2613,6 +2636,10 @@
                     "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
                     "type": "boolean"
                   },
+                  "debugConsole": {
+                    "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                    "type": "boolean"
+                  },
                   "allowedOrigins": {
                     "description": "Origins that may send events with the public key, matched exactly, such as `https://remcostoeten.nl`. An empty list allows every origin.",
                     "type": "array",
@@ -2666,6 +2693,10 @@
                   },
                   "widgetReports": {
                     "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
+                    "type": "boolean"
+                  },
+                  "debugConsole": {
+                    "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                     "type": "boolean"
                   },
                   "allowedOrigins": {
@@ -2767,6 +2798,10 @@
                             },
                             "widgetReports": {
                               "description": "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "debugConsole": {
+                              "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -32664,7 +32699,7 @@
             "session": []
           }
         ],
-        "description": "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
+        "description": "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
         "tags": [
           "Dev widget"
         ],

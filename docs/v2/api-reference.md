@@ -28,7 +28,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects` | public | Public projects for anyone; all projects for admins, filterable with `visibility=public\|private` |
 | POST | `/v2/projects` | admin | Create a project |
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
-| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `allowedOrigins`, `retentionDays` |
+| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `allowedOrigins`, `retentionDays` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
 | DELETE | `/v2/projects/:project` | admin, owner only | Delete a project; its keys stop at once and the cleanup job purges its rows |
 | GET | `/v2/projects/:project/stats` | project | Headline numbers with the previous period |
@@ -58,6 +58,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects/:project/alerts/deliveries` | admin | Delivery history, `status` filter, paged |
 | GET | `/v2/admin/alerts/status` | admin | Enabled channels, the mail transport without secrets, pending count, failing targets |
 | GET | `/v2/widget/session` | session cookie | Dev widget bootstrap: resolves the project from `Origin` and mints a 15-minute widget token |
+| GET | `/v2/widget/connect` | session cookie | The same bootstrap as a popup page on the API's origin, which posts the token to the site in `?origin=` |
 | GET | `/v2/projects/:project/logs` | admin | Log stream of ingest and engine decisions: long-polling with `after`, or server-sent events |
 | POST | `/v2/projects/:project/logs/client` | ingest | The widget SDK's `drop` and `error` reports, up to 20 per request; needs `widgetReports` |
 
@@ -1351,7 +1352,9 @@ GET /v2/projects/remcostoeten.nl/annotations?from=2026-09-01T00:00:00Z&to=2026-1
 
 The dev widget is a panel the SDK mounts on a customer site for signed-in admins. It starts from the admin session cookie once, then uses a short-lived bearer token for everything else, so the cookie is never sent cross-origin again.
 
-**Bootstrap.** The widget calls `GET /v2/widget/session` from the customer site with `credentials: "include"`. The API finds the project whose `allowedOrigins` lists the `Origin` header (the first by id when several do), reads the session cookie, checks the member may administer that project, and mints a widget token: `wt_`, 15 minutes, `admin` scope, this project only. CORS allows credentials on this route for any origin a project lists; every other widget read sends `Authorization: Bearer wt_...` and needs no credentials. Call the route again before `expiresAt` to refresh. Widget tokens are stored as their hash, never listed by `GET /v2/tokens`, refused on organization-wide routes, and deleted by the cleanup job once expired.
+**Bootstrap.** The widget calls `GET /v2/widget/session` from the customer site with `credentials: "include"`. The API reads the session cookie first and answers `401 AUTH_REQUIRED` without one before any database read, then finds the project whose `allowedOrigins` lists the `Origin` header (the first by id when several do), checks its `debugConsole` switch (`403 DEBUG_CONSOLE_DISABLED` while off, the default), checks the member may administer that project, and mints a widget token: `wt_`, 15 minutes, `admin` scope, this project only. CORS allows credentials on this route for any origin a project lists; every other widget read sends `Authorization: Bearer wt_...` and needs no credentials. Call the route again before `expiresAt` to refresh. Widget tokens are stored as their hash, never listed by `GET /v2/tokens`, refused on organization-wide routes, and deleted by the cleanup job once expired.
+
+**Popup bootstrap.** A site on another registrable domain never receives the `.remcostoeten.nl` session cookie, so `<Analytics debugConsole />` in `@spoar/sdk/next` opens `GET /v2/widget/connect?origin=<site origin>` in a popup on Ctrl+Shift+K instead. The popup is a top-level page on the API's own origin, so the cookie is sent. The API runs the same checks for that origin and answers an HTML page that posts `{ type: "spoar:console", project, token, expiresAt }` to `window.opener` with the site origin as `targetOrigin`, so only a window on that origin receives it, then closes. A refused popup says why and links a signed-out caller to the dashboard's sign-in. The page is `private, no-store`, cannot be framed, and runs only its nonce'd script. The SDK keeps the grant in `sessionStorage` for the tab and marks the browser in `localStorage`; only a marked browser calls `GET /v2/widget/session` on page load, so other visitors send nothing.
 
 `GET /v2/widget/session` from `https://noorderlicht.example` with the admin session cookie
 
@@ -1516,6 +1519,7 @@ On each API instance, every socket watching the same project and channel shares 
 | 403 | `ORIGIN_NOT_ALLOWED` | The widget bootstrap's `Origin` is in no project's allowed origins |
 | 403 | `FORBIDDEN` | The token scope or the signed-in member's role does not allow the action |
 | 403 | `WIDGET_REPORTS_DISABLED` | Client reports sent to a project with `widgetReports` off |
+| 403 | `DEBUG_CONSOLE_DISABLED` | The debug console was opened on a project with `debugConsole` off |
 | 404 | `NOT_FOUND` | Unknown route, project, visitor or session, or a private project without access |
 | 409 | `CONFLICT` | Creating a project whose id exists |
 | 413 | `PAYLOAD_TOO_LARGE` | Ingest body over 60 KB or more than 50 events, or a client report body over 16 KB |

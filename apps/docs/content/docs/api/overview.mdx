@@ -60,6 +60,7 @@ Every error uses one envelope:
 | 403 | `ORIGIN_NOT_ALLOWED` | No | The dev widget bootstrap came from an origin no project lists | Add the site's origin to the project's `allowedOrigins` |
 | 403 | `FORBIDDEN` | No | The caller's role or token scope does not allow the action | Use a role or token with more access |
 | 403 | `WIDGET_REPORTS_DISABLED` | No | SDK client reports were sent while the project's `widgetReports` is off | Turn on `widgetReports` with `PATCH /v2/projects/:project` |
+| 403 | `DEBUG_CONSOLE_DISABLED` | No | The debug console was opened on a project whose `debugConsole` is off | Turn on **Debug console** in the project's settings, or `debugConsole` with `PATCH /v2/projects/:project` |
 | 404 | `NOT_FOUND` | No | An unknown route or resource, or a private project the caller cannot read | Check the path, the project id and the credential |
 | 409 | `CONFLICT` | No | Creating something that exists, such as a project with a taken id | Pick another id |
 | 413 | `PAYLOAD_TOO_LARGE` | No | The ingest body is over 60 KB or holds more than 50 events, or a client report body is over 16 KB | Send smaller batches |

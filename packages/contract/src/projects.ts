@@ -48,6 +48,10 @@ const WidgetReports = Type.Boolean({
   description:
     "Accepts SDK outcome reports at `POST /v2/projects/{project}/logs/client`. Off by default.",
 });
+const DebugConsole = Type.Boolean({
+  description:
+    "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+});
 const PublicKey = Type.String({
   minLength: 1,
   description:
@@ -75,6 +79,7 @@ export const Project = Type.Object(
     publicVisitorData: PublicVisitorData,
     sqlEnabled: SqlEnabled,
     widgetReports: WidgetReports,
+    debugConsole: DebugConsole,
     allowedOrigins: AllowedOrigins,
     retentionDays: RetentionDays,
     publicKey: PublicKey,
@@ -148,6 +153,7 @@ export const UpdateProject = Type.Object(
     publicVisitorData: Type.Optional(PublicVisitorData),
     sqlEnabled: Type.Optional(SqlEnabled),
     widgetReports: Type.Optional(WidgetReports),
+    debugConsole: Type.Optional(DebugConsole),
     allowedOrigins: Type.Optional(AllowedOrigins),
     retentionDays: Type.Optional(RetentionDays),
   },
@@ -170,6 +176,7 @@ export const UpdatedProject = Type.Object(
           "publicVisitorData",
           "sqlEnabled",
           "widgetReports",
+          "debugConsole",
           "allowedOrigins",
           "retentionDays",
         ]),

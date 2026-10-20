@@ -22,7 +22,12 @@ export const allowedImports: { [workspace: string]: string[] } = {
   "packages/contract": ["packages/shared"],
   "packages/engine": ["packages/contract", "packages/shared"],
   "packages/client": ["packages/shared", "packages/contract"],
-  "packages/sdk": ["packages/shared", "packages/contract", "packages/client"],
+  "packages/sdk": [
+    "packages/shared",
+    "packages/contract",
+    "packages/client",
+    "packages/debugtools",
+  ],
   "packages/debugtools": ["packages/shared", "packages/contract", "packages/client"],
   "apps/api": ["packages/engine", "packages/contract", "packages/shared"],
   "apps/dashboard": [

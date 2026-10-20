@@ -33,7 +33,7 @@
       },
       "devDependencies": {
         "@electric-sql/pglite": "0.5.8",
-        "wrangler": "^4.151.1",
+        "wrangler": "4.151.1",
       },
     },
     "apps/dashboard": {
@@ -74,8 +74,8 @@
         "fumadocs-openapi": "12.2.0",
         "fumadocs-ui": "16.16.0",
         "geist": "1.7.2",
-        "lucide-react": "^1.56.0",
-        "motion": "^14.2.0",
+        "lucide-react": "1.56.0",
+        "motion": "14.2.0",
         "next": "16.4.0-canary.59",
         "react": "19.3.0",
         "react-dom": "19.3.0",
@@ -215,6 +215,7 @@
       "name": "@spoar/sdk",
       "version": "2.1.0",
       "dependencies": {
+        "@spoar/debugtools": "workspace:*",
         "web-vitals": "6.2.2",
       },
       "devDependencies": {

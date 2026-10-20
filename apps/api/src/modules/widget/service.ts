@@ -64,33 +64,50 @@ export async function projectForOrigin(
 }
 
 /**
- * @name startWidget
- * @description The dev widget's bootstrap: finds the project from the `Origin` header
- * (`ORIGIN_NOT_ALLOWED` when none lists it), reads the session cookie (`AUTH_REQUIRED` without
- * one), checks the member may administer that project (`FORBIDDEN` otherwise), and mints a
- * 15-minute `wt_` widget token with the `admin` scope bound to the project. The token is stored
- * as its hash and never listed by `GET /v2/tokens`.
+ * @name hasSessionCookie
+ * @description Whether the request carries Better Auth's session cookie at all, so the debug
+ * console's routes can refuse a signed-out caller before any database read.
  *
  * @example
- * await startWidget(deps, widget, request.headers);
+ * if (!hasSessionCookie(request.headers)) return unauthorized();
+ */
+export function hasSessionCookie(headers: Headers): boolean {
+  return headers.get("cookie")?.includes("session_token") ?? false;
+}
+
+/**
+ * @name startWidget
+ * @description The debug console's bootstrap for a site origin: reads the session cookie first
+ * (`AUTH_REQUIRED` without one, before any database read), finds the project whose allowed origins
+ * list the origin (`ORIGIN_NOT_ALLOWED` when none does), checks its `debugConsole` switch
+ * (`DEBUG_CONSOLE_DISABLED` while off) and that the member may administer it (`FORBIDDEN`
+ * otherwise), and mints a 15-minute `wt_` widget token with the `admin` scope bound to the project.
+ * The token is stored as its hash and never listed by `GET /v2/tokens`.
+ *
+ * @example
+ * await startWidget(deps, widget, request.headers.get("origin"), request.headers);
  */
 export async function startWidget(
   deps: AccessDeps,
   widget: WidgetDeps,
+  origin: Nullable<string>,
   headers: Headers,
 ): Promise<Result<WidgetSession, EngineError>> {
-  const found = await projectForOrigin(deps, headers.get("origin"));
+  const signedIn = hasSessionCookie(headers) ? await deps.sessions(headers) : null;
+  if (!signedIn) return err(engineError("AUTH_REQUIRED", "Sign in to open the debug console"));
+  const found = await projectForOrigin(deps, origin);
   if (!found.ok) return found;
   const project = found.value;
   if (!project) {
     return err(engineError("ORIGIN_NOT_ALLOWED", "No project lists this origin"));
   }
-  const signedIn = await deps.sessions(headers);
-  if (!signedIn) return err(engineError("AUTH_REQUIRED", "Sign in to use the dev widget"));
+  if (!project.debugConsole) {
+    return err(engineError("DEBUG_CONSOLE_DISABLED", `The debug console is off for ${project.id}`));
+  }
   const caller = await memberCaller(signedIn, deps);
   if (!caller.ok) return caller;
   if (!canAdmin(caller.value, project.id)) {
-    return err(engineError("FORBIDDEN", "The dev widget needs a project admin"));
+    return err(engineError("FORBIDDEN", `The debug console needs an admin of ${project.id}`));
   }
   const now = deps.clock();
   const expiresAt = new Date(now.getTime() + tokenMinutes * 60_000);
