@@ -10,7 +10,7 @@ icon: Shield
 import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
-  secret: process.env.RA_SECRET,
+  secret: process.env.SPOAR_SECRET,
   endpoint: "https://api.example.com",
 });
 ```
@@ -31,11 +31,11 @@ Returns a `(request) => Response` handler for any runtime with the fetch API.
 
 ### Options
 
-- `secret`: `string`. The project's secret key (`sk_...`), from [creating a project](/docs/getting-started/quick-start#1-create-a-project). Defaults to `RA_CONFIG.secret`.
-- `endpoint`: `string`. The API's base URL. The proxy posts to `<endpoint>/v2/events`. Defaults to `RA_CONFIG.endpoint`.
+- `secret`: `string`. The project's secret key (`sk_...`), from [creating a project](/docs/getting-started/quick-start#1-create-a-project). Defaults to `SPOAR_CONFIG.secret`.
+- `endpoint`: `string`. The API's base URL. The proxy posts to `<endpoint>/v2/events`. Defaults to `SPOAR_CONFIG.endpoint`.
 - `fetch`: `(url, init) => Promise<Response>`. A custom `fetch`. Defaults to the global `fetch`.
 
-Options left out are read from the JSON in the `RA_CONFIG` environment variable.
+Options left out are read from the JSON in the `SPOAR_CONFIG` environment variable.
 
 ### What it refuses
 
@@ -61,7 +61,7 @@ Counts HTML page loads in middleware as `page_request` events. Blockers cannot s
 
 ```ts
 const countPage = createPageCounter({
-  secret: process.env.RA_SECRET,
+  secret: process.env.SPOAR_SECRET,
   endpoint: "https://api.example.com",
 });
 

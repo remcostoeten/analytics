@@ -46,7 +46,7 @@ describe("envBlock", () => {
         endpoint: "https://api.example.com",
       }),
     ).toBe(
-      `NEXT_PUBLIC_RA_CONFIG='{"project":"blog","key":"pk_live_1","endpoint":"/_ra"}'\nRA_SECRET=sk_live_2\nRA_ENDPOINT=https://api.example.com`,
+      `NEXT_PUBLIC_SPOAR_CONFIG='{"project":"blog","key":"pk_live_1","endpoint":"/_ra"}'\nSPOAR_SECRET=sk_live_2\nSPOAR_ENDPOINT=https://api.example.com`,
     );
   });
 });

@@ -70,10 +70,12 @@ describe("engagement", () => {
 });
 
 describe("clicks", () => {
-  test("sends a click with the label and data-ra-prop attributes", async () => {
+  test.each([
+    ["data-spoar", '<button data-spoar-click="upgrade" data-spoar-prop-plan="pro">'],
+    ["the older data-ra", '<button data-ra-click="upgrade" data-ra-prop-plan="pro">'],
+  ])("sends a click with the label and %s-prop attributes", async (_, button) => {
     const { analytics, transport } = client({ plugins: [clicks()] });
-    document.body.innerHTML =
-      '<button data-ra-click="upgrade" data-ra-prop-plan="pro"><span id="inner">Upgrade</span></button><button id="plain">No</button>';
+    document.body.innerHTML = `${button}<span id="inner">Upgrade</span></button><button id="plain">No</button>`;
     document.querySelector<HTMLElement>("#inner")?.click();
     document.querySelector<HTMLElement>("#plain")?.click();
     await analytics.flush();
@@ -129,21 +131,24 @@ describe("forms", () => {
 });
 
 describe("notFound", () => {
-  test("sends not_found only on pages marked as not found", async () => {
-    document.head.innerHTML = '<meta name="ra-not-found">';
-    const marked = client({ plugins: [notFound()] });
-    await marked.analytics.flush();
-    expect(sent(marked.transport).map((event) => event.name)).toEqual(["not_found"]);
-    await marked.analytics.shutdown();
-    document.head.innerHTML = "";
-    const plain = client({ plugins: [notFound()] });
-    await plain.analytics.flush();
-    expect(sent(plain.transport)).toEqual([]);
-    await plain.analytics.shutdown();
-  });
+  test.each(["spoar-not-found", "ra-not-found"])(
+    "sends not_found only on pages marked %s",
+    async (name) => {
+      document.head.innerHTML = `<meta name="${name}">`;
+      const marked = client({ plugins: [notFound()] });
+      await marked.analytics.flush();
+      expect(sent(marked.transport).map((event) => event.name)).toEqual(["not_found"]);
+      await marked.analytics.shutdown();
+      document.head.innerHTML = "";
+      const plain = client({ plugins: [notFound()] });
+      await plain.analytics.flush();
+      expect(sent(plain.transport)).toEqual([]);
+      await plain.analytics.shutdown();
+    },
+  );
 
   test("reports a page once with the default pageviews plugin, and again after navigating", async () => {
-    document.head.innerHTML = '<meta name="ra-not-found">';
+    document.head.innerHTML = '<meta name="spoar-not-found">';
     const { analytics, transport } = client({ pageviews: true, plugins: [notFound()] });
     history.pushState(null, "", "/missing-too");
     analytics.page();
@@ -157,7 +162,7 @@ describe("notFound", () => {
   });
 
   test("reports a page once when an adapter sends the pageviews", async () => {
-    document.head.innerHTML = '<meta name="ra-not-found">';
+    document.head.innerHTML = '<meta name="spoar-not-found">';
     const { analytics, transport } = client({ plugins: [notFound()] });
     analytics.route("/[...missing]");
     analytics.page();
@@ -168,16 +173,19 @@ describe("notFound", () => {
 });
 
 describe("ignoreSelf", () => {
-  test("?ra=ignore opts this browser out and ?ra=track opts it back in", async () => {
-    history.replaceState(null, "", "/?ra=ignore");
-    const ignored = client({ plugins: [ignoreSelf()] });
-    expect(ignored.analytics.isOptedOut()).toBe(true);
-    await ignored.analytics.shutdown();
-    history.replaceState(null, "", "/?ra=track");
-    const tracked = client({ plugins: [ignoreSelf()] });
-    expect(tracked.analytics.isOptedOut()).toBe(false);
-    await tracked.analytics.shutdown();
-  });
+  test.each(["spoar", "ra"])(
+    "?%s=ignore opts this browser out and ?%s=track opts it back in",
+    async (flag) => {
+      history.replaceState(null, "", `/?${flag}=ignore`);
+      const ignored = client({ plugins: [ignoreSelf()] });
+      expect(ignored.analytics.isOptedOut()).toBe(true);
+      await ignored.analytics.shutdown();
+      history.replaceState(null, "", `/?${flag}=track`);
+      const tracked = client({ plugins: [ignoreSelf()] });
+      expect(tracked.analytics.isOptedOut()).toBe(false);
+      await tracked.analytics.shutdown();
+    },
+  );
 });
 
 describe("botSignals", () => {

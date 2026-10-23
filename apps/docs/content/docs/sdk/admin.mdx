@@ -11,7 +11,7 @@ import { createAdmin } from "@spoar/sdk/admin";
 
 const admin = createAdmin<"example.com">({
   endpoint: "https://api.example.com",
-  token: process.env.RA_TOKEN,
+  token: process.env.SPOAR_TOKEN,
 });
 
 const week = await admin.stats("example.com", { period: "7d" });
@@ -101,7 +101,7 @@ import { createAdmin, discord, mail, webhook } from "@spoar/sdk/admin";
 
 const admin = createAdmin<"example.com">({
   endpoint: "https://api.example.com",
-  token: process.env.RA_TOKEN,
+  token: process.env.SPOAR_TOKEN,
 });
 
 const synced = await admin.alerts.sync("example.com", [
@@ -114,7 +114,7 @@ if (!synced.ok) console.error(synced.error.code, synced.error.message);
 else console.log(synced.value.secrets.ops);
 ```
 
-`secrets` holds the signing secret of each new webhook target. It is shown only in the answer to `sync`, `set` and `rotate`. Store it where your receiver reads it, such as `RA_WEBHOOK_SECRET`.
+`secrets` holds the signing secret of each new webhook target. It is shown only in the answer to `sync`, `set` and `rotate`. Store it where your receiver reads it, such as `SPOAR_WEBHOOK_SECRET`.
 
 ### `alerts.list(project)`
 

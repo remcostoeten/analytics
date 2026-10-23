@@ -9,7 +9,7 @@ export type MailOptions = { transport: MailTransport; from: string; retry?: Part
  * recipients, rendered by `renderMail` and sent by `transport`, `smtp(url)` or `resend(key)`.
  *
  * @example
- * alerts({ channels: [mail({ transport: smtp(process.env.MAIL_URL), from: "Analytics <remco@gmail.com>" })] });
+ * alerts({ channels: [mail({ transport: smtp(process.env.MAIL_URL), from: "Spoar <remco@gmail.com>" })] });
  */
 export function mail(options: MailOptions): ChannelDriver<"mail"> {
   return {

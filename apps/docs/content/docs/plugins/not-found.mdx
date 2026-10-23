@@ -3,7 +3,7 @@ title: notFound
 description: A not_found event with the referrer on pages marked as not found.
 ---
 
-Import from `@spoar/sdk/plugins`. Runs in the browser and reads the `ra-not-found` meta tag and `document.referrer`.
+Import from `@spoar/sdk/plugins`. Runs in the browser and reads the `spoar-not-found` meta tag and `document.referrer`.
 
 ```ts
 import { notFound } from "@spoar/sdk/plugins";
@@ -24,7 +24,7 @@ export const analytics = createAnalytics({
 Mark the 404 page with a meta tag:
 
 ```html
-<meta name="ra-not-found" />
+<meta name="spoar-not-found" />
 ```
 
 ## Options
@@ -41,7 +41,7 @@ The event also carries the page path, so each broken URL shows up with where peo
 
 ## Behaviour
 
-- The plugin looks for `meta[name=ra-not-found]` when it starts and again after every pageview. The tag's `content` is not read.
+- The plugin looks for `meta[name=spoar-not-found]` when it starts and again after every pageview. The tag's `content` is not read.
 - It reports each URL (path and query string) once in a row, so the first pageview after start does not send a second `not_found` for the same page. Navigating to another URL and back reports it again.
 - `document.referrer` is the page the browser loaded from. After a client-side navigation it still holds the referrer of the first page load.
 

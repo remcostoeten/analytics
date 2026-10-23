@@ -49,6 +49,9 @@ A private project answers 404, not 403, to callers without access, so its name d
 | PATCH, DELETE | `/v2/projects/:project/annotations/:annotation` | admin | Change or delete one annotation |
 | GET, POST | `/v2/tokens` | admin | List and create API tokens; widget tokens are never listed |
 | DELETE | `/v2/tokens/:token` | admin | Revoke a token |
+| GET, POST | `/v2/members` | owner | List the GitHub logins that may sign in; allow one after GitHub confirms it exists |
+| GET | `/v2/members/lookup/:login` | owner | Look a login up on GitHub: canonical casing, numeric id, name and avatar |
+| PATCH, DELETE | `/v2/members/:login` | owner | Change a member's role or projects; remove it and sign it out |
 | GET | `/v2/admin/metrics` | admin | Ingest counters and job history |
 | POST | `/v2/admin/jobs/:job` | cron | Run `rollup`, `cleanup`, `alerts` or `crux`; each run is recorded in the job history |
 | GET, PUT | `/v2/projects/:project/alerts/targets` | admin | The project's alert targets; `PUT` replaces them all (`sync`). Only with `alerts()` in the config |
@@ -985,6 +988,22 @@ request
 
 `DELETE /v2/tokens/tok_01J8Z7` returns `204 No Content`.
 
+### Members
+
+All four routes need the owner's session; admins and tokens get 403.
+
+`POST /v2/members` allows a GitHub login. The API asks GitHub whether it exists and stores GitHub's casing and numeric id, so only that account may sign in with it, even if the login is renamed or reused. The role is `admin`, `analyst` or `viewer`, never `owner`; leaving `projectIds` out grants no projects, `null` grants every project.
+
+```json
+request
+{ "login": "octocat", "role": "analyst", "projectIds": ["docs"] }
+
+201 Created
+{ "data": { "login": "octocat", "githubId": "583231", "role": "analyst", "projectIds": ["docs"], "joined": false, "addedAt": "2026-10-13T09:00:00.000Z", "lastSignInAt": null } }
+```
+
+`400` when GitHub has no such user or a project does not exist, `409` when the login is already allowed, `503` when GitHub cannot be reached or its rate limit is reached. Each member also carries `lastSignInAt`, the newest session or null. `GET /v2/members/lookup/octocat` answers `{ "data": { "login", "id", "name", "avatarUrl" } }` or `404`. `PATCH /v2/members/octocat` takes `role` and `projectIds`, both optional, and changes the entry and the account once it has signed in. `DELETE /v2/members/octocat` returns `204` and deletes the account and its sessions. The owner's entry answers 403 to both.
+
 ### Operations
 
 `GET /v2/admin/metrics` as admin
@@ -1319,7 +1338,7 @@ GET /v2/projects/remcostoeten.nl/alerts/targets
 
 `POST /v2/admin/jobs/alerts` with the cron secret first queues new issues and regressions, up to 100 per run, as one delivery per enabled target subscribed to the event, never twice for the same target, event and subject; then it sends every due delivery, one mail or request per target, and settles each by the retry policy (5 attempts after 1, 5, 30, 120 and 720 minutes, within 24 hours, unless the config says otherwise). `rowsWritten` is the number sent. Without `alerts()` in the config it answers 503 "Alerts are off".
 
-A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-analytics-timestamp` (Unix seconds) and `x-analytics-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@spoar/sdk/server` check both.
+A webhook target receives `{ v: 1, sentAt, events: [{ name, project, issue: { id, title, culprit, level, count, firstSeen, lastSeen, lastRelease, url } }] }` with `x-spoar-timestamp` (Unix seconds) and `x-spoar-signature: sha256=<hex hmac of "<timestamp>.<body>">` under the target's secret. `alertRoute` and `verifyAlert` in `@spoar/sdk/server` check both.
 
 ### Annotations
 

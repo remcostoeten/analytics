@@ -19,6 +19,7 @@ import { findPlugin } from "@spoar/engine/config";
 import config from "../analytics.config";
 import { createApp } from "./app";
 import { betterAuthSessions, createAuth } from "./auth/better-auth";
+import { githubDirectory } from "./modules/members/github";
 import type { ElysiaAdapter } from "elysia";
 
 import type { GeoSource } from "./geo";
@@ -146,6 +147,7 @@ export function buildApi(host: Host) {
       limiter: adapters.limiter,
       reportsPerMinute: Number(process.env.CLIENT_REPORT_LIMIT ?? 60),
     },
+    github: githubDirectory({ send: fetch, token: process.env.GITHUB_TOKEN || null }),
     history: {
       repo: "remcostoeten/analytics",
       send: fetch,

@@ -1,4 +1,4 @@
-<h1 align="center">Analytics</h1>
+<h1 align="center">Spoar</h1>
 
 Self-hosted, privacy-first web analytics: a browser and server SDK, an API for ingest and reads, and a dashboard, on your own Postgres.
 

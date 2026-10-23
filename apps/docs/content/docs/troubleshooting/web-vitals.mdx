@@ -12,7 +12,7 @@ Use this page when the [speedInsights plugin](/docs/plugins/speed-insights) is s
 3. **The page closed before `web-vitals` loaded.** The plugin loads the `web-vitals` attribution build with a dynamic import, and starts measuring once it arrives. A visitor who leaves before that sends no metrics.
 4. **The event itself did not go out.** `web_vital` events follow the same rules as every other event: development mode, consent, opt-out and `beforeSend` apply. See [Find missing events](/docs/troubleshooting/no-events).
 
-With `?ra=debug`, each metric the plugin sends shows in the console as an `RA_EVENT` line for `web_vital`.
+With `?spoar=debug`, each metric the plugin sends shows in the console as an `RA_EVENT` line for `web_vital`.
 
 ## Some metrics never arrive
 

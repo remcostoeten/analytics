@@ -18,7 +18,7 @@ The public and secret key come from [creating a project](/docs/getting-started/q
 `.env`:
 
 ```bash
-VITE_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+VITE_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
 ```
 
 Only the public key (`pk_...`) goes in browser code. Use `/_ra` when a server on the same origin runs `createProxy`, or `https://api.example.com/v2/events` for a static site. The secret key belongs on a server; see [Server](/docs/frameworks/server).
@@ -95,7 +95,7 @@ import { analytics } from "@/analytics";
 </template>
 ```
 
-`track` is typed by `Events`, so a wrong prop is a type error with `vue-tsc`. The `clicks()` plugin sends `click` events from `data-ra-click` attributes without code; see [Plugins](/docs/plugins).
+`track` is typed by `Events`, so a wrong prop is a type error with `vue-tsc`. The `clicks()` plugin sends `click` events from `data-spoar-click` attributes without code; see [Plugins](/docs/plugins).
 
 ## Consent and identity
 

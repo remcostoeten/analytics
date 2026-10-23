@@ -16,7 +16,7 @@ A public project answers aggregate reads without a token, so skip this step if t
 
 ```bash
 curl -X POST https://api.example.com/v2/tokens \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"name":"weekly report","scope":"read","projectIds":["example.com"]}'
 ```
@@ -28,13 +28,13 @@ curl -X POST https://api.example.com/v2/tokens \
 | `projectIds` | The projects it may use, or `null` for all |
 | `expiresAt` | An ISO 8601 timestamp, or `null` for no expiry |
 
-The token starts with `at_` and is shown once; over HTTP it is in `data.token`. Store it as `RA_TOKEN`, which the examples below use. `DELETE /v2/tokens/{token}` revokes it. [Auth overview](/docs/api/auth) explains which roles and scopes pass each access level.
+The token starts with `at_` and is shown once; over HTTP it is in `data.token`. Store it as `SPOAR_TOKEN`, which the examples below use. `DELETE /v2/tokens/{token}` revokes it. [Auth overview](/docs/api/auth) explains which roles and scopes pass each access level.
 
 ## 2. Fetch headline numbers
 
 ```bash
 curl "https://api.example.com/v2/projects/example.com/stats?period=7d" \
-  -H "authorization: Bearer $RA_TOKEN"
+  -H "authorization: Bearer $SPOAR_TOKEN"
 ```
 
 The answer holds `visitors`, `sessions`, `pageviews`, `pagesPerSession`, `bounceRate` and `sessionDurationMs`, each as `{ value, previous, change }` against the 7 days before. `period` takes `24h`, `7d`, `30d`, `90d`, `12mo` or `all`; send `from` and `to` as ISO 8601 timestamps for any other range.
@@ -45,7 +45,7 @@ The answer holds `visitors`, `sessions`, `pageviews`, `pagesPerSession`, `bounce
 
 ```bash
 curl -G https://api.example.com/v2/projects/example.com/breakdown/page \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   --data-urlencode "period=30d" \
   --data-urlencode "limit=10" \
   --data-urlencode "filter[country]=NL"
@@ -73,7 +73,7 @@ To get every row as one file instead of pages, add `format=csv`, `format=json` o
 
 ```bash
 curl -G https://api.example.com/v2/projects/example.com/breakdown/referrer_domain \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   --data-urlencode "period=90d" \
   --data-urlencode "format=csv" \
   -o referrers.csv
@@ -88,7 +88,7 @@ import { createClient } from "@spoar/client";
 
 const api = createClient({
   endpoint: "https://api.example.com",
-  token: process.env.RA_TOKEN,
+  token: process.env.SPOAR_TOKEN,
 });
 
 const pages = await api
@@ -111,14 +111,14 @@ For questions the read routes do not answer, run one `SELECT` or `WITH` statemen
 2. List the views and their columns:
 
    ```bash
-   curl https://api.example.com/v2/query/schema -H "authorization: Bearer $RA_TOKEN"
+   curl https://api.example.com/v2/query/schema -H "authorization: Bearer $SPOAR_TOKEN"
    ```
 
 3. Run a query on one project. `:from`, `:to` and `:project` are bound from `params`:
 
    ```bash
    curl -X POST https://api.example.com/v2/projects/example.com/query \
-     -H "authorization: Bearer $RA_TOKEN" \
+     -H "authorization: Bearer $SPOAR_TOKEN" \
      -H "content-type: application/json" \
      -d '{
        "sql": "SELECT props->>'"'"'plan'"'"' AS plan, count(*) AS signups FROM events WHERE name = '"'"'signup'"'"' AND is_human AND ts >= :from AND ts < :to GROUP BY plan ORDER BY signups DESC",

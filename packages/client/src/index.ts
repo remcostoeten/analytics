@@ -23,6 +23,7 @@ export type {
 } from "./admin/target-types";
 export { discord, mail, webhook } from "./admin/targets";
 export type { AlertsAdmin } from "./admin/targets";
+export type { MembersAdmin } from "./admin/members";
 export type { TokensAdmin } from "./admin/tokens";
 export type {
   BreakdownRow,

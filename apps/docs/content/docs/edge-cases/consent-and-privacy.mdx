@@ -42,7 +42,7 @@ A later `consent.grant()` starts sending again with a new visitor id.
 
 ## Opt-out
 
-`analytics.optOut()` is separate from consent and wins over it: while it is set, nothing is sent in any consent state. It drops held and queued events and saves the choice until `optIn()`. The [`ignoreSelf`](/docs/plugins/ignore-self) plugin calls these two from `?ra=ignore` and `?ra=track`.
+`analytics.optOut()` is separate from consent and wins over it: while it is set, nothing is sent in any consent state. It drops held and queued events and saves the choice until `optIn()`. The [`ignoreSelf`](/docs/plugins/ignore-self) plugin calls these two from `?spoar=ignore` and `?spoar=track`.
 
 Choices made in one tab apply to other open tabs of the site at once, through the browser's `storage` event. A tab that revokes consent or opts out stops the others from sending, and they drop their queues. Every write re-reads `__ra` and changes only its own fields, so a tab opened before the change cannot overwrite it.
 

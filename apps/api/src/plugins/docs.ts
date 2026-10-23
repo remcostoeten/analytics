@@ -68,6 +68,7 @@ export const apiTags = [
   },
   { name: "Projects", description: "Projects, their visibility and keys" },
   { name: "Tokens", description: "API tokens for scripts and CI" },
+  { name: "Members", description: "The GitHub logins that may sign in, with their roles" },
   { name: "Reads", description: "Aggregate reads for one project" },
   {
     name: "Visitor-level reads",
@@ -146,7 +147,7 @@ export function docs(version: string) {
     },
     documentation: {
       info: {
-        title: "Analytics API",
+        title: "Spoar API",
         version,
         description:
           "The v2 API for Spoar: event ingest, reads, sign-in, projects and tokens. Every route is under `/v2`.\n\n[API status and endpoints](https://api.analytics.remcostoeten.nl) · [SDK docs](https://docs.analytics.remcostoeten.nl) · [Source](https://github.com/remcostoeten/analytics)",

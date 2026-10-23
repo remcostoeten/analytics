@@ -94,6 +94,6 @@ analytics.reset();
 
 ## 6. Check the result
 
-Open the site with `?ra=debug`, sign in, and look for the `[ra] RA_EVENT: identify` line in the console. `analytics.status().consent` shows the stored choice.
+Open the site with `?spoar=debug`, sign in, and look for the `[spoar] RA_EVENT: identify` line in the console. `analytics.status().consent` shows the stored choice.
 
 Identified users are listed by `GET /v2/people` and one person across projects by `GET /v2/people/{userId}`; both need a session or an API token, and visitor-level access to the projects they cover. Reports can break down by a trait with the `trait:<key>` dimension, such as `breakdown/trait:plan`.

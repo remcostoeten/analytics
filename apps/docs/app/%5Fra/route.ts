@@ -2,4 +2,7 @@ import { createProxy } from "@spoar/sdk/proxy";
 
 import { apiEndpoint } from "@/lib/api-endpoint";
 
-export const POST = createProxy({ secret: process.env.RA_SECRET, endpoint: apiEndpoint() });
+export const POST = createProxy({
+  secret: process.env.SPOAR_SECRET ?? process.env.RA_SECRET,
+  endpoint: apiEndpoint(),
+});

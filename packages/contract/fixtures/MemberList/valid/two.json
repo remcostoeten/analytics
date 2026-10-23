@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "login": "remcostoeten",
+      "githubId": "10432961",
+      "role": "owner",
+      "projectIds": null,
+      "joined": true,
+      "addedAt": "2026-09-27T16:44:00.000Z",
+      "lastSignInAt": "2026-10-13T08:12:00.000Z"
+    },
+    {
+      "login": "octocat",
+      "githubId": "583231",
+      "role": "analyst",
+      "projectIds": ["docs"],
+      "joined": false,
+      "addedAt": "2026-10-13T09:00:00.000Z",
+      "lastSignInAt": null
+    }
+  ],
+  "nextCursor": null
+}

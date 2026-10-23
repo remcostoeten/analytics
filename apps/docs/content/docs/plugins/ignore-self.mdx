@@ -3,7 +3,7 @@ title: ignoreSelf
 description: Exclude your own browser with a query parameter.
 ---
 
-Import from `@spoar/sdk/plugins`. Runs in the browser and reads `?ra=` from the page URL.
+Import from `@spoar/sdk/plugins`. Runs in the browser and reads `?spoar=` from the page URL.
 
 ```ts
 import { ignoreSelf } from "@spoar/sdk/plugins";
@@ -27,16 +27,16 @@ export const analytics = createAnalytics({
 
 ## Sends
 
-Nothing. It reads the `ra` query parameter once, when the client starts:
+Nothing. It reads the `spoar` query parameter (or the older `ra`) once, when the client starts:
 
 | URL | Does |
 | --- | --- |
-| `?ra=ignore` | Calls `analytics.optOut()`: this browser stops sending |
-| `?ra=track` | Calls `analytics.optIn()`: this browser sends again |
+| `?spoar=ignore` | Calls `analytics.optOut()`: this browser stops sending |
+| `?spoar=track` | Calls `analytics.optIn()`: this browser sends again |
 
-Open any page that loads the client with `?ra=ignore` once per browser. The opt-out is kept in `localStorage`, so it lasts until `?ra=track` or until the site data is cleared, and it applies to this site only.
+Open any page that loads the client with `?spoar=ignore` once per browser. The opt-out is kept in `localStorage`, so it lasts until `?spoar=track` or until the site data is cleared, and it applies to this site only.
 
-`?ra=debug`, which logs every event to the console, and `?ra=nodebug`, which turns that off again and keeps the visitor id, are handled by the core and work without this plugin.
+`?spoar=debug`, which logs every event to the console, and `?spoar=nodebug`, which turns that off again and keeps the visitor id, are handled by the core and work without this plugin.
 
 ## In reports
 

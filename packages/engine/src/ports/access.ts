@@ -92,9 +92,38 @@ export type TokenStore = {
   touch: (id: TokenID, at: Date) => Stored<void>;
 };
 
+export type GrantedRole = Exclude<Role, "owner">;
+
+export type MemberRecord = {
+  login: string;
+  githubId: Nullable<string>;
+  role: Role;
+  projectIds: Nullable<ProjectID[]>;
+  joined: boolean;
+  addedAt: Date;
+  lastSignInAt: Nullable<Date>;
+};
+
+export type NewMember = {
+  login: string;
+  githubId: string;
+  role: GrantedRole;
+  projectIds: Nullable<ProjectID[]>;
+};
+
+export type MemberPatch = {
+  role?: GrantedRole;
+  projectIds?: Nullable<ProjectID[]>;
+};
+
 export type MemberStore = {
-  allowedLogin: (login: string) => Stored<boolean>;
+  allowedLogin: (login: string, githubId: Nullable<string>) => Stored<boolean>;
   loginOf: (userId: UserID) => Stored<Nullable<string>>;
   membership: (userId: UserID) => Stored<Nullable<Membership>>;
-  join: (userId: UserID, name: string) => Stored<Membership>;
+  join: (userId: UserID, login: string, githubId: Nullable<string>) => Stored<Membership>;
+  list: () => Stored<MemberRecord[]>;
+  find: (login: string) => Stored<Nullable<MemberRecord>>;
+  allow: (member: NewMember) => Stored<boolean>;
+  change: (login: string, patch: MemberPatch) => Stored<Nullable<MemberRecord>>;
+  remove: (login: string) => Stored<boolean>;
 };

@@ -9,6 +9,7 @@ export async function SidebarSlot() {
     <Sidebar
       projects={projects.ok ? projects.value : []}
       isAdmin={session.isAdmin}
+      isOwner={session.role === "owner"}
       signedIn={session.user !== null}
     />
   );

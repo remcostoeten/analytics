@@ -1,0 +1,11 @@
+{
+  "data": {
+    "login": "octocat",
+    "githubId": "583231",
+    "role": "analyst",
+    "projectIds": ["docs"],
+    "joined": false,
+    "addedAt": "2026-10-13T09:00:00.000Z",
+    "lastSignInAt": null
+  }
+}

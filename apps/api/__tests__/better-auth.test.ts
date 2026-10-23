@@ -27,17 +27,17 @@ async function cookieFor(token: string) {
   return `ra.session_token=${encodeURIComponent(`${token}.${await makeSignature(token, secret)}`)}`;
 }
 
-async function createUser(login: string) {
+async function createUser(login: string, githubId?: string) {
   const context = await auth.$context;
   const fromProfile = parseAdditionalUserInputFromProviderProfile(
     auth.options,
-    { githubLogin: login },
+    { githubLogin: login, githubId },
     "create",
   );
   try {
     return await context.internalAdapter.createUser(
       { name: login, email: `${login}@example.test`, emailVerified: true, ...fromProfile },
-      { method: "oauth", oauth: { providerId: "github", profile: { login } } },
+      { method: "oauth", oauth: { providerId: "github", profile: { login, id: githubId } } },
     );
   } catch {
     return null;
@@ -124,6 +124,18 @@ describe("Better Auth", () => {
       )
     ).rows;
     expect(row?.github_login).toBe("remcostoeten");
+  });
+
+  test("an entry with a GitHub id only admits that id and gives the account its granted role", async () => {
+    await database.query(
+      "INSERT INTO dashboard_users (github_login, github_id, role, project_ids) VALUES ('bound', '5', 'analyst', '{docs}')",
+    );
+    expect(await createUser("bound", "9")).toBeNull();
+    expect(await createUser("bound", "5")).not.toBeNull();
+    const member = await database.query<{ role: string; project_ids: string[] }>(
+      "SELECT m.role, m.project_ids FROM auth_member m JOIN auth_user u ON u.id = m.user_id WHERE u.github_login = 'bound'",
+    );
+    expect(member.rows).toEqual([{ role: "analyst", project_ids: ["docs"] }]);
   });
 
   test("the GitHub sign-in starts at the API under /v2/auth", async () => {

@@ -7,6 +7,7 @@ export * from "./events";
 export * from "./issues";
 export * from "./limits";
 export * from "./live";
+export * from "./members";
 export * from "./projects";
 export * from "./query";
 export * from "./schema";

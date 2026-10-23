@@ -352,11 +352,11 @@ describe("queue and dispatch", () => {
     const parsed: WebhookBody = JSON.parse(body);
     expect(parsed.v).toBe(1);
     expect(parsed.events.map((event) => event.name)).toEqual(["issue.new", "issue.regression"]);
-    const timestamp = Number(headers.get("x-analytics-timestamp"));
+    const timestamp = Number(headers.get("x-spoar-timestamp"));
     expect(timestamp).toBe(Math.floor(created.getTime() / 1000));
-    expect(headers.get("x-analytics-signature")).toBe(
-      await signBody(body, "whsec_fixed", timestamp),
-    );
+    expect(headers.get("x-spoar-signature")).toBe(await signBody(body, "whsec_fixed", timestamp));
+    expect(headers.get("x-analytics-timestamp")).toBe(String(timestamp));
+    expect(headers.get("x-analytics-signature")).toBe(headers.get("x-spoar-signature"));
     expect(chat.calls).toHaveLength(1);
     expect(JSON.parse(bodyText(chat.calls[0]?.init)).embeds).toHaveLength(1);
 

@@ -18,18 +18,18 @@ The public and secret key come from [creating a project](/docs/getting-started/q
 `.env.local`:
 
 ```bash
-NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+NEXT_PUBLIC_SPOAR_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
 | Variable | Read by | Holds |
 | --- | --- | --- |
-| `NEXT_PUBLIC_RA_CONFIG` | `createAnalytics` in the browser | JSON options: project, public key and endpoint |
-| `RA_SECRET` | Your `/_ra` route and server code | The secret key. It must never reach the browser, so it has no `NEXT_PUBLIC_` prefix |
-| `RA_ENDPOINT` | Your `/_ra` route and server code | The API's base URL; the SDK adds `/v2/events` |
+| `NEXT_PUBLIC_SPOAR_CONFIG` | `createAnalytics` in the browser | JSON options: project, public key and endpoint |
+| `SPOAR_SECRET` | Your `/_ra` route and server code | The secret key. It must never reach the browser, so it has no `NEXT_PUBLIC_` prefix |
+| `SPOAR_ENDPOINT` | Your `/_ra` route and server code | The API's base URL; the SDK adds `/v2/events` |
 
-`RA_ENDPOINT` is a name used on this page, not one the SDK reads. `createProxy` and `createServerAnalytics` read JSON from `RA_CONFIG` for options you leave out, so `RA_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'` works as well.
+`SPOAR_ENDPOINT` is a name used on this page, not one the SDK reads. `createProxy` and `createServerAnalytics` read JSON from `SPOAR_CONFIG` for options you leave out, so `SPOAR_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'` works as well.
 
 ## Events
 
@@ -128,8 +128,8 @@ export function UpgradeButton() {
 import { createProxy } from "@spoar/sdk/proxy";
 
 export const POST = createProxy({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 
@@ -144,8 +144,8 @@ import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 

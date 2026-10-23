@@ -16,7 +16,7 @@ const endpoint = "https://api.resend.com/emails";
  * the API: `ready` reports it and mail targets turn `paused`.
  *
  * @example
- * mail({ transport: resend(process.env.RESEND_API_KEY), from: "Analytics <alerts@remcostoeten.nl>" });
+ * mail({ transport: resend(process.env.RESEND_API_KEY), from: "Spoar <alerts@remcostoeten.nl>" });
  */
 export function resend(key: string | undefined, options: ResendOptions = {}): MailTransport {
   function ready() {
