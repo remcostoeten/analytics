@@ -1,7 +1,9 @@
 import type { AuthSession } from "@spoar/contract";
 import { cacheLife } from "next/cache";
+import { cookies } from "next/headers";
 
 import { serverClient } from "@/shared/api/server-client";
+import { hasSessionCookie } from "@/shared/api/session-cookie";
 
 export type Access =
   | { state: "signed-out" }
@@ -10,23 +12,29 @@ export type Access =
 
 const signedOut: AuthSession = { user: null, session: null, role: null, isAdmin: false };
 
+async function readMemberSession(): Promise<AuthSession> {
+  "use cache: private";
+  cacheLife("minutes");
+  const api = await serverClient();
+  const result = await api.system.session();
+  return result.ok ? result.value : signedOut;
+}
+
 /**
  * @name readSession
- * @description Asks the API who the forwarded cookie belongs to. A failed call reads as signed
- * out, so the page renders the sign-in prompt instead of an error. Cached per session for five
- * minutes in the browser, so the top bar, sidebar and access checks render with a route's
- * prefetched shell; signing out reloads the page.
+ * @description Asks the API who the forwarded cookie belongs to. Without a session cookie the
+ * answer is signed out and the API is not called, so an anonymous page render costs no session
+ * read. A failed call reads as signed out too, so the page renders the sign-in prompt instead of
+ * an error. Cached per session for five minutes in the browser, so the top bar, sidebar and
+ * access checks render with a route's prefetched shell; signing out reloads the page.
  *
  * @example
  * const session = await readSession();
  * if (session.isAdmin) showSettings();
  */
 export async function readSession(): Promise<AuthSession> {
-  "use cache: private";
-  cacheLife("minutes");
-  const api = await serverClient();
-  const result = await api.system.session();
-  return result.ok ? result.value : signedOut;
+  const jar = await cookies();
+  return hasSessionCookie(jar.toString()) ? readMemberSession() : signedOut;
 }
 
 /**
