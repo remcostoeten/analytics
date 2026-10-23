@@ -1,5 +1,5 @@
-import type { AllScope } from "@spoar/client";
-import type { BreakdownRow, Period, PublicProject } from "@spoar/contract";
+import type { AllScope, ProjectScope } from "@spoar/client";
+import type { Period, PublicProject } from "@spoar/contract";
 import Link from "next/link";
 
 import { ChangeBadge } from "@/modules/analytics/components/change-badge";
@@ -7,7 +7,8 @@ import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 import { RatingBadge } from "@/modules/analytics/components/rating-badge";
 import { SeriesChart } from "@/modules/analytics/components/series-chart";
 import { ShareBar } from "@/modules/analytics/components/share-bar";
-import { formatDimensionValue, formatMetric } from "@/modules/analytics/format";
+import { HeatMap } from "@/modules/analytics/components/heat-map";
+import { formatMetric } from "@/modules/analytics/format";
 import { sumPoints } from "@/modules/analytics/logs";
 import { readTopList } from "@/modules/analytics/reads";
 import { vitalSummary, vitalViews } from "@/modules/analytics/speed";
@@ -16,10 +17,16 @@ import type { FilterDimension } from "@/modules/analytics/view-state";
 
 import { rankProjects } from "../projects";
 import { OnlineCount } from "./online-count";
+import { RankList } from "./rank-list";
 
 type ScopeProps = { scope: AllScope };
 
 type PeriodProps = ScopeProps & { period: Period };
+
+type VitalsProps = PeriodProps & {
+  projects: PublicProject[];
+  projectScope: (id: string) => ProjectScope;
+};
 
 type VisitorsProps = PeriodProps & { projectCount: number };
 
@@ -32,17 +39,28 @@ type RankCardProps = ScopeProps & {
   limit: number;
 };
 
-type RankListProps = { dimension: FilterDimension; rows: BreakdownRow[]; share?: boolean };
-
 type CardHeadProps = { title: string; description: string };
 
 const shownVitals = vitalViews.filter((view) => ["lcp", "inp", "cls"].includes(view.slug));
 
 const deviceRows = 4;
 
+const expandedRows = 50;
+
+const mapRows = 100;
+
+const vitalProjects = 10;
+
+const minSamples = 20;
+
 function periodPhrase(period: Period) {
   const label = periods.find((entry) => entry.value === period)?.label ?? period;
   return label.toLowerCase();
+}
+
+function sampleNote(samples: number) {
+  const count = formatMetric(samples, "count");
+  return samples < minSamples ? `${count} of ${minSamples} needed` : `${count} samples`;
 }
 
 function CardHead({ title, description }: CardHeadProps) {
@@ -51,35 +69,6 @@ function CardHead({ title, description }: CardHeadProps) {
       <h2 className="text-sm font-semibold">{title}</h2>
       <p className="text-xs text-muted">{description}</p>
     </header>
-  );
-}
-
-function RankList({ dimension, rows, share = false }: RankListProps) {
-  if (rows.length === 0) return <p className="py-2 text-sm text-muted">No data in this range</p>;
-  const max = Math.max(1, ...rows.map((row) => row.visitors ?? 0));
-  const total = rows.reduce((sum, row) => sum + (row.visitors ?? 0), 0);
-  return (
-    <ul className="rank-list">
-      {rows.map((row) => {
-        const value = row.visitors ?? 0;
-        const percent = total === 0 ? 0 : Math.round((value / total) * 100);
-        return (
-          <li key={row.value} className="rank-row">
-            <span
-              className="rank-fill"
-              style={{ width: `${(value / max) * 100}%` }}
-              aria-hidden="true"
-            />
-            <span className={dimension === "device" ? "rank-label capitalize" : "rank-label"}>
-              {formatDimensionValue(dimension, row.value)}
-            </span>
-            <span className="rank-value">
-              {share ? `${percent}%` : formatMetric(value, "count")}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 
@@ -203,12 +192,12 @@ export async function ProjectsCard({ scope, period, projects }: ProjectsProps) {
 }
 
 export async function RankCard({ scope, title, description, dimension, limit }: RankCardProps) {
-  const read = await readTopList(scope, dimension, "visitors", limit);
+  const read = await readTopList(scope, dimension, "visitors", Math.max(limit, expandedRows));
   return (
     <section className="card card-section">
       <CardHead title={title} description={description} />
       {read.ok ? (
-        <RankList dimension={dimension} rows={read.value.data} />
+        <RankList dimension={dimension} rows={read.value.data} collapsed={limit} />
       ) : (
         <p className="text-sm text-err">{read.error}</p>
       )}
@@ -216,20 +205,66 @@ export async function RankCard({ scope, title, description, dimension, limit }: 
   );
 }
 
-export async function VitalsCard({ scope, period }: PeriodProps) {
-  const read = await scope.speed({ percentile: 75 });
+export async function HeatMapCard({ scope, period }: PeriodProps) {
+  const read = await readTopList(scope, "country", "visitors", mapRows);
   return (
     <section className="card card-section">
       <CardHead
-        title="Core Web Vitals"
-        description={`Field data from real sessions in the ${periodPhrase(period)}, 75th percentile, all devices.`}
+        title="Visitor map"
+        description={`Where visitors came from in the ${periodPhrase(period)}.`}
       />
+      {read.ok ? (
+        <HeatMap rows={read.value.data} count="visitors" />
+      ) : (
+        <p className="text-sm text-err">{read.error}</p>
+      )}
+    </section>
+  );
+}
+
+export async function VitalsCard({ scope, period, projects, projectScope }: VitalsProps) {
+  const listed = projects.slice(0, vitalProjects);
+  const [read, perProject] = await Promise.all([
+    scope.speed({ percentile: 75 }),
+    Promise.all(
+      listed.map(async (project) => ({
+        project,
+        read: await projectScope(project.id).speed({ percentile: 75 }),
+      })),
+    ),
+  ]);
+  const data = read.ok ? read.value.data : null;
+  const measured = perProject
+    .flatMap(({ project, read: projectRead }) =>
+      projectRead.ok && projectRead.value.data.samples > 0
+        ? [{ project, data: projectRead.value.data }]
+        : [],
+    )
+    .sort((left, right) => right.data.samples - left.data.samples);
+  const hasValue =
+    data !== null && shownVitals.some((view) => data.metrics[view.slug].value !== null);
+  const count = `${projects.length} ${projects.length === 1 ? "project" : "projects"}`;
+  return (
+    <section className="card card-section">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <CardHead
+          title="Core Web Vitals"
+          description={`Real visits to ${count} combined, ${periodPhrase(period)}, 75th percentile on all devices. A value needs ${minSamples} samples.`}
+        />
+        {data && data.score !== null ? (
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span>Real Experience Score</span>
+            <span className="home-figure-small text-fg">{data.score}</span>
+            <RatingBadge rating={data.rating} />
+          </div>
+        ) : null}
+      </div>
       {read.ok ? null : (
         <p className="text-sm text-err">Could not read speed: {read.error.message}</p>
       )}
       <dl className="home-vitals">
         {shownVitals.map((view) => {
-          const summary = read.ok ? vitalSummary(read.value.data, view.slug) : null;
+          const summary = data ? vitalSummary(data, view.slug) : null;
           return (
             <div key={view.slug} className="grid content-start gap-2">
               <dt className="text-xs text-muted">
@@ -244,13 +279,49 @@ export async function VitalsCard({ scope, period }: PeriodProps) {
                 {summary ? <ShareBar shares={summary.shares} /> : null}
                 <span className="flex items-center justify-between gap-2 text-xs text-muted">
                   <RatingBadge rating={summary?.rating ?? null} />
-                  {summary ? `${formatMetric(summary.samples, "count")} samples` : null}
+                  {summary ? sampleNote(summary.samples) : null}
                 </span>
               </dd>
             </div>
           );
         })}
       </dl>
+      {read.ok && !hasValue ? (
+        <p className="text-xs text-muted">
+          {data && data.samples > 0
+            ? `${formatMetric(data.samples, "count")} samples so far, spread over too few visits for a stable value.`
+            : "No speed samples in this range. Add the speedInsights plugin from @spoar/sdk to a project to collect them."}
+        </p>
+      ) : null}
+      {measured.length > 1 ? (
+        <div className="grid gap-1">
+          <h3 className="card-title">By project</h3>
+          <ul className="vitals-projects">
+            {measured.map(({ project, data: projectData }) => (
+              <li key={project.id}>
+                <Link
+                  href={`/projects/${encodeURIComponent(project.id)}/speed`}
+                  className="vitals-project"
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
+                  {shownVitals.map((view) => {
+                    const summary = vitalSummary(projectData, view.slug);
+                    return (
+                      <span key={view.slug} className="vitals-project-value">
+                        <span className="text-muted">{view.short}</span>{" "}
+                        {summary.value === null ? "–" : formatMetric(summary.value, view.format)}
+                      </span>
+                    );
+                  })}
+                  <span className="vitals-project-samples">
+                    {formatMetric(projectData.samples, "count")} samples
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
