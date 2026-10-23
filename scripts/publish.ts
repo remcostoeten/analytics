@@ -11,8 +11,11 @@ export type Manifest = {
   [key: string]: unknown;
 };
 
+type Ranges = { [name: string]: string };
+
 const root = join(import.meta.dir, "..");
 const packages = join(root, "packages");
+const dependencyFields = ["dependencies", "peerDependencies", "optionalDependencies"];
 
 /**
  * @name publishManifest
@@ -27,6 +30,31 @@ export function publishManifest(manifest: Manifest): Manifest {
   const next: Manifest = { ...manifest, exports: publishExports, publishConfig };
   delete next.devDependencies;
   if (Object.keys(publishConfig).length === 0) delete next.publishConfig;
+  return next;
+}
+
+function pinRange(range: string, version: string | undefined): string {
+  if (!range.startsWith("workspace:") || !version) return range;
+  const spec = range.slice("workspace:".length);
+  if (spec === "*" || spec === "") return version;
+  if (spec === "^" || spec === "~") return `${spec}${version}`;
+  return spec;
+}
+
+/**
+ * @name pinWorkspaceRanges
+ * @description Replaces `workspace:` ranges in the published dependency fields with the current version of each workspace package (`workspace:^` becomes `^0.2.0`), so the tarball never depends on the versions `bun pm pack` reads from a stale `bun.lock`.
+ * @example pinWorkspaceRanges({ name: "@spoar/sdk", version: "2.2.1", dependencies: { "@spoar/debugtools": "workspace:^" } }, new Map([["@spoar/debugtools", "0.2.0"]]))
+ */
+export function pinWorkspaceRanges(manifest: Manifest, versions: Map<string, string>): Manifest {
+  const next: Manifest = { ...manifest };
+  for (const field of dependencyFields) {
+    const ranges = manifest[field] as Ranges | undefined;
+    if (!ranges) continue;
+    next[field] = Object.fromEntries(
+      Object.entries(ranges).map(([name, range]) => [name, pinRange(range, versions.get(name))]),
+    );
+  }
   return next;
 }
 
@@ -56,10 +84,27 @@ function isPublished(name: string, version: string): boolean {
   return run(["npm", "view", `${name}@${version}`, "version"], root).out === version;
 }
 
-function pack(directory: string, manifest: Manifest, destination: string): string {
+function workspaceVersions(): Map<string, string> {
+  const versions = new Map<string, string>();
+  for (const folder of readdirSync(packages)) {
+    const text = readText(join(packages, folder, "package.json"));
+    if (!text) continue;
+    const { name, version } = JSON.parse(text) as Manifest;
+    versions.set(name, version);
+  }
+  return versions;
+}
+
+function pack(
+  directory: string,
+  manifest: Manifest,
+  versions: Map<string, string>,
+  destination: string,
+): string {
   const path = join(directory, "package.json");
   const original = readFileSync(path, "utf8");
-  writeFileSync(path, `${JSON.stringify(publishManifest(manifest), null, "\t")}\n`);
+  const published = publishManifest(pinWorkspaceRanges(manifest, versions));
+  writeFileSync(path, `${JSON.stringify(published, null, "\t")}\n`);
   try {
     const packed = run(["bun", "pm", "pack", "--destination", destination, "--quiet"], directory);
     if (!packed.ok) throw new Error(`bun pm pack failed for ${manifest.name}`);
@@ -72,6 +117,7 @@ function pack(directory: string, manifest: Manifest, destination: string): strin
 function main(): void {
   const dryRun = process.argv.includes("--dry-run");
   const destination = mkdtempSync(join(tmpdir(), "spoar-publish-"));
+  const versions = workspaceVersions();
   const failed: string[] = [];
   for (const folder of readdirSync(packages)) {
     const directory = join(packages, folder);
@@ -88,7 +134,7 @@ function main(): void {
       console.log(`${id} is already on npm`);
       continue;
     }
-    const tarball = pack(directory, manifest, destination);
+    const tarball = pack(directory, manifest, versions, destination);
     const file = tarball.startsWith("/") ? tarball : join(destination, tarball);
     const command = ["npm", "publish", file, "--access", "public", "--tag", "latest"];
     if (dryRun) command.push("--dry-run");
