@@ -114,7 +114,7 @@ Public projects render for anonymous visitors, and every breakdown row links to 
 
 ## 9. First sign-in and token
 
-Open `https://docs.analytics.remcostoeten.nl/dashboard` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The projects page under `/dashboard/admin/projects` creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins. `GET /v2/setup`, the old setup page, redirects there (decision 21).
+Open `https://docs.analytics.remcostoeten.nl/dashboard` and sign in with GitHub. The first login in `dashboard_users` to sign in owns the organization; the v1 database already has your login in that table, and on a fresh database `bun run setup --owner <login>` adds it. The projects page under `/dashboard/admin/projects` creates projects, shows their keys once with the env block to paste, rotates secrets and edits allowed origins. The members page under `/dashboard/admin/members` is where the owner allows other GitHub logins, with a role and projects (decision 34); set `GITHUB_TOKEN` on the API to lift GitHub's 60 lookups an hour. `GET /v2/setup`, the old setup page, redirects there (decision 21).
 
 For a token for scripts and the docs site's query page, create one under `/dashboard/admin/tokens` with the `sql` scope; it is shown once.
 

@@ -1,4 +1,4 @@
-import type { ApiToken, ProjectResponse } from "@spoar/contract";
+import type { ApiToken, Member, ProjectResponse } from "@spoar/contract";
 import type { ClientError } from "@spoar/client";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
@@ -21,6 +21,23 @@ export async function listTokens(): Promise<Result<ApiToken[], ClientError>> {
   cacheLife("minutes");
   const api = await serverClient();
   const listed = await api.tokens.list();
+  return listed.ok ? ok(listed.value.data) : err(listed.error);
+}
+
+/**
+ * @name listMembers
+ * @description The GitHub logins on the sign-in list, owner only. Cached per session for five
+ * minutes in the browser; adding, changing or removing a member revalidates and clears it.
+ *
+ * @example
+ * const members = await listMembers();
+ * if (members.ok) render(members.value);
+ */
+export async function listMembers(): Promise<Result<Member[], ClientError>> {
+  "use cache: private";
+  cacheLife("minutes");
+  const api = await serverClient();
+  const listed = await api.members.list();
   return listed.ok ? ok(listed.value.data) : err(listed.error);
 }
 

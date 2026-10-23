@@ -408,6 +408,30 @@ export function TokensSkeleton() {
   );
 }
 
+const memberRows = ["first", "second"];
+
+export function MembersSkeleton() {
+  return (
+    <div className="grid gap-6" aria-busy="true" data-testid="members-skeleton">
+      <AdminHeader meta />
+      <div className="grid max-w-xl gap-1" aria-hidden="true">
+        <Bar className="h-5" />
+        <Bar className="h-5 w-2/3" />
+      </div>
+      <ListSkeleton rows={memberRows} action />
+      <section className="grid gap-4" aria-hidden="true">
+        <Bar className="h-4 w-28" />
+        <div className="grid max-w-xl gap-5">
+          <FieldSkeleton hint />
+          <FieldSkeleton />
+          <FieldSkeleton control="h-20" hint />
+          <Bar className="h-8 w-32" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 const settingsToggles = ["public", "sql", "widget"];
 const connectionStats = ["accepted", "duplicates", "rejected", "rate"];
 

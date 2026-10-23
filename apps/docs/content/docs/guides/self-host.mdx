@@ -21,7 +21,7 @@ It runs every migration, adds your login to `dashboard_users`, the allowlist of 
 
 ## 2. Who may sign in
 
-The first allowed login to sign in owns the organization and the projects created by the setup. Later logins join as viewers of no projects until an owner gives them access. To allow another login, run the setup again with its `--owner`, or insert it yourself:
+The first allowed login to sign in owns the organization and the projects created by the setup. Later logins join as viewers of no projects until an owner gives them access. The owner allows another login from the dashboard under Members, which checks the login against GitHub and sets its role and projects. Without the dashboard, run the setup again with its `--owner`, or insert it yourself:
 
 ```sql
 INSERT INTO dashboard_users (github_login) VALUES ('their-github-login');

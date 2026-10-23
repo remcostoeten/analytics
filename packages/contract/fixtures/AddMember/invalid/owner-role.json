@@ -1,0 +1,7 @@
+{
+  "expectedPath": "/role",
+  "value": {
+    "login": "octocat",
+    "role": "owner"
+  }
+}

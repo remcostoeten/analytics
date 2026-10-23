@@ -88,6 +88,20 @@ export function isOrigin(value: string) {
 }
 
 /**
+ * @name lines
+ * @description The non-empty trimmed lines of a textarea, for list fields such as origins.
+ *
+ * @example
+ * lines(" https://a.com \n\nhttps://b.com"); // ["https://a.com", "https://b.com"]
+ */
+export function lines(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
  * @name fieldErrors
  * @description The per-field messages of a `VALIDATION_FAILED` answer, keyed by field name
  * without the leading slash, and nothing for any other error.

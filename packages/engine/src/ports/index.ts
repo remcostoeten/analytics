@@ -8,10 +8,14 @@ import type { ProjectStore } from "./project-store";
 import type { RateLimiter } from "./rate-limiter";
 
 export type {
+  GrantedRole,
   KeyKind,
   TokenKind,
   Membership,
+  MemberPatch,
+  MemberRecord,
   MemberStore,
+  NewMember,
   NewProject,
   NewToken,
   ProjectAdmin,
