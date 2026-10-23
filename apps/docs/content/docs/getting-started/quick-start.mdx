@@ -6,8 +6,6 @@ icon: Rocket
 
 Spoar records visits to your website so you can see which pages people open, where they come from and how your site performs. You add the SDK, a small library, to your app. It sends events to your Spoar API, which stores them for the dashboard.
 
-<EventJourney />
-
 This guide connects an existing **Next.js App Router** app. You'll create a project, add the SDK and a forwarding route, then open your site to record a visit. Using another stack? Choose your [framework guide](/docs/frameworks) for its setup code.
 
 ## Before you start
@@ -80,8 +78,6 @@ npm install @spoar/sdk
 ## 3. Configure it
 
 Create or update `.env.local` at the root of your app. These settings tell the SDK which project receives the events and where to send them.
-
-<KeyPlacement />
 
 ```bash
 NEXT_PUBLIC_RA_CONFIG='{"project":"example.com","key":"pk_...","endpoint":"/_ra"}'

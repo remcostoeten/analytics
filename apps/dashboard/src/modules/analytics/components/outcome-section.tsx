@@ -2,7 +2,7 @@ import type { ProjectScope } from "@spoar/client";
 
 import { formatMetric } from "../format";
 import { readOutcomes, sumPoints } from "../logs";
-import { EmptyState } from "./empty-state";
+import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 import { SeriesChart } from "./series-chart";
 
 type Props = { scope: ProjectScope };
@@ -15,9 +15,11 @@ export async function OutcomeSection({ scope }: Props) {
       {!read.ok ? (
         <p className="text-sm text-err">Could not read the series: {read.error}</p>
       ) : read.value.series.every((entry) => sumPoints(entry.points) === 0) ? (
-        <EmptyState title="No page views in this range">
-          Widen the time range or remove a filter.
-        </EmptyState>
+        <EmptyState
+          title="No page views in this range"
+          description="Widen the time range or remove a filter."
+          illustration={<ChartIllustration />}
+        />
       ) : (
         <>
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Legend">

@@ -66,7 +66,7 @@ export const errorCatalog = {
     status: 403,
     retryable: false,
     level: "info",
-    docs: "The token scope or the signed-in member's role does not allow the action.",
+    docs: "The token scope or the signed-in member's role does not allow the action, or the debug console was opened while the project's debugConsole switch is off.",
   },
   WIDGET_REPORTS_DISABLED: {
     status: 403,

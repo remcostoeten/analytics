@@ -10,7 +10,7 @@ import { viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
 import { ChangeBadge } from "./change-badge";
 import { DeviceDonut } from "./device-donut";
-import { EmptyState } from "./empty-state";
+import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 import { SeriesChart } from "./series-chart";
 import { Sparkline } from "./sparkline";
 import { TopList } from "./top-list";
@@ -81,7 +81,11 @@ export async function TrafficSection({ scope }: Pick<Props, "scope">) {
     <section className="card-section">
       <h2 className="card-title">Page views over time</h2>
       {total === 0 ? (
-        <EmptyState title="No page views in this range" />
+        <EmptyState
+          title="No page views in this range"
+          description="Page views appear here once the site sends events."
+          illustration={<ChartIllustration />}
+        />
       ) : (
         <>
           <p className="flex items-center gap-1.5 text-xs">

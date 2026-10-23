@@ -1,18 +1,16 @@
 import type { Nullable } from "@spoar/shared/semantic";
 
-import { lines } from "./form";
-
 /**
  * @name projectIdsOf
- * @description The project list of a token from a textarea: one id per line, or null for every
- * project when the textarea is empty.
+ * @description The project list of a token from the picked ids, or null for every project when
+ * none are picked.
  *
  * @example
- * projectIdsOf("docs\nskriuw"); // ["docs", "skriuw"]
- * projectIdsOf("  "); // null
+ * projectIdsOf(["docs", " skriuw "]); // ["docs", "skriuw"]
+ * projectIdsOf([]); // null
  */
-export function projectIdsOf(value: string): Nullable<string[]> {
-  const ids = lines(value);
+export function projectIdsOf(values: string[]): Nullable<string[]> {
+  const ids = values.map((value) => value.trim()).filter((value) => value.length > 0);
   return ids.length === 0 ? null : ids;
 }
 

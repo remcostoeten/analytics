@@ -1,4 +1,5 @@
 import type { WidgetSession } from "@spoar/contract";
+import type { ConsoleGrant } from "@spoar/shared/console";
 import { noop } from "@spoar/shared/noop";
 import type { Nullable } from "@spoar/shared/semantic";
 
@@ -6,21 +7,24 @@ import type { DebugtoolsOptions, WidgetGrant } from "../options";
 
 type Mount = (options: DebugtoolsOptions, grant: Nullable<WidgetGrant>) => () => void;
 
+export type GrantRequest = Pick<DebugtoolsOptions, "endpoint" | "fetch"> & { project?: string };
+
 /**
  * @name requestGrant
  * @description Asks `GET /v2/widget/session` for a widget token, with the session cookie. Resolves
- * to the token and its expiry only on a 200; a network failure and every other status resolve to
- * null, so a signed-out visitor stops here.
+ * to the project, the token and its expiry only on a 200; a network failure and every other status
+ * resolve to null, so a signed-out visitor stops here.
  *
  * @example
  * const grant = await requestGrant({ endpoint: "https://api.example.com", project: "site" });
  * if (grant) open(grant.token);
  */
-export async function requestGrant(options: DebugtoolsOptions): Promise<Nullable<WidgetGrant>> {
+export async function requestGrant(options: GrantRequest): Promise<Nullable<ConsoleGrant>> {
   const send = options.fetch ?? fetch;
   let base = options.endpoint;
   while (base.endsWith("/")) base = base.slice(0, -1);
-  const url = `${base}/v2/widget/session?project=${encodeURIComponent(options.project)}`;
+  const query = options.project ? `?project=${encodeURIComponent(options.project)}` : "";
+  const url = `${base}/v2/widget/session${query}`;
   try {
     const response = await send(url, {
       credentials: "include",
@@ -29,7 +33,7 @@ export async function requestGrant(options: DebugtoolsOptions): Promise<Nullable
     if (response.status !== 200) return null;
     // The API validates this response against the contract's WidgetSession schema.
     const session = (await response.json()) as WidgetSession;
-    return { token: session.token, expiresAt: session.expiresAt };
+    return { project: session.project, token: session.token, expiresAt: session.expiresAt };
   } catch {
     return null;
   }

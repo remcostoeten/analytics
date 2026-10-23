@@ -1,6 +1,7 @@
 import { createClient } from "@spoar/client";
 import type { Client, ClientResult } from "@spoar/client";
 import type { QueryHistory, QueryResult, QuerySchema } from "@spoar/contract";
+import { readConsoleGrant, saveConsoleGrant } from "@spoar/shared/console";
 import type { Milliseconds, Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { requestGrant } from "./loader/start";
@@ -33,9 +34,9 @@ function spanOf(range: TimeRange): Milliseconds {
  * @name clientSource
  * @description The console's data source over `@spoar/client` for one project: the view schema,
  * runs of SQL with the time range bound as `:from` and `:to` and the project as `:project`, and
- * the caller's run history. With a widget grant it sends the `wt_` token and fetches a new one a
- * minute before it expires; without one it sends the browser's session cookie, as in the
- * dashboard.
+ * the caller's run history. With a widget grant it sends the `wt_` token and, a minute before it
+ * expires, switches to a newer grant this tab holds or fetches a new one; without one it sends the
+ * browser's session cookie, as in the dashboard.
  *
  * @example
  * const source = clientSource({ endpoint: "https://api.example.com", project: "site" }, grant);
@@ -58,10 +59,20 @@ export function clientSource(
     return client;
   }
 
+  async function refresh(grant: WidgetGrant): Promise<WidgetGrant> {
+    const stored = readConsoleGrant(now());
+    const newer = stored && Date.parse(stored.expiresAt) > Date.parse(grant.expiresAt);
+    if (stored?.project === options.project && newer) return stored;
+    const fresh = await requestGrant(options);
+    if (!fresh) return grant;
+    saveConsoleGrant(fresh);
+    return fresh;
+  }
+
   async function client(): Promise<Client<string>> {
     if (!current) return build(null);
     if (Date.parse(current.expiresAt) - now().getTime() < refreshBefore) {
-      current = (await requestGrant(options)) ?? current;
+      current = await refresh(current);
     }
     return build(current.token);
   }

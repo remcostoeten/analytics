@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { CreateTokenForm } from "@/modules/admin/components/create-token-form";
 import { TokenList } from "@/modules/admin/components/token-list";
 import { listTokens } from "@/modules/admin/reads";
+import { listProjects } from "@/modules/analytics/reads";
 import { AccessNotice } from "@/modules/session/components/access-notice";
 import { readAccess } from "@/modules/session/session";
 import { Heading } from "@/shared/ui/heading";
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "API tokens" };
 export default async function Page() {
   const access = await readAccess();
   if (access.state !== "admin") return <AccessNotice access={access} />;
-  const listed = await listTokens();
+  const [listed, projects] = await Promise.all([listTokens(), listProjects()]);
   if (!listed.ok) {
     return <p className="text-err text-sm">Could not list tokens: {listed.error.message}</p>;
   }
@@ -30,7 +31,9 @@ export default async function Page() {
       <TokenList tokens={tokens} />
       <section className="grid gap-4">
         <h2 className="caps text-muted">New token</h2>
-        <CreateTokenForm />
+        <CreateTokenForm
+          projects={projects.ok ? projects.value.map((project) => project.id) : []}
+        />
       </section>
     </>
   );

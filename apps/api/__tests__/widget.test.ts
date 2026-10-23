@@ -210,9 +210,9 @@ beforeAll(async () => {
   );
   if (!report.ok) throw new Error(report.error.message);
   await database.query(
-    `INSERT INTO projects (id, name, domain, visibility, allowed_origins, public_key, secret_key_hash)
-     VALUES ($1, 'Noorderlicht', 'noorderlicht.example', 'public', $2, 'pk_test_noord', 'x'),
-       ('other', 'Other', 'other.example', 'public', $3, 'pk_test_other', 'y')`,
+    `INSERT INTO projects (id, name, domain, visibility, allowed_origins, public_key, secret_key_hash, debug_console)
+     VALUES ($1, 'Noorderlicht', 'noorderlicht.example', 'public', $2, 'pk_test_noord', 'x', true),
+       ('other', 'Other', 'other.example', 'public', $3, 'pk_test_other', 'y', false)`,
     [project, [site], ["https://other.example"]],
   );
   await database.query(
@@ -257,11 +257,29 @@ describe("GET /v2/widget/session", () => {
     expect(response.headers.get("access-control-allow-credentials")).toBeNull();
   });
 
-  test("401 AUTH_REQUIRED without a session, with credentialed CORS for a listed origin", async () => {
+  test("401 AUTH_REQUIRED without a session, before any project lookup", async () => {
     const response = await call("/v2/widget/session", { origin: site });
     await failed(response, 401, "AUTH_REQUIRED");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(response.headers.get("access-control-allow-credentials")).toBeNull();
+  });
+
+  test("credentialed CORS for a listed origin once the session cookie is sent", async () => {
+    const response = await call("/v2/widget/session", {
+      origin: site,
+      cookie: "ra.session_token=owner",
+    });
+    expect(response.status).toBe(200);
     expect(response.headers.get("access-control-allow-origin")).toBe(site);
     expect(response.headers.get("access-control-allow-credentials")).toBe("true");
+  });
+
+  test("403 FORBIDDEN while the project's debugConsole switch is off", async () => {
+    const response = await call("/v2/widget/session", {
+      origin: "https://other.example",
+      cookie: "ra.session_token=owner",
+    });
+    await failed(response, 403, "FORBIDDEN");
   });
 
   test("403 FORBIDDEN for a member who cannot administer the project", async () => {
@@ -354,6 +372,58 @@ describe("GET /v2/widget/session", () => {
       "SELECT count(*)::int AS count FROM api_tokens WHERE kind = 'widget'",
     );
     expect(stored.rows[0]?.count).toBeGreaterThan(0);
+  });
+});
+
+describe("GET /v2/widget/connect", () => {
+  function connect(origin: string | null, headers: Headers = {}) {
+    const query = origin === null ? "" : `?origin=${encodeURIComponent(origin)}`;
+    return call(`/v2/widget/connect${query}`, headers);
+  }
+
+  test("posts a widget token to the site's origin only, under a nonce policy", async () => {
+    const response = await connect(`${site}/pricing`, { cookie: "ra.session_token=owner" });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    const policy = response.headers.get("content-security-policy") ?? "";
+    const nonce = /script-src 'nonce-([\w-]+)'/.exec(policy)?.[1];
+    expect(nonce).toBeDefined();
+    expect(policy).toContain("frame-ancestors 'none'");
+    const html = await response.text();
+    expect(html).toContain(`<script nonce="${nonce}">`);
+    const posted = /postMessage\((\{.*?\}),"([^"]+)"\)/.exec(html);
+    expect(posted?.[2]).toBe(site);
+    const message = JSON.parse(posted?.[1] ?? "{}") as Json;
+    expect(message).toMatchObject({ type: "spoar:console", project });
+    expect(String(message.token).startsWith("wt_")).toBe(true);
+    const bearer = { authorization: `Bearer ${String(message.token)}` };
+    expect((await call(`/v2/projects/${project}/logs`, bearer)).status).toBe(200);
+  });
+
+  test("asks a signed-out caller to sign in and posts nothing", async () => {
+    const response = await connect(site);
+    expect(response.status).toBe(401);
+    const html = await response.text();
+    expect(html).toContain("Sign in to open the debug console.");
+    expect(html).not.toContain("postMessage");
+  });
+
+  test("says why when the switch is off, the origin is unknown or missing", async () => {
+    const off = await connect("https://other.example", { cookie: "ra.session_token=owner" });
+    expect(off.status).toBe(403);
+    expect(await off.text()).toContain("The debug console is off for other.");
+    const unknown = await connect("https://elsewhere.example", {
+      cookie: "ra.session_token=owner",
+    });
+    expect(unknown.status).toBe(403);
+    expect(await unknown.text()).toContain("No project lists this origin.");
+    const viewer = await connect(site, { cookie: "ra.session_token=viewer" });
+    expect(viewer.status).toBe(403);
+    expect(await viewer.text()).not.toContain("postMessage");
+    const missing = await connect(null, { cookie: "ra.session_token=owner" });
+    expect(missing.status).toBe(400);
+    expect(await missing.text()).toContain("The link has no valid site origin.");
   });
 });
 

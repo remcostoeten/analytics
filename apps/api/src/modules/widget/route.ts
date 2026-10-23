@@ -1,11 +1,13 @@
 import {
   ActiveVisitors,
   ActiveVisitorsQuery,
+  errorCatalog,
   LiveSessions,
   Overview,
   ProjectParams,
   WidgetSession,
 } from "@spoar/contract";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
@@ -14,28 +16,39 @@ import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import { readGate } from "../reads/guard";
 import type { ReadsOptions } from "../reads/guard";
+import { connectHeaders, connectPage } from "./connect-page";
 import { activeVisitors, liveSessions, overviewCache, startWidget } from "./service";
 import type { WidgetDeps } from "./service";
 
 const tags = ["Dev widget"];
 const responses = { ...errorResponses, 429: errorResponses[400] };
 
+function originOf(value: string | undefined): Nullable<string> {
+  try {
+    return value ? new URL(value).origin : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * @name widgetModule
  * @description The dev widget's routes: `GET /v2/widget/session`, the bootstrap called with the
- * admin session cookie from the customer site, which answers a 15-minute widget token; the
- * visitors and sessions active in the last five minutes at the `detail` level; and the project
- * overview at the `project` level, composed from the existing reads and cached for 10 seconds
- * per project.
+ * admin session cookie from the customer site, which answers a 15-minute widget token;
+ * `GET /v2/widget/connect`, the same bootstrap as a popup page on the API's own origin, which
+ * posts the token back to a site on any domain; the visitors and sessions active in the last five
+ * minutes at the `detail` level; and the project overview at the `project` level, composed from
+ * the existing reads and cached for 10 seconds per project.
  *
  * @example
- * app.use(widgetModule(deps, reads, widget, docsBase));
+ * app.use(widgetModule(deps, reads, widget, docsBase, dashboardOrigin));
  */
 export function widgetModule(
   deps: AccessDeps,
   reads: ReadsOptions,
   widget: WidgetDeps,
   docsBase: string,
+  dashboardOrigin: Nullable<string>,
 ) {
   const gate = readGate(reads, docsBase);
   const overview = overviewCache(
@@ -55,7 +68,12 @@ export function widgetModule(
       "/widget/session",
       async ({ request, set }) => {
         set.headers["cache-control"] = "private, no-store";
-        const started = await startWidget(deps, widget, request.headers);
+        const started = await startWidget(
+          deps,
+          widget,
+          request.headers.get("origin"),
+          request.headers,
+        );
         if (started.ok) return started.value;
         const failed = failure(started.error, set.headers, docsBase);
         set.status = failed.status;
@@ -67,10 +85,38 @@ export function widgetModule(
           summary: "Start the dev widget",
           security: [{ session: [] }],
           description:
-            "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
+            "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
           tags,
         },
       },
+    )
+    .get(
+      "/widget/connect",
+      async ({ query, request }) => {
+        const nonce = crypto.randomUUID();
+        const origin = originOf(query.origin);
+        const started = origin ? await startWidget(deps, widget, origin, request.headers) : null;
+        if (origin && started?.ok) {
+          const html = connectPage({ kind: "granted", origin, session: started.value }, nonce);
+          return new Response(html, { status: 200, headers: connectHeaders(nonce) });
+        }
+        const error = started && !started.ok ? started.error : null;
+        const signIn =
+          error?.code === "AUTH_REQUIRED" && dashboardOrigin
+            ? `${dashboardOrigin}/dashboard/sign-in`
+            : null;
+        const html = connectPage(
+          {
+            kind: "refused",
+            message: error?.message ?? "The link has no valid site origin",
+            signIn,
+          },
+          nonce,
+        );
+        const status = error ? errorCatalog[error.code].status : 400;
+        return new Response(html, { status, headers: connectHeaders(nonce) });
+      },
+      { detail: { hide: true } },
     )
     .get(
       "/projects/:project/realtime/visitors",

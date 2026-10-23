@@ -1,6 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { defaultOrigins, fieldErrors, hostOf, lines, suggestId } from "../src/modules/admin/form";
+import {
+  defaultOrigins,
+  fieldErrors,
+  hostOf,
+  isOrigin,
+  originOf,
+  suggestId,
+} from "../src/modules/admin/form";
 
 describe("hostOf", () => {
   test("strips scheme, path and port", () => {
@@ -28,12 +35,21 @@ describe("defaultOrigins", () => {
   });
 });
 
-describe("lines", () => {
-  test("keeps trimmed non-empty lines", () => {
-    expect(lines(" https://a.com \r\n\n https://b.com")).toEqual([
-      "https://a.com",
-      "https://b.com",
-    ]);
+describe("originOf", () => {
+  test("adds https and drops the trailing slash", () => {
+    expect(originOf(" Example.com/ ")).toBe("https://example.com");
+    expect(originOf("http://localhost:3000")).toBe("http://localhost:3000");
+    expect(originOf("https://example.com/blog")).toBe("https://example.com/blog");
+    expect(originOf("")).toBe("");
+  });
+});
+
+describe("isOrigin", () => {
+  test("accepts scheme, host and port only", () => {
+    expect(isOrigin("https://example.com")).toBe(true);
+    expect(isOrigin("http://localhost:3000")).toBe(true);
+    expect(isOrigin("https://example.com/blog")).toBe(false);
+    expect(isOrigin("example.com")).toBe(false);
   });
 });
 

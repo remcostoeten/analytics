@@ -1,6 +1,6 @@
 {
 	"name": "@spoar/debugtools",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "A debug console for admins on their own site, in the layout of a query console: editor, dataset library and an agent pane.",
 	"license": "MIT",
 	"repository": {
@@ -26,6 +26,10 @@
 		"./console": {
 			"types": "./src/console-entry.ts",
 			"default": "./src/console-entry.ts"
+		},
+		"./gate": {
+			"types": "./src/gate/index.ts",
+			"default": "./src/gate/index.ts"
 		},
 		"./fixtures": {
 			"types": "./src/fixtures/index.ts",
@@ -54,6 +58,10 @@
 			"./console": {
 				"types": "./dist/console.d.mts",
 				"default": "./dist/console.mjs"
+			},
+			"./gate": {
+				"types": "./dist/gate.d.mts",
+				"default": "./dist/gate.mjs"
 			},
 			"./fixtures": {
 				"types": "./dist/fixtures.d.mts",

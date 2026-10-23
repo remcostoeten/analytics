@@ -15,7 +15,7 @@ const client: UserConfig = { ...shared, banner: { js: '"use client";' } };
 export default defineConfig([
   {
     ...shared,
-    entry: { index: "src/index.ts" },
+    entry: { index: "src/index.ts", gate: "src/gate/index.ts" },
     deps: {
       alwaysBundle: [
         /^@spoar\/shared/,

@@ -19,8 +19,6 @@ export const analytics = createAnalytics({
 analytics.use(errors());
 ```
 
-<PluginJourney />
-
 Every event a plugin sends goes through the same consent, opt-out and `beforeSend` checks as `track`. Plugins that read the page, such as `scrollDepth` or `clicks`, do nothing during server rendering.
 
 | Plugin | Sends | Reads in the browser |

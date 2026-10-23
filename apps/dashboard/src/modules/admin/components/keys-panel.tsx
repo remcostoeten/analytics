@@ -23,7 +23,12 @@ export function KeysPanel({ project, publicKey }: Props) {
   const [rotated, setRotated] = useState<RotatedKey | null>(null);
   const [busy, setBusy] = useState<KeyKind | null>(null);
   const currentPublic = rotated?.data.kind === "public" ? rotated.data.key : publicKey;
-  const env = envBlock({ endpoint: apiEndpoint(), publicKey: currentPublic, secretKey: null });
+  const env = envBlock({
+    project,
+    endpoint: apiEndpoint(),
+    publicKey: currentPublic,
+    secretKey: null,
+  });
 
   async function rotate(kind: KeyKind) {
     const confirmed = await notify.confirm(

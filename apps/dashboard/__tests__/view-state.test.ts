@@ -2,7 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import { formatChange, formatDimensionValue, formatMetric } from "../src/modules/analytics/format";
 import { metricPath, metricView } from "../src/modules/analytics/metrics";
-import { readViewState, viewQuery, withFilter } from "../src/modules/analytics/view-state";
+import {
+  hasFilters,
+  readViewState,
+  viewQuery,
+  withFilter,
+} from "../src/modules/analytics/view-state";
 import type { ViewState } from "../src/modules/analytics/view-state";
 
 const defaults: ViewState = {
@@ -95,6 +100,13 @@ describe("withFilter", () => {
     const state = readViewState({ country: "NL" });
     expect(withFilter(state, "page", "/").filters).toEqual({ country: "NL", page: "/" });
     expect(withFilter(state, "country", null).filters).toEqual({});
+  });
+});
+
+describe("hasFilters", () => {
+  test("is true only when a dimension is filtered", () => {
+    expect(hasFilters(readViewState({}))).toBe(false);
+    expect(hasFilters(readViewState({ country: "NL" }))).toBe(true);
   });
 });
 

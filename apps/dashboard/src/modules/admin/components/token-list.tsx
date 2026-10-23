@@ -5,6 +5,7 @@ import type { ApiToken } from "@spoar/contract";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
+import { EmptyState, KeyIllustration } from "@/shared/ui/empty-state";
 import { revokeToken } from "../actions";
 import { formatDay } from "../token-form";
 
@@ -14,7 +15,14 @@ export function TokenList({ tokens }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
 
   if (tokens.length === 0) {
-    return <p className="caps text-muted py-8 text-center">No tokens yet</p>;
+    return (
+      <EmptyState
+        className="[--es-surface:var(--bg)]"
+        title="No tokens yet"
+        description="Create a token below to read your analytics from scripts, CI or another frontend."
+        illustration={<KeyIllustration />}
+      />
+    );
   }
 
   async function revoke(token: ApiToken) {

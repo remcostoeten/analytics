@@ -15,7 +15,7 @@ type Props = {
 
 type Sent = { path: string; ts: number; visitor: string };
 
-const pollMs = 10_000;
+const pollMs = 30_000;
 const kept = 5;
 const clockSlackMs = 15_000;
 
@@ -64,7 +64,9 @@ function useTail(endpoint: string, project: string) {
       if (latest.ok) setEvents([...latest.value.data].reverse());
     }
     void poll();
-    const timer = window.setInterval(() => void poll(), pollMs);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void poll();
+    }, pollMs);
     return () => {
       active = false;
       window.clearInterval(timer);

@@ -812,6 +812,46 @@
   box-shadow: 0 1px 2px rgb(var(--shade) / 0.04);
 }
 
+@utility project-card {
+  box-shadow: 0 1px 2px rgb(var(--shade) / 0.04);
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--violet) 45%, var(--line));
+    box-shadow: 0 24px 48px -28px rgb(var(--shade) / 0.35);
+  }
+}
+
+.landing .project-card {
+  --spark-from: var(--violet);
+}
+
+.landing .drag-strip {
+  padding-block: 0.5rem 1.5rem;
+  margin-block: -0.5rem -1.5rem;
+}
+
+.landing .project-card-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 55% at 100% 0%, color-mix(in srgb, var(--peach) 70%, transparent), transparent 70%),
+    radial-gradient(55% 60% at 0% 100%, color-mix(in srgb, var(--lilac) 70%, transparent), transparent 70%);
+  opacity: 0.55;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.landing .project-card:is(:hover, :focus-visible) .project-card-glow {
+  opacity: 1;
+}
+
+.dark .landing .project-card-glow {
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0.035), transparent 45%);
+  opacity: 1;
+}
+
 .landing .spark-dot {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
   animation: fade-in 400ms ease 1700ms both;

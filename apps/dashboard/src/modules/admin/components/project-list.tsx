@@ -1,11 +1,24 @@
 import type { Project } from "@spoar/contract";
 import { Link } from "@/shared/ui/link";
 
+import { EmptyState, ProjectIllustration } from "@/shared/ui/empty-state";
+
 type Props = { projects: Project[] };
 
 export function ProjectList({ projects }: Props) {
   if (projects.length === 0) {
-    return <p className="caps text-muted py-8 text-center">No projects yet</p>;
+    return (
+      <EmptyState
+        className="[--es-surface:var(--bg)]"
+        title="No projects yet"
+        description="A project holds a site's events and the keys it sends them with."
+        illustration={<ProjectIllustration />}
+      >
+        <Link href="/admin/projects/new" className="solid-button">
+          Add a project
+        </Link>
+      </EmptyState>
+    );
   }
   return (
     <ul className="card divide-y divide-line">

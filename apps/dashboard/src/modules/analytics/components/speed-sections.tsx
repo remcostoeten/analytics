@@ -2,6 +2,9 @@ import type { ProjectScope } from "@spoar/client";
 import type { SpeedResponse } from "@spoar/contract";
 import { Link } from "@/shared/ui/link";
 
+import { EmptyState, IconStack } from "@/shared/ui/empty-state";
+import { GaugeIcon } from "@/shared/ui/icons";
+
 import { formatDimensionValue, formatMetric } from "../format";
 import { rateScore, rateVital, speedDevice, speedInterval, vitalViews } from "../speed";
 import type { VitalView } from "../speed";
@@ -140,7 +143,11 @@ export async function SpeedRoutes({ scope, view, state, path }: Props) {
       {!read.ok ? (
         <p className="text-sm text-err">Could not read routes: {read.error.message}</p>
       ) : read.value.data.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted">No routes with samples in this range</p>
+        <EmptyState
+          title="No routes with samples"
+          description="No route has a speed sample in this range."
+          illustration={<IconStack icon={<GaugeIcon />} />}
+        />
       ) : (
         <div className="table-scroll">
           <table className="data-table">
@@ -219,9 +226,11 @@ export async function SpeedElements({ scope, view, state, path }: Props) {
       {!read.ok ? (
         <p className="text-sm text-err">Could not read elements: {read.error.message}</p>
       ) : read.value.data.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted">
-          No element has 20 slow {view.short} samples in this range
-        </p>
+        <EmptyState
+          title="No slow elements"
+          description={`No element has 20 slow ${view.short} samples in this range.`}
+          illustration={<IconStack icon={<GaugeIcon />} />}
+        />
       ) : (
         <div className="table-scroll">
           <table className="data-table">

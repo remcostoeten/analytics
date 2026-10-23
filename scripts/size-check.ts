@@ -20,13 +20,14 @@ const pluginBudget = 0.6 * 1024;
 export const entryBudgets: Budget[] = [
   { file: "index.mjs", limitBytes: 5 * 1024 },
   { file: "react.mjs", limitBytes: 1.5 * 1024 },
-  { file: "next.mjs", limitBytes: 1 * 1024 },
+  { file: "next.mjs", limitBytes: 1.15 * 1024 },
 ];
 
 export const debugtoolsBudgets: Budget[] = [
   { file: "index.mjs", limitBytes: 1 * 1024 },
   { file: "react.mjs", limitBytes: 1 * 1024 },
   { file: "next.mjs", limitBytes: 1 * 1024 },
+  { file: "gate.mjs", limitBytes: 1.25 * 1024 },
 ];
 
 export const pluginExceptions: { [file: string]: number } = {

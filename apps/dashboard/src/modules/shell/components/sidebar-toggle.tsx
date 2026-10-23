@@ -1,5 +1,6 @@
 "use client";
 
+import { iconMotionHandlers } from "@/shared/ui/icon-motion";
 import { PanelIcon } from "@/shared/ui/icons";
 
 import { setSidebar, useSidebar } from "../sidebar-state";
@@ -15,6 +16,7 @@ export function SidebarToggle() {
       aria-label={label}
       title={label}
       onClick={() => setSidebar(collapsed ? "expanded" : "collapsed")}
+      {...iconMotionHandlers}
     >
       <PanelIcon className="size-4" />
     </button>

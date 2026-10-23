@@ -17,6 +17,7 @@ export type ProjectRecord = {
   publicVisitorData: boolean;
   sqlEnabled: boolean;
   widgetReports: boolean;
+  debugConsole: boolean;
   allowedOrigins: string[];
   retentionDays: number;
   publicKey: string;
@@ -46,6 +47,7 @@ export type ProjectPatch = Partial<
     | "publicVisitorData"
     | "sqlEnabled"
     | "widgetReports"
+    | "debugConsole"
     | "allowedOrigins"
     | "retentionDays"
   >

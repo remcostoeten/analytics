@@ -4,13 +4,13 @@ import { formatDimensionValue, formatMetric } from "../format";
 import type { MetricView } from "../metrics";
 import { readSplitSeries } from "../reads";
 import type { ProjectScope } from "@spoar/client";
-import { viewQuery } from "../view-state";
+import { hasFilters, viewQuery } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
 import { siteUrl } from "@/shared/config/site";
 
 import { AddAnnotation } from "./add-annotation";
 import { ChangeBadge } from "./change-badge";
-import { EmptyState } from "./empty-state";
+import { ChartIllustration, EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 import { SeriesChart } from "./series-chart";
 import { SplitMenu } from "./split-menu";
 import type { ChartPoint, ChartSeries } from "./series-chart";
@@ -92,7 +92,6 @@ export async function SummarySection({
     headline,
     canAnnotate,
   ]);
-  const hasFilters = Object.keys(state.filters).length > 0;
   return (
     <section className="panel-section grid gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -127,20 +126,23 @@ export async function SummarySection({
       {"error" in read ? (
         <p className="text-sm text-err">Could not read the series: {read.error}</p>
       ) : isQuiet(read.series) ? (
-        <EmptyState title={`No ${view.label.toLowerCase()} in this range`}>
-          {hasFilters ? (
-            "Remove a filter or widen the time range to see traffic."
+        <EmptyState
+          title={`No ${view.label.toLowerCase()} in this range`}
+          description={
+            hasFilters(state)
+              ? "Remove a filter or widen the time range to see traffic."
+              : "Once the site sends events they show up here."
+          }
+          illustration={hasFilters(state) ? <SearchIllustration /> : <ChartIllustration />}
+        >
+          {hasFilters(state) ? (
+            <Link href={`${path}${viewQuery({ ...state, filters: {} })}`} className="ghost-button">
+              Clear filters
+            </Link>
           ) : (
-            <>
-              Once the site sends events they show up here. New site?{" "}
-              <a
-                href={`${siteUrl()}/docs/getting-started/quick-start`}
-                className="text-link underline"
-              >
-                Install the SDK
-              </a>
-              .
-            </>
+            <a href={`${siteUrl()}/docs/getting-started/quick-start`} className="solid-button">
+              Install the SDK
+            </a>
           )}
         </EmptyState>
       ) : (
@@ -189,7 +191,11 @@ export async function SummarySection({
               : null}
           </ul>
           {read.series.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted">No data in this range</p>
+            <EmptyState
+              title="No data in this range"
+              description="Widen the time range to see the series."
+              illustration={<ChartIllustration />}
+            />
           ) : (
             <SeriesChart
               series={read.series}
