@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": {
 		"./console": "./src/console.ts",
+		"./crawlers": "./src/crawlers.ts",
 		"./http": "./src/http/index.ts",
 		"./noop": "./src/noop.ts",
 		"./records": "./src/records.ts",

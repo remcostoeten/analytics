@@ -20,6 +20,6 @@ Playwright also builds the dashboard and starts it with `next start` on port 330
 
 | Project | Checks |
 | --- | --- |
-| `headless` | Pageviews, SPA navigation, custom events and send on hide through both transports; required consent; `?spoar=ignore`; web vitals, with stored LCP, INP and CLS within 10% of the browser's own measurements; uncaught errors; a headless browser scoring 50 or more; the dev widget, where the `ra_e2e_admin` cookie stands in for the owner's session |
+| `headless` | Pageviews, SPA navigation, custom events and send on hide through both transports; required consent; `?spoar=ignore`; web vitals, with stored LCP, INP and CLS within 10% of the browser's own measurements; uncaught errors; a headless browser scoring 50 or more; the dev widget, where a `ra.session_token` cookie with the value `1` stands in for the owner's session |
 | `headless`, dashboard | For home, every project view and the admin pages: the route's skeleton on a locked page load and its shell on a locked client navigation. For the visitor, session and issue pages: the skeleton on a locked page load |
 | `headed` | A headed browser without the automation flag, with scripted mouse and keyboard input, scoring under 50 |
