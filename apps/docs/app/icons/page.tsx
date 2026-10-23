@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
+
 import type { NavArt } from "@/components/landing/nav-art";
 import { NavArtTile } from "@/components/landing/nav-art";
+
+export const metadata: Metadata = {
+  title: "Icons",
+  robots: { index: false, follow: false },
+};
 
 type IconItem = {
   label: string;

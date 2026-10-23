@@ -13,9 +13,17 @@ import { QueryProvider } from "@/shared/query/provider";
 import { Notifier } from "@/shared/ui/notifier";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://docs.analytics.remcostoeten.nl"),
   title: { default: "Spoar", template: "%s | Spoar" },
   description: "Projects and keys for the Spoar analytics API.",
   robots: { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: "Spoar",
+    title: "Spoar dashboard",
+    description: "Privacy-first web analytics you host yourself.",
+  },
+  twitter: { card: "summary_large_image", title: "Spoar dashboard" },
 };
 
 const serif = Newsreader({

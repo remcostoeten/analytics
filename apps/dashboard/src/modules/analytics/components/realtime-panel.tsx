@@ -9,6 +9,8 @@ import { Link } from "@/shared/ui/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { browserClient } from "@/shared/api/browser-client";
+import { ActivityIllustration, EmptyState, IconStack } from "@/shared/ui/empty-state";
+import { PulseIcon, UsersIcon } from "@/shared/ui/icons";
 
 import {
   formatDimensionValue,
@@ -72,7 +74,11 @@ type FeedProps = { events: LiveEvent[] };
 function Feed({ events }: FeedProps) {
   if (events.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-muted">No events yet. New ones appear here.</p>
+      <EmptyState
+        title="No events yet"
+        description="New events appear here as they arrive."
+        illustration={<ActivityIllustration />}
+      />
     );
   }
   return (
@@ -110,7 +116,11 @@ type VisitorsProps = { visitors: ActiveVisitor[]; hrefFor: HrefFor; canFollow: b
 function Visitors({ visitors, hrefFor, canFollow }: VisitorsProps) {
   if (visitors.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-muted">Nobody active in the last five minutes.</p>
+      <EmptyState
+        title="Nobody active"
+        description="No visitor sent an event in the last five minutes."
+        illustration={<IconStack icon={<UsersIcon />} />}
+      />
     );
   }
   return (
@@ -171,9 +181,11 @@ type SessionsProps = { sessions: LiveSession[]; hrefFor: HrefFor; canFollow: boo
 function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
   if (sessions.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-muted">
-        No session had an event in the last five minutes.
-      </p>
+      <EmptyState
+        title="No active sessions"
+        description="No session had an event in the last five minutes."
+        illustration={<IconStack icon={<PulseIcon />} />}
+      />
     );
   }
   return (

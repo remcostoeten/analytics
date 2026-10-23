@@ -3,6 +3,7 @@ import type { IssueEvent } from "@spoar/contract";
 import type { IssueID } from "@spoar/shared/semantic";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import { formatDateTime, formatTime } from "../format";
 import { frameLocation } from "../issues";
@@ -59,7 +60,11 @@ export async function IssueEvents({ scope, issue }: Props) {
         </p>
       </header>
       {events.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">No stored events for this issue.</p>
+        <EmptyState
+          title="No stored events"
+          description="No occurrence of this issue is stored."
+          illustration={<ActivityIllustration />}
+        />
       ) : (
         <ul className="grid gap-3">
           {events.map((event) => (

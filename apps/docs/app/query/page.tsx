@@ -8,6 +8,7 @@ import { apiEndpoint } from "@/lib/api-endpoint";
 export const metadata: Metadata = {
   title: "Query",
   description: "Run read-only SQL against your projects with an API token.",
+  alternates: { canonical: "/query" },
 };
 
 export default function QueryPage() {

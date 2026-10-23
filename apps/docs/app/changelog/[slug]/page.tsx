@@ -23,7 +23,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.description,
-    openGraph: post.image ? { images: [post.image] } : undefined,
+    alternates: { canonical: `/changelog/${post.slug}` },
+    openGraph: {
+      type: "article",
+      title: `${post.title} | Spoar docs`,
+      description: post.description,
+      url: `https://docs.analytics.remcostoeten.nl/changelog/${post.slug}`,
+      images: post.image ? [post.image] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${post.title} | Spoar docs`,
+      description: post.description,
+    },
   };
 }
 

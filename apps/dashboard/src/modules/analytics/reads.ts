@@ -4,7 +4,7 @@ import type {
   PublicProject,
   TimeseriesResponse,
 } from "@spoar/contract";
-import type { ProjectScope } from "@spoar/client";
+import type { AllScope, ProjectScope } from "@spoar/client";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
 import { cacheLife } from "next/cache";
@@ -84,13 +84,14 @@ export async function readSplitSeries(
 
 /**
  * @name readTopList
- * @description The top values of one dimension, ranked by the metric's count.
+ * @description The top values of one dimension, ranked by the metric's count, on a project scope
+ * or on the combined scope across every project.
  *
  * @example
  * const pages = await readTopList(scope, "page", "visitors", 5);
  */
 export async function readTopList(
-  scope: ProjectScope,
+  scope: Pick<AllScope, "breakdown">,
   dimension: FilterDimension,
   count: MetricView["count"],
   limit: number,

@@ -4,6 +4,7 @@ type Props = { height: number };
 
 const metricRows = ["visitors", "pageviews", "bounce", "duration", "events"];
 const siteRows = ["first", "second", "third"];
+const homeLists = ["channels", "referrers", "browsers", "systems"];
 const kpiRows = ["visitors", "pageviews", "bounce", "duration"];
 const sessionFacts = ["visitor", "started", "duration", "bot"];
 const issueFacts = ["events", "users", "last", "first", "first-release", "last-release"];
@@ -280,27 +281,31 @@ export function LogsSkeleton() {
 
 export function HomeSkeleton() {
   return (
-    <div className="mx-auto grid max-w-[1040px] gap-6" aria-busy="true" data-testid="home-skeleton">
-      <header
-        className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-6"
-        aria-hidden="true"
-      >
+    <div className="mx-auto grid max-w-[1200px] gap-4" aria-busy="true" data-testid="home-skeleton">
+      <header className="flex flex-wrap items-start justify-between gap-4 pb-2" aria-hidden="true">
         <div className="grid gap-1">
-          <Bar className="h-9 w-56" />
-          <Bar className="h-5 w-80 max-w-full" />
+          <Bar className="h-9 w-40" />
+          <Bar className="h-5 w-72 max-w-full" />
         </div>
         <div className="flex gap-2">
-          <Bar className="h-[34px] w-20 rounded-full" />
+          <Bar className="h-[34px] w-40" />
           <Bar className="h-[34px] w-28 rounded-full" />
         </div>
       </header>
-      <ul className="grid gap-2" aria-hidden="true">
-        {siteRows.map((row) => (
-          <li key={row}>
-            <Bar className="h-[94px] rounded-xl" />
-          </li>
+      <div className="home-top" aria-hidden="true">
+        <Bar className="h-[392px]" />
+        <Bar className="h-[392px]" />
+      </div>
+      <div className="home-pair" aria-hidden="true">
+        <Bar className="h-[340px]" />
+        <Bar className="h-[340px]" />
+      </div>
+      <div className="home-quad" aria-hidden="true">
+        {homeLists.map((list) => (
+          <Bar key={list} className="h-[252px]" />
         ))}
-      </ul>
+      </div>
+      <Bar className="h-[196px]" />
     </div>
   );
 }

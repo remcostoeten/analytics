@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 
 import { siteUrl } from "@/shared/config/site";
+import { iconMotionHandlers } from "@/shared/ui/icon-motion";
 import {
   BookIcon,
   BugIcon,
@@ -45,7 +46,7 @@ export function currentProject(pathname: string) {
 export function SidebarFoot() {
   return (
     <div className="sidebar-foot">
-      <a href={`${siteUrl()}/docs`} className="nav-item">
+      <a href={`${siteUrl()}/docs`} className="nav-item" {...iconMotionHandlers}>
         <BookIcon className="size-4 shrink-0 text-muted" />
         <span className="nav-label">Documentation</span>
       </a>
@@ -57,7 +58,12 @@ export function SidebarFoot() {
 function NavLink({ item }: { item: Item }) {
   const Glyph = item.icon;
   return (
-    <Link href={item.href} aria-current={item.active ? "page" : undefined} className="nav-item">
+    <Link
+      href={item.href}
+      aria-current={item.active ? "page" : undefined}
+      className="nav-item"
+      {...iconMotionHandlers}
+    >
       <Glyph className="size-4 shrink-0 text-muted" />
       <span className="nav-label">{item.label}</span>
     </Link>

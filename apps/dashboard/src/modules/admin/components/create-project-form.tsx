@@ -8,10 +8,19 @@ import { apiEndpoint } from "@/shared/api/endpoint";
 import { Button } from "@/shared/ui/button";
 import { Code } from "@/shared/ui/code";
 import { CopyButton } from "@/shared/ui/copy-button";
+import { ChoiceCards } from "@/shared/ui/choice-cards";
 import { Field } from "@/shared/ui/field";
+import { TagInput } from "@/shared/ui/tag-input";
 import { createProject } from "../actions";
 import { envBlock } from "../env-block";
-import { defaultOrigins, fieldErrors, lines, suggestId } from "../form";
+import {
+  defaultOrigins,
+  fieldErrors,
+  isOrigin,
+  originOf,
+  suggestId,
+  visibilityChoices,
+} from "../form";
 import type { FieldErrors } from "../form";
 import { KeyReveal } from "./key-reveal";
 
@@ -20,7 +29,7 @@ type Draft = {
   id: string;
   name: string;
   visibility: Visibility;
-  allowedOrigins: string;
+  allowedOrigins: string[];
   idTouched: boolean;
   originsTouched: boolean;
 };
@@ -30,7 +39,7 @@ const empty: Draft = {
   id: "",
   name: "",
   visibility: "public",
-  allowedOrigins: "",
+  allowedOrigins: [],
   idTouched: false,
   originsTouched: false,
 };
@@ -77,9 +86,7 @@ export function CreateProjectForm() {
       ...current,
       domain,
       id: current.idTouched ? current.id : suggestId(domain),
-      allowedOrigins: current.originsTouched
-        ? current.allowedOrigins
-        : defaultOrigins(domain).join("\n"),
+      allowedOrigins: current.originsTouched ? current.allowedOrigins : defaultOrigins(domain),
     }));
   }
 
@@ -95,7 +102,7 @@ export function CreateProjectForm() {
           name: draft.name.trim() || draft.domain.trim(),
           domain: draft.domain.trim(),
           visibility: draft.visibility,
-          allowedOrigins: lines(draft.allowedOrigins),
+          allowedOrigins: draft.allowedOrigins,
         });
         setBusy(false);
         if (!result.ok) {
@@ -155,37 +162,29 @@ export function CreateProjectForm() {
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
         />
       </Field>
-      <Field label="Visibility" htmlFor="visibility" error={errors.visibility}>
-        <select
-          id="visibility"
-          className="control"
-          value={draft.visibility}
-          onChange={(event) =>
-            setDraft({
-              ...draft,
-              visibility: event.target.value === "private" ? "private" : "public",
-            })
-          }
-        >
-          <option value="public">public: anyone may read the aggregates</option>
-          <option value="private">private: members and tokens only</option>
-        </select>
-      </Field>
+      <ChoiceCards
+        name="visibility"
+        label="Visibility"
+        value={draft.visibility}
+        choices={visibilityChoices}
+        onChange={(visibility) => setDraft({ ...draft, visibility })}
+      />
+      {errors.visibility ? <p className="text-err text-xs">{errors.visibility}</p> : null}
       <Field
         label="Allowed origins"
         htmlFor="allowedOrigins"
         error={errors.allowedOrigins}
-        hint="One origin per line. Empty accepts events from every origin."
+        hint="Filled in from the domain. Press Enter after each origin; none accepts every origin."
       >
-        <textarea
+        <TagInput
           id="allowedOrigins"
-          className="control min-h-20 font-mono"
-          spellCheck={false}
+          values={draft.allowedOrigins}
           placeholder="https://example.com"
-          value={draft.allowedOrigins}
-          aria-invalid={errors.allowedOrigins ? "true" : undefined}
-          onChange={(event) =>
-            setDraft({ ...draft, allowedOrigins: event.target.value, originsTouched: true })
+          normalize={originOf}
+          isValid={isOrigin}
+          invalid={Boolean(errors.allowedOrigins)}
+          onChange={(allowedOrigins) =>
+            setDraft({ ...draft, allowedOrigins, originsTouched: true })
           }
         />
       </Field>

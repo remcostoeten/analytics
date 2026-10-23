@@ -8,6 +8,7 @@ import { formatPostDate } from "@/lib/changelog-date";
 export const metadata: Metadata = {
   title: "Changelog",
   description: "New features and changes in Spoar, one post per change.",
+  alternates: { canonical: "/changelog" },
 };
 
 export default function ChangelogPage() {

@@ -2,6 +2,8 @@ import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { BugIcon } from "@/shared/ui/icons";
+import { EmptyState, IconStack } from "@/shared/ui/empty-state";
 
 import { formatDateTime, formatMetric, formatRelative } from "../format";
 import { splitTitle } from "../issues";
@@ -38,9 +40,11 @@ export async function IssueList({ scope, state, path, cursor }: Props) {
   return (
     <section className="panel-section grid gap-4">
       {rows.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted">
-          No {state.status} issues. Errors the SDK reports are grouped here.
-        </p>
+        <EmptyState
+          title={`No ${state.status} issues`}
+          description="Errors the SDK reports are grouped here."
+          illustration={<IconStack icon={<BugIcon />} />}
+        />
       ) : (
         <div className="table-scroll">
           <table className="data-table">

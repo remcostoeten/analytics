@@ -9,6 +9,7 @@ import { listExamples } from "@/lib/examples";
 export const metadata: Metadata = {
   title: "Examples",
   description: "Small apps that use the Spoar SDK, one per stack, with their full source.",
+  alternates: { canonical: "/examples" },
 };
 
 export default function ExamplesPage() {
