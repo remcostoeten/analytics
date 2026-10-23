@@ -107,6 +107,22 @@ export function SelectorIcon(props: Props) {
   );
 }
 
+export function ChevronDownIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="m4.5 6.5 3.5 3.5 3.5-3.5" />
+    </Icon>
+  );
+}
+
+export function CheckIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="m3.5 8.5 3 3 6-7" />
+    </Icon>
+  );
+}
+
 export function PlusCircleIcon(props: Props) {
   return (
     <Icon {...props}>

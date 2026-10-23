@@ -19,10 +19,10 @@ import {
   KeyIcon,
   ListIcon,
   PulseIcon,
-  SelectorIcon,
   UsersIcon,
 } from "@/shared/ui/icons";
 import { Logo } from "@/shared/ui/logo";
+import { Select } from "@/shared/ui/select";
 
 import { SidebarToggle } from "./sidebar-toggle";
 
@@ -178,28 +178,16 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
             <span className="nav-label text-sm font-medium">Spoar</span>
           </div>
           <div className="sidebar-switch">
-            <label className="sr-only" htmlFor="project-switcher">
-              Project
-            </label>
-            <div className="relative">
-              <select
-                id="project-switcher"
-                className="switcher"
-                value={project ?? ""}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  router.push(next ? `/projects/${encodeURIComponent(next)}` : "/");
-                }}
-              >
-                <option value="">All projects</option>
-                {projects.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.name}
-                  </option>
-                ))}
-              </select>
-              <SelectorIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted" />
-            </div>
+            <Select
+              variant="switcher"
+              label="Project"
+              value={project ?? ""}
+              options={[
+                { value: "", label: "All projects" },
+                ...projects.map((entry) => ({ value: entry.id, label: entry.name })),
+              ]}
+              onChange={(next) => router.push(next ? `/projects/${encodeURIComponent(next)}` : "/")}
+            />
           </div>
         </div>
 

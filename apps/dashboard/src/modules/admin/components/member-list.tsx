@@ -5,6 +5,7 @@ import type { Member } from "@spoar/contract";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
+import { Select } from "@/shared/ui/select";
 import { formatDay } from "../token-form";
 import { removeMember, updateMember } from "../actions";
 import { avatarOf, formatSignIn, grantedRoleOf, inviteMessage, projectsOf } from "../member-form";
@@ -12,7 +13,7 @@ import { ProjectsField, projectsText } from "./projects-field";
 
 type Props = { members: Member[] };
 
-const roles = ["viewer", "analyst", "admin"];
+const roles = ["viewer", "analyst", "admin"].map((role) => ({ value: role, label: role }));
 
 export function MemberList({ members }: Props) {
   return (
@@ -92,21 +93,14 @@ function MemberRow({ member }: { member: Member }) {
           <span className="caps text-muted">owner</span>
         ) : (
           <span className="flex items-center gap-2">
-            <select
-              aria-label={`Role of ${member.login}`}
-              className="control h-8 py-0"
+            <Select
+              label={`Role of ${member.login}`}
+              className="h-8 w-28 py-0"
               value={member.role}
               disabled={busy}
-              onChange={(event) =>
-                change({ role: grantedRoleOf(event.target.value) }, `Updated ${member.login}`)
-              }
-            >
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+              options={roles}
+              onChange={(role) => change({ role: grantedRoleOf(role) }, `Updated ${member.login}`)}
+            />
             {member.joined ? null : <InviteButton login={member.login} />}
             <Button variant="ghost" disabled={busy} onClick={() => setEditing(!editing)}>
               {editing ? "Close" : "Projects"}

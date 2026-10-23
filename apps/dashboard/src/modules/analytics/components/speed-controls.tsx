@@ -3,6 +3,8 @@
 import { Link } from "@/shared/ui/link";
 import { useRouter } from "next/navigation";
 
+import { Select } from "@/shared/ui/select";
+
 import { speedDevice, speedDevices } from "../speed";
 import { percentiles, viewQuery, withFilter } from "../view-state";
 import type { ViewState } from "../view-state";
@@ -12,23 +14,21 @@ type Props = { path: string; state: ViewState };
 export function PercentileSelect({ path, state }: Props) {
   const router = useRouter();
   return (
-    <label className="control-box">
-      <span className="sr-only">Percentile</span>
-      <select
-        value={state.percentile}
-        className="bg-transparent pr-1 text-sm outline-none"
-        onChange={(event) => {
-          const percentile = percentiles.find((entry) => String(entry) === event.target.value);
+    <div className="control-box">
+      <Select
+        variant="bare"
+        label="Percentile"
+        value={String(state.percentile)}
+        options={percentiles.map((percentile) => ({
+          value: String(percentile),
+          label: `p${percentile}`,
+        }))}
+        onChange={(value) => {
+          const percentile = percentiles.find((entry) => String(entry) === value);
           if (percentile) router.push(`${path}${viewQuery({ ...state, percentile })}`);
         }}
-      >
-        {percentiles.map((percentile) => (
-          <option key={percentile} value={percentile}>
-            p{percentile}
-          </option>
-        ))}
-      </select>
-    </label>
+      />
+    </div>
   );
 }
 

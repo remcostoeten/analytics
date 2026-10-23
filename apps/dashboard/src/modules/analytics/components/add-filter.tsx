@@ -4,11 +4,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { PlusCircleIcon } from "@/shared/ui/icons";
+import { Select } from "@/shared/ui/select";
 
 import { dimensions, viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
 
 type Props = { path: string; state: ViewState; dimensions?: readonly FilterDimension[] };
+
+const operators = [
+  { value: "is", label: "equals" },
+  { value: "not", label: "does not equal" },
+];
 
 const allDimensions = dimensions.map((entry) => entry.value);
 
@@ -68,35 +74,26 @@ export function AddFilter({ path, state, dimensions: offered = allDimensions }: 
             router.push(`${path}${viewQuery(next)}`);
           }}
         >
-          <label className="grid gap-1 text-xs text-muted">
+          <div className="grid gap-1 text-xs text-muted">
             Field
-            <select
-              className="control"
+            <Select
+              label="Field"
               value={dimension}
-              onChange={(event) => {
-                if (isDimension(event.target.value)) setDimension(event.target.value);
+              options={dimensions.filter((entry) => offered.includes(entry.value))}
+              onChange={(next) => {
+                if (isDimension(next)) setDimension(next);
               }}
-            >
-              {dimensions
-                .filter((entry) => offered.includes(entry.value))
-                .map((entry) => (
-                  <option key={entry.value} value={entry.value}>
-                    {entry.label}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs text-muted">
+            />
+          </div>
+          <div className="grid gap-1 text-xs text-muted">
             Operator
-            <select
-              className="control"
+            <Select
+              label="Operator"
               value={negate ? "not" : "is"}
-              onChange={(event) => setNegate(event.target.value === "not")}
-            >
-              <option value="is">equals</option>
-              <option value="not">does not equal</option>
-            </select>
-          </label>
+              options={operators}
+              onChange={(next) => setNegate(next === "not")}
+            />
+          </div>
           <label className="grid gap-1 text-xs text-muted">
             Value
             <input
