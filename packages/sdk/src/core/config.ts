@@ -51,9 +51,9 @@ export function mergeConfig<Config extends object>(base: Loose, explicit: Config
 
 /**
  * @name browserConfig
- * @description The browser build config: the JSON in `NEXT_PUBLIC_RA_CONFIG`, else in
- * `PUBLIC_RA_CONFIG` or `VITE_RA_CONFIG`. Each is read with literal `process.env` or
- * `import.meta.env` access, the only form bundlers inline.
+ * @description The browser build config: the JSON in `NEXT_PUBLIC_SPOAR_CONFIG`, else in
+ * `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG`; the older `*_RA_CONFIG` names still work. Each is
+ * read with literal `process.env` or `import.meta.env` access, the only form bundlers inline.
  *
  * @example
  * browserConfig(); // { project: "remcostoeten.nl", key: "pk_test", endpoint: "/_ra" }
@@ -61,7 +61,9 @@ export function mergeConfig<Config extends object>(base: Loose, explicit: Config
 export function browserConfig(): Loose {
   const env = (import.meta as Meta).env;
   return parseConfig(
-    readEnv(() => process.env.NEXT_PUBLIC_RA_CONFIG) ??
+    readEnv(() => process.env.NEXT_PUBLIC_SPOAR_CONFIG ?? process.env.NEXT_PUBLIC_RA_CONFIG) ??
+      env?.PUBLIC_SPOAR_CONFIG ??
+      env?.VITE_SPOAR_CONFIG ??
       env?.PUBLIC_RA_CONFIG ??
       env?.VITE_RA_CONFIG,
   );

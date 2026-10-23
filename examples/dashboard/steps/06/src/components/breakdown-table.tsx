@@ -50,8 +50,8 @@ export function BreakdownTable({ scope, scopeKey, dimension, title, onPick }: Pr
               <button
                 type="button"
                 className="breakdown-row"
-                data-ra-click="breakdown"
-                data-ra-prop-dimension={dimension}
+                data-spoar-click="breakdown"
+                data-spoar-prop-dimension={dimension}
                 onClick={() => onPick(dimension, row.value)}
                 title={`Filter on ${dimension} = ${row.value}`}
               >

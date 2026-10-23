@@ -7,7 +7,7 @@ function hex(bytes: Uint8Array) {
 
 /**
  * @name signBody
- * @description The `x-analytics-signature` value for a webhook body: `sha256=` and the hex HMAC
+ * @description The `x-spoar-signature` value for a webhook body: `sha256=` and the hex HMAC
  * of `<timestamp>.<body>` with the target's secret, where `timestamp` is Unix seconds.
  *
  * @example

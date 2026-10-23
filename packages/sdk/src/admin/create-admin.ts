@@ -56,7 +56,7 @@ export type Admin<Projects extends string> = ReadsAdmin<Projects> & {
  * `{ ok: false, error }` and never throws; a missing token answers `NO_TOKEN` without a request.
  *
  * @example
- * const admin = createAdmin<"remcostoeten.nl" | "skriuw">({ endpoint: "https://api.analytics.remcostoeten.nl", token: process.env.RA_ADMIN_TOKEN });
+ * const admin = createAdmin<"remcostoeten.nl" | "skriuw">({ endpoint: "https://api.analytics.remcostoeten.nl", token: process.env.SPOAR_ADMIN_TOKEN });
  * const synced = await admin.alerts.sync("remcostoeten.nl", [mail({ to: ["remco@gmail.com"] })]);
  * if (!synced.ok) console.error(synced.error.code, synced.error.message);
  */

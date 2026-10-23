@@ -25,7 +25,7 @@ A private project needs an API token with the `read` scope. An admin creates one
 The token starts with `at_` and is shown once. Put it in your server's environment, never in a `NEXT_PUBLIC_` variable:
 
 ```bash
-RA_TOKEN=at_live_...
+SPOAR_TOKEN=at_live_...
 ```
 
 ## 2. Install the client
@@ -43,7 +43,7 @@ import { createClient } from "@spoar/client";
 
 const api = createClient({
   endpoint: "https://api.example.com",
-  token: process.env.RA_TOKEN,
+  token: process.env.SPOAR_TOKEN,
 });
 
 function percent(share: number) {
@@ -94,7 +94,7 @@ Run the app and open `/stats`. With no events yet, the numbers are 0 and the lis
 
 | You see | Cause |
 | --- | --- |
-| `NO_TOKEN` | `RA_TOKEN` is set to an empty string |
+| `NO_TOKEN` | `SPOAR_TOKEN` is set to an empty string |
 | `UNAUTHORIZED` or `NOT_FOUND` | The project is private and the token is missing, revoked or not listed for it. A private project answers 404 so its name does not leak |
 | `NETWORK` | `endpoint` is wrong or the API is down; `<API URL>/v2/health` should answer `"ok": true` |
 

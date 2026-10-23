@@ -56,6 +56,10 @@ export function pageFacts(route: string | null, first: boolean): PageFacts {
   };
 }
 
+function urlParams() {
+  return new URLSearchParams(typeof location === "undefined" ? "" : location.search);
+}
+
 /**
  * @name browserContext
  * @description Screen and viewport size, timezone, language, connection type, the UTM tags on the
@@ -74,7 +78,7 @@ export function browserContext(release: string | undefined): WireContext {
   context.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const connection = (navigator as Navigator & { connection?: Connection }).connection;
   if (connection?.effectiveType) context.connection = connection.effectiveType;
-  const params = new URLSearchParams(location.search);
+  const params = urlParams();
   const utm: NonNullable<WireContext["utm"]> = {};
   for (const key of utmKeys) {
     const value = params.get(`utm_${key}`);
@@ -86,8 +90,8 @@ export function browserContext(release: string | undefined): WireContext {
 
 /**
  * @name debugFlag
- * @description Reads the debug switch from the URL: `?ra=debug` gives true, which turns debug
- * output on in this browser, `?ra=nodebug` gives false, which turns it off again without touching
+ * @description Reads the debug switch from the URL: `?spoar=debug` (or the older `?ra=debug`) gives true, which turns debug
+ * output on in this browser, `?spoar=nodebug` gives false, which turns it off again without touching
  * the visitor id, and anything else gives null, which leaves the stored choice alone.
  *
  * @example
@@ -95,8 +99,8 @@ export function browserContext(release: string | undefined): WireContext {
  * if (flag !== null) saved.write({ debug: flag }, true);
  */
 export function debugFlag(): boolean | null {
-  const flag =
-    typeof location === "undefined" ? null : new URLSearchParams(location.search).get("ra");
+  const query = urlParams();
+  const flag = query.get("spoar") ?? query.get("ra");
   return flag === "debug" ? true : flag === "nodebug" ? false : null;
 }
 

@@ -16,7 +16,7 @@ Each project's `sqlEnabled` switch is on by default; off blocks SQL on it for ev
 
 ```bash
 curl -X POST https://api.example.com/v2/projects/example.com/query \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"sql":"SELECT path, count(*) AS views FROM events WHERE ts >= :from AND ts < :to GROUP BY path ORDER BY views DESC LIMIT 20","params":{"from":"2026-09-01T00:00:00.000Z","to":"2026-10-01T00:00:00.000Z"}}'
 ```

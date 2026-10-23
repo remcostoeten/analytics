@@ -31,7 +31,7 @@ export function sqlVariants(
 
 const api = createClient({
   endpoint: ${JSON.stringify(target.endpoint)},
-  token: process.env.RA_READ_TOKEN,
+  token: process.env.SPOAR_READ_TOKEN,
 });
 
 const ${preset.id} = await api
@@ -48,7 +48,7 @@ const ${preset.id} = await api
     2,
   );
   const curl = `curl ${target.endpoint}/v2/projects/${encodeURIComponent(target.project)}/query \\
-  -H "authorization: Bearer $RA_SQL_TOKEN" \\
+  -H "authorization: Bearer $SPOAR_SQL_TOKEN" \\
   -H "content-type: application/json" \\
   -d @- <<'JSON'
 ${body}

@@ -8,7 +8,7 @@ This guide keeps your own visits, your team's, and your test runs out of the num
 
 | Way | Events reach the API | Undo |
 | --- | --- | --- |
-| `?ra=ignore` with the `ignoreSelf` plugin | No | `?ra=track` in the same browser |
+| `?spoar=ignore` with the `ignoreSelf` plugin | No | `?spoar=track` in the same browser |
 | Mark a visitor as internal | Yes, stored with `is_internal` | `PATCH` the visitor with `isInternal: false` |
 
 ## Stop a browser from sending
@@ -29,11 +29,11 @@ This guide keeps your own visits, your team's, and your test runs out of the num
    });
    ```
 
-2. Deploy, then open any page of the site once with `?ra=ignore`, such as `https://example.com/?ra=ignore`, in each browser you use.
+2. Deploy, then open any page of the site once with `?spoar=ignore`, such as `https://example.com/?spoar=ignore`, in each browser you use.
 
-3. Check it: `analytics.isOptedOut()` returns `true`, and with `?ra=debug` the console shows `[ra] RA_DROP` lines with `opt-out` as the reason.
+3. Check it: `analytics.isOptedOut()` returns `true`, and with `?spoar=debug` the console shows `[spoar] RA_DROP` lines with `opt-out` as the reason.
 
-The opt-out is stored in `localStorage` for this site, so it lasts until you open a page with `?ra=track` or clear the site data. A private window or another browser starts without it.
+The opt-out is stored in `localStorage` for this site, so it lasts until you open a page with `?spoar=track` or clear the site data. A private window or another browser starts without it.
 
 Without the plugin, the same switch is available in code: `analytics.optOut()` and `analytics.optIn()`, for example from a toggle on your own admin page.
 
@@ -53,7 +53,7 @@ Use this for a teammate's device or a test account whose events you still want t
 
    ```bash
    curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/0192f1c4-6a2e-7b3d-8c4f-1a2b3c4d5e6f \
-     -H "authorization: Bearer $RA_TOKEN" \
+     -H "authorization: Bearer $SPOAR_TOKEN" \
      -H "content-type: application/json" \
      -d '{"isInternal":true}'
    ```
@@ -64,10 +64,10 @@ Use this for a teammate's device or a test account whose events you still want t
 
    ```bash
    curl "https://api.example.com/v2/projects/example.com/stats?period=7d&traffic=internal" \
-     -H "authorization: Bearer $RA_TOKEN"
+     -H "authorization: Bearer $SPOAR_TOKEN"
    ```
 
-After `analytics.reset()` or cleared site data the browser gets a new visitor id, which is not marked. Mark the new id, or use `?ra=ignore` for browsers you control.
+After `analytics.reset()` or cleared site data the browser gets a new visitor id, which is not marked. Mark the new id, or use `?spoar=ignore` for browsers you control.
 
 ## Signed-in admins
 
@@ -76,7 +76,7 @@ Events that carry a signed-in owner's or admin's session cookie are stored as in
 - the event goes through the `/_ra` proxy, or through the server client given the incoming `request` or `headers`. The browser client sends without cookies;
 - the site receives the cookie at all. The API sets it for its own domain, so a site on another subdomain gets it only when the API sets `AUTH_COOKIE_DOMAIN` to the shared parent domain, such as `.example.com`.
 
-The proxy and the server client forward only the session cookie, `ra.session_token` or `__Secure-ra.session_token`, and no other cookie. For events a browser sends to the API directly, use `?ra=ignore` or mark the visitor instead.
+The proxy and the server client forward only the session cookie, `ra.session_token` or `__Secure-ra.session_token`, and no other cookie. For events a browser sends to the API directly, use `?spoar=ignore` or mark the visitor instead.
 
 ## Local and preview traffic
 

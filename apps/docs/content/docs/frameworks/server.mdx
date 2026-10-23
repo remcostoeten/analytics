@@ -20,11 +20,11 @@ npm install @spoar/sdk
 ```
 
 ```bash
-RA_SECRET=sk_...
-RA_ENDPOINT=https://api.example.com
+SPOAR_SECRET=sk_...
+SPOAR_ENDPOINT=https://api.example.com
 ```
 
-`RA_SECRET` and `RA_ENDPOINT` are names used on this page. The SDK itself reads only `RA_CONFIG`, a JSON object with options you leave out, such as `RA_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'`. The endpoint is the API's base URL; the SDK adds `/v2/events`.
+`SPOAR_SECRET` and `SPOAR_ENDPOINT` are names used on this page. The SDK itself reads only `SPOAR_CONFIG`, a JSON object with options you leave out, such as `SPOAR_CONFIG='{"secret":"sk_...","endpoint":"https://api.example.com"}'`. The endpoint is the API's base URL; the SDK adds `/v2/events`.
 
 ## Track events
 
@@ -35,8 +35,8 @@ import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: process.env.RA_SECRET,
-  endpoint: process.env.RA_ENDPOINT,
+  secret: process.env.SPOAR_SECRET,
+  endpoint: process.env.SPOAR_ENDPOINT,
 });
 ```
 
@@ -65,7 +65,7 @@ Node frameworks that hand you a standard `Request` work the same way as Bun and 
 import { createProxy } from "@spoar/sdk/proxy";
 import { serverAnalytics } from "./analytics";
 
-const proxy = createProxy({ secret: Bun.env.RA_SECRET, endpoint: Bun.env.RA_ENDPOINT });
+const proxy = createProxy({ secret: Bun.env.SPOAR_SECRET, endpoint: Bun.env.SPOAR_ENDPOINT });
 
 Bun.serve({
   routes: {
@@ -86,7 +86,7 @@ Bun.serve({
 import { createProxy } from "npm:@spoar/sdk/proxy";
 import { createServerAnalytics } from "npm:@spoar/sdk/server";
 
-const options = { secret: Deno.env.get("RA_SECRET"), endpoint: Deno.env.get("RA_ENDPOINT") };
+const options = { secret: Deno.env.get("SPOAR_SECRET"), endpoint: Deno.env.get("SPOAR_ENDPOINT") };
 const proxy = createProxy(options);
 const serverAnalytics = createServerAnalytics(options);
 
@@ -124,11 +124,11 @@ Workers get their secrets per request through `env`, and keep work alive with `c
 import { createProxy } from "@spoar/sdk/proxy";
 import { createServerAnalytics } from "@spoar/sdk/server";
 
-type Env = { RA_SECRET: string; RA_ENDPOINT: string };
+type Env = { SPOAR_SECRET: string; SPOAR_ENDPOINT: string };
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const options = { secret: env.RA_SECRET, endpoint: env.RA_ENDPOINT };
+    const options = { secret: env.SPOAR_SECRET, endpoint: env.SPOAR_ENDPOINT };
     const { pathname } = new URL(request.url);
     if (pathname === "/_ra") return createProxy(options)(request);
     if (pathname === "/api/signup" && request.method === "POST") {
@@ -156,7 +156,7 @@ Any language can post events to `POST /v2/events` with the secret key in `Author
 
 ```bash
 curl -X POST https://api.example.com/v2/events \
-  -H "authorization: Bearer $RA_SECRET" \
+  -H "authorization: Bearer $SPOAR_SECRET" \
   -H "content-type: application/json" \
   -d '{
     "v": 1,

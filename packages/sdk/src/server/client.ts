@@ -74,17 +74,20 @@ function failed(code: ServerErrorCode, message: string, count: number): ServerRe
  * `session` share the id in `serverVisitor`. `waitUntil` from the
  * options, the call or Vercel's runtime keeps the send alive after the response. Every method
  * resolves to `{ ok, error, accepted, duplicates, failed }` and never throws. Options missing
- * here are read from the JSON in `RA_CONFIG`.
+ * here are read from the JSON in `SPOAR_CONFIG` (or the older `RA_CONFIG`).
  *
  * @example
- * const serverAnalytics = createServerAnalytics<Events>({ project: "remcostoeten.nl", secret: env.RA_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
+ * const serverAnalytics = createServerAnalytics<Events>({ project: "remcostoeten.nl", secret: env.SPOAR_SECRET, endpoint: "https://api.analytics.remcostoeten.nl" });
  * await serverAnalytics.track("checkout", { revenue: 49, currency: "EUR", orderId: "order_1" }, { request });
  */
 export function createServerAnalytics<
   Events extends EventMap = EventMap,
   Groups extends GroupMap = GroupMap,
 >(options: ServerConfig = {}): ServerAnalytics<Events, Groups> {
-  const config = mergeConfig(parseConfig(readEnv(() => process.env.RA_CONFIG)), options);
+  const config = mergeConfig(
+    parseConfig(readEnv(() => process.env.SPOAR_CONFIG ?? process.env.RA_CONFIG)),
+    options,
+  );
   const request: Fetcher = config.fetch ?? ((url, init) => fetch(url, init));
   const warned = new Set<ServerErrorCode>();
   let pending: Outgoing[] = [];
@@ -93,7 +96,7 @@ export function createServerAnalytics<
   function warn(error: ServerError) {
     if (warned.has(error.code)) return;
     warned.add(error.code);
-    console.warn(`[ra] ${error.code}: ${error.message}`);
+    console.warn(`[spoar] ${error.code}: ${error.message}`);
   }
 
   async function post(

@@ -11,7 +11,7 @@ import { createServerAnalytics } from "@spoar/sdk/server";
 import type { Events } from "./events";
 
 export const serverAnalytics = createServerAnalytics<Events>({
-  secret: process.env.RA_SECRET,
+  secret: process.env.SPOAR_SECRET,
   endpoint: "https://api.example.com",
 });
 
@@ -42,7 +42,7 @@ type ServerErrorCode =
 
 ## Client options
 
-Pass these to `createServerAnalytics<Events, Groups>(options)`. Options you leave out are read from the JSON in `RA_CONFIG`. The optional `Groups` type parameter types `group` and the `groups` call option.
+Pass these to `createServerAnalytics<Events, Groups>(options)`. Options you leave out are read from the JSON in `SPOAR_CONFIG`. The optional `Groups` type parameter types `group` and the `groups` call option.
 
 ```ts
 type ServerConfig = {
@@ -221,7 +221,7 @@ Turns a webhook into a route handler with one typed function per event. In Next.
 import { alertRoute } from "@spoar/sdk/server";
 
 export const POST = alertRoute({
-  secret: process.env.RA_WEBHOOK_SECRET,
+  secret: process.env.SPOAR_WEBHOOK_SECRET,
   on: {
     "issue.new": async (event) => notifyTeam(event.issue.title),
     "issue.regression": async (event) => openTicket(event.issue),
@@ -248,12 +248,12 @@ type AlertVerifyCode = "NO_SECRET" | "BAD_SIGNATURE" | "STALE_TIMESTAMP" | "BAD_
 
 The same check without the routing, for other frameworks. It reads the request body and never throws.
 
-- `x-analytics-signature` must be `sha256=` followed by the hex HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's secret. The comparison runs in constant time.
-- `x-analytics-timestamp` is in Unix seconds and must be at most 5 minutes from now, so a captured request cannot be replayed.
+- `x-spoar-signature` must be `sha256=` followed by the hex HMAC-SHA256 of `<x-spoar-timestamp>.<body>` with the target's secret. The comparison runs in constant time.
+- `x-spoar-timestamp` is in Unix seconds and must be at most 5 minutes from now, so a captured request cannot be replayed.
 - Events this SDK does not know are left out of the result.
 
 ```ts
-const verified = await verifyAlert(request, process.env.RA_WEBHOOK_SECRET);
+const verified = await verifyAlert(request, process.env.SPOAR_WEBHOOK_SECRET);
 if (!verified.ok) return new Response(verified.error.message, { status: 401 });
 for (const event of verified.value.events) console.log(event.name);
 ```

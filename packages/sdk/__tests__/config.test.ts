@@ -4,6 +4,7 @@ import { createAnalytics } from "../src/core/client";
 import { mergeConfig, parseConfig, readEnv } from "../src/core/config";
 
 afterEach(() => {
+  delete process.env.NEXT_PUBLIC_SPOAR_CONFIG;
   delete process.env.NEXT_PUBLIC_RA_CONFIG;
 });
 
@@ -36,8 +37,8 @@ describe("build config", () => {
     ).toBeUndefined();
   });
 
-  test("the browser client reads NEXT_PUBLIC_RA_CONFIG under explicit options", async () => {
-    process.env.NEXT_PUBLIC_RA_CONFIG = JSON.stringify({
+  test("the browser client reads NEXT_PUBLIC_SPOAR_CONFIG under explicit options", async () => {
+    process.env.NEXT_PUBLIC_SPOAR_CONFIG = JSON.stringify({
       key: "pk_test",
       endpoint: "/from-env",
       release: "2026.09.28",
@@ -48,5 +49,22 @@ describe("build config", () => {
     expect(explicit.status().endpoint).toBe("/_ra");
     await fromEnv.shutdown();
     await explicit.shutdown();
+  });
+
+  test.each([
+    ["the older NEXT_PUBLIC_RA_CONFIG", { NEXT_PUBLIC_RA_CONFIG: '{"endpoint":"/old"}' }, "/old"],
+    [
+      "NEXT_PUBLIC_SPOAR_CONFIG over NEXT_PUBLIC_RA_CONFIG",
+      {
+        NEXT_PUBLIC_SPOAR_CONFIG: '{"endpoint":"/new"}',
+        NEXT_PUBLIC_RA_CONFIG: '{"endpoint":"/old"}',
+      },
+      "/new",
+    ],
+  ])("the browser client reads %s", async (_, env, endpoint) => {
+    Object.assign(process.env, env);
+    const analytics = createAnalytics({ pageviews: false, mode: "production" });
+    expect(analytics.status().endpoint).toBe(endpoint);
+    await analytics.shutdown();
   });
 });

@@ -75,7 +75,7 @@ The site tracks itself and shows its own numbers on the landing page. Create its
 
 ```bash
 curl -X POST https://api.analytics.remcostoeten.nl/v2/projects \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"id":"docs.analytics.remcostoeten.nl","name":"Spoar docs","domain":"docs.analytics.remcostoeten.nl","allowedOrigins":["https://docs.analytics.remcostoeten.nl"]}'
 ```
@@ -84,9 +84,9 @@ Then set on `v2.analytics-docs`:
 
 | Variable | Value |
 | --- | --- |
-| `NEXT_PUBLIC_RA_CONFIG` | `{"project":"docs.analytics.remcostoeten.nl","key":"<publicKey>","endpoint":"/_ra"}` |
-| `RA_SECRET` | The `secretKey` from the answer |
-| `RA_SQL_TOKEN` | An `at_live_` token with the `sql` scope that lists the docs project, from the dashboard's API tokens page. It turns on the tools section on the landing page; without it the section is left out |
+| `NEXT_PUBLIC_SPOAR_CONFIG` | `{"project":"docs.analytics.remcostoeten.nl","key":"<publicKey>","endpoint":"/_ra"}` |
+| `SPOAR_SECRET` | The `secretKey` from the answer |
+| `SPOAR_SQL_TOKEN` | An `at_live_` token with the `sql` scope that lists the docs project, from the dashboard's API tokens page. It turns on the tools section on the landing page; without it the section is left out |
 
 Until the project exists the landing page renders with empty numbers and the site sends nothing.
 

@@ -309,8 +309,8 @@ export const sdkMethods: SdkMethod[] = [
     "@spoar/sdk/plugins",
     "clicks",
     "clicks()",
-    "Sends `click` for elements marked with `data-ra-click`, with the value as `label` and each `data-ra-prop-*` attribute as a prop.",
-    `createAnalytics({ plugins: [clicks()] });\n\n// <button data-ra-click="upgrade" data-ra-prop-plan="pro">Upgrade</button>`,
+    "Sends `click` for elements marked with `data-spoar-click`, with the value as `label` and each `data-spoar-prop-*` attribute as a prop.",
+    `createAnalytics({ plugins: [clicks()] });\n\n// <button data-spoar-click="upgrade" data-spoar-prop-plan="pro">Upgrade</button>`,
   ),
   codeOnly(
     "@spoar/sdk/plugins",
@@ -552,7 +552,7 @@ export const sdkMethods: SdkMethod[] = [
     "createPageCounter",
     "createPageCounter(config?)",
     "Counts HTML page requests on the server as `page_request` events, for middleware.",
-    `const countPage = createPageCounter({ secret: env.RA_SECRET });\ncountPage(request, event.waitUntil);`,
+    `const countPage = createPageCounter({ secret: env.SPOAR_SECRET });\ncountPage(request, event.waitUntil);`,
   ),
   codeOnly(
     "@spoar/sdk/proxy",

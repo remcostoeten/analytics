@@ -1,6 +1,6 @@
 ---
 title: clicks
-description: A click event for elements marked with data-ra-click.
+description: A click event for elements marked with data-spoar-click.
 ---
 
 Import from `@spoar/sdk/plugins`. Runs in the browser and listens for clicks on the document.
@@ -24,7 +24,7 @@ export const analytics = createAnalytics({
 Mark the elements to count in the markup:
 
 ```html
-<button data-ra-click="upgrade" data-ra-prop-plan="pro" data-ra-prop-billing-cycle="yearly">
+<button data-spoar-click="upgrade" data-spoar-prop-plan="pro" data-spoar-prop-billing-cycle="yearly">
   Upgrade
 </button>
 ```
@@ -37,7 +37,7 @@ Mark the elements to count in the markup:
 
 | Event | Props |
 | --- | --- |
-| `click` | `label` with the value of `data-ra-click`, plus one string prop per `data-ra-prop-*` attribute |
+| `click` | `label` with the value of `data-spoar-click`, plus one string prop per `data-spoar-prop-*` attribute |
 
 The button above sends:
 
@@ -48,7 +48,7 @@ The button above sends:
 ## Behaviour
 
 - One listener on `document`, in the capture phase. A click on a child of a marked element counts for the nearest marked ancestor.
-- Prop names follow the browser's `dataset` naming: the part after `data-ra-prop-` in camelCase, so `data-ra-prop-billing-cycle` becomes `billingCycle`.
+- Prop names follow the browser's `dataset` naming: the part after `data-spoar-prop-` in camelCase, so `data-spoar-prop-billing-cycle` becomes `billingCycle`.
 - Clicks on unmarked elements are ignored, and no text content is read.
 - The usual prop limits apply: at most 25 props, values cut at 255 characters.
 

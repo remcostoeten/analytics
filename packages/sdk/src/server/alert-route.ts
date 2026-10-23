@@ -81,16 +81,20 @@ function readBody(text: string): Result<WebhookBody, AlertVerifyError> {
   return ok({ v: 1, sentAt: parsed.sentAt, events });
 }
 
+function header(request: Request, name: "signature" | "timestamp") {
+  return request.headers.get(`x-spoar-${name}`) ?? request.headers.get(`x-analytics-${name}`);
+}
+
 /**
  * @name verifyAlert
- * @description Checks a signed alert webhook request and reads its body: `x-analytics-signature`
- * must be `sha256=` and the hex HMAC-SHA256 of `<x-analytics-timestamp>.<body>` with the target's
- * secret, compared in constant time, and the timestamp (Unix seconds) at most 5 minutes from now,
+ * @description Checks a signed alert webhook request and reads its body: `x-spoar-signature`
+ * must be `sha256=` and the hex HMAC-SHA256 of `<x-spoar-timestamp>.<body>` with the target's
+ * secret (the older `x-analytics-signature` and `x-analytics-timestamp` headers work the same), compared in constant time, and the timestamp (Unix seconds) at most 5 minutes from now,
  * so a captured request cannot be replayed. Events this SDK does not know are left out. It reads
  * the request body and never throws.
  *
  * @example
- * const verified = await verifyAlert(request, process.env.RA_WEBHOOK_SECRET);
+ * const verified = await verifyAlert(request, process.env.SPOAR_WEBHOOK_SECRET);
  * if (!verified.ok) return new Response(verified.error.message, { status: 401 });
  * for (const event of verified.value.events) console.log(event.name, event.issue.title);
  */
@@ -99,15 +103,14 @@ export async function verifyAlert(
   secret: string | undefined,
 ): Promise<Result<WebhookBody, AlertVerifyError>> {
   if (!secret) return failure("NO_SECRET", "the webhook secret is empty");
-  const signature = signaturePattern.exec(request.headers.get("x-analytics-signature") ?? "");
-  if (!signature?.[1])
-    return failure("BAD_SIGNATURE", "x-analytics-signature is missing or malformed");
-  const timestamp = Number(request.headers.get("x-analytics-timestamp"));
+  const signature = signaturePattern.exec(header(request, "signature") ?? "");
+  if (!signature?.[1]) return failure("BAD_SIGNATURE", "x-spoar-signature is missing or malformed");
+  const timestamp = Number(header(request, "timestamp"));
   if (!Number.isInteger(timestamp) || timestamp <= 0) {
-    return failure("STALE_TIMESTAMP", "x-analytics-timestamp is missing or not Unix seconds");
+    return failure("STALE_TIMESTAMP", "x-spoar-timestamp is missing or not Unix seconds");
   }
   if (Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds) {
-    return failure("STALE_TIMESTAMP", "x-analytics-timestamp is more than 5 minutes off");
+    return failure("STALE_TIMESTAMP", "x-spoar-timestamp is more than 5 minutes off");
   }
   let text: string;
   try {
@@ -149,7 +152,7 @@ async function dispatch<Name extends AlertEventName>(
  *
  * @example
  * export const POST = alertRoute({
- *   secret: process.env.RA_WEBHOOK_SECRET,
+ *   secret: process.env.SPOAR_WEBHOOK_SECRET,
  *   on: { "issue.new": async (event) => notifyTeam(event.issue.title) },
  * });
  */

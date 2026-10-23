@@ -46,6 +46,7 @@ function visitorRequest() {
 withNativeRuntime();
 
 afterEach(() => {
+  delete process.env.SPOAR_CONFIG;
   delete process.env.RA_CONFIG;
 });
 
@@ -251,8 +252,8 @@ describe("createServerAnalytics", () => {
     });
   });
 
-  test("reads RA_CONFIG under explicit options", async () => {
-    process.env.RA_CONFIG = JSON.stringify({
+  test.each(["SPOAR_CONFIG", "RA_CONFIG"])("reads %s under explicit options", async (name) => {
+    process.env[name] = JSON.stringify({
       secret: "sk_test",
       endpoint: "https://env.example.test",
     });

@@ -12,15 +12,12 @@ export type Identity = {
 type Session = { id: string; last: number };
 
 const sessionKey = "__ra_session";
-const legacySessionKey = "__analytics_session_id";
 const idleMs = 30 * 60 * 1000;
 
 function readSession(store: Store | null): Session | null {
   try {
     const raw = store?.getItem(sessionKey);
-    if (raw) return JSON.parse(raw) as Session;
-    const legacy = store?.getItem(legacySessionKey);
-    return legacy ? { id: legacy, last: 0 } : null;
+    return raw ? (JSON.parse(raw) as Session) : null;
   } catch {
     return null;
   }
@@ -55,12 +52,11 @@ export function createIdentity(
 
   function session() {
     const time = now();
-    const alive = current && (current.last === 0 || time - current.last < idleMs);
+    const alive = current && time - current.last < idleMs;
     current = { id: alive && current ? current.id : uuidv7(time), last: time };
     if (!allowed()) return current.id;
     try {
       store?.setItem(sessionKey, JSON.stringify(current));
-      store?.removeItem(legacySessionKey);
     } catch {
       noop();
     }

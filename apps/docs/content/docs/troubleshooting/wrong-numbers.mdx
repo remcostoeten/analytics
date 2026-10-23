@@ -37,10 +37,10 @@ The API stores every event with a bot score from 0 to 100 and drops none at inge
 
 ```bash
 curl "https://api.example.com/v2/projects/example.com/breakdown/bot_reason?traffic=all" \
-  -H "authorization: Bearer $RA_TOKEN"
+  -H "authorization: Bearer $SPOAR_TOKEN"
 ```
 
-A public project needs no token; for a private one, `$RA_TOKEN` is a `read` token ([Create a token](/docs/guides/read-your-data#1-create-a-token)). [Bots](/docs/edge-cases/bots) lists every signal and its weight.
+A public project needs no token; for a private one, `$SPOAR_TOKEN` is a `read` token ([Create a token](/docs/guides/read-your-data#1-create-a-token)). [Bots](/docs/edge-cases/bots) lists every signal and its weight.
 
 A real visitor becomes a bot only when signals add up to 50, for example a visitor on a hosting network (40) whose request also lacks browser headers (30). Your own tests with `curl`, Playwright or a headless browser score 100 and never count as human. To see what the default filter leaves out, read with `traffic=bots`.
 
@@ -59,12 +59,12 @@ The `localhost` and `preview` flags come from the request's `Origin`. A signed-i
 To keep development traffic out:
 
 - Leave `endpoint` out of your development config. In development mode without an `endpoint`, the client does not send.
-- Add the [ignoreSelf plugin](/docs/plugins/ignore-self) and open the site once with `?ra=ignore` in each browser you use.
+- Add the [ignoreSelf plugin](/docs/plugins/ignore-self) and open the site once with `?spoar=ignore` in each browser you use.
 - Mark your visitor as internal. The id is the `visitor` field of the `__ra` key in `localStorage`. The call needs an `admin` token and updates that visitor's stored and later events:
 
 ```bash
 curl -X PATCH https://api.example.com/v2/projects/example.com/visitors/VISITOR_ID \
-  -H "authorization: Bearer $RA_TOKEN" \
+  -H "authorization: Bearer $SPOAR_TOKEN" \
   -H "content-type: application/json" \
   -d '{"isInternal":true}'
 ```
