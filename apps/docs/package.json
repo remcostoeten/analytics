@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@pierre/diffs": "1.5.2",
+		"@pierre/trees": "1.0.0-beta.6",
 		"@spoar/client": "workspace:*",
 		"@spoar/debugtools": "workspace:*",
 		"@spoar/sdk": "workspace:*",

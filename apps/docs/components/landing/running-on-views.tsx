@@ -4,21 +4,23 @@ import { useId, useState, type ReactNode } from "react";
 
 import { ArrowUpRightIcon } from "./icons";
 
-type View = "cards" | "json";
+type View = "cards" | "list" | "json";
 
 type Props = {
   intro: ReactNode;
-  cards: ReactNode;
+  strip: ReactNode;
+  list: ReactNode;
   json: ReactNode;
   endpoint: string;
 };
 
 const views: { value: View; label: string }[] = [
-  { value: "cards", label: "List" },
+  { value: "cards", label: "Cards" },
+  { value: "list", label: "List" },
   { value: "json", label: "JSON" },
 ];
 
-export function RunningOnViews({ intro, cards, json, endpoint }: Props) {
+export function RunningOnViews({ intro, strip, list, json, endpoint }: Props) {
   const [view, setView] = useState<View>("cards");
   const id = useId();
   return (
@@ -53,7 +55,16 @@ export function RunningOnViews({ intro, cards, json, endpoint }: Props) {
         hidden={view !== "cards"}
         className="mt-12"
       >
-        {cards}
+        {strip}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${id}-list`}
+        aria-labelledby={`${id}-list-tab`}
+        hidden={view !== "list"}
+        className="mt-12"
+      >
+        {list}
       </div>
       <div
         role="tabpanel"

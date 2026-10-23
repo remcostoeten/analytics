@@ -165,6 +165,17 @@ export function withFilter(
 }
 
 /**
+ * @name hasFilters
+ * @description Whether the view is filtered on at least one dimension.
+ *
+ * @example
+ * hasFilters(withFilter(state, "country", "NL")); // true
+ */
+export function hasFilters(state: ViewState) {
+  return Object.keys(state.filters).length > 0;
+}
+
+/**
  * @name dimensionLabel
  * @description The display name of a filterable dimension.
  *

@@ -1,73 +1,60 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Link } from "@/shared/ui/link";
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 
+import { PeriodSelect } from "@/modules/analytics/components/period-select";
 import { listProjects } from "@/modules/analytics/reads";
-import { formatMetric } from "@/modules/analytics/format";
+import { readViewState } from "@/modules/analytics/view-state";
+import type { SearchParams } from "@/modules/analytics/view-state";
+import {
+  OnlineCard,
+  ProjectsCard,
+  RankCard,
+  VisitorsCard,
+  VitalsCard,
+} from "@/modules/home/components/home-sections";
 import { readSession } from "@/modules/session/session";
+import { EmptyState, ProjectIllustration } from "@/shared/ui/empty-state";
 import { HomeSkeleton } from "@/modules/shell/components/skeletons";
 import { serverClient } from "@/shared/api/server-client";
 import { siteUrl } from "@/shared/config/site";
-import { ExternalIcon } from "@/shared/ui/icons";
+
+type Props = { searchParams: Promise<SearchParams> };
 
 export const metadata: Metadata = { title: "Home" };
 
-const created = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const sources = [
+  { dimension: "channel", title: "Channels", description: "Visitors by acquisition channel." },
+  { dimension: "referrer_domain", title: "Referrers", description: "Sites sending visitors." },
+  { dimension: "browser", title: "Browsers", description: "Visitors by browser." },
+  { dimension: "os", title: "Operating systems", description: "Visitors by operating system." },
+] as const;
 
-function createdAgo(timestamp: string) {
-  const days = Math.round((Date.parse(timestamp) - Date.now()) / 86_400_000);
-  if (days > -31) return created.format(days, "day");
-  if (days > -365) return created.format(Math.round(days / 30), "month");
-  return created.format(Math.round(days / 365), "year");
+const listRows = 6;
+
+function CardSkeleton({ height }: { height: number }) {
+  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
 }
 
-async function fetchTraffic() {
-  const api = await serverClient();
-  const traffic = await api
-    .period("24h")
-    .projectBreakdown({ metrics: ["pageviews", "visitors"], limit: 100 });
-  return new Map(traffic.ok ? traffic.value.data.map((row) => [row.value, row]) : []);
-}
-
-const readTraffic = cache(fetchTraffic);
-
-async function CreatedAgo({ timestamp }: { timestamp: string }) {
-  await connection();
-  return <> · created {createdAgo(timestamp)}</>;
-}
-
-type Props = { project: string; metric: "pageviews" | "visitors" };
-
-async function Traffic({ project, metric }: Props) {
-  const row = (await readTraffic()).get(project);
-  return <dd className="text-xl tabular-nums">{formatMetric(row?.[metric] ?? 0, "count")}</dd>;
-}
-
-function TrafficCell({ project, metric, label }: Props & { label: string }) {
-  return (
-    <div className="grid gap-1">
-      <dt className="text-xs text-muted">{label}</dt>
-      <Suspense fallback={<dd className="skeleton h-7 w-12" />}>
-        <Traffic project={project} metric={metric} />
-      </Suspense>
-    </div>
-  );
-}
-
-async function Home() {
-  const [projects, session] = await Promise.all([listProjects(), readSession()]);
+async function Home({ searchParams }: Props) {
+  const state = readViewState(await searchParams);
+  const [api, projects, session] = await Promise.all([
+    serverClient(),
+    listProjects(),
+    readSession(),
+  ]);
+  const scope = api.period(state.period).human();
+  const key = state.period;
 
   return (
-    <div className="mx-auto grid max-w-[1040px] gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-6">
+    <div className="mx-auto grid max-w-[1200px] gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 pb-2">
         <div className="grid gap-1">
-          <h1 className="font-serif text-3xl tracking-tight">Web analytics</h1>
-          <p className="text-sm text-muted">
-            Every project you can read, with its traffic over the last 24 hours.
-          </p>
+          <h1 className="font-serif text-3xl tracking-tight">Overview</h1>
+          <p className="text-sm text-muted">Traffic across every project you can read.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <PeriodSelect path="/" state={state} />
           <a href={`${siteUrl()}/docs`} className="ghost-button">
             Documentation
           </a>
@@ -82,71 +69,79 @@ async function Home() {
       {!projects.ok ? (
         <p className="text-sm text-err">Could not list projects: {projects.error}</p>
       ) : projects.value.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">
-          {session.user ? "No projects yet." : "No public projects. Sign in to see private ones."}
-        </p>
+        <EmptyState
+          className="[--es-surface:var(--bg)]"
+          size="lg"
+          title={session.user ? "No projects yet" : "No public projects"}
+          description={
+            session.user
+              ? "Add a project to start collecting visitors, page views and events."
+              : "Sign in to see the projects you can access."
+          }
+          illustration={<ProjectIllustration />}
+        >
+          {session.isAdmin ? (
+            <Link href="/admin/projects/new" className="solid-button">
+              Add a project
+            </Link>
+          ) : null}
+          {session.user ? null : (
+            <Link href="/sign-in" className="solid-button">
+              Sign in
+            </Link>
+          )}
+        </EmptyState>
       ) : (
-        <ul className="grid gap-2">
-          {projects.value.map((project) => {
-            const href = `/projects/${encodeURIComponent(project.id)}`;
-            return (
-              <li key={project.id} className="site-row">
-                <div className="grid min-w-0 gap-1">
-                  <span className="flex items-center gap-2">
-                    <Link href={href} className="truncate text-base font-semibold hover:underline">
-                      {project.name}
-                    </Link>
-                    <a
-                      href={`https://${project.domain}`}
-                      aria-label={`Open ${project.domain}`}
-                      className="text-link"
-                    >
-                      <ExternalIcon className="size-3.5" />
-                    </a>
-                  </span>
-                  <span className="text-xs text-muted">
-                    {project.domain}
-                    <Suspense fallback={null}>
-                      <CreatedAgo timestamp={project.createdAt} />
-                    </Suspense>
-                  </span>
-                  <span className="flex flex-wrap gap-3 text-xs">
-                    <Link href={href} className="text-link underline">
-                      View analytics
-                    </Link>
-                    {session.isAdmin ? (
-                      <Link href={`/admin${href}`} className="text-link underline">
-                        Manage project
-                      </Link>
-                    ) : null}
-                    <span className="text-muted">{project.visibility}</span>
-                  </span>
-                </div>
-                <dl className="contents">
-                  <TrafficCell
-                    project={project.id}
-                    metric="pageviews"
-                    label="Page views (last 24 hours)"
-                  />
-                  <TrafficCell
-                    project={project.id}
-                    metric="visitors"
-                    label="Visitors (last 24 hours)"
-                  />
-                </dl>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <div className="home-top">
+            <Suspense key={`visitors${key}`} fallback={<CardSkeleton height={392} />}>
+              <VisitorsCard
+                scope={scope}
+                period={state.period}
+                projectCount={projects.value.length}
+              />
+            </Suspense>
+            <Suspense key={`online${key}`} fallback={<CardSkeleton height={392} />}>
+              <OnlineCard scope={scope} />
+            </Suspense>
+          </div>
+
+          <div className="home-pair">
+            <Suspense key={`projects${key}`} fallback={<CardSkeleton height={340} />}>
+              <ProjectsCard scope={scope} period={state.period} projects={projects.value} />
+            </Suspense>
+            <Suspense key={`countries${key}`} fallback={<CardSkeleton height={340} />}>
+              <RankCard
+                scope={scope}
+                dimension="country"
+                title="Top countries"
+                description="Visitors by country."
+                limit={8}
+              />
+            </Suspense>
+          </div>
+
+          <div className="home-quad">
+            {sources.map((source) => (
+              <Suspense key={`${source.dimension}${key}`} fallback={<CardSkeleton height={252} />}>
+                <RankCard scope={scope} limit={listRows} {...source} />
+              </Suspense>
+            ))}
+          </div>
+
+          <Suspense key={`vitals${key}`} fallback={<CardSkeleton height={196} />}>
+            <VitalsCard scope={scope} period={state.period} />
+          </Suspense>
+        </>
       )}
     </div>
   );
 }
 
-export default function Page() {
+export default function Page({ searchParams }: Props) {
   return (
     <Suspense fallback={<HomeSkeleton />}>
-      <Home />
+      <Home searchParams={searchParams} />
     </Suspense>
   );
 }

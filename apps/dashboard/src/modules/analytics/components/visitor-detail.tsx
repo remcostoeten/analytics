@@ -4,6 +4,7 @@ import type { VisitorID } from "@spoar/shared/semantic";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import {
   formatDateTime,
@@ -193,7 +194,11 @@ export async function VisitList({ scope, visitor, sessionHref }: Props) {
         </p>
       </header>
       {visits.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">No visits stored for this visitor.</p>
+        <EmptyState
+          title="No visits stored"
+          description="No visit is stored for this visitor."
+          illustration={<ActivityIllustration />}
+        />
       ) : (
         <ol className="grid gap-3">
           {visits.map((visit) => (

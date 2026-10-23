@@ -1,0 +1,29 @@
+# Spoar
+
+> Privacy-first, self-hosted web analytics on your own Postgres database.
+
+Spoar provides a typed SDK for browsers and servers, one Elysia API for ingest, reads and sign-in, and a Postgres database you run. It sets no cookies for tracked visitors and never stores raw IP addresses.
+
+## Core Documentation
+
+- [Quick Start](https://docs.analytics.remcostoeten.nl/docs/getting-started/quick-start): Connect an app to Spoar and see the first pageview in the dashboard.
+- [How it Works](https://docs.analytics.remcostoeten.nl/docs/getting-started/how-it-works): Follow an event from the browser through the proxy to the database.
+- [Concepts](https://docs.analytics.remcostoeten.nl/docs/getting-started/concepts): Events, pageviews, routes, visitors, sessions, consent, projects and keys.
+- [Minimal Dashboard](https://docs.analytics.remcostoeten.nl/docs/getting-started/minimal-dashboard): Build your own analytics overview page.
+
+## SDK Reference
+
+- [Install the SDK](https://docs.analytics.remcostoeten.nl/docs/sdk/install): Package entries, imports and size budgets.
+- [React](https://docs.analytics.remcostoeten.nl/docs/sdk/react): AnalyticsProvider and hooks for React applications.
+- [Next.js](https://docs.analytics.remcostoeten.nl/docs/sdk/next): Next.js App Router and Pages Router integration.
+- [Plugins](https://docs.analytics.remcostoeten.nl/docs/plugins): Speed insights (Core Web Vitals), error tracking, scroll depth, engagement, outbound links.
+- [Proxy](https://docs.analytics.remcostoeten.nl/docs/sdk/proxy): First-party same-origin event forwarding route.
+- [Server](https://docs.analytics.remcostoeten.nl/docs/sdk/server): Tracking from Node, Bun, Deno and edge functions.
+
+## API & Guides
+
+- [API Reference](https://docs.analytics.remcostoeten.nl/docs/reference): Full OpenAPI specification and endpoint documentation.
+- [Self-Host Guide](https://docs.analytics.remcostoeten.nl/docs/guides/self-host): Run the Postgres database, API and scheduled jobs.
+- [SQL Console](https://docs.analytics.remcostoeten.nl/docs/api/sql): Run read-only analytical SQL against console views.
+- [Custom Events](https://docs.analytics.remcostoeten.nl/docs/guides/custom-events): Track typed custom events and conversion goals.
+- [Identify Users](https://docs.analytics.remcostoeten.nl/docs/guides/identify-users): Associate events with authenticated accounts and groups.

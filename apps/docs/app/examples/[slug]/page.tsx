@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { preloadFileTree } from "@pierre/trees/ssr";
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 
-import { CodeWindow } from "@/components/landing/code-window";
+import { ExampleBrowser } from "@/components/examples/example-browser";
+import { highlightCode } from "@/components/landing/code-window";
 import { ArrowIcon } from "@/components/landing/icons";
 import { SiteShell } from "@/components/landing/site-shell";
 import { getExample, listExamples } from "@/lib/examples";
@@ -38,7 +39,22 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const example = getExample((await params).slug);
   if (!example) return {};
-  return { title: example.title, description: example.description };
+  return {
+    title: example.title,
+    description: example.description,
+    alternates: { canonical: `/examples/${example.slug}` },
+    openGraph: {
+      type: "article",
+      title: `${example.title} | Spoar docs`,
+      description: example.description,
+      url: `https://docs.analytics.remcostoeten.nl/examples/${example.slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${example.title} | Spoar docs`,
+      description: example.description,
+    },
+  };
 }
 
 function languageOf(file: string) {
@@ -54,9 +70,21 @@ async function readSource(directory: string, file: string) {
 export default async function ExamplePage({ params }: Props) {
   const example = getExample((await params).slug);
   if (!example) notFound();
-  const sources = await Promise.all(
-    example.files.map((file) => readSource(example.directory, file)),
+  const files = await Promise.all(
+    example.files.map(async (file) => {
+      const code = await readSource(example.directory, file);
+      const lang = languageOf(file);
+      return { path: file, lang, code, rendered: await highlightCode(code, lang) };
+    }),
   );
+  const treeId = `example-tree-${example.slug}`;
+  const tree = preloadFileTree({
+    id: treeId,
+    paths: example.files,
+    initialExpansion: "open",
+    initialSelectedPaths: example.files.slice(0, 1),
+    search: true,
+  });
   return (
     <SiteShell>
       <main className="framed mx-auto w-[min(1040px,calc(100%-32px))] flex-1">
@@ -85,13 +113,11 @@ export default async function ExamplePage({ params }: Props) {
           </section>
         ) : null}
         <section>
-          <Tabs items={example.files}>
-            {example.files.map((file, index) => (
-              <Tab key={file} value={file}>
-                <CodeWindow title={file} lang={languageOf(file)} code={sources[index] ?? ""} />
-              </Tab>
-            ))}
-          </Tabs>
+          <ExampleBrowser
+            id={treeId}
+            files={files}
+            preloaded={{ id: tree.id, shadowHtml: tree.shadowHtml }}
+          />
         </section>
       </main>
     </SiteShell>

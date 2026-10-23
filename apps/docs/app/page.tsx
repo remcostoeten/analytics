@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import Link from "next/link";
 import type { ComponentType, ReactNode, SVGProps } from "react";
@@ -227,6 +228,54 @@ const questions = [
   },
 ];
 
+export const metadata: Metadata = {
+  title: "Spoar | Privacy-First Web Analytics on Postgres",
+  description:
+    "Privacy-first web analytics you host yourself. A typed SDK, one API for ingest, reads and sign-in, and a SQL console on your own Postgres.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Spoar | Privacy-First Web Analytics on Postgres",
+    description: "Privacy-first web analytics you host yourself.",
+    url: "https://docs.analytics.remcostoeten.nl",
+  },
+};
+
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Spoar",
+    url: "https://docs.analytics.remcostoeten.nl",
+    description: "Privacy-first web analytics on your own Postgres.",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Spoar",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "All",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    description:
+      "Privacy-first web analytics you host yourself with a typed SDK, one API for ingest, reads and sign-in, and a SQL console.",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: questions.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  },
+];
+
 async function readSnippet() {
   "use cache";
   cacheLife("max");
@@ -237,6 +286,10 @@ export default async function HomePage() {
   const example = await readSnippet();
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <RevealObserver />
       <SiteNav links={siteLinks()} loginHref={dashboardUrl("/sign-in")} />
 

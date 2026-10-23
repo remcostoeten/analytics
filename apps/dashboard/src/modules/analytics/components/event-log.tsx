@@ -4,9 +4,9 @@ import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue } from "../format";
 import { eventOutcome, logPageSize } from "../logs";
-import { viewQuery } from "../view-state";
+import { hasFilters, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
-import { EmptyState } from "./empty-state";
+import { ActivityIllustration, EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 
 type Props = {
   scope: ProjectScope;
@@ -104,8 +104,19 @@ export async function EventLog({ scope, state, path, base, cursor }: Props) {
     <section className="log" aria-label="Events">
       {rows.length === 0 ? (
         <div className="panel-section">
-          <EmptyState title="No events in this range">
-            Widen the time range, switch traffic or remove a filter.
+          <EmptyState
+            title="No events in this range"
+            description="Widen the time range, switch traffic or remove a filter."
+            illustration={hasFilters(state) ? <SearchIllustration /> : <ActivityIllustration />}
+          >
+            {hasFilters(state) ? (
+              <Link
+                href={`${path}${viewQuery({ ...state, filters: {} })}`}
+                className="ghost-button"
+              >
+                Clear filters
+              </Link>
+            ) : null}
           </EmptyState>
         </div>
       ) : (

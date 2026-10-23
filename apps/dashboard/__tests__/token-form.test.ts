@@ -4,8 +4,8 @@ import { expiresAtOf, formatDay, projectIdsOf } from "../src/modules/admin/token
 
 describe("projectIdsOf", () => {
   test("lists ids or means every project", () => {
-    expect(projectIdsOf("docs\n skriuw \n")).toEqual(["docs", "skriuw"]);
-    expect(projectIdsOf("  ")).toBeNull();
+    expect(projectIdsOf(["docs", " skriuw "])).toEqual(["docs", "skriuw"]);
+    expect(projectIdsOf([" "])).toBeNull();
   });
 });
 

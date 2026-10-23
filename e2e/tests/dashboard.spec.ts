@@ -34,8 +34,8 @@ const routes: Route[] = [
     path: "",
     from: "/admin/tokens",
     link: "Home",
-    shell: heading("Web analytics"),
-    deferred: (page) => page.locator(".site-row dd:not(.skeleton)").filter({ visible: true }),
+    shell: heading("Overview"),
+    deferred: text("Core Web Vitals"),
   },
   {
     name: "web analytics",

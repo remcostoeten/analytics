@@ -1,5 +1,7 @@
 import type { SessionEvents } from "@spoar/contract";
 
+import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
+
 import { formatDuration, formatTime } from "../format";
 import { countSteps, formatProps, trailSteps } from "../trail";
 
@@ -18,7 +20,11 @@ export function SessionTrail({ events }: Props) {
         </p>
       </header>
       {steps.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">This session has no stored events.</p>
+        <EmptyState
+          title="No stored events"
+          description="This session has no stored events."
+          illustration={<ActivityIllustration />}
+        />
       ) : (
         <ol className="timeline">
           {steps.map((step) => (

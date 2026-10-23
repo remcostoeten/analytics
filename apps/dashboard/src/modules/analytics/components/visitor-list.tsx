@@ -2,9 +2,10 @@ import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 
 import { formatDateTime, formatDimensionValue, formatMetric, formatRelative } from "../format";
-import { viewQuery } from "../view-state";
+import { hasFilters, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
 
 type Props = { scope: ProjectScope; state: ViewState; path: string; cursor: string | undefined };
@@ -18,9 +19,17 @@ export async function VisitorList({ scope, state, path, cursor }: Props) {
   return (
     <section className="panel-section grid gap-4">
       {rows.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted">
-          No visitors match this range and filters.
-        </p>
+        <EmptyState
+          title="No visitors match"
+          description="Nobody visited in this range with these filters."
+          illustration={<SearchIllustration />}
+        >
+          {hasFilters(state) ? (
+            <Link href={`${path}${viewQuery({ ...state, filters: {} })}`} className="ghost-button">
+              Clear filters
+            </Link>
+          ) : null}
+        </EmptyState>
       ) : (
         <div className="table-scroll">
           <table className="data-table">
