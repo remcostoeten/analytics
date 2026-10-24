@@ -1547,6 +1547,16 @@
                           ],
                           "retentionDays": 90,
                           "publicKey": "pk_live_a81d44e0",
+                          "keyUsage": {
+                            "public": {
+                              "lastUsedAt": "2026-08-02T11:58:00.000Z",
+                              "lastUsedOrigin": "https://portal.example.nl"
+                            },
+                            "secret": {
+                              "lastUsedAt": null,
+                              "lastUsedOrigin": null
+                            }
+                          },
                           "createdAt": "2026-01-11T09:30:00.000Z",
                           "updatedAt": "2026-08-02T12:00:00.000Z"
                         }
@@ -1579,6 +1589,7 @@
                               "allowedOrigins",
                               "retentionDays",
                               "publicKey",
+                              "keyUsage",
                               "createdAt",
                               "updatedAt"
                             ],
@@ -1644,6 +1655,66 @@
                                 "minLength": 1,
                                 "description": "The `pk_live_` key browsers send in `X-Project-Key`. It is not secret; `allowedOrigins` limits where it works.",
                                 "type": "string"
+                              },
+                              "keyUsage": {
+                                "description": "When and from where each key last authorized an ingest batch. Updated at most once a minute, or at once when the origin changes.",
+                                "type": "object",
+                                "required": [
+                                  "public",
+                                  "secret"
+                                ],
+                                "properties": {
+                                  "public": {
+                                    "description": "Null values mean the key has not been used since it was created or rotated.",
+                                    "type": "object",
+                                    "required": [
+                                      "lastUsedAt",
+                                      "lastUsedOrigin"
+                                    ],
+                                    "properties": {
+                                      "lastUsedAt": {
+                                        "format": "date-time",
+                                        "description": "When the key last authorized a batch.",
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "lastUsedOrigin": {
+                                        "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "secret": {
+                                    "description": "Null values mean the key has not been used since it was created or rotated.",
+                                    "type": "object",
+                                    "required": [
+                                      "lastUsedAt",
+                                      "lastUsedOrigin"
+                                    ],
+                                    "properties": {
+                                      "lastUsedAt": {
+                                        "format": "date-time",
+                                        "description": "When the key last authorized a batch.",
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "lastUsedOrigin": {
+                                        "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
                               },
                               "createdAt": {
                                 "format": "date-time",
@@ -2035,6 +2106,16 @@
                         ],
                         "retentionDays": 90,
                         "publicKey": "pk_live_c07b19e2",
+                        "keyUsage": {
+                          "public": {
+                            "lastUsedAt": null,
+                            "lastUsedOrigin": null
+                          },
+                          "secret": {
+                            "lastUsedAt": null,
+                            "lastUsedOrigin": null
+                          }
+                        },
                         "secretKey": "sk_live_5d0e7c1f9a2b4c6d8e0f",
                         "createdAt": "2026-09-27T16:41:00.000Z",
                         "updatedAt": "2026-09-27T16:41:00.000Z"
@@ -2064,6 +2145,7 @@
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
+                            "keyUsage",
                             "createdAt",
                             "updatedAt"
                           ],
@@ -2134,6 +2216,66 @@
                               "minLength": 1,
                               "description": "The `pk_live_` key browsers send in `X-Project-Key`. It is not secret; `allowedOrigins` limits where it works.",
                               "type": "string"
+                            },
+                            "keyUsage": {
+                              "description": "When and from where each key last authorized an ingest batch. Updated at most once a minute, or at once when the origin changes.",
+                              "type": "object",
+                              "required": [
+                                "public",
+                                "secret"
+                              ],
+                              "properties": {
+                                "public": {
+                                  "description": "Null values mean the key has not been used since it was created or rotated.",
+                                  "type": "object",
+                                  "required": [
+                                    "lastUsedAt",
+                                    "lastUsedOrigin"
+                                  ],
+                                  "properties": {
+                                    "lastUsedAt": {
+                                      "format": "date-time",
+                                      "description": "When the key last authorized a batch.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "lastUsedOrigin": {
+                                      "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "secret": {
+                                  "description": "Null values mean the key has not been used since it was created or rotated.",
+                                  "type": "object",
+                                  "required": [
+                                    "lastUsedAt",
+                                    "lastUsedOrigin"
+                                  ],
+                                  "properties": {
+                                    "lastUsedAt": {
+                                      "format": "date-time",
+                                      "description": "When the key last authorized a batch.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "lastUsedOrigin": {
+                                      "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
                             },
                             "createdAt": {
                               "format": "date-time",
@@ -2308,6 +2450,7 @@
                             "allowedOrigins",
                             "retentionDays",
                             "publicKey",
+                            "keyUsage",
                             "createdAt",
                             "updatedAt"
                           ],
@@ -2373,6 +2516,66 @@
                               "minLength": 1,
                               "description": "The `pk_live_` key browsers send in `X-Project-Key`. It is not secret; `allowedOrigins` limits where it works.",
                               "type": "string"
+                            },
+                            "keyUsage": {
+                              "description": "When and from where each key last authorized an ingest batch. Updated at most once a minute, or at once when the origin changes.",
+                              "type": "object",
+                              "required": [
+                                "public",
+                                "secret"
+                              ],
+                              "properties": {
+                                "public": {
+                                  "description": "Null values mean the key has not been used since it was created or rotated.",
+                                  "type": "object",
+                                  "required": [
+                                    "lastUsedAt",
+                                    "lastUsedOrigin"
+                                  ],
+                                  "properties": {
+                                    "lastUsedAt": {
+                                      "format": "date-time",
+                                      "description": "When the key last authorized a batch.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "lastUsedOrigin": {
+                                      "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "secret": {
+                                  "description": "Null values mean the key has not been used since it was created or rotated.",
+                                  "type": "object",
+                                  "required": [
+                                    "lastUsedAt",
+                                    "lastUsedOrigin"
+                                  ],
+                                  "properties": {
+                                    "lastUsedAt": {
+                                      "format": "date-time",
+                                      "description": "When the key last authorized a batch.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "lastUsedOrigin": {
+                                      "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
                             },
                             "createdAt": {
                               "format": "date-time",
@@ -3004,6 +3207,197 @@
           }
         },
         "operationId": "deleteV2ProjectsByProject"
+      }
+    },
+    "/v2/projects/{project}/key-usage": {
+      "get": {
+        "summary": "Read when the keys were last used",
+        "description": "When and from which origin the public and the secret key last authorized an ingest batch. For project admins and the debug console's widget token.",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "description": "The project id, as listed by `GET /v2/projects`.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "examples": [
+                    {
+                      "data": {
+                        "public": {
+                          "lastUsedAt": "2026-08-02T11:58:00.000Z",
+                          "lastUsedOrigin": "https://portal.example.nl"
+                        },
+                        "secret": {
+                          "lastUsedAt": null,
+                          "lastUsedOrigin": null
+                        }
+                      }
+                    }
+                  ],
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "description": "When and from where each key last authorized an ingest batch. Updated at most once a minute, or at once when the origin changes.",
+                      "type": "object",
+                      "required": [
+                        "public",
+                        "secret"
+                      ],
+                      "properties": {
+                        "public": {
+                          "description": "Null values mean the key has not been used since it was created or rotated.",
+                          "type": "object",
+                          "required": [
+                            "lastUsedAt",
+                            "lastUsedOrigin"
+                          ],
+                          "properties": {
+                            "lastUsedAt": {
+                              "format": "date-time",
+                              "description": "When the key last authorized a batch.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastUsedOrigin": {
+                              "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
+                        "secret": {
+                          "description": "Null values mean the key has not been used since it was created or rotated.",
+                          "type": "object",
+                          "required": [
+                            "lastUsedAt",
+                            "lastUsedOrigin"
+                          ],
+                          "properties": {
+                            "lastUsedAt": {
+                              "format": "date-time",
+                              "description": "When the key last authorized a batch.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "lastUsedOrigin": {
+                              "description": "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectKey-usage"
       }
     },
     "/v2/projects/{project}/keys": {
@@ -32701,7 +33095,7 @@
             "session": []
           }
         ],
-        "description": "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
+        "description": "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `sql` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
         "tags": [
           "Dev widget"
         ],

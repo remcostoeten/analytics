@@ -12,6 +12,7 @@ import { readAccess } from "@/modules/session/session";
 import { ConnectionSkeleton } from "@/modules/shell/components/skeletons";
 import { serverClient } from "@/shared/api/server-client";
 import { Heading } from "@/shared/ui/heading";
+import { Tip } from "@/shared/ui/tip";
 
 type Props = { params: Promise<{ project: string }> };
 
@@ -48,16 +49,32 @@ export default async function Page({ params }: Props) {
       <Heading title={project.name} meta={project.id} />
       <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="grid content-start gap-4">
-          <h2 className="caps text-muted">Settings</h2>
+          <h2 className="caps text-muted flex items-center gap-1.5">
+            Settings
+            <Tip label="About settings">
+              Choose who can see this project's numbers, which sites may send data and how long it
+              is kept.
+            </Tip>
+          </h2>
           <ProjectSettingsForm project={project} />
         </section>
         <section className="grid content-start gap-4">
-          <h2 className="caps text-muted">Connection</h2>
+          <h2 className="caps text-muted flex items-center gap-1.5">
+            Connection
+            <Tip label="About the connection">
+              Shows whether your site is successfully sending visits to this project right now.
+            </Tip>
+          </h2>
           <Suspense fallback={<ConnectionSkeleton />}>
             <Connection project={project.id} />
           </Suspense>
-          <h2 className="caps text-muted">Keys</h2>
-          <KeysPanel project={project.id} publicKey={project.publicKey} />
+          <h2 className="caps text-muted flex items-center gap-1.5">
+            Keys
+            <Tip label="About keys">
+              Keys prove that data really comes from your site. You need them once to connect it.
+            </Tip>
+          </h2>
+          <KeysPanel project={project.id} publicKey={project.publicKey} usage={project.keyUsage} />
           {access.session.role === "owner" ? (
             <DeleteProjectPanel project={project.id} name={project.name} />
           ) : null}

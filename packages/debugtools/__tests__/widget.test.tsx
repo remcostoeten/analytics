@@ -55,6 +55,30 @@ describe("Widget", () => {
     expect(container.querySelector("[role=dialog]")).toBeNull();
   });
 
+  test("moves focus into the panel and back to the launcher on close", () => {
+    const container = render();
+    const launcher = container.querySelector<HTMLButtonElement>(
+      '[aria-label="Open the debug console"]',
+    );
+    act(() => launcher?.click());
+    expect(document.activeElement === container.querySelector("[role=dialog]")).toBe(true);
+    press({ key: "Escape" });
+    const back = container.querySelector('[aria-label="Open the debug console"]');
+    expect(document.activeElement === back).toBe(true);
+  });
+
+  test("shows the status bar above the console", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    act(() => root.render(<Widget open statusBar={<p>Token live until 12:15</p>} />));
+    expect(container.querySelector("[role=dialog]")?.textContent).toContain(
+      "Token live until 12:15",
+    );
+    act(() => root.unmount());
+    container.remove();
+  });
+
   test("starts open with the open prop", () => {
     const container = render(true);
     expect(container.querySelector("[role=dialog]")).not.toBeNull();

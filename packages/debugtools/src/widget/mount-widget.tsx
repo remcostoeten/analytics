@@ -6,6 +6,7 @@ import type { Nullable } from "@spoar/shared/semantic";
 import type { DebugtoolsOptions, WidgetGrant } from "../options";
 import { clientSource } from "../source";
 import { css } from "../styles/compiled";
+import { StatusBar } from "./status-bar";
 import { Widget } from "./widget";
 
 const hostTag = "spoar-debugtools";
@@ -55,6 +56,16 @@ export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGr
         theme={options.theme}
         launcher={options.launcher}
         open={options.open}
+        statusBar={
+          live ? (
+            <StatusBar
+              endpoint={options.endpoint}
+              project={options.project}
+              grant={grant}
+              fetch={options.fetch}
+            />
+          ) : undefined
+        }
       />
     </StrictMode>,
   );

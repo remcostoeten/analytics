@@ -1,8 +1,11 @@
+import { Tip } from "./tip";
+
 type Choice<Value extends string> = { value: Value; label: string; hint: string };
 
 type Props<Value extends string> = {
   name: string;
   label: string;
+  tip?: string;
   value: Value;
   choices: Choice<Value>[];
   onChange: (value: Value) => void;
@@ -11,13 +14,17 @@ type Props<Value extends string> = {
 export function ChoiceCards<Value extends string>({
   name,
   label,
+  tip,
   value,
   choices,
   onChange,
 }: Props<Value>) {
   return (
     <fieldset className="grid gap-1.5">
-      <legend className="caps text-muted mb-1.5">{label}</legend>
+      <legend className="caps text-muted mb-1.5 flex items-center gap-1.5">
+        {label}
+        {tip ? <Tip label={`About ${label}`}>{tip}</Tip> : null}
+      </legend>
       <div className="grid gap-2 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
         {choices.map((choice) => (
           <label key={choice.value} className="choice-card">

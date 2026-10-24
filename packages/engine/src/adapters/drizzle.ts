@@ -2,7 +2,7 @@ import type { Props } from "@spoar/contract";
 import { hasKeys, orNull } from "@spoar/shared/records";
 import { err, ok } from "@spoar/shared/result";
 import type { Nullable } from "@spoar/shared/semantic";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
@@ -495,9 +495,12 @@ export function drizzleStore(db: Database): EventStore {
   };
 }
 
+const keyUsageWindowMs = 60_000;
+
 /**
  * @name drizzleProjects
- * @description A `ProjectStore` on the `projects` table.
+ * @description A `ProjectStore` on the `projects` table. `markUsed` writes a key's last use at most
+ * once a minute, or at once when its origin changes, so busy ingest does not write on every batch.
  *
  * @example
  * const projects = drizzleProjects(db);
@@ -523,6 +526,36 @@ export function drizzleProjects(db: Database): ProjectStore {
   return {
     byPublicKey: (key) => find(eq(projects.publicKey, key)),
     bySecretHash: (hash) => find(eq(projects.secretKeyHash, hash)),
+    markUsed: async (id, kind, at, origin) => {
+      const usedAt = kind === "public" ? projects.publicKeyUsedAt : projects.secretKeyUsedAt;
+      const usedOrigin =
+        kind === "public" ? projects.publicKeyUsedOrigin : projects.secretKeyUsedOrigin;
+      const set =
+        kind === "public"
+          ? { publicKeyUsedAt: at, publicKeyUsedOrigin: origin }
+          : { secretKeyUsedAt: at, secretKeyUsedOrigin: origin };
+      const stale = new Date(at.getTime() - keyUsageWindowMs);
+      try {
+        await db
+          .update(projects)
+          .set(set)
+          .where(
+            and(
+              eq(projects.id, id),
+              or(
+                isNull(usedAt),
+                lt(usedAt, stale),
+                origin === null
+                  ? sql`${usedOrigin} is not null`
+                  : or(isNull(usedOrigin), ne(usedOrigin, origin)),
+              ),
+            ),
+          );
+        return ok(undefined);
+      } catch (error) {
+        return unavailable("Could not record the key usage", error);
+      }
+    },
   };
 }
 /**

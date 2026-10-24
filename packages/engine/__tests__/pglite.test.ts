@@ -262,4 +262,40 @@ describe("engine on PGlite", () => {
     });
     expect(await adapters.projects.bySecretHash("missing")).toEqual({ ok: true, value: null });
   });
+
+  test("records when and from where a key was last used, at most once a minute", async () => {
+    const at = new Date("2026-10-24T12:00:00.000Z");
+    async function read() {
+      const { rows } = await database.query<{
+        public_key_used_at: Date | null;
+        public_key_used_origin: string | null;
+        secret_key_used_at: Date | null;
+      }>(
+        "SELECT public_key_used_at, public_key_used_origin, secret_key_used_at FROM projects WHERE id = $1",
+        [project.id],
+      );
+      return rows[0];
+    }
+    expect(await adapters.projects.markUsed(project.id, "public", at, "https://a.test")).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    await adapters.projects.markUsed(
+      project.id,
+      "public",
+      new Date(at.getTime() + 30_000),
+      "https://a.test",
+    );
+    expect((await read())?.public_key_used_at).toEqual(at);
+    await adapters.projects.markUsed(
+      project.id,
+      "public",
+      new Date(at.getTime() + 40_000),
+      "https://b.test",
+    );
+    expect((await read())?.public_key_used_origin).toBe("https://b.test");
+    expect((await read())?.secret_key_used_at).toBeNull();
+    await adapters.projects.markUsed(project.id, "secret", new Date(at.getTime() + 90_000), null);
+    expect((await read())?.secret_key_used_at).toEqual(new Date(at.getTime() + 90_000));
+  });
 });

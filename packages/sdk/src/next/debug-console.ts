@@ -40,7 +40,13 @@ function gate(api: string): () => void {
     if (!isShortcut(event) || readConsoleGrant(new Date())) return;
     const url = `${api}/v2/widget/connect?origin=${encodeURIComponent(location.origin)}`;
     const popup = window.open(url, "spoar-console", popupFeatures);
-    if (popup) start(popup);
+    if (popup) {
+      start(popup);
+      return;
+    }
+    void import("@spoar/debugtools/gate")
+      .then(({ showConsoleNotice }) => showConsoleNotice("Allow pop-ups to open the debug console"))
+      .catch(noop);
   }
 
   if (readConsoleGrant(new Date()) || isConsoleArmed()) start(null);

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "public": {
+      "lastUsedAt": "2026-08-02T11:58:00.000Z",
+      "lastUsedOrigin": "https://portal.example.nl"
+    },
+    "secret": {
+      "lastUsedAt": null,
+      "lastUsedOrigin": null
+    }
+  }
+}

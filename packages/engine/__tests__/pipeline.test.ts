@@ -6,6 +6,7 @@ import { defineEnricher, defineSignal, defineStage } from "../src/define";
 import type { Registry, Stage } from "../src/define";
 import { correctedTimestamp, createDraft } from "../src/draft";
 import { engineError } from "../src/errors";
+import { memoryLogs } from "../src/adapters/memory-logs";
 import { createEngine } from "../src/pipeline";
 import { botScoreStage } from "../src/stages/bot-score";
 import { enrichStage } from "../src/stages/enrich";
@@ -229,6 +230,23 @@ describe("admitting a batch", () => {
         ),
       ),
     );
+  });
+
+  test("logs a refused origin once a minute per origin, and nothing for an unknown key", async () => {
+    const logs = memoryLogs();
+    const ports = { ...memoryPorts(), logs };
+    const refused = engine(ports);
+    await refused.ingest(browserRequest({ origin: "https://evil.example" }));
+    await refused.ingest(browserRequest({ origin: "https://evil.example" }));
+    await refused.ingest(browserRequest({ origin: "https://other.example" }));
+    await refused.ingest({
+      ...browserRequest(),
+      credentials: { publicKey: "pk_nope", secretKey: null },
+    });
+    expect(logs.lines.map((line) => [line.level, line.data])).toEqual([
+      ["warn", { code: "RA_ORIGIN_REFUSED", origin: "https://evil.example" }],
+      ["warn", { code: "RA_ORIGIN_REFUSED", origin: "https://other.example" }],
+    ]);
   });
 
   test("accepts any origin with the secret key and trusts forwarded details", async () => {

@@ -1,6 +1,7 @@
 import type { IngestResult, RejectedEvent } from "@spoar/contract";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
+import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { authorize } from "./authorize";
 import type { Authorized } from "./authorize";
@@ -10,7 +11,14 @@ import { createDraft } from "./draft";
 import type { EventDraft, IngestRequest } from "./draft";
 import { engineError } from "./errors";
 import type { EngineError } from "./errors";
-import { batchLines, rateLimitedLine, rawEvent, rejectedLine, verdictLines } from "./logs/lines";
+import {
+  batchLines,
+  originRefusedLine,
+  rateLimitedLine,
+  rawEvent,
+  rejectedLine,
+  verdictLines,
+} from "./logs/lines";
 import type { NewLogLine, Ports } from "./ports";
 import { parseEvent } from "./stages/parse";
 import { clientIp } from "./utilities/client-ip";
@@ -86,15 +94,41 @@ export function createEngine(ports: Ports, registry: Registry, settings: Setting
     }
   }
 
+  async function markUsed(access: Authorized, origin: Nullable<string>) {
+    const marked = await ports.projects.markUsed(
+      access.projectId,
+      access.key,
+      ports.clock.now(),
+      origin,
+    );
+    if (!marked.ok) {
+      ports.logger.warn("key usage not recorded", {
+        project: access.projectId,
+        message: marked.error.message,
+      });
+    }
+  }
+
+  async function logRefusedOrigin(project: ProjectID, origin: Nullable<string>) {
+    const first = await ports.limiter.hit(`origin:${project}:${origin ?? "none"}`, 1, 60);
+    if (first.allowed) await record([originRefusedLine(project, ports.clock.now(), origin)]);
+  }
+
   async function admit(request: IngestRequest): Promise<Result<Authorized, EngineError>> {
     const { headers } = request.request;
+    const origin = headers.get("origin");
     const access = await authorize(
       ports.projects,
       ports.hasher,
       request.credentials,
-      headers.get("origin"),
+      origin,
+      logRefusedOrigin,
     );
-    if (!access.ok || access.value.trusted) return access;
+    if (!access.ok) return access;
+    if (access.value.trusted) {
+      await markUsed(access.value, origin);
+      return access;
+    }
     const caller = await hashIp(
       ports.hasher,
       settings.ipSecret,
@@ -107,7 +141,10 @@ export function createEngine(ports: Ports, registry: Registry, settings: Setting
       limit,
       windowSeconds,
     );
-    if (decision.allowed) return access;
+    if (decision.allowed) {
+      await markUsed(access.value, origin);
+      return access;
+    }
     await record([
       rateLimitedLine(access.value.projectId, ports.clock.now(), decision.retryAfterSeconds),
     ]);

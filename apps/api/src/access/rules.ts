@@ -54,7 +54,7 @@ export function canReadDetail(caller: Caller, project: ProjectRecord): boolean {
  * @name canAdmin
  * @description The `admin` level: owners always; admins and `admin` tokens for the projects they
  * list, and for organization-wide routes (no project) only when they list no projects at all.
- * Widget tokens never pass on organization-wide routes.
+ * Widget tokens carry the `sql` scope, so they never pass.
  *
  * @example
  * canAdmin(caller, null); // creating projects and tokens
@@ -65,8 +65,22 @@ export function canAdmin(caller: Caller, project: Nullable<ProjectID>): boolean 
     return caller.role === "admin" && lists(caller.projectIds, project);
   }
   if (caller.kind !== "token" || caller.scope !== "admin") return false;
-  if (caller.tokenKind === "widget" && project === null) return false;
   return lists(caller.projectIds, project);
+}
+
+/**
+ * @name canReadLogs
+ * @description The `logs` level: everyone who passes `admin` for the project, plus the debug
+ * console's widget token on its one project, so the console can tail logs and read key usage without admin rights.
+ *
+ * @example
+ * canReadLogs(widgetCaller, "docs"); // true when the token lists docs
+ */
+export function canReadLogs(caller: Caller, project: ProjectID): boolean {
+  if (canAdmin(caller, project)) return true;
+  return (
+    caller.kind === "token" && caller.tokenKind === "widget" && lists(caller.projectIds, project)
+  );
 }
 
 /**

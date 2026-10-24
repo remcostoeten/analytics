@@ -67,6 +67,13 @@ describe("clientSource", () => {
     expect(seen[1]?.authorization).toBe("Bearer wt_fresh");
   });
 
+  test("reads the project's log lines that contain a text", async () => {
+    const seen: Seen[] = [];
+    const source = clientSource(options(seen), null, () => now);
+    await source.logs("RA_RATE_LIMITED");
+    expect(seen[0]?.url).toBe("https://api.example.com/v2/projects/site/logs?q=RA_RATE_LIMITED");
+  });
+
   test("sends the session cookie without a grant", async () => {
     const seen: Seen[] = [];
     const source = clientSource(options(seen), null, () => now);

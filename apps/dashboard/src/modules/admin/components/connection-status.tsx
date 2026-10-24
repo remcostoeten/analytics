@@ -1,5 +1,6 @@
 import type { IngestTotals } from "@spoar/contract";
 
+import { Tip } from "@/shared/ui/tip";
 import { connectionOf, type ConnectionState } from "../connection";
 
 type Props = { ingest: IngestTotals };
@@ -33,19 +34,38 @@ export function ConnectionStatus({ ingest }: Props) {
       </div>
       <p className="text-muted text-sm">{hint}</p>
       <dl className="grid grid-cols-4 gap-2 text-sm">
-        <Stat label="Accepted" value={ingest.accepted} />
-        <Stat label="Duplicates" value={ingest.duplicates} />
-        <Stat label="Rejected" value={ingest.rejected} />
-        <Stat label="Rate limited" value={ingest.rateLimited} />
+        <Stat
+          label="Accepted"
+          value={ingest.accepted}
+          tip="Visits that arrived and were saved. This is the number you want to see growing."
+        />
+        <Stat
+          label="Duplicates"
+          value={ingest.duplicates}
+          tip="Visits that were sent more than once. Only one copy is kept, so nothing is double counted."
+        />
+        <Stat
+          label="Rejected"
+          value={ingest.rejected}
+          tip="Visits we refused. Usually the site address is not in the allowed origins, or a key is wrong."
+        />
+        <Stat
+          label="Rate limited"
+          value={ingest.rateLimited}
+          tip="Visits turned away because too many arrived too quickly from one source. A few is normal, many can mean a bot."
+        />
       </dl>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, tip }: { label: string; value: number; tip: string }) {
   return (
     <div className="grid gap-0.5">
-      <dt className="caps text-muted">{label}</dt>
+      <dt className="caps text-muted flex items-center gap-1">
+        {label}
+        <Tip label={`About ${label}`}>{tip}</Tip>
+      </dt>
       <dd className="font-mono tabular-nums">{value.toLocaleString()}</dd>
     </div>
   );

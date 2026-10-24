@@ -66,6 +66,10 @@ const projectColumns = {
   allowedOrigins: projects.allowedOrigins,
   retentionDays: projects.retentionDays,
   publicKey: projects.publicKey,
+  publicKeyUsedAt: projects.publicKeyUsedAt,
+  publicKeyUsedOrigin: projects.publicKeyUsedOrigin,
+  secretKeyUsedAt: projects.secretKeyUsedAt,
+  secretKeyUsedOrigin: projects.secretKeyUsedOrigin,
   orgId: projects.orgId,
   createdAt: projects.createdAt,
   updatedAt: projects.updatedAt,
@@ -102,7 +106,7 @@ async function attempt<Value>(message: string, run: () => Promise<Value>) {
  * @description The `ProjectAdmin` store on `projects`: find, list by visibility, create, patch,
  * key rotation and removal. Creating an existing id returns null, as does an id whose rows the
  * cleanup job is still purging, and so does changing a project that does not exist. Rotation
- * stores the public key as is and the secret key's hash. Removal deletes the project row, so its
+ * stores the public key as is and the secret key's hash, and clears that key's last use. Removal deletes the project row, so its
  * keys and routes stop at once, and records the id in `deleted_projects` for the cleanup job to
  * purge its rows in batches.
  *
@@ -150,7 +154,10 @@ export function drizzleProjectAdmin(db: Database): ProjectAdmin {
     rotate: (id, kind, value) =>
       attempt("Could not rotate the key", async () => {
         const rotatedAt = new Date();
-        const keys = kind === "public" ? { publicKey: value } : { secretKeyHash: value };
+        const keys =
+          kind === "public"
+            ? { publicKey: value, publicKeyUsedAt: null, publicKeyUsedOrigin: null }
+            : { secretKeyHash: value, secretKeyUsedAt: null, secretKeyUsedOrigin: null };
         const [row] = await db
           .update(projects)
           .set({ ...keys, updatedAt: rotatedAt })

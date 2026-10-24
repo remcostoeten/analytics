@@ -1,4 +1,4 @@
-import type { WidgetSession } from "@spoar/contract";
+import type { ApiError, WidgetSession } from "@spoar/contract";
 import type { ConsoleGrant } from "@spoar/shared/console";
 import { noop } from "@spoar/shared/noop";
 import type { Nullable } from "@spoar/shared/semantic";
@@ -8,6 +8,42 @@ import type { DebugtoolsOptions, WidgetGrant } from "../options";
 type Mount = (options: DebugtoolsOptions, grant: Nullable<WidgetGrant>) => () => void;
 
 export type GrantRequest = Pick<DebugtoolsOptions, "endpoint" | "fetch"> & { project?: string };
+
+export type GrantAnswer = { grant: Nullable<ConsoleGrant>; refusal: Nullable<string> };
+
+type Refused = (response: Response) => Promise<void>;
+
+async function refusalOf(response: Response): Promise<Nullable<string>> {
+  if (response.status !== 401 && response.status !== 403 && response.status !== 404) return null;
+  try {
+    const body = (await response.json()) as Partial<ApiError> | null;
+    return body?.error?.message ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function ask(options: GrantRequest, refused?: Refused): Promise<Nullable<ConsoleGrant>> {
+  const send = options.fetch ?? fetch;
+  let base = options.endpoint;
+  while (base.endsWith("/")) base = base.slice(0, -1);
+  const query = options.project ? `?project=${encodeURIComponent(options.project)}` : "";
+  const url = `${base}/v2/widget/session${query}`;
+  try {
+    const response = await send(url, {
+      credentials: "include",
+      headers: { accept: "application/json" },
+    });
+    if (response.status !== 200) {
+      await refused?.(response);
+      return null;
+    }
+    const session = (await response.json()) as WidgetSession;
+    return { project: session.project, token: session.token, expiresAt: session.expiresAt };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * @name requestGrant
@@ -19,24 +55,25 @@ export type GrantRequest = Pick<DebugtoolsOptions, "endpoint" | "fetch"> & { pro
  * const grant = await requestGrant({ endpoint: "https://api.example.com", project: "site" });
  * if (grant) open(grant.token);
  */
-export async function requestGrant(options: GrantRequest): Promise<Nullable<ConsoleGrant>> {
-  const send = options.fetch ?? fetch;
-  let base = options.endpoint;
-  while (base.endsWith("/")) base = base.slice(0, -1);
-  const query = options.project ? `?project=${encodeURIComponent(options.project)}` : "";
-  const url = `${base}/v2/widget/session${query}`;
-  try {
-    const response = await send(url, {
-      credentials: "include",
-      headers: { accept: "application/json" },
-    });
-    if (response.status !== 200) return null;
-    // The API validates this response against the contract's WidgetSession schema.
-    const session = (await response.json()) as WidgetSession;
-    return { project: session.project, token: session.token, expiresAt: session.expiresAt };
-  } catch {
-    return null;
-  }
+export function requestGrant(options: GrantRequest): Promise<Nullable<ConsoleGrant>> {
+  return ask(options);
+}
+
+/**
+ * @name requestGrantAnswer
+ * @description `requestGrant` that also keeps why the API said no. A 401, 403 or 404 carries the
+ * API's message as `refusal`, such as "The debug console is off for site"; a network failure and
+ * every other status give no message.
+ *
+ * @example
+ * const { grant, refusal } = await requestGrantAnswer({ endpoint: "https://api.example.com" });
+ */
+export async function requestGrantAnswer(options: GrantRequest): Promise<GrantAnswer> {
+  let refusal: Nullable<string> = null;
+  const grant = await ask(options, async (response) => {
+    refusal = await refusalOf(response);
+  });
+  return { grant, refusal };
 }
 
 /**

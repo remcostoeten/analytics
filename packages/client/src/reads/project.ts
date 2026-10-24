@@ -1,7 +1,10 @@
 import type {
   ActiveVisitors,
   AnnotationList,
+  LineKind,
+  LineLevel,
   LiveSessions,
+  LogList,
   Overview,
   ProjectBreakdownResponse,
   QueryParams,
@@ -15,6 +18,8 @@ import { basePath, toQuery } from "../scope";
 import type { ClientError, ClientResult, Metric, Page, ScopeState, Send } from "../types";
 
 export type LiveRowsOptions = { limit?: number };
+
+export type LogsOptions = { level?: LineLevel; kind?: LineKind; q?: string };
 
 export type LiveVisitorsOptions = LiveRowsOptions & { everyMs?: number; signal?: AbortSignal };
 
@@ -41,6 +46,7 @@ export type ProjectOnlyReads = {
   ) => AsyncGenerator<Result<ActiveVisitors, ClientError>>;
   realtimeSessions: (options?: LiveRowsOptions) => ClientResult<LiveSessions>;
   overview: () => ClientResult<Overview>;
+  logs: (options?: LogsOptions) => ClientResult<LogList>;
   annotations: (options?: Page) => ClientResult<AnnotationList>;
   query: (sql: string, params?: QueryParams) => ClientResult<QueryResult>;
 };
@@ -57,7 +63,7 @@ export type AllOnlyReads = {
  * @description The terminals that exist only under `/v2/projects/:project`: the live visitor and
  * session rows, `liveVisitors` as an async iterable that reads `realtime/visitors` every
  * `everyMs` (5 seconds by default) until the signal aborts or a call fails, the dev widget's
- * `overview`, the `annotations` that overlap the scope's range, and SQL over the project's views.
+ * `overview` and `logs` (the last 100 engine decisions, filtered by level, kind or message text), the `annotations` that overlap the scope's range, and SQL over the project's views.
  *
  * @example
  * const reads = projectOnlyReads(send, { project: "skriuw", period: "7d", filter: {} });
@@ -97,6 +103,12 @@ export function projectOnlyReads(send: Send, state: ScopeState): ProjectOnlyRead
         query: { limit: options.limit },
       }),
     overview: () => send.json<Overview>({ method: "GET", path: `${base}/overview` }),
+    logs: (options = {}) =>
+      send.json<LogList>({
+        method: "GET",
+        path: `${base}/logs`,
+        query: { level: options.level, kind: options.kind, q: options.q },
+      }),
     annotations: (options = {}) =>
       send.json<AnnotationList>({
         method: "GET",

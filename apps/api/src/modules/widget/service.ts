@@ -80,7 +80,7 @@ export function hasSessionCookie(headers: Headers): boolean {
  * @description The debug console's bootstrap for a site origin: reads the session cookie first
  * (`AUTH_REQUIRED` without one, before any database read), finds the project whose allowed origins
  * list the origin (`ORIGIN_NOT_ALLOWED` when none does), checks its `debugConsole` switch
- * and that the member may administer it (`FORBIDDEN` otherwise), and mints a 15-minute `wt_` widget token with the `admin` scope bound to the project.
+ * and that the member may administer it (`FORBIDDEN` otherwise), and mints a 15-minute `wt_` widget token with the `sql` scope bound to the project.
  * The token is stored as its hash and never listed by `GET /v2/tokens`.
  *
  * @example
@@ -115,7 +115,7 @@ export async function startWidget(
     id: randomSecret("tok_", 8),
     kind: "widget",
     name: `Widget for ${signedIn.login ?? signedIn.userId}`,
-    scope: "admin",
+    scope: "sql",
     projectIds: [project.id],
     expiresAt,
     tokenHash: await deps.hasher.sha256(token),

@@ -73,7 +73,7 @@ export function logsModule(
     .get("/projects/:project/logs", read(widget.logs), {
       params: ProjectParams,
       query: LogsQuery,
-      access: "admin",
+      access: "logs",
       response: { 200: t.Union([LogList, eventStream]), ...responses },
       detail: {
         summary: "Log stream",

@@ -195,5 +195,6 @@ export function memoryProjects(list: MemoryProject[]): ProjectStore {
   return {
     byPublicKey: async (key) => ok(access(list.find((project) => project.publicKey === key))),
     bySecretHash: async (hash) => ok(access(list.find((project) => project.secretHash === hash))),
+    markUsed: async () => ok(undefined),
   };
 }

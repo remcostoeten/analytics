@@ -185,8 +185,8 @@ beforeAll(async () => {
   await database.query(
     `INSERT INTO api_tokens (id, name, token_hash, scope, project_ids, kind, expires_at) VALUES
        ('tok_read', 'read', $1, 'read', NULL, 'api', NULL),
-       ('tok_widget', 'widget', $2, 'admin', ARRAY['live'], 'widget', $3),
-       ('tok_short', 'widget', $4, 'admin', ARRAY['live'], 'widget', $5)`,
+       ('tok_widget', 'widget', $2, 'sql', ARRAY['live'], 'widget', $3),
+       ('tok_short', 'widget', $4, 'sql', ARRAY['live'], 'widget', $5)`,
     [
       await hasher.sha256("at_test_read"),
       await hasher.sha256("wt_test_widget"),
