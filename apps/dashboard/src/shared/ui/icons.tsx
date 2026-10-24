@@ -132,6 +132,15 @@ export function PlusCircleIcon(props: Props) {
   );
 }
 
+export function InfoIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 7.25v3.5M8 5.2v.1" />
+    </Icon>
+  );
+}
+
 export function CloseIcon(props: Props) {
   return (
     <Icon {...props}>

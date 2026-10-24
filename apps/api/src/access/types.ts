@@ -31,7 +31,7 @@ export type Caller =
       projectIds: Nullable<ProjectID[]>;
     };
 
-export type Level = "public" | "project" | "detail" | "admin" | "cron";
+export type Level = "public" | "project" | "detail" | "logs" | "admin" | "cron";
 
 export type AccessDeps = {
   projects: ProjectAdmin;

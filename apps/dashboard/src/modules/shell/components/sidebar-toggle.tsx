@@ -11,14 +11,14 @@ export function SidebarToggle() {
   return (
     <button
       type="button"
-      className="sidebar-toggle"
+      className="nav-item w-full text-left"
       aria-pressed={collapsed}
       aria-label={label}
-      title={label}
       onClick={() => setSidebar(collapsed ? "expanded" : "collapsed")}
       {...iconMotionHandlers}
     >
-      <PanelIcon className="size-4" />
+      <PanelIcon className="size-4 shrink-0 text-muted" />
+      <span className="nav-label">{collapsed ? "Expand" : "Collapse"}</span>
     </button>
   );
 }

@@ -5,7 +5,7 @@ import type { Result } from "@spoar/shared/result";
 import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { bearerToken, resolveCaller, sameSecret } from "./caller";
-import { canAdmin, canRead, canReadDetail } from "./rules";
+import { canAdmin, canRead, canReadDetail, canReadLogs } from "./rules";
 import type { AccessDeps, Caller, Level } from "./types";
 
 export type Decision = {
@@ -47,6 +47,11 @@ function judge(
     return canReadDetail(caller, project)
       ? decision
       : refused(caller, "Visitor-level data needs an analyst, admin or API token");
+  }
+  if (level === "logs") {
+    return canReadLogs(caller, project.id)
+      ? decision
+      : refused(caller, "The log stream needs a project admin");
   }
   return canAdmin(caller, project.id) ? decision : refused(caller, "This needs a project admin");
 }

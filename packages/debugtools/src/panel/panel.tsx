@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 
 import { Icon } from "../icons";
@@ -57,10 +57,15 @@ function placement(layout: PanelLayout): CSSProperties {
 }
 
 export function Panel({ label, theme, onClose, children }: Props) {
+  const root = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<PanelLayout>(() => {
     const saved = storage();
     return fitLayout(saved ? readLayout(saved) : defaultLayout, viewport());
   });
+
+  useEffect(() => {
+    root.current?.focus();
+  }, []);
 
   useEffect(() => {
     const saved = storage();
@@ -133,7 +138,9 @@ export function Panel({ label, theme, onClose, children }: Props) {
 
   return (
     <div
-      className={`spd fixed flex animate-console-sheet flex-col overflow-hidden border-console-line bg-console-bg font-console-sans text-[13px] text-console-fg shadow-[0_-20px_60px_-30px_var(--spc-shadow)] motion-reduce:animate-none ${floating ? "rounded-[10px] border" : maximized ? "" : "border-t"}`}
+      ref={root}
+      tabIndex={-1}
+      className={`spd fixed flex animate-console-sheet outline-none flex-col overflow-hidden border-console-line bg-console-bg font-console-sans text-[13px] text-console-fg shadow-[0_-20px_60px_-30px_var(--spc-shadow)] motion-reduce:animate-none ${floating ? "rounded-[10px] border" : maximized ? "" : "border-t"}`}
       style={placement(layout)}
       data-theme={theme}
       data-mode={layout.mode}

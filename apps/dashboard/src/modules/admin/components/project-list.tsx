@@ -26,7 +26,7 @@ export function ProjectList({ projects }: Props) {
         <li key={project.id}>
           <Link
             href={`/admin/projects/${encodeURIComponent(project.id)}`}
-            className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-bg"
+            className="flex items-center justify-between gap-4 px-4 py-3 outline-none transition-colors hover:bg-bg focus-visible:bg-bg"
           >
             <span className="grid gap-0.5">
               <span className="text-sm font-medium">{project.name}</span>

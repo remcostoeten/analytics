@@ -4,6 +4,7 @@ import { notify } from "@remcostoeten/notifier";
 import { useState } from "react";
 
 import { Button } from "@/shared/ui/button";
+import { Tip } from "@/shared/ui/tip";
 import { removeProject } from "../actions";
 
 type Props = { project: string; name: string };
@@ -26,7 +27,13 @@ export function DeleteProjectPanel({ project, name }: Props) {
   return (
     <section className="card grid gap-3 p-4">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="caps">Delete project</h2>
+        <h2 className="caps flex items-center gap-1.5">
+          Delete project
+          <Tip label="About deleting a project">
+            Removes the project and all of its collected data for good. This cannot be undone, and
+            your site stops being tracked.
+          </Tip>
+        </h2>
         <Button variant="danger" disabled={busy} onClick={remove}>
           {busy ? "Deleting" : "Delete"}
         </Button>

@@ -6,7 +6,7 @@ import type { Nullable } from "@spoar/shared/semantic";
 import { Value } from "@sinclair/typebox/value";
 
 import { decide } from "../../access/decide";
-import { canAdmin, canReadDetail } from "../../access/rules";
+import { canReadDetail, canReadLogs } from "../../access/rules";
 import type { AccessDeps } from "../../access/types";
 import type { createHub } from "./hub";
 
@@ -93,7 +93,7 @@ export function openLive(connection: Connection, deps: LiveDeps) {
       channels.add("visitors");
       channels.add("sessions");
     }
-    if (canAdmin(caller, project.id)) channels.add("logs");
+    if (canReadLogs(caller, project.id)) channels.add("logs");
     granted = { channels, detailed };
     clearTimeout(deadline);
     const expiresAt = caller.kind === "token" ? await tokenExpiry(token, deps.access) : null;

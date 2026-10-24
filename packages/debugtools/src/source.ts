@@ -1,6 +1,6 @@
 import { createClient } from "@spoar/client";
 import type { Client, ClientResult } from "@spoar/client";
-import type { QueryHistory, QueryResult, QuerySchema } from "@spoar/contract";
+import type { LogList, QueryHistory, QueryResult, QuerySchema } from "@spoar/contract";
 import { readConsoleGrant, saveConsoleGrant } from "@spoar/shared/console";
 import type { Milliseconds, Nullable, ProjectID } from "@spoar/shared/semantic";
 
@@ -14,6 +14,7 @@ export type ConsoleSource = {
   schema: () => ClientResult<QuerySchema>;
   run: (sql: string, range: TimeRange) => ClientResult<QueryResult>;
   history: () => ClientResult<QueryHistory>;
+  logs: (q: string) => ClientResult<LogList>;
 };
 
 export const timeRanges: { value: TimeRange; label: string; span: Milliseconds }[] = [
@@ -33,8 +34,8 @@ function spanOf(range: TimeRange): Milliseconds {
 /**
  * @name clientSource
  * @description The console's data source over `@spoar/client` for one project: the view schema,
- * runs of SQL with the time range bound as `:from` and `:to` and the project as `:project`, and
- * the caller's run history. With a widget grant it sends the `wt_` token and, a minute before it
+ * runs of SQL with the time range bound as `:from` and `:to` and the project as `:project`, the
+ * caller's run history and the project's engine log lines that contain a text. With a widget grant it sends the `wt_` token and, a minute before it
  * expires, switches to a newer grant this tab holds or fetches a new one; without one it sends the
  * browser's session cookie, as in the dashboard.
  *
@@ -81,6 +82,7 @@ export function clientSource(
     project: options.project,
     schema: async () => (await client()).sql.schema(),
     history: async () => (await client()).sql.history(),
+    logs: async (q) => (await client()).project(options.project).logs({ q }),
     run: async (sql, range) => {
       const to = now();
       const from = new Date(to.getTime() - spanOf(range));

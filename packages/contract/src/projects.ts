@@ -2,7 +2,8 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Visibility } from "./enums";
-import { dataOf, listOf, oneOf, Timestamp } from "./schema";
+import { dataOf, listOf, nullable, oneOf, Timestamp } from "./schema";
+import keyUsageResponse from "../fixtures/KeyUsageResponse/valid/used.json";
 import createProject from "../fixtures/CreateProject/valid/docs.json";
 import createdProject from "../fixtures/CreatedProject/valid/docs.json";
 import projectList from "../fixtures/ProjectList/valid/admin-private.json";
@@ -58,6 +59,29 @@ const PublicKey = Type.String({
     "The `pk_live_` key browsers send in `X-Project-Key`. It is not secret; `allowedOrigins` limits where it works.",
 });
 
+const KeyUse = Type.Object(
+  {
+    lastUsedAt: nullable(
+      Type.String({ format: "date-time", description: "When the key last authorized a batch." }),
+    ),
+    lastUsedOrigin: nullable(
+      Type.String({
+        description:
+          "The `Origin` of that request. Null when none was sent, as server-side secret key calls usually do.",
+      }),
+    ),
+  },
+  { description: "Null values mean the key has not been used since it was created or rotated." },
+);
+
+export const KeyUsage = Type.Object(
+  { public: KeyUse, secret: KeyUse },
+  {
+    description:
+      "When and from where each key last authorized an ingest batch. Updated at most once a minute, or at once when the origin changes.",
+  },
+);
+
 export const PublicProject = Type.Object(
   {
     id: ProjectId,
@@ -83,6 +107,7 @@ export const Project = Type.Object(
     allowedOrigins: AllowedOrigins,
     retentionDays: RetentionDays,
     publicKey: PublicKey,
+    keyUsage: KeyUsage,
     createdAt: Timestamp,
     updatedAt: Timestamp,
   },
@@ -92,6 +117,13 @@ export const Project = Type.Object(
   },
 );
 export type Project = Static<typeof Project>;
+
+export type KeyUsage = Static<typeof KeyUsage>;
+
+export const KeyUsageResponse = Type.Object(dataOf(KeyUsage).properties, {
+  examples: [keyUsageResponse],
+});
+export type KeyUsageResponse = Static<typeof KeyUsageResponse>;
 
 export const ProjectsQuery = Type.Object({
   visibility: Type.Optional(

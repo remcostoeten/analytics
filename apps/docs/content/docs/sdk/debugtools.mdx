@@ -26,6 +26,10 @@ Then turn on **Debug console** in the project's settings in the dashboard. Visit
 
 The console talks to the API behind an absolute `endpoint`, or to the hosted API when events go through the `/_ra` proxy. Pass `debugConsole={{ api: "https://api.example.com" }}` for a self-hosted API.
 
+The console opens with a status line under its title bar: the project, whether the widget token is live and until when, and when each key was last used and from which origin. The key lines need a token that may read the project's settings; without one they are left out. Escape closes the console and puts focus back on the launcher.
+
+If you press the shortcut and the browser blocks the popup, a notice asks you to allow pop-ups. When this browser opened the console before and the API now refuses it, such as when the project's **Debug console** switch is off, a notice shows the API's reason. A visitor who never opened the console sees nothing.
+
 ## Install
 
 ```bash

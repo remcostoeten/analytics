@@ -14,6 +14,7 @@ import type { ConsoleSections } from "../sections";
 import type { ConsoleSource } from "../source";
 import type { ConsoleTheme } from "../types";
 import { LiveToolbar } from "./live-toolbar";
+import { RejectsView } from "./rejects-view";
 import { Results } from "./results";
 import { quickQueries, quickQuerySql, sqlKeywords } from "./schema";
 import { SqlEditor } from "./sql-editor";
@@ -28,7 +29,7 @@ type Props = {
   style?: CSSProperties;
 };
 
-type View = "results" | "library";
+type View = "results" | "library" | "rejects";
 
 const keywords: ReadonlySet<string> = new Set(sqlKeywords);
 const tabs = ["Query"];
@@ -73,7 +74,8 @@ export function LiveConsole({
   }
 
   const showResults = show.results && view === "results";
-  const panes = !showResults && (show.library || show.recent);
+  const showRejects = show.results && view === "rejects";
+  const panes = !showResults && !showRejects && (show.library || show.recent);
   const split = show.library && show.recent;
 
   return (
@@ -98,7 +100,7 @@ export function LiveConsole({
         <SqlEditor
           value={live.sql}
           keywords={keywords}
-          fill={!showResults && !panes}
+          fill={!showResults && !showRejects && !panes}
           inputRef={input}
           onChange={live.setSql}
           onRun={() => run()}
@@ -121,6 +123,14 @@ export function LiveConsole({
             Results
             {summary ? <span className="text-console-dim">{summary}</span> : null}
           </button>
+          <button
+            type="button"
+            className={barButtonClass}
+            aria-pressed={view === "rejects"}
+            onClick={() => setView("rejects")}
+          >
+            Rejected
+          </button>
           {show.library || show.recent ? (
             <button
               type="button"
@@ -134,6 +144,7 @@ export function LiveConsole({
         </div>
       ) : null}
       {showResults ? <Results state={live.state} /> : null}
+      {showRejects ? <RejectsView source={source} /> : null}
       {panes ? (
         <div
           className={`grid min-h-0 flex-1 ${split ? "grid-cols-2 @max-[860px]:grid-cols-1" : "grid-cols-1"}`}

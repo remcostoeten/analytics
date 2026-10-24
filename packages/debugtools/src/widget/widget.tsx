@@ -1,6 +1,6 @@
 import type { Nullable } from "@spoar/shared/semantic";
-import { useEffect, useState } from "react";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { Console } from "../console";
 import { LiveConsole } from "../live/live-console";
@@ -18,6 +18,7 @@ type Props = {
   theme?: ConsoleTheme;
   launcher?: LauncherSide;
   open?: boolean;
+  statusBar?: ReactNode;
 };
 
 const fullHeight = { "--spc-height": "100%" } as CSSProperties;
@@ -42,8 +43,16 @@ export function Widget({
   theme = "dark",
   launcher = "left",
   open: initial = false,
+  statusBar,
 }: Props) {
   const [open, setOpen] = useState(initial);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(initial);
+
+  useEffect(() => {
+    if (wasOpen.current && !open) launcherRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -61,6 +70,7 @@ export function Widget({
   if (!open) {
     return (
       <button
+        ref={launcherRef}
         type="button"
         className={`spd fixed bottom-4 ${launcher === "right" ? "right-4" : "left-4"} inline-flex h-8 items-center gap-2 rounded-full border border-console-edge bg-console-bg pr-3 pl-2.5 font-console-sans text-xs leading-none font-medium text-console-fg shadow-[0_10px_30px_-12px_var(--spc-shadow)] transition-[transform,border-color] duration-150 ease-console hover:border-console-edge-hover active:scale-[0.97] ${focusClass}`}
         aria-label="Open the debug console"
@@ -81,23 +91,28 @@ export function Widget({
 
   return (
     <Panel label={label} theme={theme} onClose={() => setOpen(false)}>
-      {source && !data ? (
-        <LiveConsole
-          source={source}
-          sections={sections}
-          theme={theme}
-          style={fullHeight}
-          className={embeddedClass}
-        />
-      ) : (
-        <Console
-          data={data}
-          sections={sections}
-          theme={theme}
-          style={fullHeight}
-          className={embeddedClass}
-        />
-      )}
+      <div className="flex h-full flex-col">
+        {statusBar}
+        <div className="min-h-0 flex-1">
+          {source && !data ? (
+            <LiveConsole
+              source={source}
+              sections={sections}
+              theme={theme}
+              style={fullHeight}
+              className={embeddedClass}
+            />
+          ) : (
+            <Console
+              data={data}
+              sections={sections}
+              theme={theme}
+              style={fullHeight}
+              className={embeddedClass}
+            />
+          )}
+        </div>
+      </div>
     </Panel>
   );
 }

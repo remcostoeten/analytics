@@ -307,6 +307,15 @@ describe("GET /v2/widget/session", () => {
     expect(token.startsWith("wt_")).toBe(true);
     const bearer = { authorization: `Bearer ${token}` };
     expect((await call(`/v2/projects/${project}/logs`, bearer)).status).toBe(200);
+    const usage = await call(`/v2/projects/${project}/key-usage`, bearer);
+    expect(usage.status).toBe(200);
+    expect(await usage.json()).toEqual({
+      data: {
+        public: { lastUsedAt: "2026-10-03T14:02:00.000Z", lastUsedOrigin: site },
+        secret: { lastUsedAt: null, lastUsedOrigin: null },
+      },
+    });
+    await failed(await call("/v2/projects/other/key-usage", bearer), 403, "FORBIDDEN");
     await failed(await call("/v2/projects/other/logs", bearer), 403, "FORBIDDEN");
     await failed(await call("/v2/tokens", bearer), 403, "FORBIDDEN");
     await failed(
@@ -325,6 +334,41 @@ describe("GET /v2/widget/session", () => {
       401,
       "UNAUTHORIZED",
     );
+  });
+
+  test("a widget token cannot change settings, rotate keys or reach other admin routes", async () => {
+    const started = await body("/v2/widget/session", WidgetSession, {
+      origin: site,
+      cookie: "ra.session_token=owner",
+    });
+    const bearer = {
+      authorization: `Bearer ${String(started.token)}`,
+      "content-type": "application/json",
+    };
+    await failed(
+      await call(`/v2/projects/${project}`, bearer, {
+        method: "PATCH",
+        body: JSON.stringify({ visibility: "public" }),
+      }),
+      403,
+      "FORBIDDEN",
+    );
+    await failed(
+      await call(`/v2/projects/${project}/keys`, bearer, {
+        method: "POST",
+        body: JSON.stringify({ kind: "secret" }),
+      }),
+      403,
+      "FORBIDDEN",
+    );
+    await failed(
+      await call(`/v2/projects/${project}`, bearer, { method: "DELETE" }),
+      403,
+      "FORBIDDEN",
+    );
+    expect((await call(`/v2/projects/${project}/logs`, bearer)).status).toBe(200);
+    expect((await call(`/v2/projects/${project}/realtime/sessions`, bearer)).status).toBe(200);
+    expect((await call(`/v2/projects/${project}/overview`, bearer)).status).toBe(200);
   });
 
   test("a widget token runs SQL on its one project, an admin API token does not", async () => {

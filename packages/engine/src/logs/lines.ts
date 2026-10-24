@@ -9,6 +9,7 @@ export const batchCode = "RA_INGEST_BATCH";
 const rejectedCode = "RA_INGEST_REJECTED";
 const duplicateCode = "RA_INGEST_DUPLICATE";
 export const rateLimitedCode = "RA_RATE_LIMITED";
+const originRefusedCode = "RA_ORIGIN_REFUSED";
 const verdictCode = "RA_BOT_VERDICT";
 const jobCode = "RA_JOB";
 
@@ -199,6 +200,31 @@ export function rateLimitedLine(
     kind: "ingest",
     message: `${rateLimitedCode} retry after ${retryAfterSeconds}s`,
     data: { code: rateLimitedCode, retryAfterSeconds },
+    visitor: null,
+    session: null,
+  };
+}
+
+/**
+ * @name originRefusedLine
+ * @description The `warn` line for an ingest request whose `Origin` is not in the project's
+ * allowed origins, with the origin cut to 200 characters and scrubbed.
+ *
+ * @example
+ * originRefusedLine("docs", at, "https://evil.example");
+ */
+export function originRefusedLine(
+  project: ProjectID,
+  at: Date,
+  origin: Nullable<string>,
+): NewLogLine {
+  const shown = scrubbed((origin ?? "(none)").slice(0, 200));
+  return {
+    ...base(project, at),
+    level: "warn",
+    kind: "ingest",
+    message: `${originRefusedCode} ${shown} is not in the allowed origins`,
+    data: { code: originRefusedCode, origin: shown },
     visitor: null,
     session: null,
   };

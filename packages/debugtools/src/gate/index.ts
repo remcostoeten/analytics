@@ -1,6 +1,7 @@
 import {
   armConsole,
   disarmConsole,
+  isConsoleArmed,
   readConsoleGrant,
   saveConsoleGrant,
 } from "@spoar/shared/console";
@@ -8,7 +9,7 @@ import type { ConsoleGrant } from "@spoar/shared/console";
 import { noop } from "@spoar/shared/noop";
 import type { Nullable } from "@spoar/shared/semantic";
 
-import { requestGrant } from "../loader/start";
+import { requestGrantAnswer } from "../loader/start";
 import type { DebugtoolsOptions, WidgetGrant } from "../options";
 
 type Mount = (options: DebugtoolsOptions, grant: Nullable<WidgetGrant>) => () => void;
@@ -23,6 +24,8 @@ type ConnectMessage = {
   token: string;
   expiresAt: string;
 };
+
+type GrantAnswer = { grant: Nullable<ConsoleGrant>; refusal: Nullable<string> };
 
 const connectType = "spoar:console";
 const closedPollMs = 500;
@@ -55,9 +58,24 @@ function fromPopup(options: GateOptions, popup: Window): Promise<Nullable<Consol
   });
 }
 
-async function grantFor(options: GateOptions): Promise<Nullable<ConsoleGrant>> {
-  if (options.popup) return fromPopup(options, options.popup);
-  return readConsoleGrant(new Date()) ?? requestGrant(options);
+async function grantFor(options: GateOptions): Promise<GrantAnswer> {
+  if (options.popup) return { grant: await fromPopup(options, options.popup), refusal: null };
+  const held = readConsoleGrant(new Date());
+  return held ? { grant: held, refusal: null } : requestGrantAnswer(options);
+}
+
+/**
+ * @name showConsoleNotice
+ * @description Loads the notice on first use, so visitors who never see one do not download it,
+ * and shows a short dismissible message at the bottom left of the page. Resolves to a function that
+ * removes it.
+ *
+ * @example
+ * await showConsoleNotice("The debug console is off for site");
+ */
+export async function showConsoleNotice(message: string): Promise<() => void> {
+  const { showConsoleNotice: show } = await import("./notice");
+  return show(message);
 }
 
 /**
@@ -68,7 +86,8 @@ async function grantFor(options: GateOptions): Promise<Nullable<ConsoleGrant>> {
  * tab holds or asks `GET /v2/widget/session` with the session cookie. The grant names the project,
  * so the host does not have to. A grant is kept for the tab
  * and arms the browser, so later page loads open the console on their own; a refused start without
- * a popup disarms it. One console is mounted per page, however often it is started. Returns a
+ * a popup disarms it, and tells a browser that was armed why, with the API's message, while a
+ * browser that never was stays silent. One console is mounted per page, however often it is started. Returns a
  * function that unmounts it.
  *
  * @example
@@ -79,11 +98,13 @@ export function startConsole(
   load: () => Promise<Mount> = loadWidget,
 ): () => void {
   let stopped = false;
+  const wasArmed = isConsoleArmed();
   void grantFor(options)
-    .then(async (grant) => {
+    .then(async ({ grant, refusal }) => {
       if (stopped) return;
       if (!grant) {
         if (!options.popup) disarmConsole();
+        if (wasArmed && refusal) void showConsoleNotice(refusal);
         return;
       }
       saveConsoleGrant(grant);

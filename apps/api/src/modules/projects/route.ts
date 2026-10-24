@@ -3,6 +3,7 @@ import {
   CreateProject,
   ProjectList,
   ProjectParams,
+  KeyUsageResponse,
   ProjectResponse,
   ProjectsQuery,
   RotatedKey,
@@ -23,6 +24,7 @@ import {
   listProjects,
   removeProject,
   rotateKey,
+  keyUsageOf,
   shapeFor,
   updateProject,
 } from "./service";
@@ -100,6 +102,24 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
         detail: {
           summary: "Get a project",
           description: "Settings are included for the project's admins.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/projects/:project/key-usage",
+      ({ project, set }) =>
+        project
+          ? { data: keyUsageOf(project) }
+          : reject(engineError("NOT_FOUND", "Project not found"), set),
+      {
+        params: ProjectParams,
+        access: "logs",
+        response: { 200: KeyUsageResponse, ...errorResponses },
+        detail: {
+          summary: "Read when the keys were last used",
+          description:
+            "When and from which origin the public and the secret key last authorized an ingest batch. For project admins and the debug console's widget token.",
           tags,
         },
       },

@@ -85,7 +85,7 @@ export function widgetModule(
           summary: "Start the dev widget",
           security: [{ session: [] }],
           description:
-            "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `admin` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
+            "Called from the customer site with `credentials: include`. The project is the one whose `allowedOrigins` lists the `Origin` header and whose `debugConsole` switch is on; the caller needs the admin session cookie and admin rights on that project. Answers a widget token (`wt_`, 15 minutes, `sql` scope, this project only) for the other widget reads and for SQL on this project while `sqlEnabled` is on, so the cookie is never sent again. Call it again to refresh. CORS allows credentials on this route for any origin a project lists.",
           tags,
         },
       },

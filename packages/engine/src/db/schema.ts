@@ -189,6 +189,10 @@ export const projects = pgTable("projects", {
   sqlEnabled: boolean("sql_enabled").notNull().default(true),
   widgetReports: boolean("widget_reports").notNull().default(false),
   debugConsole: boolean("debug_console").notNull().default(false),
+  publicKeyUsedAt: timestamp("public_key_used_at", { withTimezone: true }),
+  publicKeyUsedOrigin: text("public_key_used_origin"),
+  secretKeyUsedAt: timestamp("secret_key_used_at", { withTimezone: true }),
+  secretKeyUsedOrigin: text("secret_key_used_origin"),
 });
 
 export const deletedProjects = pgTable("deleted_projects", {

@@ -48,6 +48,13 @@ async function settle() {
   for (let index = 0; index < 10; index++) await Promise.resolve();
 }
 
+async function noticeShown() {
+  for (let index = 0; index < 50; index++) {
+    if (document.querySelector("spoar-debugtools-notice")) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
 afterEach(() => {
   for (const stop of stops) stop();
   stops = [];
@@ -84,6 +91,47 @@ describe("startConsole without a popup", () => {
     await settle();
     expect(calls).toEqual([]);
     expect(isConsoleArmed()).toBe(false);
+  });
+
+  test("tells a browser that was armed why the API refused", async () => {
+    localStorage.setItem("spoar.console", "site");
+    const calls: string[] = [];
+    const refused = {
+      error: { code: "FORBIDDEN", message: "The debug console is off for site" },
+    };
+    start(
+      {
+        endpoint: api,
+        popup: null,
+        fetch: async () => new Response(JSON.stringify(refused), { status: 403 }),
+      },
+      calls,
+    );
+    await settle();
+    await noticeShown();
+    expect(document.querySelector("spoar-debugtools-notice")?.textContent).toContain(
+      "The debug console is off for site",
+    );
+    document
+      .querySelector("spoar-debugtools-notice button")
+      ?.dispatchEvent(new MouseEvent("click"));
+    expect(document.querySelector("spoar-debugtools-notice")).toBeNull();
+  });
+
+  test("stays silent for a browser that was never armed", async () => {
+    const refused = {
+      error: { code: "AUTH_REQUIRED", message: "Sign in to open the debug console" },
+    };
+    start(
+      {
+        endpoint: api,
+        popup: null,
+        fetch: async () => new Response(JSON.stringify(refused), { status: 401 }),
+      },
+      [],
+    );
+    await settle();
+    expect(document.querySelector("spoar-debugtools-notice")).toBeNull();
   });
 
   test("mounts one console however often it starts", async () => {

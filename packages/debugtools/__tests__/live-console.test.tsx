@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import type { QueryHistory, QueryResult, QuerySchema } from "@spoar/contract";
+import type { LogLine, QueryHistory, QueryResult, QuerySchema } from "@spoar/contract";
 import { act } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
@@ -57,6 +57,7 @@ function memorySource(runs: Run[]): ConsoleSource {
     project: "site",
     schema: async () => ({ ok: true, value: schema }),
     history: async () => ({ ok: true, value: history }),
+    logs: async () => ({ ok: true, value: { data: [], nextCursor: "0" } }),
     run: async (sql, range) => {
       runs.push({ sql, range });
       return { ok: true, value: answer };
@@ -132,6 +133,81 @@ describe("LiveConsole", () => {
     expect(container.querySelector("[role=alert]")?.textContent).toBe(
       "You may not run SQL on this project",
     );
+  });
+});
+
+describe("Rejected view", () => {
+  test("lists rejected events and rate limited requests, newest first", async () => {
+    const queries: string[] = [];
+    function line(id: string, data: LogLine["data"], message: string): LogLine {
+      return {
+        id,
+        ts: "2026-10-11T11:00:00.000Z",
+        level: "error",
+        kind: "ingest",
+        source: "engine",
+        message,
+        data,
+        visitor: null,
+        session: null,
+      };
+    }
+    const source: ConsoleSource = {
+      ...memorySource([]),
+      logs: async (q) => {
+        queries.push(q);
+        return {
+          ok: true,
+          value: {
+            data:
+              q === "RA_INGEST_REJECTED"
+                ? [
+                    line(
+                      "5",
+                      {
+                        code: "RA_INGEST_REJECTED",
+                        reason: "VALIDATION_FAILED",
+                        event: "signup",
+                        field: "props",
+                      },
+                      "RA_INGEST_REJECTED events[0].props: too long on signup",
+                    ),
+                  ]
+                : q === "RA_RATE_LIMITED"
+                  ? [
+                      line(
+                        "9",
+                        { code: "RA_RATE_LIMITED", retryAfterSeconds: 12 },
+                        "RA_RATE_LIMITED retry after 12s",
+                      ),
+                    ]
+                  : [
+                      line(
+                        "11",
+                        { code: "RA_ORIGIN_REFUSED", origin: "https://evil.example" },
+                        "RA_ORIGIN_REFUSED https://evil.example is not in the allowed origins",
+                      ),
+                    ],
+            nextCursor: "9",
+          },
+        };
+      },
+    };
+    const container = await render(<LiveConsole source={source} />);
+    await act(async () => button(container, "Rejected")?.click());
+    expect(queries.sort()).toEqual(["RA_INGEST_REJECTED", "RA_ORIGIN_REFUSED", "RA_RATE_LIMITED"]);
+    const rows = [...container.querySelectorAll("tbody tr")].map((row) => row.textContent);
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toContain("FORBIDDEN_ORIGIN");
+    expect(rows[1]).toContain("RATE_LIMITED");
+    expect(rows[2]).toContain("VALIDATION_FAILED");
+    expect(rows[2]).toContain("signup");
+  });
+
+  test("says when nothing was rejected", async () => {
+    const container = await render(<LiveConsole source={memorySource([])} />);
+    await act(async () => button(container, "Rejected")?.click());
+    expect(container.textContent).toContain("Nothing was rejected.");
   });
 });
 

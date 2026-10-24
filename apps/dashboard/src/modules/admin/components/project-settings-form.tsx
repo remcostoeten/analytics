@@ -98,6 +98,7 @@ export function ProjectSettingsForm({ project }: Props) {
         <ChoiceCards
           name="visibility"
           label="Visibility"
+          tip="Who can read this project's numbers. Public: anyone, even signed out, sees totals like page views. Private: only team members and tokens added to this project."
           value={draft.visibility}
           choices={visibilityChoices}
           onChange={(visibility) => setDraft({ ...draft, visibility })}
@@ -109,6 +110,7 @@ export function ProjectSettingsForm({ project }: Props) {
         <Field
           label="Allowed origins"
           htmlFor="allowedOrigins"
+          tip="The websites allowed to send data to this project. An origin is the address a site loads from, like https://example.com. Data from any other address is turned away, so list every address your site uses, including the www version."
           error={errors.allowedOrigins}
           hint="Press Enter after each origin, matched exactly. None accepts events from every origin."
         >
@@ -125,6 +127,7 @@ export function ProjectSettingsForm({ project }: Props) {
         <Field
           label="Retention"
           htmlFor="retentionDays"
+          tip="How many days of visits are kept. A scheduled cleanup deletes older data from the database for good, so it disappears from your charts. It only runs if something calls the cleanup job on a schedule."
           error={errors.retentionDays}
           hint="Events and sessions older than this are deleted by the cleanup job."
         >
@@ -150,6 +153,7 @@ export function ProjectSettingsForm({ project }: Props) {
           <SwitchRow
             id="publicVisitorData"
             label="Public visitor data"
+            tip="Only matters when the project is public. Off: the public sees totals only. On: anyone can also browse individual visits, visitors and sessions. Team members with detail access see them either way."
             hint="On a public project, anyone may also read events, visitors and sessions."
             checked={draft.publicVisitorData}
             onChange={(publicVisitorData) => setDraft({ ...draft, publicVisitorData })}
@@ -157,6 +161,7 @@ export function ProjectSettingsForm({ project }: Props) {
           <SwitchRow
             id="sqlEnabled"
             label="SQL console"
+            tip="Lets trusted people type their own questions about the data in a query language called SQL. It is read only, so nothing can be changed or deleted this way."
             hint="Admins, analysts and sql tokens may run read-only SQL on this project."
             checked={draft.sqlEnabled}
             onChange={(sqlEnabled) => setDraft({ ...draft, sqlEnabled })}
@@ -164,6 +169,7 @@ export function ProjectSettingsForm({ project }: Props) {
           <SwitchRow
             id="debugConsole"
             label="Debug console"
+            tip="A hidden panel on your own site for checking this project's data while you build: SQL queries and the events the project rejected. Admins of this project open it with Ctrl+Shift+K after signing in through a popup. The site must be listed in the project's allowed origins and render the debug console. Nobody else sees it. The SQL tab needs the SQL console switch on."
             hint="Admins may open the debug console with Ctrl+Shift+K on sites that render <Analytics debugConsole />. Its SQL tab needs the SQL console on."
             checked={draft.debugConsole}
             onChange={(debugConsole) => setDraft({ ...draft, debugConsole })}

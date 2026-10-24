@@ -21,6 +21,10 @@ export type ProjectRecord = {
   allowedOrigins: string[];
   retentionDays: number;
   publicKey: string;
+  publicKeyUsedAt: Nullable<Date>;
+  publicKeyUsedOrigin: Nullable<string>;
+  secretKeyUsedAt: Nullable<Date>;
+  secretKeyUsedOrigin: Nullable<string>;
   orgId: Nullable<string>;
   createdAt: Date;
   updatedAt: Date;

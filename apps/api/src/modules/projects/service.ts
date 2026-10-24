@@ -1,5 +1,6 @@
 import type {
   CreateProject,
+  KeyUsage,
   Project,
   PublicProject,
   UpdatedProject,
@@ -36,6 +37,26 @@ function publicShape(project: ProjectRecord): PublicProject {
 }
 
 /**
+ * @name keyUsageOf
+ * @description When and from which origin each key of a project last authorized a batch.
+ *
+ * @example
+ * keyUsageOf(project).public.lastUsedAt;
+ */
+export function keyUsageOf(project: ProjectRecord): KeyUsage {
+  return {
+    public: {
+      lastUsedAt: project.publicKeyUsedAt?.toISOString() ?? null,
+      lastUsedOrigin: project.publicKeyUsedOrigin,
+    },
+    secret: {
+      lastUsedAt: project.secretKeyUsedAt?.toISOString() ?? null,
+      lastUsedOrigin: project.secretKeyUsedOrigin,
+    },
+  };
+}
+
+/**
  * @name adminShape
  * @description Every setting of a project, for callers who may change it. Never includes the
  * secret key.
@@ -53,6 +74,7 @@ function adminShape(project: ProjectRecord): Project {
     allowedOrigins: project.allowedOrigins,
     retentionDays: project.retentionDays,
     publicKey: project.publicKey,
+    keyUsage: keyUsageOf(project),
     updatedAt: project.updatedAt.toISOString(),
   };
 }
