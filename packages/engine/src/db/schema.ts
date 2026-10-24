@@ -17,6 +17,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
+import type { KeyCheckRecord } from "../ports/access";
 import { baseEntity, timestamps } from "./columns";
 
 export const events = pgTable(
@@ -193,6 +194,13 @@ export const projects = pgTable("projects", {
   publicKeyUsedOrigin: text("public_key_used_origin"),
   secretKeyUsedAt: timestamp("secret_key_used_at", { withTimezone: true }),
   secretKeyUsedOrigin: text("secret_key_used_origin"),
+  publicKeyCreatedAt: timestamp("public_key_created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  secretKeyCreatedAt: timestamp("secret_key_created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  keyCheck: jsonb("key_check").$type<KeyCheckRecord>(),
 });
 
 export const deletedProjects = pgTable("deleted_projects", {

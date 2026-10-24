@@ -1,7 +1,9 @@
 import type {
+  CheckKeys,
   CreatedProject,
   CreateProject,
   KeyKind,
+  KeyStatus,
   ProjectList,
   ProjectResponse,
   ProjectsQuery,
@@ -21,14 +23,17 @@ export type ProjectsAdmin<Projects extends string> = {
   create: (project: CreateProject) => ClientResult<CreatedProject>;
   update: (project: Projects, changes: UpdateProject) => ClientResult<UpdatedProject>;
   rotateKey: (project: Projects, kind: KeyKind) => ClientResult<RotatedKey>;
+  keyStatus: (project: Projects) => ClientResult<KeyStatus>;
+  checkKeys: (project: Projects, input?: CheckKeys) => ClientResult<KeyStatus>;
   remove: (project: Projects) => ClientResult<null>;
 };
 
 /**
  * @name projectsAdmin
  * @description The project routes: the list anyone may see (all projects for an admin), one
- * project, the admin-only create, update and key rotation, and the owner-only `remove`. A rotated
- * secret is in the answer once and never again. A removed project's keys stop at once and its
+ * project, the admin-only create, update, key rotation, `keyStatus` and `checkKeys`, and the
+ * owner-only `remove`. A rotated secret is in the answer once and never again; a secret passed to
+ * `checkKeys` is compared by hash and not stored. A removed project's keys stop at once and its
  * rows are purged by the cleanup job.
  *
  * @example
@@ -57,6 +62,14 @@ export function projectsAdmin<Projects extends string>(send: Send): ProjectsAdmi
         method: "POST",
         path: `${projectPath(project)}/keys`,
         body: { kind },
+      }),
+    keyStatus: (project) =>
+      send.json<KeyStatus>({ method: "GET", path: `${projectPath(project)}/keys` }),
+    checkKeys: (project, input = {}) =>
+      send.json<KeyStatus>({
+        method: "POST",
+        path: `${projectPath(project)}/keys/check`,
+        body: toBody(input),
       }),
     remove: async (project) => {
       const result = await send.json<Json>({ method: "DELETE", path: projectPath(project) });

@@ -142,7 +142,7 @@ export function createApp(options: AppOptions) {
         handler: options.authHandler,
       }),
     )
-    .use(projectsModule(options.access, options.docsBase))
+    .use(projectsModule(options.access, options.docsBase, widget?.logs ?? null))
     .use(setupModule(options.dashboardOrigin, options.docsBase))
     .use(tokensModule(options.access, options.docsBase))
     .use(

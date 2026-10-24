@@ -1,6 +1,8 @@
 import {
+  CheckKeys,
   CreatedProject,
   CreateProject,
+  KeyStatus,
   ProjectList,
   ProjectParams,
   KeyUsageResponse,
@@ -12,7 +14,8 @@ import {
   UpdateProject,
 } from "@spoar/contract";
 import { engineError } from "@spoar/engine";
-import type { EngineError } from "@spoar/engine";
+import type { EngineError, LogStore } from "@spoar/engine";
+import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia, t } from "elysia";
 
 import type { AccessDeps } from "../../access/types";
@@ -20,7 +23,9 @@ import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import {
+  checkKeys,
   createProject,
+  keyStatus,
   listProjects,
   removeProject,
   rotateKey,
@@ -34,13 +39,14 @@ const tags = ["Projects"];
 /**
  * @name projectsModule
  * @description `/v2/projects`: the project list and one project for readers, creating, changing
- * and rotating the keys of projects for admins, and deleting one for the owner. A private project
- * answers 404 to anyone who may not read it.
+ * and rotating and checking the keys of projects for admins, and deleting one for the owner. A
+ * private project answers 404 to anyone who may not read it. Key checks read the ingest log, so
+ * without `logs` a project always checks as waiting.
  *
  * @example
- * app.use(projectsModule(deps, docsBase));
+ * app.use(projectsModule(deps, docsBase, logs));
  */
-export function projectsModule(deps: AccessDeps, docsBase: string) {
+export function projectsModule(deps: AccessDeps, docsBase: string, logs: Nullable<LogStore>) {
   function reject(
     error: EngineError,
     set: { status?: unknown; headers: { [name: string]: unknown } },
@@ -160,6 +166,45 @@ export function projectsModule(deps: AccessDeps, docsBase: string) {
           summary: "Rotate a key",
           description:
             "Replaces the public or the secret key. A new secret key is returned once and the old one stops working.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/projects/:project/keys",
+      async ({ params, set }) => {
+        const status = await keyStatus(deps, params.project);
+        if (status.ok) return { data: status.value };
+        return reject(status.error, set);
+      },
+      {
+        params: ProjectParams,
+        access: "admin",
+        response: { 200: KeyStatus, ...errorResponses },
+        detail: {
+          summary: "Get the key status",
+          description:
+            "When the current public and secret keys were generated and the last key check, which is null until one has run and after a key is rotated.",
+          tags,
+        },
+      },
+    )
+    .post(
+      "/projects/:project/keys/check",
+      async ({ body, params, set }) => {
+        const checked = await checkKeys(deps, logs, params.project, body.secretKey ?? null);
+        if (checked.ok) return { data: checked.value };
+        return reject(checked.error, set);
+      },
+      {
+        params: ProjectParams,
+        access: "admin",
+        body: CheckKeys,
+        response: { 200: KeyStatus, ...errorResponses },
+        detail: {
+          summary: "Check the keys",
+          description:
+            "Reports whether events were accepted with the current public key since it was generated, within the 7 days the log keeps, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
           tags,
         },
       },

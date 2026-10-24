@@ -1,0 +1,14 @@
+{
+  "data": {
+    "publicKeyCreatedAt": "2026-09-27T16:43:00.000Z",
+    "secretKeyCreatedAt": "2026-09-20T09:12:00.000Z",
+    "check": {
+      "checkedAt": "2026-10-24T08:30:00.000Z",
+      "state": "connected",
+      "accepted": 412,
+      "rejected": 0,
+      "since": "2026-10-17T08:30:00.000Z",
+      "secretKey": "matches"
+    }
+  }
+}

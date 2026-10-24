@@ -3626,6 +3626,474 @@
           }
         },
         "operationId": "postV2ProjectsByProjectKeys"
+      },
+      "get": {
+        "summary": "Get the key status",
+        "description": "When the current public and secret keys were generated and the last key check, which is null until one has run and after a key is rotated.",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "description": "The project id, as listed by `GET /v2/projects`.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "When each current key was generated and the last check, which is null until one has run and after a key is rotated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "When each current key was generated and the last check, which is null until one has run and after a key is rotated.",
+                  "examples": [
+                    {
+                      "data": {
+                        "publicKeyCreatedAt": "2026-09-27T16:43:00.000Z",
+                        "secretKeyCreatedAt": "2026-09-20T09:12:00.000Z",
+                        "check": {
+                          "checkedAt": "2026-10-24T08:30:00.000Z",
+                          "state": "connected",
+                          "accepted": 412,
+                          "rejected": 0,
+                          "since": "2026-10-17T08:30:00.000Z",
+                          "secretKey": "matches"
+                        }
+                      }
+                    }
+                  ],
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publicKeyCreatedAt",
+                        "secretKeyCreatedAt",
+                        "check"
+                      ],
+                      "properties": {
+                        "publicKeyCreatedAt": {
+                          "format": "date-time",
+                          "description": "ISO 8601 timestamp in UTC.",
+                          "type": "string"
+                        },
+                        "secretKeyCreatedAt": {
+                          "format": "date-time",
+                          "description": "ISO 8601 timestamp in UTC.",
+                          "type": "string"
+                        },
+                        "check": {
+                          "description": "The result of the last key check.",
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "required": [
+                            "checkedAt",
+                            "state",
+                            "accepted",
+                            "rejected",
+                            "since",
+                            "secretKey"
+                          ],
+                          "properties": {
+                            "checkedAt": {
+                              "format": "date-time",
+                              "description": "ISO 8601 timestamp in UTC.",
+                              "type": "string"
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "connected",
+                                "rejected",
+                                "waiting"
+                              ],
+                              "description": "`connected` when events were accepted with the current public key, `rejected` when events arrived but none were accepted, `waiting` when none arrived."
+                            },
+                            "accepted": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "rejected": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "since": {
+                              "format": "date-time",
+                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+                              "type": "string"
+                            },
+                            "secretKey": {
+                              "type": "string",
+                              "enum": [
+                                "matches",
+                                "mismatch",
+                                "not-tested"
+                              ],
+                              "description": "`matches` when the secret key sent with the check hashes to the stored one, `mismatch` when it does not, `not-tested` when no secret key was sent."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectKeys"
+      }
+    },
+    "/v2/projects/{project}/keys/check": {
+      "post": {
+        "summary": "Check the keys",
+        "description": "Reports whether events were accepted with the current public key since it was generated, within the 7 days the log keeps, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "description": "The project id, as listed by `GET /v2/projects`.",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "examples": [
+                  {
+                    "secretKey": "sk_live_9b8a7f6e5d4c3b2a1f0e"
+                  }
+                ],
+                "type": "object",
+                "properties": {
+                  "secretKey": {
+                    "minLength": 1,
+                    "description": "The `sk_live_` key to verify. It is compared by hash, never stored, and the stored key is never returned.",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "examples": [
+                  {
+                    "secretKey": "sk_live_9b8a7f6e5d4c3b2a1f0e"
+                  }
+                ],
+                "type": "object",
+                "properties": {
+                  "secretKey": {
+                    "minLength": 1,
+                    "description": "The `sk_live_` key to verify. It is compared by hash, never stored, and the stored key is never returned.",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "examples": [
+                  {
+                    "secretKey": "sk_live_9b8a7f6e5d4c3b2a1f0e"
+                  }
+                ],
+                "type": "object",
+                "properties": {
+                  "secretKey": {
+                    "minLength": 1,
+                    "description": "The `sk_live_` key to verify. It is compared by hash, never stored, and the stored key is never returned.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "When each current key was generated and the last check, which is null until one has run and after a key is rotated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "When each current key was generated and the last check, which is null until one has run and after a key is rotated.",
+                  "examples": [
+                    {
+                      "data": {
+                        "publicKeyCreatedAt": "2026-09-27T16:43:00.000Z",
+                        "secretKeyCreatedAt": "2026-09-20T09:12:00.000Z",
+                        "check": {
+                          "checkedAt": "2026-10-24T08:30:00.000Z",
+                          "state": "connected",
+                          "accepted": 412,
+                          "rejected": 0,
+                          "since": "2026-10-17T08:30:00.000Z",
+                          "secretKey": "matches"
+                        }
+                      }
+                    }
+                  ],
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publicKeyCreatedAt",
+                        "secretKeyCreatedAt",
+                        "check"
+                      ],
+                      "properties": {
+                        "publicKeyCreatedAt": {
+                          "format": "date-time",
+                          "description": "ISO 8601 timestamp in UTC.",
+                          "type": "string"
+                        },
+                        "secretKeyCreatedAt": {
+                          "format": "date-time",
+                          "description": "ISO 8601 timestamp in UTC.",
+                          "type": "string"
+                        },
+                        "check": {
+                          "description": "The result of the last key check.",
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "required": [
+                            "checkedAt",
+                            "state",
+                            "accepted",
+                            "rejected",
+                            "since",
+                            "secretKey"
+                          ],
+                          "properties": {
+                            "checkedAt": {
+                              "format": "date-time",
+                              "description": "ISO 8601 timestamp in UTC.",
+                              "type": "string"
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "connected",
+                                "rejected",
+                                "waiting"
+                              ],
+                              "description": "`connected` when events were accepted with the current public key, `rejected` when events arrived but none were accepted, `waiting` when none arrived."
+                            },
+                            "accepted": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "rejected": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "since": {
+                              "format": "date-time",
+                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+                              "type": "string"
+                            },
+                            "secretKey": {
+                              "type": "string",
+                              "enum": [
+                                "matches",
+                                "mismatch",
+                                "not-tested"
+                              ],
+                              "description": "`matches` when the secret key sent with the check hashes to the stored one, `mismatch` when it does not, `not-tested` when no secret key was sent."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV2ProjectsByProjectKeysCheck"
       }
     },
     "/v2/tokens": {

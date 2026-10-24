@@ -9,7 +9,10 @@ import type { RateLimiter } from "./rate-limiter";
 
 export type {
   GrantedRole,
+  KeyCheckRecord,
+  KeyCheckState,
   KeyKind,
+  KeyState,
   TokenKind,
   Membership,
   MemberPatch,
@@ -22,6 +25,7 @@ export type {
   ProjectPatch,
   ProjectRecord,
   Role,
+  SecretKeyCheck,
   TokenRecord,
   TokenScope,
   TokenStore,

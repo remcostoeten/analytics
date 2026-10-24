@@ -9,6 +9,7 @@ import type {
   CreateToken,
   GithubLookup,
   KeyKind,
+  KeyStatus,
   MemberResponse,
   RotatedKey,
   UpdatedProject,
@@ -73,6 +74,24 @@ export async function rotateKey(
 ): Promise<Result<RotatedKey, ClientError>> {
   const api = await serverClient();
   const result = await api.projects.rotateKey(project, kind);
+  if (result.ok) revalidatePath(`/admin/projects/${encodeURIComponent(project)}`);
+  return result;
+}
+
+/**
+ * @name checkKeys
+ * @description Checks one project's keys through the API, stores the result and refreshes its
+ * page. A secret key passed in is compared by hash and never stored.
+ *
+ * @example
+ * const checked = await checkKeys("example.com", "sk_live_9b8a7f6e5d4c3b2a1f0e");
+ */
+export async function checkKeys(
+  project: string,
+  secretKey: string | null,
+): Promise<Result<KeyStatus, ClientError>> {
+  const api = await serverClient();
+  const result = await api.projects.checkKeys(project, secretKey ? { secretKey } : {});
   if (result.ok) revalidatePath(`/admin/projects/${encodeURIComponent(project)}`);
   return result;
 }

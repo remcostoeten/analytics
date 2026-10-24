@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ConnectionStatus } from "@/modules/admin/components/connection-status";
+import { KeyCheck } from "@/modules/admin/components/key-check";
 import { DeleteProjectPanel } from "@/modules/admin/components/delete-project-panel";
 import { KeysPanel } from "@/modules/admin/components/keys-panel";
 import { ProjectSettingsForm } from "@/modules/admin/components/project-settings-form";
@@ -30,6 +31,16 @@ async function Connection({ project }: { project: string }) {
     <p className="text-err text-sm">
       Could not load the connection status: {overview.error.message}
     </p>
+  );
+}
+
+async function KeyCheckSection({ project }: { project: string }) {
+  const api = await serverClient();
+  const status = await api.projects.keyStatus(project);
+  return status.ok ? (
+    <KeyCheck project={project} status={status.value.data} />
+  ) : (
+    <p className="text-err text-sm">Could not load the key check: {status.error.message}</p>
   );
 }
 
@@ -74,6 +85,9 @@ export default async function Page({ params }: Props) {
               Keys prove that data really comes from your site. You need them once to connect it.
             </Tip>
           </h2>
+          <Suspense fallback={<ConnectionSkeleton />}>
+            <KeyCheckSection project={project.id} />
+          </Suspense>
           <KeysPanel project={project.id} publicKey={project.publicKey} usage={project.keyUsage} />
           {access.session.role === "owner" ? (
             <DeleteProjectPanel project={project.id} name={project.name} />

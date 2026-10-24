@@ -30,6 +30,24 @@ export type ProjectRecord = {
   updatedAt: Date;
 };
 
+export type KeyCheckState = "connected" | "rejected" | "waiting";
+export type SecretKeyCheck = "matches" | "mismatch" | "not-tested";
+
+export type KeyCheckRecord = {
+  checkedAt: string;
+  state: KeyCheckState;
+  accepted: number;
+  rejected: number;
+  since: string;
+  secretKey: SecretKeyCheck;
+};
+
+export type KeyState = {
+  publicKeyCreatedAt: Date;
+  secretKeyCreatedAt: Date;
+  check: Nullable<KeyCheckRecord>;
+};
+
 export type NewProject = {
   id: ProjectID;
   name: string;
@@ -85,6 +103,9 @@ export type ProjectAdmin = {
   create: (project: NewProject) => Stored<Nullable<ProjectRecord>>;
   update: (id: ProjectID, patch: ProjectPatch) => Stored<Nullable<ProjectRecord>>;
   rotate: (id: ProjectID, kind: KeyKind, value: string) => Stored<Nullable<Date>>;
+  keyState: (id: ProjectID) => Stored<Nullable<KeyState>>;
+  secretMatches: (id: ProjectID, hash: string) => Stored<boolean>;
+  recordKeyCheck: (id: ProjectID, check: KeyCheckRecord) => Stored<boolean>;
   remove: (id: ProjectID) => Stored<boolean>;
 };
 

@@ -1,5 +1,6 @@
 import type {
   CreateProject,
+  KeyStatus,
   KeyUsage,
   Project,
   PublicProject,
@@ -7,7 +8,16 @@ import type {
   UpdateProject,
 } from "@spoar/contract";
 import { engineError } from "@spoar/engine";
-import type { EngineError, ProjectRecord, Visibility } from "@spoar/engine";
+import type {
+  EngineError,
+  KeyCheckRecord,
+  KeyCheckState,
+  KeyState,
+  LogStore,
+  ProjectRecord,
+  SecretKeyCheck,
+  Visibility,
+} from "@spoar/engine";
 import { organizationId } from "@spoar/engine/adapters/access";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
@@ -18,6 +28,8 @@ import { randomSecret } from "../../access/secrets";
 import type { AccessDeps, Caller } from "../../access/types";
 
 type Created = Project & { secretKey: string };
+
+const logRetentionMs = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * @name publicShape
@@ -219,4 +231,84 @@ export async function removeProject(
   if (!removed.ok) return removed;
   if (!removed.value) return err(engineError("NOT_FOUND", "Project not found"));
   return ok(null);
+}
+
+function keyStatusOf(state: KeyState): KeyStatus["data"] {
+  return {
+    publicKeyCreatedAt: state.publicKeyCreatedAt.toISOString(),
+    secretKeyCreatedAt: state.secretKeyCreatedAt.toISOString(),
+    check: state.check,
+  };
+}
+
+function stateOf(accepted: number, refused: number): KeyCheckState {
+  if (accepted > 0) return "connected";
+  return refused > 0 ? "rejected" : "waiting";
+}
+
+/**
+ * @name keyStatus
+ * @description When each current key of a project was generated and the result of its last check,
+ * which is null until a check has run and after a key is rotated.
+ *
+ * @example
+ * await keyStatus(deps, "docs");
+ */
+export async function keyStatus(
+  deps: AccessDeps,
+  id: string,
+): Promise<Result<KeyStatus["data"], EngineError>> {
+  const found = await deps.projects.keyState(id);
+  if (!found.ok) return found;
+  if (!found.value) return err(engineError("NOT_FOUND", "Project not found"));
+  return ok(keyStatusOf(found.value));
+}
+
+/**
+ * @name checkKeys
+ * @description Checks a project's keys and stores the result. The public key counts as connected
+ * when the ingest log holds accepted events since it was generated, within the 7 days the log
+ * keeps. A secret key sent with the check is compared by its sha256 hash and never stored; the
+ * stored hash cannot be read back, so without one the secret key is `not-tested`.
+ *
+ * @example
+ * await checkKeys(deps, logs, "docs", "sk_live_9b8a7f6e5d4c3b2a1f0e");
+ */
+export async function checkKeys(
+  deps: AccessDeps,
+  logs: Nullable<LogStore>,
+  id: string,
+  secretKey: Nullable<string>,
+): Promise<Result<KeyStatus["data"], EngineError>> {
+  const found = await deps.projects.keyState(id);
+  if (!found.ok) return found;
+  const state = found.value;
+  if (!state) return err(engineError("NOT_FOUND", "Project not found"));
+  const now = deps.clock();
+  const since = new Date(
+    Math.max(state.publicKeyCreatedAt.getTime(), now.getTime() - logRetentionMs),
+  );
+  const totals = logs
+    ? await logs.ingestTotals(id, since)
+    : ok({ accepted: 0, duplicates: 0, rejected: 0, rateLimited: 0 });
+  if (!totals.ok) return totals;
+  const refused = totals.value.rejected + totals.value.rateLimited;
+  let secret: SecretKeyCheck = "not-tested";
+  if (secretKey) {
+    const matched = await deps.projects.secretMatches(id, await deps.hasher.sha256(secretKey));
+    if (!matched.ok) return matched;
+    secret = matched.value ? "matches" : "mismatch";
+  }
+  const check: KeyCheckRecord = {
+    checkedAt: now.toISOString(),
+    state: stateOf(totals.value.accepted, refused),
+    accepted: totals.value.accepted,
+    rejected: refused,
+    since: since.toISOString(),
+    secretKey: secret,
+  };
+  const stored = await deps.projects.recordKeyCheck(id, check);
+  if (!stored.ok) return stored;
+  if (!stored.value) return err(engineError("NOT_FOUND", "Project not found"));
+  return ok(keyStatusOf({ ...state, check }));
 }
