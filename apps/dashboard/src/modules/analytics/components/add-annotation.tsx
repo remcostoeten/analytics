@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { PlusCircleIcon } from "@/shared/ui/icons";
+import { Select } from "@/shared/ui/select";
 
 import { createAnnotation } from "../actions";
 import { annotationKinds, calendarDay, isCalendarDate, kindLabels } from "../annotations";
@@ -120,22 +121,20 @@ export function AddAnnotation({ project }: Props) {
               />
             </label>
           </div>
-          <label className="grid gap-1 text-xs text-muted">
+          <div className="grid gap-1 text-xs text-muted">
             Kind
-            <select
-              className="control"
+            <Select
+              label="Kind"
               value={kind}
-              onChange={(event) => {
-                if (isKind(event.target.value)) setKind(event.target.value);
+              options={annotationKinds.map((entry) => ({
+                value: entry,
+                label: kindLabels[entry],
+              }))}
+              onChange={(next) => {
+                if (isKind(next)) setKind(next);
               }}
-            >
-              {annotationKinds.map((entry) => (
-                <option key={entry} value={entry}>
-                  {kindLabels[entry]}
-                </option>
-              ))}
-            </select>
-          </label>
+            />
+          </div>
           <label className="grid gap-1 text-xs text-muted">
             Note
             <textarea

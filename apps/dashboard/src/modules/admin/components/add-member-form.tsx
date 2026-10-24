@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
 import { Field } from "@/shared/ui/field";
+import { Select } from "@/shared/ui/select";
 import { addMember, lookupGithubLogin } from "../actions";
 import { fieldErrors } from "../form";
 import type { FieldErrors } from "../form";
@@ -113,18 +114,7 @@ export function AddMemberForm() {
         <LoginCheck check={check} />
       </Field>
       <Field label="Role" htmlFor="member-role" error={errors.role}>
-        <select
-          id="member-role"
-          className="control"
-          value={role}
-          onChange={(event) => setRole(event.target.value)}
-        >
-          {roles.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+        <Select id="member-role" value={role} options={roles} onChange={setRole} />
       </Field>
       <ProjectsField
         id="member"

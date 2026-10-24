@@ -7,6 +7,7 @@ import { listProjects } from "@/modules/analytics/reads";
 import { readViewState } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
 import {
+  HeatMapCard,
   OnlineCard,
   ProjectsCard,
   RankCard,
@@ -121,6 +122,10 @@ async function Home({ searchParams }: Props) {
             </Suspense>
           </div>
 
+          <Suspense key={`map${key}`} fallback={<CardSkeleton height={460} />}>
+            <HeatMapCard scope={scope} period={state.period} />
+          </Suspense>
+
           <div className="home-quad">
             {sources.map((source) => (
               <Suspense key={`${source.dimension}${key}`} fallback={<CardSkeleton height={252} />}>
@@ -129,8 +134,13 @@ async function Home({ searchParams }: Props) {
             ))}
           </div>
 
-          <Suspense key={`vitals${key}`} fallback={<CardSkeleton height={196} />}>
-            <VitalsCard scope={scope} period={state.period} />
+          <Suspense key={`vitals${key}`} fallback={<CardSkeleton height={260} />}>
+            <VitalsCard
+              scope={scope}
+              period={state.period}
+              projects={projects.value}
+              projectScope={(id) => api.project(id).period(state.period)}
+            />
           </Suspense>
         </>
       )}
