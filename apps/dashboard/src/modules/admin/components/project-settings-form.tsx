@@ -162,16 +162,9 @@ export function ProjectSettingsForm({ project }: Props) {
             onChange={(sqlEnabled) => setDraft({ ...draft, sqlEnabled })}
           />
           <SwitchRow
-            id="widgetReports"
-            label="Widget reports"
-            hint="Accept SDK outcome reports from the dev widget."
-            checked={draft.widgetReports}
-            onChange={(widgetReports) => setDraft({ ...draft, widgetReports })}
-          />
-          <SwitchRow
             id="debugConsole"
             label="Debug console"
-            hint="Admins may open the debug console with Ctrl+Shift+K on sites that render <Analytics debugConsole />."
+            hint="Admins may open the debug console with Ctrl+Shift+K on sites that render <Analytics debugConsole />. Its SQL tab needs the SQL console on."
             checked={draft.debugConsole}
             onChange={(debugConsole) => setDraft({ ...draft, debugConsole })}
           />
