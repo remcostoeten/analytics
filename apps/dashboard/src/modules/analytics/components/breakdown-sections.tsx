@@ -41,7 +41,7 @@ export async function CountrySection({ scope, view, state, path }: Props) {
       </h2>
       {read.ok ? (
         <div className="country-grid">
-          <CountryMap rows={read.value.data} count={view.count} hrefFor={href} />
+          <CountryMap rows={read.value.data} count={view.count} path={path} state={state} />
           <div className="grid content-start gap-3">
             <TopList
               title="Top countries"
