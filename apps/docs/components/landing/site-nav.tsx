@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Logo } from "@/components/logo";
+import { dashboardUrl } from "@/lib/dashboard-url";
 
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 
@@ -24,10 +25,20 @@ const menuItem =
 
 export function SiteNav({ links, loginHref }: Props) {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const { resolvedTheme, setTheme } = useTheme();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(dashboardUrl("/session"), { credentials: "same-origin", signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => setSignedIn(body?.signedIn === true))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -60,8 +71,8 @@ export function SiteNav({ links, loginHref }: Props) {
             <Logo className="size-6" />
             Spoar
           </Link>
-          <a href={loginHref} className="pill-ghost">
-            Log in
+          <a href={signedIn ? dashboardUrl() : loginHref} className="pill-ghost">
+            {signedIn ? "Dashboard" : "Log in"}
           </a>
           <Link href="/docs/getting-started/quick-start" className="pill-dark">
             Get started
