@@ -286,7 +286,11 @@ describe("reads", () => {
     });
   });
 
+  let exactLcp = 0;
+
   test("the rollup writes daily percentiles and drops raw rows past the cut-off", async () => {
+    const before = await speed.summary(month, 75);
+    exactLcp = before.ok ? (before.value.find((row) => row.metric === "lcp")?.value ?? 0) : 0;
     const result = await speed.rollup(
       new Date("2026-09-01T00:00:00Z"),
       new Date("2026-09-04T00:00:00Z"),
@@ -310,31 +314,79 @@ describe("reads", () => {
     const spanning = { ...month, rawFrom: new Date("2026-09-03T00:00:00Z") };
     const summary = await speed.summary(spanning, 75);
     const lcp = summary.ok ? summary.value.find((row) => row.metric === "lcp") : null;
-    expect(lcp).toEqual({
+    expect(lcp).toMatchObject({
       metric: "lcp",
       samples: 24,
-      value: (3850 * 20 + 502.25 * 4) / 24,
       good: 12,
       needsImprovement: 8,
       poor: 4,
     });
+    expect(exactLcp).toBeGreaterThan(0);
+    expect(Math.abs((lcp?.value ?? 0) - exactLcp)).toBeLessThanOrEqual(exactLcp * 0.02);
     const daily = await speed.series(spanning, 75, "lcp", "day");
-    expect(daily.ok ? daily.value.map(({ samples, value }) => ({ samples, value })) : null).toEqual(
-      [
-        { samples: 0, value: null },
-        { samples: 20, value: 3850 },
-        { samples: 4, value: 502.25 },
-      ],
-    );
+    const days = daily.ok ? daily.value : [];
+    expect(days.map(({ samples }) => samples)).toEqual([0, 20, 4]);
+    expect(days[0]?.value).toBeNull();
+    expect(Math.abs((days[1]?.value ?? 0) - 3850)).toBeLessThanOrEqual(3850 * 0.02);
+    expect(days[2]?.value).toBe(502.25);
     const routes = await speed.routes(spanning, 75, "route");
-    expect(routes.ok ? routes.value.filter((row) => row.metric === "lcp") : null).toEqual(
-      expect.arrayContaining([
-        { route: "/", metric: "lcp", samples: 20, value: 3850 },
-        { route: "/docs", metric: "lcp", samples: 4, value: 502.25 },
-      ]),
-    );
+    const lcpRoutes = routes.ok ? routes.value.filter((row) => row.metric === "lcp") : [];
+    const docs = lcpRoutes.find((row) => row.route === "/docs");
+    const home = lcpRoutes.find((row) => row.route === "/");
+    expect(home?.samples).toBe(20);
+    expect(Math.abs((home?.value ?? 0) - 3850)).toBeLessThanOrEqual(3850 * 0.02);
+    expect(docs?.samples).toBe(4);
+    expect(Math.abs((docs?.value ?? 0) - 502.25)).toBeLessThanOrEqual(502.25 * 0.02);
     const byPage = await speed.summary({ ...spanning, path: "/docs" }, 75);
     expect(byPage.ok ? byPage.value.map((row) => row.samples) : null).toEqual([4]);
+  });
+});
+
+describe("rollups across devices", () => {
+  const day = {
+    ...month,
+    from: new Date("2026-09-01T00:00:00Z"),
+    to: new Date("2026-09-02T00:00:00Z"),
+    rawFrom: new Date("2026-09-02T00:00:00Z"),
+  };
+
+  function bucketOf(value: number) {
+    return Math.floor(Math.log(value) / Math.log(1.02));
+  }
+
+  async function insert(
+    projectId: string,
+    device: string,
+    samples: number,
+    p75: number,
+    keep: boolean,
+  ) {
+    await database.query(
+      `INSERT INTO rollup_vitals (project_id, day, route, device, metric, samples, p75, good, needs_improvement, poor, buckets)
+       VALUES ($1, '2026-09-01', '/', $2, 'lcp', $3, $4, 0, 0, 0, $5)`,
+      [projectId, device, samples, p75, keep ? JSON.stringify({ [bucketOf(p75)]: samples }) : null],
+    );
+  }
+
+  async function lcpOf(projectId: string) {
+    const summary = await speed.summary({ ...day, projectIds: [projectId] }, 75);
+    return summary.ok ? summary.value.find((row) => row.metric === "lcp")?.value : undefined;
+  }
+
+  test("merges daily histograms instead of averaging percentiles", async () => {
+    await insert("merged", "mobile", 100, 4000, true);
+    await insert("merged", "desktop", 900, 1500, true);
+    const value = await lcpOf("merged");
+    expect(Math.abs((value ?? 0) - 1500)).toBeLessThanOrEqual(1500 * 0.02);
+    const series = await speed.series({ ...day, projectIds: ["merged"] }, 75, "lcp", "day");
+    const first = series.ok ? series.value[0]?.value : null;
+    expect(Math.abs((first ?? 0) - 1500)).toBeLessThanOrEqual(1500 * 0.02);
+  });
+
+  test("falls back to the weighted mean for days rolled up without a histogram", async () => {
+    await insert("legacy", "mobile", 100, 4000, false);
+    await insert("legacy", "desktop", 900, 1500, false);
+    expect(await lcpOf("legacy")).toBe(1750);
   });
 });
 
