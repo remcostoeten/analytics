@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 import { Button } from "./button";
 
-type Props = { value: string; label?: string };
+type Props = { value: string; label?: string; className?: string };
 
 const copiedMs = 1200;
 
-export function CopyButton({ value, label = "Copy" }: Props) {
+export function CopyButton({ value, label = "Copy", className }: Props) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -20,6 +20,7 @@ export function CopyButton({ value, label = "Copy" }: Props) {
   return (
     <Button
       variant="ghost"
+      className={className}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
