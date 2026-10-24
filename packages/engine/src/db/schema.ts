@@ -309,6 +309,7 @@ export const rollupVitals = pgTable(
     good: integer("good").notNull(),
     needsImprovement: integer("needs_improvement").notNull(),
     poor: integer("poor").notNull(),
+    buckets: jsonb("buckets").$type<{ [bucket: string]: number }>(),
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.day, table.route, table.device, table.metric] }),

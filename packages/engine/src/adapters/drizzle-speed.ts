@@ -6,6 +6,7 @@ import type { RouteStat, SpeedGroup, SpeedScope, SpeedStore, VitalStat } from ".
 import type { VitalName } from "../speed/score";
 import type { Database } from "./drizzle";
 import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
+import type { Row } from "./drizzle-rows";
 
 const rolledColumns: { [percentile: number]: string } = {
   50: "p50",
@@ -17,7 +18,11 @@ const rolledColumns: { [percentile: number]: string } = {
 
 type Weighed = { samples: number; value: number | null };
 
-type Counted = Weighed & { good: number; needsImprovement: number; poor: number };
+type Counts = { samples: number; good: number; needsImprovement: number; poor: number };
+
+type Gathered = { counts: Counts[]; exact?: Weighed; legacy?: Weighed; histogram?: Weighed };
+
+const growth = sql.raw("1.02::double precision");
 
 function projectsIn(column: SQL, scope: SpeedScope) {
   return scope.projectIds.length > 0
@@ -66,23 +71,42 @@ function rolledWhere(scope: SpeedScope): SQL | null {
 
 function rolledPercentile(percentile: number) {
   const column = sql.raw(`r.${rolledColumns[percentile] ?? "p75"}`);
-  return sql`sum(${column} * r.samples) / NULLIF(sum(r.samples) FILTER (WHERE ${column} IS NOT NULL), 0)`;
+  return sql`sum(${column} * r.samples) FILTER (WHERE r.buckets IS NULL) / NULLIF(sum(r.samples) FILTER (WHERE r.buckets IS NULL AND ${column} IS NOT NULL), 0)`;
+}
+
+function legacySamples() {
+  return sql`sum(r.samples) FILTER (WHERE r.buckets IS NULL)`;
+}
+
+function bucketOf(value: SQL, metric: SQL) {
+  return sql`floor(ln(greatest(${value} * CASE WHEN ${metric} = 'cls' THEN 1000 ELSE 1 END, 1)) / ln(${growth}))::int`;
+}
+
+function histogramPercentile(source: SQL, keys: string, percentile: number, unscale: SQL) {
+  const partition = sql.raw(keys);
+  return sql`SELECT ${partition}, max(total) AS samples,
+      power(${growth}, (min(bucket) + 0.5)::double precision) / ${unscale} AS value
+    FROM (
+      SELECT ${partition}, bucket,
+        sum(n) OVER (PARTITION BY ${partition} ORDER BY bucket) AS cum,
+        sum(n) OVER (PARTITION BY ${partition}) AS total
+      FROM (SELECT ${partition}, bucket, sum(n) AS n FROM (${source}) s GROUP BY ${partition}, bucket) g
+    ) c
+    WHERE cum >= total * ${percentile / 100}::double precision
+    GROUP BY ${partition}`;
 }
 
 function nullableNumber(value: unknown) {
   return value === null || value === undefined ? null : numeric(value);
 }
 
-function weigh(parts: Weighed[]): Weighed {
-  const valued = parts.filter((part) => part.value !== null && part.samples > 0);
+function weighedValue(parts: (Weighed | undefined)[]) {
+  const valued = parts.filter(
+    (part): part is Weighed & { value: number } =>
+      part !== undefined && part.value !== null && part.samples > 0,
+  );
   const weight = valued.reduce((sum, part) => sum + part.samples, 0);
-  return {
-    samples: parts.reduce((sum, part) => sum + part.samples, 0),
-    value:
-      weight > 0
-        ? valued.reduce((sum, part) => sum + (part.value ?? 0) * part.samples, 0) / weight
-        : null,
-  };
+  return weight > 0 ? valued.reduce((sum, part) => sum + part.value * part.samples, 0) / weight : 0;
 }
 
 function grouping(group: SpeedGroup) {
@@ -100,8 +124,10 @@ function percentileOf(percentile: number) {
  * selectors behind slow values, all over human traffic only and split by production and preview;
  * and the daily `rollup_vitals` job, which rolls up production rows only and drops raw rows past
  * the retention cut-off. Days before the scope's `rawFrom` come from `rollup_vitals`, with each
- * day's percentile averaged over its routes and devices weighted by samples, so ranges older than
- * the raw retention still answer. The rollup has no path, country, selector, hour or preview rows,
+ * day's value read from a log-spaced histogram (2% steps) stored with the rollup and merged across
+ * days, routes and devices, so ranges older than the raw retention still answer within about 1%.
+ * Days rolled up before the histogram existed fall back to their stored percentile averaged
+ * weighted by samples. The rollup has no path, country, selector, hour or preview rows,
  * so a `path` or `country` filter, the preview environment, the hourly series, grouping by path
  * and the elements read cover raw days only, and the routes read leaves out rolled-up rows
  * without a route.
@@ -125,34 +151,72 @@ export function drizzleSpeed(db: Database): SpeedStore {
         const old = rolled
           ? await selectRows(
               db,
-              sql`SELECT r.metric, sum(r.samples) AS samples, ${rolledPercentile(percentile)} AS value,
+              sql`SELECT r.metric, sum(r.samples) AS samples, ${legacySamples()} AS legacy_samples,
+                  ${rolledPercentile(percentile)} AS value,
                   sum(r.good) AS good, sum(r.needs_improvement) AS needs_improvement, sum(r.poor) AS poor
                 FROM rollup_vitals r WHERE ${rolled} GROUP BY r.metric`,
             )
           : [];
-        const stats = new Map<VitalName, Counted[]>();
-        for (const row of [...raw, ...old]) {
+        const merged = rolled
+          ? await selectRows(
+              db,
+              histogramPercentile(
+                sql`SELECT w.metric, ${bucketOf(sql`w.value`, sql`w.metric`)} AS bucket, count(*) AS n
+                    FROM web_vitals w WHERE ${where(scope)} GROUP BY 1, 2
+                  UNION ALL
+                  SELECT r.metric, e.key::int AS bucket, sum(e.value::int) AS n
+                    FROM rollup_vitals r, jsonb_each_text(r.buckets) e WHERE ${rolled} GROUP BY 1, 2`,
+                "metric",
+                percentile,
+                sql`CASE WHEN metric = 'cls' THEN 1000 ELSE 1 END`,
+              ),
+            )
+          : [];
+        const stats = new Map<VitalName, Gathered>();
+        function gathered(row: Row) {
           const metric = textual(row.metric) as VitalName;
-          stats.set(metric, [
-            ...(stats.get(metric) ?? []),
-            {
-              samples: numeric(row.samples),
-              value: nullableNumber(row.value),
-              good: numeric(row.good),
-              needsImprovement: numeric(row.needs_improvement),
-              poor: numeric(row.poor),
-            },
-          ]);
+          const found = stats.get(metric) ?? { counts: [] };
+          stats.set(metric, found);
+          return found;
         }
-        return [...stats.entries()].map(([metric, parts]): VitalStat => {
-          const weighed = weigh(parts);
+        function counts(row: Row): Counts {
+          return {
+            samples: numeric(row.samples),
+            good: numeric(row.good),
+            needsImprovement: numeric(row.needs_improvement),
+            poor: numeric(row.poor),
+          };
+        }
+        for (const row of raw) {
+          const found = gathered(row);
+          found.counts.push(counts(row));
+          found.exact = { samples: numeric(row.samples), value: nullableNumber(row.value) };
+        }
+        for (const row of old) {
+          const found = gathered(row);
+          found.counts.push(counts(row));
+          found.legacy = {
+            samples: numeric(row.legacy_samples),
+            value: nullableNumber(row.value),
+          };
+        }
+        for (const row of merged) {
+          gathered(row).histogram = {
+            samples: numeric(row.samples),
+            value: nullableNumber(row.value),
+          };
+        }
+        return [...stats.entries()].map(([metric, found]): VitalStat => {
+          function sum(pick: (part: Counts) => number) {
+            return found.counts.reduce((total, part) => total + pick(part), 0);
+          }
           return {
             metric,
-            samples: weighed.samples,
-            value: weighed.value ?? 0,
-            good: parts.reduce((sum, part) => sum + part.good, 0),
-            needsImprovement: parts.reduce((sum, part) => sum + part.needsImprovement, 0),
-            poor: parts.reduce((sum, part) => sum + part.poor, 0),
+            samples: sum((part) => part.samples),
+            value: weighedValue([found.histogram ?? found.exact, found.legacy]),
+            good: sum((part) => part.good),
+            needsImprovement: sum((part) => part.needsImprovement),
+            poor: sum((part) => part.poor),
           };
         });
       }),
@@ -162,8 +226,17 @@ export function drizzleSpeed(db: Database): SpeedStore {
         const rolled = interval === "day" ? rolledWhere(scope) : null;
         const old = rolled
           ? sql`UNION ALL SELECT (r.day::timestamp AT TIME ZONE 'UTC') AS bucket, sum(r.samples) AS samples,
-              ${rolledPercentile(percentile)} AS value
-            FROM rollup_vitals r WHERE ${rolled} AND r.metric = ${metric} GROUP BY r.day`
+              COALESCE(h.value, ${rolledPercentile(percentile)}) AS value
+            FROM rollup_vitals r
+            LEFT JOIN (${histogramPercentile(
+              sql`SELECT r.day, e.key::int AS bucket, sum(e.value::int) AS n
+                FROM rollup_vitals r, jsonb_each_text(r.buckets) e
+                WHERE ${rolled} AND r.metric = ${metric} GROUP BY 1, 2`,
+              "day",
+              percentile,
+              sql.raw(metric === "cls" ? "1000" : "1"),
+            )}) h ON h.day = r.day
+            WHERE ${rolled} AND r.metric = ${metric} GROUP BY r.day, h.value`
           : sql``;
         const rows = await selectRows(
           db,
@@ -197,28 +270,61 @@ export function drizzleSpeed(db: Database): SpeedStore {
         const old = rolled
           ? await selectRows(
               db,
-              sql`SELECT r.route, r.metric, sum(r.samples) AS samples, ${rolledPercentile(percentile)} AS value
+              sql`SELECT r.route, r.metric, sum(r.samples) AS samples, ${legacySamples()} AS legacy_samples,
+                  ${rolledPercentile(percentile)} AS value
                 FROM rollup_vitals r WHERE ${rolled} AND r.route <> '' GROUP BY 1, 2`,
             )
           : [];
-        const grouped = new Map<string, { route: string; metric: VitalName; parts: Weighed[] }>();
-        for (const row of [...raw, ...old]) {
+        const merged = rolled
+          ? await selectRows(
+              db,
+              histogramPercentile(
+                sql`SELECT ${grouping(group)} AS route, w.metric, ${bucketOf(sql`w.value`, sql`w.metric`)} AS bucket, count(*) AS n
+                    FROM web_vitals w WHERE ${where(scope)} GROUP BY 1, 2, 3
+                  UNION ALL
+                  SELECT r.route, r.metric, e.key::int AS bucket, sum(e.value::int) AS n
+                    FROM rollup_vitals r, jsonb_each_text(r.buckets) e
+                    WHERE ${rolled} AND r.route <> '' GROUP BY 1, 2, 3`,
+                "route, metric",
+                percentile,
+                sql`CASE WHEN metric = 'cls' THEN 1000 ELSE 1 END`,
+              ),
+            )
+          : [];
+        const grouped = new Map<
+          string,
+          { route: string; metric: VitalName; samples: number } & Omit<Gathered, "counts">
+        >();
+        function entryOf(row: Row) {
           const route = textual(row.route);
           const metric = textual(row.metric) as VitalName;
           const key = JSON.stringify([route, metric]);
-          const entry = grouped.get(key) ?? { route, metric, parts: [] };
-          entry.parts.push({ samples: numeric(row.samples), value: nullableNumber(row.value) });
+          const entry = grouped.get(key) ?? { route, metric, samples: 0 };
           grouped.set(key, entry);
+          return entry;
         }
-        return [...grouped.values()].map((entry): RouteStat => {
-          const weighed = weigh(entry.parts);
-          return {
-            route: entry.route,
-            metric: entry.metric,
-            samples: weighed.samples,
-            value: weighed.value ?? 0,
+        for (const row of raw) {
+          const entry = entryOf(row);
+          entry.samples += numeric(row.samples);
+          entry.exact = { samples: numeric(row.samples), value: nullableNumber(row.value) };
+        }
+        for (const row of old) {
+          const entry = entryOf(row);
+          entry.samples += numeric(row.samples);
+          entry.legacy = { samples: numeric(row.legacy_samples), value: nullableNumber(row.value) };
+        }
+        for (const row of merged) {
+          entryOf(row).histogram = {
+            samples: numeric(row.samples),
+            value: nullableNumber(row.value),
           };
-        });
+        }
+        return [...grouped.values()].map((entry): RouteStat => ({
+          route: entry.route,
+          metric: entry.metric,
+          samples: entry.samples,
+          value: weighedValue([entry.histogram ?? entry.exact, entry.legacy]),
+        }));
       }),
     elements: (scope, percentile, metric, minSamples, page) =>
       attempt("Could not read the speed elements", async () => {
@@ -247,24 +353,39 @@ export function drizzleSpeed(db: Database): SpeedStore {
       attempt("Could not roll up speed", async () => {
         const written = await selectRows(
           db,
-          sql`INSERT INTO rollup_vitals (project_id, day, route, device, metric, samples, p50, p75, p90, p95, p99, good, needs_improvement, poor)
-            SELECT w.project_id, (w.ts AT TIME ZONE 'UTC')::date, COALESCE(w.route, ''), w.device, w.metric, count(*),
-              percentile_cont(0.5) WITHIN GROUP (ORDER BY w.value),
-              percentile_cont(0.75) WITHIN GROUP (ORDER BY w.value),
-              percentile_cont(0.9) WITHIN GROUP (ORDER BY w.value),
-              percentile_cont(0.95) WITHIN GROUP (ORDER BY w.value),
-              percentile_cont(0.99) WITHIN GROUP (ORDER BY w.value),
-              count(*) FILTER (WHERE w.rating = 'good'),
-              count(*) FILTER (WHERE w.rating = 'needs-improvement'),
-              count(*) FILTER (WHERE w.rating = 'poor')
-            FROM web_vitals w
-            WHERE w.ts >= ${from.toISOString()}::timestamptz AND w.ts < ${to.toISOString()}::timestamptz
-              AND w.bot_score < ${botThreshold} AND NOT w.is_internal AND NOT w.is_preview
-            GROUP BY 1, 2, 3, 4, 5
+          sql`WITH kept AS (
+              SELECT w.project_id, (w.ts AT TIME ZONE 'UTC')::date AS day, COALESCE(w.route, '') AS route,
+                w.device, w.metric, w.value, w.rating, ${bucketOf(sql`w.value`, sql`w.metric`)} AS bucket
+              FROM web_vitals w
+              WHERE w.ts >= ${from.toISOString()}::timestamptz AND w.ts < ${to.toISOString()}::timestamptz
+                AND w.bot_score < ${botThreshold} AND NOT w.is_internal AND NOT w.is_preview
+            ), histograms AS (
+              SELECT project_id, day, route, device, metric, jsonb_object_agg(bucket::text, n) AS buckets
+              FROM (
+                SELECT project_id, day, route, device, metric, bucket, count(*) AS n
+                FROM kept GROUP BY 1, 2, 3, 4, 5, 6
+              ) b GROUP BY 1, 2, 3, 4, 5
+            )
+            INSERT INTO rollup_vitals (project_id, day, route, device, metric, samples, p50, p75, p90, p95, p99, good, needs_improvement, poor, buckets)
+            SELECT k.project_id, k.day, k.route, k.device, k.metric, count(*),
+              percentile_cont(0.5) WITHIN GROUP (ORDER BY k.value),
+              percentile_cont(0.75) WITHIN GROUP (ORDER BY k.value),
+              percentile_cont(0.9) WITHIN GROUP (ORDER BY k.value),
+              percentile_cont(0.95) WITHIN GROUP (ORDER BY k.value),
+              percentile_cont(0.99) WITHIN GROUP (ORDER BY k.value),
+              count(*) FILTER (WHERE k.rating = 'good'),
+              count(*) FILTER (WHERE k.rating = 'needs-improvement'),
+              count(*) FILTER (WHERE k.rating = 'poor'),
+              h.buckets
+            FROM kept k
+            JOIN histograms h ON h.project_id = k.project_id AND h.day = k.day AND h.route = k.route
+              AND h.device = k.device AND h.metric = k.metric
+            GROUP BY k.project_id, k.day, k.route, k.device, k.metric, h.buckets
             ON CONFLICT (project_id, day, route, device, metric) DO UPDATE SET
               samples = excluded.samples, p50 = excluded.p50, p75 = excluded.p75, p90 = excluded.p90,
               p95 = excluded.p95, p99 = excluded.p99, good = excluded.good,
-              needs_improvement = excluded.needs_improvement, poor = excluded.poor
+              needs_improvement = excluded.needs_improvement, poor = excluded.poor,
+              buckets = excluded.buckets
             RETURNING 1`,
         );
         const deleted = await selectRows(
