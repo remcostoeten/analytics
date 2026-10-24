@@ -8,6 +8,7 @@ const config: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
+    staleTimes: { dynamic: 30, static: 300 },
     exposeTestingApiInProductionBuild: process.env.EXPOSE_TESTING_API === "1",
     serverActions: {
       allowedOrigins: [new URL(siteUrl()).host],

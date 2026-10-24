@@ -1,14 +1,19 @@
+"use client";
+
 import type { BreakdownRow } from "@spoar/contract";
 import { Link } from "@/shared/ui/link";
 
 import { formatMetric } from "../format";
 import type { CountMetric } from "../metrics";
+import { viewQuery, withFilter } from "../view-state";
+import type { ViewState } from "../view-state";
 import world from "../world-shapes.json";
 
 type Props = {
   rows: BreakdownRow[];
   count: CountMetric;
-  hrefFor: (value: string) => string;
+  path: string;
+  state: ViewState;
 };
 
 function fill(share: number) {
@@ -16,7 +21,7 @@ function fill(share: number) {
   return `color-mix(in srgb, var(--series-1) ${strength}%, var(--map-land))`;
 }
 
-export function CountryMap({ rows, count, hrefFor }: Props) {
+export function CountryMap({ rows, count, path, state }: Props) {
   const values = new Map(rows.map((row) => [row.value, row[count] ?? 0]));
   const max = Math.max(1, ...values.values());
   return (
@@ -38,7 +43,7 @@ export function CountryMap({ rows, count, hrefFor }: Props) {
           return (
             <Link
               key={shape.code}
-              href={hrefFor(shape.code)}
+              href={`${path}${viewQuery(withFilter(state, "country", shape.code))}`}
               aria-label={`Filter by ${shape.name}`}
             >
               <path d={shape.path} className="map-country" style={{ fill: fill(value / max) }}>
