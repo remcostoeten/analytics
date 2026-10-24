@@ -30,6 +30,8 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
 | PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `allowedOrigins`, `retentionDays` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
+| GET | `/v2/projects/:project/keys` | admin | When the current keys were generated and the last key check |
+| POST | `/v2/projects/:project/keys/check` | admin | Check the keys and store the result; an optional `secretKey` is compared by hash |
 | DELETE | `/v2/projects/:project` | admin, owner only | Delete a project; its keys stop at once and the cleanup job purges its rows |
 | GET | `/v2/projects/:project/stats` | project | Headline numbers with the previous period |
 | GET | `/v2/projects/:project/timeseries` | project | One metric bucketed by hour or day |
@@ -739,6 +741,20 @@ request
 200 OK
 { "data": { "kind": "secret", "key": "sk_live_9b8a7f6e5d4c3b2a1f0e", "rotatedAt": "2026-09-27T16:43:00.000Z" } }
 ```
+
+`GET /v2/projects/docs/keys` as admin returns when each current key was generated and the last check, which is `null` until one has run and after a key is rotated.
+
+`POST /v2/projects/docs/keys/check` as admin
+
+```json
+request
+{ "secretKey": "sk_live_9b8a7f6e5d4c3b2a1f0e" }
+
+200 OK
+{ "data": { "publicKeyCreatedAt": "2026-09-27T16:43:00.000Z", "secretKeyCreatedAt": "2026-09-20T09:12:00.000Z", "check": { "checkedAt": "2026-10-24T08:30:00.000Z", "state": "connected", "accepted": 412, "rejected": 0, "since": "2026-10-17T08:30:00.000Z", "secretKey": "matches" } } }
+```
+
+`state` is `connected` when the ingest log holds accepted events since the public key was generated, `rejected` when events arrived and none were accepted, and `waiting` when none arrived. Counts cover the 7 days the log keeps, so `since` is never older than that. The body is optional: without `secretKey` the result is `not-tested`, because only the secret key's hash is stored. A sent secret key is compared by hash and never stored. Rotating a key stamps its generation time and clears the stored check.
 
 `DELETE /v2/projects/docs` as owner
 

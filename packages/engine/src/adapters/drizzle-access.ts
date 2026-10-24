@@ -1,5 +1,5 @@
 import { ok } from "@spoar/shared/result";
-import { asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
 
 import {
   apiTokens,
@@ -106,7 +106,9 @@ async function attempt<Value>(message: string, run: () => Promise<Value>) {
  * @description The `ProjectAdmin` store on `projects`: find, list by visibility, create, patch,
  * key rotation and removal. Creating an existing id returns null, as does an id whose rows the
  * cleanup job is still purging, and so does changing a project that does not exist. Rotation
- * stores the public key as is and the secret key's hash, and clears that key's last use. Removal deletes the project row, so its
+ * stores the public key as is and the secret key's hash, stamps that key's creation time and
+ * clears that key's last use and the stored key check. `keyState`, `secretMatches` and `recordKeyCheck` read the key
+ * creation times and last check, compare a secret key's hash and store a check result. Removal deletes the project row, so its
  * keys and routes stop at once, and records the id in `deleted_projects` for the cleanup job to
  * purge its rows in batches.
  *
@@ -156,14 +158,53 @@ export function drizzleProjectAdmin(db: Database): ProjectAdmin {
         const rotatedAt = new Date();
         const keys =
           kind === "public"
-            ? { publicKey: value, publicKeyUsedAt: null, publicKeyUsedOrigin: null }
-            : { secretKeyHash: value, secretKeyUsedAt: null, secretKeyUsedOrigin: null };
+            ? {
+                publicKey: value,
+                publicKeyCreatedAt: rotatedAt,
+                publicKeyUsedAt: null,
+                publicKeyUsedOrigin: null,
+              }
+            : {
+                secretKeyHash: value,
+                secretKeyCreatedAt: rotatedAt,
+                secretKeyUsedAt: null,
+                secretKeyUsedOrigin: null,
+              };
         const [row] = await db
           .update(projects)
-          .set({ ...keys, updatedAt: rotatedAt })
+          .set({ ...keys, keyCheck: null, updatedAt: rotatedAt })
           .where(eq(projects.id, id))
           .returning({ updatedAt: projects.updatedAt });
         return row ? row.updatedAt : null;
+      }),
+    keyState: (id) =>
+      attempt("Could not read the key state", async () => {
+        const [row] = await db
+          .select({
+            publicKeyCreatedAt: projects.publicKeyCreatedAt,
+            secretKeyCreatedAt: projects.secretKeyCreatedAt,
+            check: projects.keyCheck,
+          })
+          .from(projects)
+          .where(eq(projects.id, id));
+        return row ?? null;
+      }),
+    secretMatches: (id, hash) =>
+      attempt("Could not compare the secret key", async () => {
+        const rows = await db
+          .select({ id: projects.id })
+          .from(projects)
+          .where(and(eq(projects.id, id), eq(projects.secretKeyHash, hash)));
+        return rows.length > 0;
+      }),
+    recordKeyCheck: (id, check) =>
+      attempt("Could not store the key check", async () => {
+        const rows = await db
+          .update(projects)
+          .set({ keyCheck: check })
+          .where(eq(projects.id, id))
+          .returning({ id: projects.id });
+        return rows.length > 0;
       }),
     remove: (id) =>
       attempt("Could not delete the project", async () => {

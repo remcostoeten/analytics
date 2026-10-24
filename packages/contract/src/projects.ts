@@ -2,10 +2,12 @@ import { Type } from "@sinclair/typebox";
 import type { Static } from "@sinclair/typebox";
 
 import { Visibility } from "./enums";
-import { dataOf, listOf, nullable, oneOf, Timestamp } from "./schema";
+import { Count, dataOf, listOf, nullable, oneOf, Timestamp } from "./schema";
+import checkKeys from "../fixtures/CheckKeys/valid/with-secret.json";
 import keyUsageResponse from "../fixtures/KeyUsageResponse/valid/used.json";
 import createProject from "../fixtures/CreateProject/valid/docs.json";
 import createdProject from "../fixtures/CreatedProject/valid/docs.json";
+import keyStatus from "../fixtures/KeyStatus/valid/connected.json";
 import projectList from "../fixtures/ProjectList/valid/admin-private.json";
 import projectResponse from "../fixtures/ProjectResponse/valid/signed-out.json";
 import rotateKey from "../fixtures/RotateKey/valid/secret.json";
@@ -245,3 +247,60 @@ export const RotatedKey = Type.Object(
   { examples: [rotatedKey] },
 );
 export type RotatedKey = Static<typeof RotatedKey>;
+
+const KeyCheckState = oneOf(["connected", "rejected", "waiting"], {
+  description:
+    "`connected` when events were accepted with the current public key, `rejected` when events arrived but none were accepted, `waiting` when none arrived.",
+});
+
+const SecretKeyCheck = oneOf(["matches", "mismatch", "not-tested"], {
+  description:
+    "`matches` when the secret key sent with the check hashes to the stored one, `mismatch` when it does not, `not-tested` when no secret key was sent.",
+});
+
+export const CheckKeys = Type.Object(
+  {
+    secretKey: Type.Optional(
+      Type.String({
+        minLength: 1,
+        description:
+          "The `sk_live_` key to verify. It is compared by hash, never stored, and the stored key is never returned.",
+      }),
+    ),
+  },
+  { examples: [checkKeys] },
+);
+export type CheckKeys = Static<typeof CheckKeys>;
+
+export const KeyCheck = Type.Object(
+  {
+    checkedAt: Timestamp,
+    state: KeyCheckState,
+    accepted: Count,
+    rejected: Count,
+    since: Type.String({
+      format: "date-time",
+      description:
+        "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+    }),
+    secretKey: SecretKeyCheck,
+  },
+  { description: "The result of the last key check." },
+);
+export type KeyCheck = Static<typeof KeyCheck>;
+
+export const KeyStatus = Type.Object(
+  dataOf(
+    Type.Object({
+      publicKeyCreatedAt: Timestamp,
+      secretKeyCreatedAt: Timestamp,
+      check: nullable(KeyCheck),
+    }),
+  ).properties,
+  {
+    description:
+      "When each current key was generated and the last check, which is null until one has run and after a key is rotated.",
+    examples: [keyStatus],
+  },
+);
+export type KeyStatus = Static<typeof KeyStatus>;
