@@ -251,3 +251,39 @@ export function MoonIcon(props: Props) {
     </Icon>
   );
 }
+
+export function DesktopIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <rect x="2" y="3" width="12" height="8" rx="1.5" />
+      <path d="M6 13.5h4M8 11v2.5" />
+    </Icon>
+  );
+}
+
+export function MobileIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <rect x="4.5" y="2" width="7" height="12" rx="1.5" />
+      <path d="M7 11.75h2" />
+    </Icon>
+  );
+}
+
+export function TabletIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="2" width="10" height="12" rx="1.5" />
+      <path d="M7 12h2" />
+    </Icon>
+  );
+}
+
+export function GlobeIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="8" r="5.5" />
+      <path d="M2.5 8h11M8 2.5c-1.8 1.6-2.7 3.4-2.7 5.5s.9 3.9 2.7 5.5c1.8-1.6 2.7-3.4 2.7-5.5S9.8 4.1 8 2.5Z" />
+    </Icon>
+  );
+}

@@ -1,5 +1,6 @@
 import type { ProjectScope } from "@spoar/client";
 import type { EventRow } from "@spoar/contract";
+import { JsonBlock } from "@/shared/ui/json-block";
 import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue } from "../format";
@@ -68,9 +69,7 @@ function Detail({ row, base, state }: { row: EventRow; base: string; state: View
         <Field label="Bot reasons" value={row.bot.reasons.join(", ")} />
         <Field label="Internal" value={row.isInternal ? "yes" : "no"} />
       </dl>
-      {Object.keys(extra).length > 0 ? (
-        <pre className="log-json">{JSON.stringify(extra, null, 2)}</pre>
-      ) : null}
+      {Object.keys(extra).length > 0 ? <JsonBlock value={extra} label="Properties" /> : null}
       <div className="flex flex-wrap gap-3 text-xs">
         <Link
           href={`${base}/sessions/${encodeURIComponent(row.session)}${viewQuery(state)}`}

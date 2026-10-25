@@ -5,6 +5,7 @@ import { AddFilter } from "@/modules/analytics/components/add-filter";
 import { FilterChips } from "@/modules/analytics/components/filter-chips";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
 import { VisitorList } from "@/modules/analytics/components/visitor-list";
+import { VisitorSummary } from "@/modules/analytics/components/visitor-summary";
 import { readScope } from "@/modules/analytics/reads";
 import { readViewState, viewQuery } from "@/modules/analytics/view-state";
 import type { SearchParams } from "@/modules/analytics/view-state";
@@ -34,6 +35,9 @@ export default async function Page({ params, searchParams }: Props) {
           </div>
           <FilterChips path={path} state={state} />
         </ProjectHeading>
+        <Suspense key={viewQuery(state)} fallback={<SectionSkeleton height={160} />}>
+          <VisitorSummary scope={scope} state={state} path={path} />
+        </Suspense>
         <Suspense
           key={`${viewQuery(state)}${cursor ?? ""}`}
           fallback={<SectionSkeleton height={360} />}
