@@ -2,11 +2,13 @@
 
 import { useTheme } from "fumadocs-ui/provider/base";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/logo";
-import { dashboardUrl } from "@/lib/dashboard-url";
+import { fetchAccount, readStoredAccount, storeAccount } from "@/lib/account";
+import type { Account } from "@/lib/account";
 
+import { AccountMenu } from "./account-menu";
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 
 export type NavLink = {
@@ -25,18 +27,25 @@ const menuItem =
 
 export function SiteNav({ links, loginHref }: Props) {
   const [open, setOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const { resolvedTheme, setTheme } = useTheme();
 
+  useLayoutEffect(() => {
+    setAccount(readStoredAccount());
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
-    fetch(dashboardUrl("/session"), { credentials: "same-origin", signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body) => setSignedIn(body?.signedIn === true))
-      .catch(() => {});
+    async function check() {
+      const next = await fetchAccount(controller.signal);
+      if (next === undefined) return;
+      setAccount(next);
+      storeAccount(next);
+    }
+    void check();
     return () => controller.abort();
   }, []);
 
@@ -71,9 +80,13 @@ export function SiteNav({ links, loginHref }: Props) {
             <Logo className="size-6" />
             Spoar
           </Link>
-          <a href={signedIn ? dashboardUrl() : loginHref} className="pill-ghost">
-            {signedIn ? "Dashboard" : "Log in"}
-          </a>
+          {account ? (
+            <AccountMenu account={account} onSignedOut={() => setAccount(null)} />
+          ) : (
+            <a href={loginHref} className="pill-ghost">
+              Log in
+            </a>
+          )}
           <Link href="/docs/getting-started/quick-start" className="pill-dark">
             Get started
           </Link>
