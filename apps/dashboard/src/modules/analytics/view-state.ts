@@ -58,7 +58,7 @@ export const issueStatuses = [
 ] as const satisfies readonly { value: IssueStatus; label: string }[];
 
 const defaults = {
-  period: "7d",
+  period: "30d",
   percentile: 75,
   status: "open",
   items: 5,

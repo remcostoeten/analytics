@@ -1,9 +1,13 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 import type { VisitorDetail as Detail } from "@spoar/contract";
 import type { VisitorID } from "@spoar/shared/semantic";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import {
@@ -180,8 +184,12 @@ export function VisitorFacts({
 
 const visitLimit = 20;
 
-export async function VisitList({ scope, visitor, sessionHref }: Props) {
-  const read = await scope.visitorVisits(visitor, { limit: visitLimit });
+export function VisitList({ scope, visitor, sessionHref }: Props) {
+  const visitsRead = useRead(scope.key("visitorVisits", visitor, { limit: visitLimit }), () =>
+    scope.visitorVisits(visitor, { limit: visitLimit }),
+  );
+  if (visitsRead.data === undefined) return <SectionSkeleton height={320} />;
+  const read = visitsRead.data;
   if (!read.ok) return <ReadNotice error={read.error} what="this visitor's visits" />;
   const visits = read.value.data;
   return (

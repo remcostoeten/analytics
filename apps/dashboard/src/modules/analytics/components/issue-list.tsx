@@ -1,19 +1,22 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useReadOf } from "@/shared/query/read";
 import { BugIcon } from "@/shared/ui/icons";
 import { EmptyState, IconStack } from "@/shared/ui/empty-state";
 
 import { formatDateTime, formatMetric, formatRelative } from "../format";
 import { splitTitle } from "../issues";
+import { issuesQuery } from "../queries";
 import { issueStatuses, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
 import { StatusBadge } from "./status-badge";
 
 type Props = { scope: ProjectScope; state: ViewState; path: string; cursor: string | undefined };
-
-const pageSize = 50;
 
 export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) {
   return (
@@ -33,8 +36,10 @@ export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) 
   );
 }
 
-export async function IssueList({ scope, state, path, cursor }: Props) {
-  const read = await scope.issues({ status: state.status, limit: pageSize, cursor });
+export function IssueList({ scope, state, path, cursor }: Props) {
+  const issues = useReadOf(issuesQuery(scope, state.status, cursor));
+  if (issues.data === undefined) return <SectionSkeleton height={320} />;
+  const read = issues.data;
   if (!read.ok) return <ReadNotice error={read.error} what="issues" />;
   const rows = read.value.data;
   return (

@@ -6,11 +6,16 @@ import { useState } from "react";
 
 type Props = { children: ReactNode };
 
+const staleMs = 30_000;
+
+const keepMs = 30 * 60_000;
+
 function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 30_000,
+        staleTime: staleMs,
+        gcTime: keepMs,
         retry: false,
         refetchOnWindowFocus: false,
       },

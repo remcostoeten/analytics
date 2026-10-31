@@ -164,7 +164,7 @@ export function unsupportedSpeedFilters(state: ViewState): FilterDimension[] {
  * @example
  * speedInterval("24h"); // "hour"
  */
-export function speedInterval(period: ViewState["period"]) {
+export function speedInterval(period: ViewState["period"]): "hour" | "day" {
   return period === "24h" ? "hour" : "day";
 }
 

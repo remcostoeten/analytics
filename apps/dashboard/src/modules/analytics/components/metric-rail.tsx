@@ -1,68 +1,71 @@
 "use client";
 
-import type { StatsResponse, TimeseriesPoint } from "@spoar/contract";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import type { ProjectScope } from "@spoar/client";
+import { keepPreviousData, useQueries } from "@tanstack/react-query";
 import { Link } from "@/shared/ui/link";
 
-import { browserClient } from "@/shared/api/browser-client";
+import { useReadOf } from "@/shared/query/read";
+import type { Prefetchable } from "@/shared/query/read";
 
 import { metricPath, metricViews } from "../metrics";
+import { statsQuery, timeseriesQuery } from "../queries";
 import type { MetricView } from "../metrics";
-import { viewScope } from "../scope";
 import { viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
 import { AnimatedNumber } from "./animated-number";
 import { ChangeBadge } from "./change-badge";
 import { Sparkline } from "./sparkline";
 
-export type RailData = {
-  stats: StatsResponse["data"] | null;
-  sparklines: { [slug: string]: TimeseriesPoint[] };
-};
-
 type Props = {
-  project: string;
+  scope: ProjectScope;
   state: ViewState;
   base: string;
   current: MetricView;
-  initial: RailData;
-  renderedAt: number;
 };
 
 const railIntervalMs = 30_000;
 
-export function MetricRail({ project, state, base, current, initial, renderedAt }: Props) {
-  const scope = viewScope(browserClient(), project, state);
-  const polling = {
-    refetchInterval: railIntervalMs,
-    staleTime: railIntervalMs,
-    initialDataUpdatedAt: renderedAt,
-  };
-  const stats = useQuery({
-    queryKey: scope.key("stats"),
-    queryFn: async () => {
-      const read = await scope.stats();
-      return read.ok ? read.value.data : null;
-    },
-    initialData: initial.stats,
-    ...polling,
-  });
+const polling = { refetchInterval: railIntervalMs, staleTime: railIntervalMs };
+
+/**
+ * @name railReads
+ * @description The metric rail's reads on a scope: the stats and one sparkline series per metric,
+ * for warming the cache before a navigation.
+ *
+ * @example
+ * prefetchReads(queryClient, railReads(scope));
+ */
+export function railReads(scope: ProjectScope): Prefetchable[] {
+  return [statsQuery(scope), ...metricViews.map((view) => timeseriesQuery(scope, view.series))];
+}
+
+function RailSkeleton() {
+  return (
+    <div className="rail" aria-hidden="true">
+      {metricViews.map((view) => (
+        <div key={view.slug} className="skeleton h-[116px]" />
+      ))}
+    </div>
+  );
+}
+
+export function MetricRail({ scope, state, base, current }: Props) {
+  const stats = useReadOf(statsQuery(scope), polling);
   const sparklines = useQueries({
     queries: metricViews.map((view) => ({
-      queryKey: scope.key("timeseries", view.series),
-      queryFn: async () => {
-        const read = await scope.timeseries(view.series);
-        return read.ok ? read.value.data : null;
-      },
-      initialData: initial.sparklines[view.slug] ?? null,
+      ...timeseriesQuery(scope, view.series),
+      placeholderData: keepPreviousData,
       ...polling,
     })),
   });
+  if (stats.data === undefined) return <RailSkeleton />;
+  const data = stats.data.ok ? stats.data.value.data : null;
 
   return (
     <nav aria-label="Metrics" className="rail">
       {metricViews.map((view, index) => {
-        const stat = stats.data?.[view.stat];
+        const stat = data?.[view.stat];
+        const sparkline = sparklines[index]?.data;
         const selected = view.slug === current.slug;
         return (
           <Link
@@ -80,7 +83,7 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
             ) : (
               <span className="metric-value">–</span>
             )}
-            <Sparkline points={sparklines[index]?.data ?? []} />
+            <Sparkline points={sparkline?.ok ? sparkline.value.data : []} />
           </Link>
         );
       })}

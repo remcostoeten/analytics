@@ -11,7 +11,7 @@ import {
 import type { ViewState } from "../src/modules/analytics/view-state";
 
 const defaults: ViewState = {
-  period: "7d",
+  period: "30d",
   bots: false,
   split: null,
   filters: {},

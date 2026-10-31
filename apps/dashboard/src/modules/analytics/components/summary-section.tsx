@@ -1,33 +1,39 @@
+"use client";
+
+import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
+
+import { useSession } from "@/modules/session/use-session";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useReadOf } from "@/shared/query/read";
+import type { Prefetchable } from "@/shared/query/read";
+import { siteUrl } from "@/shared/config/site";
+import { ChartIllustration, EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 
 import { formatDimensionValue, formatMetric } from "../format";
 import type { MetricView } from "../metrics";
-import { readSplitSeries } from "../reads";
-import type { ProjectScope } from "@spoar/client";
+import { annotationsQuery, comparedSeriesQuery, splitSeriesQuery, statsQuery } from "../queries";
 import { hasFilters, viewQuery } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
-import { siteUrl } from "@/shared/config/site";
-
 import { AddAnnotation } from "./add-annotation";
 import { ChangeBadge } from "./change-badge";
-import { ChartIllustration, EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 import { SeriesChart } from "./series-chart";
-import { SplitMenu } from "./split-menu";
 import type { ChartPoint, ChartSeries } from "./series-chart";
+import { SplitMenu } from "./split-menu";
 
 type Props = {
   scope: ProjectScope;
   view: MetricView;
   state: ViewState;
   path: string;
-  headline: Promise<Headline>;
   project: string;
-  canAnnotate: Promise<boolean>;
 };
 
-export type Headline = { total: number | null; change: number | null };
-
 type Split = { value: FilterDimension | null; label: string };
+
+type Series =
+  | { error: string }
+  | { series: ChartSeries[]; previous: ChartPoint[]; totals: (number | null)[]; interval: string };
 
 const splits = [
   { value: null, label: "All" },
@@ -44,54 +50,70 @@ const moreSplits = [
   { value: "channel", label: "Channel" },
 ] as const satisfies readonly Split[];
 
-const seriesLimit = 5;
-
 function isQuiet(series: ChartSeries[]) {
   return series.every((entry) => entry.points.every((point) => !point.value));
 }
 
-async function readSeries(scope: ProjectScope, view: MetricView, split: FilterDimension | null) {
+/**
+ * @name summaryReads
+ * @description The summary chart's reads for a view: the headline stats, the series (whole or
+ * split) and the annotations, for warming the cache before a navigation to it.
+ *
+ * @example
+ * prefetchReads(queryClient, summaryReads(scope, view, state.split));
+ */
+export function summaryReads(
+  scope: ProjectScope,
+  view: MetricView,
+  split: FilterDimension | null,
+): Prefetchable[] {
+  return [
+    statsQuery(scope),
+    split === null ? comparedSeriesQuery(scope, view.series) : splitSeriesQuery(scope, view, split),
+    annotationsQuery(scope),
+  ];
+}
+
+function useSeries(scope: ProjectScope, view: MetricView, split: FilterDimension | null) {
+  const whole = useReadOf(comparedSeriesQuery(scope, view.series), { enabled: split === null });
+  const splitRead = useReadOf(splitSeriesQuery(scope, view, split ?? "page"), {
+    enabled: split !== null,
+  });
   if (split === null) {
-    const read = await scope.timeseries(view.series, { compare: "previous" });
-    if (!read.ok) return { error: read.error.message } as const;
+    if (whole.data === undefined) return undefined;
+    const read = whole.data;
+    if (!read.ok) return { error: read.error.message };
     const series: ChartSeries[] = [{ label: view.label, points: read.value.data }];
     const previous = read.value.data.map((point) => ({
       bucket: point.bucket,
       value: point.previous ?? null,
     }));
-    return { series, previous, totals: [], interval: read.value.interval } as const;
+    return { series, previous, totals: [], interval: read.value.interval };
   }
-  const read = await readSplitSeries(scope, view, split, seriesLimit);
-  if (!read.ok) return { error: read.error } as const;
+  if (splitRead.data === undefined) return undefined;
+  const read = splitRead.data;
+  if (!read.ok) return { error: read.error };
   const series: ChartSeries[] = read.value.map((entry) => ({
     label: formatDimensionValue(split, entry.value),
     points: entry.series.data,
   }));
   const totals = read.value.map((entry) => (view.format === "count" ? entry.total : null));
-  const previous: ChartPoint[] = [];
-  return {
-    series,
-    previous,
-    totals,
-    interval: read.value[0]?.series.interval ?? "day",
-  } as const;
+  return { series, previous: [], totals, interval: read.value[0]?.series.interval ?? "day" };
 }
 
-export async function SummarySection({
-  scope,
-  view,
-  state,
-  path,
-  headline,
-  project,
-  canAnnotate,
-}: Props) {
-  const [read, annotations, { total, change }, editable] = await Promise.all([
-    readSeries(scope, view, state.split),
-    scope.annotations({ limit: 100 }),
-    headline,
-    canAnnotate,
-  ]);
+function isDayInterval(interval: string): interval is "hour" | "day" | "month" {
+  return interval === "hour" || interval === "day" || interval === "month";
+}
+
+export function SummarySection({ scope, view, state, path, project }: Props) {
+  const read: Series | undefined = useSeries(scope, view, state.split);
+  const stats = useReadOf(statsQuery(scope));
+  const annotations = useReadOf(annotationsQuery(scope));
+  const editable = useSession().isAdmin;
+  if (read === undefined || stats.data === undefined) return <SectionSkeleton height={430} />;
+  const headline = stats.data.ok ? stats.data.value.data[view.stat] : null;
+  const total = headline?.value ?? null;
+  const change = headline?.change ?? null;
   return (
     <section className="panel-section grid gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -200,10 +222,10 @@ export async function SummarySection({
             <SeriesChart
               series={read.series}
               format={view.format}
-              interval={read.interval}
+              interval={isDayInterval(read.interval) ? read.interval : "day"}
               previous={read.previous}
               label={view.label}
-              annotations={annotations.ok ? annotations.value.data : []}
+              annotations={annotations.data?.ok ? annotations.data.value.data : []}
               project={project}
               editable={editable}
             />

@@ -1,19 +1,23 @@
+"use client";
+
 import type { AllScope, ProjectScope } from "@spoar/client";
 import type { Period, PublicProject } from "@spoar/contract";
+import { keepPreviousData, useQueries } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { ChangeBadge } from "@/modules/analytics/components/change-badge";
-import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
+import { HeatMap } from "@/modules/analytics/components/heat-map";
 import { RatingBadge } from "@/modules/analytics/components/rating-badge";
 import { SeriesChart } from "@/modules/analytics/components/series-chart";
 import { ShareBar } from "@/modules/analytics/components/share-bar";
-import { HeatMap } from "@/modules/analytics/components/heat-map";
 import { formatMetric } from "@/modules/analytics/format";
 import { sumPoints } from "@/modules/analytics/logs";
-import { readTopList } from "@/modules/analytics/reads";
+import { readTopList } from "@/modules/analytics/series";
 import { vitalSummary, vitalViews } from "@/modules/analytics/speed";
 import { periods } from "@/modules/analytics/view-state";
 import type { FilterDimension } from "@/modules/analytics/view-state";
+import { useRead } from "@/shared/query/read";
+import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import { rankProjects } from "../projects";
 import { OnlineCount } from "./online-count";
@@ -53,6 +57,12 @@ const vitalProjects = 10;
 
 const minSamples = 20;
 
+const speedOptions = { percentile: 75 } as const;
+
+function CardSkeleton({ height }: { height: number }) {
+  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
+}
+
 function periodPhrase(period: Period) {
   const label = periods.find((entry) => entry.value === period)?.label ?? period;
   return label.toLowerCase();
@@ -61,6 +71,17 @@ function periodPhrase(period: Period) {
 function sampleNote(samples: number) {
   const count = formatMetric(samples, "count");
   return samples < minSamples ? `${count} of ${minSamples} needed` : `${count} samples`;
+}
+
+function useAllTopList(
+  scope: AllScope,
+  dimension: FilterDimension,
+  count: "visitors" | "pageviews" | "sessions",
+  limit: number,
+) {
+  return useRead(scope.key("breakdown", dimension, { limit, metrics: [count] }), () =>
+    readTopList(scope, dimension, count, limit),
+  );
 }
 
 function CardHead({ title, description }: CardHeadProps) {
@@ -72,9 +93,12 @@ function CardHead({ title, description }: CardHeadProps) {
   );
 }
 
-export async function VisitorsCard({ scope, period, projectCount }: VisitorsProps) {
-  const [stats, series] = await Promise.all([scope.stats(), scope.timeseries("visitors")]);
-  const visitors = stats.ok ? stats.value.data.visitors : null;
+export function VisitorsCard({ scope, period, projectCount }: VisitorsProps) {
+  const stats = useRead(scope.key("stats"), () => scope.stats());
+  const series = useRead(scope.key("timeseries", "visitors"), () => scope.timeseries("visitors"));
+  if (stats.data === undefined || series.data === undefined) return <CardSkeleton height={392} />;
+  const visitors = stats.data.ok ? stats.data.value.data.visitors : null;
+  const read = series.data;
   const projects = `${projectCount} ${projectCount === 1 ? "project" : "projects"}`;
   return (
     <section className="card card-section">
@@ -89,9 +113,9 @@ export async function VisitorsCard({ scope, period, projectCount }: VisitorsProp
         </div>
         <ChangeBadge change={visitors?.change ?? null} lowerIsBetter={false} />
       </header>
-      {!series.ok ? (
-        <p className="text-sm text-err">Could not read the series: {series.error.message}</p>
-      ) : sumPoints(series.value.data) === 0 ? (
+      {!read.ok ? (
+        <p className="text-sm text-err">Could not read the series: {read.error.message}</p>
+      ) : sumPoints(read.value.data) === 0 ? (
         <EmptyState
           title="No visitors in this range"
           description="Visitors from every project show up here."
@@ -99,9 +123,9 @@ export async function VisitorsCard({ scope, period, projectCount }: VisitorsProp
         />
       ) : (
         <SeriesChart
-          series={[{ label: "Visitors", points: series.value.data }]}
+          series={[{ label: "Visitors", points: read.value.data }]}
           format="count"
-          interval={series.value.interval}
+          interval={read.value.interval}
           label="Visitors"
         />
       )}
@@ -109,15 +133,14 @@ export async function VisitorsCard({ scope, period, projectCount }: VisitorsProp
   );
 }
 
-export async function OnlineCard({ scope }: ScopeProps) {
-  const [live, devices] = await Promise.all([
-    scope.realtime(),
-    readTopList(scope, "device", "visitors", deviceRows),
-  ]);
+export function OnlineCard({ scope }: ScopeProps) {
+  const devices = useAllTopList(scope, "device", "visitors", deviceRows);
+  if (devices.data === undefined) return <CardSkeleton height={392} />;
+  const read = devices.data;
   return (
     <section className="card card-section">
       <header className="grid gap-1">
-        <OnlineCount initial={live.ok ? live.value.data.visitors : null} />
+        <OnlineCount />
         <p className="flex items-center gap-1.5 text-xs text-muted">
           <span className="live-dot" aria-hidden="true" />
           visitors online
@@ -125,27 +148,32 @@ export async function OnlineCard({ scope }: ScopeProps) {
       </header>
       <div className="grid gap-2">
         <h3 className="card-title">Devices</h3>
-        {devices.ok ? (
-          <RankList dimension="device" rows={devices.value.data} share />
+        {read.ok ? (
+          <RankList dimension="device" rows={read.value.data} share />
         ) : (
-          <p className="text-sm text-err">{devices.error}</p>
+          <p className="text-sm text-err">{read.error}</p>
         )}
       </div>
     </section>
   );
 }
 
-export async function ProjectsCard({ scope, period, projects }: ProjectsProps) {
-  const traffic = await scope.projectBreakdown({ metrics: ["visitors", "pageviews"], limit: 100 });
-  const rows = rankProjects(projects, traffic.ok ? traffic.value.data : []);
+export function ProjectsCard({ scope, period, projects }: ProjectsProps) {
+  const options = { metrics: ["visitors", "pageviews"], limit: 100 } as const;
+  const traffic = useRead(scope.key("projectBreakdown", options), () =>
+    scope.projectBreakdown(options),
+  );
+  if (traffic.data === undefined) return <CardSkeleton height={340} />;
+  const read = traffic.data;
+  const rows = rankProjects(projects, read.ok ? read.value.data : []);
   return (
     <section className="card card-section">
       <CardHead
         title="Projects"
         description={`Ranked by visitors in the ${periodPhrase(period)}.`}
       />
-      {traffic.ok ? null : (
-        <p className="text-sm text-err">Could not read traffic: {traffic.error.message}</p>
+      {read.ok ? null : (
+        <p className="text-sm text-err">Could not read traffic: {read.error.message}</p>
       )}
       <div className="home-scroll">
         <table className="home-table">
@@ -191,8 +219,10 @@ export async function ProjectsCard({ scope, period, projects }: ProjectsProps) {
   );
 }
 
-export async function RankCard({ scope, title, description, dimension, limit }: RankCardProps) {
-  const read = await readTopList(scope, dimension, "visitors", Math.max(limit, expandedRows));
+export function RankCard({ scope, title, description, dimension, limit }: RankCardProps) {
+  const list = useAllTopList(scope, dimension, "visitors", Math.max(limit, expandedRows));
+  if (list.data === undefined) return <CardSkeleton height={limit > 6 ? 340 : 252} />;
+  const read = list.data;
   return (
     <section className="card card-section">
       <CardHead title={title} description={description} />
@@ -205,8 +235,10 @@ export async function RankCard({ scope, title, description, dimension, limit }: 
   );
 }
 
-export async function HeatMapCard({ scope, period }: PeriodProps) {
-  const read = await readTopList(scope, "country", "visitors", mapRows);
+export function HeatMapCard({ scope, period }: PeriodProps) {
+  const countries = useAllTopList(scope, "country", "visitors", mapRows);
+  if (countries.data === undefined) return <CardSkeleton height={460} />;
+  const read = countries.data;
   return (
     <section className="card card-section">
       <CardHead
@@ -222,24 +254,29 @@ export async function HeatMapCard({ scope, period }: PeriodProps) {
   );
 }
 
-export async function VitalsCard({ scope, period, projects, projectScope }: VitalsProps) {
+export function VitalsCard({ scope, period, projects, projectScope }: VitalsProps) {
   const listed = projects.slice(0, vitalProjects);
-  const [read, perProject] = await Promise.all([
-    scope.speed({ percentile: 75 }),
-    Promise.all(
-      listed.map(async (project) => ({
-        project,
-        read: await projectScope(project.id).speed({ percentile: 75 }),
-      })),
-    ),
-  ]);
+  const speed = useRead(scope.key("speed", speedOptions), () => scope.speed(speedOptions));
+  const perProject = useQueries({
+    queries: listed.map((project) => {
+      const projectReads = projectScope(project.id);
+      return {
+        queryKey: projectReads.key("speed", speedOptions),
+        queryFn: () => projectReads.speed(speedOptions),
+        placeholderData: keepPreviousData,
+      };
+    }),
+  });
+  if (speed.data === undefined) return <CardSkeleton height={260} />;
+  const read = speed.data;
   const data = read.ok ? read.value.data : null;
-  const measured = perProject
-    .flatMap(({ project, read: projectRead }) =>
-      projectRead.ok && projectRead.value.data.samples > 0
+  const measured = listed
+    .flatMap((project, index) => {
+      const projectRead = perProject[index]?.data;
+      return projectRead?.ok && projectRead.value.data.samples > 0
         ? [{ project, data: projectRead.value.data }]
-        : [],
-    )
+        : [];
+    })
     .sort((left, right) => right.data.samples - left.data.samples);
   const hasValue =
     data !== null && shownVitals.some((view) => data.metrics[view.slug].value !== null);

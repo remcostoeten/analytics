@@ -1,20 +1,6 @@
 import type { ClientError } from "@spoar/client";
-import type {
-  ActiveVisitors,
-  LiveEvent,
-  LiveEvents,
-  LiveSessions,
-  RealtimeResponse,
-} from "@spoar/contract";
+import type { LiveEvent } from "@spoar/contract";
 import type { Result } from "@spoar/shared/result";
-
-export type RealtimeSnapshot = {
-  at: string;
-  summary: Result<RealtimeResponse, ClientError>;
-  events: Result<LiveEvents, ClientError>;
-  visitors: Result<ActiveVisitors, ClientError>;
-  sessions: Result<LiveSessions, ClientError>;
-};
 
 export const realtimeIntervalMs = 30_000;
 

@@ -1,14 +1,21 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+
 import { formatMetric } from "../format";
-import { readOutcomes, sumPoints } from "../logs";
+import { sumPoints } from "../logs";
 import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
+import { useOutcomes } from "./overview-sections";
 import { SeriesChart } from "./series-chart";
 
 type Props = { scope: ProjectScope };
 
-export async function OutcomeSection({ scope }: Props) {
-  const read = await readOutcomes(scope);
+export function OutcomeSection({ scope }: Props) {
+  const outcomes = useOutcomes(scope);
+  if (outcomes.data === undefined) return <SectionSkeleton height={310} />;
+  const read = outcomes.data;
   return (
     <section className="panel-section grid gap-3">
       <h2 className="text-sm font-medium">Page views by outcome over time</h2>

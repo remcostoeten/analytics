@@ -1,9 +1,16 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useReadOf } from "@/shared/query/read";
+import type { Prefetchable } from "@/shared/query/read";
+
 import { formatMetric } from "../format";
-import { readTopList } from "../reads";
+import { statsQuery, topListQuery } from "../queries";
 import { viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
+import { useTopList } from "./breakdown-sections";
 import { ChangeBadge } from "./change-badge";
 import { TopList } from "./top-list";
 
@@ -30,12 +37,29 @@ function hrefFor(path: string, state: ViewState, dimension: FilterDimension) {
   return (value: string) => `${path}${viewQuery(withFilter(state, dimension, value))}`;
 }
 
-export async function VisitorSummary({ scope, state, path }: Props) {
-  const [stats, countries, devices] = await Promise.all([
-    scope.stats(),
-    readTopList(scope, "country", "visitors", topRows),
-    readTopList(scope, "device", "visitors", topRows),
-  ]);
+/**
+ * @name visitorSummaryReads
+ * @description The visitor summary's reads on a scope, for warming the cache before a navigation.
+ *
+ * @example
+ * prefetchReads(queryClient, visitorSummaryReads(scope));
+ */
+export function visitorSummaryReads(scope: ProjectScope): Prefetchable[] {
+  return [
+    statsQuery(scope),
+    topListQuery(scope, "country", "visitors", topRows),
+    topListQuery(scope, "device", "visitors", topRows),
+  ];
+}
+
+export function VisitorSummary({ scope, state, path }: Props) {
+  const statsRead = useReadOf(statsQuery(scope));
+  const countriesRead = useTopList(scope, "country", "visitors", topRows);
+  const devicesRead = useTopList(scope, "device", "visitors", topRows);
+  if (statsRead.data === undefined) return <SectionSkeleton height={160} />;
+  const stats = statsRead.data;
+  const countries = countriesRead.data;
+  const devices = devicesRead.data;
   if (!stats.ok) return null;
   const data = stats.value.data;
   const perVisitor = data.visitors.value > 0 ? data.sessions.value / data.visitors.value : 0;
@@ -61,7 +85,7 @@ export async function VisitorSummary({ scope, state, path }: Props) {
           note={`${data.pagesPerSession.value.toFixed(1)} per session`}
         />
       </div>
-      {countries.ok ? (
+      {countries?.ok ? (
         <TopList
           title="Where from"
           dimension="country"
@@ -70,7 +94,7 @@ export async function VisitorSummary({ scope, state, path }: Props) {
           hrefFor={hrefFor(path, state, "country")}
         />
       ) : null}
-      {devices.ok ? (
+      {devices?.ok ? (
         <TopList
           title="On what"
           dimension="device"

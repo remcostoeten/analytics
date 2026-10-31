@@ -1,10 +1,16 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 import type { EventRow } from "@spoar/contract";
 import { JsonBlock } from "@/shared/ui/json-block";
 import { Link } from "@/shared/ui/link";
 
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useReadOf } from "@/shared/query/read";
+
 import { formatDimensionValue } from "../format";
-import { eventOutcome, logPageSize } from "../logs";
+import { eventOutcome } from "../logs";
+import { eventsQuery } from "../queries";
 import { hasFilters, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
 import { ActivityIllustration, EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
@@ -88,8 +94,10 @@ function Detail({ row, base, state }: { row: EventRow; base: string; state: View
   );
 }
 
-export async function EventLog({ scope, state, path, base, cursor }: Props) {
-  const read = await scope.events({ limit: logPageSize, cursor });
+export function EventLog({ scope, state, path, base, cursor }: Props) {
+  const events = useReadOf(eventsQuery(scope, cursor));
+  if (events.data === undefined) return <SectionSkeleton height={480} />;
+  const read = events.data;
   if (!read.ok) {
     return (
       <section className="panel-section">

@@ -178,7 +178,6 @@ for (const route of routes) {
       await trigger.click();
       await page.waitForURL(atPath(route.path));
       await expect(route.shell(page)).toBeVisible();
-      if (route.deferred) await expect(route.deferred(page)).toHaveCount(0);
     });
     if (route.deferred) await expect(route.deferred(page).first()).toBeVisible();
   });

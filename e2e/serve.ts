@@ -11,6 +11,7 @@ import { runMigrations } from "@spoar/engine/db/migrate";
 import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 import { createProxy } from "@spoar/sdk/proxy";
 
+import { dashboardPort } from "./dashboard-port";
 import {
   adminCookie,
   apiPort,
@@ -180,7 +181,7 @@ const api = createApp({
     ),
   logger: () => memoryLogger(),
   clock: () => clock.now(),
-  dashboardOrigin: null,
+  dashboardOrigin: `http://localhost:${dashboardPort}`,
   docsBase: "http://localhost/v2/openapi",
   geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
   access: {

@@ -2,13 +2,14 @@
 
 import { notify } from "@remcostoeten/notifier";
 import type { AnnotationKind } from "@spoar/contract";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { browserClient } from "@/shared/api/browser-client";
+import { invalidateRoute } from "@/shared/query/read";
 import { PlusCircleIcon } from "@/shared/ui/icons";
 import { Select } from "@/shared/ui/select";
 
-import { createAnnotation } from "../actions";
 import { annotationKinds, calendarDay, isCalendarDate, kindLabels } from "../annotations";
 
 type Props = { project: string };
@@ -18,7 +19,7 @@ function isKind(value: string): value is AnnotationKind {
 }
 
 export function AddAnnotation({ project }: Props) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -67,7 +68,7 @@ export function AddAnnotation({ project }: Props) {
             const trimmed = title.trim();
             if (!trimmed || !isCalendarDate(date)) return;
             setBusy(true);
-            const result = await createAnnotation(project, {
+            const result = await browserClient().annotations.create(project, {
               title: trimmed,
               date,
               endDate: isCalendarDate(endDate) ? endDate : null,
@@ -84,7 +85,7 @@ export function AddAnnotation({ project }: Props) {
             setTitle("");
             setNote("");
             setEndDate("");
-            router.refresh();
+            await invalidateRoute(queryClient, "annotations");
           }}
         >
           <label className="grid gap-1 text-xs text-muted">

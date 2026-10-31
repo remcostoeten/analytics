@@ -1,11 +1,14 @@
+"use client";
+
 import { notFound } from "next/navigation";
 
-import { findProject } from "@/modules/analytics/reads";
+import { useProject } from "@/modules/analytics/use-projects";
 
 type Props = { project: string };
 
-export async function ProjectDomain({ project }: Props) {
-  const found = await findProject(project);
-  if (!found) notFound();
-  return <span className="font-mono text-xs text-muted">{found.domain}</span>;
+export function ProjectDomain({ project }: Props) {
+  const found = useProject(project);
+  if (found.status === "missing") notFound();
+  if (found.status === "loading") return null;
+  return <span className="font-mono text-xs text-muted">{found.project.domain}</span>;
 }

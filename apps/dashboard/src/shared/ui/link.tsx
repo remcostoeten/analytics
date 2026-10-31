@@ -4,35 +4,48 @@ import NextLink from "next/link";
 import type { ComponentProps } from "react";
 import { useState } from "react";
 
+import { usePrefetchHref } from "@/shared/query/prefetch";
+
 type Props = Omit<ComponentProps<typeof NextLink>, "prefetch">;
 
 /**
  * @name Link
- * @description `next/link` that keeps the route's shared shell prefetch and switches to a full
- * prefetch once the pointer or focus lands on it, so the destination's URL-dependent parts
- * (project name, filters, period) are ready on click. Links are `nofollow`, so a crawler that
- * reads a public project's page does not walk every filter combination.
+ * @description `next/link` that asks the surrounding view to prefetch the destination's data once
+ * the pointer or focus lands on it, so the next view renders with data on click. Admin links also
+ * switch to a full route prefetch then, since the admin pages still render their URL-dependent
+ * parts on the server. Links are `nofollow`, so a crawler that reads a public project's page does
+ * not walk every filter combination.
  *
  * @example
  * <Link href={`/projects/${project}/speed`}>Speed</Link>
  */
-export function Link({ onMouseEnter, onFocus, onTouchStart, ...rest }: Props) {
+export function Link({ href, onMouseEnter, onFocus, onTouchStart, ...rest }: Props) {
   const [intent, setIntent] = useState(false);
+  const prefetchHref = usePrefetchHref();
+  const target = typeof href === "string" ? href : null;
+  const admin = target !== null && target.startsWith("/admin");
+
+  function intend() {
+    setIntent(true);
+    if (target !== null) prefetchHref(target);
+  }
+
   return (
     <NextLink
       rel="nofollow"
+      href={href}
       {...rest}
-      prefetch={intent ? true : "auto"}
+      prefetch={intent && admin ? true : "auto"}
       onMouseEnter={(event) => {
-        setIntent(true);
+        intend();
         onMouseEnter?.(event);
       }}
       onFocus={(event) => {
-        setIntent(true);
+        intend();
         onFocus?.(event);
       }}
       onTouchStart={(event) => {
-        setIntent(true);
+        intend();
         onTouchStart?.(event);
       }}
     />
