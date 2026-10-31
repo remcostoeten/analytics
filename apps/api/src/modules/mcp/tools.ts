@@ -13,6 +13,7 @@ import {
   RangeQuery,
   RotateKey,
   SpeedQuery,
+  TimeseriesQuery,
   TrafficFilter,
   UpdateProject,
 } from "@spoar/contract";
@@ -25,7 +26,7 @@ import type { JsonObject } from "./protocol";
 export type ToolResult = { text: string; structured?: JsonObject; isError?: boolean };
 
 export type Forward = (input: {
-  method: "GET" | "POST" | "PATCH";
+  method: "GET" | "POST" | "PATCH" | "DELETE";
   path: string;
   query?: { [name: string]: unknown };
   body?: JsonObject;
@@ -92,7 +93,7 @@ async function fromResponse(response: Response, note?: string): Promise<ToolResu
   const text = await response.text();
   const payload: Json = text ? JSON.parse(text) : null;
   if (!response.ok) return { text: errorMessage(payload, response.status), isError: true };
-  const data = isObject(payload) && "data" in payload ? payload.data : payload;
+  const data = isObject(payload) && "data" in payload ? payload.data : (payload ?? { ok: true });
   const structured: JsonObject = {
     ...(isObject(data) ? data : { data }),
     ...(isObject(payload) && "nextCursor" in payload ? { nextCursor: payload.nextCursor } : {}),
@@ -184,6 +185,14 @@ const stats = readTool(
   "Visitors, pageviews, sessions, bounce rate and time on page for a period, compared to the previous one.",
   Scope,
   (input) => `${projectPath(input)}/stats`,
+);
+
+const timeseries = readTool(
+  "timeseries",
+  "One metric over time",
+  "A metric per hour, day, week or month over the period, optionally with the previous period beside it; for questions such as whether traffic dropped last week.",
+  Type.Object({ ...Scope.properties, ...TimeseriesQuery.properties }),
+  (input) => `${projectPath(input)}/timeseries`,
 );
 
 const breakdown = readTool(
@@ -345,6 +354,89 @@ const checkKeys: Tool = {
   },
 };
 
+const keyUsage: Tool = {
+  name: "key_usage",
+  title: "Key usage",
+  description:
+    "When and from which origin the public and the secret key last authorized an ingest batch. The quickest way to see that a new site is sending: the public key shows the browser's origin after the first page load, the secret key the proxy's.",
+  level: "admin",
+  readOnly: true,
+  inputSchema: Type.Object({ project: Project }),
+  call: async (input, context) =>
+    fromResponse(
+      await context.forward({ method: "GET", path: `${projectPath(input)}/key-usage` }),
+      "A null lastUsedAt means that key has not authorized a batch yet. An unexpected lastUsedOrigin usually means the origin is missing from allowedOrigins; add it with add_origins.",
+    ),
+};
+
+const addOrigins: Tool = {
+  name: "add_origins",
+  title: "Add allowed origins",
+  description:
+    "Adds origins to a project's `allowedOrigins` without touching the ones already there. Use this rather than update_project to allow one more origin, such as a preview host.",
+  level: "admin",
+  readOnly: false,
+  inputSchema: Type.Object({
+    project: Project,
+    origins: Type.Array(Type.String({ format: "uri" }), {
+      minItems: 1,
+      description: "Exact origins, such as `https://preview.example.com`.",
+    }),
+  }),
+  call: async (input, context) => {
+    const current = await context.forward({ method: "GET", path: projectPath(input) });
+    if (!current.ok) return fromResponse(current);
+    const project: Json = await current.json();
+    const data = isObject(project) && isObject(project.data) ? project.data : {};
+    const existing = Array.isArray(data.allowedOrigins) ? data.allowedOrigins.map(text) : [];
+    const added = Array.isArray(input.origins) ? input.origins.map(text) : [];
+    const merged = [...new Set([...existing, ...added])];
+    const response = await context.forward({
+      method: "PATCH",
+      path: projectPath(input),
+      body: { allowedOrigins: merged },
+    });
+    return fromResponse(
+      response,
+      existing.length === 0
+        ? "The project allowed every origin before; it now allows only the listed ones."
+        : undefined,
+    );
+  },
+};
+
+const listTokens: Tool = {
+  name: "list_tokens",
+  title: "List API tokens",
+  description:
+    "Every API token with its scope, projects, last use and expiry. Values are never shown.",
+  level: "admin",
+  readOnly: true,
+  inputSchema: Type.Object({}),
+  call: async (_input, context) =>
+    fromResponse(await context.forward({ method: "GET", path: "/v2/tokens" })),
+};
+
+const revokeToken: Tool = {
+  name: "revoke_token",
+  title: "Revoke an API token",
+  description: "Stops a token at once, by its `tok_` id from list_tokens.",
+  level: "admin",
+  readOnly: false,
+  destructive: true,
+  inputSchema: Type.Object({
+    token: Type.String({ minLength: 1, description: "The token id (`tok_...`), not its value." }),
+  }),
+  call: async (input, context) =>
+    fromResponse(
+      await context.forward({
+        method: "DELETE",
+        path: `/v2/tokens/${encodeURIComponent(text(input.token))}`,
+      }),
+      "The token stopped working now; anything that used it needs a new one from create_token.",
+    ),
+};
+
 const createToken: Tool = {
   name: "create_token",
   title: "Create an API token",
@@ -360,9 +452,9 @@ const createToken: Tool = {
 /**
  * @name tools
  * @description The MCP tools, each a call to one existing route with the caller's own token:
- * the reads any token may make, `sql` for the `sql` scope, and the project, key and token
- * writes for the `admin` scope. There is no project deletion; that stays with the owner in
- * the dashboard.
+ * the reads any token may make, `sql` for the `sql` scope, and for the `admin` scope the
+ * project, origin, key and token writes plus key usage. There is no project deletion; that
+ * stays with the owner in the dashboard.
  *
  * @example
  * tools.find((tool) => tool.name === "stats");
@@ -371,6 +463,7 @@ export const tools: Tool[] = [
   listProjects,
   getProject,
   stats,
+  timeseries,
   breakdown,
   speed,
   issues,
@@ -379,8 +472,12 @@ export const tools: Tool[] = [
   sql,
   createProject,
   updateProject,
+  addOrigins,
   rotateKey,
   checkKeys,
+  keyUsage,
+  listTokens,
+  revokeToken,
   createToken,
 ];
 

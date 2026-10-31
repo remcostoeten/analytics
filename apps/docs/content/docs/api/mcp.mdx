@@ -40,6 +40,7 @@ Which tools a client sees follows the token's scope. A `read` token gets the rea
 | `list_projects` | read | The projects the token may read |
 | `get_project` | read | One project with its settings and public key |
 | `stats` | read | Visitors, pageviews, sessions, bounce rate and time on page for a period |
+| `timeseries` | read | One metric per hour, day, week or month, optionally against the previous period |
 | `breakdown` | read | Top values of a dimension such as `page`, `referrer_domain` or `country` |
 | `speed` | read | Core Web Vitals and the Real Experience Score |
 | `issues` | read | Grouped JavaScript errors |
@@ -48,19 +49,29 @@ Which tools a client sees follows the token's scope. A `read` token gets the rea
 | `sql` | sql | One read-only statement against the [documented views](/docs/api/sql) |
 | `create_project` | admin | A project with new keys; the secret key is in the answer once |
 | `update_project` | admin | Name, visibility, allowed origins, retention and the switches |
+| `add_origins` | admin | Adds origins to `allowedOrigins`, keeping the ones already there |
 | `rotate_key` | admin | A new public or secret key; the old one stops at once |
 | `check_keys` | admin | Verifies a secret key by hash and reports whether pageviews arrive |
+| `key_usage` | admin | When and from which origin each key last authorized a batch |
+| `list_tokens` | admin | Every API token, without its value |
+| `revoke_token` | admin | Stops a token by its id |
 | `create_token` | admin | Another API token, for CI or a second client |
 
 There is no delete tool. Removing a project stays with the owner in the dashboard.
 
 Read tools take `project`, the range as `period` or `from` and `to`, `traffic`, `environment` and `filter` as a dimension-to-value map, the same parameters as the routes in the [API overview](/docs/api/overview).
 
-Three tools add a note to their answer because the API alone cannot tell the agent what happens next:
+## Is a new site sending?
+
+`key_usage` is the quickest check. After the first page load in the browser, the public key shows a `lastUsedAt` and the page's origin; after the first proxied batch, the secret key does too. A `lastUsedOrigin` you did not expect is an origin missing from `allowedOrigins`, which `add_origins` fixes in one step. `check_keys` then confirms the keys with its `connected` state once pageviews are counted.
+
+Some tools add a note to their answer because the API alone cannot tell the agent what happens next:
 
 - `create_project` adds `http://localhost:<port>` and `http://127.0.0.1:<port>` to `allowedOrigins`, for the `devPort` you pass or for 3000, 4321 and 5173, so the first local run is not rejected. Trim the list with `update_project` before going live if you want a strict one.
 - `rotate_key` reminds the agent that the old key stopped working, and that the deployed environment, and for build-time values a new build, must carry the new one before the site sends events again.
 - `check_keys` explains the states: `waiting` until the first real pageview, `connected` after it, `rejected` when events came from an origin outside `allowedOrigins`.
+- `add_origins` warns when the project allowed every origin before, since the list it writes is now the only one accepted.
+- `revoke_token` reminds the agent that whatever used the token needs a new one.
 
 ## The setup prompt
 

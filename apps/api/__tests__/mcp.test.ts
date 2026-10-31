@@ -180,6 +180,7 @@ describe("POST /v2/mcp", () => {
       "list_projects",
       "get_project",
       "stats",
+      "timeseries",
       "breakdown",
       "speed",
       "issues",
@@ -192,8 +193,12 @@ describe("POST /v2/mcp", () => {
       ...reads,
       "create_project",
       "update_project",
+      "add_origins",
       "rotate_key",
       "check_keys",
+      "key_usage",
+      "list_tokens",
+      "revoke_token",
       "create_token",
     ]);
   });
@@ -312,9 +317,57 @@ describe("POST /v2/mcp", () => {
     expect(refused.error.message).toContain("Unknown tool");
   });
 
-  test("create_token answers with the value once", async () => {
-    const json = await call("create_token", { name: "ci", scope: "read" });
-    expect(json.result.structuredContent.token).toStartWith("at_live_");
+  test("timeseries reads one metric per day", async () => {
+    const json = await call("timeseries", { project: "site", period: "7d", metric: "pageviews" });
+    const points = json.result.structuredContent.data as Json[];
+    expect(points.reduce((sum, point) => sum + point.value, 0)).toBe(1);
+  });
+
+  test("add_origins merges with the existing list", async () => {
+    const json = await call("add_origins", {
+      project: "shop",
+      origins: ["https://preview.shop.test", "https://shop.test"],
+    });
+    expect(json.result.structuredContent.allowedOrigins).toEqual([
+      "https://shop.test",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:4321",
+      "http://127.0.0.1:4321",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "https://preview.shop.test",
+    ]);
+    expect(json.result.structuredContent.note).toBeUndefined();
+  });
+
+  test("add_origins warns when the project allowed every origin", async () => {
+    const json = await call("add_origins", { project: "site", origins: ["https://site.test"] });
+    expect(json.result.structuredContent.allowedOrigins).toEqual(["https://site.test"]);
+    expect(json.result.structuredContent.note).toContain("every origin");
+  });
+
+  test("key_usage shows a fresh project has not sent yet", async () => {
+    const json = await call("key_usage", { project: "blog" });
+    expect(json.result.structuredContent.public.lastUsedAt).toBeNull();
+    expect(json.result.structuredContent.note).toContain("add_origins");
+  });
+
+  test("create_token answers with the value once, list_tokens never shows it, revoke_token stops it", async () => {
+    const created = await call("create_token", { name: "ci", scope: "read" });
+    const token = created.result.structuredContent.token as string;
+    const id = created.result.structuredContent.id as string;
+    expect(token).toStartWith("at_live_");
+    const list = await call("list_tokens");
+    const entry = (list.result.structuredContent.data as Json[]).find((row) => row.id === id)!;
+    expect(entry.name).toBe("ci");
+    expect(JSON.stringify(list)).not.toContain(token);
+    expect(await listed(token)).toContain("stats");
+    const revoked = await call("revoke_token", { token: id });
+    expect(revoked.result.structuredContent.ok).toBe(true);
+    expect(revoked.result.structuredContent.note).toContain("stopped working");
+    const after = await rpc("tools/list", {}, token);
+    expect(after.status).toBe(401);
   });
 
   test("serves the setup prompt", async () => {
