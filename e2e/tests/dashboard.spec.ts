@@ -172,7 +172,10 @@ for (const route of routes) {
     page,
   }) => {
     await page.goto(`${base}${route.from}`);
-    const trigger = page.getByRole("link", { name: route.link, exact: true }).first();
+    const trigger = page
+      .getByRole("link", { name: route.link, exact: true })
+      .and(page.locator(`[href="/dashboard${route.path}"]`))
+      .first();
     await expect(trigger).toBeVisible();
     await instant(page, async () => {
       await trigger.click();
