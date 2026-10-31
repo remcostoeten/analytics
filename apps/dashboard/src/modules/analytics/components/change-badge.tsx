@@ -1,20 +1,42 @@
-import { TrendIcon } from "@/shared/ui/icons";
-
 import { formatChange } from "../format";
 
 type Props = { change: number | null; lowerIsBetter: boolean };
 
+const flatBelow = 0.0005;
+
+function tone(change: number, lowerIsBetter: boolean) {
+  if (Math.abs(change) < flatBelow) return "flat";
+  const rising = change > 0;
+  return lowerIsBetter !== rising ? "good" : "bad";
+}
+
+function Chevron({ change }: { change: number }) {
+  if (Math.abs(change) < flatBelow) {
+    return (
+      <svg viewBox="0 0 8 8" className="delta-mark" aria-hidden="true">
+        <path d="M1.5 4h5" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 8 8" className="delta-mark" aria-hidden="true">
+      <path d={change > 0 ? "M1.5 5.25 4 2.75l2.5 2.5" : "M1.5 2.75 4 5.25l2.5-2.5"} />
+    </svg>
+  );
+}
+
 export function ChangeBadge({ change, lowerIsBetter }: Props) {
   const text = formatChange(change);
-  if (text === null) return null;
-  const rising = (change ?? 0) >= 0;
-  const good = lowerIsBetter ? !rising : rising;
+  if (text === null || change === null) return null;
+  const direction = Math.abs(change) < flatBelow ? "Unchanged" : change > 0 ? "Up" : "Down";
   return (
     <span
-      className={`flex items-center gap-0.5 text-xs ${good ? "text-ok" : "text-err"}`}
+      className="delta"
+      data-tone={tone(change, lowerIsBetter)}
       title="Compared with the previous period"
     >
-      <TrendIcon down={!rising} className="size-3" />
+      <Chevron change={change} />
+      <span className="sr-only">{direction} </span>
       {text}
     </span>
   );

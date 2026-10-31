@@ -71,15 +71,15 @@ export function MetricRail({ project, state, base, current, initial, renderedAt 
             aria-current={selected ? "page" : undefined}
             className="metric-card"
           >
-            <span className="metric-label text-sm">{view.label}</span>
-            <span className="flex items-baseline gap-2">
-              {stat ? (
-                <AnimatedNumber value={stat.value} format={view.format} className="metric-value" />
-              ) : (
-                <span className="metric-value">–</span>
-              )}
+            <span className="metric-head">
+              <span className="metric-label text-sm">{view.label}</span>
               <ChangeBadge change={stat?.change ?? null} lowerIsBetter={view.lowerIsBetter} />
             </span>
+            {stat ? (
+              <AnimatedNumber value={stat.value} format={view.format} className="metric-value" />
+            ) : (
+              <span className="metric-value">–</span>
+            )}
             <Sparkline points={sparklines[index]?.data ?? []} />
           </Link>
         );
