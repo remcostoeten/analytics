@@ -4,11 +4,13 @@ import type { ClientError } from "@spoar/client";
 import type { ActiveVisitor, LiveEvent, LiveEvents, LiveSession } from "@spoar/contract";
 import { ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
-import { focusManager, useQuery, useQueryClient } from "@tanstack/react-query";
+import { focusManager, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/shared/ui/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { RealtimeBodySkeleton } from "@/modules/shell/components/skeletons";
 import { browserClient } from "@/shared/api/browser-client";
+import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState, IconStack } from "@/shared/ui/empty-state";
 import { PulseIcon, UsersIcon } from "@/shared/ui/icons";
 
@@ -20,11 +22,9 @@ import {
   formatTime,
 } from "../format";
 import { feedKeep, feedLimit, mergeEvents, needsSignIn, realtimeIntervalMs } from "../realtime";
-import type { RealtimeSnapshot } from "../realtime";
 
 type Props = {
   project: string;
-  initial: RealtimeSnapshot;
   base: string;
   canFollow: boolean;
 };
@@ -230,14 +230,13 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
   );
 }
 
-export function RealtimePanel({ project, initial, base, canFollow }: Props) {
+export function RealtimePanel({ project, base, canFollow }: Props) {
   const scope = browserClient().project(project);
   const queryClient = useQueryClient();
   const polling = {
     refetchInterval: realtimeIntervalMs,
     refetchOnWindowFocus: true,
     staleTime: realtimeIntervalMs,
-    initialDataUpdatedAt: Date.parse(initial.at),
   };
 
   function detailHref(visitor: string) {
@@ -249,36 +248,28 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
   }
 
   const eventsKey = scope.key("realtimeEvents", { limit: feedLimit });
-  const summaryRead = useQuery({
-    queryKey: scope.key("realtime"),
-    queryFn: () => scope.realtime(),
-    initialData: initial.summary,
-    ...polling,
-  });
-  const eventsRead = useQuery({
-    queryKey: eventsKey,
-    queryFn: async () => {
+  const summaryRead = useRead(scope.key("realtime"), () => scope.realtime(), polling);
+  const eventsRead = useRead(
+    eventsKey,
+    async () => {
       const read = await scope.realtimeEvents({ limit: feedLimit });
       if (!read.ok) return read;
       const shown = queryClient.getQueryData<Result<LiveEvents, ClientError>>(eventsKey);
       const previous = shown?.ok ? shown.value.data : [];
       return ok({ ...read.value, data: mergeEvents(previous, read.value.data, feedKeep) });
     },
-    initialData: initial.events,
-    ...polling,
-  });
-  const visitorsRead = useQuery({
-    queryKey: scope.key("realtimeVisitors", { limit: detailLimit }),
-    queryFn: () => scope.realtimeVisitors({ limit: detailLimit }),
-    initialData: initial.visitors,
-    ...polling,
-  });
-  const sessionsRead = useQuery({
-    queryKey: scope.key("realtimeSessions", { limit: detailLimit }),
-    queryFn: () => scope.realtimeSessions({ limit: detailLimit }),
-    initialData: initial.sessions,
-    ...polling,
-  });
+    polling,
+  );
+  const visitorsRead = useRead(
+    scope.key("realtimeVisitors", { limit: detailLimit }),
+    () => scope.realtimeVisitors({ limit: detailLimit }),
+    polling,
+  );
+  const sessionsRead = useRead(
+    scope.key("realtimeSessions", { limit: detailLimit }),
+    () => scope.realtimeSessions({ limit: detailLimit }),
+    polling,
+  );
 
   const paused = !useSyncExternalStore(subscribeFocus, readFocus, () => true);
   const [now, setNow] = useState(() => Date.now());
@@ -298,6 +289,14 @@ export function RealtimePanel({ project, initial, base, canFollow }: Props) {
     realtimeIntervalMs / 1000,
     Math.max(0, Math.ceil((updatedAt + realtimeIntervalMs - now) / 1000)),
   );
+  if (
+    summaryRead.data === undefined ||
+    eventsRead.data === undefined ||
+    visitorsRead.data === undefined ||
+    sessionsRead.data === undefined
+  ) {
+    return <RealtimeBodySkeleton />;
+  }
   const snapshot = {
     summary: summaryRead.data,
     events: eventsRead.data,

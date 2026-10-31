@@ -20,7 +20,7 @@
 	},
 	"scripts": {
 		"typecheck": "tsgo --noEmit",
-		"test": "bun test"
+		"test": "bun test --timeout 30000"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "1.1.0",

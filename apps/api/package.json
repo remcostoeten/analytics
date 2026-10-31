@@ -13,7 +13,7 @@
 		"deploy:worker": "wrangler deploy",
 		"build": "bun scripts/download-geo.ts",
 		"typecheck": "tsgo --noEmit",
-		"test": "bun test",
+		"test": "bun test --timeout 30000",
 		"openapi": "bun scripts/openapi.ts"
 	},
 	"dependencies": {

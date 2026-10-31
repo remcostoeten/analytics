@@ -1,13 +1,18 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 import type { DeviceType, VisitorRow } from "@spoar/contract";
 import type { CSSProperties, ReactNode } from "react";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useReadOf } from "@/shared/query/read";
 import { EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 import { DesktopIcon, GlobeIcon, MobileIcon, TabletIcon } from "@/shared/ui/icons";
 
 import { formatDateTime, formatDimensionValue, formatMetric, formatRelative } from "../format";
+import { visitorsQuery } from "../queries";
 import { hasFilters, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
 import { countryFlag, groupVisitors, visitorHue } from "../visitor-presentation";
@@ -15,8 +20,6 @@ import { countryFlag, groupVisitors, visitorHue } from "../visitor-presentation"
 type Props = { scope: ProjectScope; state: ViewState; path: string; cursor: string | undefined };
 
 type CountProps = { value: number; max: number };
-
-const pageSize = 50;
 
 const deviceIcons: { [Device in DeviceType]: ReactNode } = {
   desktop: <DesktopIcon className="size-3.5" />,
@@ -87,8 +90,10 @@ function Row({ row, href, max }: { row: VisitorRow; href: string; max: number })
   );
 }
 
-export async function VisitorList({ scope, state, path, cursor }: Props) {
-  const read = await scope.visitors({ limit: pageSize, cursor });
+export function VisitorList({ scope, state, path, cursor }: Props) {
+  const visitors = useReadOf(visitorsQuery(scope, cursor));
+  if (visitors.data === undefined) return <SectionSkeleton height={360} />;
+  const read = visitors.data;
   if (!read.ok) return <ReadNotice error={read.error} what="visitors" />;
   const rows = read.value.data;
   const max = Math.max(1, ...rows.map((row) => Math.max(row.sessions, row.pageviews)));

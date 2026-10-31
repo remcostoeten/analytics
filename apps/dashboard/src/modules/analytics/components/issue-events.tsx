@@ -1,8 +1,12 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
 import type { IssueEvent } from "@spoar/contract";
 import type { IssueID } from "@spoar/shared/semantic";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import { formatDateTime, formatTime } from "../format";
@@ -47,10 +51,14 @@ function Breadcrumbs({ event }: { event: IssueEvent }) {
   );
 }
 
-export async function IssueEvents({ scope, issue }: Props) {
-  const read = await scope.issueEvents(issue, { limit: eventLimit });
+export function IssueEvents({ scope, issue }: Props) {
+  const events = useRead(scope.key("issueEvents", issue, { limit: eventLimit }), () =>
+    scope.issueEvents(issue, { limit: eventLimit }),
+  );
+  if (events.data === undefined) return <SectionSkeleton height={320} />;
+  const read = events.data;
   if (!read.ok) return <ReadNotice error={read.error} what="this issue's events" />;
-  const events = read.value.data;
+  const rows = read.value.data;
   return (
     <section className="panel-section grid gap-4">
       <header className="grid gap-1">
@@ -59,7 +67,7 @@ export async function IssueEvents({ scope, issue }: Props) {
           The most recent stored occurrences with their stack and what happened before them.
         </p>
       </header>
-      {events.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           title="No stored events"
           description="No occurrence of this issue is stored."
@@ -67,7 +75,7 @@ export async function IssueEvents({ scope, issue }: Props) {
         />
       ) : (
         <ul className="grid gap-3">
-          {events.map((event) => (
+          {rows.map((event) => (
             <li key={event.id} className="card grid gap-3 p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
                 <span className="flex flex-wrap gap-x-3 gap-y-1">
@@ -97,7 +105,7 @@ export async function IssueEvents({ scope, issue }: Props) {
         </ul>
       )}
       {read.value.nextCursor ? (
-        <p className="text-xs text-muted">Showing the latest {events.length} events.</p>
+        <p className="text-xs text-muted">Showing the latest {rows.length} events.</p>
       ) : null}
     </section>
   );

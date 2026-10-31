@@ -1,22 +1,45 @@
+"use client";
+
 import type { BreakdownRow } from "@spoar/contract";
+import { useRef, useState } from "react";
+import type { PointerEvent } from "react";
 
 import { formatMetric } from "../format";
 import type { CountMetric } from "../metrics";
 import { countryCenter } from "../world-centers";
 import world from "../world-shapes.json";
 
-type Props = { rows: BreakdownRow[]; count: CountMetric };
+type Props = {
+  rows: BreakdownRow[];
+  count: CountMetric;
+  active?: string;
+  onSelect?: (code: string) => void;
+};
 
 type Point = readonly [number, number];
 
 type Ring = { points: Point[]; minX: number; maxX: number; minY: number; maxY: number };
 
-type Lit = { code: string; name: string; dots: string; value: number; level: number };
+type Lit = {
+  code: string;
+  name: string;
+  dots: string;
+  value: number;
+  level: number;
+  rank: number;
+  share: number;
+};
 
 const pitch = 7;
 const dash = `0 ${pitch}`;
 const rowHeight = pitch * 0.866;
 const levels = [1, 2, 3, 4, 5] as const;
+const tipOffset = 14;
+const countLabels = {
+  visitors: "visitors",
+  pageviews: "page views",
+  sessions: "sessions",
+} as const;
 const numberPattern = /-?\d+(?:\.\d+)?/g;
 
 function parseRings(path: string): Ring[] {
@@ -107,32 +130,77 @@ function level(value: number, max: number) {
   return Math.max(1, Math.ceil(Math.sqrt(value / max) * levels.length));
 }
 
-export function HeatMap({ rows, count }: Props) {
+function percent(share: number) {
+  if (share > 0 && share < 0.01) return "<1%";
+  return `${Math.round(share * 100)}%`;
+}
+
+export function HeatMap({ rows, count, active, onSelect }: Props) {
+  const tooltip = useRef<HTMLDivElement>(null);
+  const [code, setCode] = useState("");
+  const [open, setOpen] = useState(false);
   const values = rows.flatMap((row) => {
     const value = row[count] ?? 0;
     return value > 0 ? [{ code: row.value, value }] : [];
   });
   const max = Math.max(1, ...values.map((entry) => entry.value));
+  const total = Math.max(
+    1,
+    values.reduce((sum, entry) => sum + entry.value, 0),
+  );
   const lit = values
-    .flatMap(({ code, value }): Lit[] => {
-      const centre = countryCenter(code);
+    .flatMap(({ code: countryCode, value }): Lit[] => {
+      const centre = countryCenter(countryCode);
       if (!centre) return [];
-      const dots = dotsByCountry.get(code) ?? [];
+      const dots = dotsByCountry.get(countryCode) ?? [];
       return [
         {
-          code,
+          code: countryCode,
           name: centre.name,
           dots: dotPath(dots.length > 0 ? dots : [[centre.x, centre.y]]),
           value,
           level: level(value, max),
+          rank: 0,
+          share: value / total,
         },
       ];
     })
-    .toSorted((left, right) => left.value - right.value);
+    .toSorted((left, right) => right.value - left.value)
+    .map((country, index) => ({ ...country, rank: index + 1 }))
+    .toReversed();
   const top = lit.at(-1);
-  const topCentre = top ? countryCenter(top.code) : null;
+  const shown = lit.find((country) => country.code === code);
+
+  function track(event: PointerEvent<HTMLElement>) {
+    const target = event.target instanceof Element ? event.target.closest("[data-code]") : null;
+    const next = target?.getAttribute("data-code") ?? "";
+    setOpen(next !== "");
+    if (next !== "") setCode(next);
+    const tip = tooltip.current;
+    if (!tip || next === "") return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - box.left;
+    const y = event.clientY - box.top;
+    const flip = x + tipOffset + tip.offsetWidth > box.width;
+    const left = flip ? x - tipOffset - tip.offsetWidth : x + tipOffset;
+    const upper = Math.max(0, Math.min(y + tipOffset, box.height - tip.offsetHeight));
+    tip.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(upper)}px, 0)`;
+  }
+
   return (
-    <figure className="heat-map">
+    <figure
+      className="heat-map"
+      data-active={open}
+      data-selectable={onSelect !== undefined}
+      onPointerMove={track}
+      onPointerDown={track}
+      onPointerLeave={() => setOpen(false)}
+      onClick={(event) => {
+        const target = event.target instanceof Element ? event.target.closest("[data-code]") : null;
+        const picked = target?.getAttribute("data-code");
+        if (picked && onSelect) onSelect(picked);
+      }}
+    >
       <svg
         viewBox={`0 0 ${world.width} ${world.height}`}
         role="img"
@@ -140,19 +208,44 @@ export function HeatMap({ rows, count }: Props) {
       >
         <path d={landDots} className="heat-land" strokeDasharray={dash} />
         {lit.map((country) => (
-          <g key={country.code} className={`heat-country heat-level-${country.level}`}>
-            <title>{`${country.name}: ${formatMetric(country.value, "count")}`}</title>
+          <g
+            key={country.code}
+            data-code={country.code}
+            data-hovered={open && country.code === code}
+            data-selected={country.code === active}
+            className={`heat-country heat-level-${country.level}`}
+          >
             <path d={country.dots} className="heat-hit" strokeWidth={pitch} />
             <path d={country.dots} className="heat-dots" strokeDasharray={dash} />
           </g>
         ))}
-        {topCentre ? (
-          <g className="heat-top" aria-hidden="true">
-            <circle cx={topCentre.x} cy={topCentre.y} r={9} className="heat-ring" />
-            <circle cx={topCentre.x} cy={topCentre.y} r={9} className="heat-ripple" />
-          </g>
-        ) : null}
       </svg>
+      <ul className="sr-only">
+        {lit.toReversed().map((country) => (
+          <li key={country.code}>
+            {`${country.name}: ${formatMetric(country.value, "count")} ${countLabels[count]}`}
+          </li>
+        ))}
+      </ul>
+      <div ref={tooltip} className="heat-tooltip" data-open={open} aria-hidden="true">
+        {shown ? (
+          <>
+            <p className="heat-tooltip-name">{shown.name}</p>
+            <p className="heat-tooltip-value">
+              <span className="tabular-nums">{formatMetric(shown.value, "count")}</span>
+              <span className="heat-tooltip-unit">{countLabels[count]}</span>
+            </p>
+            <p className="heat-tooltip-meta tabular-nums">
+              {`${percent(shown.share)} of total, #${shown.rank} of ${lit.length}`}
+            </p>
+            {onSelect ? (
+              <p className="heat-tooltip-meta">
+                {shown.code === active ? "Click to clear the filter" : "Click to filter"}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
       {top ? (
         <figcaption className="heat-scale">
           <span className="tabular-nums">1</span>
@@ -162,7 +255,7 @@ export function HeatMap({ rows, count }: Props) {
             ))}
           </span>
           <span className="tabular-nums">{formatMetric(max, "count")}</span>
-          <span className="heat-scale-top">{`Most from ${top.name}`}</span>
+          <span className="heat-scale-top">{`Most from ${top.name} (${percent(top.share)})`}</span>
         </figcaption>
       ) : null}
     </figure>

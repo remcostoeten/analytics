@@ -1,12 +1,24 @@
+"use client";
+
 import type { ProjectScope } from "@spoar/client";
-import type { SpeedResponse } from "@spoar/contract";
 import { Link } from "@/shared/ui/link";
 
+import { useSession } from "@/modules/session/use-session";
+import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { prefetchReads, useReadOf } from "@/shared/query/read";
+import type { QueryClient } from "@tanstack/react-query";
 import { EmptyState, IconStack } from "@/shared/ui/empty-state";
 import { GaugeIcon } from "@/shared/ui/icons";
 
 import { formatDimensionValue, formatMetric } from "../format";
-import { rateScore, rateVital, speedDevice, speedInterval, vitalViews } from "../speed";
+import {
+  annotationsQuery,
+  speedElementsQuery,
+  speedRoutesQuery,
+  speedSeriesQuery,
+  speedSummaryQuery,
+} from "../queries";
+import { rateScore, rateVital, vitalViews } from "../speed";
 import type { VitalView } from "../speed";
 import { viewQuery, withFilter } from "../view-state";
 import type { ViewState } from "../view-state";
@@ -23,11 +35,9 @@ type Props = {
   path: string;
 };
 
-type SummaryProps = Props & {
-  summary: Promise<SpeedResponse["data"] | null>;
-  project: string;
-  canAnnotate: Promise<boolean>;
-};
+type SummaryProps = Props & { project: string };
+
+const routeLimit = 10;
 
 function routeHref(path: string, state: ViewState, route: string) {
   return `${path}${viewQuery(withFilter(state, "route", route))}`;
@@ -42,30 +52,55 @@ function vitalCell(view: VitalView, value: number | null) {
   );
 }
 
-export async function SpeedSummary({
-  scope,
-  view,
-  state,
-  summary,
-  project,
-  canAnnotate,
-}: SummaryProps) {
-  const [data, series, annotations, editable] = await Promise.all([
-    summary,
-    scope.speedTimeseries({
-      metric: view.slug,
-      percentile: state.percentile,
-      device: speedDevice(state.filters),
-      interval: speedInterval(state.period),
-    }),
-    scope.annotations({ limit: 100 }),
-    canAnnotate,
+/**
+ * @name useSpeedSummary
+ * @description The speed summary of a view, on the key the vitals rail and the summary section
+ * share, so the two read it once.
+ *
+ * @example
+ * const summary = useSpeedSummary(scope, state);
+ */
+export function useSpeedSummary(scope: ProjectScope, state: ViewState) {
+  return useReadOf(speedSummaryQuery(scope, state));
+}
+
+/**
+ * @name prefetchSpeed
+ * @description Warms the speed page's reads for one view.
+ *
+ * @example
+ * prefetchSpeed(queryClient, scope, state, vitalView("inp"));
+ */
+export function prefetchSpeed(
+  client: QueryClient,
+  scope: ProjectScope,
+  state: ViewState,
+  view: VitalView,
+) {
+  prefetchReads(client, [
+    speedSummaryQuery(scope, state),
+    speedSeriesQuery(scope, state, view),
+    annotationsQuery(scope),
+    speedRoutesQuery(scope, state, routeLimit),
+    speedElementsQuery(scope, state, view, routeLimit),
   ]);
+}
+
+export function SpeedSummary({ scope, view, state, project }: SummaryProps) {
+  const summary = useSpeedSummary(scope, state);
+  const series = useReadOf(speedSeriesQuery(scope, state, view));
+  const annotations = useReadOf(annotationsQuery(scope));
+  const editable = useSession().isAdmin;
+  if (summary.data === undefined || series.data === undefined) {
+    return <SectionSkeleton height={424} />;
+  }
+  const data = summary.data.ok ? summary.data.value.data : null;
   const metric = data?.metrics[view.slug] ?? null;
-  const chart: ChartSeries[] = series.ok
-    ? [{ label: `${view.short} p${state.percentile}`, points: series.value.data }]
+  const read = series.data;
+  const chart: ChartSeries[] = read.ok
+    ? [{ label: `${view.short} p${state.percentile}`, points: read.value.data }]
     : [];
-  const measured = series.ok ? series.value.data.some((point) => point.value !== null) : false;
+  const measured = read.ok ? read.value.data.some((point) => point.value !== null) : false;
   return (
     <section className="panel-section grid gap-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -99,8 +134,8 @@ export async function SpeedSummary({
         </p>
       </div>
       {metric ? <ShareBar shares={metric.shares} detailed /> : null}
-      {!series.ok ? (
-        <p className="text-sm text-err">Could not read the series: {series.error.message}</p>
+      {!read.ok ? (
+        <p className="text-sm text-err">Could not read the series: {read.error.message}</p>
       ) : !measured ? (
         <p className="py-16 text-center text-sm text-muted">
           No {view.short} samples in this range. Buckets need 20 samples to show a value.
@@ -109,13 +144,13 @@ export async function SpeedSummary({
         <SeriesChart
           series={chart}
           format={view.format}
-          interval={series.value.interval}
+          interval={read.value.interval}
           label={view.label}
           thresholds={[
             { value: view.good, label: "Good" },
             { value: view.poor, label: "Poor" },
           ]}
-          annotations={annotations.ok ? annotations.value.data : []}
+          annotations={annotations.data?.ok ? annotations.data.value.data : []}
           project={project}
           editable={editable}
         />
@@ -124,14 +159,10 @@ export async function SpeedSummary({
   );
 }
 
-const routeLimit = 10;
-
-export async function SpeedRoutes({ scope, view, state, path }: Props) {
-  const read = await scope.speedRoutes({
-    percentile: state.percentile,
-    device: speedDevice(state.filters),
-    limit: routeLimit,
-  });
+export function SpeedRoutes({ scope, view, state, path }: Props) {
+  const routes = useReadOf(speedRoutesQuery(scope, state, routeLimit));
+  if (routes.data === undefined) return <SectionSkeleton height={282} />;
+  const read = routes.data;
   return (
     <section className="panel-section grid gap-4">
       <header className="grid gap-1">
@@ -208,13 +239,10 @@ export async function SpeedRoutes({ scope, view, state, path }: Props) {
   );
 }
 
-export async function SpeedElements({ scope, view, state, path }: Props) {
-  const read = await scope.speedElements({
-    metric: view.slug,
-    percentile: state.percentile,
-    device: speedDevice(state.filters),
-    limit: routeLimit,
-  });
+export function SpeedElements({ scope, view, state, path }: Props) {
+  const elements = useReadOf(speedElementsQuery(scope, state, view, routeLimit));
+  if (elements.data === undefined) return <SectionSkeleton height={240} />;
+  const read = elements.data;
   return (
     <section className="panel-section grid gap-4">
       <header className="grid gap-1">

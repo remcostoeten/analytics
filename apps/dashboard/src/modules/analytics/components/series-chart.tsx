@@ -2,10 +2,12 @@
 
 import { notify } from "@remcostoeten/notifier";
 import type { Annotation, Interval } from "@spoar/contract";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { removeAnnotation } from "../actions";
+import { browserClient } from "@/shared/api/browser-client";
+import { invalidateRoute } from "@/shared/query/read";
+
 import { kindLabels, placeAnnotations } from "../annotations";
 import type { PlacedAnnotation } from "../annotations";
 import { formatDateTime, formatMetric } from "../format";
@@ -110,7 +112,7 @@ export function SeriesChart({
   project = "",
   editable = false,
 }: Props) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const gradientId = useId();
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -428,7 +430,10 @@ export function SeriesChart({
                 disabled={removing}
                 onClick={async () => {
                   setRemoving(true);
-                  const result = await removeAnnotation(project, open.annotation.id);
+                  const result = await browserClient().annotations.remove(
+                    project,
+                    open.annotation.id,
+                  );
                   setRemoving(false);
                   if (!result.ok) {
                     notify.error(result.error.message);
@@ -436,7 +441,7 @@ export function SeriesChart({
                   }
                   setMarker(null);
                   notify.success("Annotation removed");
-                  router.refresh();
+                  await invalidateRoute(queryClient, "annotations");
                 }}
               >
                 {removing ? "Removing…" : "Remove"}

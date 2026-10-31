@@ -4,6 +4,7 @@ import type { BreakdownRow } from "@spoar/contract";
 import { useState } from "react";
 
 import { formatDimensionValue, formatMetric } from "@/modules/analytics/format";
+import { Link } from "@/shared/ui/link";
 import type { FilterDimension } from "@/modules/analytics/view-state";
 
 type Props = {
@@ -11,9 +12,18 @@ type Props = {
   rows: BreakdownRow[];
   share?: boolean;
   collapsed?: number;
+  href?: (value: string) => string;
+  active?: string;
 };
 
-export function RankList({ dimension, rows, share = false, collapsed = rows.length }: Props) {
+export function RankList({
+  dimension,
+  rows,
+  share = false,
+  collapsed = rows.length,
+  href,
+  active,
+}: Props) {
   const [open, setOpen] = useState(false);
   if (rows.length === 0) return <p className="py-2 text-sm text-muted">No data in this range</p>;
   const max = Math.max(1, ...rows.map((row) => row.visitors ?? 0));
@@ -26,8 +36,8 @@ export function RankList({ dimension, rows, share = false, collapsed = rows.leng
         {shown.map((row) => {
           const value = row.visitors ?? 0;
           const percent = total === 0 ? 0 : Math.round((value / total) * 100);
-          return (
-            <li key={row.value} className="rank-row">
+          const content = (
+            <>
               <span
                 className="rank-fill"
                 style={{ width: `${(value / max) * 100}%` }}
@@ -39,6 +49,25 @@ export function RankList({ dimension, rows, share = false, collapsed = rows.leng
               <span className="rank-value">
                 {share ? `${percent}%` : formatMetric(value, "count")}
               </span>
+            </>
+          );
+          return (
+            <li key={row.value}>
+              {href ? (
+                <Link
+                  href={href(row.value)}
+                  scroll={false}
+                  className="rank-row rank-link"
+                  aria-current={row.value === active ? "true" : undefined}
+                  title={
+                    row.value === active ? "Remove this filter" : "Filter the overview on this"
+                  }
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className="rank-row">{content}</div>
+              )}
             </li>
           );
         })}

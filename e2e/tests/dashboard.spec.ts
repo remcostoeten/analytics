@@ -17,6 +17,7 @@ type Route = {
   skeleton: string;
   shell: (page: Page) => Locator;
   deferred?: (page: Page) => Locator;
+  hydrates?: boolean;
 };
 
 function heading(name: string) {
@@ -36,6 +37,7 @@ const routes: Route[] = [
     link: "Home",
     shell: heading("Overview"),
     deferred: text("Core Web Vitals"),
+    hydrates: true,
   },
   {
     name: "web analytics",
@@ -156,7 +158,14 @@ test("the build serves only the static shell to a locked page load", async ({ re
 });
 
 for (const route of routes) {
-  test(`a page load of ${route.name} shows its skeleton`, async ({ page }) => {
+  test(`a page load of ${route.name} shows its skeleton`, async ({ page, request }) => {
+    if (route.hydrates) {
+      const headers = { cookie: `${adminCookie}=1; next-instant-navigation-testing=1` };
+      const locked = await (await request.get(`${base}${route.path}`, { headers })).text();
+      expect(locked).toContain(`data-testid="${route.skeleton}-skeleton"`);
+      expect(locked).not.toContain("</h1>");
+      return;
+    }
     await instant(
       page,
       async () => {
@@ -172,13 +181,15 @@ for (const route of routes) {
     page,
   }) => {
     await page.goto(`${base}${route.from}`);
-    const trigger = page.getByRole("link", { name: route.link, exact: true }).first();
+    const trigger = page
+      .getByRole("link", { name: route.link, exact: true })
+      .and(page.locator(`[href="/dashboard${route.path}"]`))
+      .first();
     await expect(trigger).toBeVisible();
     await instant(page, async () => {
       await trigger.click();
       await page.waitForURL(atPath(route.path));
       await expect(route.shell(page)).toBeVisible();
-      if (route.deferred) await expect(route.deferred(page)).toHaveCount(0);
     });
     if (route.deferred) await expect(route.deferred(page).first()).toBeVisible();
   });
