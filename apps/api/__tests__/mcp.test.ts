@@ -173,6 +173,15 @@ describe("POST /v2/mcp", () => {
       }),
     );
     expect(response.status).toBe(400);
+    const json = (await response.json()) as Json;
+    expect(json.error.code).toBe(-32600);
+    expect(json.id).toBeNull();
+  });
+
+  test("pages a breakdown with cursor", async () => {
+    const first = await call("breakdown", { project: "site", dimension: "page", limit: 1 });
+    expect(first.result.structuredContent.data).toHaveLength(1);
+    expect(first.result.structuredContent).toHaveProperty("nextCursor");
   });
 
   test("lists tools by token scope", async () => {

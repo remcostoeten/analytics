@@ -35451,118 +35451,28 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "One JSON-RPC 2.0 message; batches are not accepted.",
-                "type": "object",
-                "required": [
-                  "jsonrpc",
-                  "method"
-                ],
-                "properties": {
-                  "jsonrpc": {
-                    "const": "2.0",
-                    "type": "string"
-                  },
-                  "method": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "params": {
-                    "type": "object",
-                    "patternProperties": {
-                      "^(.*)$": {}
-                    }
-                  }
-                }
+                "description": "One JSON-RPC 2.0 message; batches are not accepted."
               }
             },
             "application/x-www-form-urlencoded": {
               "schema": {
-                "description": "One JSON-RPC 2.0 message; batches are not accepted.",
-                "type": "object",
-                "required": [
-                  "jsonrpc",
-                  "method"
-                ],
-                "properties": {
-                  "jsonrpc": {
-                    "const": "2.0",
-                    "type": "string"
-                  },
-                  "method": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "params": {
-                    "type": "object",
-                    "patternProperties": {
-                      "^(.*)$": {}
-                    }
-                  }
-                }
+                "description": "One JSON-RPC 2.0 message; batches are not accepted."
               }
             },
             "multipart/form-data": {
               "schema": {
-                "description": "One JSON-RPC 2.0 message; batches are not accepted.",
-                "type": "object",
-                "required": [
-                  "jsonrpc",
-                  "method"
-                ],
-                "properties": {
-                  "jsonrpc": {
-                    "const": "2.0",
-                    "type": "string"
-                  },
-                  "method": {
-                    "type": "string"
-                  },
-                  "id": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "params": {
-                    "type": "object",
-                    "patternProperties": {
-                      "^(.*)$": {}
-                    }
-                  }
-                }
+                "description": "One JSON-RPC 2.0 message; batches are not accepted."
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "The JSON-RPC answer; a notification gets an empty 202.",
+            "description": "The JSON-RPC answer, with `error` for a malformed message, an unknown method or bad arguments. A notification gets an empty 202.",
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "The JSON-RPC answer; a notification gets an empty 202.",
+                  "description": "The JSON-RPC answer, with `error` for a malformed message, an unknown method or bad arguments. A notification gets an empty 202.",
                   "type": "object",
                   "required": [
                     "jsonrpc",
@@ -35621,12 +35531,69 @@
               }
             }
           },
+          "202": {
+            "description": "Response for status 202"
+          },
           "400": {
-            "description": "The error envelope every failed request answers with.",
+            "description": "The JSON-RPC answer, with `error` for a malformed message, an unknown method or bad arguments. A notification gets an empty 202.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiError"
+                  "description": "The JSON-RPC answer, with `error` for a malformed message, an unknown method or bad arguments. A notification gets an empty 202.",
+                  "type": "object",
+                  "required": [
+                    "jsonrpc",
+                    "id"
+                  ],
+                  "properties": {
+                    "jsonrpc": {
+                      "const": "2.0",
+                      "type": "string"
+                    },
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "result": {
+                      "type": "object",
+                      "patternProperties": {
+                        "^(.*)$": {}
+                      }
+                    },
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "properties": {
+                        "code": {
+                          "anyOf": [
+                            {
+                              "format": "integer",
+                              "default": 0,
+                              "type": "string"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

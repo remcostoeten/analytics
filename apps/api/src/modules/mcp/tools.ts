@@ -66,6 +66,12 @@ const Scope = Type.Object({
 });
 
 const Limit = Type.Optional(Type.Integer({ minimum: 1, maximum: 100, description: "Rows." }));
+const Cursor = Type.Optional(
+  Type.String({
+    minLength: 1,
+    description: "The `nextCursor` from the previous answer; leave it out for the first page.",
+  }),
+);
 
 function isObject(value: Json | undefined): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -206,6 +212,7 @@ const breakdown = readTool(
       Type.String({ description: "Comma-separated metrics; default `visitors,pageviews`." }),
     ),
     limit: Limit,
+    cursor: Cursor,
   }),
   (input) => `${projectPath(input)}/breakdown/${encodeURIComponent(text(input.dimension))}`,
   ["dimension"],
@@ -220,6 +227,8 @@ const speed = readTool(
     ...RangeQuery.properties,
     filter: FilterQuery.properties.filter,
     ...SpeedQuery.properties,
+    limit: Limit,
+    cursor: Cursor,
   }),
   (input) => `${projectPath(input)}/speed`,
 );
@@ -228,7 +237,7 @@ const issues = readTool(
   "issues",
   "Error issues",
   "Grouped JavaScript errors with counts, affected visitors and first and last seen.",
-  Type.Object({ project: Project, ...IssuesQuery.properties, limit: Limit }),
+  Type.Object({ project: Project, ...IssuesQuery.properties, limit: Limit, cursor: Cursor }),
   (input) => `${projectPath(input)}/issues`,
 );
 

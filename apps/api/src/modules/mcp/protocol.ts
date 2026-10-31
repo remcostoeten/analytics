@@ -49,16 +49,7 @@ function fail(id: Nullable<RequestId>, code: number, message: string): RpcRespon
   return { jsonrpc: "2.0", id, error: { code, message } };
 }
 
-/**
- * @name RpcEnvelope
- * @description The shape of one JSON-RPC 2.0 message as the route validates it: the 2025-06-18
- * revision of the protocol dropped batching, so arrays are refused, and a message without an id
- * is a notification.
- *
- * @example
- * Value.Check(RpcEnvelope, { jsonrpc: "2.0", id: 1, method: "ping" }); // true
- */
-export const RpcEnvelope = Type.Object(
+const RpcEnvelope = Type.Object(
   {
     jsonrpc: Type.Literal("2.0"),
     method: Type.String(),
@@ -70,8 +61,9 @@ export const RpcEnvelope = Type.Object(
 
 /**
  * @name parseRpc
- * @description Reads one JSON-RPC 2.0 message, or null when it is not one. The params are
- * round-tripped through JSON so they hold plain values only.
+ * @description Reads one JSON-RPC 2.0 message, or null when it is not one: the 2025-06-18
+ * revision of the protocol dropped batching, so arrays are refused, and a message without an
+ * id is a notification. The params are round-tripped through JSON so they hold plain values.
  *
  * @example
  * parseRpc({ jsonrpc: "2.0", id: 1, method: "ping" }); // { jsonrpc: "2.0", id: 1, method: "ping" }

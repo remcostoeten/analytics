@@ -6,7 +6,7 @@ import { access } from "../../plugins/access";
 import { failure } from "../../plugins/error-handler";
 import { errorResponses } from "../../plugins/error-responses";
 import { setupPrompt } from "./prompts";
-import { RpcEnvelope, handleRpc, parseRpc, protocolVersion } from "./protocol";
+import { handleRpc, parseRpc, protocolVersion } from "./protocol";
 import type { Server } from "./protocol";
 import { mayUse, tools } from "./tools";
 import type { Forward, Tool } from "./tools";
@@ -23,7 +23,10 @@ const reply = t.Object(
     result: t.Optional(t.Record(t.String(), t.Unknown())),
     error: t.Optional(t.Object({ code: t.Integer(), message: t.String() })),
   },
-  { description: "The JSON-RPC answer; a notification gets an empty 202." },
+  {
+    description:
+      "The JSON-RPC answer, with `error` for a malformed message, an unknown method or bad arguments. A notification gets an empty 202.",
+  },
 );
 
 function json(payload: unknown, status: number, headers: { [name: string]: string } = {}) {
@@ -104,7 +107,10 @@ export function mcpModule(
             {
               jsonrpc: "2.0",
               id: null,
-              error: { code: -32600, message: "Expected one JSON-RPC 2.0 request" },
+              error: {
+                code: -32600,
+                message: "Expected one JSON-RPC 2.0 request; batches are not accepted",
+              },
             },
             400,
           );
@@ -121,8 +127,8 @@ export function mcpModule(
       },
       {
         access: "public",
-        body: RpcEnvelope,
-        response: { 200: reply, ...errorResponses },
+        body: t.Unknown({ description: "One JSON-RPC 2.0 message; batches are not accepted." }),
+        response: { 200: reply, 202: t.Void(), ...errorResponses, 400: reply },
         detail: {
           summary: "Model Context Protocol",
           description:
