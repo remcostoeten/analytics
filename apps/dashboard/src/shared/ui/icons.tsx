@@ -149,14 +149,6 @@ export function CloseIcon(props: Props) {
   );
 }
 
-export function TrendIcon({ down, ...props }: Props & { down: boolean }) {
-  return (
-    <Icon {...props}>
-      {down ? <path d="M4 4l8 8M12 6.5V12H6.5" /> : <path d="M4 12l8-8M6.5 4H12v5.5" />}
-    </Icon>
-  );
-}
-
 export function ExternalIcon(props: Props) {
   return (
     <Icon {...props}>
