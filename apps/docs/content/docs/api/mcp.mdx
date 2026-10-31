@@ -1,0 +1,71 @@
+---
+title: MCP server
+description: Let Claude Code, Cursor and other MCP clients read your analytics and set up a site with an API token.
+icon: Bot
+---
+
+`POST /v2/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server over Streamable HTTP. An AI client connects with an API token as the bearer and gets a tool per read route, the SQL console for `sql` tokens, and the project, key and token writes for `admin` tokens. Every tool call runs the matching API route with that token, so access is judged exactly as it is for the API.
+
+## Connect
+
+Create a token in the dashboard under **API tokens** ([read your data](/docs/guides/read-your-data#1-create-a-token) shows the other ways), then add the server:
+
+```bash
+claude mcp add --transport http spoar https://api.analytics.remcostoeten.nl/v2/mcp \
+  --header "Authorization: Bearer at_live_..."
+```
+
+For Cursor, Claude Desktop and other clients that take a JSON file:
+
+```json
+{
+  "mcpServers": {
+    "spoar": {
+      "type": "http",
+      "url": "https://api.analytics.remcostoeten.nl/v2/mcp",
+      "headers": { "Authorization": "Bearer at_live_..." }
+    }
+  }
+}
+```
+
+A self-hosted API serves the same path on its own origin. The server is stateless: each request carries one JSON-RPC message and gets one answer, with no session to keep.
+
+## Tools
+
+Which tools a client sees follows the token's scope. A `read` token gets the reads; `sql` adds `sql`; `admin` adds the writes. A tool the token may not use is not listed and is unknown when called.
+
+| Tool | Scope | Does |
+| --- | --- | --- |
+| `list_projects` | read | The projects the token may read |
+| `get_project` | read | One project with its settings and public key |
+| `stats` | read | Visitors, pageviews, sessions, bounce rate and time on page for a period |
+| `breakdown` | read | Top values of a dimension such as `page`, `referrer_domain` or `country` |
+| `speed` | read | Core Web Vitals and the Real Experience Score |
+| `issues` | read | Grouped JavaScript errors |
+| `realtime` | read | Visitors in the last five minutes |
+| `key_status` | read | When the keys were generated and the last key check |
+| `sql` | sql | One read-only statement against the [documented views](/docs/api/sql) |
+| `create_project` | admin | A project with new keys; the secret key is in the answer once |
+| `update_project` | admin | Name, visibility, allowed origins, retention and the switches |
+| `rotate_key` | admin | A new public or secret key; the old one stops at once |
+| `check_keys` | admin | Verifies a secret key by hash and reports whether pageviews arrive |
+| `create_token` | admin | Another API token, for CI or a second client |
+
+There is no delete tool. Removing a project stays with the owner in the dashboard.
+
+Read tools take `project`, the range as `period` or `from` and `to`, `traffic`, `environment` and `filter` as a dimension-to-value map, the same parameters as the routes in the [API overview](/docs/api/overview).
+
+Three tools add a note to their answer because the API alone cannot tell the agent what happens next:
+
+- `create_project` adds `http://localhost:<port>` and `http://127.0.0.1:<port>` to `allowedOrigins`, for the `devPort` you pass or for 3000, 4321 and 5173, so the first local run is not rejected. Trim the list with `update_project` before going live if you want a strict one.
+- `rotate_key` reminds the agent that the old key stopped working, and that the deployed environment, and for build-time values a new build, must carry the new one before the site sends events again.
+- `check_keys` explains the states: `waiting` until the first real pageview, `connected` after it, `rejected` when events came from an origin outside `allowedOrigins`.
+
+## The setup prompt
+
+The server offers one prompt, `setup`, with optional `domain`, `directory` and `api` arguments. It gives the agent the steps to connect a site: detect the framework from `package.json`, find or create the project, write `NEXT_PUBLIC_SPOAR_CONFIG`, `PUBLIC_SPOAR_CONFIG` or `VITE_SPOAR_CONFIG` to the env file the framework loads, add the [proxy](/docs/sdk/proxy) and `SPOAR_SECRET` when the app has a server, mount the SDK, and verify with `check_keys`. The server never reads or writes files; the agent does that with its own tools, and the secret key passes through the agent once, the same as copying it from the dashboard.
+
+## Protocol
+
+The server speaks the 2025-06-18 revision of the protocol: `initialize`, `ping`, `tools/list`, `tools/call`, `prompts/list` and `prompts/get`. Batches are refused, notifications get an empty `202`, and `GET /v2/mcp` answers `405` since nothing is streamed. Without a token the route answers the API's `401` envelope.
