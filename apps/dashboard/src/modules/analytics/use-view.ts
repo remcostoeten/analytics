@@ -31,19 +31,6 @@ function viewStateOf(search: ReadonlyURLSearchParams) {
 }
 
 /**
- * @name useViewState
- * @description The analytics view in the browser's URL, read on the client so a navigation that
- * only changes the query string re-renders without the server.
- *
- * @example
- * const state = useViewState();
- * state.period; // "30d"
- */
-export function useViewState(): ViewState {
-  return viewStateOf(useSearchParams());
-}
-
-/**
  * @name useProjectView
  * @description Everything a project page reads from its URL: the project, the route params, the
  * view state, a list cursor, the project's base path and a read scope on the browser client that

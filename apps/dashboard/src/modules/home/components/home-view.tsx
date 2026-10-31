@@ -1,21 +1,27 @@
 "use client";
 
-import { Link } from "@/shared/ui/link";
+import { useRouter } from "next/navigation";
 
+import { Chip, FilterChips } from "@/modules/analytics/components/filter-chips";
 import { PeriodSelect } from "@/modules/analytics/components/period-select";
+import { speedViewScope } from "@/modules/analytics/scope";
 import { useProjects } from "@/modules/analytics/use-projects";
-import { useViewState } from "@/modules/analytics/use-view";
+import { hasFilters } from "@/modules/analytics/view-state";
 import { useSession } from "@/modules/session/use-session";
 import { browserClient } from "@/shared/api/browser-client";
 import { siteUrl } from "@/shared/config/site";
 import { EmptyState, ProjectIllustration } from "@/shared/ui/empty-state";
+import { Link } from "@/shared/ui/link";
+import { Select } from "@/shared/ui/select";
+
+import { homeHref, homeScope, homeSpeedScope, useHomeState } from "../home-state";
 
 import {
   HeatMapCard,
   OnlineCard,
   ProjectsCard,
   RankCard,
-  VisitorsCard,
+  TrafficCard,
   VitalsCard,
 } from "./home-sections";
 
@@ -27,6 +33,8 @@ const sources = [
 ] as const;
 
 const listRows = 6;
+
+const allProjects = "all";
 
 function CardSkeleton({ height }: { height: number }) {
   return <div className="skeleton" style={{ height }} aria-hidden="true" />;
@@ -55,11 +63,19 @@ function BodySkeleton() {
 }
 
 export function HomeView() {
-  const state = useViewState();
+  const state = useHomeState();
+  const router = useRouter();
   const projects = useProjects();
   const session = useSession();
   const api = browserClient();
-  const scope = api.period(state.period).human();
+  const scope = homeScope(api, state);
+  const speedScope = homeSpeedScope(api, state);
+  const listed = projects.status === "ok" ? projects.projects : [];
+  const focused = listed.find((project) => project.id === state.project);
+  const projectOptions = [
+    { value: allProjects, label: "All projects" },
+    ...listed.map((project) => ({ value: project.id, label: project.name })),
+  ];
 
   return (
     <div className="mx-auto grid max-w-[1200px] gap-4">
@@ -69,7 +85,27 @@ export function HomeView() {
           <p className="text-sm text-muted">Traffic across every project you can read.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <PeriodSelect path="/" state={state} />
+          {listed.length > 1 ? (
+            <div className="control-box">
+              <Select
+                variant="bare"
+                label="Project"
+                value={state.project ?? allProjects}
+                options={projectOptions}
+                onChange={(value) =>
+                  router.push(
+                    homeHref({
+                      ...state,
+                      project: value === allProjects ? null : value,
+                      byProject: false,
+                    }),
+                    { scroll: false },
+                  )
+                }
+              />
+            </div>
+          ) : null}
+          <PeriodSelect path="" state={state.view} query={(view) => homeHref({ ...state, view })} />
           <a href={`${siteUrl()}/docs`} className="ghost-button">
             Documentation
           </a>
@@ -80,6 +116,25 @@ export function HomeView() {
           ) : null}
         </div>
       </header>
+
+      {hasFilters(state.view) || focused ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {focused ? (
+            <Chip
+              field="Project"
+              operator="equals"
+              value={focused.name}
+              href={homeHref({ ...state, project: null })}
+            />
+          ) : null}
+          <FilterChips
+            path=""
+            state={state.view}
+            traffic={false}
+            query={(view) => homeHref({ ...state, view })}
+          />
+        </div>
+      ) : null}
 
       {projects.status === "loading" ? (
         <BodySkeleton />
@@ -111,18 +166,15 @@ export function HomeView() {
       ) : (
         <>
           <div className="home-top">
-            <VisitorsCard
-              scope={scope}
-              period={state.period}
-              projectCount={projects.projects.length}
-            />
-            <OnlineCard scope={scope} />
+            <TrafficCard scope={scope} state={state} projects={projects.projects} />
+            <OnlineCard scope={scope} state={state} />
           </div>
 
           <div className="home-pair">
-            <ProjectsCard scope={scope} period={state.period} projects={projects.projects} />
+            <ProjectsCard scope={scope} state={state} projects={projects.projects} />
             <RankCard
               scope={scope}
+              state={state}
               dimension="country"
               title="Top countries"
               description="Visitors by country."
@@ -130,19 +182,25 @@ export function HomeView() {
             />
           </div>
 
-          <HeatMapCard scope={scope} period={state.period} />
+          <HeatMapCard scope={scope} state={state} />
 
           <div className="home-quad">
             {sources.map((source) => (
-              <RankCard key={source.dimension} scope={scope} limit={listRows} {...source} />
+              <RankCard
+                key={source.dimension}
+                scope={scope}
+                state={state}
+                limit={listRows}
+                {...source}
+              />
             ))}
           </div>
 
           <VitalsCard
-            scope={scope}
-            period={state.period}
+            scope={speedScope}
+            state={state}
             projects={projects.projects}
-            projectScope={(id) => api.project(id).period(state.period)}
+            projectScope={(id) => speedViewScope(api, id, state.view)}
           />
         </>
       )}

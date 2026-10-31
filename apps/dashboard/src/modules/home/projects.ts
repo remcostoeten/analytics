@@ -8,6 +8,8 @@ export type RankedProject = {
   visitors: number;
   pageviews: number;
   change: Nullable<number>;
+  speedScore: Nullable<number>;
+  openIssues: Nullable<number>;
 };
 
 /**
@@ -35,6 +37,8 @@ export function rankProjects(
         visitors: row?.visitors ?? 0,
         pageviews: row?.pageviews ?? 0,
         change: row?.change.visitors ?? null,
+        speedScore: row?.speedScore ?? null,
+        openIssues: row?.openIssues ?? null,
       };
     })
     .sort((left, right) => right.visitors - left.visitors || left.name.localeCompare(right.name));

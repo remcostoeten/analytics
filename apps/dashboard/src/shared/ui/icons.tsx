@@ -149,6 +149,14 @@ export function CloseIcon(props: Props) {
   );
 }
 
+export function FilterIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M2.5 3.5h11l-4.25 5v4l-2.5 1.25V8.5z" />
+    </Icon>
+  );
+}
+
 export function ExternalIcon(props: Props) {
   return (
     <Icon {...props}>

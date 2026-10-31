@@ -3,7 +3,12 @@
 import type { PublicProject } from "@spoar/contract";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ComponentType, SVGProps } from "react";
+import { useState } from "react";
+import type { ComponentType, CSSProperties, SVGProps } from "react";
+
+import { logPath, trafficOptions } from "@/modules/analytics/logs";
+import { metricPath, metricView, metricViews } from "@/modules/analytics/metrics";
+import { vitalView, vitalViews } from "@/modules/analytics/speed";
 
 import { siteUrl } from "@/shared/config/site";
 import { iconMotionHandlers } from "@/shared/ui/icon-motion";
@@ -14,6 +19,7 @@ import {
   FolderIcon,
   GaugeIcon,
   GearIcon,
+  ChevronDownIcon,
   GridIcon,
   HomeIcon,
   KeyIcon,
@@ -33,12 +39,17 @@ type Props = {
   signedIn: boolean;
 };
 
+type SubItem = { label: string; hint?: string; href: string; active: boolean };
+
 type Item = {
   label: string;
   href: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   active: boolean;
+  children?: SubItem[];
 };
+
+type NavItemProps = { item: Item; open: boolean; onToggle: () => void };
 
 const projectSections = ["overview", "speed", "issues", "realtime", "logs", "visitors", "sessions"];
 
@@ -60,6 +71,12 @@ export function SidebarFoot() {
   );
 }
 
+function projectHue(id: string) {
+  let hash = 0;
+  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) % 360;
+  return hash;
+}
+
 function NavLink({ item }: { item: Item }) {
   const Glyph = item.icon;
   return (
@@ -75,9 +92,50 @@ function NavLink({ item }: { item: Item }) {
   );
 }
 
+function NavItem({ item, open, onToggle }: NavItemProps) {
+  const children = item.children ?? [];
+  if (children.length === 0) return <NavLink item={item} />;
+  const id = `nav-sub-${item.label.toLowerCase().replaceAll(" ", "-")}`;
+  return (
+    <>
+      <div className="nav-row">
+        <NavLink item={item} />
+        <button
+          type="button"
+          className="nav-expand"
+          aria-expanded={open}
+          aria-controls={id}
+          aria-label={`${open ? "Hide" : "Show"} ${item.label} pages`}
+          onClick={onToggle}
+        >
+          <ChevronDownIcon className="size-3.5" />
+        </button>
+      </div>
+      <div id={id} className="nav-sub" data-open={open} inert={!open}>
+        <ul>
+          {children.map((child, index) => (
+            <li key={child.href}>
+              <Link
+                href={child.href}
+                aria-current={child.active ? "page" : undefined}
+                className="nav-sub-item"
+                style={{ "--nav-index": index } as CSSProperties}
+              >
+                <span className="truncate">{child.label}</span>
+                {child.hint ? <span className="nav-sub-hint">{child.hint}</span> : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
 export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const [toggled, setToggled] = useState<{ [label: string]: boolean }>({});
   const project = currentProject(pathname);
   const encoded = project ? encodeURIComponent(project) : null;
 
@@ -86,7 +144,12 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
   ];
   if (encoded) {
     const projectPath = `/projects/${encoded}`;
-    const section = pathname.slice(projectPath.length).split("/")[1] ?? "";
+    const segments = pathname.slice(projectPath.length).split("/");
+    const section = segments[1] ?? "";
+    const detail = segments[2];
+    const analytics = pathname.startsWith(projectPath) && !projectSections.includes(section);
+    const currentMetric = metricView(section === "" ? undefined : section);
+    const currentVital = vitalView(detail);
     workspace.push(
       {
         label: "Overview",
@@ -98,13 +161,24 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
         label: "Web analytics",
         href: projectPath,
         icon: ChartIcon,
-        active: pathname.startsWith(projectPath) && !projectSections.includes(section),
+        active: analytics,
+        children: metricViews.map((view) => ({
+          label: view.label,
+          href: metricPath(projectPath, view),
+          active: analytics && view.slug === currentMetric.slug,
+        })),
       },
       {
         label: "Speed",
         href: `${projectPath}/speed`,
         icon: GaugeIcon,
         active: section === "speed",
+        children: vitalViews.map((view) => ({
+          label: view.short,
+          hint: view.label,
+          href: `${projectPath}/speed/${view.slug}`,
+          active: section === "speed" && view.slug === currentVital.slug,
+        })),
       },
       {
         label: "Realtime",
@@ -120,6 +194,11 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
           href: `${projectPath}/logs`,
           icon: ListIcon,
           active: section === "logs",
+          children: trafficOptions.map((option) => ({
+            label: option.label,
+            href: logPath(projectPath, option.value),
+            active: section === "logs" && (detail ?? "all") === option.value,
+          })),
         },
         {
           label: "Issues",
@@ -195,10 +274,48 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
           <ul>
             {workspace.map((item) => (
               <li key={item.href}>
-                <NavLink item={item} />
+                <NavItem
+                  item={item}
+                  open={toggled[item.label] ?? item.active}
+                  onToggle={() =>
+                    setToggled((current) => ({
+                      ...current,
+                      [item.label]: !(current[item.label] ?? item.active),
+                    }))
+                  }
+                />
               </li>
             ))}
           </ul>
+          {projects.length > 0 ? (
+            <div className="sidebar-group sidebar-projects">
+              <p className="sidebar-group-label">Projects</p>
+              <ul>
+                {projects.map((entry) => (
+                  <li key={entry.id}>
+                    <Link
+                      href={`/projects/${encodeURIComponent(entry.id)}`}
+                      aria-current={entry.id === project ? "true" : undefined}
+                      className="nav-item nav-project"
+                      title={entry.domain}
+                    >
+                      <span
+                        className="nav-avatar"
+                        style={{ "--avatar-hue": projectHue(entry.id) } as CSSProperties}
+                        aria-hidden="true"
+                      >
+                        {entry.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="nav-label grid min-w-0">
+                        <span className="truncate">{entry.name}</span>
+                        <span className="nav-project-domain truncate">{entry.domain}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {isAdmin ? (
             <div className="sidebar-group">
               <p className="sidebar-group-label">Manage</p>

@@ -11,6 +11,7 @@ type Props = {
   state: ViewState;
   inactive?: FilterDimension[];
   traffic?: boolean;
+  query?: (state: ViewState) => string;
 };
 
 type ChipProps = {
@@ -21,7 +22,7 @@ type ChipProps = {
   inactive?: boolean;
 };
 
-function Chip({ field, operator, value, href, inactive = false }: ChipProps) {
+export function Chip({ field, operator, value, href, inactive = false }: ChipProps) {
   return (
     <span
       className={inactive ? "chip chip-inactive" : "chip"}
@@ -30,14 +31,25 @@ function Chip({ field, operator, value, href, inactive = false }: ChipProps) {
       <span>{field}</span>
       <span className="text-muted">{operator}</span>
       <span className="font-medium">{value}</span>
-      <Link href={href} aria-label={`Remove ${field} filter`} className="chip-remove">
+      <Link
+        href={href}
+        scroll={false}
+        aria-label={`Remove ${field} filter`}
+        className="chip-remove"
+      >
         <CloseIcon className="size-3" />
       </Link>
     </span>
   );
 }
 
-export function FilterChips({ path, state, inactive = [], traffic = true }: Props) {
+export function FilterChips({
+  path,
+  state,
+  inactive = [],
+  traffic = true,
+  query = viewQuery,
+}: Props) {
   const active = dimensions.flatMap(({ value }) => {
     const filter = state.filters[value];
     return filter ? [{ dimension: value, filter }] : [];
@@ -49,14 +61,14 @@ export function FilterChips({ path, state, inactive = [], traffic = true }: Prop
           field="Bots"
           operator="are"
           value="included"
-          href={`${path}${viewQuery({ ...state, bots: false })}`}
+          href={`${path}${query({ ...state, bots: false })}`}
         />
       ) : (
         <Chip
           field="Exclude bots"
           operator="equals"
           value="Yes"
-          href={`${path}${viewQuery({ ...state, bots: true })}`}
+          href={`${path}${query({ ...state, bots: true })}`}
         />
       )}
       {active.map(({ dimension, filter }) => {
@@ -68,7 +80,7 @@ export function FilterChips({ path, state, inactive = [], traffic = true }: Prop
             field={dimensionLabel(dimension)}
             operator={negated ? "does not equal" : "equals"}
             value={formatDimensionValue(dimension, value)}
-            href={`${path}${viewQuery(withFilter(state, dimension, null))}`}
+            href={`${path}${query(withFilter(state, dimension, null))}`}
             inactive={inactive.includes(dimension)}
           />
         );
