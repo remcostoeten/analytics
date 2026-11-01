@@ -84,6 +84,22 @@ export function canReadLogs(caller: Caller, project: ProjectID): boolean {
 }
 
 /**
+ * @name canAnnotate
+ * @description The `annotate` level, for adding an annotation: everyone who passes `admin` for the
+ * project, plus the debug console's widget token on its one project, so an admin can mark a
+ * release or a post from their own site. Changing and deleting annotations stay `admin`.
+ *
+ * @example
+ * canAnnotate(widgetCaller, "docs"); // true when the token lists docs
+ */
+export function canAnnotate(caller: Caller, project: ProjectID): boolean {
+  if (canAdmin(caller, project)) return true;
+  return (
+    caller.kind === "token" && caller.tokenKind === "widget" && lists(caller.projectIds, project)
+  );
+}
+
+/**
  * @name isSignedInAdmin
  * @description A signed-in owner or admin, whose own visits are marked internal at ingest.
  *
