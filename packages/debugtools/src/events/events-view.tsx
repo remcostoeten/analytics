@@ -83,7 +83,7 @@ function Empty({ host }: { host: ConsoleHost }) {
   return (
     <div className={messageClass}>
       <p className="text-console-fg">No events yet.</p>
-      <p>Only events the SDK handles after this tab first opened show up here.</p>
+      <p>Only events the SDK handles after the console loaded on this page show up here.</p>
       {idle ? (
         <p>
           The SDK has not sent anything yet. In development mode it logs events to the browser

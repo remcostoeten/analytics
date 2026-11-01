@@ -212,7 +212,7 @@ describe("EventsView", () => {
   test("says only later events show and hints at development mode when nothing was sent", async () => {
     const container = await render(<EventsView context={context(fakeHost())} />);
     expect(container.textContent).toContain("No events yet.");
-    expect(container.textContent).toContain("after this tab first opened");
+    expect(container.textContent).toContain("after the console loaded on this page");
     expect(container.textContent).toContain("development mode");
     expect(container.textContent).toContain("last send never");
   });

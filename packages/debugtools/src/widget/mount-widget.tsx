@@ -5,6 +5,7 @@ import type { Nullable } from "@spoar/shared/semantic";
 
 import type { DebugtoolsOptions, WidgetGrant } from "../options";
 import { Actions } from "../actions/actions";
+import { sharedEventLog } from "../events/event-log";
 import { clientAccess, clientSource } from "../source";
 import { css } from "../styles/compiled";
 import { StatusBar } from "./status-bar";
@@ -48,6 +49,7 @@ export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGr
   const root = createRoot(container);
   const live = grant !== null || options.auth === "session";
   const client = clientAccess(options, grant);
+  if (live && options.host) sharedEventLog(options.host);
   const context = live ? { project: options.project, client, host: options.host ?? null } : null;
   root.render(
     <StrictMode>
