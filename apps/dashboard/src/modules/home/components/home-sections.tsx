@@ -10,6 +10,7 @@ import { ChangeBadge } from "@/modules/analytics/components/change-badge";
 import { HeatMap } from "@/modules/analytics/components/heat-map";
 import { RatingBadge } from "@/modules/analytics/components/rating-badge";
 import { SeriesChart } from "@/modules/analytics/components/series-chart";
+import { Sparkline } from "@/modules/analytics/components/sparkline";
 import type { ChartPoint, ChartSeries } from "@/modules/analytics/components/series-chart";
 import { ShareBar } from "@/modules/analytics/components/share-bar";
 import { formatMetric } from "@/modules/analytics/format";
@@ -139,6 +140,13 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
       };
     }),
   });
+  const sparklines = useQueries({
+    queries: metricViews.map((view) => ({
+      queryKey: scope.key("timeseries", view.series),
+      queryFn: () => scope.timeseries(view.series),
+      placeholderData: keepPreviousData,
+    })),
+  });
   if (stats.data === undefined) return <CardSkeleton height={392} />;
   const data = stats.data.ok ? stats.data.value.data : null;
   const narrowed = projects.find((project) => project.id === state.project);
@@ -181,27 +189,27 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
   return (
     <section className="card card-section">
       <nav aria-label="Metric" className="home-metrics">
-        {metricViews.map((view) => {
+        {metricViews.map((view, index) => {
           const stat = data?.[view.stat];
+          const sparkline = sparklines[index]?.data;
           return (
             <Link
               key={view.slug}
               href={homeHref({ ...state, metric: view })}
               scroll={false}
               aria-current={view.slug === metric.slug ? "page" : undefined}
-              className="home-metric"
+              className="metric-card"
             >
-              <span className="text-xs text-muted">{view.label}</span>
+              <span className="metric-head">
+                <span className="metric-label text-sm">{view.label}</span>
+                <ChangeBadge change={stat?.change ?? null} lowerIsBetter={view.lowerIsBetter} />
+              </span>
               {stat ? (
-                <AnimatedNumber
-                  value={stat.value}
-                  format={view.format}
-                  className="home-metric-value"
-                />
+                <AnimatedNumber value={stat.value} format={view.format} className="metric-value" />
               ) : (
-                <span className="home-metric-value">–</span>
+                <span className="metric-value">–</span>
               )}
-              <ChangeBadge change={stat?.change ?? null} lowerIsBetter={view.lowerIsBetter} />
+              <Sparkline points={sparkline?.ok ? sparkline.value.data : []} />
             </Link>
           );
         })}
