@@ -8,6 +8,7 @@ import { speedViewScope } from "@/modules/analytics/scope";
 import { useProjects } from "@/modules/analytics/use-projects";
 import { hasFilters } from "@/modules/analytics/view-state";
 import { useSession } from "@/modules/session/use-session";
+import { GhostCard } from "@/modules/shell/components/ghost";
 import { browserClient } from "@/shared/api/browser-client";
 import { siteUrl } from "@/shared/config/site";
 import { EmptyState, ProjectIllustration } from "@/shared/ui/empty-state";
@@ -36,28 +37,24 @@ const listRows = 6;
 
 const allProjects = "all";
 
-function CardSkeleton({ height }: { height: number }) {
-  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
-}
-
 function BodySkeleton() {
   return (
     <>
       <div className="home-top">
-        <CardSkeleton height={392} />
-        <CardSkeleton height={392} />
+        <GhostCard kind="metrics" height={392} />
+        <GhostCard kind="list" height={392} rows={4} />
       </div>
       <div className="home-pair">
-        <CardSkeleton height={340} />
-        <CardSkeleton height={340} />
+        <GhostCard kind="list" height={340} rows={6} />
+        <GhostCard kind="list" height={340} rows={6} />
       </div>
-      <CardSkeleton height={460} />
+      <GhostCard kind="map" height={460} />
       <div className="home-quad">
         {sources.map((source) => (
-          <CardSkeleton key={source.dimension} height={252} />
+          <GhostCard key={source.dimension} kind="list" height={252} rows={5} />
         ))}
       </div>
-      <CardSkeleton height={260} />
+      <GhostCard kind="list" height={260} rows={5} />
     </>
   );
 }

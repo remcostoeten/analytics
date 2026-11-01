@@ -5,7 +5,7 @@ import type { EventRow } from "@spoar/contract";
 import { JsonBlock } from "@/shared/ui/json-block";
 import { Link } from "@/shared/ui/link";
 
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 
 import { formatDimensionValue } from "../format";
@@ -96,7 +96,7 @@ function Detail({ row, base, state }: { row: EventRow; base: string; state: View
 
 export function EventLog({ scope, state, path, base, cursor }: Props) {
   const events = useReadOf(eventsQuery(scope, cursor));
-  if (events.data === undefined) return <SectionSkeleton height={480} />;
+  if (events.data === undefined) return <GhostSection kind="list" height={480} rows={10} />;
   const read = events.data;
   if (!read.ok) {
     return (

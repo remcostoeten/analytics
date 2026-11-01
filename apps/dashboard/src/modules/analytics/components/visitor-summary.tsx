@@ -2,7 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import type { Prefetchable } from "@/shared/query/read";
 
@@ -56,7 +56,7 @@ export function VisitorSummary({ scope, state, path }: Props) {
   const statsRead = useReadOf(statsQuery(scope));
   const countriesRead = useTopList(scope, "country", "visitors", topRows);
   const devicesRead = useTopList(scope, "device", "visitors", topRows);
-  if (statsRead.data === undefined) return <SectionSkeleton height={160} />;
+  if (statsRead.data === undefined) return <GhostSection kind="stats" height={160} />;
   const stats = statsRead.data;
   const countries = countriesRead.data;
   const devices = devicesRead.data;

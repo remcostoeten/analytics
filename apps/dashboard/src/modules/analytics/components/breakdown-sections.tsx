@@ -2,7 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostList, GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import type { Prefetchable } from "@/shared/query/read";
 
@@ -76,7 +76,7 @@ export function breakdownReads(
 export function CountrySection({ scope, view, state, path }: Props) {
   const countries = useTopList(scope, "country", view.count, mapRows);
   const href = hrefFor(path, state, "country");
-  if (countries.data === undefined) return <SectionSkeleton height={320} />;
+  if (countries.data === undefined) return <GhostSection kind="map" height={320} />;
   const read = countries.data;
   return (
     <section className="panel-section grid gap-4">
@@ -112,7 +112,7 @@ type SourceProps = Props & { dimension: FilterDimension; title: string };
 
 function SourceCell({ scope, view, state, path, dimension, title }: SourceProps) {
   const list = useTopList(scope, dimension, view.count, state.items);
-  if (list.data === undefined) return <div className="skeleton h-40" aria-hidden="true" />;
+  if (list.data === undefined) return <GhostList height={160} rows={4} />;
   const read = list.data;
   return read.ok ? (
     <TopList

@@ -19,6 +19,7 @@ import { readTopList } from "@/modules/analytics/series";
 import { speedDevice, vitalSummary, vitalViews } from "@/modules/analytics/speed";
 import { hasFilters, periods, viewQuery } from "@/modules/analytics/view-state";
 import type { FilterDimension } from "@/modules/analytics/view-state";
+import { GhostCard, GhostChart } from "@/modules/shell/components/ghost";
 import { useRead } from "@/shared/query/read";
 import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 import { FilterIcon } from "@/shared/ui/icons";
@@ -67,10 +68,6 @@ const minSamples = 20;
 const trafficOptions = { metrics: ["visitors", "pageviews"], limit: 100 } as const;
 
 const compareOptions = { compare: "previous" } as const;
-
-function CardSkeleton({ height }: { height: number }) {
-  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
-}
 
 function periodPhrase(period: Period) {
   const label = periods.find((entry) => entry.value === period)?.label ?? period;
@@ -147,7 +144,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
       placeholderData: keepPreviousData,
     })),
   });
-  if (stats.data === undefined) return <CardSkeleton height={392} />;
+  if (stats.data === undefined) return <GhostCard kind="metrics" height={392} />;
   const data = stats.data.ok ? stats.data.value.data : null;
   const narrowed = projects.find((project) => project.id === state.project);
   const across = narrowed
@@ -158,7 +155,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
   function chart() {
     if (split) {
       if (traffic.data === undefined || perProject.some((read) => read.data === undefined)) {
-        return <div className="skeleton h-[240px]" aria-hidden="true" />;
+        return <GhostChart height={240} />;
       }
       const series: ChartSeries[] = ranked.flatMap((project, index) => {
         const read = perProject[index]?.data;
@@ -171,7 +168,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
         interval: interval?.ok ? interval.value.interval : "day",
       };
     }
-    if (whole.data === undefined) return <div className="skeleton h-[240px]" aria-hidden="true" />;
+    if (whole.data === undefined) return <GhostChart height={240} />;
     if (!whole.data.ok) {
       return (
         <p className="text-sm text-err">Could not read the series: {whole.data.error.message}</p>
@@ -306,7 +303,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
 
 export function OnlineCard({ scope, state }: ScopeProps) {
   const devices = useAllTopList(scope, "device", "visitors", deviceRows);
-  if (devices.data === undefined) return <CardSkeleton height={392} />;
+  if (devices.data === undefined) return <GhostCard kind="list" height={392} rows={4} />;
   const read = devices.data;
   return (
     <section className="card card-section">
@@ -337,7 +334,7 @@ export function OnlineCard({ scope, state }: ScopeProps) {
 
 export function ProjectsCard({ scope, state, projects }: ProjectsProps) {
   const traffic = useProjectTraffic(scope);
-  if (traffic.data === undefined) return <CardSkeleton height={340} />;
+  if (traffic.data === undefined) return <GhostCard kind="list" height={340} rows={6} />;
   const read = traffic.data;
   const rows = rankProjects(projects, read.ok ? read.value.data : []).filter(
     (row) => state.project === null || row.id === state.project,
@@ -435,7 +432,8 @@ export function ProjectsCard({ scope, state, projects }: ProjectsProps) {
 
 export function RankCard({ scope, state, title, description, dimension, limit }: RankCardProps) {
   const list = useAllTopList(scope, dimension, "visitors", Math.max(limit, expandedRows));
-  if (list.data === undefined) return <CardSkeleton height={limit > 6 ? 340 : 252} />;
+  if (list.data === undefined)
+    return <GhostCard kind="list" height={limit > 6 ? 340 : 252} rows={limit > 6 ? 8 : 5} />;
   const read = list.data;
   return (
     <section className="card card-section">
@@ -458,7 +456,7 @@ export function RankCard({ scope, state, title, description, dimension, limit }:
 export function HeatMapCard({ scope, state }: ScopeProps) {
   const router = useRouter();
   const countries = useAllTopList(scope, "country", "visitors", mapRows);
-  if (countries.data === undefined) return <CardSkeleton height={460} />;
+  if (countries.data === undefined) return <GhostCard kind="map" height={460} />;
   const read = countries.data;
   return (
     <section className="card card-section">
@@ -498,7 +496,7 @@ export function VitalsCard({ scope, state, projects, projectScope }: VitalsProps
       };
     }),
   });
-  if (speed.data === undefined) return <CardSkeleton height={260} />;
+  if (speed.data === undefined) return <GhostCard kind="list" height={260} rows={5} />;
   const read = speed.data;
   const data = read.ok ? read.value.data : null;
   const measured = listed

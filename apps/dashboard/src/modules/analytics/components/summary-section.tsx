@@ -4,7 +4,7 @@ import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { useSession } from "@/modules/session/use-session";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import type { Prefetchable } from "@/shared/query/read";
 import { siteUrl } from "@/shared/config/site";
@@ -110,7 +110,8 @@ export function SummarySection({ scope, view, state, path, project }: Props) {
   const stats = useReadOf(statsQuery(scope));
   const annotations = useReadOf(annotationsQuery(scope));
   const editable = useSession().isAdmin;
-  if (read === undefined || stats.data === undefined) return <SectionSkeleton height={430} />;
+  if (read === undefined || stats.data === undefined)
+    return <GhostSection kind="chart" height={430} />;
   const headline = stats.data.ok ? stats.data.value.data[view.stat] : null;
   const total = headline?.value ?? null;
   const change = headline?.change ?? null;

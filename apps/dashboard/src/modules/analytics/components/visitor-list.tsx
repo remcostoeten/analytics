@@ -6,7 +6,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import { EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 import { DesktopIcon, GlobeIcon, MobileIcon, TabletIcon } from "@/shared/ui/icons";
@@ -92,7 +92,7 @@ function Row({ row, href, max }: { row: VisitorRow; href: string; max: number })
 
 export function VisitorList({ scope, state, path, cursor }: Props) {
   const visitors = useReadOf(visitorsQuery(scope, cursor));
-  if (visitors.data === undefined) return <SectionSkeleton height={360} />;
+  if (visitors.data === undefined) return <GhostSection kind="list" height={360} rows={7} />;
   const read = visitors.data;
   if (!read.ok) return <ReadNotice error={read.error} what="visitors" />;
   const rows = read.value.data;

@@ -1,5 +1,6 @@
 "use client";
 
+import { GhostTile } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
 import { useSession } from "@/modules/session/use-session";
@@ -28,7 +29,7 @@ type Props = { project: string; state: ViewState; base: string };
 function Vitals({ project, state, base }: Props) {
   const scope = speedViewScope(browserClient(), project, state);
   const summary = useSpeedSummary(scope, state);
-  if (summary.data === undefined) return <div className="skeleton h-[114px]" />;
+  if (summary.data === undefined) return <GhostTile height={114} wide />;
   return (
     <VitalsCard
       data={summary.data.ok ? summary.data.value.data : null}
