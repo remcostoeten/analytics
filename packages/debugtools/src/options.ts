@@ -1,12 +1,15 @@
 import type { Fetcher } from "@spoar/shared/http";
 import type { ProjectID, Timestamp } from "@spoar/shared/semantic";
 
+import type { ConsoleHost } from "./host";
 import type { ConsoleSections } from "./sections";
 import type { ConsoleData, ConsoleTheme } from "./types";
 
 export type ConsoleAuth = "widget" | "session";
 
 export type LauncherSide = "left" | "right";
+
+export type ConsoleTab = "page" | "events" | "sql";
 
 export type WidgetGrant = {
   token: string;
@@ -24,4 +27,6 @@ export type DebugtoolsOptions = {
   theme?: ConsoleTheme;
   demo?: boolean;
   open?: boolean;
+  tabs?: ConsoleTab[];
+  host?: ConsoleHost;
 };

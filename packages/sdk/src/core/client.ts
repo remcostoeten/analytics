@@ -108,7 +108,7 @@ export function createAnalytics<Events extends EventMap = EventMap>(
 
   function report(code: string, detail: string, event?: WireEvent) {
     log.info(code, detail, event);
-    for (const handler of listeners.error) handler(code, detail);
+    for (const handler of listeners.error) handler(code, detail, event);
   }
 
   function consentStatus(): ConsentStatus {
