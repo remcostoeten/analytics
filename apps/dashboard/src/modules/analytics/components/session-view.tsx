@@ -1,11 +1,12 @@
 "use client";
 
 import type { SessionEvents } from "@spoar/contract";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 import { notFound } from "next/navigation";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
-import { FactsSkeleton, SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { FactsSkeleton } from "@/modules/shell/components/skeletons";
 import { useRead } from "@/shared/query/read";
 
 import { formatDateTime, formatDuration } from "../format";
@@ -93,7 +94,7 @@ export function SessionView() {
           ) : null}
         </header>
         {read === undefined ? (
-          <SectionSkeleton height={360} />
+          <GhostSection kind="list" height={360} rows={7} />
         ) : read.ok ? (
           <SessionTrail events={read.value} />
         ) : (

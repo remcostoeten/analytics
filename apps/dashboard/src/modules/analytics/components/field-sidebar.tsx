@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProjectScope } from "@spoar/client";
+import { GhostList } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
 import { formatDimensionValue, formatMetric } from "../format";
@@ -43,7 +44,7 @@ function Field({ scope, state, path, field }: FieldProps) {
         {active ? <span className="field-active">1</span> : null}
       </summary>
       {read === undefined ? (
-        <div className="skeleton mx-2 my-1 h-24" aria-hidden="true" />
+        <GhostList height={96} rows={3} />
       ) : !read.ok ? (
         <p className="px-2 py-1 text-xs text-err">{read.error}</p>
       ) : rows.length === 0 ? (

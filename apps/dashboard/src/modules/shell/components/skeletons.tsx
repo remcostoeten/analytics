@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { GhostCard, GhostList, GhostSection, GhostTile } from "./ghost";
+
 type Props = { height: number };
 
 const metricRows = ["visitors", "pageviews", "bounce", "duration", "events"];
@@ -9,19 +11,16 @@ const kpiRows = ["visitors", "pageviews", "bounce", "duration"];
 const sessionFacts = ["visitor", "started", "duration", "bot"];
 const issueFacts = ["events", "users", "last", "first", "first-release", "last-release"];
 const realtimeRows = [116, 100, 100];
-const realtimeSections = [170, 111, 139, 139];
+const realtimeSections = [
+  { kind: "list", height: 170, rows: 3 },
+  { kind: "stats", height: 111, rows: 0 },
+  { kind: "list", height: 139, rows: 2 },
+  { kind: "list", height: 139, rows: 2 },
+] as const;
 const vitalHeights = [101, 91, 91, 91, 91, 91];
 
 function Bar({ className }: { className: string }) {
   return <div className={`skeleton ${className}`} />;
-}
-
-export function SectionSkeleton({ height }: Props) {
-  return (
-    <div className="panel-section" aria-hidden="true">
-      <div className="skeleton" style={{ height }} />
-    </div>
-  );
 }
 
 function ControlRow({ chips = true }: { chips?: boolean }) {
@@ -65,10 +64,10 @@ export function AnalyticsSkeleton() {
       data-testid="analytics-skeleton"
     >
       <aside className="grid gap-6" aria-hidden="true">
-        <Bar className="h-[114px]" />
+        <GhostTile height={114} wide />
         <div className="rail">
           {metricRows.map((row) => (
-            <Bar key={row} className="h-[116px]" />
+            <GhostTile key={row} height={116} />
           ))}
         </div>
       </aside>
@@ -76,9 +75,9 @@ export function AnalyticsSkeleton() {
         <PanelHeading>
           <ControlRow />
         </PanelHeading>
-        <SectionSkeleton height={430} />
-        <SectionSkeleton height={320} />
-        <SectionSkeleton height={570} />
+        <GhostSection kind="chart" height={430} />
+        <GhostSection kind="map" height={320} />
+        <GhostSection kind="list" height={570} rows={10} />
       </div>
     </div>
   );
@@ -94,7 +93,7 @@ export function SpeedSkeleton() {
       <aside className="grid gap-6" aria-hidden="true">
         <div className="rail">
           {vitalHeights.map((height, index) => (
-            <div key={index} className="skeleton" style={{ height }} />
+            <GhostTile key={index} height={height} />
           ))}
         </div>
       </aside>
@@ -103,17 +102,17 @@ export function SpeedSkeleton() {
           <ControlRow chips={false} />
           <Bar className="h-7 w-56 max-w-full" />
         </PanelHeading>
-        <SectionSkeleton height={424} />
-        <SectionSkeleton height={282} />
-        <SectionSkeleton height={240} />
+        <GhostSection kind="chart" height={424} />
+        <GhostSection kind="list" height={282} rows={5} />
+        <GhostSection kind="list" height={240} rows={4} />
       </div>
     </div>
   );
 }
 
-type PanelProps = Props & { heading?: "filters" | "tabs" };
+type PanelProps = Props & { heading?: "filters" | "tabs"; rows?: number };
 
-export function PanelSkeleton({ height, heading = "filters" }: PanelProps) {
+export function PanelSkeleton({ height, heading = "filters", rows = 7 }: PanelProps) {
   return (
     <div
       className="mx-auto grid max-w-[1200px] gap-6"
@@ -131,7 +130,7 @@ export function PanelSkeleton({ height, heading = "filters" }: PanelProps) {
             <ControlRow />
           )}
         </PanelHeading>
-        <SectionSkeleton height={height} />
+        <GhostSection kind="list" height={height} rows={rows} />
       </div>
     </div>
   );
@@ -174,7 +173,7 @@ export function DetailSkeleton({ height, facts }: DetailProps) {
           </div>
           <FactsSkeleton facts={facts} />
         </header>
-        <SectionSkeleton height={height} />
+        <GhostSection kind="list" height={height} rows={6} />
       </div>
     </div>
   );
@@ -185,13 +184,13 @@ export function RealtimeBodySkeleton() {
     <div className="grid items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]" aria-hidden="true">
       <aside className="rail">
         {realtimeRows.map((height, index) => (
-          <div key={index} className="skeleton" style={{ height }} />
+          <GhostTile key={index} height={height} />
         ))}
         <Bar className="h-4 w-40" />
       </aside>
       <div className="panel">
-        {realtimeSections.map((height, index) => (
-          <SectionSkeleton key={index} height={height} />
+        {realtimeSections.map((section, index) => (
+          <GhostSection key={index} {...section} />
         ))}
       </div>
     </div>
@@ -224,24 +223,16 @@ export function OverviewSkeleton() {
       </header>
       <div className="kpi-row" aria-hidden="true">
         {kpiRows.map((row) => (
-          <Bar key={row} className="h-[132px]" />
+          <GhostCard key={row} kind="stats" height={132} />
         ))}
       </div>
-      <div className="card">
-        <Bar className="h-[328px]" />
-      </div>
+      <GhostCard kind="chart" height={328} />
       <div className="overview-split">
-        <div className="card">
-          <Bar className="h-[300px]" />
-        </div>
-        <div className="card">
-          <Bar className="h-[300px]" />
-        </div>
+        <GhostCard kind="list" height={300} rows={5} />
+        <GhostCard kind="list" height={300} rows={5} />
       </div>
-      <div className="card">
-        <Bar className="h-[108px]" />
-      </div>
-      <Bar className="h-[720px]" />
+      <GhostCard kind="stats" height={108} />
+      <GhostCard kind="list" height={720} rows={8} />
     </div>
   );
 }
@@ -264,14 +255,14 @@ export function LogsSkeleton() {
       </header>
       <div className="log-layout">
         <div className="field-sidebar" aria-hidden="true">
-          <Bar className="h-[408px]" />
+          <GhostList height={408} rows={10} />
         </div>
         <div className="grid min-w-0 content-start gap-4">
           <div className="panel">
-            <SectionSkeleton height={310} />
+            <GhostSection kind="chart" height={310} />
           </div>
           <div className="panel">
-            <SectionSkeleton height={480} />
+            <GhostSection kind="list" height={480} rows={10} />
           </div>
         </div>
       </div>
@@ -292,20 +283,21 @@ export function HomeSkeleton() {
           <Bar className="h-[34px] w-28 rounded-full" />
         </div>
       </header>
-      <div className="home-top" aria-hidden="true">
-        <Bar className="h-[392px]" />
-        <Bar className="h-[392px]" />
+      <div className="home-top">
+        <GhostCard kind="metrics" height={392} />
+        <GhostCard kind="list" height={392} rows={4} />
       </div>
-      <div className="home-pair" aria-hidden="true">
-        <Bar className="h-[340px]" />
-        <Bar className="h-[340px]" />
+      <div className="home-pair">
+        <GhostCard kind="list" height={340} rows={6} />
+        <GhostCard kind="list" height={340} rows={6} />
       </div>
-      <div className="home-quad" aria-hidden="true">
+      <GhostCard kind="map" height={460} />
+      <div className="home-quad">
         {homeLists.map((list) => (
-          <Bar key={list} className="h-[252px]" />
+          <GhostCard key={list} kind="list" height={252} rows={5} />
         ))}
       </div>
-      <Bar className="h-[196px]" />
+      <GhostCard kind="list" height={196} rows={3} />
     </div>
   );
 }

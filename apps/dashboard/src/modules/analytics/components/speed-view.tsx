@@ -1,5 +1,6 @@
 "use client";
 
+import { GhostTile } from "@/modules/shell/components/ghost";
 import { ProjectHeading } from "@/modules/shell/components/project-heading";
 import { browserClient } from "@/shared/api/browser-client";
 
@@ -20,7 +21,7 @@ function RailSkeleton() {
   return (
     <div className="rail" aria-hidden="true">
       {vitalHeights.map((height, index) => (
-        <div key={index} className="skeleton" style={{ height }} />
+        <GhostTile key={index} height={height} />
       ))}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 import { keepPreviousData, useQueries } from "@tanstack/react-query";
+import { GhostCard } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
 import { useReadOf } from "@/shared/query/read";
@@ -37,10 +38,6 @@ const topLists = [
 const topRows = 12;
 const countryRows = 10;
 const deviceRows = 5;
-
-function CardSkeleton({ height }: { height: number }) {
-  return <div className="skeleton" style={{ height }} aria-hidden="true" />;
-}
 
 function filterHref(path: string, state: ViewState, dimension: FilterDimension) {
   return (value: string) => `${path}${viewQuery(withFilter(state, dimension, value))}`;
@@ -90,7 +87,7 @@ export function KpiTiles({ scope, state, base }: Pick<Props, "scope" | "state" |
     return (
       <div className="kpi-row">
         {tileViews.map((view) => (
-          <CardSkeleton key={view.slug} height={132} />
+          <GhostCard key={view.slug} kind="stats" height={132} />
         ))}
       </div>
     );
@@ -124,7 +121,7 @@ export function KpiTiles({ scope, state, base }: Pick<Props, "scope" | "state" |
 
 export function TrafficSection({ scope }: Pick<Props, "scope">) {
   const series = useReadOf(timeseriesQuery(scope, "pageviews"));
-  if (series.data === undefined) return <CardSkeleton height={328} />;
+  if (series.data === undefined) return <GhostCard kind="chart" height={328} />;
   const read = series.data;
   if (!read.ok) {
     return <p className="text-sm text-err">Could not read the series: {read.error.message}</p>;
@@ -160,7 +157,7 @@ export function TrafficSection({ scope }: Pick<Props, "scope">) {
 
 export function DeviceSection({ scope, state, path }: Omit<Props, "base">) {
   const devices = useTopList(scope, "device", "pageviews", deviceRows);
-  if (devices.data === undefined) return <CardSkeleton height={300} />;
+  if (devices.data === undefined) return <GhostCard kind="list" height={300} rows={5} />;
   const read = devices.data;
   return (
     <section className="card-section">
@@ -176,7 +173,7 @@ export function DeviceSection({ scope, state, path }: Omit<Props, "base">) {
 
 export function CountrySection({ scope, state, path, base }: Props) {
   const countries = useTopList(scope, "country", "pageviews", countryRows);
-  if (countries.data === undefined) return <CardSkeleton height={300} />;
+  if (countries.data === undefined) return <GhostCard kind="list" height={300} rows={5} />;
   const read = countries.data;
   return (
     <section className="card-section">
@@ -202,7 +199,7 @@ export function CountrySection({ scope, state, path, base }: Props) {
 
 export function OutcomeBar({ scope }: Pick<Props, "scope">) {
   const outcomes = useOutcomes(scope);
-  if (outcomes.data === undefined) return <CardSkeleton height={108} />;
+  if (outcomes.data === undefined) return <GhostCard kind="stats" height={108} />;
   const read = outcomes.data;
   if (!read.ok) return <p className="text-sm text-err">{read.error}</p>;
   const parts = read.value.series.map((entry) => ({ ...entry, total: sumPoints(entry.points) }));
@@ -243,7 +240,7 @@ type TopCardProps = Omit<Props, "base"> & { dimension: FilterDimension; title: s
 
 function TopCard({ scope, state, path, dimension, title }: TopCardProps) {
   const list = useTopList(scope, dimension, "pageviews", topRows);
-  if (list.data === undefined) return <CardSkeleton height={360} />;
+  if (list.data === undefined) return <GhostCard kind="list" height={360} rows={8} />;
   const read = list.data;
   return (
     <section className="card card-section">

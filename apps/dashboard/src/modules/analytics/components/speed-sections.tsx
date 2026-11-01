@@ -4,7 +4,7 @@ import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { useSession } from "@/modules/session/use-session";
-import { SectionSkeleton } from "@/modules/shell/components/skeletons";
+import { GhostSection } from "@/modules/shell/components/ghost";
 import { prefetchReads, useReadOf } from "@/shared/query/read";
 import type { QueryClient } from "@tanstack/react-query";
 import { EmptyState, IconStack } from "@/shared/ui/empty-state";
@@ -92,7 +92,7 @@ export function SpeedSummary({ scope, view, state, project }: SummaryProps) {
   const annotations = useReadOf(annotationsQuery(scope));
   const editable = useSession().isAdmin;
   if (summary.data === undefined || series.data === undefined) {
-    return <SectionSkeleton height={424} />;
+    return <GhostSection kind="chart" height={424} />;
   }
   const data = summary.data.ok ? summary.data.value.data : null;
   const metric = data?.metrics[view.slug] ?? null;
@@ -161,7 +161,7 @@ export function SpeedSummary({ scope, view, state, project }: SummaryProps) {
 
 export function SpeedRoutes({ scope, view, state, path }: Props) {
   const routes = useReadOf(speedRoutesQuery(scope, state, routeLimit));
-  if (routes.data === undefined) return <SectionSkeleton height={282} />;
+  if (routes.data === undefined) return <GhostSection kind="list" height={282} rows={5} />;
   const read = routes.data;
   return (
     <section className="panel-section grid gap-4">
@@ -241,7 +241,7 @@ export function SpeedRoutes({ scope, view, state, path }: Props) {
 
 export function SpeedElements({ scope, view, state, path }: Props) {
   const elements = useReadOf(speedElementsQuery(scope, state, view, routeLimit));
-  if (elements.data === undefined) return <SectionSkeleton height={240} />;
+  if (elements.data === undefined) return <GhostSection kind="list" height={240} rows={4} />;
   const read = elements.data;
   return (
     <section className="panel-section grid gap-4">
