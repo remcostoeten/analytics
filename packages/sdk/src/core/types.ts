@@ -71,7 +71,7 @@ export type FlushResult = {
 export type Listener = "error" | "send" | "drop";
 
 export type Handlers = {
-  error: (code: string, detail: string) => void;
+  error: (code: string, detail: string, event?: WireEvent) => void;
   send: (envelope: Envelope) => void;
   drop: (event: WireEvent, reason: string) => void;
 };

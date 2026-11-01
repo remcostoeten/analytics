@@ -2,6 +2,7 @@ import { readConsoleGrant } from "@spoar/shared/console";
 import type { Fetcher } from "@spoar/shared/http";
 import type { Nullable } from "@spoar/shared/semantic";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
 import type { WidgetGrant } from "../options";
 import { describeKeyUse, describeToken, fetchKeyUsage } from "./status";
@@ -12,11 +13,12 @@ type Props = {
   project: string;
   grant: Nullable<WidgetGrant>;
   fetch?: Fetcher;
+  actions?: ReactNode;
 };
 
 const tickMs = 30_000;
 
-export function StatusBar({ endpoint, project, grant, fetch }: Props) {
+export function StatusBar({ endpoint, project, grant, fetch, actions }: Props) {
   const [now, setNow] = useState(() => new Date());
   const [usage, setUsage] = useState<Nullable<KeyUsage>>(null);
   const token = grant?.token ?? null;
@@ -56,6 +58,7 @@ export function StatusBar({ endpoint, project, grant, fetch }: Props) {
           {line}
         </span>
       ))}
+      {actions}
     </div>
   );
 }

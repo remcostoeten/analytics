@@ -32,9 +32,10 @@ const adminToken = "at_parity_admin";
 
 const dayMs = 86_400_000;
 
-const now = new Date();
+const today = new Date(Math.floor(Date.now() / dayMs) * dayMs);
 
-const today = new Date(Math.floor(now.getTime() / dayMs) * dayMs);
+// Reads end at the start of the current UTC hour, so a clock in the day's first hour drops today's bucket.
+const now = new Date(today.getTime() + 12.5 * 3_600_000);
 
 function isCalendarDay(value: string): value is CalendarDay {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);

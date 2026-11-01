@@ -25,6 +25,7 @@ const stores = pgliteAccess(database);
 const admin = { authorization: "Bearer at_test_admin" };
 const alphaAdmin = { authorization: "Bearer at_test_alpha_admin" };
 const reader = { authorization: "Bearer at_test_reader" };
+const widget = { authorization: "Bearer wt_test_beta" };
 const anonymous = {};
 
 const api = createApp({
@@ -160,6 +161,11 @@ beforeAll(async () => {
       await hasher.sha256("at_test_reader"),
     ],
   );
+  await database.query(
+    `INSERT INTO api_tokens (id, name, token_hash, scope, project_ids, kind, expires_at) VALUES
+      ('tok_widget_beta', 'widget', $1, 'sql', '{beta}', 'widget', '2026-09-27T16:55:00Z')`,
+    [await hasher.sha256("wt_test_beta")],
+  );
 });
 
 describe("create", () => {
@@ -222,6 +228,22 @@ describe("access", () => {
     expect((await send("POST", "/delta/annotations", alphaAdmin, json)).status).toBe(403);
     expect((await send("POST", "/beta/annotations", alphaAdmin, json)).status).toBe(404);
     expect((await send("POST", "/alpha/annotations", alphaAdmin, json)).status).toBe(201);
+  });
+
+  test("the debug console's widget token adds annotations on its one project only", async () => {
+    const json = { title: "Shipped from the site", date: "2026-09-27T16:30:00.000Z", kind: "post" };
+    const created = await parsed(
+      await send("POST", "/beta/annotations", widget, json),
+      201,
+      AnnotationResponse,
+    );
+    expect(created.data).toMatchObject({ title: "Shipped from the site", kind: "post" });
+    expect((await send("POST", "/alpha/annotations", widget, json)).status).toBe(403);
+    expect((await send("POST", "/delta/annotations", widget, json)).status).toBe(403);
+    const path = `/beta/annotations/${created.data.id}`;
+    expect((await send("PATCH", path, widget, { title: "Changed" })).status).toBe(403);
+    expect((await send("DELETE", path, widget)).status).toBe(403);
+    expect((await send("DELETE", path, admin)).status).toBe(204);
   });
 
   test("reads follow the project's visibility", async () => {

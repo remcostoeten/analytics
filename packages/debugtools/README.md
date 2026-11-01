@@ -1,6 +1,12 @@
 # @spoar/debugtools
 
-A SQL console for admins on their own site, docked to the bottom of the page: a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search and the recent queries. It runs SQL against the project through `@spoar/client`.
+A console for admins on their own site, docked to the bottom of the page. It reads the project through `@spoar/client` and shows:
+
+- **This page**: visitors, pageviews, bounce rate, time on page, referrers, Web Vitals and issues for the current path, and click counts pinned on `data-spoar-click` elements.
+- **My events**: each event this tab sent, accepted, rejected or dropped, with the reason, and the project's recent server-side rejects.
+- **Count my visits**: opts this browser out of tracking or back in.
+- **Annotate**: adds a chart annotation.
+- **SQL**: the SQL console with a time range, editor, results, dataset library and recent queries, when `tabs` includes `"sql"`.
 
 It is a separate package from `@spoar/sdk` and replaces `@spoar/devtools` (decisions 30 to 33 in `docs/v2/plan.md`), so the SDK's size budgets do not change.
 
@@ -31,7 +37,7 @@ import { Debugtools } from "@spoar/debugtools/next";
 | `@spoar/debugtools/console` | `<Console />`, `<LiveConsole />`, `clientSource` | The fixture console, or the live console over a source, without the loader or the admin check |
 | `@spoar/debugtools/fixtures` | `consoleFixture` | Sample data for `<Console />` and the `data` option |
 
-`options` takes `endpoint`, `project`, an optional `auth` (`"widget"` or `"session"`, default `"widget"`), an optional `launcher` (`"left"` or `"right"`), an optional `fetch`, an optional `data` to show fixture data instead of the project's, an optional `sections` to turn parts of the console on or off, an optional `theme` (`"dark"`, `"light"` or `"system"`, default `"dark"`), an optional `demo` to show the fixture console when the admin check fails, and an optional `open` to open the console as soon as it mounts.
+`options` takes `endpoint`, `project`, an optional `auth` (`"widget"` or `"session"`, default `"widget"`), an optional `launcher` (`"left"` or `"right"`), an optional `fetch`, an optional `data` to show fixture data instead of the project's, an optional `sections` to turn parts of the console on or off, an optional `theme` (`"dark"`, `"light"` or `"system"`, default `"dark"`), an optional `demo` to show the fixture console when the admin check fails, an optional `open` to open the console as soon as it mounts, an optional `tabs` (`"page"`, `"events"` and `"sql"`, default the first two) and an optional `host`, the page's `@spoar/sdk` client, which **My events** and **Count my visits** read. `<Analytics debugConsole />` in `@spoar/sdk/next` passes its client as `host`.
 
 ## The Console component
 

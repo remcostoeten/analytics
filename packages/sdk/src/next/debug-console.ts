@@ -4,6 +4,7 @@ import { isConsoleArmed, readConsoleGrant } from "@spoar/shared/console";
 import { noop } from "@spoar/shared/noop";
 import type { Nullable } from "@spoar/shared/semantic";
 
+import type { Analytics } from "../core/types";
 import { useAnalytics } from "../react/use-analytics";
 
 export type DebugConsole = boolean | { api: string };
@@ -24,14 +25,14 @@ function isShortcut(event: KeyboardEvent) {
   return (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "k";
 }
 
-function gate(api: string): () => void {
+function gate(api: string, host: Analytics): () => void {
   let stopped = false;
   let stop = noop;
 
   function start(popup: Nullable<Window>) {
     void import("@spoar/debugtools/gate")
       .then(({ startConsole }) => {
-        if (!stopped) stop = startConsole({ endpoint: api, popup });
+        if (!stopped) stop = startConsole({ endpoint: api, popup, host });
       })
       .catch(noop);
   }
@@ -78,7 +79,7 @@ export default function DebugConsoleGate({ option }: Props) {
 
   useEffect(() => {
     if (!on) return;
-    return gate(apiFor(custom, client.status().endpoint));
+    return gate(apiFor(custom, client.status().endpoint), client);
   }, [client, on, custom]);
 
   return null;

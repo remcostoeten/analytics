@@ -23,7 +23,7 @@ The [API reference](/docs/reference) has the request and response schema of ever
 
 ## Signing in
 
-The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API reads the admin session cookie, finds the project whose `allowedOrigins` lists the page's `Origin`, checks that its `debugConsole` switch is on and that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `sql` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. The token can run SQL, read logs and read the live data of that project, but it cannot change settings, rotate keys or manage tokens. Call the route again before `expiresAt` to refresh.
+The widget calls `GET /v2/widget/session` from your site with `credentials: "include"`. The API reads the admin session cookie, finds the project whose `allowedOrigins` lists the page's `Origin`, checks that its `debugConsole` switch is on and that you may administer that project, and answers a widget token: `wt_`, valid for 15 minutes, `sql` scope, that project only. Every other call sends `Authorization: Bearer wt_...`, so the cookie never travels cross-origin again. The token can run SQL, read logs and the live data of that project, and add annotations to it, but it cannot change or delete annotations, change settings, rotate keys or manage tokens. Call the route again before `expiresAt` to refresh.
 
 | Answer | When |
 | --- | --- |

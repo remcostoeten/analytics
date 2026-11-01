@@ -27,27 +27,34 @@ export const timeRanges: { value: TimeRange; label: string; span: Milliseconds }
 
 const refreshBefore: Milliseconds = 60_000;
 
-function spanOf(range: TimeRange): Milliseconds {
+/**
+ * @name spanOf
+ * @description The length of a console time range in milliseconds, an hour for an unknown one.
+ *
+ * @example
+ * spanOf("15m"); // 900000
+ */
+export function spanOf(range: TimeRange): Milliseconds {
   return timeRanges.find((item) => item.value === range)?.span ?? 60 * 60_000;
 }
 
+export type ClientAccess = () => Promise<Client<string>>;
+
 /**
- * @name clientSource
- * @description The console's data source over `@spoar/client` for one project: the view schema,
- * runs of SQL with the time range bound as `:from` and `:to` and the project as `:project`, the
- * caller's run history and the project's engine log lines that contain a text. With a widget grant it sends the `wt_` token and, a minute before it
- * expires, switches to a newer grant this tab holds or fetches a new one; without one it sends the
- * browser's session cookie, as in the dashboard.
+ * @name clientAccess
+ * @description A function that resolves the `@spoar/client` for the console's project. With a
+ * widget grant it sends the `wt_` token and, a minute before it expires, switches to a newer grant
+ * this tab holds or fetches a new one; without one it sends the browser's session cookie, as in the
+ * dashboard. The client is reused while the token stays the same.
  *
  * @example
- * const source = clientSource({ endpoint: "https://api.example.com", project: "site" }, grant);
- * const result = await source.run("select count(*) from events where ts >= :from", "24h");
+ * const client = await clientAccess({ endpoint: "https://api.example.com", project: "site" }, grant)();
  */
-export function clientSource(
+export function clientAccess(
   options: DebugtoolsOptions,
   grant: Nullable<WidgetGrant>,
   now: () => Date = () => new Date(),
-): ConsoleSource {
+): ClientAccess {
   let current = grant;
   let cached: Nullable<{ token: Nullable<string>; client: Client<string> }> = null;
 
@@ -70,14 +77,32 @@ export function clientSource(
     return fresh;
   }
 
-  async function client(): Promise<Client<string>> {
+  return async () => {
     if (!current) return build(null);
     if (Date.parse(current.expiresAt) - now().getTime() < refreshBefore) {
       current = await refresh(current);
     }
     return build(current.token);
-  }
+  };
+}
 
+/**
+ * @name clientSource
+ * @description The console's SQL source over `@spoar/client` for one project: the view schema,
+ * runs of SQL with the time range bound as `:from` and `:to` and the project as `:project`, the
+ * caller's run history and the project's engine log lines that contain a text. It reads through
+ * `clientAccess`, so a widget grant is refreshed before it expires.
+ *
+ * @example
+ * const source = clientSource({ endpoint: "https://api.example.com", project: "site" }, grant);
+ * const result = await source.run("select count(*) from events where ts >= :from", "24h");
+ */
+export function clientSource(
+  options: DebugtoolsOptions,
+  grant: Nullable<WidgetGrant>,
+  now: () => Date = () => new Date(),
+  client: ClientAccess = clientAccess(options, grant, now),
+): ConsoleSource {
   return {
     project: options.project,
     schema: async () => (await client()).sql.schema(),

@@ -4,7 +4,9 @@ import { createRoot } from "react-dom/client";
 import type { Nullable } from "@spoar/shared/semantic";
 
 import type { DebugtoolsOptions, WidgetGrant } from "../options";
-import { clientSource } from "../source";
+import { Actions } from "../actions/actions";
+import { sharedEventLog } from "../events/event-log";
+import { clientAccess, clientSource } from "../source";
 import { css } from "../styles/compiled";
 import { StatusBar } from "./status-bar";
 import { Widget } from "./widget";
@@ -46,16 +48,21 @@ export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGr
   document.body.append(host);
   const root = createRoot(container);
   const live = grant !== null || options.auth === "session";
+  const client = clientAccess(options, grant);
+  if (live && options.host) sharedEventLog(options.host);
+  const context = live ? { project: options.project, client, host: options.host ?? null } : null;
   root.render(
     <StrictMode>
       <Widget
         label={live ? options.project : `${options.project} demo`}
-        source={live ? clientSource(options, grant) : null}
+        source={live ? clientSource(options, grant, undefined, client) : null}
         data={options.data}
         sections={options.sections}
         theme={options.theme}
         launcher={options.launcher}
         open={options.open}
+        tabs={options.tabs}
+        context={context}
         statusBar={
           live ? (
             <StatusBar
@@ -63,6 +70,7 @@ export function mountWidget(options: DebugtoolsOptions, grant: Nullable<WidgetGr
               project={options.project}
               grant={grant}
               fetch={options.fetch}
+              actions={context ? <Actions context={context} /> : undefined}
             />
           ) : undefined
         }

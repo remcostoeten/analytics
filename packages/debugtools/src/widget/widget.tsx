@@ -3,12 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { Console } from "../console";
+import { EventsView } from "../events/events-view";
 import { LiveConsole } from "../live/live-console";
+import type { ConsoleTab, LauncherSide } from "../options";
+import { PageView } from "../page/page-view";
 import { Panel } from "../panel/panel";
-import type { LauncherSide } from "../options";
 import type { ConsoleSections } from "../sections";
 import type { ConsoleSource } from "../source";
 import type { ConsoleData, ConsoleTheme } from "../types";
+import { TabBar } from "./tab-bar";
+import { resolveTabs } from "./view";
+import type { ViewContext } from "./view";
 
 type Props = {
   label?: string;
@@ -19,6 +24,8 @@ type Props = {
   launcher?: LauncherSide;
   open?: boolean;
   statusBar?: ReactNode;
+  context?: Nullable<ViewContext>;
+  tabs?: ConsoleTab[];
 };
 
 const fullHeight = { "--spc-height": "100%" } as CSSProperties;
@@ -44,8 +51,12 @@ export function Widget({
   launcher = "left",
   open: initial = false,
   statusBar,
+  context = null,
+  tabs,
 }: Props) {
   const [open, setOpen] = useState(initial);
+  const shown = resolveTabs(tabs);
+  const [tab, setTab] = useState<ConsoleTab>(shown[0] ?? "page");
   const launcherRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(initial);
 
@@ -93,25 +104,44 @@ export function Widget({
     <Panel label={label} theme={theme} onClose={() => setOpen(false)}>
       <div className="flex h-full flex-col">
         {statusBar}
-        <div className="min-h-0 flex-1">
-          {source && !data ? (
-            <LiveConsole
-              source={source}
-              sections={sections}
-              theme={theme}
-              style={fullHeight}
-              className={embeddedClass}
-            />
-          ) : (
-            <Console
-              data={data}
-              sections={sections}
-              theme={theme}
-              style={fullHeight}
-              className={embeddedClass}
-            />
-          )}
-        </div>
+        {source && !data && context ? (
+          <>
+            {shown.length > 1 ? <TabBar tabs={shown} active={tab} onSelect={setTab} /> : null}
+            <div className="min-h-0 flex-1 overflow-auto" role="tabpanel">
+              {tab === "page" ? <PageView context={context} /> : null}
+              {tab === "events" ? <EventsView context={context} /> : null}
+              {tab === "sql" ? (
+                <LiveConsole
+                  source={source}
+                  sections={sections}
+                  theme={theme}
+                  style={fullHeight}
+                  className={embeddedClass}
+                />
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <div className="min-h-0 flex-1">
+            {source && !data ? (
+              <LiveConsole
+                source={source}
+                sections={sections}
+                theme={theme}
+                style={fullHeight}
+                className={embeddedClass}
+              />
+            ) : (
+              <Console
+                data={data}
+                sections={sections}
+                theme={theme}
+                style={fullHeight}
+                className={embeddedClass}
+              />
+            )}
+          </div>
+        )}
       </div>
     </Panel>
   );

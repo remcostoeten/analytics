@@ -5,7 +5,7 @@ import type { Result } from "@spoar/shared/result";
 import type { Nullable, ProjectID } from "@spoar/shared/semantic";
 
 import { bearerToken, resolveCaller, sameSecret } from "./caller";
-import { canAdmin, canRead, canReadDetail, canReadLogs } from "./rules";
+import { canAdmin, canAnnotate, canRead, canReadDetail, canReadLogs } from "./rules";
 import type { AccessDeps, Caller, Level } from "./types";
 
 export type Decision = {
@@ -52,6 +52,11 @@ function judge(
     return canReadLogs(caller, project.id)
       ? decision
       : refused(caller, "The log stream needs a project admin");
+  }
+  if (level === "annotate") {
+    return canAnnotate(caller, project.id)
+      ? decision
+      : refused(caller, "Adding an annotation needs a project admin");
   }
   return canAdmin(caller, project.id) ? decision : refused(caller, "This needs a project admin");
 }

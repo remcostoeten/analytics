@@ -25944,7 +25944,7 @@
       },
       "post": {
         "summary": "Add an annotation",
-        "description": "A `title` and a `date`, with an optional `endDate` for a range, `kind` (`release`, `post`, `content`, `incident` or `other`, the default), `note` and `url`. A calendar date means its start in UTC. `endDate` may not be before `date`.",
+        "description": "A `title` and a `date`, with an optional `endDate` for a range, `kind` (`release`, `post`, `content`, `incident` or `other`, the default), `note` and `url`. A calendar date means its start in UTC. `endDate` may not be before `date`. Project admins may add one, and so may the debug console's widget token on its own project; changing and deleting stay with admins.",
         "tags": [
           "Annotations"
         ],
