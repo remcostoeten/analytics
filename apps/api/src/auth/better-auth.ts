@@ -5,6 +5,7 @@ import {
   authInvitation,
   authMember,
   authOrganization,
+  authRateLimit,
   authSession,
   authUser,
   authVerification,
@@ -28,6 +29,8 @@ export type AuthOptions = {
   secure: boolean;
 };
 
+const signInRule = { window: 60, max: 10 };
+
 async function allowed(members: MemberStore, login: unknown, githubId: unknown) {
   if (typeof login !== "string" || login === "") return false;
   const result = await members.allowedLogin(login, typeof githubId === "string" ? githubId : null);
@@ -42,7 +45,9 @@ async function allowed(members: MemberStore, login: unknown, githubId: unknown) 
  * admits that id, and each new account joins the single
  * organization. The GitHub login is copied from the profile into `githubLogin`, which stays open
  * to provider input because Better Auth drops `input: false` fields from the profile, and an
- * update that touches it is refused instead. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
+ * update that touches it is refused instead. Requests are rate limited per IP and path in the
+ * `auth_rate_limit` table, 10 a minute for sign-in and the OAuth callback and 120 for the rest,
+ * and only when `secure` is on. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
@@ -66,6 +71,7 @@ export function createAuth(options: AuthOptions) {
         organization: authOrganization,
         member: authMember,
         invitation: authInvitation,
+        rateLimit: authRateLimit,
       },
     }),
     user: {
@@ -91,7 +97,18 @@ export function createAuth(options: AuthOptions) {
         roles: { owner: ownerAc, admin: adminAc, analyst: memberAc, viewer: memberAc },
       }),
     ],
+    rateLimit: {
+      enabled: options.secure,
+      storage: "database",
+      window: 60,
+      max: 120,
+      customRules: {
+        "/sign-in/*": signInRule,
+        "/callback/*": signInRule,
+      },
+    },
     advanced: {
+      ipAddress: { ipAddressHeaders: ["x-real-ip", "x-forwarded-for"] },
       cookiePrefix: "ra",
       useSecureCookies: options.secure,
       crossSubDomainCookies: options.cookieDomain

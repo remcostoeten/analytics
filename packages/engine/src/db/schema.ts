@@ -370,6 +370,13 @@ export const authVerification = pgTable("auth_verification", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
+export const authRateLimit = pgTable("auth_rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
 export const authMember = pgTable("auth_member", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id")
