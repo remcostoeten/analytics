@@ -1,5 +1,12 @@
 # @spoar/client
 
+## 2.1.0
+
+### Minor Changes
+
+- 1fa7840: Adds `projects.keyStatus` and `projects.checkKeys`: when a project's keys were generated and the last check, and a check that reports whether events were accepted with the current public key and, given a secret key, whether it matches the stored hash.
+- 5770d89: Adds `members` to the admin namespaces: list the GitHub logins that may sign in, look a login up on GitHub, add one with a role and projects, change it and remove it. Owner only.
+
 ## 2.0.1
 
 ### Patch Changes
