@@ -1,6 +1,7 @@
 import { apiEndpoint } from "@/lib/api-endpoint";
+import { dashboardUrl } from "@/lib/dashboard-url";
 import { formatCount, formatDuration, formatShare } from "@/lib/format";
-import { readProjects, showcaseQuery, type ShowcaseProject } from "@/lib/showcase";
+import { readProjects, type ShowcaseProject } from "@/lib/showcase";
 
 import { CodeWindow } from "./code-window";
 import { CountUp } from "./count-up";
@@ -10,7 +11,7 @@ import { RunningOnViews } from "./running-on-views";
 import { stagger } from "./stagger";
 
 export async function RunningOn() {
-  const [{ projects, list }, query] = await Promise.all([readProjects(), showcaseQuery()]);
+  const { projects, list } = await readProjects();
   if (projects.length === 0) return null;
   return (
     <section className="container-land py-14 sm:py-20">
@@ -38,7 +39,7 @@ export async function RunningOn() {
                 >
                   <ProjectCard
                     project={project}
-                    href={statsHref(project.id, query)}
+                    href={projectHref(project.id)}
                     gradient={`card-spark-${index}`}
                   />
                 </li>
@@ -66,7 +67,7 @@ export async function RunningOn() {
                 <li key={project.id} style={stagger(index)} className="reveal">
                   <ProjectRow
                     project={project}
-                    href={statsHref(project.id, query)}
+                    href={projectHref(project.id)}
                     gradient={`spark-${index}`}
                   />
                 </li>
@@ -82,8 +83,8 @@ export async function RunningOn() {
   );
 }
 
-function statsHref(id: string, query: string) {
-  return `${apiEndpoint()}/v2/projects/${encodeURIComponent(id)}/stats?${query}`;
+function projectHref(id: string) {
+  return dashboardUrl(`/projects/${encodeURIComponent(id)}`);
 }
 
 type Metric = {
@@ -131,7 +132,6 @@ function ProjectCard({ project, href, gradient }: ProjectProps) {
   return (
     <a
       href={href}
-      rel="noreferrer"
       draggable={false}
       className="project-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-[translate,box-shadow,border-color] duration-200 hover:-translate-y-0.5"
     >
@@ -187,7 +187,6 @@ function ProjectRow({ project, href, gradient }: ProjectProps) {
   return (
     <a
       href={href}
-      rel="noreferrer"
       className="project-row group items-center px-5 py-3.5 transition-colors duration-200 hover:bg-fg/[0.03] focus-visible:bg-fg/[0.03] focus-visible:outline-none"
     >
       <span className="tile-glow flex size-8 shrink-0 items-center justify-center rounded-lg font-serif text-[0.95rem] text-white">
