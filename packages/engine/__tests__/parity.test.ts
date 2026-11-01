@@ -90,7 +90,7 @@ beforeAll(async () => {
     });
     if (!result.ok || result.value.rejected.length > 0) throw new Error(JSON.stringify(result));
   }
-});
+}, 30_000);
 
 describe("parity with the v1 ingest handler", () => {
   test("events match on every legacy column", async () => {

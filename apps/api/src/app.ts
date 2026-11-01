@@ -31,6 +31,7 @@ import { tokensModule } from "./modules/tokens/route";
 import { liveModule } from "./modules/live/route";
 import type { LiveOptions } from "./modules/live/route";
 import { logsModule } from "./modules/logs/route";
+import { mcpModule } from "./modules/mcp/route";
 import type { GithubDirectory } from "./modules/members/github";
 import { membersModule } from "./modules/members/route";
 import { widgetModule } from "./modules/widget/route";
@@ -81,7 +82,7 @@ async function signedInAdmin(headers: Headers, access: AccessDeps) {
 /**
  * @name createApp
  * @description Builds the v2 API under `/v2`, with the landing page at `/` and `/v2`: request ids, CORS, the error envelope, OpenAPI docs,
- * health, ingest, sign-in, projects, the retired setup page's redirect, tokens, the reads, annotations, the SQL console, with
+ * health, ingest, sign-in, projects, the retired setup page's redirect, tokens, the reads, annotations, the SQL console, the MCP server at `/v2/mcp`, with
  * `alerts` the alert routes, and with `widget` the dev widget's bootstrap, active visitors and
  * sessions, overview, log and the `live` WebSocket. The engine is created per request so its
  * log lines carry the request id. Events sent with a signed-in admin's session cookie are
@@ -206,5 +207,6 @@ export function createApp(options: AppOptions) {
         commit: options.commit ?? null,
       }),
     )
-    .use(api);
+    .use(api)
+    .use(mcpModule(options.access, (request) => api.handle(request), options.docsBase, version));
 }

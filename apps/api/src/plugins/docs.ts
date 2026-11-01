@@ -78,6 +78,7 @@ export const apiTags = [
   { name: "Speed", description: "Core Web Vitals and the Real Experience Score" },
   { name: "Issues", description: "Error tracking, issues and error rules" },
   { name: "Annotations", description: "Dated labels on a project's time series" },
+  { name: "MCP", description: "The Model Context Protocol server for AI clients" },
   {
     name: "Dev widget",
     description: "The admin dev widget: bootstrap, live visitors and sessions, logs, overview",
