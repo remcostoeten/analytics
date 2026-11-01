@@ -2610,6 +2610,14 @@
   background: var(--ok);
 }
 
+.share-needsImprovement {
+  background: var(--warn);
+}
+
+.share-poor {
+  background: var(--err);
+}
+
 .vitals-meter {
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr) auto;
@@ -2663,14 +2671,6 @@
 
 .dots-empty {
   stroke: color-mix(in oklab, var(--map-land) 85%, var(--surface));
-}
-
-.share-needsImprovement {
-  background: var(--warn);
-}
-
-.share-poor {
-  background: var(--err);
 }
 
 .fill-warn {
@@ -3768,6 +3768,33 @@
   overflow: hidden;
 }
 
+.ghost,
+.ghost-metric {
+  position: relative;
+  isolation: isolate;
+  animation: ghost-in 240ms var(--ease-out) 120ms backwards;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--fg) 7%, transparent) 50%,
+      transparent 70%
+    );
+    translate: -100% 0;
+    animation: ghost-sweep 1.8s cubic-bezier(0.45, 0, 0.25, 1) 360ms infinite;
+  }
+
+  & .skeleton {
+    animation: none;
+    background: var(--grid);
+  }
+}
+
 .ghost-head {
   display: flex;
   align-items: start;
@@ -3814,7 +3841,6 @@
   width: 100%;
   height: 100%;
   min-height: 7rem;
-  animation: ghost-breathe 2.8s ease-in-out infinite;
 }
 
 .ghost-wave-fill {
@@ -3919,8 +3945,26 @@
   overflow: hidden;
 }
 
-@keyframes ghost-breathe {
-  50% {
-    opacity: 0.55;
+@keyframes ghost-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ghost-sweep {
+  60%,
+  100% {
+    translate: 100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost,
+  .ghost-metric {
+    animation: none;
+
+    &::after {
+      display: none;
+    }
   }
 }
