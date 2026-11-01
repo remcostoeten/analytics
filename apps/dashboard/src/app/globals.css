@@ -2610,6 +2610,14 @@
   background: var(--ok);
 }
 
+.share-needsImprovement {
+  background: var(--warn);
+}
+
+.share-poor {
+  background: var(--err);
+}
+
 .vitals-meter {
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr) auto;
@@ -2663,14 +2671,6 @@
 
 .dots-empty {
   stroke: color-mix(in oklab, var(--map-land) 85%, var(--surface));
-}
-
-.share-needsImprovement {
-  background: var(--warn);
-}
-
-.share-poor {
-  background: var(--err);
 }
 
 .fill-warn {
