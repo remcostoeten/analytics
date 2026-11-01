@@ -29,7 +29,7 @@ type Props = { project: string; state: ViewState; base: string };
 function Vitals({ project, state, base }: Props) {
   const scope = speedViewScope(browserClient(), project, state);
   const summary = useSpeedSummary(scope, state);
-  if (summary.data === undefined) return <GhostTile height={114} wide />;
+  if (summary.data === undefined) return <GhostTile height={121} wide />;
   return (
     <VitalsCard
       data={summary.data.ok ? summary.data.value.data : null}
@@ -69,7 +69,7 @@ export function AnalyticsView() {
 
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="grid gap-6">
+      <aside className="view-aside">
         <Vitals project={project} state={state} base={base} />
         <MetricRail scope={scope} state={state} base={base} current={view} />
         <QuickActions project={project} />

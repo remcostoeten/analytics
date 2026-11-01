@@ -36,7 +36,7 @@ export function SpeedView() {
   const shared = { scope, view, state, path };
   return (
     <div className="mx-auto grid max-w-[1200px] items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="grid gap-6">
+      <aside className="view-aside">
         {summary.data === undefined ? (
           <RailSkeleton />
         ) : (

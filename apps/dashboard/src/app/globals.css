@@ -583,6 +583,16 @@
   }
 }
 
+.view-aside {
+  display: grid;
+  gap: 1.5rem;
+
+  @media (min-width: 1024px) and (min-height: 60rem) {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
 .live-badge {
   display: inline-flex;
   align-items: center;
@@ -2559,6 +2569,61 @@
 
 .share-good {
   background: var(--ok);
+}
+
+.vitals-meter {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.vitals-name {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.vitals-value {
+  min-width: 3rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-dots {
+  display: block;
+  width: 100%;
+  height: 0.6875rem;
+  overflow: visible;
+
+  & path {
+    fill: none;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: dot-spark-reveal 420ms steps(8, end) both;
+  }
+}
+
+.dots-good {
+  stroke: color-mix(in oklab, var(--ok) 65%, var(--surface));
+}
+
+.dots-needsImprovement {
+  stroke: var(--warn);
+}
+
+.dots-poor {
+  stroke: var(--err);
+}
+
+.dots-empty {
+  stroke: color-mix(in oklab, var(--map-land) 85%, var(--surface));
 }
 
 .share-needsImprovement {

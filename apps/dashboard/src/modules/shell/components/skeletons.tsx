@@ -64,7 +64,7 @@ export function AnalyticsSkeleton() {
       data-testid="analytics-skeleton"
     >
       <aside className="grid gap-6" aria-hidden="true">
-        <GhostTile height={114} wide />
+        <GhostTile height={121} wide />
         <div className="rail">
           {metricRows.map((row) => (
             <GhostTile key={row} height={116} />
