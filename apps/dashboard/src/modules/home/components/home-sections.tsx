@@ -24,6 +24,7 @@ import { useRead } from "@/shared/query/read";
 import { ChartIllustration, EmptyState } from "@/shared/ui/empty-state";
 import { FilterIcon } from "@/shared/ui/icons";
 import { Link } from "@/shared/ui/link";
+import { Tabs } from "@/shared/ui/tabs";
 
 import { homeHref, toggleHomeFilter } from "../home-state";
 import type { HomeState } from "../home-state";
@@ -216,7 +217,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
           {metric.label} in the {periodPhrase(state.view.period)} across {across}.
         </p>
         {splittable ? (
-          <nav aria-label="Chart" className="tabs">
+          <Tabs label="Chart">
             <Link
               href={homeHref({ ...state, byProject: false })}
               scroll={false}
@@ -233,7 +234,7 @@ export function TrafficCard({ scope, state, projects }: TrafficProps) {
             >
               By project
             </Link>
-          </nav>
+          </Tabs>
         ) : null}
       </div>
       {"series" in drawn ? (
