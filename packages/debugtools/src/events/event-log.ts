@@ -20,7 +20,7 @@ export type EventLog = {
   stop: () => void;
 };
 
-export const eventLogLimit = 200;
+const eventLogLimit = 200;
 
 const rejectedCode = "RA_INGEST_REJECTED";
 const failedCode = "RA_INGEST_FAILED";

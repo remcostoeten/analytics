@@ -254,8 +254,9 @@ describe("EventsView", () => {
     });
     const input = container.querySelector("input") as HTMLInputElement;
     await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      setter?.call(input, "SIGN");
+      const native: { set?: (this: HTMLInputElement, value: string) => void } | undefined =
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+      native?.set?.call(input, "SIGN");
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
     expect(container.querySelectorAll("li")).toHaveLength(1);

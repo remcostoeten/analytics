@@ -1,10 +1,17 @@
 ---
 title: Debug console
-description: A SQL console for admins on their own site, docked to the bottom of the page. It ships as @spoar/debugtools and visitors never download it.
+description: A console for admins on their own site that shows the numbers and the events of the page in front of them. It ships as @spoar/debugtools and visitors never download it.
 icon: Bug
 ---
 
-`@spoar/debugtools` opens a SQL console over your live site. Only you see it. It has a toolbar with a time range, a SQL editor, the result rows, a dataset library with field search, and your recent queries. It runs [SQL](/docs/api/sql) against the project the page tracks. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
+`@spoar/debugtools` opens a console over your live site. Only you see it. It answers questions about the page you are on and the browser you are using:
+
+- **This page**: visitors, pageviews, bounce rate and time on page for the current path, its top referrers, its Web Vitals and the issues raised on it. **Show clicks** outlines every element marked with `data-spoar-click` and pins its click count to it.
+- **My events**: each event this tab sent since the console loaded, with whether the API accepted it, rejected it and why, or the SDK dropped it and why. **Server rejects** lists the project's recent rejected events, rate limited requests and refused origins.
+- **Count my visits**: a switch that opts this browser out of tracking, or back in.
+- **Annotate**: adds a chart annotation, such as a release or a post, that shows on the dashboard's charts.
+
+[SQL](/docs/api/sql) is an opt-in tab through the `tabs` option, and the dashboard shows it. It is a separate package from `@spoar/sdk`, so the SDK's size budgets do not change.
 
 ## Try it here
 
@@ -129,6 +136,8 @@ type DebugtoolsOptions = {
   theme?: "dark" | "light" | "system";
   demo?: boolean;
   open?: boolean;
+  tabs?: ("page" | "events" | "sql")[];
+  host?: ConsoleHost;
 };
 ```
 
@@ -176,6 +185,18 @@ Default `false`. When the admin check fails, shows the console on fixture data i
 
 Default `false`. Opens the console as soon as it mounts, instead of showing the launcher.
 
+### tabs
+
+Default `["page", "events"]`. The tabs to show, always in the order **This page**, **My events**, **SQL**. Add `"sql"` for the SQL console; `sections` applies to it.
+
+### host
+
+The page's `@spoar/sdk` client, created with `createAnalytics`. **My events** and **Count my visits** read it, so without it they explain that the page gave the console no client. `<Analytics debugConsole />` passes its own client.
+
+```ts
+mount({ endpoint: "https://api.example.com", project: "example.com", host: analytics });
+```
+
 ## Using the console
 
 A **Console** pill sits at the bottom left of the page. Click it, or press Ctrl+Shift+K (Cmd+Shift+K on a Mac), to open the console. Escape or the close button closes it.
@@ -188,7 +209,9 @@ The console opens as a panel docked to the bottom of the page. Drag its top edge
 
 The browser remembers the mode, height, position and size.
 
-Write SQL in the editor and press Run or Ctrl+Enter. `:from` and `:to` are bound to the time range in the toolbar, and `:project` to the project. The dataset library lists the views and columns you can query. A dataset's quick query fills the editor with its latest rows.
+**This page** follows the page as you navigate. Type another path to look at it instead, and press **Follow page** to go back.
+
+On the **SQL** tab, write SQL in the editor and press Run or Ctrl+Enter. `:from` and `:to` are bound to the time range in the toolbar, and `:project` to the project. The dataset library lists the views and columns you can query. A dataset's quick query fills the editor with its latest rows.
 
 The console renders in a Shadow DOM root on a `<spoar-debugtools>` element, so your site's CSS and the console's never meet.
 
