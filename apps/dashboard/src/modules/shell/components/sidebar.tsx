@@ -30,7 +30,9 @@ import {
 import { Logo } from "@/shared/ui/logo";
 import { Select } from "@/shared/ui/select";
 
+import { ProjectIcon } from "./project-icon";
 import { SidebarToggle } from "./sidebar-toggle";
+import { useHoverIndicator } from "./use-hover-indicator";
 
 type Props = {
   projects: PublicProject[];
@@ -69,12 +71,6 @@ export function SidebarFoot() {
       <SidebarToggle />
     </div>
   );
-}
-
-function projectHue(id: string) {
-  let hash = 0;
-  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) % 360;
-  return hash;
 }
 
 function NavLink({ item }: { item: Item }) {
@@ -138,6 +134,7 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
   const [toggled, setToggled] = useState<{ [label: string]: boolean }>({});
   const project = currentProject(pathname);
   const encoded = project ? encodeURIComponent(project) : null;
+  const { navRef, indicatorRef } = useHoverIndicator<HTMLElement>();
 
   const workspace: Item[] = [
     { label: "Home", href: "/", icon: HomeIcon, active: pathname === "/" },
@@ -270,7 +267,8 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
           </div>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Dashboard">
+        <nav ref={navRef} className="sidebar-nav" aria-label="Dashboard">
+          <span ref={indicatorRef} className="nav-hover" aria-hidden="true" />
           <ul>
             {workspace.map((item) => (
               <li key={item.href}>
@@ -299,13 +297,7 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
                       className="nav-item nav-project"
                       title={entry.domain}
                     >
-                      <span
-                        className="nav-avatar"
-                        style={{ "--avatar-hue": projectHue(entry.id) } as CSSProperties}
-                        aria-hidden="true"
-                      >
-                        {entry.name.slice(0, 1).toUpperCase()}
-                      </span>
+                      <ProjectIcon id={entry.id} name={entry.name} domain={entry.domain} />
                       <span className="nav-label grid min-w-0">
                         <span className="truncate">{entry.name}</span>
                         <span className="nav-project-domain truncate">{entry.domain}</span>
