@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProjectScope } from "@spoar/client";
+import { useRouter } from "next/navigation";
 
 import { GhostList, GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
@@ -10,7 +11,7 @@ import type { MetricView } from "../metrics";
 import { topListQuery } from "../queries";
 import { dimensionLabel, viewQuery, withFilter } from "../view-state";
 import type { FilterDimension, ViewState } from "../view-state";
-import { CountryMap } from "./country-map";
+import { HeatMap } from "./heat-map";
 import { ListSizeSelect } from "./list-size-select";
 import { TopList } from "./top-list";
 
@@ -74,6 +75,7 @@ export function breakdownReads(
 }
 
 export function CountrySection({ scope, view, state, path }: Props) {
+  const router = useRouter();
   const countries = useTopList(scope, "country", view.count, mapRows);
   const href = hrefFor(path, state, "country");
   if (countries.data === undefined) return <GhostSection kind="map" height={320} />;
@@ -85,7 +87,17 @@ export function CountrySection({ scope, view, state, path }: Props) {
       </h2>
       {read.ok ? (
         <div className="country-grid">
-          <CountryMap rows={read.value.data} count={view.count} path={path} state={state} />
+          <HeatMap
+            rows={read.value.data}
+            count={view.count}
+            active={state.filters.country}
+            onSelect={(code) =>
+              router.push(
+                `${path}${viewQuery(withFilter(state, "country", state.filters.country === code ? null : code))}`,
+                { scroll: false },
+              )
+            }
+          />
           <div className="grid content-start gap-3">
             <TopList
               title="Top countries"
