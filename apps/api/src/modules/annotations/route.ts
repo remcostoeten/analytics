@@ -26,8 +26,8 @@ const named = t.Composite([
 /**
  * @name annotationsModule
  * @description Dated labels on a project's time series under `/v2/projects/:project/annotations`:
- * the list by date range for anyone who may read the project, and create, update and delete for
- * its admins.
+ * the list by date range for anyone who may read the project, create for its admins and the debug
+ * console's widget token on that project, and update and delete for its admins.
  *
  * @example
  * app.use(annotationsModule(deps, reads, store, docsBase));
@@ -72,13 +72,13 @@ export function annotationsModule(
       },
       {
         params: ProjectParams,
-        access: "admin",
+        access: "annotate",
         body: CreateAnnotation,
         response: { 201: AnnotationResponse, ...responses },
         detail: {
           summary: "Add an annotation",
           description:
-            "A `title` and a `date`, with an optional `endDate` for a range, `kind` (`release`, `post`, `content`, `incident` or `other`, the default), `note` and `url`. A calendar date means its start in UTC. `endDate` may not be before `date`.",
+            "A `title` and a `date`, with an optional `endDate` for a range, `kind` (`release`, `post`, `content`, `incident` or `other`, the default), `note` and `url`. A calendar date means its start in UTC. `endDate` may not be before `date`. Project admins may add one, and so may the debug console's widget token on its own project; changing and deleting stay with admins.",
           tags,
         },
       },

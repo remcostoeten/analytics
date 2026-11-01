@@ -15,6 +15,7 @@ const security: Record<Level, Record<string, string[]>[]> = {
   project: [{}, ...signedIn],
   detail: signedIn,
   logs: signedIn,
+  annotate: signedIn,
   admin: signedIn,
   cron: [{ cronSecret: [] }],
 };
