@@ -1,13 +1,16 @@
 "use client";
 
 import type { BreakdownRow } from "@spoar/contract";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 
 import { formatMetric } from "../format";
 import type { CountMetric } from "../metrics";
 import { countryCenter } from "../world-centers";
 import world from "../world-shapes.json";
+import { CountryCard, percent } from "./country-card";
+import type { CountryStat } from "./country-card";
+import { CountryLookup } from "./country-lookup";
 
 type Props = {
   rows: BreakdownRow[];
@@ -35,6 +38,8 @@ const dash = `0 ${pitch}`;
 const rowHeight = pitch * 0.866;
 const levels = [1, 2, 3, 4, 5] as const;
 const tipOffset = 14;
+const hoverGrace = 90;
+const maxPinned = 6;
 const countLabels = {
   visitors: "visitors",
   pageviews: "page views",
@@ -130,15 +135,22 @@ function level(value: number, max: number) {
   return Math.max(1, Math.ceil(Math.sqrt(value / max) * levels.length));
 }
 
-function percent(share: number) {
-  if (share > 0 && share < 0.01) return "<1%";
-  return `${Math.round(share * 100)}%`;
+const nameByCode = new Map<string, string>();
+
+for (const shape of world.shapes) {
+  if (!nameByCode.has(shape.code)) nameByCode.set(shape.code, shape.name);
 }
 
 export function HeatMap({ rows, count, active, onSelect }: Props) {
   const tooltip = useRef<HTMLDivElement>(null);
+  const leaving = useRef<number>(0);
   const [code, setCode] = useState("");
   const [open, setOpen] = useState(false);
+  const [focus, setFocus] = useState("");
+  const [pinned, setPinned] = useState<string[]>([]);
+
+  useEffect(() => () => window.clearTimeout(leaving.current), []);
+
   const values = rows.flatMap((row) => {
     const value = row[count] ?? 0;
     return value > 0 ? [{ code: row.value, value }] : [];
@@ -170,14 +182,64 @@ export function HeatMap({ rows, count, active, onSelect }: Props) {
     .toReversed();
   const top = lit.at(-1);
   const shown = lit.find((country) => country.code === code);
+  const litByCode = new Map(lit.map((country) => [country.code, country]));
+  const options = [...nameByCode].map(([optionCode, name]) => ({
+    code: optionCode,
+    name,
+    value: litByCode.get(optionCode)?.value ?? 0,
+  }));
+  const stats = pinned.map((pinnedCode): CountryStat => {
+    const country = litByCode.get(pinnedCode);
+    return {
+      code: pinnedCode,
+      name: country?.name ?? nameByCode.get(pinnedCode) ?? pinnedCode,
+      value: country?.value ?? 0,
+      share: country?.share ?? 0,
+      rank: country?.rank ?? null,
+    };
+  });
+  const emptyPinned = pinned.filter((pinnedCode) => !litByCode.has(pinnedCode));
+
+  function add(next: string) {
+    setPinned((current) =>
+      current.includes(next) ? current : [...current.slice(1 - maxPinned), next],
+    );
+  }
+
+  function toggle(next: string) {
+    setPinned((current) =>
+      current.includes(next)
+        ? current.filter((entry) => entry !== next)
+        : [...current.slice(1 - maxPinned), next],
+    );
+  }
+
+  function hideSoon() {
+    if (leaving.current !== 0) return;
+    leaving.current = window.setTimeout(() => {
+      leaving.current = 0;
+      setOpen(false);
+    }, hoverGrace);
+  }
+
+  function cancelHide() {
+    window.clearTimeout(leaving.current);
+    leaving.current = 0;
+  }
 
   function track(event: PointerEvent<HTMLElement>) {
     const target = event.target instanceof Element ? event.target.closest("[data-code]") : null;
     const next = target?.getAttribute("data-code") ?? "";
-    setOpen(next !== "");
-    if (next !== "") setCode(next);
+    if (next === "") {
+      hideSoon();
+      return;
+    }
+    cancelHide();
+    setOpen(true);
+    setCode(next);
     const tip = tooltip.current;
-    if (!tip || next === "") return;
+    if (!tip) return;
+    tip.dataset.glide = String(tip.dataset.open === "true");
     const box = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - box.left;
     const y = event.clientY - box.top;
@@ -188,38 +250,71 @@ export function HeatMap({ rows, count, active, onSelect }: Props) {
   }
 
   return (
-    <figure
-      className="heat-map"
-      data-active={open}
-      data-selectable={onSelect !== undefined}
-      onPointerMove={track}
-      onPointerDown={track}
-      onPointerLeave={() => setOpen(false)}
-      onClick={(event) => {
-        const target = event.target instanceof Element ? event.target.closest("[data-code]") : null;
-        const picked = target?.getAttribute("data-code");
-        if (picked && onSelect) onSelect(picked);
-      }}
-    >
-      <svg
-        viewBox={`0 0 ${world.width} ${world.height}`}
-        role="img"
-        aria-label="Map of visitors by country"
+    <figure className="heat-map" data-active={open} data-selectable>
+      <CountryLookup options={options} pinned={pinned} onPick={add} onHover={setFocus} />
+      <div
+        className="heat-stage"
+        onPointerMove={track}
+        onPointerDown={track}
+        onPointerLeave={hideSoon}
+        onClick={(event) => {
+          const target =
+            event.target instanceof Element ? event.target.closest("[data-code]") : null;
+          const picked = target?.getAttribute("data-code");
+          if (picked) toggle(picked);
+        }}
       >
-        <path d={landDots} className="heat-land" strokeDasharray={dash} />
-        {lit.map((country) => (
-          <g
-            key={country.code}
-            data-code={country.code}
-            data-hovered={open && country.code === code}
-            data-selected={country.code === active}
-            className={`heat-country heat-level-${country.level}`}
-          >
-            <path d={country.dots} className="heat-hit" strokeWidth={pitch} />
-            <path d={country.dots} className="heat-dots" strokeDasharray={dash} />
-          </g>
-        ))}
-      </svg>
+        <svg
+          viewBox={`0 0 ${world.width} ${world.height}`}
+          role="img"
+          aria-label="Map of visitors by country"
+        >
+          <path d={landDots} className="heat-land" strokeDasharray={dash} />
+          {emptyPinned.map((emptyCode) => (
+            <g
+              key={emptyCode}
+              className="heat-country heat-empty"
+              data-selected
+              data-hovered={emptyCode === focus}
+            >
+              <path
+                d={dotPath(dotsByCountry.get(emptyCode) ?? [])}
+                className="heat-dots"
+                strokeDasharray={dash}
+              />
+            </g>
+          ))}
+          {lit.map((country) => (
+            <g
+              key={country.code}
+              data-code={country.code}
+              data-hovered={(open && country.code === code) || country.code === focus}
+              data-selected={country.code === active || pinned.includes(country.code)}
+              className={`heat-country heat-level-${country.level}`}
+            >
+              <path d={country.dots} className="heat-hit" strokeWidth={pitch} />
+              <path d={country.dots} className="heat-dots" strokeDasharray={dash} />
+            </g>
+          ))}
+        </svg>
+        <div ref={tooltip} className="heat-tooltip" data-open={open} aria-hidden="true">
+          {shown ? (
+            <>
+              <p className="heat-tooltip-name">{shown.name}</p>
+              <p className="heat-tooltip-value">
+                <span className="tabular-nums">{formatMetric(shown.value, "count")}</span>
+                <span className="heat-tooltip-unit">{countLabels[count]}</span>
+              </p>
+              <p className="heat-tooltip-meta tabular-nums">
+                {`${percent(shown.share)} of total, #${shown.rank} of ${lit.length}`}
+              </p>
+              <p className="heat-tooltip-meta">
+                {pinned.includes(shown.code) ? "Click to unpin" : "Click to pin"}
+              </p>
+            </>
+          ) : null}
+        </div>
+      </div>
       <ul className="sr-only">
         {lit.toReversed().map((country) => (
           <li key={country.code}>
@@ -227,25 +322,22 @@ export function HeatMap({ rows, count, active, onSelect }: Props) {
           </li>
         ))}
       </ul>
-      <div ref={tooltip} className="heat-tooltip" data-open={open} aria-hidden="true">
-        {shown ? (
-          <>
-            <p className="heat-tooltip-name">{shown.name}</p>
-            <p className="heat-tooltip-value">
-              <span className="tabular-nums">{formatMetric(shown.value, "count")}</span>
-              <span className="heat-tooltip-unit">{countLabels[count]}</span>
-            </p>
-            <p className="heat-tooltip-meta tabular-nums">
-              {`${percent(shown.share)} of total, #${shown.rank} of ${lit.length}`}
-            </p>
-            {onSelect ? (
-              <p className="heat-tooltip-meta">
-                {shown.code === active ? "Click to clear the filter" : "Click to filter"}
-              </p>
-            ) : null}
-          </>
-        ) : null}
-      </div>
+      {stats.length > 0 ? (
+        <ul className="country-cards">
+          {stats.map((stat) => (
+            <CountryCard
+              key={stat.code}
+              stat={stat}
+              unit={countLabels[count]}
+              total={total}
+              filtered={stat.code === active}
+              onFilter={onSelect ? () => onSelect(stat.code) : undefined}
+              onClose={() => toggle(stat.code)}
+              onHover={setFocus}
+            />
+          ))}
+        </ul>
+      ) : null}
       {top ? (
         <figcaption className="heat-scale">
           <span className="tabular-nums">1</span>
