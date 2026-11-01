@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
+import { Tabs } from "@/shared/ui/tabs";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
 import { GhostSection } from "@/modules/shell/components/ghost";
@@ -20,7 +21,7 @@ type Props = { scope: ProjectScope; state: ViewState; path: string; cursor: stri
 
 export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) {
   return (
-    <nav aria-label="Status" className="tabs">
+    <Tabs label="Status">
       {issueStatuses.map((status) => (
         <Link
           key={status.value}
@@ -32,7 +33,7 @@ export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) 
           {status.label}
         </Link>
       ))}
-    </nav>
+    </Tabs>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
+import { Tabs } from "@/shared/ui/tabs";
 
 import { useSession } from "@/modules/session/use-session";
 import { GhostSection } from "@/modules/shell/components/ghost";
@@ -125,7 +126,7 @@ export function SummarySection({ scope, view, state, path, project }: Props) {
         {editable ? <AddAnnotation project={project} /> : null}
       </header>
 
-      <nav aria-label="Split by" className="tabs">
+      <Tabs label="Split by">
         {splits.map((split) => (
           <Link
             key={split.label}
@@ -144,7 +145,7 @@ export function SummarySection({ scope, view, state, path, project }: Props) {
             active: state.split === split.value,
           }))}
         />
-      </nav>
+      </Tabs>
 
       {"error" in read ? (
         <p className="text-sm text-err">Could not read the series: {read.error}</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/shared/ui/link";
+import { Tabs } from "@/shared/ui/tabs";
 import { useRouter } from "next/navigation";
 
 import { Select } from "@/shared/ui/select";
@@ -35,7 +36,7 @@ export function PercentileSelect({ path, state }: Props) {
 export function DeviceTabs({ path, state }: Props) {
   const current = speedDevice(state.filters);
   return (
-    <nav aria-label="Device" className="tabs">
+    <Tabs label="Device">
       {speedDevices.map((device) => (
         <Link
           key={device.value}
@@ -47,6 +48,6 @@ export function DeviceTabs({ path, state }: Props) {
           {device.label}
         </Link>
       ))}
-    </nav>
+    </Tabs>
   );
 }
