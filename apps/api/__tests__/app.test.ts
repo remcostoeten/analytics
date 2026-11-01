@@ -354,6 +354,7 @@ describe("GET /v2/openapi/json", () => {
       "/v2/issues",
       "/v2/lifecycle",
       "/v2/map",
+      "/v2/mcp",
       "/v2/paths",
       "/v2/people",
       "/v2/people/{userId}",
