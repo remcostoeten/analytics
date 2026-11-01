@@ -152,4 +152,41 @@ describe("Better Auth", () => {
     expect(response.headers.get("set-cookie")).toContain("HttpOnly");
     expect(response.headers.get("set-cookie")?.toLowerCase()).toContain("samesite=lax");
   });
+
+  test("sign-in is limited to 10 a minute per IP, counted in the database, and other IPs are unaffected", async () => {
+    const limited = createAuth({
+      db: stores.db,
+      members: stores.members,
+      secret,
+      baseURL: "http://localhost:3100",
+      github: { clientId: "github-client", clientSecret: "github-client-secret" },
+      cookieDomain: null,
+      trustedOrigins: ["http://localhost:3000"],
+      secure: true,
+    });
+    function signIn(ip: string) {
+      return limited.handler(
+        new Request("http://localhost:3100/v2/auth/sign-in/social", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            origin: "http://localhost:3000",
+            "x-real-ip": ip,
+          },
+          body: JSON.stringify({ provider: "github", callbackURL: "http://localhost:3000/" }),
+        }),
+      );
+    }
+    for (let attempt = 0; attempt < 10; attempt++) {
+      expect((await signIn("203.0.113.7")).status).toBe(200);
+    }
+    const refused = await signIn("203.0.113.7");
+    expect(refused.status).toBe(429);
+    expect(Number(refused.headers.get("x-retry-after"))).toBeGreaterThan(0);
+    expect((await signIn("203.0.113.8")).status).toBe(200);
+    const rows = await database.query<{ count: number }>(
+      "SELECT count FROM auth_rate_limit WHERE key LIKE '203.0.113.7%'",
+    );
+    expect(rows.rows[0]?.count).toBe(10);
+  });
 });
