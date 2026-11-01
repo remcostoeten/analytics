@@ -1,5 +1,7 @@
 .landing .console-run {
-  transition: transform 160ms var(--ease-out);
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 150ms ease;
 }
 
 .landing .console-run:active {
@@ -13,8 +15,17 @@
     color 150ms ease;
 }
 
-.landing :is(.console-run, .console-item, .console-tab, .console-open):focus-visible {
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.45);
+.landing .console-run:focus-visible {
+  background-color: #e4d4fa;
+}
+
+.landing :is(.console-item, .console-tab):focus-visible {
+  background-color: rgb(255 255 255 / 0.1);
+  color: var(--console-fg);
+}
+
+.landing .console-open:focus-visible {
+  color: var(--console-fg);
 }
 
 .landing .console-tab-indicator {

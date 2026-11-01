@@ -65,22 +65,19 @@ export function DropTrail({
     let scene: ReturnType<typeof createDropScene> | undefined;
     let visible = false;
     let loading = false;
+    let lost = false;
     let disposed = false;
 
     function sync() {
-      if (!stage) return;
-      const active = visible && !document.hidden;
-      stage.dataset.paused = String(!active);
-      if (active) stage.dataset.entered = "true";
-      scene?.setActive(active);
+      scene?.setActive(visible && !document.hidden);
     }
 
     function load() {
-      if (loading || disposed || !canvas || !stage) return;
+      if (loading || scene || disposed || !canvas || !stage) return;
       loading = true;
       loadDropScene()
         .then(({ createDropScene: createScene }) => {
-          if (disposed) return;
+          if (disposed || lost) return;
           scene = createScene(canvas, { scrollDriven });
           sceneRef.current = scene;
           if (exportRef) exportRef.current = scene.exportPng;
@@ -90,20 +87,32 @@ export function DropTrail({
         })
         .catch((error) => {
           console.warn("The 3D logo could not load; keeping the static logo.", error);
+        })
+        .finally(() => {
+          loading = false;
         });
     }
 
+    const preloader = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        preloader.disconnect();
+        load();
+      },
+      { rootMargin: "200% 0px" },
+    );
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        visible = Boolean(entry && entry.intersectionRatio >= 0.35);
+        visible = Boolean(entry?.isIntersecting);
         sync();
-        if (visible) load();
       },
-      { threshold: [0, 0.35] },
+      { rootMargin: "25% 0px" },
     );
 
     function handleContextLost(event: Event) {
       event.preventDefault();
+      lost = true;
       if (stage) delete stage.dataset.rendered;
       scene?.dispose();
       scene = undefined;
@@ -111,20 +120,27 @@ export function DropTrail({
       if (exportRef) exportRef.current = undefined;
     }
 
+    function handleContextRestored() {
+      lost = false;
+      load();
+    }
+
+    preloader.observe(stage);
     observer.observe(stage);
     canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
     document.addEventListener("visibilitychange", sync);
 
     return () => {
       disposed = true;
+      preloader.disconnect();
       observer.disconnect();
       canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
       document.removeEventListener("visibilitychange", sync);
       scene?.dispose();
       sceneRef.current = undefined;
       if (exportRef) exportRef.current = undefined;
-      delete stage.dataset.entered;
-      delete stage.dataset.paused;
       delete stage.dataset.rendered;
     };
   }, [exportRef, scrollDriven]);

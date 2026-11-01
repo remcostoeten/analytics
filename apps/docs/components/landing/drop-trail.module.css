@@ -56,14 +56,6 @@
   opacity: 1;
 }
 
-.stage[data-entered="true"] .reveal {
-  animation: arrive 1000ms var(--ease-out) both;
-}
-
-.stage[data-paused="true"] .reveal {
-  animation-play-state: paused;
-}
-
 .stage[data-header="true"] {
   flex-shrink: 0;
 }
@@ -71,34 +63,4 @@
 .stage[data-header="true"] .halo,
 .stage[data-header="true"] .shadow {
   display: none;
-}
-
-.stage[data-header="true"] .reveal {
-  animation: none;
-}
-
-@keyframes arrive {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stage[data-entered="true"] .reveal {
-    animation: fade-in 200ms var(--ease-out) both;
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }

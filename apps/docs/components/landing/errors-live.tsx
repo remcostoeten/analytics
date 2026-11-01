@@ -202,7 +202,7 @@ export function ErrorsScene({ endpoint, project }: Props) {
               type="button"
               onClick={() => throwOne()}
               disabled={shown === "thrown" || shown === "sent"}
-              className="shrink-0 rounded-full bg-[#ffb59a] px-3 py-1 text-[0.62rem] font-medium text-[#2b2624] transition-transform active:scale-95 disabled:opacity-60"
+              className="shrink-0 rounded-full bg-[#ffb59a] px-3 py-1.5 text-[0.62rem] font-medium text-[#2b2624] transition-[transform,background-color] focus-visible:bg-[#ffd6c6] active:scale-95 disabled:opacity-60"
             >
               {shown === "idle" ? "Throw a TypeError" : "Throw another"}
             </button>

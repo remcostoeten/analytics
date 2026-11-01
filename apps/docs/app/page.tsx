@@ -299,7 +299,7 @@ export default async function HomePage() {
         <h1 className="hero-rise font-serif max-w-4xl text-[3rem] leading-[1.02] font-light tracking-[-0.02em] text-fg sm:text-[4.6rem] lg:text-[5.5rem]">
           Web analytics on your own Postgres
         </h1>
-        <p className="hero-rise-late mt-6 max-w-lg font-serif text-[1.05rem] leading-relaxed text-muted">
+        <p className="hero-rise-late mt-6 max-w-lg font-serif text-[1.05rem] leading-relaxed text-balance text-muted">
           A typed SDK, one API for ingest and reads, and a database you run. No cookies for
           visitors, and raw IP addresses are never stored.
         </p>
@@ -314,7 +314,7 @@ export default async function HomePage() {
             or <InstallCommand command="npm install @spoar/sdk" />
           </span>
         </div>
-        <ul className="hero-rise-late mt-12 flex max-w-2xl flex-wrap justify-center gap-2">
+        <ul className="hero-rise-late mt-12 flex max-w-3xl flex-wrap justify-center gap-2">
           {chips.map((chip) => (
             <li key={chip.label}>
               <Link href={chip.href} className="chip">
@@ -337,7 +337,7 @@ export default async function HomePage() {
             <HeroConsole />
           </div>
         </div>
-        <p className="hero-rise-late mt-6 max-w-lg font-serif text-[0.9rem] text-muted">
+        <p className="hero-rise-late mt-6 max-w-lg font-serif text-[0.9rem] leading-relaxed text-balance text-muted">
           These are this site&apos;s own numbers, read from the public API with @spoar/client.{" "}
           <a
             href={`${apiEndpoint()}/v2/projects/${encodeURIComponent(showcaseProject())}/stats?${await showcaseQuery()}`}
@@ -414,7 +414,9 @@ export default async function HomePage() {
                   <h3 className="font-serif text-[2.1rem] leading-[1.1] font-light tracking-[-0.01em] sm:text-[2.5rem]">
                     {feature.title}
                   </h3>
-                  <p className="mt-4 font-serif text-[1.15rem] font-medium">{feature.lead}</p>
+                  <p className="mt-4 font-serif text-[1.15rem] leading-snug font-medium">
+                    {feature.lead}
+                  </p>
                   {feature.body.map((paragraph) => (
                     <p
                       key={paragraph}
@@ -427,7 +429,9 @@ export default async function HomePage() {
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--lilac)] text-[#6b46c1]">
                       <feature.noteIcon className="size-3.5" />
                     </span>
-                    <span className="font-serif text-[0.9rem] text-fg">{feature.note}</span>
+                    <span className="font-serif text-[0.9rem] leading-relaxed text-pretty text-fg">
+                      {feature.note}
+                    </span>
                   </div>
                   <Link href={feature.href} className="pill-dark mt-6 w-fit px-4! py-2!">
                     {feature.linkText}
@@ -522,7 +526,7 @@ export default async function HomePage() {
             <h2 className="font-serif text-[2.1rem] leading-[1.1] font-light text-[#f6efe9] sm:text-[2.5rem]">
               Own your analytics
             </h2>
-            <p className="max-w-sm font-serif text-[0.95rem] text-[#f6efe9]/65">
+            <p className="max-w-sm font-serif text-[0.95rem] leading-relaxed text-balance text-[#f6efe9]/65">
               From an empty app to the first stored event in the quick start.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -536,14 +540,17 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="mt-12 flex flex-col items-center justify-between gap-6 md:flex-row">
-            <Link href="/" className="flex items-center gap-2 font-medium tracking-tight">
+            <Link
+              href="/"
+              className="-mx-2 flex items-center gap-2 rounded-full px-2 py-1 font-medium tracking-tight transition-colors focus-visible:bg-fg/[0.06]"
+            >
               <Logo className="size-7" />
               Spoar
             </Link>
-            <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 font-serif text-[0.9rem] text-fg/75">
+            <ul className="flex flex-wrap justify-center gap-x-5 gap-y-0.5 font-serif text-[0.9rem] text-fg/75">
               {siteLinks().map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="link-line">
+                  <Link href={link.href} className="link-line inline-block py-1.5">
                     {link.label}
                   </Link>
                 </li>

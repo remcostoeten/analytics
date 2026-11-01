@@ -41,7 +41,7 @@ export function RunningOnViews({ intro, strip, list, json, endpoint }: Props) {
               aria-selected={view === option.value}
               aria-controls={`${id}-${option.value}`}
               onClick={() => setView(option.value)}
-              className={`rounded-full px-4 py-1.5 text-[0.8rem] font-medium transition-colors ${view === option.value ? "bg-[var(--pill-bg)] text-[var(--pill-fg)]" : "text-muted hover:text-fg"}`}
+              className={`rounded-full px-4 py-1.5 text-[0.8rem] font-medium transition-colors ${view === option.value ? "bg-[var(--pill-bg)] text-[var(--pill-fg)] focus-visible:bg-[var(--pill-hover)]" : "text-muted hover:text-fg focus-visible:bg-fg/[0.06] focus-visible:text-fg"}`}
             >
               {option.label}
             </button>

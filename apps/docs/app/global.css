@@ -231,8 +231,10 @@
   text-decoration: underline;
   text-decoration-color: var(--line);
   text-underline-offset: 3px;
+  border-radius: 3px;
   transition:
     text-decoration-color 150ms ease,
+    background-color 150ms ease,
     color 150ms ease;
 
   &:hover {
@@ -240,7 +242,9 @@
   }
   &:focus-visible {
     outline: none;
-    text-decoration-color: var(--fg);
+    background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--fg);
+    text-decoration-color: var(--accent);
   }
 }
 
@@ -661,6 +665,7 @@
   }
   &:focus-visible {
     outline: none;
+    background: linear-gradient(180deg, #4f4541, #2a2321);
     box-shadow:
       0 0 0 3px var(--lilac),
       0 22px 48px -12px rgb(255 140 90 / 0.75),
@@ -727,10 +732,13 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: #141110;
-  transition: transform 120ms ease;
+  transition:
+    transform 120ms ease,
+    background-color 150ms ease;
 
   &:focus-visible {
     outline: none;
+    background: #e4d4fa;
   }
   &:active {
     transform: scale(0.97);

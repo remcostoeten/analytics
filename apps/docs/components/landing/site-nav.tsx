@@ -75,7 +75,7 @@ export function SiteNav({ links, loginHref }: Props) {
           <Link
             href="/"
             aria-label="Spoar home"
-            className="mr-6 flex items-center gap-2 rounded-full py-1 pr-2 pl-1.5 text-[0.85rem] font-medium tracking-tight text-fg"
+            className="mr-6 flex items-center gap-2 rounded-full py-1 pr-2 pl-1.5 text-[0.85rem] font-medium tracking-tight text-fg transition-colors focus-visible:bg-fg/[0.06]"
           >
             <Logo className="size-6" />
             Spoar

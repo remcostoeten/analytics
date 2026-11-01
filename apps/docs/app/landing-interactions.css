@@ -15,6 +15,16 @@
   outline: none;
 }
 
+@layer base {
+  .landing :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  .landing p {
+    text-wrap: pretty;
+  }
+}
+
 .landing .cta-arrow,
 .landing .pill-light > svg,
 .landing .chip > svg {
@@ -663,8 +673,24 @@
 }
 
 .landing .faq summary {
+  margin-inline: -0.75rem;
   border-radius: 6px;
-  transition: color 150ms ease;
+  padding-inline: 0.75rem;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.landing .faq summary:focus-visible {
+  background-color: color-mix(in srgb, var(--fg) 5%, transparent);
+}
+
+.landing .faq summary:focus-visible .faq-chevron {
+  color: var(--fg);
+}
+
+.landing .drag-strip:focus-visible .project-card {
+  border-color: color-mix(in srgb, var(--violet) 45%, var(--line));
 }
 
 .landing .faq-chevron {
@@ -673,7 +699,6 @@
     color 150ms ease;
 }
 
-.landing .faq summary:focus-visible .faq-chevron,
 .landing .faq[open] .faq-chevron {
   color: var(--fg);
   transform: rotate(180deg);
