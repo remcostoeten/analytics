@@ -10,7 +10,7 @@ export type ViewContext = {
   host: Nullable<ConsoleHost>;
 };
 
-export const defaultTabs: ConsoleTab[] = ["page", "events"];
+const defaultTabs: ConsoleTab[] = ["page", "events"];
 
 export const tabLabels: { [Tab in ConsoleTab]: string } = {
   page: "This page",
