@@ -2531,15 +2531,8 @@
 
 .skeleton {
   border-radius: 6px;
-  background: linear-gradient(90deg, var(--raised), var(--grid), var(--raised));
-  background-size: 200% 100%;
-  animation: skeleton 1.4s ease-in-out infinite;
-}
-
-@keyframes skeleton {
-  to {
-    background-position: -200% 0;
-  }
+  background: color-mix(in srgb, var(--fg) 9%, var(--surface));
+  animation: ghost-pulse 1.8s ease-in-out infinite;
 }
 
 .metric-static {
@@ -3770,29 +3763,71 @@
 
 .ghost,
 .ghost-metric {
-  position: relative;
-  isolation: isolate;
-  animation: ghost-in 240ms var(--ease-out) 120ms backwards;
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-      100deg,
-      transparent 30%,
-      color-mix(in srgb, var(--fg) 7%, transparent) 50%,
-      transparent 70%
-    );
-    translate: -100% 0;
-    animation: ghost-sweep 1.8s cubic-bezier(0.45, 0, 0.25, 1) 360ms infinite;
-  }
+  animation: ghost-in 240ms var(--ease-out) calc(120ms + var(--g, 0) * 90ms) backwards;
 
   & .skeleton {
     animation: none;
-    background: var(--grid);
   }
+
+  & .ghost-wave {
+    animation: ghost-wave 2.4s cubic-bezier(0.33, 1, 0.68, 1) calc(var(--g, 0) * 180ms) infinite backwards;
+  }
+
+  & .ghost-row-fill {
+    transform-origin: left;
+    animation: ghost-fill 2.4s cubic-bezier(0.33, 1, 0.68, 1)
+      calc(var(--g, 0) * 180ms + var(--r, 0) * 120ms) infinite backwards;
+  }
+}
+
+.ghost:nth-child(2),
+.ghost-metric:nth-child(2) {
+  --g: 1;
+}
+
+.ghost:nth-child(3),
+.ghost-metric:nth-child(3) {
+  --g: 2;
+}
+
+.ghost:nth-child(4),
+.ghost-metric:nth-child(4) {
+  --g: 3;
+}
+
+.ghost:nth-child(5),
+.ghost-metric:nth-child(5) {
+  --g: 4;
+}
+
+.ghost:nth-child(6),
+.ghost-metric:nth-child(6) {
+  --g: 5;
+}
+
+.ghost:nth-child(n + 7),
+.ghost-metric:nth-child(n + 7) {
+  --g: 6;
+}
+
+.ghost-row:nth-child(2) {
+  --r: 1;
+}
+
+.ghost-row:nth-child(3) {
+  --r: 2;
+}
+
+.ghost-row:nth-child(4) {
+  --r: 3;
+}
+
+.ghost-row:nth-child(5) {
+  --r: 4;
+}
+
+.ghost-row:nth-child(n + 6) {
+  --r: 5;
 }
 
 .ghost-head {
@@ -3818,7 +3853,7 @@
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--grid);
+  background: color-mix(in srgb, var(--fg) 12%, var(--surface));
 }
 
 .ghost-plot {
@@ -3844,7 +3879,7 @@
 }
 
 .ghost-wave-fill {
-  fill: color-mix(in srgb, var(--grid) 70%, transparent);
+  fill: color-mix(in srgb, var(--fg) 5%, transparent);
 }
 
 .ghost-wave-line {
@@ -3871,6 +3906,7 @@
 .ghost-wave-faint {
   min-height: 0;
   height: 50%;
+  --hold: 0.6;
   opacity: 0.6;
 }
 
@@ -3917,7 +3953,7 @@
 .ghost-row-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: color-mix(in srgb, var(--grid) 60%, transparent);
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
 }
 
 .ghost-stats {
@@ -3951,20 +3987,56 @@
   }
 }
 
-@keyframes ghost-sweep {
-  60%,
+@keyframes ghost-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes ghost-wave {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: var(--hold, 1);
+  }
+  55%,
+  85% {
+    clip-path: inset(0);
+    opacity: var(--hold, 1);
+  }
   100% {
-    translate: 100% 0;
+    clip-path: inset(0);
+    opacity: 0;
+  }
+}
+
+@keyframes ghost-fill {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  55%,
+  85% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
   .ghost,
   .ghost-metric {
     animation: none;
 
-    &::after {
-      display: none;
+    & .ghost-wave,
+    & .ghost-row-fill {
+      animation: none;
     }
   }
 }
