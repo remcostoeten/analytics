@@ -32,6 +32,8 @@
     --err: #e5484d;
     --raised: #f8efe9;
     --grid: #f3e9e2;
+    --skeleton: color-mix(in srgb, var(--fg) 6%, transparent);
+    --skeleton-shine: color-mix(in srgb, var(--fg) 6%, transparent);
     --track: #f2e6de;
     --map-land: #efe3db;
     --link: #6b46c1;
@@ -66,6 +68,8 @@
     --err: #ff6b70;
     --raised: #251f1d;
     --grid: #261f1d;
+    --skeleton: color-mix(in srgb, var(--fg) 7%, transparent);
+    --skeleton-shine: color-mix(in srgb, var(--fg) 7%, transparent);
     --track: #2e2725;
     --map-land: #2c2523;
     --link: #c9adf7;
@@ -2528,16 +2532,32 @@
 }
 
 .skeleton {
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--raised), var(--grid), var(--raised));
-  background-size: 200% 100%;
-  animation: skeleton 1.4s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--skeleton);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--skeleton-shine) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: ghost-shimmer 1.5s var(--skeleton-delay, 0s) ease-in-out infinite;
+  }
 }
 
-@keyframes skeleton {
-  to {
-    background-position: -200% 0;
-  }
+[aria-busy="true"][data-testid$="-skeleton"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 25%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  pointer-events: none;
+  animation: ghost-progress 1.5s ease-in-out infinite;
 }
 
 .metric-static {
@@ -3728,13 +3748,21 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
+
+  &:nth-child(2) .skeleton {
+    --skeleton-delay: 0.1s;
+  }
+
+  &:nth-child(3) .skeleton {
+    --skeleton-delay: 0.2s;
+  }
 }
 
 .ghost-dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--grid);
+  background: var(--skeleton);
 }
 
 .ghost-plot {
@@ -3752,47 +3780,65 @@
   padding-block: 0.25rem 1rem;
 }
 
-.ghost-wave {
+.ghost-plot-svg {
   display: block;
   width: 100%;
   height: 100%;
   min-height: 7rem;
-  animation: ghost-breathe 2.8s ease-in-out infinite;
 }
 
-.ghost-wave-fill {
-  fill: color-mix(in srgb, var(--grid) 70%, transparent);
-}
-
-.ghost-wave-line {
-  fill: none;
-  stroke: color-mix(in srgb, var(--muted) 28%, var(--line));
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.ghost-wave-small {
-  align-self: end;
-  height: 100%;
-  min-height: 0;
-  max-height: 2.25rem;
-  margin-top: 0.25rem;
-}
-
-.ghost-wave-tall {
+.ghost-plot-tall {
   flex: 1;
   height: auto;
   min-height: 0;
 }
 
-.ghost-wave-faint {
+.ghost-plot-faint {
   min-height: 0;
-  height: 50%;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
-.ghost-wave-flipped {
-  transform: scaleY(-1);
+.ghost-fill-top {
+  stop-color: var(--fg);
+  stop-opacity: 0.09;
+}
+
+.ghost-fill-bottom {
+  stop-color: var(--fg);
+  stop-opacity: 0.01;
+}
+
+.ghost-shine-edge {
+  stop-color: var(--fg);
+  stop-opacity: 0;
+}
+
+.ghost-shine-peak {
+  stop-color: var(--fg);
+  stop-opacity: 0.12;
+}
+
+.ghost-shine {
+  transform-box: fill-box;
+  animation: ghost-shimmer 1.8s ease-in-out infinite;
+}
+
+.ghost-outline {
+  fill: none;
+  stroke: var(--fg);
+  stroke-opacity: 0.16;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghost-spark {
+  display: block;
+  align-self: end;
+  width: 100%;
+  height: 100%;
+  max-height: 2.25rem;
+  margin-top: 0.25rem;
+  animation: ghost-spark 1.5s ease-in-out infinite;
 }
 
 .ghost-metric {
@@ -3829,18 +3875,40 @@
   padding-inline: 0.5rem;
   border-radius: 4px;
   overflow: hidden;
+
+  &:nth-child(3n + 2) {
+    --skeleton-delay: 0.1s;
+  }
+
+  &:nth-child(3n) {
+    --skeleton-delay: 0.2s;
+  }
 }
 
 .ghost-row-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: color-mix(in srgb, var(--grid) 60%, transparent);
+  background: var(--skeleton);
+  opacity: 0.6;
+  animation: ghost-fade 2s var(--skeleton-delay, 0s) ease-in-out infinite;
 }
 
 .ghost-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   gap: 1rem;
+
+  & > :nth-child(2) {
+    --skeleton-delay: 0.1s;
+  }
+
+  & > :nth-child(3) {
+    --skeleton-delay: 0.2s;
+  }
+
+  & > :nth-child(4) {
+    --skeleton-delay: 0.3s;
+  }
 }
 
 .ghost-map {
@@ -3856,14 +3924,73 @@
 
 .ghost-map-globe {
   display: grid;
+  align-items: end;
   min-height: 12rem;
   border-radius: 8px;
   background: color-mix(in srgb, var(--raised) 60%, transparent);
   overflow: hidden;
 }
 
-@keyframes ghost-breathe {
+@keyframes ghost-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ghost-fade {
+  0%,
+  40%,
+  70%,
+  100% {
+    opacity: 0.6;
+  }
+  48%,
+  62% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes ghost-spark {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
   50% {
-    opacity: 0.55;
+    opacity: 0.3;
+  }
+}
+
+@keyframes ghost-progress {
+  0%,
+  100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  .ghost-shine,
+  .ghost-row-fill,
+  .ghost-spark,
+  [aria-busy="true"][data-testid$="-skeleton"]::before {
+    animation: none;
+  }
+
+  .skeleton::after {
+    display: none;
+  }
+
+  .ghost-spark {
+    opacity: 0.5;
+  }
+
+  .ghost-shine {
+    display: none;
   }
 }

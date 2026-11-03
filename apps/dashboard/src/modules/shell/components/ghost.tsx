@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 type GhostKind = "chart" | "list" | "metrics" | "map" | "stats";
 
 type Props = { kind: GhostKind; height: number; rows?: number };
@@ -34,18 +36,44 @@ function Legend({ count }: { count: number }) {
   );
 }
 
-function Wave({ className = "" }: { className?: string }) {
+function Plot({ className = "" }: { className?: string }) {
+  const id = useId().replace(/[^\w-]/g, "");
   return (
-    <svg className={`ghost-wave ${className}`} viewBox="0 0 600 120" preserveAspectRatio="none">
-      <path d={`${wave} V120 H0 Z`} className="ghost-wave-fill" />
-      <path d={wave} className="ghost-wave-line" />
+    <svg className={`ghost-plot-svg ${className}`} viewBox="0 0 600 120" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" className="ghost-fill-top" />
+          <stop offset="100%" className="ghost-fill-bottom" />
+        </linearGradient>
+        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" className="ghost-shine-edge" />
+          <stop offset="50%" className="ghost-shine-peak" />
+          <stop offset="100%" className="ghost-shine-edge" />
+        </linearGradient>
+        <clipPath id={`${id}-clip`}>
+          <path d={`${wave} V120 H0 Z`} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id}-clip)`}>
+        <rect width="600" height="120" fill={`url(#${id}-fill)`} />
+        <rect className="ghost-shine" width="600" height="120" fill={`url(#${id}-shine)`} />
+      </g>
+      <path d={wave} className="ghost-outline" />
+    </svg>
+  );
+}
+
+function Spark() {
+  return (
+    <svg className="ghost-spark" viewBox="0 0 600 120" preserveAspectRatio="none">
+      <path d={wave} className="ghost-outline" />
     </svg>
   );
 }
 
 /**
  * @name GhostChart
- * @description A legend row, a y-axis and a faint wave, for a chart body that is still loading.
+ * @description A legend row, a y-axis and a faint area with a passing shine, for a chart body that is still loading.
  *
  * @example
  * if (series.data === undefined) return <GhostChart height={240} />;
@@ -89,7 +117,7 @@ export function GhostTile({ height, wide = false }: TileProps) {
     >
       <Bar className="h-3.5 w-16" />
       <Bar className="h-7 w-20" />
-      <Wave className="ghost-wave-small" />
+      <Spark />
     </span>
   );
 }
@@ -104,7 +132,7 @@ function Chart() {
             <Bar key={cell} className="h-2.5 w-5" />
           ))}
         </div>
-        <Wave />
+        <Plot />
       </div>
     </>
   );
@@ -136,7 +164,7 @@ function Metrics() {
         ))}
       </div>
       <Bar className="h-3.5 w-64 max-w-full" />
-      <Wave className="ghost-wave-tall" />
+      <Plot className="ghost-plot-tall" />
     </>
   );
 }
@@ -159,8 +187,7 @@ function Map() {
     <div className="ghost-map">
       <List rows={8} />
       <div className="ghost-map-globe">
-        <Wave className="ghost-wave-faint" />
-        <Wave className="ghost-wave-faint ghost-wave-flipped" />
+        <Plot className="ghost-plot-faint" />
       </div>
     </div>
   );
