@@ -1,5 +1,6 @@
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { PanelSkeleton } from "@/modules/shell/components/skeletons";
 
 export default function Loading() {
-  return <PanelSkeleton height={320} heading="tabs" />;
+  return <PanelSkeleton height={ghostSizes.issueList} heading="tabs" />;
 }

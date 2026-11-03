@@ -8,6 +8,7 @@ import { speedViewScope } from "@/modules/analytics/scope";
 import { useProjects } from "@/modules/analytics/use-projects";
 import { hasFilters } from "@/modules/analytics/view-state";
 import { useSession } from "@/modules/session/use-session";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostCard } from "@/modules/shell/components/ghost";
 import { browserClient } from "@/shared/api/browser-client";
 import { siteUrl } from "@/shared/config/site";
@@ -41,20 +42,20 @@ function BodySkeleton() {
   return (
     <>
       <div className="home-top">
-        <GhostCard kind="metrics" height={392} />
-        <GhostCard kind="list" height={392} rows={4} />
+        <GhostCard kind="metrics" height={ghostSizes.homeTop} />
+        <GhostCard kind="list" height={ghostSizes.homeTop} rows={4} />
       </div>
       <div className="home-pair">
-        <GhostCard kind="list" height={340} rows={6} />
-        <GhostCard kind="list" height={340} rows={6} />
+        <GhostCard kind="list" height={ghostSizes.homePair} rows={6} />
+        <GhostCard kind="list" height={ghostSizes.homePair} rows={8} />
       </div>
-      <GhostCard kind="map" height={460} />
+      <GhostCard kind="worldmap" />
       <div className="home-quad">
         {sources.map((source) => (
-          <GhostCard key={source.dimension} kind="list" height={252} rows={5} />
+          <GhostCard key={source.dimension} kind="list" height={ghostSizes.homeQuad} rows={5} />
         ))}
       </div>
-      <GhostCard kind="list" height={260} rows={5} />
+      <GhostCard kind="list" height={ghostSizes.homeVitals} rows={8} />
     </>
   );
 }

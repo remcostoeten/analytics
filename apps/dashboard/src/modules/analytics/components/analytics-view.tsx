@@ -1,5 +1,6 @@
 "use client";
 
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostTile } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
@@ -29,7 +30,7 @@ type Props = { project: string; state: ViewState; base: string };
 function Vitals({ project, state, base }: Props) {
   const scope = speedViewScope(browserClient(), project, state);
   const summary = useSpeedSummary(scope, state);
-  if (summary.data === undefined) return <GhostTile height={114} wide />;
+  if (summary.data === undefined) return <GhostTile height={ghostSizes.vitalsTile} wide />;
   return (
     <VitalsCard
       data={summary.data.ok ? summary.data.value.data : null}

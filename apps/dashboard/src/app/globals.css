@@ -3738,6 +3738,79 @@
   gap: 0.75rem;
 }
 
+.ghost-head-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ghost-title,
+.ghost-desc {
+  display: flex;
+  align-items: center;
+}
+
+.ghost-title {
+  height: 20px;
+
+  &:only-child {
+    height: 18px;
+  }
+}
+
+.ghost-desc {
+  height: 16px;
+}
+
+.ghost-section {
+  & .ghost-head-text {
+    gap: 4px;
+  }
+
+  & .ghost-title,
+  & .ghost-title:only-child {
+    height: 30px;
+  }
+
+  & .ghost-desc {
+    height: 20px;
+  }
+}
+
+.ghost-tabs {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  height: 30px;
+}
+
+.ghost-cells {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.ghost-cell {
+  display: grid;
+  gap: 2px;
+  width: 6.5rem;
+  grid-template-rows: 16px 35px;
+  align-items: center;
+}
+
+.ghost-heat {
+  pointer-events: none;
+}
+
+.ghost-heat-stage {
+  display: block;
+  aspect-ratio: 960 / 560;
+  border-radius: 4px;
+  background-image: radial-gradient(circle, var(--skeleton) 1.3px, transparent 1.8px);
+  background-size: 9px 9px;
+  animation: ghost-fade 2s ease-in-out infinite;
+}
+
 .ghost-legend {
   display: flex;
   flex-wrap: wrap;
@@ -3791,11 +3864,6 @@
   flex: 1;
   height: auto;
   min-height: 0;
-}
-
-.ghost-plot-faint {
-  min-height: 0;
-  opacity: 0.7;
 }
 
 .ghost-fill-top {
@@ -3878,7 +3946,10 @@
   flex: 1;
 }
 
-.ghost-section,
+.ghost-section {
+  gap: 1rem;
+}
+
 .ghost-bare {
   gap: 0.75rem;
 }
@@ -3938,26 +4009,6 @@
   }
 }
 
-.ghost-map {
-  display: grid;
-  flex: 1;
-  gap: 1rem;
-  min-height: 0;
-
-  @media (min-width: 900px) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
-  }
-}
-
-.ghost-map-globe {
-  display: grid;
-  align-items: end;
-  min-height: 12rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--raised) 60%, transparent);
-  overflow: hidden;
-}
-
 @keyframes ghost-shimmer {
   from {
     transform: translateX(-100%);
@@ -4005,6 +4056,7 @@
   .ghost-shine,
   .ghost-row-fill,
   .ghost-outcome,
+  .ghost-heat-stage,
   .ghost-spark,
   [aria-busy="true"][data-testid$="-skeleton"]::before {
     animation: none;

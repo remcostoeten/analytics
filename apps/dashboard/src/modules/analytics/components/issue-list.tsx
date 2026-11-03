@@ -4,6 +4,7 @@ import type { ProjectScope } from "@spoar/client";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import { BugIcon } from "@/shared/ui/icons";
@@ -38,7 +39,8 @@ export function IssueStatusTabs({ path, state }: Pick<Props, "path" | "state">) 
 
 export function IssueList({ scope, state, path, cursor }: Props) {
   const issues = useReadOf(issuesQuery(scope, state.status, cursor));
-  if (issues.data === undefined) return <GhostSection kind="list" height={320} rows={6} />;
+  if (issues.data === undefined)
+    return <GhostSection kind="list" height={ghostSizes.issueList} rows={6} />;
   const read = issues.data;
   if (!read.ok) return <ReadNotice error={read.error} what="issues" />;
   const rows = read.value.data;

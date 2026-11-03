@@ -1,8 +1,26 @@
 import { useId } from "react";
 
-type GhostKind = "chart" | "list" | "metrics" | "map" | "stats" | "outcome";
+type GhostKind =
+  | "chart"
+  | "summary"
+  | "list"
+  | "pair"
+  | "metrics"
+  | "map"
+  | "worldmap"
+  | "sources"
+  | "stats"
+  | "outcome";
 
-type Props = { kind: GhostKind; height: number; rows?: number };
+type GhostHead = "full" | "title" | "none";
+
+type Props = {
+  kind: GhostKind;
+  height?: number;
+  rows?: number;
+  head?: GhostHead;
+  framed?: boolean;
+};
 
 type BareProps = { height: number; rows?: number };
 
@@ -17,6 +35,14 @@ const listFills = [92, 74, 58, 47, 35, 28, 20, 14];
 const metricCards = ["visitors", "pageviews", "sessions", "bounce", "duration"];
 
 const statCells = ["first", "second", "third", "fourth"];
+
+const tabWidths = ["w-6", "w-14", "w-10", "w-14", "w-9", "w-14"];
+
+const sourceCells = ["referrer", "host", "country", "path", "browser", "os"];
+
+const headless: GhostKind[] = ["metrics", "stats"];
+
+const titleOnly: GhostKind[] = ["map", "sources", "outcome", "pair"];
 
 function Bar({ className }: { className: string }) {
   return <span className={`skeleton block ${className}`} />;
@@ -143,18 +169,45 @@ export function GhostKpi() {
   );
 }
 
+function Axis() {
+  return (
+    <div className="ghost-plot">
+      <div className="ghost-axis">
+        {statCells.map((cell) => (
+          <Bar key={cell} className="h-2.5 w-5" />
+        ))}
+      </div>
+      <Plot />
+    </div>
+  );
+}
+
 function Chart() {
   return (
     <>
       <Legend count={2} />
-      <div className="ghost-plot">
-        <div className="ghost-axis">
-          {statCells.map((cell) => (
-            <Bar key={cell} className="h-2.5 w-5" />
-          ))}
-        </div>
-        <Plot />
+      <Axis />
+    </>
+  );
+}
+
+function Summary() {
+  return (
+    <>
+      <div className="ghost-tabs">
+        {tabWidths.map((width, index) => (
+          <Bar key={index} className={`h-3 ${width}`} />
+        ))}
       </div>
+      <div className="ghost-cells">
+        {statCells.slice(0, 2).map((cell) => (
+          <span key={cell} className="ghost-cell">
+            <Bar className="h-3 w-16" />
+            <Bar className="h-6 w-14" />
+          </span>
+        ))}
+      </div>
+      <Axis />
     </>
   );
 }
@@ -173,6 +226,19 @@ function List({ rows }: { rows: number }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function Pair({ rows }: { rows: number }) {
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      {statCells.slice(0, 2).map((cell) => (
+        <div key={cell} className="grid content-start gap-2">
+          <Bar className="my-[3px] h-3.5 w-20" />
+          <List rows={rows} />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -213,53 +279,100 @@ function Outcome() {
   );
 }
 
-function Map() {
+function Heat() {
   return (
-    <div className="ghost-map">
-      <List rows={8} />
-      <div className="ghost-map-globe">
-        <Plot className="ghost-plot-faint" />
-      </div>
+    <div className="heat-map ghost-heat">
+      <Bar className="h-[31px] w-64 max-w-full" />
+      <span className="ghost-heat-stage" />
+      <Bar className="h-[18px] w-56 max-w-full" />
+    </div>
+  );
+}
+
+function Map({ rows }: { rows: number }) {
+  return (
+    <div className="country-grid">
+      <Heat />
+      <List rows={rows} />
+    </div>
+  );
+}
+
+function Sources({ rows }: { rows: number }) {
+  return (
+    <div className="source-grid">
+      {sourceCells.map((cell) => (
+        <div key={cell} className="source-cell">
+          <List rows={rows} />
+        </div>
+      ))}
     </div>
   );
 }
 
 function body(kind: GhostKind, rows: number) {
   if (kind === "chart") return <Chart />;
+  if (kind === "summary") return <Summary />;
   if (kind === "metrics") return <Metrics />;
   if (kind === "stats") return <Stats />;
-  if (kind === "map") return <Map />;
+  if (kind === "map") return <Map rows={rows} />;
+  if (kind === "worldmap") return <Heat />;
+  if (kind === "sources") return <Sources rows={rows} />;
   if (kind === "outcome") return <Outcome />;
+  if (kind === "pair") return <Pair rows={rows} />;
   return <List rows={rows} />;
 }
 
-function Head({ kind }: Pick<Props, "kind">) {
-  if (kind === "metrics" || kind === "stats") return null;
-  if (kind === "outcome") return <Bar className="h-4 w-32" />;
+function defaultHead(kind: GhostKind): GhostHead {
+  if (headless.includes(kind)) return "none";
+  if (titleOnly.includes(kind)) return "title";
+  return "full";
+}
+
+function Head({ head, action }: { head: GhostHead; action: boolean }) {
+  if (head === "none") return null;
   return (
     <header className="ghost-head">
-      <span className="grid gap-1.5">
-        <Bar className="h-4 w-24" />
-        <Bar className="h-3 w-40 max-w-full" />
+      <span className="ghost-head-text">
+        <span className="ghost-title">
+          <Bar className="h-4 w-28" />
+        </span>
+        {head === "full" ? (
+          <span className="ghost-desc">
+            <Bar className="h-3 w-48 max-w-full" />
+          </span>
+        ) : null}
       </span>
-      {kind === "chart" ? <Bar className="h-6 w-28" /> : null}
+      {action ? <Bar className="h-[27px] w-24" /> : null}
     </header>
   );
 }
 
-export function GhostCard({ kind, height, rows = 6 }: Props) {
+function hasAction(kind: GhostKind) {
+  return kind === "summary" || kind === "sources";
+}
+
+export function GhostCard({ kind, height, rows = 6, head, framed = true }: Props) {
   return (
-    <div className="card card-section ghost" style={{ height }} aria-hidden="true">
-      <Head kind={kind} />
+    <div
+      className={framed ? "card card-section ghost" : "card-section ghost"}
+      style={height === undefined ? undefined : { height }}
+      aria-hidden="true"
+    >
+      <Head head={head ?? defaultHead(kind)} action={hasAction(kind)} />
       {body(kind, rows)}
     </div>
   );
 }
 
-export function GhostSection({ kind, height, rows = 6 }: Props) {
+export function GhostSection({ kind, height, rows = 6, head }: Props) {
   return (
-    <div className="panel-section ghost ghost-section" style={{ height }} aria-hidden="true">
-      <Head kind={kind} />
+    <div
+      className="panel-section ghost ghost-section"
+      style={height === undefined ? undefined : { height }}
+      aria-hidden="true"
+    >
+      <Head head={head ?? defaultHead(kind)} action={hasAction(kind)} />
       {body(kind, rows)}
     </div>
   );

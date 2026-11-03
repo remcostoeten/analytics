@@ -6,6 +6,7 @@ import type { VisitorID } from "@spoar/shared/semantic";
 import { Link } from "@/shared/ui/link";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
@@ -188,7 +189,8 @@ export function VisitList({ scope, visitor, sessionHref }: Props) {
   const visitsRead = useRead(scope.key("visitorVisits", visitor, { limit: visitLimit }), () =>
     scope.visitorVisits(visitor, { limit: visitLimit }),
   );
-  if (visitsRead.data === undefined) return <GhostSection kind="list" height={320} rows={6} />;
+  if (visitsRead.data === undefined)
+    return <GhostSection kind="list" height={ghostSizes.visits} rows={3} />;
   const read = visitsRead.data;
   if (!read.ok) return <ReadNotice error={read.error} what="this visitor's visits" />;
   const visits = read.value.data;

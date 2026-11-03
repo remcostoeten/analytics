@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostList, GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import type { Prefetchable } from "@/shared/query/read";
@@ -76,7 +77,7 @@ export function breakdownReads(
 export function CountrySection({ scope, view, state, path }: Props) {
   const countries = useTopList(scope, "country", view.count, mapRows);
   const href = hrefFor(path, state, "country");
-  if (countries.data === undefined) return <GhostSection kind="map" height={320} />;
+  if (countries.data === undefined) return <GhostSection kind="map" rows={8} />;
   const read = countries.data;
   return (
     <section className="panel-section grid gap-4">
@@ -112,7 +113,7 @@ type SourceProps = Props & { dimension: FilterDimension; title: string };
 
 function SourceCell({ scope, view, state, path, dimension, title }: SourceProps) {
   const list = useTopList(scope, dimension, view.count, state.items);
-  if (list.data === undefined) return <GhostList height={160} rows={4} />;
+  if (list.data === undefined) return <GhostList height={ghostSizes.sourceList} rows={5} />;
   const read = list.data;
   return read.ok ? (
     <TopList
