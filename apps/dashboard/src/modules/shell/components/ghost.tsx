@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-type GhostKind = "chart" | "list" | "metrics" | "map" | "stats";
+type GhostKind = "chart" | "list" | "metrics" | "map" | "stats" | "outcome";
 
 type Props = { kind: GhostKind; height: number; rows?: number };
 
@@ -63,9 +63,9 @@ function Plot({ className = "" }: { className?: string }) {
   );
 }
 
-function Spark() {
+function Spark({ className = "" }: { className?: string }) {
   return (
-    <svg className="ghost-spark" viewBox="0 0 600 120" preserveAspectRatio="none">
+    <svg className={`ghost-spark ${className}`} viewBox="0 0 600 120" preserveAspectRatio="none">
       <path d={wave} className="ghost-outline" />
     </svg>
   );
@@ -122,6 +122,27 @@ export function GhostTile({ height, wide = false }: TileProps) {
   );
 }
 
+/**
+ * @name GhostKpi
+ * @description A KPI tile with a label, a value with its change badge and a sparkline, sized like the
+ * real tile so nothing moves when the numbers arrive.
+ *
+ * @example
+ * <div className="kpi-row">{tileViews.map((view) => <GhostKpi key={view.slug} />)}</div>
+ */
+export function GhostKpi() {
+  return (
+    <span className="kpi-tile ghost-kpi" aria-hidden="true">
+      <Bar className="my-0.5 h-3 w-16" />
+      <span className="flex h-[1.8rem] items-center gap-2">
+        <Bar className="h-5 w-20" />
+        <Bar className="h-4 w-10" />
+      </span>
+      <Spark className="ghost-spark-kpi" />
+    </span>
+  );
+}
+
 function Chart() {
   return (
     <>
@@ -172,13 +193,23 @@ function Metrics() {
 function Stats() {
   return (
     <div className="ghost-stats">
-      {statCells.map((cell) => (
+      {statCells.slice(0, 3).map((cell) => (
         <span key={cell} className="grid gap-1.5">
           <Bar className="h-3 w-14" />
           <Bar className="h-6 w-20" />
+          <Bar className="h-3 w-24" />
         </span>
       ))}
     </div>
+  );
+}
+
+function Outcome() {
+  return (
+    <>
+      <Legend count={3} />
+      <span className="outcome-bar ghost-outcome" />
+    </>
   );
 }
 
@@ -198,11 +229,13 @@ function body(kind: GhostKind, rows: number) {
   if (kind === "metrics") return <Metrics />;
   if (kind === "stats") return <Stats />;
   if (kind === "map") return <Map />;
+  if (kind === "outcome") return <Outcome />;
   return <List rows={rows} />;
 }
 
 function Head({ kind }: Pick<Props, "kind">) {
-  if (kind === "metrics") return null;
+  if (kind === "metrics" || kind === "stats") return null;
+  if (kind === "outcome") return <Bar className="h-4 w-32" />;
   return (
     <header className="ghost-head">
       <span className="grid gap-1.5">

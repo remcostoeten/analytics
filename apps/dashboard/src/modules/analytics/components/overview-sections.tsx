@@ -2,7 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 import { keepPreviousData, useQueries } from "@tanstack/react-query";
-import { GhostCard } from "@/modules/shell/components/ghost";
+import { GhostCard, GhostKpi } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
 import { useReadOf } from "@/shared/query/read";
@@ -87,7 +87,7 @@ export function KpiTiles({ scope, state, base }: Pick<Props, "scope" | "state" |
     return (
       <div className="kpi-row">
         {tileViews.map((view) => (
-          <GhostCard key={view.slug} kind="stats" height={132} />
+          <GhostKpi key={view.slug} />
         ))}
       </div>
     );
@@ -199,7 +199,7 @@ export function CountrySection({ scope, state, path, base }: Props) {
 
 export function OutcomeBar({ scope }: Pick<Props, "scope">) {
   const outcomes = useOutcomes(scope);
-  if (outcomes.data === undefined) return <GhostCard kind="stats" height={108} />;
+  if (outcomes.data === undefined) return <GhostCard kind="outcome" height={108} />;
   const read = outcomes.data;
   if (!read.ok) return <p className="text-sm text-err">{read.error}</p>;
   const parts = read.value.series.map((entry) => ({ ...entry, total: sumPoints(entry.points) }));

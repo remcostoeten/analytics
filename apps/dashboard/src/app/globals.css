@@ -3841,6 +3841,33 @@
   animation: ghost-spark 1.5s ease-in-out infinite;
 }
 
+.ghost-spark-kpi {
+  height: 2rem;
+  max-height: none;
+  margin: 0 0 0.75rem;
+}
+
+.ghost-kpi {
+  pointer-events: none;
+}
+
+.kpi-row > .ghost-kpi:nth-child(2) {
+  --skeleton-delay: 0.1s;
+}
+
+.kpi-row > .ghost-kpi:nth-child(3) {
+  --skeleton-delay: 0.2s;
+}
+
+.kpi-row > .ghost-kpi:nth-child(4) {
+  --skeleton-delay: 0.3s;
+}
+
+.ghost-outcome {
+  background: var(--skeleton);
+  animation: ghost-fade 2s ease-in-out infinite;
+}
+
 .ghost-metric {
   overflow: hidden;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -3977,6 +4004,7 @@
   .skeleton::after,
   .ghost-shine,
   .ghost-row-fill,
+  .ghost-outcome,
   .ghost-spark,
   [aria-busy="true"][data-testid$="-skeleton"]::before {
     animation: none;

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { GhostCard, GhostList, GhostSection, GhostTile } from "./ghost";
+import { GhostCard, GhostKpi, GhostList, GhostSection, GhostTile } from "./ghost";
 
 type Props = { height: number };
 
@@ -223,7 +223,7 @@ export function OverviewSkeleton() {
       </header>
       <div className="kpi-row" aria-hidden="true">
         {kpiRows.map((row) => (
-          <GhostCard key={row} kind="stats" height={132} />
+          <GhostKpi key={row} />
         ))}
       </div>
       <GhostCard kind="chart" height={328} />
@@ -231,7 +231,7 @@ export function OverviewSkeleton() {
         <GhostCard kind="list" height={300} rows={5} />
         <GhostCard kind="list" height={300} rows={5} />
       </div>
-      <GhostCard kind="stats" height={108} />
+      <GhostCard kind="outcome" height={108} />
       <GhostCard kind="list" height={720} rows={8} />
     </div>
   );
