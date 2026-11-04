@@ -57,7 +57,7 @@ export function AnalyticsSkeleton() {
       aria-busy="true"
       data-testid="analytics-skeleton"
     >
-      <aside className="grid gap-6" aria-hidden="true">
+      <aside className="view-aside" aria-hidden="true">
         <GhostTile height={ghostSizes.vitalsTile} wide />
         <div className="rail">
           {metricRows.map((row) => (
@@ -84,7 +84,7 @@ export function SpeedSkeleton() {
       aria-busy="true"
       data-testid="speed-skeleton"
     >
-      <aside className="grid gap-6" aria-hidden="true">
+      <aside className="view-aside" aria-hidden="true">
         <div className="rail">
           {ghostSizes.speedTiles.map((height, index) => (
             <GhostTile key={index} height={height} />
