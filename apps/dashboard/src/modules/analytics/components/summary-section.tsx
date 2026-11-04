@@ -5,6 +5,7 @@ import { Link } from "@/shared/ui/link";
 import { Tabs } from "@/shared/ui/tabs";
 
 import { useSession } from "@/modules/session/use-session";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 import type { Prefetchable } from "@/shared/query/read";
@@ -112,7 +113,7 @@ export function SummarySection({ scope, view, state, path, project }: Props) {
   const annotations = useReadOf(annotationsQuery(scope));
   const editable = useSession().isAdmin;
   if (read === undefined || stats.data === undefined)
-    return <GhostSection kind="chart" height={430} />;
+    return <GhostSection kind="summary" height={ghostSizes.summary} />;
   const headline = stats.data.ok ? stats.data.value.data[view.stat] : null;
   const total = headline?.value ?? null;
   const change = headline?.change ?? null;

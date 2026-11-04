@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 import { keepPreviousData, useQueries } from "@tanstack/react-query";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostTile } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 
@@ -44,7 +45,7 @@ function RailSkeleton() {
   return (
     <div className="rail" aria-hidden="true">
       {metricViews.map((view) => (
-        <GhostTile key={view.slug} height={116} />
+        <GhostTile key={view.slug} height={ghostSizes.railTile} />
       ))}
     </div>
   );

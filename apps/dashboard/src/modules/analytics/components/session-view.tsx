@@ -1,6 +1,7 @@
 "use client";
 
 import type { SessionEvents } from "@spoar/contract";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { Link } from "@/shared/ui/link";
 import { notFound } from "next/navigation";
@@ -94,7 +95,7 @@ export function SessionView() {
           ) : null}
         </header>
         {read === undefined ? (
-          <GhostSection kind="list" height={360} rows={7} />
+          <GhostSection kind="list" height={ghostSizes.sessionTrail} rows={7} />
         ) : read.ok ? (
           <SessionTrail events={read.value} />
         ) : (

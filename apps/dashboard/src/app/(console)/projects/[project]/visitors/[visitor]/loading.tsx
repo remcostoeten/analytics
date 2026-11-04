@@ -1,5 +1,6 @@
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { DetailSkeleton } from "@/modules/shell/components/skeletons";
 
 export default function Loading() {
-  return <DetailSkeleton height={320} facts={6} />;
+  return <DetailSkeleton height={ghostSizes.visits} facts="visitor" />;
 }
