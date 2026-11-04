@@ -45,7 +45,7 @@ export function VisitorView() {
             ) : null}
           </div>
           {read === undefined ? (
-            <FactsSkeleton facts={6} />
+            <FactsSkeleton facts="visitor" />
           ) : read.ok ? (
             <VisitorFacts detail={read.value.data} sessionHref={sessionHref} />
           ) : (

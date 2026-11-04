@@ -5,6 +5,7 @@ import type { IssueEvent } from "@spoar/contract";
 import type { IssueID } from "@spoar/shared/semantic";
 
 import { ReadNotice } from "@/modules/session/components/read-notice";
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
@@ -55,7 +56,8 @@ export function IssueEvents({ scope, issue }: Props) {
   const events = useRead(scope.key("issueEvents", issue, { limit: eventLimit }), () =>
     scope.issueEvents(issue, { limit: eventLimit }),
   );
-  if (events.data === undefined) return <GhostSection kind="list" height={320} rows={6} />;
+  if (events.data === undefined)
+    return <GhostSection kind="list" height={ghostSizes.issueEvents} rows={6} />;
   const read = events.data;
   if (!read.ok) return <ReadNotice error={read.error} what="this issue's events" />;
   const rows = read.value.data;

@@ -23,13 +23,17 @@ export default function Page(props: Props) {
 function PageFallback() {
   return (
     <DocsPage>
-      <DocsTitle>Loading documentation</DocsTitle>
+      <div className="flex flex-col gap-3" aria-busy="true">
+        <span className="sr-only">Loading documentation</span>
+        <div className="skeleton h-9 w-72 max-w-full" aria-hidden="true" />
+        <div className="skeleton h-4 w-96 max-w-full [--skeleton-delay:0.1s]" aria-hidden="true" />
+      </div>
       <DocsBody>
         <div className="flex flex-col gap-4" aria-hidden="true">
-          <div className="h-4 w-3/4 animate-pulse rounded-md bg-fd-muted" />
-          <div className="h-4 w-full animate-pulse rounded-md bg-fd-muted" />
-          <div className="h-4 w-5/6 animate-pulse rounded-md bg-fd-muted" />
-          <div className="mt-4 h-32 w-full animate-pulse rounded-md bg-fd-muted" />
+          <div className="skeleton h-3 w-3/4" />
+          <div className="skeleton h-3 w-full [--skeleton-delay:0.1s]" />
+          <div className="skeleton h-3 w-5/6 [--skeleton-delay:0.2s]" />
+          <div className="skeleton mt-4 h-32 w-full [--skeleton-delay:0.3s]" />
         </div>
       </DocsBody>
     </DocsPage>

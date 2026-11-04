@@ -2,6 +2,7 @@
 
 import type { ProjectScope } from "@spoar/client";
 
+import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 
 import { formatMetric } from "../format";
@@ -14,7 +15,8 @@ type Props = { scope: ProjectScope };
 
 export function OutcomeSection({ scope }: Props) {
   const outcomes = useOutcomes(scope);
-  if (outcomes.data === undefined) return <GhostSection kind="chart" height={310} />;
+  if (outcomes.data === undefined)
+    return <GhostSection kind="chart" height={ghostSizes.logsChart} />;
   const read = outcomes.data;
   return (
     <section className="panel-section grid gap-3">
