@@ -18,10 +18,10 @@ const outcomes = [
 ] as const satisfies readonly { outcome: Outcome; label: string; traffic: TrafficFilter }[];
 
 export const trafficOptions = [
-  { value: "all", label: "All traffic" },
   { value: "human", label: "Human" },
   { value: "bots", label: "Bots" },
   { value: "internal", label: "Internal" },
+  { value: "all", label: "All traffic" },
 ] as const satisfies readonly { value: TrafficFilter; label: string }[];
 
 export const fieldGroups = [
@@ -40,26 +40,27 @@ function isTraffic(value: string | undefined): value is TrafficFilter {
 
 /**
  * @name logTraffic
- * @description The traffic the log page shows, from the path segment after `/logs`. Unlike the
- * analytics views it defaults to all traffic, so bots and your own visits show up in the log.
+ * @description The traffic the log page shows, from the path segment after `/logs`. It defaults
+ * to human traffic, which leaves out localhost, bots and your own visits; `all` shows everything.
  *
  * @example
  * logTraffic("bots"); // "bots"
- * logTraffic(undefined); // "all"
+ * logTraffic(undefined); // "human"
  */
 export function logTraffic(segment: string | undefined): TrafficFilter {
-  return isTraffic(segment) ? segment : "all";
+  return isTraffic(segment) ? segment : "human";
 }
 
 /**
  * @name logPath
- * @description The URL of the log for one traffic choice; all traffic lives at `/logs` itself.
+ * @description The URL of the log for one traffic choice; human traffic lives at `/logs` itself.
  *
  * @example
  * logPath("/projects/skriuw", "bots"); // "/projects/skriuw/logs/bots"
+ * logPath("/projects/skriuw", "human"); // "/projects/skriuw/logs"
  */
 export function logPath(base: string, traffic: TrafficFilter) {
-  return traffic === "all" ? `${base}/logs` : `${base}/logs/${traffic}`;
+  return traffic === "human" ? `${base}/logs` : `${base}/logs/${traffic}`;
 }
 
 /**
