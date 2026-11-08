@@ -30,15 +30,20 @@ function pause(ms: number, signal: AbortSignal | null) {
  * @name drizzleFeed
  * @description The `RealtimeFeed` on any Drizzle Postgres database, by long-polling: with a cursor
  * it answers as soon as newer events exist, otherwise checks every `pollMs` until the wait ends;
- * without one it answers at once with the last five minutes. Events are ordered by
+ * without one it answers at once with the last five minutes before `now`, the database clock
+ * unless a clock is given. Events are ordered by
  * `(received_at, id)`, which the `events_project_received_idx` index serves.
  *
  * @example
  * const feed = drizzleFeed(db, { pollMs: 2000 });
  * await feed.next({ scope, after: null, limit: 50 }, { ms: 25_000, signal: null });
  */
-export function drizzleFeed(db: Database, options: { pollMs: number }): RealtimeFeed {
+export function drizzleFeed(
+  db: Database,
+  options: { pollMs: number; now?: () => Date },
+): RealtimeFeed {
   async function read(query: FeedQuery): Promise<FeedPage> {
+    const now = options.now ? sql`${options.now().toISOString()}::timestamptz` : sql`now()`;
     const { joins, where } = scopeParts({ ...query.scope, ...openRange }, []);
     const columns = sql`e.id::text AS id, e.id AS seq, e.project_id, COALESCE(e.name, e.type) AS name,
       e.ts, e.path, e.country, e.device_type, e.visitor_id, e.session_id,
@@ -55,7 +60,7 @@ export function drizzleFeed(db: Database, options: { pollMs: number }): Realtime
           db,
           sql`SELECT * FROM (
               SELECT ${columns} FROM events e ${joins}
-              WHERE ${where} AND e.received_at >= now() - interval '5 minutes'
+              WHERE ${where} AND e.received_at >= ${now} - interval '5 minutes'
               ORDER BY e.received_at DESC, e.id DESC LIMIT ${query.limit}
             ) latest ORDER BY latest.received_at, latest.seq`,
         );
