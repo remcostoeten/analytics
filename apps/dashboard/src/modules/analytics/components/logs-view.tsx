@@ -23,7 +23,7 @@ export function LogsView() {
   const state = { ...view.state, bots: false };
   const segments = params.traffic;
   const traffic = logTraffic(segments?.[0]);
-  if (segments && (segments.length > 1 || traffic === "all")) notFound();
+  if (segments && (segments.length > 1 || traffic === "human")) notFound();
   const path = logPath(base, traffic);
   const scope = viewScope(browserClient(), project, state);
   const scoped = scope.traffic(traffic);

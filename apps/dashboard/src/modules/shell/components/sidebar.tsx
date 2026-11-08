@@ -194,7 +194,7 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
           children: trafficOptions.map((option) => ({
             label: option.label,
             href: logPath(projectPath, option.value),
-            active: section === "logs" && (detail ?? "all") === option.value,
+            active: section === "logs" && (detail ?? "human") === option.value,
           })),
         },
         {
