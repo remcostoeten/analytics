@@ -216,7 +216,7 @@ export async function startParityApi(): Promise<{
   const clock = fixedClock(now);
   const hasher = webCryptoHasher();
   const geo = openGeo([], []);
-  const stores = pgliteAccess(database);
+  const stores = pgliteAccess(database, () => clock.now());
   const adapters = pgliteAdapters(database, clock);
   const api = createApp({
     engine: (logger) =>

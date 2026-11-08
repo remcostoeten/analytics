@@ -487,7 +487,7 @@ export type Access = {
  * @example
  * const access = accessOn(drizzle(client), pgliteTransact(client));
  */
-export function accessOn(db: Database, transact: Transact): Access {
+export function accessOn(db: Database, transact: Transact, now?: () => Date): Access {
   return {
     db,
     projects: drizzleProjectAdmin(db),
@@ -495,7 +495,7 @@ export function accessOn(db: Database, transact: Transact): Access {
     members: drizzleMembers(db),
     reads: drizzleReads(db),
     details: drizzleDetails(db),
-    feed: drizzleFeed(db, { pollMs: 2000 }),
+    feed: drizzleFeed(db, { pollMs: 2000, now }),
     queries: queryRunner(transact, () => readQuerySecret(db), webCryptoHasher(), {
       timeoutMs: 10_000,
       maxRows: 10_000,

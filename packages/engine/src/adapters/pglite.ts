@@ -30,13 +30,15 @@ export function pgliteAdapters(
 /**
  * @name pgliteAccess
  * @description The project, token and member stores on an in-process PGlite database, plus the
- * Drizzle database itself for Better Auth. Migrate the database first.
+ * Drizzle database itself for Better Auth. Migrate the database first. A `now` clock replaces the
+ * database clock in the live feed's five minute window.
  *
  * @example
  * const access = pgliteAccess(new PGlite());
+ * const fixed = pgliteAccess(new PGlite(), () => new Date("2026-10-09T12:30:00.000Z"));
  */
-export function pgliteAccess(client: PGlite): Access {
-  return accessOn(drizzle(client), pgliteTransact(client));
+export function pgliteAccess(client: PGlite, now?: () => Date): Access {
+  return accessOn(drizzle(client), pgliteTransact(client), now);
 }
 
 /**
