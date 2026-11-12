@@ -9,6 +9,7 @@
     "---SDK---",
     "sdk/install",
     "sdk/client",
+    "sdk/read-client",
     "sdk/options",
     "sdk/react",
     "sdk/next",

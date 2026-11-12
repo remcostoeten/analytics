@@ -22,7 +22,7 @@ const config: NextConfig = {
         { source: "/dashboard", destination: `${dashboard}/dashboard` },
         { source: "/dashboard/:path*", destination: `${dashboard}/dashboard/:path*` },
       ],
-      afterFiles: [],
+      afterFiles: [{ source: "/docs/:path*.md", destination: "/llms.mdx/docs/:path*" }],
       fallback: [],
     };
   },

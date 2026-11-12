@@ -6,6 +6,7 @@ import { Suspense } from "react";
 
 import { getMDXComponents } from "@/components/mdx";
 import { OpenAPIPage } from "@/components/openapi-page";
+import { markdownUrl } from "@/lib/llms";
 import { source } from "@/lib/source";
 
 type Props = {
@@ -140,7 +141,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title: page.data.title,
     description,
-    alternates: { canonical: page.url },
+    alternates: { canonical: page.url, types: { "text/markdown": markdownUrl(page) } },
     openGraph: {
       type: "article",
       title: `${page.data.title} | Spoar docs`,

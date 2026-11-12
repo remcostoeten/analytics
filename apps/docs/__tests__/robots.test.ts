@@ -16,6 +16,6 @@ describe("robots.txt", () => {
     const rules = [robots().rules].flat();
     const ai = rules.find((rule) => [rule.userAgent].flat().includes("GPTBot"));
 
-    expect(ai?.allow).toEqual(["/", "/docs", "/llms.txt"]);
+    expect(ai?.allow).toEqual(["/", "/docs", "/llms.txt", "/llms-full.txt"]);
   });
 });
