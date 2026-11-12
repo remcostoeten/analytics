@@ -10,7 +10,7 @@ The docs site on Fumadocs and Next: the SDK, the API guides, the API reference g
 
 Hand-written pages live in `content/docs` (`index.mdx`, `sdk/`, `api/`). `content/docs/reference/` is generated and ignored by git; change a route in `apps/api`, run `bun run --cwd apps/api openapi`, and the next build picks it up.
 
-The site tracks itself through `@spoar/sdk`: `lib/analytics.ts` creates the client, `app/providers.tsx` mounts the Next adapter, and `app/%5Fra/route.ts` serves the `/_ra` proxy. The landing page reads that project's last 30 days and the public project list from the API through `@spoar/client` (`lib/showcase.ts`), cached for a minute, and polls the realtime routes from the browser.
+The site tracks itself through `@spoar/sdk`: `lib/analytics.ts` creates the client, `app/providers.tsx` mounts the Next adapter, and `app/%5Fra/route.ts` serves the `/_ra` proxy. The landing page reads that project's last 30 days and the public project list from the API through `@spoar/client` (`lib/showcase.ts`), cached for an hour, and polls the realtime routes from the browser.
 
 | Variable | Default | Does |
 | --- | --- | --- |

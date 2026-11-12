@@ -1,22 +1,21 @@
-import { listProjects } from "@/modules/analytics/reads";
-import { projectsKey } from "@/modules/analytics/use-projects";
-import { readSession } from "@/modules/session/session";
-import { Seed } from "@/shared/query/seed";
+"use client";
+
+import { useProjects } from "@/modules/analytics/use-projects";
+import { useSession } from "@/modules/session/use-session";
 
 import { Sidebar } from "./sidebar";
+import { SidebarSkeleton } from "./sidebar-skeleton";
 
-export async function SidebarSlot() {
-  const [projects, session] = await Promise.all([listProjects(), readSession()]);
-  const seed = projects.ok ? <Seed queryKey={projectsKey} data={projects} /> : null;
+export function SidebarSlot() {
+  const projects = useProjects();
+  const session = useSession();
+  if (projects.status === "loading") return <SidebarSkeleton />;
   return (
-    <>
-      {seed}
-      <Sidebar
-        projects={projects.ok ? projects.value : []}
-        isAdmin={session.isAdmin}
-        isOwner={session.role === "owner"}
-        signedIn={session.user !== null}
-      />
-    </>
+    <Sidebar
+      projects={projects.status === "ok" ? projects.projects : []}
+      isAdmin={session.isAdmin}
+      isOwner={session.role === "owner"}
+      signedIn={session.user !== null}
+    />
   );
 }

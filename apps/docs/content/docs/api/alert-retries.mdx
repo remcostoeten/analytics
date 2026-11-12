@@ -16,7 +16,7 @@ alerts({
 | Option | Default | Means |
 | --- | --- | --- |
 | `attempts` | `5` | Tries after the first failure; `0` turns retrying off |
-| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` waits 10 minutes, one job run |
+| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` waits 30 minutes, one job run |
 | `maxAge` | `"24h"` | A delivery is not tried past this age and turns `failed`; a `Duration` such as `"30m"`, `"6h"` or `"2d"` |
 
 The config only needs what differs from the defaults. A channel's own `retry` overrides the plugin's, key by key, so `webhook({ retry: { maxAge: "1h" } })` above keeps 5 exponential attempts but gives up after an hour.

@@ -26,7 +26,7 @@ export async function LiveRead({ read }: Props) {
       <CodeWindow title={`${calls[read]}.data`} lang="json" code={JSON.stringify(data, null, 2)} />
       <figcaption className="font-mono text-[0.72rem] text-muted">
         Live from {showcase.project} over the last 30 days
-        {read === "timeseries" ? ", last 7 days shown" : ""}. Refreshed every minute.
+        {read === "timeseries" ? ", last 7 days shown" : ""}. Refreshed every hour.
       </figcaption>
     </figure>
   );

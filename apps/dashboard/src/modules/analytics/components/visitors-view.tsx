@@ -7,6 +7,7 @@ import { AddFilter } from "./add-filter";
 import { FilterChips } from "./filter-chips";
 import { PeriodSelect } from "./period-select";
 import { VisitorList } from "./visitor-list";
+import { VisitorMap } from "./visitor-map";
 import { VisitorSummary } from "./visitor-summary";
 
 export function VisitorsView() {
@@ -24,6 +25,7 @@ export function VisitorsView() {
           <FilterChips path={path} state={state} />
         </ProjectHeading>
         <VisitorSummary scope={scope} state={state} path={path} />
+        <VisitorMap scope={scope} state={state} path={path} />
         <VisitorList scope={scope} state={state} path={path} cursor={cursor} />
       </div>
     </div>

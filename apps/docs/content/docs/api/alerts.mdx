@@ -56,11 +56,11 @@ export default defineConfig({
 
 ## How alerts are sent
 
-`POST /v2/admin/jobs/alerts` runs every 10 minutes from the scheduler. Each run queues new issues and regressions, up to 100, and sends each target its due alerts together: one mail, one Discord message or one signed webhook request. A failed send is retried by the [retry policy](/docs/api/alert-retries), and one failing target never holds back another. [Alert webhooks](/docs/sdk/server#alert-webhooks) shows how to check a webhook's signature.
+`POST /v2/admin/jobs/alerts` runs every 30 minutes from the scheduler. Each run queues new issues and regressions, up to 100, and sends each target its due alerts together: one mail, one Discord message or one signed webhook request. A failed send is retried by the [retry policy](/docs/api/alert-retries), and one failing target never holds back another. [Alert webhooks](/docs/sdk/server#alert-webhooks) shows how to check a webhook's signature.
 
 ## Speed drops
 
-`speed.drop` is opt-in per target. Each alerts run compares yesterday's Real Experience Score (UTC day, production traffic, all devices, p75, metrics with at least 20 samples) with the 7 days before it, for every project with a target subscribed to it, and fires when the score fell 10 points or more to under 90. A drop alerts once per project and day. Change the numbers in the config:
+`speed.drop` is opt-in per target. Once a day, after the rollup job, the API compares yesterday's Real Experience Score (UTC day, production traffic, all devices, p75, metrics with at least 20 samples) with the 7 days before it, for every project with a target subscribed to it, and fires when the score fell 10 points or more to under 90. A drop alerts once per project and day. Change the numbers in the config:
 
 ```ts
 alerts({ channels, speedDrop: { points: 15, below: 85, baselineDays: 14 } });

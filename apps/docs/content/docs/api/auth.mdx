@@ -69,6 +69,8 @@ Sign-in goes through the API, so every frontend shares one access check.
 
 Signed out, the same route answers `{ "user": null, "session": null, "role": null, "isAdmin": false }`.
 
+The API keeps a session, the allowlist answer and the role for up to 60 seconds before asking the database again, so removing a member or changing a role can take a minute to apply.
+
 Events sent with a signed-in owner's or admin's session cookie are stored as internal traffic; [Exclude your own traffic](/docs/guides/exclude-your-traffic) explains when the cookie reaches the API.
 
 ## API tokens

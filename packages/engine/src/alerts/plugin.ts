@@ -59,8 +59,8 @@ export function alerts(options: AlertsOptions): AlertsPlugin {
 
 /**
  * @name runAlerts
- * @description One run of the alerts job: queue the new issues, regressions and speed drops, then
- * dispatch every due batch.
+ * @description One run of the alerts job: queue the new issues and regressions, then dispatch
+ * every due batch, speed drops queued by `runSpeedAlerts` included.
  *
  * @example
  * await runAlerts(plugin, { issues, speed, alerts: store, links: apiLinks(apiUrl) }, new Date());
@@ -77,14 +77,30 @@ export async function runAlerts(
     now,
   });
   if (!queued.ok) return queued;
+  const sent = await dispatchAlerts(job.alerts, plugin, now);
+  if (!sent.ok) return sent;
+  return ok({ queued: queued.value.queued, ...sent.value });
+}
+
+/**
+ * @name runSpeedAlerts
+ * @description Queues a `speed.drop` for each subscribed project whose score fell yesterday. The
+ * comparison covers whole UTC days, so its answer changes once a day and the daily rollup job
+ * runs it; the next alerts run sends what it queued.
+ *
+ * @example
+ * await runSpeedAlerts(plugin, { issues, speed, alerts: store, links: apiLinks(apiUrl) }, new Date());
+ */
+export async function runSpeedAlerts(
+  plugin: AlertsPlugin,
+  job: AlertsJob,
+  now: Date,
+): Promise<Result<{ queued: number }, EngineError>> {
   const slower = await queueSpeedAlerts(job.speed, job.alerts, {
     links: job.links,
-    channels,
+    channels: plugin.channels.map((channel) => channel.name),
     now,
     drop: plugin.speedDrop,
   });
-  if (!slower.ok) return slower;
-  const sent = await dispatchAlerts(job.alerts, plugin, now);
-  if (!sent.ok) return sent;
-  return ok({ queued: queued.value.queued + slower.value.queued, ...sent.value });
+  return slower.ok ? ok({ queued: slower.value.queued }) : slower;
 }

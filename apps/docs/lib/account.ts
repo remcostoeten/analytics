@@ -43,6 +43,44 @@ export function storeAccount(account: Account | null) {
 }
 
 /**
+ * @name accountHintScript
+ * @description Inline script for the landing pages that runs before the first paint. When a
+ * stored account exists it marks the document with `data-account` and hands the avatar or the
+ * initial to CSS, so the server-rendered nav shows the avatar slot instead of "Log in" until
+ * hydration takes over.
+ *
+ * @example
+ * <script dangerouslySetInnerHTML={{ __html: accountHintScript }} />
+ */
+export const accountHintScript = `try{var u=JSON.parse(localStorage.getItem(${JSON.stringify(storageKey)})).user,r=document.documentElement,n=u.name||u.login;r.dataset.account="";if(/^https:/.test(u.avatarUrl))r.style.setProperty("--account-avatar","url("+JSON.stringify(u.avatarUrl)+")");else r.style.setProperty("--account-initial",JSON.stringify(n.slice(0,1).toUpperCase()))}catch(e){}`;
+
+/**
+ * @name clearAccountHint
+ * @description Removes what `accountHintScript` set, once the nav renders the account itself.
+ *
+ * @example
+ * clearAccountHint();
+ */
+export function clearAccountHint() {
+  const root = document.documentElement;
+  delete root.dataset.account;
+  root.style.removeProperty("--account-avatar");
+  root.style.removeProperty("--account-initial");
+}
+
+/**
+ * @name sameAccount
+ * @description Whether two session results describe the same account, so a check that returns
+ * what the nav already shows does not render it again.
+ *
+ * @example
+ * setAccount((current) => (sameAccount(current, next) ? current : next));
+ */
+export function sameAccount(left: Account | null, right: Account | null) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+/**
  * @name fetchAccount
  * @description Asks the dashboard who the session cookie belongs to. Resolves to the account,
  * to null when signed out, and to undefined when the check itself failed.

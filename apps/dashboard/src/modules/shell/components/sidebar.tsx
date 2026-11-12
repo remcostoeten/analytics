@@ -61,6 +61,28 @@ export function currentProject(pathname: string) {
   return id === "new" ? null : id;
 }
 
+const listSections = ["issues", "visitors"];
+
+/**
+ * @name projectSwitchPath
+ * @description Where switching to another project leads: the same page of that project, so a
+ * switch on the visits tab lands on its visits tab. A page about one record, such as an issue, a
+ * visitor or a session, belongs to the project being left, so the switch lands on that section's
+ * list instead. Outside a project's pages it is the project's first page.
+ *
+ * @example
+ * projectSwitchPath("/projects/doradb.app/visits", "skriuw.com"); // "/projects/skriuw.com/visits"
+ */
+export function projectSwitchPath(pathname: string, next: string) {
+  const target = `/projects/${encodeURIComponent(next)}`;
+  const match = /^\/projects\/[^/]+((?:\/[^/]+)*)\/?$/.exec(pathname);
+  if (!match) return target;
+  const [section = "", ...rest] = (match[1] ?? "").split("/").filter(Boolean);
+  if (section === "sessions") return `${target}/visitors`;
+  if (listSections.includes(section)) return `${target}/${section}`;
+  return [target, section, ...rest].filter(Boolean).join("/");
+}
+
 export function SidebarFoot() {
   return (
     <div className="sidebar-foot">
@@ -262,7 +284,7 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
                 { value: "", label: "All projects" },
                 ...projects.map((entry) => ({ value: entry.id, label: entry.name })),
               ]}
-              onChange={(next) => router.push(next ? `/projects/${encodeURIComponent(next)}` : "/")}
+              onChange={(next) => router.push(next ? projectSwitchPath(pathname, next) : "/")}
             />
           </div>
         </div>
@@ -292,7 +314,7 @@ export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
                 {projects.map((entry) => (
                   <li key={entry.id}>
                     <Link
-                      href={`/projects/${encodeURIComponent(entry.id)}`}
+                      href={projectSwitchPath(pathname, entry.id)}
                       aria-current={entry.id === project ? "true" : undefined}
                       className="nav-item nav-project"
                       title={entry.domain}

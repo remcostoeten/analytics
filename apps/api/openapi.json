@@ -456,7 +456,7 @@
                           ]
                         },
                         "loadMs": {
-                          "description": "Milliseconds the databases took to load.",
+                          "description": "Milliseconds the databases took to load, 0 until the first lookup reads them.",
                           "type": "number"
                         }
                       }
@@ -29738,7 +29738,7 @@
     "/v2/admin/jobs/rollup": {
       "post": {
         "summary": "Roll up speed",
-        "description": "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+        "description": "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -30077,7 +30077,7 @@
     "/v2/admin/jobs/alerts": {
       "post": {
         "summary": "Queue and send alerts",
-        "description": "Queues new issues and regressions, up to 100 per run, and speed drops (yesterday's Real Experience Score against the 7 days before it), as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
+        "description": "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, speed drops the rollup job queued included, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],

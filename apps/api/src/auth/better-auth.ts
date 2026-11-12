@@ -31,6 +31,16 @@ export type AuthOptions = {
 
 const signInRule = { window: 60, max: 10 };
 
+/**
+ * @name accessCacheSeconds
+ * @description How long a session, the allowlist answer and a membership may be served without
+ * asking the database, and so the longest a removed member or a revoked session keeps working.
+ *
+ * @example
+ * cachedMembers(stores.members, () => clock.now(), accessCacheSeconds * 1000);
+ */
+export const accessCacheSeconds = 60;
+
 async function allowed(members: MemberStore, login: unknown, githubId: unknown) {
   if (typeof login !== "string" || login === "") return false;
   const result = await members.allowedLogin(login, typeof githubId === "string" ? githubId : null);
@@ -47,7 +57,8 @@ async function allowed(members: MemberStore, login: unknown, githubId: unknown) 
  * to provider input because Better Auth drops `input: false` fields from the profile, and an
  * update that touches it is refused instead. Requests are rate limited per IP and path in the
  * `auth_rate_limit` table, 10 a minute for sign-in and the OAuth callback and 120 for the rest,
- * and only when `secure` is on. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
+ * and only when `secure` is on. A session is also kept in a signed cookie for `accessCacheSeconds`,
+ * so reads inside that window skip the session tables. The session cookie is httpOnly, `SameSite=Lax`, Secure in production, and set on
  * `cookieDomain` so every subdomain, ingest included, receives it.
  *
  * @example
@@ -97,6 +108,7 @@ export function createAuth(options: AuthOptions) {
         roles: { owner: ownerAc, admin: adminAc, analyst: memberAc, viewer: memberAc },
       }),
     ],
+    session: { cookieCache: { enabled: true, maxAge: accessCacheSeconds } },
     rateLimit: {
       enabled: options.secure,
       storage: "database",
@@ -153,7 +165,8 @@ export type Auth = ReturnType<typeof createAuth>;
  * @name betterAuthSessions
  * @description Reads the signed-in user from Better Auth's session cookie, or null when there is
  * no valid session. The login is checked against the allowlist on every read, so removing it from
- * `dashboard_users` ends existing sessions too.
+ * `dashboard_users` ends existing sessions too, within `accessCacheSeconds` when `members` is the
+ * cached store and the session comes from Better Auth's signed cookie cache.
  *
  * @example
  * const sessions = betterAuthSessions(auth, members);

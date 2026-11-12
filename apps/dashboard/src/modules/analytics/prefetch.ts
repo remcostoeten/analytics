@@ -9,6 +9,7 @@ import { railReads } from "./components/metric-rail";
 import { overviewReads } from "./components/overview-sections";
 import { prefetchSpeed } from "./components/speed-sections";
 import { summaryReads } from "./components/summary-section";
+import { visitorMapReads } from "./components/visitor-map";
 import { visitorSummaryReads } from "./components/visitor-summary";
 import { logTraffic } from "./logs";
 import { metricView, metricViews } from "./metrics";
@@ -67,7 +68,11 @@ export function prefetchHref(client: QueryClient, api: Client<string>, href: str
     return;
   }
   if (rest === "/visitors") {
-    prefetchReads(client, [...visitorSummaryReads(scope), visitorsQuery(scope, target.cursor)]);
+    prefetchReads(client, [
+      ...visitorSummaryReads(scope),
+      ...visitorMapReads(scope),
+      visitorsQuery(scope, target.cursor),
+    ]);
     return;
   }
   const logs = tail(rest, "/logs");

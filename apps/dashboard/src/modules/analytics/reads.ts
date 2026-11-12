@@ -34,9 +34,9 @@ async function listMemberProjects(): Promise<Projects> {
  * @description Every project the caller may read: public ones when signed out, private ones too
  * for members, with every setting for admins. The public list is read without a cookie and shared
  * by every anonymous visitor for a minute, so a crawler walking the public pages does not list the
- * projects once per page. A member's list is cached per session for five minutes in the browser,
- * so the sidebar and headings render with a route's prefetched shell. A server action that
- * revalidates clears it.
+ * projects once per page. A member's list is cached per session for five minutes in the browser.
+ * Only the admin pages read it here; the sidebar and the analytics views ask from the browser
+ * through `useProjects`. A server action that revalidates clears it.
  *
  * @example
  * const projects = await listProjects();

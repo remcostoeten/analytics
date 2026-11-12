@@ -83,7 +83,7 @@ Four routes keep the data in shape. Call each one with `Authorization: Bearer <C
 | --- | --- | --- |
 | `POST /v2/admin/jobs/rollup` | Daily | Scores the previous day's sessions for bots, rolls speed data into daily percentiles, and drops raw speed rows past 30 days |
 | `POST /v2/admin/jobs/cleanup` | Daily, after `rollup` | Deletes events, sessions and speed rows past each project's `retentionDays` |
-| `POST /v2/admin/jobs/alerts` | Every 10 minutes | Sends new issues, regressions and other alerts to the project's targets |
+| `POST /v2/admin/jobs/alerts` | Every 30 minutes | Sends new issues, regressions and other alerts to the project's targets |
 | `POST /v2/admin/jobs/crux` | Weekly, optional | Compares speed with the Chrome UX Report |
 
 A fork of the repository can use the `jobs` GitHub workflow: set the `API_URL` variable and the `CRON_SECRET` secret on a `production` environment. Any other scheduler works too, such as cron with `curl -X POST -H "Authorization: Bearer $CRON_SECRET" "$API_URL/v2/admin/jobs/rollup"`.

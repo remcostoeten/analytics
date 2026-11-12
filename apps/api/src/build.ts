@@ -17,8 +17,9 @@ import { apiLinks } from "@spoar/engine/alerts";
 import { findPlugin } from "@spoar/engine/config";
 
 import config from "../analytics.config";
+import { cachedMembers } from "./access/cached-members";
 import { createApp } from "./app";
-import { betterAuthSessions, createAuth } from "./auth/better-auth";
+import { accessCacheSeconds, betterAuthSessions, createAuth } from "./auth/better-auth";
 import { githubDirectory } from "./modules/members/github";
 import type { ElysiaAdapter } from "elysia";
 
@@ -81,6 +82,7 @@ export function buildApi(host: Host) {
     trustedOrigins: dashboardOrigin ? [dashboardOrigin] : [],
     secure: production,
   });
+  const members = cachedMembers(stores.members, () => clock.now(), accessCacheSeconds * 1000);
   const settings = {
     ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
     rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
@@ -102,12 +104,18 @@ export function buildApi(host: Host) {
     clock: () => clock.now(),
     dashboardOrigin,
     docsBase: process.env.DOCS_BASE ?? "https://api.analytics.remcostoeten.nl/v2/openapi",
-    geo: { city: host.geo.city, asn: host.geo.asn, loadMs: host.geo.loadMs },
+    geo: {
+      city: host.geo.city,
+      asn: host.geo.asn,
+      get loadMs() {
+        return host.geo.loadMs;
+      },
+    },
     access: {
       projects: stores.projects,
       tokens: stores.tokens,
-      members: stores.members,
-      sessions: betterAuthSessions(auth, stores.members),
+      members,
+      sessions: betterAuthSessions(auth, members),
       hasher,
       clock: () => clock.now(),
       cronSecret: process.env.CRON_SECRET || null,

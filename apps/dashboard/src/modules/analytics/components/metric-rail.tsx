@@ -25,7 +25,8 @@ type Props = {
   current: MetricView;
 };
 
-const railIntervalMs = 30_000;
+// A period ends at the start of the current UTC hour, so the answer only changes on the hour.
+const railIntervalMs = 5 * 60_000;
 
 const polling = { refetchInterval: railIntervalMs, staleTime: railIntervalMs };
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { accountHintScript } from "@/lib/account";
 import { dashboardUrl } from "@/lib/dashboard-url";
 import { siteLinks } from "@/lib/site-links";
 
@@ -13,6 +14,7 @@ type Props = {
 export function SiteShell({ children }: Props) {
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
+      <script dangerouslySetInnerHTML={{ __html: accountHintScript }} />
       <SiteNav links={siteLinks()} loginHref={dashboardUrl("/sign-in")} />
       <div className="flex flex-1 flex-col pt-20">{children}</div>
     </div>

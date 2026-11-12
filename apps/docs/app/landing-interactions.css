@@ -980,6 +980,24 @@
   display: block;
 }
 
+.landing .nav-account-hint,
+[data-account] .landing .nav-login {
+  display: none;
+}
+
+[data-account] .landing .nav-account-hint {
+  display: inline-flex;
+  font-size: 0.75rem;
+}
+
+.landing .nav-account-hint > span {
+  background: var(--account-avatar, none) center / cover;
+}
+
+.landing .nav-account-hint > span::before {
+  content: var(--account-initial, none);
+}
+
 .landing .json-peek pre {
   max-height: 380px;
   overflow-y: auto;

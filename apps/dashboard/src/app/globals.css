@@ -1904,7 +1904,7 @@
   background: var(--raised);
   padding: 0.75rem;
 
-  & svg {
+  & .heat-stage > svg {
     width: 100%;
     height: auto;
   }
