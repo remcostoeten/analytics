@@ -2,7 +2,10 @@
 
 import { notify } from "@remcostoeten/notifier";
 import type { CreatedProject, Visibility } from "@spoar/contract";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { projectsKey } from "@/modules/analytics/use-projects";
 
 import { apiEndpoint } from "@/shared/api/endpoint";
 import { Button } from "@/shared/ui/button";
@@ -77,6 +80,7 @@ export function CreateProjectForm() {
   const [draft, setDraft] = useState(empty);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
   const [created, setCreated] = useState<CreatedProject | null>(null);
 
   if (created) return <Created project={created} />;
@@ -111,6 +115,7 @@ export function CreateProjectForm() {
           return;
         }
         notify.success(`Created ${result.value.data.id}`);
+        void queryClient.invalidateQueries({ queryKey: projectsKey });
         setCreated(result.value);
       }}
     >

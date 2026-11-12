@@ -2,7 +2,10 @@
 
 import { notify } from "@remcostoeten/notifier";
 import type { Project, UpdateProject } from "@spoar/contract";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { projectsKey } from "@/modules/analytics/use-projects";
 
 import { Button } from "@/shared/ui/button";
 import { ChoiceCards } from "@/shared/ui/choice-cards";
@@ -60,6 +63,7 @@ export function ProjectSettingsForm({ project }: Props) {
   const [draft, setDraft] = useState(() => draftOf(project));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
   const changes = changesOf(project, draft);
   const dirty = Object.keys(changes).length > 0;
 
@@ -79,6 +83,7 @@ export function ProjectSettingsForm({ project }: Props) {
           return;
         }
         notify.success("Settings saved");
+        void queryClient.invalidateQueries({ queryKey: projectsKey });
       }}
     >
       <section className="grid gap-4">

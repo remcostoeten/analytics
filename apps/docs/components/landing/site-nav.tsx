@@ -5,7 +5,13 @@ import Link from "next/link";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/logo";
-import { fetchAccount, readStoredAccount, storeAccount } from "@/lib/account";
+import {
+  clearAccountHint,
+  fetchAccount,
+  readStoredAccount,
+  sameAccount,
+  storeAccount,
+} from "@/lib/account";
 import type { Account } from "@/lib/account";
 
 import { AccountMenu } from "./account-menu";
@@ -35,6 +41,7 @@ export function SiteNav({ links, loginHref }: Props) {
 
   useLayoutEffect(() => {
     setAccount(readStoredAccount());
+    clearAccountHint();
   }, []);
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export function SiteNav({ links, loginHref }: Props) {
     async function check() {
       const next = await fetchAccount(controller.signal);
       if (next === undefined) return;
-      setAccount(next);
+      setAccount((current) => (sameAccount(current, next) ? current : next));
       storeAccount(next);
     }
     void check();
@@ -83,12 +90,17 @@ export function SiteNav({ links, loginHref }: Props) {
           {account ? (
             <AccountMenu account={account} onSignedOut={() => setAccount(null)} />
           ) : (
-            <a href={loginHref} className="pill-ghost">
-              Log in
-            </a>
+            <>
+              <a href={loginHref} className="pill-ghost nav-login">
+                Log in
+              </a>
+              <span aria-hidden="true" className="nav-account-hint pill-ghost size-8 px-0!">
+                <span className="flex size-6 items-center justify-center rounded-full" />
+              </span>
+            </>
           )}
           <Link href="/docs/getting-started/quick-start" className="pill-dark">
-            Get started
+            Insight Dashboard
           </Link>
           <button
             type="button"

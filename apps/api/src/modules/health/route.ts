@@ -28,7 +28,10 @@ const HealthDetails = Type.Composite([
         asn: Type.Union([Type.String(), Type.Null()], {
           description: "Path of the MaxMind ASN database, or null when it did not load.",
         }),
-        loadMs: Type.Number({ description: "Milliseconds the databases took to load." }),
+        loadMs: Type.Number({
+          description:
+            "Milliseconds the databases took to load, 0 until the first lookup reads them.",
+        }),
       },
       { description: "The geo databases this instance loaded." },
     ),

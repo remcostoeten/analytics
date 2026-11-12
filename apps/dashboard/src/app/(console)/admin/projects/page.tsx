@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Link } from "@/shared/ui/link";
 
 import { ProjectList } from "@/modules/admin/components/project-list";
+import { ProjectsSync } from "@/modules/analytics/components/projects-sync";
 import { listProjects } from "@/modules/analytics/reads";
 import { AccessNotice } from "@/modules/session/components/access-notice";
 import { readAccess } from "@/modules/session/session";
@@ -24,6 +25,7 @@ export default async function Page() {
   const projects = listed.value.filter(withSettings);
   return (
     <>
+      <ProjectsSync projects={listed} />
       <Heading
         title="Projects"
         meta={`${projects.length} project${projects.length === 1 ? "" : "s"}`}

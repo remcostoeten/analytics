@@ -27,7 +27,7 @@ export function sqlShowcaseEnabled() {
 /**
  * @name runSqlPreset
  * @description Runs one preset against this site's project over the showcase window, with the
- * token held on the server, and caches the answer for a minute so every visitor shares one run
+ * token held on the server, and caches the answer for an hour so every visitor shares one run
  * per preset and the token's 30 queries a minute are never spent.
  *
  * @example
@@ -35,7 +35,7 @@ export function sqlShowcaseEnabled() {
  */
 export async function runSqlPreset(id: SqlPresetId): Promise<SqlOutcome> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hours");
   const preset = findSqlPreset(id);
   const token = sqlToken();
   if (!preset || !token) return { status: "failed", message: "SQL on this page is not set up." };

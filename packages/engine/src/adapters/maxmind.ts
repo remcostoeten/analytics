@@ -41,7 +41,8 @@ function toRecord(city: Nullable<CityResponse>, asn: Nullable<AsnResponse>): Geo
  * @name maxmindGeo
  * @description A `GeoLookup` over MaxMind City and ASN databases. It takes the file contents, not
  * paths, so the engine never touches the file system; the host reads the files. A malformed
- * address gives an empty record.
+ * address gives an empty record. The last address is remembered, because every event of a batch
+ * shares one and both the geo and the network enricher ask for it.
  *
  * @example
  * const geo = maxmindGeo(readFileSync("GeoLite2-City.mmdb"), readFileSync("GeoLite2-ASN.mmdb"));
@@ -52,5 +53,17 @@ export function maxmindGeo(city: Buffer, asn: Nullable<Buffer>): GeoLookup {
   const asnReader = asn ? new Reader<AsnResponse>(asn) : null;
   const findCity = safely((ip) => cityReader.get(ip));
   const findAsn = safely((ip) => asnReader?.get(ip) ?? null);
-  return { lookup: (ip) => toRecord(findCity(ip), findAsn(ip)) };
+  const last: { ip: Nullable<string>; record: GeoRecord } = {
+    ip: null,
+    record: toRecord(null, null),
+  };
+  return {
+    lookup: (ip) => {
+      if (last.ip !== ip) {
+        last.record = toRecord(findCity(ip), findAsn(ip));
+        last.ip = ip;
+      }
+      return last.record;
+    },
+  };
 }

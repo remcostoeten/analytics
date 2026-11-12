@@ -25,8 +25,9 @@ async function readMemberSession(): Promise<AuthSession> {
  * @description Asks the API who the forwarded cookie belongs to. Without a session cookie the
  * answer is signed out and the API is not called, so an anonymous page render costs no session
  * read. A failed call reads as signed out too, so the page renders the sign-in prompt instead of
- * an error. Cached per session for five minutes in the browser, so the top bar, sidebar and
- * access checks render with a route's prefetched shell; signing out reloads the page.
+ * an error. Cached per session for five minutes in the browser, so the admin pages' access
+ * checks render with a route's prefetched shell; the top bar and sidebar ask from the browser
+ * through `useSessionRead`. Signing out reloads the page.
  *
  * @example
  * const session = await readSession();

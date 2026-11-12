@@ -40,6 +40,7 @@ import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
 import { VitalsScene } from "@/components/landing/vitals-live";
 import { Logo } from "@/components/logo";
+import { accountHintScript } from "@/lib/account";
 import { apiEndpoint } from "@/lib/api-endpoint";
 import { dashboardUrl } from "@/lib/dashboard-url";
 import { showcaseProject, showcaseQuery } from "@/lib/showcase";
@@ -290,6 +291,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      <script dangerouslySetInnerHTML={{ __html: accountHintScript }} />
       <RevealObserver />
       <SiteNav links={siteLinks()} loginHref={dashboardUrl("/sign-in")} />
 

@@ -50,14 +50,14 @@ export function showcaseProject() {
 /**
  * @name showcaseQuery
  * @description The `from` and `to` query string of the showcase window for links to the raw
- * JSON, cached for a minute so a prerendered page never reads the clock itself.
+ * JSON, cached for an hour so a prerendered page never reads the clock itself.
  *
  * @example
  * `${endpoint}/v2/projects/docs/stats?${await showcaseQuery()}`
  */
 export async function showcaseQuery() {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hours");
   const { from, to } = showcaseWindow();
   return `from=${from.toISOString()}&to=${to.toISOString()}`;
 }
@@ -69,7 +69,7 @@ function scope(project: string) {
 /**
  * @name readShowcase
  * @description This site's own numbers for the last 30 days, read from the public API and cached
- * for a minute: the stats, visitors per day, the top pages and the top referrers. A read that
+ * for an hour: the stats, visitors per day, the top pages and the top referrers. A read that
  * fails leaves its part empty, so the page still renders when the API is unreachable at build.
  *
  * @example
@@ -77,7 +77,7 @@ function scope(project: string) {
  */
 export async function readShowcase(): Promise<Showcase> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hours");
   const project = showcaseProject();
   const reads = scope(project);
   const [stats, series, pages, sources] = await Promise.all([
@@ -106,7 +106,7 @@ export async function readShowcase(): Promise<Showcase> {
  */
 export async function readProjects(): Promise<ShowcaseProjects> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hours");
   const api = createClient({ endpoint: apiEndpoint() });
   const list = await api.projects.list();
   if (!list.ok) return { projects: [], list: null };

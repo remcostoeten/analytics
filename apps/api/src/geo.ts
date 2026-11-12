@@ -42,19 +42,34 @@ function firstExisting(paths: string[]) {
 
 /**
  * @name openGeo
- * @description Opens the first City and ASN databases found and builds the engine's
- * `GeoLookup`. Without a City database every lookup is empty, so ingest still works and geo
- * columns stay null.
+ * @description Finds the first City and ASN databases and builds the engine's `GeoLookup`. The
+ * files are read on the first lookup, not here, so an instance that only serves reads never pays
+ * for them; `loadMs` is 0 until then. Without a City database every lookup is empty, so ingest
+ * still works and geo columns stay null.
  *
  * @example
  * const geo = openGeo(candidatePaths("GeoLite2-City.mmdb", where), candidatePaths("GeoLite2-ASN.mmdb", where));
  */
 export function openGeo(cityPaths: string[], asnPaths: string[]): GeoSource {
-  const started = performance.now();
   const city = firstExisting(cityPaths);
-  const asn = firstExisting(asnPaths);
-  const lookup = city
-    ? maxmindGeo(readFileSync(city), asn ? readFileSync(asn) : null)
+  const asn = city ? firstExisting(asnPaths) : null;
+  const loaded: { lookup: Nullable<GeoLookup>; ms: number } = { lookup: null, ms: 0 };
+  function load(file: string) {
+    const started = performance.now();
+    const lookup = maxmindGeo(readFileSync(file), asn ? readFileSync(asn) : null);
+    loaded.lookup = lookup;
+    loaded.ms = Math.round(performance.now() - started);
+    return lookup;
+  }
+  const lookup: GeoLookup = city
+    ? { lookup: (ip) => (loaded.lookup ?? load(city)).lookup(ip) }
     : memoryGeo(new Map());
-  return { lookup, city, asn: city ? asn : null, loadMs: Math.round(performance.now() - started) };
+  return {
+    lookup,
+    city,
+    asn,
+    get loadMs() {
+      return loaded.ms;
+    },
+  };
 }

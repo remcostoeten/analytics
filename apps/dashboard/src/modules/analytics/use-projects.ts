@@ -12,12 +12,14 @@ export type ProjectsRead =
   | { status: "error"; message: string }
   | { status: "ok"; projects: PublicProject[] };
 
+export type ProjectsData = Result<PublicProject[], string>;
+
 const projectsStaleMs = 5 * 60_000;
 
 /**
  * @name useProjects
- * @description Every project the browser may read, from the cache the sidebar seeds on the
- * server, refreshed every five minutes.
+ * @description Every project the browser may read, asked from the browser and refreshed every
+ * five minutes. The sidebar and every view share the one answer.
  *
  * @example
  * const projects = useProjects();
@@ -26,7 +28,7 @@ const projectsStaleMs = 5 * 60_000;
 export function useProjects(): ProjectsRead {
   const read = useQuery({
     queryKey: projectsKey,
-    queryFn: async (): Promise<Result<PublicProject[], string>> => {
+    queryFn: async (): Promise<ProjectsData> => {
       const listed = await browserClient().projects.list();
       return listed.ok ? ok(listed.value.data) : err(listed.error.message);
     },

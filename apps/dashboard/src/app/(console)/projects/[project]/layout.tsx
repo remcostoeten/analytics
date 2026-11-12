@@ -1,23 +1,16 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { ProjectConsole } from "@/modules/console/components/project-console";
-import { readSession } from "@/modules/session/session";
+import { ProjectConsoleSlot } from "@/modules/console/components/project-console-slot";
 
-type Props = { children: ReactNode; params: Promise<{ project: string }> };
+type Props = { children: ReactNode };
 
-async function Console({ params }: Pick<Props, "params">) {
-  const [{ project }, session] = await Promise.all([params, readSession()]);
-  const canQuery = session.role !== null && session.role !== "viewer";
-  return canQuery ? <ProjectConsole project={project} /> : null;
-}
-
-export default function Layout({ children, params }: Props) {
+export default function Layout({ children }: Props) {
   return (
     <>
       {children}
       <Suspense fallback={null}>
-        <Console params={params} />
+        <ProjectConsoleSlot />
       </Suspense>
     </>
   );

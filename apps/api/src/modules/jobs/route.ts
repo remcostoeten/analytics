@@ -10,7 +10,7 @@ import type {
 } from "@spoar/engine";
 import { ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
-import { runAlerts } from "@spoar/engine/alerts";
+import { runAlerts, runSpeedAlerts } from "@spoar/engine/alerts";
 import type { Nullable } from "@spoar/shared/semantic";
 import { Elysia, t } from "elysia";
 
@@ -54,7 +54,7 @@ function startOfDay(at: Date) {
  * @description Scheduled jobs behind the cron secret, each recorded in the job history:
  * `rollup?days=2` runs the session layer of bot detection over the previous UTC day, then rolls
  * the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops raw speed rows past 30
- * days; `cleanup` deletes events, sessions and raw speed rows past each project's retention,
+ * days, and with alerts on queues speed drops; `cleanup` deletes events, sessions and raw speed rows past each project's retention,
  * 50,000 of each per run, plus week-old log lines and expired widget tokens; `alerts` queues new
  * issues and regressions and sends due deliveries to the alert targets; `crux` compares each
  * project's p75 with the Chrome UX Report. With `logs`, every run also writes a `jobs` line to
@@ -123,6 +123,20 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
     return scored.ok ? ok(scored.value.velocity + scored.value.fanout) : scored;
   }
 
+  async function queueSpeedDrops(now: Date): Promise<Result<{ queued: number }, EngineError>> {
+    if (!options.alerts) return ok({ queued: 0 });
+    return runSpeedAlerts(
+      options.alerts.plugin,
+      {
+        issues: options.issues,
+        speed: options.speed,
+        alerts: options.alerts.store,
+        links: options.alerts.links,
+      },
+      now,
+    );
+  }
+
   const route = { access: "cron" as const, response: { 200: JobResult, ...errorResponses } };
   const tags = ["Jobs"];
 
@@ -150,6 +164,8 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
             new Date(now.getTime() - rawVitalDays * dayMs),
           );
           if (!result.ok) return result;
+          const slower = await queueSpeedDrops(now);
+          if (!slower.ok) return slower;
           return ok({
             startDay: from.toISOString().slice(0, 10),
             days,
@@ -171,7 +187,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Roll up speed",
           description:
-            "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+            "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
           tags,
         },
       },
@@ -223,7 +239,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Queue and send alerts",
           description:
-            "Queues new issues and regressions, up to 100 per run, and speed drops (yesterday's Real Experience Score against the 7 days before it), as one delivery per subscribed alert target, then sends every due delivery, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
+            "Queues new issues and regressions, up to 100 per run, as one delivery per subscribed alert target, then sends every due delivery, speed drops the rollup job queued included, one mail or request per target, retrying failures by the retry policy; `rowsWritten` is the number sent. Answers 503 when `alerts()` is not in the config. Needs the cron secret.",
           tags,
         },
       },

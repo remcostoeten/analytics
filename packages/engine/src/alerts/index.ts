@@ -10,7 +10,7 @@ export { alertEventNames, alertLabels, defaultAlertEvents } from "./events";
 export type { AlertEvents, AlertOf } from "./events";
 export { apiLinks } from "./links";
 export type { AlertLinks } from "./links";
-export { alerts, runAlerts } from "./plugin";
+export { alerts, runAlerts, runSpeedAlerts } from "./plugin";
 export type { AlertsJob, AlertsOptions, AlertsPlugin, AlertsRun } from "./plugin";
 export { queueIssueAlerts } from "./queue-issues";
 export { defaultSpeedDrop, queueSpeedAlerts } from "./queue-speed";

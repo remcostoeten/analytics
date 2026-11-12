@@ -86,7 +86,7 @@ alerts({
 | Option | Default | Means |
 | --- | --- | --- |
 | `attempts` | `5` | Tries after the first failure; `0` turns retrying off |
-| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` retries on every job run (10 minutes) |
+| `backoff` | `"exponential"` | `"exponential"` waits 1, 5, 30, 120 and 720 minutes; `"fixed"` retries on every job run (30 minutes) |
 | `maxAge` | `"24h"` | An alert older than this is not tried again and turns `failed`; a `Duration` like `"30m"`, `"6h"`, `"2d"` |
 
 A channel's own `retry` overrides the plugin's, key by key. The docs recommend a short `maxAge` for chat channels, where a late alert is noise, and more `attempts` for a webhook that feeds another system.
@@ -234,7 +234,7 @@ The contract is the single source of every shape: the API validates with it, Ope
 
 ### Flow
 
-Both steps run in `POST /v2/admin/jobs/alerts`, which `jobs.yml` already calls every 10 minutes.
+Both steps run in `POST /v2/admin/jobs/alerts`, which `jobs.yml` calls every 30 minutes (every 10 until 11 November 2026, which woke the database 144 times a day). The `speed.drop` producer is the exception: its answer changes once a day, so the daily `rollup` job queues it and the next alerts run sends it.
 
 1. **Queue.** Producers turn what happened into alert events. For each event, one delivery per enabled target of that project subscribed to it, inserted with `ON CONFLICT DO NOTHING` on `(target_id, event_name, subject_id)`, so a retried run never queues twice. `subject_id` is the issue id for `issue.new`, the issue id with its `regressed_at` for `issue.regression`, so every regression alerts once, and the project with the UTC day for `speed.drop`, so a drop alerts once a day.
 2. **Dispatch.** Due deliveries are grouped per target into a batch, and the target's channel sends the batch as one mail or one request. Success marks them `sent`; failure keeps them `pending` with the error and the next attempt from the retry policy, until the policy runs out and they turn `failed`. One failing target never holds back another.
