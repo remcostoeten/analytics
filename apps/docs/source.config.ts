@@ -1,12 +1,30 @@
+import type { LLMsOptions } from "fumadocs-core/mdx-plugins/remark-llms";
 import { metaSchema, pageSchema } from "fumadocs-core/source/schema";
 import { defineCollections, defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
 
 import { codeThemes } from "./lib/code-theme";
 
+type MarkdownNode = Parameters<NonNullable<LLMsOptions["filterElement"]>>[0];
+
+const interactiveOnly = new Set(["DashboardPreview", "DevWidgetToggle", "LiveRead"]);
+const wrappers = new Set(["Accordions", "Cards", "Step", "Steps", "Tabs"]);
+
+function markdownElement(node: MarkdownNode) {
+  if (node.type === "mdxjsEsm") return false;
+  if (node.type !== "mdxJsxFlowElement" && node.type !== "mdxJsxTextElement") return true;
+  if (interactiveOnly.has(node.name ?? "")) return false;
+  return wrappers.has(node.name ?? "") ? "children-only" : true;
+}
+
 export const docs = defineDocs({
   dir: "content/docs",
-  docs: { schema: pageSchema },
+  docs: {
+    schema: pageSchema,
+    postprocess: {
+      includeProcessedMarkdown: { headingIds: false, filterElement: markdownElement },
+    },
+  },
   meta: { schema: metaSchema },
 });
 

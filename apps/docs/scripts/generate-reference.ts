@@ -3,7 +3,7 @@ import { rm } from "node:fs/promises";
 import { generateFiles } from "fumadocs-openapi";
 import type { OutputEntry, OutputFile, OutputGroup } from "fumadocs-openapi";
 
-import { openapi } from "../lib/openapi";
+import { kebab, openapi, operationSlug } from "../lib/openapi";
 
 type BeforeWrite = {
   readonly generatedEntries: Record<string, OutputEntry[]>;
@@ -13,16 +13,6 @@ const output = "./content/docs/reference";
 const base = "/docs/reference";
 const { bundled } = await openapi.getSchema("../api/openapi.json");
 const tagNames = (bundled.tags ?? []).map((tag) => tag.name);
-
-function kebab(value: string) {
-  return value
-    .replaceAll("{", "")
-    .replaceAll("}", "")
-    .split(/[^a-zA-Z0-9]+/)
-    .filter((part) => part.length > 0)
-    .join("-")
-    .toLowerCase();
-}
 
 function slugOf(path: string) {
   return path.endsWith(".mdx") ? path.slice(0, -4) : path;
@@ -107,7 +97,7 @@ await generateFiles({
   groupBy: "tag",
   name: (entry) =>
     entry.type === "operation"
-      ? kebab(`${entry.item.method} ${entry.item.path}`)
+      ? operationSlug(entry.item.method, entry.item.path)
       : kebab(entry.item.name),
   slugify: kebab,
   includeDescription: true,

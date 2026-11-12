@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"],
-        allow: ["/", "/docs", "/llms.txt"],
+        allow: ["/", "/docs", "/llms.txt", "/llms-full.txt"],
         disallow: ["/_ra", "/api/search", "/dashboard"],
       },
     ],
