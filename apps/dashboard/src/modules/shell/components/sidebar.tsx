@@ -36,6 +36,7 @@ import { useHoverIndicator } from "./use-hover-indicator";
 
 type Props = {
   projects: PublicProject[];
+  projectsKnown: boolean;
   isAdmin: boolean;
   isOwner: boolean;
   signedIn: boolean;
@@ -150,11 +151,15 @@ function NavItem({ item, open, onToggle }: NavItemProps) {
   );
 }
 
-export function Sidebar({ projects, isAdmin, isOwner, signedIn }: Props) {
+export function Sidebar({ projects, projectsKnown, isAdmin, isOwner, signedIn }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [toggled, setToggled] = useState<{ [label: string]: boolean }>({});
-  const project = currentProject(pathname);
+  const routed = currentProject(pathname);
+  const project =
+    routed !== null && (!projectsKnown || projects.some((entry) => entry.id === routed))
+      ? routed
+      : null;
   const encoded = project ? encodeURIComponent(project) : null;
   const { navRef, indicatorRef } = useHoverIndicator<HTMLElement>();
 

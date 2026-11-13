@@ -5,11 +5,12 @@ import type { EventRow } from "@spoar/contract";
 import { JsonBlock } from "@/shared/ui/json-block";
 import { Link } from "@/shared/ui/link";
 
+import { ReadNotice } from "@/modules/session/components/read-notice";
 import { ghostSizes } from "@/modules/shell/components/ghost-sizes";
 import { GhostSection } from "@/modules/shell/components/ghost";
 import { useReadOf } from "@/shared/query/read";
 
-import { formatDimensionValue } from "../format";
+import { formatDevice, formatDimensionValue } from "../format";
 import { eventOutcome } from "../logs";
 import { eventsQuery } from "../queries";
 import { hasFilters, viewQuery } from "../view-state";
@@ -63,7 +64,7 @@ function Detail({ row, base, state }: { row: EventRow; base: string; state: View
         <Field label="Region" value={row.geo.region} />
         <Field label="City" value={row.geo.city} />
         <Field label="Timezone" value={row.geo.timezone} />
-        <Field label="Device" value={row.device.type} />
+        <Field label="Device" value={formatDevice(row.device.type)} />
         <Field
           label="Browser"
           value={[row.device.browser, row.device.browserVersion].filter(Boolean).join(" ")}
@@ -100,13 +101,7 @@ export function EventLog({ scope, state, path, base, cursor }: Props) {
   if (events.data === undefined)
     return <GhostSection kind="list" height={ghostSizes.logsList} rows={10} />;
   const read = events.data;
-  if (!read.ok) {
-    return (
-      <section className="panel-section">
-        <p className="text-sm text-err">Could not read events: {read.error.message}</p>
-      </section>
-    );
-  }
+  if (!read.ok) return <ReadNotice error={read.error} what="events" />;
   const query = viewQuery(state);
   const rows = read.value.data;
   return (
@@ -163,7 +158,7 @@ export function EventLog({ scope, state, path, base, cursor }: Props) {
                 </span>
                 <span className="truncate">{row.device.browser ?? "–"}</span>
                 <span className="truncate">{row.device.os ?? "–"}</span>
-                <span className="truncate capitalize">{row.device.type}</span>
+                <span className="truncate">{formatDevice(row.device.type)}</span>
                 <span className="text-right font-mono tabular-nums">{row.bot.score}</span>
               </summary>
               <Detail row={row} base={base} state={state} />

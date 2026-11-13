@@ -13,6 +13,7 @@ export function SidebarSlot() {
   return (
     <Sidebar
       projects={projects.status === "ok" ? projects.projects : []}
+      projectsKnown={projects.status === "ok"}
       isAdmin={session.isAdmin}
       isOwner={session.role === "owner"}
       signedIn={session.user !== null}

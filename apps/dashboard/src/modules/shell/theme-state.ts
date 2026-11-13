@@ -1,6 +1,7 @@
 "use client";
 
 import { noop } from "@spoar/shared/noop";
+import type { Nullable } from "@spoar/shared/semantic";
 import { useSyncExternalStore } from "react";
 
 import { themeAttribute, themeStorageKey } from "./theme-bootstrap";
@@ -21,11 +22,15 @@ function serverTheme(): Theme {
 }
 
 function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute(themeAttribute, theme);
+  const root = document.documentElement;
+  root.classList.remove("light", "dark");
+  root.classList.add(theme);
+  root.setAttribute(themeAttribute, theme);
+  root.style.colorScheme = theme;
   listeners.forEach((listener) => listener());
 }
 
-function storedTheme(): Theme | null {
+function storedTheme(): Nullable<Theme> {
   try {
     const stored = localStorage.getItem(themeStorageKey);
     return stored === "light" || stored === "dark" ? stored : null;
@@ -34,25 +39,41 @@ function storedTheme(): Theme | null {
   }
 }
 
-function followSystem(event: MediaQueryListEvent) {
+function preferredTheme(): Theme {
+  return storedTheme() ?? (systemDark().matches ? "dark" : "light");
+}
+
+function followSystem() {
   if (storedTheme()) return;
-  applyTheme(event.matches ? "dark" : "light");
+  applyTheme(preferredTheme());
+}
+
+function followOtherTabs(event: StorageEvent) {
+  if (event.key !== null && event.key !== themeStorageKey) return;
+  applyTheme(preferredTheme());
 }
 
 function subscribe(listener: () => void) {
-  if (listeners.size === 0) systemDark().addEventListener("change", followSystem);
+  if (listeners.size === 0) {
+    systemDark().addEventListener("change", followSystem);
+    window.addEventListener("storage", followOtherTabs);
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0) systemDark().removeEventListener("change", followSystem);
+    if (listeners.size > 0) return;
+    systemDark().removeEventListener("change", followSystem);
+    window.removeEventListener("storage", followOtherTabs);
   };
 }
 
 /**
  * @name setTheme
- * @description Switches the console between the light and dark palette, remembers
- * the choice in localStorage and notifies every mounted `useTheme` subscriber.
- * Until a choice is stored the console follows the operating system setting.
+ * @description Switches the console between the light and dark palette and
+ * remembers the choice under the `theme` localStorage key the docs site also
+ * uses, so both apps on the origin share one preference. Notifies every mounted
+ * `useTheme` subscriber. Until a choice is stored, or while the stored value is
+ * `system`, the console follows the operating system setting.
  *
  * @example
  * setTheme("dark");

@@ -20,6 +20,8 @@ type Stage = "idle" | "thrown" | "sent" | "dropped" | "grouped";
 
 type Fresh = { issue: Issue; since: number };
 
+type Blocked = "sign-in" | "unreachable";
+
 const card =
   "rounded-xl border border-[var(--glass-edge)] bg-surface/90 shadow-[0_14px_30px_-16px_rgb(var(--shade)/0.45)] backdrop-blur-sm";
 
@@ -43,69 +45,66 @@ function seenSince(issue: Issue, since: number) {
   return new Date(issue.lastSeen).getTime() >= since;
 }
 
+function blockedBy(status: number | null): Blocked {
+  return status === 401 || status === 403 ? "sign-in" : "unreachable";
+}
+
 function useIssues(endpoint: string, project: string, since: number | null) {
   const read = useMemo(() => {
     const scope = createClient({ endpoint }).project(project);
     return () => scope.issues({ status: "open", limit: 50 });
   }, [endpoint, project]);
   const [issues, setIssues] = useState<Issue[] | null>(null);
-  const [readable, setReadable] = useState(true);
+  const [blocked, setBlocked] = useState<Blocked | null>(null);
   const [fresh, setFresh] = useState<Fresh | null>(null);
 
   useEffect(() => {
+    if (since === null || blocked) return;
+    const from = since;
     let active = true;
-    void read().then((list) => {
-      if (!active) return;
-      if (list.ok) setIssues(list.value.data);
-      else setReadable(false);
-    });
-    return () => {
-      active = false;
-    };
-  }, [read]);
-
-  useEffect(() => {
-    if (since === null) return;
     let attempts = 0;
-    const timer = window.setInterval(() => {
+    let timer = 0;
+    function poll() {
       attempts += 1;
       void read().then((list) => {
+        if (!active) return;
         if (!list.ok) {
-          setReadable(false);
-          window.clearInterval(timer);
+          setBlocked(blockedBy(list.error.status));
           return;
         }
         setIssues(list.value.data);
-        const match = list.value.data.find((issue) => seenSince(issue, since));
-        if (match) {
-          setFresh({ issue: match, since });
-          window.clearInterval(timer);
-        } else if (attempts >= repolls) {
-          window.clearInterval(timer);
-        }
+        const match = list.value.data.find((issue) => seenSince(issue, from));
+        if (match) setFresh({ issue: match, since: from });
+        else if (attempts < repolls) timer = window.setTimeout(poll, repollMs);
       });
-    }, repollMs);
-    return () => window.clearInterval(timer);
-  }, [read, since]);
+    }
+    poll();
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [read, since, blocked]);
 
-  return { issues, readable, fresh: fresh?.since === since ? fresh.issue : null };
+  return { issues, blocked, fresh: fresh?.since === since ? fresh.issue : null };
 }
 
 function Status({
   stage,
   issue,
-  readable,
+  blocked,
   reason,
 }: {
   stage: Stage;
   issue: Issue | null;
-  readable: boolean;
+  blocked: Blocked | null;
   reason: string | null;
 }) {
   if (stage === "dropped") return <>dropped: {reason}</>;
   if (!tracked && stage !== "idle") return <>no project in this build, nothing sent</>;
   if (stage === "grouped" && issue) return <>{issue.culprit ?? issue.title}</>;
-  if (stage === "sent" && !readable) return <>issues are not public for this project</>;
+  if (stage === "grouped" && blocked === "sign-in")
+    return <>your error, from this tab; the issue list needs sign-in</>;
+  if (stage === "grouped") return <>your error, from this tab; the issue list is unreachable</>;
   return <>uncaught, on purpose</>;
 }
 
@@ -114,13 +113,17 @@ export function ErrorsScene({ endpoint, project }: Props) {
   const [stage, setStage] = useState<Stage>("idle");
   const [since, setSince] = useState<number | null>(null);
   const [reason, setReason] = useState<string | null>(null);
-  const { issues, readable, fresh } = useIssues(endpoint, project, stage === "sent" ? since : null);
-  const shown: Stage = fresh ? "grouped" : stage;
+  const [sentErrors, setSentErrors] = useState(0);
+  const { issues, blocked, fresh } = useIssues(endpoint, project, stage === "sent" ? since : null);
+  const local = !fresh && stage === "sent" && blocked !== null;
+  const shown: Stage = fresh || local ? "grouped" : stage;
 
   useEffect(
     () =>
       analytics.on("send", (envelope) => {
-        if (!envelope.events.some((event) => event.name === "error")) return;
+        const errors = envelope.events.filter((event) => event.name === "error").length;
+        if (errors === 0) return;
+        setSentErrors((count) => count + errors);
         setStage((current) => (current === "thrown" ? "sent" : current));
       }),
     [analytics],
@@ -168,7 +171,11 @@ export function ErrorsScene({ endpoint, project }: Props) {
               TypeError
             </span>
             <span className="font-mono text-[0.6rem] text-white/50">
-              {fresh ? `${fresh.id} · ${fresh.count} events` : "not thrown yet"}
+              {fresh
+                ? `${fresh.id} · ${fresh.count} events`
+                : local
+                  ? `this tab · ${sentErrors} sent`
+                  : "not thrown yet"}
             </span>
           </div>
           <div className="px-4 py-3">
@@ -207,13 +214,13 @@ export function ErrorsScene({ endpoint, project }: Props) {
               {shown === "idle" ? "Throw a TypeError" : "Throw another"}
             </button>
             <span className="truncate font-mono text-[0.58rem] text-white/50">
-              <Status stage={shown} issue={fresh} readable={readable} reason={reason} />
+              <Status stage={shown} issue={fresh} blocked={blocked} reason={reason} />
             </span>
           </div>
         </div>
       </div>
       {issues ? (
-        <Sticker className="top-6 left-[6%]" tilt={-5} delay={0.7}>
+        <Sticker className="top-4 left-[6%] sm:top-6" tilt={-5} delay={0.7}>
           <div
             className={`${card} flex items-center gap-1.5 px-2.5 py-1.5 text-[0.62rem] font-medium text-fg`}
           >
@@ -224,13 +231,13 @@ export function ErrorsScene({ endpoint, project }: Props) {
           </div>
         </Sticker>
       ) : null}
-      <Sticker className="right-[6%] bottom-7" tilt={4} delay={1.5}>
+      <Sticker className="right-[6%] bottom-4 sm:bottom-7" tilt={4} delay={1.5}>
         <div className={`${card} flex items-center gap-1.5 px-2.5 py-1.5 text-[0.62rem] text-fg`}>
           <ShieldIcon className="size-3.5 text-[var(--violet-ink)]" />
           Bot traffic opens no issues
         </div>
       </Sticker>
-      <Sticker className="bottom-9 left-[7%]" tilt={-3} delay={2.2}>
+      <Sticker className="bottom-9 left-[7%] hidden sm:block" tilt={-3} delay={2.2}>
         <div className="rounded-full bg-[#ffe6a8] px-2.5 py-1 font-mono text-[0.58rem] text-[#7a5310] shadow-[0_10px_20px_-12px_rgb(120_80_20/0.6)]">
           one fingerprint across deploys
         </div>

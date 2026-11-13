@@ -12,7 +12,13 @@ import { useReadOf } from "@/shared/query/read";
 import { EmptyState, SearchIllustration } from "@/shared/ui/empty-state";
 import { DesktopIcon, GlobeIcon, MobileIcon, TabletIcon } from "@/shared/ui/icons";
 
-import { formatDateTime, formatDimensionValue, formatMetric, formatRelative } from "../format";
+import {
+  formatDateTime,
+  formatDevice,
+  formatDimensionValue,
+  formatMetric,
+  formatRelative,
+} from "../format";
 import { visitorsQuery } from "../queries";
 import { hasFilters, viewQuery } from "../view-state";
 import type { ViewState } from "../view-state";
@@ -75,7 +81,8 @@ function Row({ row, href, max }: { row: VisitorRow; href: string; max: number })
         <span className="visitor-device">
           <span className="text-muted">{deviceIcons[row.device]}</span>
           <span className="truncate">
-            {row.browser ?? (row.device === "unknown" ? "Unknown browser" : row.device)}
+            {row.browser ??
+              (row.device === "unknown" ? "Unknown browser" : formatDevice(row.device))}
           </span>
         </span>
         <Count value={row.sessions} max={max} />

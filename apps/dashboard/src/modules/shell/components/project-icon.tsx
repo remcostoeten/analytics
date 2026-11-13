@@ -1,11 +1,13 @@
 "use client";
 
+import type { Nullable } from "@spoar/shared/semantic";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { CSSProperties } from "react";
 
-type Props = { id: string; name: string; domain: string };
+import { basePath } from "@/shared/config/site";
 
-const localHosts = /^(localhost|127\.|0\.0\.0\.0|\[::1\])/;
+type Props = { id: string; name: string; domain: string };
 
 function projectHue(id: string) {
   let hash = 0;
@@ -13,41 +15,51 @@ function projectHue(id: string) {
   return hash;
 }
 
-function faviconUrl(domain: string) {
-  const host = domain.replace(/^https?:\/\//, "").split("/")[0] ?? "";
-  if (!host || localHosts.test(host)) return null;
-  return `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico`;
+async function readIcon(id: string, domain: string) {
+  const query = new URLSearchParams({ domain });
+  const response = await fetch(`${basePath}/project-icon/${encodeURIComponent(id)}?${query}`);
+  return response.ok ? response.text() : "";
 }
 
 export function ProjectIcon({ id, name, domain }: Props) {
-  const [state, setState] = useState<"loading" | "loaded" | "failed">("loading");
-  const src = faviconUrl(domain);
-  const showImage = src !== null && state !== "failed";
+  const icon = useQuery({
+    queryKey: ["spoar", "project-icon", id, domain],
+    queryFn: () => readIcon(id, domain),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const [loaded, setLoaded] = useState<Nullable<string>>(null);
+  const src = icon.data?.startsWith("data:image/") ? icon.data : null;
+  const state =
+    src !== null && loaded === src
+      ? "loaded"
+      : src === null && !icon.isPending
+        ? "failed"
+        : "loading";
 
   return (
     <span
       className="nav-avatar"
-      data-state={showImage ? state : "failed"}
+      data-state={state}
       style={{ "--avatar-hue": projectHue(id) } as CSSProperties}
       aria-hidden="true"
     >
       <span className="nav-avatar-letter">{name.slice(0, 1).toUpperCase()}</span>
-      {showImage ? (
+      {src === null ? null : (
         <img
           ref={(image) => {
-            if (image?.complete) setState(image.naturalWidth > 0 ? "loaded" : "failed");
+            if (image?.complete && image.naturalWidth > 0) setLoaded(src);
           }}
           src={src}
           alt=""
           width={16}
           height={16}
-          loading="lazy"
           decoding="async"
-          referrerPolicy="no-referrer"
-          onLoad={() => setState("loaded")}
-          onError={() => setState("failed")}
+          onLoad={() => setLoaded(src)}
         />
-      ) : null}
+      )}
     </span>
   );
 }

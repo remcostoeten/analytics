@@ -113,12 +113,12 @@ export function PrivacyScene() {
           <span className="text-[0.64rem] font-medium text-fg">visitor cookies</span>
         </div>
       </Sticker>
-      <Sticker className="bottom-8 left-[9%]" tilt={4} delay={1}>
+      <Sticker className="bottom-16 left-[6%] sm:bottom-8 sm:left-[9%]" tilt={4} delay={1}>
         <div className={`${card} px-2.5 py-1.5 font-mono text-[0.58rem] text-muted`}>
           visitor id · localStorage
         </div>
       </Sticker>
-      <Sticker className="right-[8%] bottom-10" tilt={-5} delay={2}>
+      <Sticker className="right-[6%] bottom-5 sm:right-[8%] sm:bottom-10" tilt={-5} delay={2}>
         <div className={`${card} px-2.5 py-1.5 font-mono text-[0.58rem] text-muted`}>
           session · 30 min idle
         </div>
