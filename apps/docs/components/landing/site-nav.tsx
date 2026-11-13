@@ -82,16 +82,16 @@ export function SiteNav({ links, loginHref }: Props) {
           <Link
             href="/"
             aria-label="Spoar home"
-            className="mr-6 flex items-center gap-2 rounded-full py-1 pr-2 pl-1.5 text-[0.85rem] font-medium tracking-tight text-fg transition-colors focus-visible:bg-fg/[0.06]"
+            className="mr-1 flex items-center gap-2 rounded-full py-1 pr-2 pl-1.5 text-[0.85rem] sm:mr-6 font-medium tracking-tight text-fg transition-colors focus-visible:bg-fg/[0.06]"
           >
             <Logo className="size-6" />
-            Spoar
+            <span className="max-[359px]:sr-only">Spoar</span>
           </Link>
           {account ? (
             <AccountMenu account={account} onSignedOut={() => setAccount(null)} />
           ) : (
             <>
-              <a href={loginHref} className="pill-ghost nav-login">
+              <a href={loginHref} className="pill-ghost nav-login whitespace-nowrap max-sm:hidden!">
                 Log in
               </a>
               <span aria-hidden="true" className="nav-account-hint pill-ghost size-8 px-0!">
@@ -99,7 +99,7 @@ export function SiteNav({ links, loginHref }: Props) {
               </span>
             </>
           )}
-          <Link href="/docs/getting-started/quick-start" className="pill-dark">
+          <Link href="/docs/getting-started/quick-start" className="pill-dark whitespace-nowrap">
             Insight Dashboard
           </Link>
           <button
@@ -144,6 +144,13 @@ export function SiteNav({ links, loginHref }: Props) {
                 )}
               </li>
             ))}
+            {account ? null : (
+              <li className="sm:hidden">
+                <a href={loginHref} className={menuItem}>
+                  Log in
+                </a>
+              </li>
+            )}
           </ul>
         ) : null}
       </div>

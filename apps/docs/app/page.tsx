@@ -391,7 +391,7 @@ export default async function HomePage() {
               <div
                 className={`step-card ${step.tone} group/step relative flex h-60 items-center justify-center rounded-2xl p-6`}
               >
-                <span className="step-badge absolute top-3 left-3 rounded-full bg-surface/70 px-2.5 py-1 font-mono text-[0.62rem] text-fg">
+                <span className="step-badge absolute top-3 left-3 z-10 rounded-full bg-surface/70 px-2.5 py-1 font-mono text-[0.62rem] text-fg">
                   {step.badge}
                 </span>
                 <div className="step-visual flex w-full justify-center">{step.visual}</div>
@@ -552,9 +552,15 @@ export default async function HomePage() {
             <ul className="flex flex-wrap justify-center gap-x-5 gap-y-0.5 font-serif text-[0.9rem] text-fg/75">
               {siteLinks().map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="link-line inline-block py-1.5">
-                    {link.label}
-                  </Link>
+                  {link.external ? (
+                    <a href={link.href} className="link-line inline-block py-1.5">
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="link-line inline-block py-1.5">
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

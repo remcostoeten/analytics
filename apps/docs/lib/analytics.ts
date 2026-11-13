@@ -1,5 +1,5 @@
 import { createAnalytics } from "@spoar/sdk";
-import { errors, speedInsights } from "@spoar/sdk/plugins";
+import { botSignals, errors, speedInsights } from "@spoar/sdk/plugins";
 
 export const tracked = Boolean(
   process.env.NEXT_PUBLIC_SPOAR_CONFIG ?? process.env.NEXT_PUBLIC_RA_CONFIG,
@@ -18,5 +18,5 @@ export const analytics = createAnalytics({
   pageviews: false,
   privacySignals: "ignore",
   mode: tracked ? "auto" : "development",
-  plugins: [speedInsights(), errors()],
+  plugins: [botSignals(), speedInsights(), errors()],
 });

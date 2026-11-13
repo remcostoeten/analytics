@@ -2,6 +2,7 @@ import type { AuthSession } from "@spoar/contract";
 import { useQuery } from "@tanstack/react-query";
 
 import { browserClient } from "@/shared/api/browser-client";
+import { useHydrated } from "@/shared/query/hydrated";
 
 const sessionKey = ["spoar", "session"] as const;
 
@@ -30,6 +31,8 @@ export function useSessionRead(): SessionRead {
     },
     staleTime: sessionStaleMs,
   });
+  const hydrated = useHydrated();
+  if (!hydrated) return { known: false, session: signedOut };
   return { known: read.data !== undefined, session: read.data ?? signedOut };
 }
 

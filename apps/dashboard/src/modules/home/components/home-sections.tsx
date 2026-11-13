@@ -363,10 +363,10 @@ export function ProjectsCard({ scope, state, projects }: ProjectsProps) {
               <th scope="col" className="num">
                 Views
               </th>
-              <th scope="col" className="num">
+              <th scope="col" className="num home-optional">
                 Change
               </th>
-              <th scope="col" className="num">
+              <th scope="col" className="num home-optional">
                 Speed
               </th>
               <th scope="col">
@@ -379,18 +379,21 @@ export function ProjectsCard({ scope, state, projects }: ProjectsProps) {
               const focused = row.id === state.project;
               return (
                 <tr key={row.id} aria-current={focused ? "true" : undefined}>
-                  <td>
+                  <td className="home-name">
                     <Link
                       href={`/projects/${encodeURIComponent(row.id)}${viewQuery(state.view)}`}
-                      className="font-medium hover:underline"
+                      className="block truncate font-medium hover:underline"
+                      title={row.name}
                     >
                       {row.name}
                     </Link>
-                    <span className="block text-xs text-muted">{row.domain}</span>
+                    <span className="block truncate text-xs text-muted" title={row.domain}>
+                      {row.domain}
+                    </span>
                   </td>
                   <td className="num">{formatMetric(row.visitors, "count")}</td>
                   <td className="num">{formatMetric(row.pageviews, "count")}</td>
-                  <td className="num">
+                  <td className="num home-optional">
                     {row.change === null ? (
                       <span className="text-muted">–</span>
                     ) : (
@@ -399,7 +402,7 @@ export function ProjectsCard({ scope, state, projects }: ProjectsProps) {
                       </span>
                     )}
                   </td>
-                  <td className="num">
+                  <td className="num home-optional">
                     {row.speedScore === null ? (
                       <span className="text-muted">–</span>
                     ) : (
@@ -581,7 +584,9 @@ export function VitalsCard({ scope, state, projects, projectScope }: VitalsProps
                   href={`/projects/${encodeURIComponent(project.id)}/speed${viewQuery(state.view)}`}
                   className="vitals-project"
                 >
-                  <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
+                  <span className="vitals-project-name" title={project.name}>
+                    {project.name}
+                  </span>
                   {shownVitals.map((view) => {
                     const summary = vitalSummary(projectData, view.slug);
                     return (

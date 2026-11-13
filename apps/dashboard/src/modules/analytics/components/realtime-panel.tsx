@@ -15,6 +15,7 @@ import { ActivityIllustration, EmptyState, IconStack } from "@/shared/ui/empty-s
 import { PulseIcon, UsersIcon } from "@/shared/ui/icons";
 
 import {
+  formatDevice,
   formatDimensionValue,
   formatDuration,
   formatMetric,
@@ -102,7 +103,7 @@ function Feed({ events }: FeedProps) {
               <td className="text-xs">
                 {event.country ? formatDimensionValue("country", event.country) : "–"}
               </td>
-              <td className="text-xs text-muted">{event.device}</td>
+              <td className="text-xs text-muted">{formatDevice(event.device)}</td>
             </tr>
           ))}
         </tbody>
@@ -161,7 +162,7 @@ function Visitors({ visitors, hrefFor, canFollow }: VisitorsProps) {
                   .join(", ") || "–"}
               </td>
               <td className="text-xs text-muted">
-                {[row.browser, row.os].filter(Boolean).join(" on ") || row.device}
+                {[row.browser, row.os].filter(Boolean).join(" on ") || formatDevice(row.device)}
               </td>
               <td className="text-right tabular-nums">{row.pages}</td>
               <td className="text-right tabular-nums">{formatDuration(row.duration * 1000)}</td>
@@ -208,7 +209,7 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
               </span>
               <span className="text-muted">
                 {session.country ? formatDimensionValue("country", session.country) : "Unknown"} ·{" "}
-                {session.device}
+                {formatDevice(session.device)}
               </span>
             </span>
             <span className="text-muted">

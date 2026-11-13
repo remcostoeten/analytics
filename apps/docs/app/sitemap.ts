@@ -6,6 +6,8 @@ import { source } from "@/lib/source";
 
 const baseUrl = "https://docs.analytics.remcostoeten.nl";
 
+const redirectedDocs = new Set(["/docs/changelog"]);
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -35,11 +37,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const docRoutes: MetadataRoute.Sitemap = source.getPages().map((page) => ({
-    url: `${baseUrl}${page.url}`,
-    changeFrequency: "weekly",
-    priority: 0.8,
-  }));
+  const docRoutes: MetadataRoute.Sitemap = source
+    .getPages()
+    .filter((page) => !redirectedDocs.has(page.url))
+    .map((page) => ({
+      url: `${baseUrl}${page.url}`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
 
   const changelogRoutes: MetadataRoute.Sitemap = listPosts().map((post) => ({
     url: `${baseUrl}/changelog/${post.slug}`,

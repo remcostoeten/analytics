@@ -10,7 +10,7 @@ import { GhostSection } from "@/modules/shell/components/ghost";
 import { useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
-import { formatDateTime, formatTime } from "../format";
+import { formatDateTime, formatDevice, formatTime } from "../format";
 import { frameLocation } from "../issues";
 
 type Props = { scope: ProjectScope; issue: IssueID };
@@ -89,7 +89,7 @@ export function IssueEvents({ scope, issue }: Props) {
                   {event.environment ? <span>{event.environment}</span> : null}
                   <span>
                     {[event.device.browser, event.device.os].filter(Boolean).join(" on ") ||
-                      event.device.type}
+                      formatDevice(event.device.type)}
                   </span>
                   <span title="Anonymous visitor id" className="font-mono">
                     {event.visitor.slice(0, 8)}

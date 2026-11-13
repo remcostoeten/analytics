@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { Newsreader } from "next/font/google";
-import Script from "next/script";
 
 import "./globals.css";
 
@@ -43,9 +42,11 @@ export default function Layout({ children }: Props) {
       suppressHydrationWarning
     >
       <body className="min-h-screen">
-        <Script id="shell-state" strategy="beforeInteractive">
-          {themeBootstrap + sidebarBootstrap}
-        </Script>
+        <script
+          id="shell-state"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: themeBootstrap + sidebarBootstrap }}
+        />
         <QueryProvider>{children}</QueryProvider>
         <Notifier />
       </body>

@@ -133,6 +133,8 @@ describe("format", () => {
     expect(formatDimensionValue("country", "NL")).toBe("Netherlands");
     expect(formatDimensionValue("referrer_domain", "")).toBe("None (direct)");
     expect(formatDimensionValue("browser", "")).toBe("Unknown");
+    expect(formatDimensionValue("device", "desktop")).toBe("Desktop");
+    expect(formatDimensionValue("browser", "chrome")).toBe("chrome");
   });
 
   test("resolves metric slugs", () => {

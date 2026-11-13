@@ -268,22 +268,47 @@
   --peach: #ffd7c4;
   --rose: #f9c9dc;
   --lilac: #e4d4fa;
+  --auth-top: #fff3ee;
+  --auth-bottom: #fff9f6;
+  --auth-card-border: rgb(45 45 45 / 0.05);
+  --auth-button-top: #2d2d2d;
+  --auth-button-bottom: #000;
+  --auth-button-ink: #fff;
   color-scheme: light;
   color: var(--fg);
   background:
     radial-gradient(70% 45% at 20% 100%, color-mix(in srgb, var(--lilac) 70%, transparent), transparent 70%),
     radial-gradient(60% 40% at 85% 100%, color-mix(in srgb, var(--rose) 80%, transparent), transparent 70%),
     radial-gradient(50% 35% at 50% 30%, color-mix(in srgb, var(--peach) 35%, transparent), transparent 70%),
-    linear-gradient(to bottom, #fff3ee, #fff9f6);
+    linear-gradient(to bottom, var(--auth-top), var(--auth-bottom));
 
   ::selection {
     background: var(--rose);
+  }
+
+  :root[data-theme="dark"] & {
+    --bg: #13100f;
+    --surface: #1b1716;
+    --fg: #f3ece8;
+    --muted: #a3958e;
+    --line: #2e2725;
+    --err: #ff6b70;
+    --peach: #4d2c22;
+    --rose: #45263a;
+    --lilac: #352a52;
+    --auth-top: #1a1412;
+    --auth-bottom: #13100f;
+    --auth-card-border: rgb(255 255 255 / 0.06);
+    --auth-button-top: #fdf7f3;
+    --auth-button-bottom: #e6ddd8;
+    --auth-button-ink: #13100f;
+    color-scheme: dark;
   }
 }
 
 .auth-card {
   background: var(--surface);
-  border: 1px solid rgb(45 45 45 / 0.05);
+  border: 1px solid var(--auth-card-border);
   border-radius: 22px;
   box-shadow:
     0 1px 3px rgb(0 0 0 / 0.08),
@@ -314,8 +339,8 @@
   justify-content: center;
   gap: 0.5rem;
   border-radius: 999px;
-  background: linear-gradient(to bottom, #2d2d2d 10%, #000);
-  color: #fff;
+  background: linear-gradient(to bottom, var(--auth-button-top) 10%, var(--auth-button-bottom));
+  color: var(--auth-button-ink);
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
@@ -590,6 +615,11 @@
 .view-aside {
   display: grid;
   gap: 1.5rem;
+  order: 1;
+
+  @media (min-width: 1024px) {
+    order: 0;
+  }
 
   @media (min-width: 1024px) and (min-height: 60rem) {
     position: sticky;
@@ -1899,6 +1929,8 @@
 .heat-map {
   position: relative;
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   border-radius: 6px;
   background: var(--raised);
@@ -2261,8 +2293,16 @@
 }
 
 .home-scroll {
+  --scroll-fade: color-mix(in srgb, var(--fg) 14%, transparent);
   max-height: 17.5rem;
-  overflow-y: auto;
+  overflow: auto;
+  background:
+    linear-gradient(to right, var(--surface) 40%, transparent) left / 1.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 40%, transparent) right / 1.5rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-fade), transparent) left / 0.625rem 100%
+      no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-fade), transparent) right / 0.625rem
+      100% no-repeat scroll;
 }
 
 .home-table {
@@ -2292,6 +2332,21 @@
   & .num {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  & .home-name {
+    width: 100%;
+    max-width: 0;
+  }
+
+  @media (max-width: 639px) {
+    & th,
+    & td {
+      padding-inline: 0.375rem;
+    }
+    & .home-optional {
+      display: none;
+    }
   }
 }
 
@@ -2314,6 +2369,19 @@
   &:focus-visible {
     outline: none;
     background: color-mix(in srgb, var(--series-1) 10%, transparent);
+  }
+}
+
+.vitals-project-name {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (min-width: 640px) {
+    flex-basis: 8rem;
   }
 }
 

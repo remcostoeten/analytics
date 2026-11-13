@@ -13,6 +13,7 @@ import { ActivityIllustration, EmptyState } from "@/shared/ui/empty-state";
 
 import {
   formatDateTime,
+  formatDevice,
   formatDimensionValue,
   formatDuration,
   formatMetric,
@@ -46,7 +47,7 @@ function place(geo: Detail["data"]["geo"]) {
 function device(detail: Detail["data"]["device"]) {
   const browser = [detail.browser, detail.browserVersion].filter(Boolean).join(" ");
   const os = [detail.os, detail.osVersion].filter(Boolean).join(" ");
-  return [browser, os].filter(Boolean).join(" on ") || detail.type;
+  return [browser, os].filter(Boolean).join(" on ") || formatDevice(detail.type);
 }
 
 const signals = [

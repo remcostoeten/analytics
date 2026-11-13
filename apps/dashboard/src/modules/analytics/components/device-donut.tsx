@@ -25,9 +25,7 @@ export function DeviceDonut({ rows, hrefFor }: Props) {
                 className="size-2 rounded-full"
                 style={{ background: `var(--series-${order + 1})` }}
               />
-              <span className="text-muted capitalize">
-                {formatDimensionValue("device", slice.value)}
-              </span>
+              <span className="text-muted">{formatDimensionValue("device", slice.value)}</span>
               <span className="font-medium tabular-nums">
                 {formatMetric(slice.count, "count", true)}
               </span>

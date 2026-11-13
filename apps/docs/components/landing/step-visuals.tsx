@@ -144,7 +144,7 @@ export function ReadVisual() {
   return (
     <div
       aria-hidden="true"
-      className="read-visual mx-auto w-full max-w-[270px] rounded-xl border border-line bg-surface p-3 shadow-[0_12px_28px_-16px_rgb(var(--shade)/0.4)]"
+      className="read-visual mx-auto mt-4 w-full max-w-[270px] rounded-xl border border-line bg-surface p-3 shadow-[0_12px_28px_-16px_rgb(var(--shade)/0.4)]"
     >
       <div className="flex items-center justify-between text-[0.62rem] text-muted">
         <span>Query</span>
@@ -153,21 +153,21 @@ export function ReadVisual() {
           read only
         </span>
       </div>
-      <div className="read-sql relative mt-2 overflow-hidden rounded-md bg-bg px-2 py-1.5 font-mono text-[0.6rem] leading-[1.6] text-fg">
+      <div className="read-sql relative mt-1.5 overflow-hidden rounded-md bg-bg px-2 py-1.5 font-mono text-[0.6rem] leading-[1.6] text-fg">
         <span className="text-muted">SELECT</span> path, count(*){" "}
         <span className="text-muted">AS</span> views
         <br />
         <span className="text-muted">FROM</span> events <span className="text-muted">GROUP BY</span>{" "}
         path
       </div>
-      <ul className="mt-2 flex flex-col">
+      <ul className="mt-1.5 flex flex-col">
         {rows.map((row, index) => {
           const style: BarStyle = { "--i": index, "--w": `${row.share}%` };
           return (
             <li
               key={row.path}
               style={style}
-              className="relative flex justify-between border-b border-dashed border-line py-1 font-mono text-[0.62rem] last:border-0"
+              className="relative flex justify-between border-b border-dashed border-line py-[3px] font-mono text-[0.62rem] last:border-0"
             >
               <span className="read-bar absolute inset-y-0.5 -left-1 rounded-sm bg-accent/10" />
               <span className="relative text-fg">{row.path}</span>
@@ -176,7 +176,7 @@ export function ReadVisual() {
           );
         })}
       </ul>
-      <div className="read-status mt-1.5 flex justify-between font-mono text-[0.55rem] text-muted">
+      <div className="read-status mt-1 flex justify-between font-mono text-[0.55rem] text-muted">
         <span>3 rows</span>
         <span>12 ms</span>
       </div>

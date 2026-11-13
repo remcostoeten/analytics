@@ -4,6 +4,7 @@ import type { Result } from "@spoar/shared/result";
 import { useQuery } from "@tanstack/react-query";
 
 import { browserClient } from "@/shared/api/browser-client";
+import { useHydrated } from "@/shared/query/hydrated";
 
 export const projectsKey = ["spoar", "projects"] as const;
 
@@ -34,7 +35,8 @@ export function useProjects(): ProjectsRead {
     },
     staleTime: projectsStaleMs,
   });
-  if (read.data === undefined) return { status: "loading" };
+  const hydrated = useHydrated();
+  if (!hydrated || read.data === undefined) return { status: "loading" };
   return read.data.ok
     ? { status: "ok", projects: read.data.value }
     : { status: "error", message: read.data.error };

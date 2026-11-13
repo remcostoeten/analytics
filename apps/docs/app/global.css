@@ -397,7 +397,6 @@
 
 @keyframes hero-rise {
   from {
-    opacity: 0;
     transform: translateY(10px);
   }
 }

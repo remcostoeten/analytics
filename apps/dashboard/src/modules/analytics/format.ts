@@ -68,7 +68,22 @@ export function formatChange(change: number | null) {
 export function formatDimensionValue(dimension: string, value: string) {
   if (value === "") return dimension === "referrer_domain" ? "None (direct)" : "Unknown";
   if (dimension === "country" && /^[A-Z]{2}$/.test(value)) return regions.of(value) ?? value;
+  if (dimension === "device") return formatDevice(value);
   return value;
+}
+
+/**
+ * @name formatDevice
+ * @description A device type as one capitalised label, the same on every page; an empty value
+ * reads as unknown.
+ *
+ * @example
+ * formatDevice("desktop"); // "Desktop"
+ * formatDevice(""); // "Unknown"
+ */
+export function formatDevice(device: string) {
+  if (device === "") return "Unknown";
+  return `${device.charAt(0).toUpperCase()}${device.slice(1)}`;
 }
 
 const relative = new Intl.RelativeTimeFormat("en", { numeric: "always", style: "narrow" });

@@ -43,9 +43,7 @@ export function RankList({
                 style={{ width: `${(value / max) * 100}%` }}
                 aria-hidden="true"
               />
-              <span className={dimension === "device" ? "rank-label capitalize" : "rank-label"}>
-                {formatDimensionValue(dimension, row.value)}
-              </span>
+              <span className="rank-label">{formatDimensionValue(dimension, row.value)}</span>
               <span className="rank-value">
                 {share ? `${percent}%` : formatMetric(value, "count")}
               </span>
