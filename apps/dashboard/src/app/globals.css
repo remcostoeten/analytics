@@ -3856,9 +3856,7 @@
   overflow: hidden;
 }
 
-.ghost,
-.ghost-metric,
-.ghost-kpi {
+[data-testid$="-skeleton"] :is(.ghost, .ghost-metric, .ghost-kpi) {
   animation: ghost-in 240ms var(--ease-out) calc(120ms + var(--g, 0) * 90ms) backwards;
 }
 
