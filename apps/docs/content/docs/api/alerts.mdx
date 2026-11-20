@@ -56,7 +56,7 @@ export default defineConfig({
 
 ## How alerts are sent
 
-`POST /v2/admin/jobs/alerts` runs every 30 minutes from the scheduler. Each run queues new issues and regressions, up to 100, and sends each target its due alerts together: one mail, one Discord message or one signed webhook request. A failed send is retried by the [retry policy](/docs/api/alert-retries), and one failing target never holds back another. [Alert webhooks](/docs/sdk/server#alert-webhooks) shows how to check a webhook's signature.
+`POST /v2/admin/jobs/alerts` runs every hour from the scheduler. Each run queues new issues and regressions, up to 100, and sends each target its due alerts together: one mail, one Discord message or one signed webhook request. A failed send is retried by the [retry policy](/docs/api/alert-retries), and one failing target never holds back another. [Alert webhooks](/docs/sdk/server#alert-webhooks) shows how to check a webhook's signature.
 
 ## Speed drops
 

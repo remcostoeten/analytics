@@ -96,7 +96,7 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 
 | When (UTC) | Job |
 | --- | --- |
-| Every 30 minutes | `alerts` |
+| Hourly at minute 7 | `alerts` |
 | Daily 02:17 | `rollup`, then `cleanup` |
 | Mondays 04:43 | `crux` |
 
