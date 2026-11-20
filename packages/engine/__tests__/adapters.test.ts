@@ -44,26 +44,24 @@ describe("maxmindGeo", () => {
   const geo = maxmindGeo(city, null);
 
   test("looks up a known address", () => {
-    expect(geo.lookup("81.2.69.160")).toEqual({
-      geo: {
-        country: "GB",
-        region: "ENG",
-        city: "London",
-        postalCode: null,
-        timezone: "Europe/London",
-        latitude: 51.5142,
-        longitude: -0.0931,
-        continent: "EU",
-      },
-      network: { asn: null, asOrg: null },
+    expect(geo.location("81.2.69.160")).toEqual({
+      country: "GB",
+      region: "ENG",
+      city: "London",
+      postalCode: null,
+      timezone: "Europe/London",
+      latitude: 51.5142,
+      longitude: -0.0931,
+      continent: "EU",
     });
+    expect(geo.network("81.2.69.160")).toEqual({ asn: null, asOrg: null });
   });
 
   test("returns nulls for an unknown address", () => {
-    expect(geo.lookup("10.0.0.1").geo.country).toBeNull();
+    expect(geo.location("10.0.0.1").country).toBeNull();
   });
 
   test("returns nulls for a malformed address", () => {
-    expect(geo.lookup("not-an-ip").geo.country).toBeNull();
+    expect(geo.location("not-an-ip").country).toBeNull();
   });
 });

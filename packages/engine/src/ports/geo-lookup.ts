@@ -13,5 +13,6 @@ export type GeoRecord = {
 };
 
 export type GeoLookup = {
-  lookup: (ip: string) => GeoRecord;
+  location: (ip: string) => Location;
+  network: (ip: string) => Network;
 };

@@ -92,5 +92,10 @@ export function cloudflareGeo(): GeoSource {
     if (!current?.location || current.ip !== ip) return empty;
     return toRecord(current.location);
   }
-  return { lookup: { lookup }, city: "cloudflare", asn: "cloudflare", loadMs: 0 };
+  return {
+    lookup: { location: (ip) => lookup(ip).geo, network: (ip) => lookup(ip).network },
+    city: "cloudflare",
+    asn: "cloudflare",
+    loadMs: 0,
+  };
 }
