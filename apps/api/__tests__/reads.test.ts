@@ -165,13 +165,13 @@ describe("GET /v2/projects/:project/stats", () => {
     });
   });
 
-  test("public projects are cacheable; private ones are not", async () => {
+  test("public projects are cacheable; private ones only in the browser", async () => {
     expect((await get("/v2/projects/site/stats")).headers.get("cache-control")).toBe(
       "public, s-maxage=60",
     );
     const closed = await get("/v2/projects/closed/stats", { authorization: "Bearer at_test_read" });
     expect(closed.status).toBe(200);
-    expect(closed.headers.get("cache-control")).toBe("private, no-store");
+    expect(closed.headers.get("cache-control")).toBe("private, max-age=60");
     expect((await get("/v2/projects/closed/stats")).status).toBe(404);
   });
 

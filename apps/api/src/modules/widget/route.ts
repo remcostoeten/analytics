@@ -121,7 +121,7 @@ export function widgetModule(
     .get(
       "/projects/:project/realtime/visitors",
       ({ request, caller, project, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.answer(request, caller, project, set, "live-private", (params, id) =>
           activeVisitors(widget.store, id, params, reads.clock()),
         ),
       {
@@ -140,7 +140,7 @@ export function widgetModule(
     .get(
       "/projects/:project/realtime/sessions",
       ({ request, caller, project, set }) =>
-        gate.answer(request, caller, project, set, "private", (params, id) =>
+        gate.answer(request, caller, project, set, "live-private", (params, id) =>
           liveSessions(widget.store, id, params, reads.clock()),
         ),
       {

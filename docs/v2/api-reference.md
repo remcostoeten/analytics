@@ -351,7 +351,7 @@ All six take the shared range, traffic and filter parameters, and answer without
 
 ### Live events
 
-`GET /v2/projects/:project/realtime/events` without `after` answers at once with the events received in the last five minutes (up to `limit`, default 50). With `after=<nextCursor>` it answers as soon as newer events arrive, or with an empty page and the same cursor after 25 seconds, checking every 2 seconds. Events are ordered by when the API received them. `traffic` and `filter[...]` apply as on every read; `visitor` and `session` appear only with `detail` access.
+`GET /v2/projects/:project/realtime/events` without `after` answers at once with the events received in the last five minutes (up to `limit`, default 50). With `after=<nextCursor>` it answers as soon as newer events arrive, or with an empty page and the same cursor after 25 seconds, checking every 5 seconds. Events are ordered by when the API received them. `traffic` and `filter[...]` apply as on every read; `visitor` and `session` appear only with `detail` access.
 
 With `Accept: text/event-stream` the same route streams the pages as server-sent events: one `events` message per batch with the cursor as its `id`, a comment when a wait ends empty, and an `error` message if a read fails. The stream closes after about 55 seconds and the browser reconnects with `Last-Event-ID`, carrying on from the last batch.
 

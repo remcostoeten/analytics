@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { watchPageFocus } from "./focus";
 
 type Props = { children: ReactNode };
 
@@ -25,5 +27,6 @@ function createQueryClient() {
 
 export function QueryProvider({ children }: Props) {
   const [client] = useState(createQueryClient);
+  useEffect(() => watchPageFocus(), []);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

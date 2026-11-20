@@ -9,6 +9,28 @@ export type ReadOptions = {
   refetchOnWindowFocus?: boolean;
 };
 
+/**
+ * @name liveIntervalMs
+ * @description How often live reads (visitors online, the realtime panel) poll while the page has
+ * focus. Polling pauses while the window is blurred or hidden.
+ *
+ * @example
+ * useRead(scope.key("realtime"), () => scope.realtime(), livePolling);
+ */
+export const liveIntervalMs = 60_000;
+
+/**
+ * @name livePolling
+ * @description The read options every live read shares, so reads on the same key poll once.
+ *
+ * @example
+ * useRead(scope.key("realtime"), () => scope.realtime(), livePolling);
+ */
+export const livePolling = {
+  refetchInterval: liveIntervalMs,
+  staleTime: liveIntervalMs,
+} satisfies ReadOptions;
+
 export type Read<Value, Failure> = {
   queryKey: QueryKey;
   queryFn: () => Promise<Result<Value, Failure>>;

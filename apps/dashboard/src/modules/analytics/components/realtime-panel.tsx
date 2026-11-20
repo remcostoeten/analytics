@@ -10,7 +10,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { RealtimeBodySkeleton } from "@/modules/shell/components/skeletons";
 import { browserClient } from "@/shared/api/browser-client";
-import { useRead } from "@/shared/query/read";
+import { liveIntervalMs, livePolling, useRead } from "@/shared/query/read";
 import { ActivityIllustration, EmptyState, IconStack } from "@/shared/ui/empty-state";
 import { PulseIcon, UsersIcon } from "@/shared/ui/icons";
 
@@ -22,7 +22,7 @@ import {
   formatRelative,
   formatTime,
 } from "../format";
-import { feedKeep, feedLimit, mergeEvents, needsSignIn, realtimeIntervalMs } from "../realtime";
+import { feedKeep, feedLimit, mergeEvents, needsSignIn } from "../realtime";
 
 type Props = {
   project: string;
@@ -234,11 +234,7 @@ function Sessions({ sessions, hrefFor, canFollow }: SessionsProps) {
 export function RealtimePanel({ project, base, canFollow }: Props) {
   const scope = browserClient().project(project);
   const queryClient = useQueryClient();
-  const polling = {
-    refetchInterval: realtimeIntervalMs,
-    refetchOnWindowFocus: true,
-    staleTime: realtimeIntervalMs,
-  };
+  const polling = { ...livePolling, refetchOnWindowFocus: true };
 
   function detailHref(visitor: string) {
     return `${base}/visitors/${encodeURIComponent(visitor)}`;
@@ -287,8 +283,8 @@ export function RealtimePanel({ project, base, canFollow }: Props) {
     sessionsRead.dataUpdatedAt,
   );
   const secondsLeft = Math.min(
-    realtimeIntervalMs / 1000,
-    Math.max(0, Math.ceil((updatedAt + realtimeIntervalMs - now) / 1000)),
+    liveIntervalMs / 1000,
+    Math.max(0, Math.ceil((updatedAt + liveIntervalMs - now) / 1000)),
   );
   if (
     summaryRead.data === undefined ||

@@ -495,7 +495,7 @@ export function accessOn(db: Database, transact: Transact, now?: () => Date): Ac
     members: drizzleMembers(db),
     reads: drizzleReads(db),
     details: drizzleDetails(db),
-    feed: drizzleFeed(db, { pollMs: 2000, now }),
+    feed: drizzleFeed(db, { pollMs: 5000, now }),
     queries: queryRunner(transact, () => readQuerySecret(db), webCryptoHasher(), {
       timeoutMs: 10_000,
       maxRows: 10_000,
@@ -507,7 +507,7 @@ export function accessOn(db: Database, transact: Transact, now?: () => Date): Ac
     issues: drizzleIssues(db),
     ops: drizzleOps(db),
     alerts: drizzleAlerts(db),
-    logs: drizzleLogs(db, { pollMs: 2000 }),
+    logs: drizzleLogs(db, { pollMs: 5000 }),
     widget: drizzleWidget(db),
   };
 }

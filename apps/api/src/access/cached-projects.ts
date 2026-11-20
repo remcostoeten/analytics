@@ -1,57 +1,62 @@
-import type { ProjectStore } from "@spoar/engine";
-import { ok } from "@spoar/shared/result";
-import type { Nullable } from "@spoar/shared/semantic";
+import type { ProjectAdmin } from "@spoar/engine";
 
-import { remember } from "./remember";
-
-type Props = { at: number; origin: Nullable<string> };
-
-const markWindowMs = 60_000;
-const maxMarks = 500;
+import { remember } from "../cache/remember";
 
 /**
  * @name cachedProjects
- * @description A `ProjectStore` for ingest that remembers which project a public key or secret
- * hash belongs to per instance for `ttlMs`, so a batch does not read `projects` every time; a
- * rotated or revoked key keeps working on an instance until its entry expires. `markUsed` reaches
- * the database at most once a minute per key and instance, or at once when the origin changes,
- * the same rule the database applies. Failed reads and writes are never remembered.
+ * @description A `ProjectAdmin` that remembers `find` and `list` answers per instance for
+ * `ttlMs`, so the access check on every project route does not ask the database for the project
+ * each time. A change through this store clears what it remembers at once; a change made on
+ * another instance, or by ingest stamping key usage, applies when the entry expires. Failed reads
+ * are never remembered.
  *
  * @example
- * const projects = cachedProjects(adapters.projects, () => clock.now(), 60_000);
+ * const projects = cachedProjects(stores.projects, () => clock.now(), 60_000);
  */
 export function cachedProjects(
-  projects: ProjectStore,
+  projects: ProjectAdmin,
   clock: () => Date,
   ttlMs: number,
-): ProjectStore {
-  const publicKeys = remember<Awaited<ReturnType<ProjectStore["byPublicKey"]>>>(clock, ttlMs);
-  const secretHashes = remember<Awaited<ReturnType<ProjectStore["bySecretHash"]>>>(clock, ttlMs);
-  const marks = new Map<string, Props>();
+): ProjectAdmin {
+  const found = remember<Awaited<ReturnType<ProjectAdmin["find"]>>>(clock, ttlMs);
+  const listed = remember<Awaited<ReturnType<ProjectAdmin["list"]>>>(clock, ttlMs);
+  function forget() {
+    found.clear();
+    listed.clear();
+  }
   return {
-    byPublicKey: (key) =>
-      publicKeys.read(
-        key,
-        () => projects.byPublicKey(key),
+    ...projects,
+    find: (id) =>
+      found.read(
+        id,
+        () => projects.find(id),
         (result) => result.ok,
       ),
-    bySecretHash: (hash) =>
-      secretHashes.read(
-        hash,
-        () => projects.bySecretHash(hash),
+    list: (visibility) =>
+      listed.read(
+        visibility ?? "",
+        () => projects.list(visibility),
         (result) => result.ok,
       ),
-    markUsed: async (id, kind, at, origin) => {
-      const key = `${id}\u0000${kind}`;
-      const last = marks.get(key);
-      if (last && last.origin === origin && at.getTime() - last.at < markWindowMs) {
-        return ok(undefined);
-      }
-      const marked = await projects.markUsed(id, kind, at, origin);
-      if (!marked.ok) return marked;
-      if (marks.size >= maxMarks) marks.clear();
-      marks.set(key, { at: at.getTime(), origin });
-      return marked;
+    create: async (project) => {
+      forget();
+      return projects.create(project);
+    },
+    update: async (id, patch) => {
+      forget();
+      return projects.update(id, patch);
+    },
+    rotate: async (id, kind, value) => {
+      forget();
+      return projects.rotate(id, kind, value);
+    },
+    recordKeyCheck: async (id, check) => {
+      forget();
+      return projects.recordKeyCheck(id, check);
+    },
+    remove: async (id) => {
+      forget();
+      return projects.remove(id);
     },
   };
 }

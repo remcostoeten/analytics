@@ -1,6 +1,6 @@
 import type { MemberStore } from "@spoar/engine";
 
-import { remember } from "./remember";
+import { remember } from "../cache/remember";
 
 /**
  * @name cachedMembers

@@ -37,6 +37,22 @@ describe("memoryLimiter", () => {
     ]);
     expect((await limiter.hit("ip:b", 2, 60)).allowed).toBe(true);
   });
+
+  test("starts a new count in the next window and keeps at most maxKeys keys", async () => {
+    const clock = { at: Date.parse("2026-09-27T16:40:15.000Z") };
+    const limiter = memoryLimiter({ now: () => new Date(clock.at) }, 2);
+    await limiter.hit("ip:a", 1, 60);
+    expect((await limiter.hit("ip:a", 1, 60)).allowed).toBe(false);
+    clock.at += 60_000;
+    expect(await limiter.hit("ip:a", 1, 60)).toEqual({
+      allowed: true,
+      hits: 1,
+      retryAfterSeconds: 0,
+    });
+    await limiter.hit("ip:b", 1, 60);
+    await limiter.hit("ip:c", 1, 60);
+    expect((await limiter.hit("ip:a", 1, 60)).hits).toBe(1);
+  });
 });
 
 describe("maxmindGeo", () => {

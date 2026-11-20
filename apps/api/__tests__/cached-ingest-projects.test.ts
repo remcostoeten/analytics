@@ -4,7 +4,7 @@ import type { ProjectAccess, ProjectStore } from "@spoar/engine";
 import { engineError } from "@spoar/engine";
 import { err, ok } from "@spoar/shared/result";
 
-import { cachedProjects } from "../src/access/cached-projects";
+import { cachedIngestProjects } from "../src/access/cached-ingest-projects";
 
 const project: ProjectAccess = { id: "docs", allowedOrigins: [], widgetReports: false };
 
@@ -30,7 +30,7 @@ function counted(state: { fail: boolean }) {
 test("key lookups are remembered until they expire", async () => {
   const clock = { now: 0 };
   const { store, calls } = counted({ fail: false });
-  const projects = cachedProjects(store, () => new Date(clock.now), 60_000);
+  const projects = cachedIngestProjects(store, () => new Date(clock.now), 60_000);
   expect(await projects.byPublicKey("pk_live_1")).toEqual(ok(project));
   await projects.byPublicKey("pk_live_1");
   await projects.bySecretHash("hash");
@@ -44,7 +44,7 @@ test("key lookups are remembered until they expire", async () => {
 test("a failed lookup is asked again", async () => {
   const state = { fail: true };
   const { store, calls } = counted(state);
-  const projects = cachedProjects(store, () => new Date(0), 60_000);
+  const projects = cachedIngestProjects(store, () => new Date(0), 60_000);
   await projects.byPublicKey("pk_live_1");
   state.fail = false;
   expect(await projects.byPublicKey("pk_live_1")).toEqual(ok(project));
@@ -54,7 +54,7 @@ test("a failed lookup is asked again", async () => {
 test("key usage is written once a minute, or when the origin changes", async () => {
   const state = { fail: false };
   const { store, calls } = counted(state);
-  const projects = cachedProjects(store, () => new Date(0), 60_000);
+  const projects = cachedIngestProjects(store, () => new Date(0), 60_000);
   const origin = "https://docs.example";
   await projects.markUsed("docs", "public", new Date(0), origin);
   await projects.markUsed("docs", "public", new Date(30_000), origin);

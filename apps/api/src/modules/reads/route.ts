@@ -55,7 +55,8 @@ const readResponses = { ...errorResponses, 429: errorResponses[400] };
  * `breakdown/:dimension`, `paths`, `retention`, `lifecycle`, `stickiness`, `heatmap`, `map`, `realtime` and the live feed
  * `realtime/events`, all at the `project` level; the feed adds visitor and session ids only with
  * `detail` access. Public projects answer with
- * `Cache-Control: public, s-maxage=60`, private ones with `private, no-store`, and anonymous
+ * `Cache-Control: public, s-maxage=60`, private ones with `private, max-age=60` (`realtime`
+ * 15 seconds), and anonymous
  * callers are rate limited per daily IP hash. `breakdown`, `paths` and `map` also answer
  * `format=csv|json|sql` (or `Accept: text/csv`) with every row as one download.
  *
@@ -209,7 +210,7 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
           ? gate.answer(request, caller, project, set, "private", (params, id) =>
               withVisitors(caller, project, params, id),
             )
-          : answer(request, caller, project, set, (_, id) =>
+          : gate.answer(request, caller, project, set, "live", (_, id) =>
               realtime(options.store, [id], options.clock()),
             ),
       {

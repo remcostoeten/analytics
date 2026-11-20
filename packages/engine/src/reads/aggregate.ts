@@ -44,12 +44,12 @@ function customAggregates(metrics: Metric[]): SQL[] {
  * from the events; bounce rate and session duration from each session's events across the
  * whole scope, so a page's bounce rate counts the sessions that viewed it; time on page from the gap to the session's next pageview; sums and averages of numeric
  * props; scroll depth as the average `scroll_depth` event, as a share of the page; conversion rate as the share of sessions the `scoped` CTE marks `converted`. Each metric comes back as column `m0`, `m1`... in the order given, with `visitors` always
- * included for shares.
+ * included for shares, followed by any `extra` columns, which may read the CTEs.
  *
  * @example
  * sql`WITH scoped AS (...) ${aggregateQuery(metrics)}`;
  */
-export function aggregateQuery(metrics: Metric[]): SQL {
+export function aggregateQuery(metrics: Metric[], extra: SQL[] = []): SQL {
   const custom = customAggregates(metrics);
   const columns = metrics.map(
     (metric, index) => sql`${metricColumn(metric, index)} AS ${sql.raw(`m${index}`)}`,
@@ -83,7 +83,7 @@ export function aggregateQuery(metrics: Metric[]): SQL {
       FROM scoped WHERE type = 'pageview' AND session_id IS NOT NULL
     ),
     page_metrics AS (SELECT k, avg(stay) AS stay FROM page_stays GROUP BY k)
-    SELECT ea.k, ea.visitors AS visitors_count, ${sql.join(columns, sql`, `)}
+    SELECT ea.k, ea.visitors AS visitors_count, ${sql.join([...columns, ...extra], sql`, `)}
     FROM event_agg ea
     LEFT JOIN session_metrics sm ON sm.k IS NOT DISTINCT FROM ea.k
     LEFT JOIN page_metrics pm ON pm.k IS NOT DISTINCT FROM ea.k`;
