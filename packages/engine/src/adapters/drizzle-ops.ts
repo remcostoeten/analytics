@@ -12,6 +12,7 @@ const rateLimitDays = 1;
 const sentDays = 30;
 const failedDays = 90;
 const logDays = 7;
+const dayMs = 24 * 60 * 60 * 1000;
 
 function hourOf(at: Date) {
   const hour = new Date(at);
@@ -72,7 +73,8 @@ async function purgeDeletedProjects(db: Database, batch: number) {
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
  * ingest numbers since a moment, retention cleanup of events and sessions past each project's
  * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
- * log lines older than 7 days, expired widget tokens, and the rows of deleted projects until none
+ * log lines older than 7 days, expired widget tokens, sign-in rate limit rows older than a day,
+ * and the rows of deleted projects until none
  * are left, the session layer of bot detection over a range, and the Chrome UX Report checks.
  *
  * @example
@@ -206,6 +208,12 @@ export function drizzleOps(db: Database): OpsStore {
             WHERE window_start < ${at}::timestamptz - make_interval(days => ${rateLimitDays})
             RETURNING key`,
         );
+        const signIns = await selectRows(
+          db,
+          sql`DELETE FROM auth_rate_limit
+            WHERE last_request < ${now.getTime() - rateLimitDays * dayMs}
+            RETURNING id`,
+        );
         const deliveries = await selectRows(
           db,
           sql`DELETE FROM alert_deliveries
@@ -232,6 +240,7 @@ export function drizzleOps(db: Database): OpsStore {
             sessions.length +
             vitals.length +
             limits.length +
+            signIns.length +
             deliveries.length +
             lines.length +
             tokens.length +

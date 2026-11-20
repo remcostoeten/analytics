@@ -128,6 +128,32 @@ describe("landing", () => {
     expect(body.history).toBeNull();
   });
 
+  test("lets a shared CDN cache the page", async () => {
+    const response = await app().handle(new Request("https://api.example.test/"));
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=300, s-maxage=300, stale-while-revalidate=3600",
+    );
+  });
+
+  test("shares one database check per minute", async () => {
+    let now = Date.parse("2026-10-02T12:00:00.000Z");
+    let pings = 0;
+    const served = app({
+      clock: () => new Date(now),
+      ping: async () => {
+        pings += 1;
+        return [1];
+      },
+    });
+    await served.handle(new Request("https://api.example.test/"));
+    now += 30 * 1000;
+    await served.handle(new Request("https://api.example.test/v2"));
+    expect(pings).toBe(1);
+    now += 31 * 1000;
+    await served.handle(new Request("https://api.example.test/"));
+    expect(pings).toBe(2);
+  });
+
   test("reads commit activity from GitHub and gives null while it computes", async () => {
     expect(
       await fetchHistory({ repo: "example/repo", send: github(200, activity), token: null }),

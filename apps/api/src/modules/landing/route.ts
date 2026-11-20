@@ -20,6 +20,12 @@ const pingTimeout: Milliseconds = 2000;
 
 const historyTtl: Milliseconds = 60 * 60 * 1000;
 
+const pingTtl: Milliseconds = 60 * 1000;
+
+const cacheControl = "public, max-age=300, s-maxage=300, stale-while-revalidate=3600";
+
+type DatabaseCheck = { ok: boolean; latencyMs: Milliseconds };
+
 function wantsHtml(headers: Headers) {
   return (headers.get("accept") ?? "").includes("text/html");
 }
@@ -28,8 +34,9 @@ function wantsHtml(headers: Headers) {
  * @name landingModule
  * @description `GET /` and `GET /v2`: the health details, every documented route grouped by tag
  * and, with a `history` source, the repository's commits per week for the last year, cached for
- * an hour. Browsers get HTML; any other `Accept` gets the same data as JSON. Both routes are
- * hidden from the OpenAPI document.
+ * an hour. The database check is shared for a minute per instance, and the response may sit in a
+ * shared CDN cache for five minutes. Browsers get HTML; any other `Accept` gets the same data as
+ * JSON. Both routes are hidden from the OpenAPI document.
  *
  * @example
  * new Elysia().use(landingModule({ version, clock, tags: apiTags, routes: () => api.routes, geo, history: null })).use(api);
@@ -41,6 +48,7 @@ export function landingModule(options: LandingOptions) {
     : `node ${process.versions.node}`;
   let groups: ReturnType<typeof routeGroups> | null = null;
   let cached: { history: History; at: number } | null = null;
+  let checked: { result: Promise<DatabaseCheck>; at: number } | null = null;
 
   async function history(): Promise<Nullable<History>> {
     if (!options.history) return null;
@@ -51,18 +59,24 @@ export function landingModule(options: LandingOptions) {
     return fresh ?? cached?.history ?? null;
   }
 
-  async function database() {
-    if (!options.ping) return null;
+  async function ping(send: () => Promise<unknown>): Promise<DatabaseCheck> {
     const started = Date.now();
     const timeout = new Promise<false>((resolve) => setTimeout(() => resolve(false), pingTimeout));
     const ok = await Promise.race([
-      options.ping().then(
+      send().then(
         () => true,
         () => false,
       ),
       timeout,
     ]);
     return { ok, latencyMs: Date.now() - started };
+  }
+
+  function database(): Nullable<Promise<DatabaseCheck>> {
+    if (!options.ping) return null;
+    const now = options.clock().getTime();
+    if (!checked || now - checked.at >= pingTtl) checked = { result: ping(options.ping), at: now };
+    return checked.result;
   }
 
   async function render(request: Request) {
@@ -86,7 +100,7 @@ export function landingModule(options: LandingOptions) {
     return new Response(html ? landingPage(view) : JSON.stringify(view), {
       headers: {
         "content-type": html ? "text/html; charset=utf-8" : "application/json",
-        "cache-control": "public, max-age=300",
+        "cache-control": cacheControl,
         vary: "Accept",
       },
     });

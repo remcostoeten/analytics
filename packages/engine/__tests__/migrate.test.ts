@@ -11,10 +11,10 @@ const legacy = files.slice(0, names.indexOf(baseline) + 1);
 const apply = { dryRun: false, baseline: null };
 
 describe("readMigrations", () => {
-  test("reads 0000 to 0041 in order", () => {
+  test("reads 0000 to 0042 in order", () => {
     expect(names[0]).toBe("0000_create_events");
-    expect(names.at(-1)).toBe("0041_add_auth_rate_limit");
-    expect(names).toHaveLength(42);
+    expect(names.at(-1)).toBe("0042_trim_event_indexes");
+    expect(names).toHaveLength(43);
     expect(names).toEqual([...names].sort());
   });
 });
@@ -117,6 +117,29 @@ describe("runMigrations on a database v1 already migrated", () => {
       { indexname: "sessions_pkey" },
       { indexname: "sessions_project_session_uidx" },
     ]);
+  });
+
+  test("drops the unused events indexes and indexes logs by project and id", async () => {
+    const database = await legacyDatabase();
+    await runMigrations(createClient(database), files, { dryRun: false, baseline });
+    const indexes = await database.query<{ indexname: string }>(
+      "SELECT indexname FROM pg_indexes WHERE tablename IN ('events', 'logs')",
+    );
+    const names = indexes.rows.map((row) => row.indexname);
+    expect(names).toContain("events_project_ts_type_idx");
+    expect(names).toContain("events_host_idx");
+    expect(names).toContain("events_country_idx");
+    expect(names).toContain("events_bot_detected_idx");
+    expect(names).toContain("logs_project_id_idx");
+    for (const dropped of [
+      "events_project_ts_idx",
+      "events_project_type_idx",
+      "events_path_idx",
+      "events_is_preview_idx",
+      "events_props_gin",
+    ]) {
+      expect(names).not.toContain(dropped);
+    }
   });
 });
 

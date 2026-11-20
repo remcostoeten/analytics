@@ -29913,7 +29913,7 @@
     "/v2/admin/jobs/cleanup": {
       "post": {
         "summary": "Delete expired rows",
-        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and rate limit windows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and ingest and sign-in rate limit rows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
