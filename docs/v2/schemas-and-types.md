@@ -356,7 +356,7 @@ CREATE INDEX IF NOT EXISTS events_project_name_ts_idx ON events (project_id, nam
 CREATE INDEX IF NOT EXISTS events_project_route_ts_idx ON events (project_id, route, ts);
 CREATE INDEX IF NOT EXISTS events_human_idx ON events (project_id, ts)
   WHERE bot_score < 50 AND is_internal = false AND is_localhost = false AND is_preview = false;
-CREATE INDEX IF NOT EXISTS events_props_gin ON events USING gin (meta jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS events_props_gin ON events USING gin (meta jsonb_path_ops); -- dropped in 0042
 
 -- 0011, 0012, 0020
 ALTER TABLE sessions
