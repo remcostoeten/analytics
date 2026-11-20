@@ -2,7 +2,7 @@ name: jobs
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "7 * * * *"
     - cron: "17 2 * * *"
     - cron: "43 4 * * 1"
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
         id: pick
         run: |
           case "$SCHEDULE" in
-            "*/30 * * * *") jobs="alerts" ;;
+            "7 * * * *") jobs="alerts" ;;
             "17 2 * * *") jobs="rollup cleanup" ;;
             "43 4 * * 1") jobs="crux" ;;
             *) jobs="$CHOSEN" ;;

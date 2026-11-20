@@ -345,9 +345,12 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
     .get(
       "/realtime",
       ({ request, caller, set }) =>
-        aggregate(request, caller, set, ({ projects }) =>
-          realtime(options.store, projects, options.clock()),
-        ),
+        gate.answerMany(request, caller, set, "live", async (params) => {
+          const scoped = await readableProjects(deps, caller, params, false);
+          return scoped.ok
+            ? realtime(options.store, scoped.value.projects, options.clock())
+            : scoped;
+        }),
       {
         access: "public",
         response: { 200: RealtimeResponse, ...responses },

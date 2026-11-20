@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { memoryGeo } from "@spoar/engine/adapters/memory";
-import { maxmindGeo } from "@spoar/engine/adapters/maxmind";
+import { maxmindLocation, maxmindNetwork } from "@spoar/engine/adapters/maxmind";
 import type { GeoLookup } from "@spoar/engine";
 import type { Nullable } from "@spoar/shared/semantic";
 
@@ -40,12 +40,24 @@ function firstExisting(paths: string[]) {
   return paths.find((candidate) => existsSync(candidate)) ?? null;
 }
 
+function lazily<Lookup>(file: string, open: (contents: Buffer) => Lookup, loaded: { ms: number }) {
+  const opened: { lookup: Nullable<Lookup> } = { lookup: null };
+  return () => {
+    if (opened.lookup) return opened.lookup;
+    const started = performance.now();
+    opened.lookup = open(readFileSync(file));
+    loaded.ms += Math.round(performance.now() - started);
+    return opened.lookup;
+  };
+}
+
 /**
  * @name openGeo
- * @description Finds the first City and ASN databases and builds the engine's `GeoLookup`. The
- * files are read on the first lookup, not here, so an instance that only serves reads never pays
- * for them; `loadMs` is 0 until then. Without a City database every lookup is empty, so ingest
- * still works and geo columns stay null.
+ * @description Finds the first City and ASN databases and builds the engine's `GeoLookup`. Each
+ * file is read on its first lookup, not here: an instance that only serves reads never pays for
+ * them, and on Vercel the City file stays closed because the edge headers already locate the
+ * visitor. `loadMs` is the time spent opening them so far. Without a City database every location
+ * is empty, so ingest still works and geo columns stay null.
  *
  * @example
  * const geo = openGeo(candidatePaths("GeoLite2-City.mmdb", where), candidatePaths("GeoLite2-ASN.mmdb", where));
@@ -53,17 +65,14 @@ function firstExisting(paths: string[]) {
 export function openGeo(cityPaths: string[], asnPaths: string[]): GeoSource {
   const city = firstExisting(cityPaths);
   const asn = city ? firstExisting(asnPaths) : null;
-  const loaded: { lookup: Nullable<GeoLookup>; ms: number } = { lookup: null, ms: 0 };
-  function load(file: string) {
-    const started = performance.now();
-    const lookup = maxmindGeo(readFileSync(file), asn ? readFileSync(asn) : null);
-    loaded.lookup = lookup;
-    loaded.ms = Math.round(performance.now() - started);
-    return lookup;
-  }
-  const lookup: GeoLookup = city
-    ? { lookup: (ip) => (loaded.lookup ?? load(city)).lookup(ip) }
-    : memoryGeo(new Map());
+  const loaded = { ms: 0 };
+  const empty = memoryGeo(new Map());
+  const cityLookup = city ? lazily(city, maxmindLocation, loaded) : null;
+  const asnLookup = asn ? lazily(asn, maxmindNetwork, loaded) : null;
+  const lookup: GeoLookup = {
+    location: cityLookup ? (ip) => cityLookup()(ip) : empty.location,
+    network: asnLookup ? (ip) => asnLookup()(ip) : empty.network,
+  };
   return {
     lookup,
     city,

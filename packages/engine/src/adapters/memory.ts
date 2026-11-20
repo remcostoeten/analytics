@@ -92,7 +92,10 @@ export function memoryStore(): EventStore & {
  * const geo = memoryGeo(new Map([["81.2.69.160", record]]));
  */
 export function memoryGeo(records: Map<string, GeoRecord>): GeoLookup {
-  return { lookup: (ip) => records.get(ip) ?? emptyRecord };
+  return {
+    location: (ip) => (records.get(ip) ?? emptyRecord).geo,
+    network: (ip) => (records.get(ip) ?? emptyRecord).network,
+  };
 }
 
 /**
@@ -108,22 +111,30 @@ export function fixedClock(now: Date): Clock {
 
 /**
  * @name memoryLimiter
- * @description A fixed-window `RateLimiter` counted in memory against the given clock.
+ * @description A fixed-window `RateLimiter` counted in memory against the given clock, per
+ * process. Past `maxKeys` keys it drops the windows that have ended, and starts over if that is
+ * not enough, so it never grows without bound.
  *
  * @example
  * const limiter = memoryLimiter(fixedClock(new Date()));
  * await limiter.hit("ip:abc", 60, 60);
  */
-export function memoryLimiter(clock: Clock): RateLimiter {
-  const windows = new Map<string, number>();
+export function memoryLimiter(clock: Clock, maxKeys = 10_000): RateLimiter {
+  const windows = new Map<string, { start: number; ends: number; hits: number }>();
+  function prune(now: number) {
+    for (const [key, window] of windows) if (window.ends <= now) windows.delete(key);
+    if (windows.size >= maxKeys) windows.clear();
+  }
   return {
     hit: async (key, limit, windowSeconds) => {
+      const now = clock.now().getTime();
       const windowMs = windowSeconds * 1000;
-      const start = Math.floor(clock.now().getTime() / windowMs) * windowMs;
-      const slot = `${key}@${start}`;
-      const hits = (windows.get(slot) ?? 0) + 1;
-      windows.set(slot, hits);
-      const retryAfterSeconds = Math.ceil((start + windowMs - clock.now().getTime()) / 1000);
+      const start = Math.floor(now / windowMs) * windowMs;
+      const current = windows.get(key);
+      const hits = current && current.start === start ? current.hits + 1 : 1;
+      if (!current && windows.size >= maxKeys) prune(now);
+      windows.set(key, { start, ends: start + windowMs, hits });
+      const retryAfterSeconds = Math.ceil((start + windowMs - now) / 1000);
       return {
         allowed: hits <= limit,
         hits,

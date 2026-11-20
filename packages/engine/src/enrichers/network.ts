@@ -11,6 +11,6 @@ export const network = defineEnricher({
   name: "network",
   enrich: (draft, { ports }) => {
     const ip = draft.enrichment.client.ip;
-    return { network: ip ? ports.geo.lookup(ip).network : { asn: null, asOrg: null } };
+    return { network: ip ? ports.geo.network(ip) : { asn: null, asOrg: null } };
   },
 });

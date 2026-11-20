@@ -38,9 +38,25 @@ describe("proxy", () => {
     });
   }
 
-  test("refuses AI crawlers on every path", () => {
+  test("refuses AI crawlers on pages", () => {
     expect(proxy(request("GPTBot/1.2")).status).toBe(403);
-    expect(proxyConfig.matcher).toBe("/:path*");
+  });
+
+  test("runs on pages but not on static files", () => {
+    const matcher = new RegExp(`^${proxyConfig.matcher}$`);
+    for (const path of ["/", "/projects/example.com", "/admin/projects", "/robots.txt"]) {
+      expect(matcher.test(path)).toBe(true);
+    }
+    for (const path of [
+      "/_next/static/chunks/main.js",
+      "/_next/image",
+      "/favicon.ico",
+      "/icon.png",
+      "/opengraph-image.png",
+      "/fonts/geist.woff2",
+    ]) {
+      expect(matcher.test(path)).toBe(false);
+    }
   });
 
   test("passes browsers through", () => {

@@ -23,7 +23,18 @@ describe("dashboard proxy", () => {
   });
 
   test("only runs on the dashboard and docs paths", () => {
-    expect(config.matcher).toEqual(["/dashboard", "/dashboard/:path*", "/docs", "/docs/:path*"]);
+    expect(config.matcher[0]).toBe("/dashboard");
+    expect(config.matcher.slice(2)).toEqual(["/docs", "/docs/:path*"]);
+  });
+
+  test("skips the dashboard's static files", () => {
+    const matcher = new RegExp(`^${config.matcher[1]}$`);
+    expect(matcher.test("/dashboard/projects/example.com")).toBe(true);
+    expect(matcher.test("/dashboard/")).toBe(true);
+    expect(matcher.test("/dashboard/_next/static/chunks/main.js")).toBe(false);
+    expect(matcher.test("/dashboard/_next/image")).toBe(false);
+    expect(matcher.test("/dashboard/favicon.ico")).toBe(false);
+    expect(matcher.test("/dashboard/icon.png")).toBe(false);
   });
 });
 

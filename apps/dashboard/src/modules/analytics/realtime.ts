@@ -2,8 +2,6 @@ import type { ClientError } from "@spoar/client";
 import type { LiveEvent } from "@spoar/contract";
 import type { Result } from "@spoar/shared/result";
 
-export const realtimeIntervalMs = 30_000;
-
 export const feedLimit = 50;
 
 export const feedKeep = 100;

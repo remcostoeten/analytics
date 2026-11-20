@@ -92,9 +92,9 @@ Batch runs auth, rate limit and geo once per request, then step 9 onward per eve
 
 ### Scheduled jobs
 
-Vercel crons in `apps/ingestion/vercel.json`, called with `CRON_SECRET`:
-- `/admin/rollup` daily 02:30. Rebuilds last N UTC days of `rollup_daily` (dimensions `total`, `path`, `country`), excluding bot, internal, localhost and preview traffic.
-- `/admin/cleanup` daily 03:00. Retention: pageviews 90d, other events 30d, localhost and bots 7d.
+No Vercel crons run since 20 November 2026: v2 never reads `rollup_daily`, and the v2 `cleanup` job applies retention to the shared database. Both routes still answer when called with `CRON_SECRET`:
+- `/admin/rollup` rebuilds last N UTC days of `rollup_daily` (dimensions `total`, `path`, `country`), excluding bot, internal, localhost and preview traffic.
+- `/admin/cleanup` applies retention: pageviews 90d, other events 30d, localhost and bots 7d.
 
 Do not emit crons from `scripts/build.ts`; duplicates fail the deploy.
 

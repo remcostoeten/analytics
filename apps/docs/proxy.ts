@@ -17,5 +17,11 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*", "/docs", "/docs/:path*"],
+  matcher: [
+    "/dashboard",
+    // Every dashboard path except Next build output, image optimisation and static asset files.
+    "/dashboard/((?!_next/static|_next/image|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|css|js|map)$).*)",
+    "/docs",
+    "/docs/:path*",
+  ],
 };

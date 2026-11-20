@@ -74,12 +74,17 @@ describe("ipHash", () => {
 describe("geo", () => {
   test.each([
     [
-      "the city database wins when it finds a city, edge headers fill gaps",
+      "edge headers win over the city database when they name a country",
       { "x-vercel-ip-country": "GB", "x-vercel-ip-city": "Hub", "x-vercel-ip-postal-code": "EC1" },
-      { country: "GB", city: "London", postalCode: "EC1", timezone: "Europe/London" },
+      { country: "GB", city: "Hub", postalCode: "EC1", timezone: "Europe/Amsterdam" },
     ],
     [
-      "edge headers win when the database has no city",
+      "the city database answers without edge headers",
+      {},
+      { country: "GB", city: "London", timezone: "Europe/London" },
+    ],
+    [
+      "edge headers answer when the database has no record",
       { "x-forwarded-for": "10.0.0.1", "x-vercel-ip-country": "NL", "x-vercel-ip-city": "Utrecht" },
       { country: "NL", city: "Utrecht", timezone: "Europe/Amsterdam" },
     ],
@@ -91,6 +96,27 @@ describe("geo", () => {
   ])("%s", async (_, headers, expected) => {
     const enriched = await geo.enrich(draft(headers), context);
     expect(enriched.geo).toMatchObject(expected);
+  });
+
+  test("edge headers leave the city database unopened", async () => {
+    const asked: string[] = [];
+    const counting: StageContext = {
+      ...context,
+      ports: {
+        ...context.ports,
+        geo: {
+          location: (ip) => {
+            asked.push(ip);
+            return emptyLocation;
+          },
+          network: () => london.network,
+        },
+      },
+    };
+    await geo.enrich(draft({ "x-vercel-ip-country": "NL" }), counting);
+    expect(asked).toEqual([]);
+    await geo.enrich(draft(), counting);
+    expect(asked).toEqual(["81.2.69.160"]);
   });
 
   test("a trusted request skips the edge headers, which describe the calling server", async () => {

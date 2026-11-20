@@ -101,7 +101,7 @@ SQL needs an owner, or an admin or analyst who lists the project, a token with t
 
 ### 429 "Too many reads; try again shortly"
 
-Anonymous reads are limited per IP hash: 120 a minute by default, set with `PUBLIC_READ_LIMIT`. Signed-in callers and API tokens are not limited here.
+Anonymous reads are limited per IP hash: 120 a minute per API instance by default, set with `PUBLIC_READ_LIMIT`. Signed-in callers and API tokens are not limited here.
 
 ### 429 "At most 30 queries a minute"
 

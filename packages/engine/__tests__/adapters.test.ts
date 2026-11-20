@@ -37,6 +37,22 @@ describe("memoryLimiter", () => {
     ]);
     expect((await limiter.hit("ip:b", 2, 60)).allowed).toBe(true);
   });
+
+  test("starts a new count in the next window and keeps at most maxKeys keys", async () => {
+    const clock = { at: Date.parse("2026-09-27T16:40:15.000Z") };
+    const limiter = memoryLimiter({ now: () => new Date(clock.at) }, 2);
+    await limiter.hit("ip:a", 1, 60);
+    expect((await limiter.hit("ip:a", 1, 60)).allowed).toBe(false);
+    clock.at += 60_000;
+    expect(await limiter.hit("ip:a", 1, 60)).toEqual({
+      allowed: true,
+      hits: 1,
+      retryAfterSeconds: 0,
+    });
+    await limiter.hit("ip:b", 1, 60);
+    await limiter.hit("ip:c", 1, 60);
+    expect((await limiter.hit("ip:a", 1, 60)).hits).toBe(1);
+  });
 });
 
 describe("maxmindGeo", () => {
@@ -44,26 +60,24 @@ describe("maxmindGeo", () => {
   const geo = maxmindGeo(city, null);
 
   test("looks up a known address", () => {
-    expect(geo.lookup("81.2.69.160")).toEqual({
-      geo: {
-        country: "GB",
-        region: "ENG",
-        city: "London",
-        postalCode: null,
-        timezone: "Europe/London",
-        latitude: 51.5142,
-        longitude: -0.0931,
-        continent: "EU",
-      },
-      network: { asn: null, asOrg: null },
+    expect(geo.location("81.2.69.160")).toEqual({
+      country: "GB",
+      region: "ENG",
+      city: "London",
+      postalCode: null,
+      timezone: "Europe/London",
+      latitude: 51.5142,
+      longitude: -0.0931,
+      continent: "EU",
     });
+    expect(geo.network("81.2.69.160")).toEqual({ asn: null, asOrg: null });
   });
 
   test("returns nulls for an unknown address", () => {
-    expect(geo.lookup("10.0.0.1").geo.country).toBeNull();
+    expect(geo.location("10.0.0.1").country).toBeNull();
   });
 
   test("returns nulls for a malformed address", () => {
-    expect(geo.lookup("not-an-ip").geo.country).toBeNull();
+    expect(geo.location("not-an-ip").country).toBeNull();
   });
 });

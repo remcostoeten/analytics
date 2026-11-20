@@ -15,7 +15,7 @@ Aggregate reads of a public project need no credential. Everything else needs a 
 - Lists answer `{ data, nextCursor }`; single resources answer `{ data }`.
 - Timestamps are ISO 8601 in UTC.
 - Every response carries `x-request-id`.
-- Aggregate reads of a public project are cached for 60 seconds (`Cache-Control: public, s-maxage=60`); everything else is `private, no-store`.
+- Aggregate reads of a public project are cached for 60 seconds (`Cache-Control: public, s-maxage=60`); those of a private project only in the caller's browser (`private, max-age=60`, 15 seconds for `realtime`); everything else is `private, no-store`. The API also keeps aggregate answers for up to 60 seconds and realtime ones for 15, so a read can trail new events by that long.
 - Every list and breakdown also answers `format=csv|json|sql` (or `Accept: text/csv`) with the whole list as one download, up to 1 million rows.
 
 ## Shared query parameters

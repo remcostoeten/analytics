@@ -10,5 +10,7 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/:path*",
+  // Skips Next build output, image optimisation and files with a static asset extension.
+  matcher:
+    "/((?!_next/static|_next/image|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|css|js|map)$).*)",
 };

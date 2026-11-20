@@ -90,7 +90,7 @@ export function defineSignal(signal: Signal): Signal {
  * the enrichment fields it fills, which the enrich stage merges in registration order.
  *
  * @example
- * const network = defineEnricher({ name: "network", enrich: (draft, { ports }) => ({ network: ports.geo.lookup(draft.enrichment.client.ip ?? "").network }) });
+ * const network = defineEnricher({ name: "network", enrich: (draft, { ports }) => ({ network: ports.geo.network(draft.enrichment.client.ip ?? "") }) });
  */
 export function defineEnricher(enricher: Enricher): Enricher {
   return enricher;

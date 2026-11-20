@@ -11,6 +11,7 @@ import {
   postgresAdapters,
   routeLocalNeon,
 } from "@spoar/engine/adapters/postgres";
+import { memoryLimiter } from "@spoar/engine/adapters/memory";
 import { jsonLogger, systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
 
 import { apiLinks } from "@spoar/engine/alerts";
@@ -18,6 +19,9 @@ import { findPlugin } from "@spoar/engine/config";
 
 import config from "../analytics.config";
 import { cachedMembers } from "./access/cached-members";
+import { cachedProjects } from "./access/cached-projects";
+import { cachedIngestProjects } from "./access/cached-ingest-projects";
+import { throttledTokens } from "./access/throttled-tokens";
 import { createApp } from "./app";
 import { accessCacheSeconds, betterAuthSessions, createAuth } from "./auth/better-auth";
 import { githubDirectory } from "./modules/members/github";
@@ -83,6 +87,9 @@ export function buildApi(host: Host) {
     secure: production,
   });
   const members = cachedMembers(stores.members, () => clock.now(), accessCacheSeconds * 1000);
+  const ingestProjects = cachedIngestProjects(adapters.projects, () => clock.now(), 60_000);
+  const ingestLimiter = memoryLimiter(clock);
+  const projects = cachedProjects(stores.projects, () => clock.now(), accessCacheSeconds * 1000);
   const settings = {
     ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
     rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
@@ -91,7 +98,16 @@ export function buildApi(host: Host) {
   return createApp({
     engine: (log) =>
       createEngine(
-        { ...adapters, geo: host.geo.lookup, hasher, clock, logger: log, logs: stores.logs },
+        {
+          ...adapters,
+          projects: ingestProjects,
+          limiter: ingestLimiter,
+          geo: host.geo.lookup,
+          hasher,
+          clock,
+          logger: log,
+          logs: stores.logs,
+        },
         {
           stages: defaultStages,
           signals: defaultSignals,
@@ -112,8 +128,8 @@ export function buildApi(host: Host) {
       },
     },
     access: {
-      projects: stores.projects,
-      tokens: stores.tokens,
+      projects,
+      tokens: throttledTokens(stores.tokens, accessCacheSeconds * 1000),
       members,
       sessions: betterAuthSessions(auth, members),
       hasher,
@@ -127,11 +143,12 @@ export function buildApi(host: Host) {
       speed: stores.speed,
       issues: stores.issues,
       live: { waitMs: 25_000, streamMs: 55_000 },
-      limiter: adapters.limiter,
+      limiter: memoryLimiter(clock),
       hasher,
       ipSecret: settings.ipSecret,
       publicLimit: Number(process.env.PUBLIC_READ_LIMIT ?? 120),
       clock: () => clock.now(),
+      memo: { aggregateMs: 60_000, liveMs: 15_000 },
     },
     query: {
       runner: stores.queries,
@@ -151,7 +168,7 @@ export function buildApi(host: Host) {
     widget: {
       store: stores.widget,
       logs: stores.logs,
-      keys: adapters.projects,
+      keys: ingestProjects,
       limiter: adapters.limiter,
       reportsPerMinute: Number(process.env.CLIENT_REPORT_LIMIT ?? 60),
     },
