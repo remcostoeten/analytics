@@ -178,9 +178,9 @@ describe("aggregate reads across projects", () => {
     expect((stats.data as Json).pageviews).toMatchObject({ value: 4 });
   });
 
-  test("an admin also gets private projects, not cacheable", async () => {
+  test("an admin also gets private projects, cacheable in their browser only", async () => {
     const response = await call(`/v2/stats?${week}`, admin);
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe("private, max-age=60");
     const stats = await body(`/v2/stats?${week}`, StatsResponse, admin);
     expect((stats.data as Json).pageviews).toMatchObject({ value: 5 });
   });

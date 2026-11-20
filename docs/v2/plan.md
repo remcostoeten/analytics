@@ -320,8 +320,8 @@ Shared rules:
 - Lists return `{ data, nextCursor }` with `limit` at most 100.
 - Errors always return `{ error: { code, message, details? } }` with UPPER\_SNAKE codes; the full list with statuses is at the end of the API reference tab.
 - A private project answers 404 to anyone without access, so its existence does not leak.
-- Public aggregate reads send `Cache-Control: public, s-maxage=60` so Cloudflare absorbs repeat traffic; private reads send `private, no-store`.
-- Public reads have their own per-IP-hash rate limit, separate from ingest.
+- Public aggregate reads send `Cache-Control: public, s-maxage=60` so Cloudflare absorbs repeat traffic; aggregate reads of a private project send `private, max-age=60` (`realtime` 15 seconds), and other private reads `private, no-store`. Each API instance also keeps successful aggregate answers for 60 seconds and realtime ones for 15, by path and query.
+- Public reads have their own per-IP-hash rate limit, separate from ingest, counted in memory per API instance so an anonymous read does not write to the database.
 
 The `skriuw-*` selectors and the PostHog proxy stay out of v2. Product-specific views become saved filters over `breakdown` and `events` once they are needed.
 
@@ -431,7 +431,7 @@ The design keeps Postgres as the only source of truth and hides delivery behind 
 
 | Stage | How | Why |
 | --- | --- | --- |
-| Now (phase 4) | `GET /realtime/events?after=<cursor>` long-polls: it answers at once when newer events exist, otherwise waits up to 25 seconds, checking an index on `(project_id, received_at, id)` (migration 0023) every 2 seconds. The dashboard's live counter and stream use it; KPI tiles simply refetch every 30 seconds | Works on Vercel today, needs no new service, and costs one indexed query per open dashboard every 2 seconds, which is fine for a handful of viewers |
+| Now (phase 4) | `GET /realtime/events?after=<cursor>` long-polls: it answers at once when newer events exist, otherwise waits up to 25 seconds, checking an index on `(project_id, received_at, id)` (migration 0023) every 5 seconds. The dashboard's live counter and the realtime panel refetch every 60 seconds while the window has focus; KPI tiles every five minutes | Works on Vercel today, needs no new service, and costs one indexed query per open long-poll every 5 seconds, which is fine for a handful of viewers |
 | Now (dev widget) | `GET /v2/projects/:project/live` is a WebSocket on the same API. Vercel Functions serve WebSockets on Fluid compute (public beta since June 22, 2026); a connection is pinned to one instance and closes at the function's maximum duration. Per instance, every socket watching one project and channel shares one poller on the same cursors and indexes, and a reconnect resumes from its cursor | One connection carries events, logs, visitors and sessions; Active CPU pricing bills message handling, not idle connection time; ten viewers on an instance cost the same queries as one |
 | Later, if needed | A shared hub across instances: Redis pub/sub from the Vercel Marketplace, or a Cloudflare Durable Object per project that ingest notifies after it persists a batch | Only worth it when per-instance polling gets expensive; `server.publish()` on Vercel reaches one instance only |
 
