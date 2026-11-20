@@ -28,14 +28,20 @@ function effective(scope: ReadScope, metrics: Metric[]) {
   return { scope: split?.scope ?? scope, conversion: split?.conversion ?? null };
 }
 
+const scopeTotals = [
+  sql`(SELECT count(DISTINCT k) FILTER (WHERE k IS NOT NULL) FROM scoped) AS scope_total`,
+  sql`(SELECT count(DISTINCT visitor_id) FROM scoped) AS scope_visitors`,
+];
+
 function withScope(
   scope: ReadScope,
   key: SQL,
   keyDimensions: Parameters<typeof scopedEvents>[2],
   metrics: Metric[],
+  extra: SQL[] = [],
 ) {
   const read = effective(scope, metrics);
-  return sql`WITH scoped AS (${scopedEvents(read.scope, key, keyDimensions, read.conversion)})${aggregateQuery(metrics)}`;
+  return sql`WITH scoped AS (${scopedEvents(read.scope, key, keyDimensions, read.conversion)})${aggregateQuery(metrics, extra)}`;
 }
 
 /**
@@ -86,19 +92,22 @@ export function drizzleReads(db: Database): ReadStore {
     breakdown: (scope, dimension, metrics, page) =>
       attempt("Could not read the breakdown", async () => {
         const key = dimension.expression({ from: scope.from });
-        const [counts] = await selectRows(
-          db,
-          sql`WITH scoped AS (${scopedEvents(effective(scope, metrics).scope, key, [dimension])})
-            SELECT count(DISTINCT k) FILTER (WHERE k IS NOT NULL) AS total, count(DISTINCT visitor_id) AS visitors FROM scoped`,
-        );
         const order = metrics.slice(0, 2).map((_, index) => sql.raw(`a.m${index} DESC`));
         const rows = await selectRows(
           db,
-          sql`SELECT * FROM (${withScope(scope, key, [dimension], metrics)}) a
+          sql`SELECT * FROM (${withScope(scope, key, [dimension], metrics, scopeTotals)}) a
             WHERE a.k IS NOT NULL
             ORDER BY ${sql.join(order, sql`, `)}, a.k ASC
             LIMIT ${page.limit} OFFSET ${page.offset}`,
         );
+        const [first] = rows;
+        const [counts] = first
+          ? [{ total: first.scope_total, visitors: first.scope_visitors }]
+          : await selectRows(
+              db,
+              sql`WITH scoped AS (${scopedEvents(effective(scope, metrics).scope, key, [dimension])})
+                SELECT count(DISTINCT k) FILTER (WHERE k IS NOT NULL) AS total, count(DISTINCT visitor_id) AS visitors FROM scoped`,
+            );
         return {
           rows: rows.map((row) => ({
             value: textual(row.k),
@@ -119,27 +128,35 @@ export function drizzleReads(db: Database): ReadStore {
           environment: "production",
           filters: [],
         };
-        const scoped = sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])})`;
-        const [totals] = await selectRows(
+        const rows = await selectRows(
           db,
-          sql`${scoped} SELECT count(DISTINCT visitor_id) AS visitors, count(*) FILTER (WHERE type = 'pageview') AS pageviews FROM scoped`,
+          sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}),
+            totals AS (
+              SELECT 'total' AS kind, NULL::text AS value, count(DISTINCT visitor_id) AS visitors,
+                count(*) FILTER (WHERE type = 'pageview') AS pageviews
+              FROM scoped
+            ),
+            pages AS (
+              SELECT 'page' AS kind, path::text AS value, count(DISTINCT visitor_id) AS visitors, 0::bigint AS pageviews
+              FROM scoped WHERE path IS NOT NULL GROUP BY 2 ORDER BY 3 DESC, 2 ASC LIMIT ${topLimit}
+            ),
+            countries AS (
+              SELECT 'country' AS kind, country::text AS value, count(DISTINCT visitor_id) AS visitors, 0::bigint AS pageviews
+              FROM scoped WHERE country IS NOT NULL GROUP BY 2 ORDER BY 3 DESC, 2 ASC LIMIT ${topLimit}
+            )
+            SELECT * FROM (
+              SELECT * FROM totals UNION ALL SELECT * FROM pages UNION ALL SELECT * FROM countries
+            ) u ORDER BY kind, visitors DESC, value ASC`,
         );
-        function top(column: SQL) {
-          return selectRows(
-            db,
-            sql`${scoped} SELECT ${column} AS value, count(DISTINCT visitor_id) AS visitors FROM scoped
-              WHERE ${column} IS NOT NULL GROUP BY 1 ORDER BY 2 DESC, 1 ASC LIMIT ${topLimit}`,
-          );
-        }
-        const [pages, countries] = await Promise.all([top(sql`path`), top(sql`country`)]);
         function shape(row: Row) {
           return { value: textual(row.value), visitors: numeric(row.visitors) };
         }
+        const totals = rows.find((row) => row.kind === "total");
         return {
           visitors: numeric(totals?.visitors),
           pageviews: numeric(totals?.pageviews),
-          pages: pages.map(shape),
-          countries: countries.map(shape),
+          pages: rows.filter((row) => row.kind === "page").map(shape),
+          countries: rows.filter((row) => row.kind === "country").map(shape),
         };
       }),
     ...exploreReads(db),
