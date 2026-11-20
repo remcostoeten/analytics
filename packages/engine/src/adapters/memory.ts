@@ -92,7 +92,10 @@ export function memoryStore(): EventStore & {
  * const geo = memoryGeo(new Map([["81.2.69.160", record]]));
  */
 export function memoryGeo(records: Map<string, GeoRecord>): GeoLookup {
-  return { lookup: (ip) => records.get(ip) ?? emptyRecord };
+  return {
+    location: (ip) => (records.get(ip) ?? emptyRecord).geo,
+    network: (ip) => (records.get(ip) ?? emptyRecord).network,
+  };
 }
 
 /**
