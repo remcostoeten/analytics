@@ -259,6 +259,21 @@ describe("jobs", () => {
     expect(left.rows[0]?.rows).toBe(0);
   });
 
+  test("cleanup deletes sign-in rate limit rows older than a day", async () => {
+    await database.query(
+      `INSERT INTO auth_rate_limit (id, key, count, last_request)
+       VALUES ('old', '127.0.0.1/sign-in/social', 3, $1), ('recent', '127.0.0.2/sign-in/social', 1, $2)`,
+      [now.getTime() - 2 * 24 * 60 * 60 * 1000, now.getTime() - 60 * 1000],
+    );
+    const response = await post("/admin/jobs/cleanup");
+    expect(((await response.json()) as { data: Json }).data).toMatchObject({
+      job: "cleanup",
+      rowsDeleted: 1,
+    });
+    const left = await database.query<{ id: string }>("SELECT id FROM auth_rate_limit");
+    expect(left.rows).toEqual([{ id: "recent" }]);
+  });
+
   test("crux compares p75 with the Chrome UX Report and flags gaps over 25%", async () => {
     const response = await post("/admin/jobs/crux");
     expect(response.status).toBe(200);
