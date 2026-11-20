@@ -109,28 +109,43 @@ export function fixedClock(now: Date): Clock {
   return { now: () => new Date(now) };
 }
 
+type Window = { hits: number; endsAt: number };
+
 /**
  * @name memoryLimiter
- * @description A fixed-window `RateLimiter` counted in memory against the given clock.
+ * @description A fixed-window `RateLimiter` counted in memory against the given clock. The API
+ * uses it for ingest, so each instance counts its own requests without a database round trip.
+ * Windows that have ended are dropped once a minute, which keeps a long-lived instance's memory
+ * bounded.
  *
  * @example
  * const limiter = memoryLimiter(fixedClock(new Date()));
  * await limiter.hit("ip:abc", 60, 60);
  */
 export function memoryLimiter(clock: Clock): RateLimiter {
-  const windows = new Map<string, number>();
+  const windows = new Map<string, Window>();
+  const swept = { at: 0 };
+  function sweep(now: number) {
+    if (now - swept.at < 60_000) return;
+    swept.at = now;
+    for (const [slot, window] of windows) {
+      if (window.endsAt <= now) windows.delete(slot);
+    }
+  }
   return {
     hit: async (key, limit, windowSeconds) => {
+      const now = clock.now().getTime();
+      sweep(now);
       const windowMs = windowSeconds * 1000;
-      const start = Math.floor(clock.now().getTime() / windowMs) * windowMs;
+      const start = Math.floor(now / windowMs) * windowMs;
       const slot = `${key}@${start}`;
-      const hits = (windows.get(slot) ?? 0) + 1;
-      windows.set(slot, hits);
-      const retryAfterSeconds = Math.ceil((start + windowMs - clock.now().getTime()) / 1000);
+      const hits = (windows.get(slot)?.hits ?? 0) + 1;
+      windows.set(slot, { hits, endsAt: start + windowMs });
+      const allowed = hits <= limit;
       return {
-        allowed: hits <= limit,
+        allowed,
         hits,
-        retryAfterSeconds: hits <= limit ? 0 : retryAfterSeconds,
+        retryAfterSeconds: allowed ? 0 : Math.ceil((start + windowMs - now) / 1000),
       };
     },
   };

@@ -1,24 +1,6 @@
 import type { MemberStore } from "@spoar/engine";
 
-type Entry<Value> = { value: Value; expires: number };
-
-const maxEntries = 500;
-
-function remember<Value>(clock: () => Date, ttlMs: number) {
-  const entries = new Map<string, Entry<Value>>();
-  return {
-    clear: () => entries.clear(),
-    read: async (key: string, load: () => Promise<Value>, keep: (value: Value) => boolean) => {
-      const now = clock().getTime();
-      const hit = entries.get(key);
-      if (hit && hit.expires > now) return hit.value;
-      const value = await load();
-      if (entries.size >= maxEntries) entries.clear();
-      if (keep(value)) entries.set(key, { value, expires: now + ttlMs });
-      return value;
-    },
-  };
-}
+import { remember } from "./remember";
 
 /**
  * @name cachedMembers

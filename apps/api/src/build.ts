@@ -11,6 +11,7 @@ import {
   postgresAdapters,
   routeLocalNeon,
 } from "@spoar/engine/adapters/postgres";
+import { memoryLimiter } from "@spoar/engine/adapters/memory";
 import { jsonLogger, systemClock, webCryptoHasher } from "@spoar/engine/adapters/system";
 
 import { apiLinks } from "@spoar/engine/alerts";
@@ -18,6 +19,7 @@ import { findPlugin } from "@spoar/engine/config";
 
 import config from "../analytics.config";
 import { cachedMembers } from "./access/cached-members";
+import { cachedProjects } from "./access/cached-projects";
 import { createApp } from "./app";
 import { accessCacheSeconds, betterAuthSessions, createAuth } from "./auth/better-auth";
 import { githubDirectory } from "./modules/members/github";
@@ -83,6 +85,8 @@ export function buildApi(host: Host) {
     secure: production,
   });
   const members = cachedMembers(stores.members, () => clock.now(), accessCacheSeconds * 1000);
+  const ingestProjects = cachedProjects(adapters.projects, () => clock.now(), 60_000);
+  const ingestLimiter = memoryLimiter(clock);
   const settings = {
     ipSecret: problem ? "insecure-development-secret-change-me" : ipSecret,
     rateLimit: { limit: Number(process.env.INGEST_RATE_LIMIT ?? 100), windowSeconds: 60 },
@@ -91,7 +95,16 @@ export function buildApi(host: Host) {
   return createApp({
     engine: (log) =>
       createEngine(
-        { ...adapters, geo: host.geo.lookup, hasher, clock, logger: log, logs: stores.logs },
+        {
+          ...adapters,
+          projects: ingestProjects,
+          limiter: ingestLimiter,
+          geo: host.geo.lookup,
+          hasher,
+          clock,
+          logger: log,
+          logs: stores.logs,
+        },
         {
           stages: defaultStages,
           signals: defaultSignals,
@@ -151,7 +164,7 @@ export function buildApi(host: Host) {
     widget: {
       store: stores.widget,
       logs: stores.logs,
-      keys: adapters.projects,
+      keys: ingestProjects,
       limiter: adapters.limiter,
       reportsPerMinute: Number(process.env.CLIENT_REPORT_LIMIT ?? 60),
     },
