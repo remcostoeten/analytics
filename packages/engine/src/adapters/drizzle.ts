@@ -142,6 +142,17 @@ function timestamp(value: string) {
   return sql`${value}::timestamptz`;
 }
 
+type Row = { [column: string]: unknown };
+
+async function rowsOf(db: Database, query: SQL): Promise<Row[]> {
+  const result: unknown = await db.execute(query);
+  if (Array.isArray(result)) return result;
+  if (typeof result === "object" && result !== null && "rows" in result) {
+    return Array.isArray(result.rows) ? result.rows : [];
+  }
+  return [];
+}
+
 function experiment(props: Props): Nullable<Meta> {
   const { experiment: name, variant } = props;
   return typeof name === "string" && typeof variant === "string" ? { [name]: variant } : null;
@@ -168,15 +179,12 @@ function mergedMeta(patch: Meta): SQL {
   return merged;
 }
 
-async function upsertSession(db: Database, group: EventDraft[]) {
-  const first = group[0];
-  const last = group.at(-1);
-  if (!first || !last) return { inserted: false, internal: false };
+function sessionUpsert(db: Database, first: EventDraft, last: EventDraft, group: EventDraft[]) {
   const internal = group.some((draft) => draft.flags.internal);
   const pageviews = group.filter((draft) => draft.event.name === "pageview").length;
   const lastEventAt = timestamp(last.ts);
   const latest = sql`GREATEST(${sessions.lastEventAt}, ${lastEventAt})`;
-  const [row] = await db
+  return db
     .insert(sessions)
     .values({
       projectId: first.projectId,
@@ -211,13 +219,10 @@ async function upsertSession(db: Database, group: EventDraft[]) {
         isInternal: sql`${sessions.isInternal} OR ${internal}`,
       },
     })
-    .returning({ inserted: sql<boolean>`xmax = 0`, internal: sessions.isInternal });
-  return { inserted: row?.inserted ?? false, internal };
+    .returning({ inserted: sql<boolean>`xmax = 0`.as("inserted") });
 }
 
-async function upsertVisitor(db: Database, group: EventDraft[], newSession: boolean) {
-  const last = group.at(-1);
-  if (!last) return false;
+function visitorUpsert(db: Database, last: EventDraft, group: EventDraft[]) {
   const { client, device, geo } = last.enrichment;
   const internal = group.some((draft) => draft.flags.internal);
   const patch = visitorPatch(group);
@@ -236,7 +241,7 @@ async function upsertVisitor(db: Database, group: EventDraft[], newSession: bool
     ua: client.userAgent,
     screenResolution: last.event.context?.screen ?? null,
   };
-  const [row] = await db
+  return db
     .insert(visitors)
     .values({
       ...details,
@@ -250,13 +255,29 @@ async function upsertVisitor(db: Database, group: EventDraft[], newSession: bool
       set: {
         ...details,
         lastSeen: sql`now()`,
-        visitCount: sql`${visitors.visitCount} + ${newSession ? 1 : 0}`,
+        visitCount: sql`${visitors.visitCount} + (SELECT count(*)::integer FROM upserted_session WHERE inserted)`,
         isInternal: sql`${visitors.isInternal} OR ${internal}`,
         ...(hasKeys(patch) ? { meta: mergedMeta(patch) } : {}),
       },
     })
     .returning({ isInternal: visitors.isInternal });
-  return row?.isInternal ?? internal;
+}
+
+async function upsertSessionAndVisitor(db: Database, group: EventDraft[]) {
+  const first = group[0];
+  const last = group.at(-1);
+  if (!first || !last) return { visitorInternal: false, sessionInternal: false };
+  const session = sessionUpsert(db, first, last, group);
+  const visitor = visitorUpsert(db, last, group);
+  const [row] = await rowsOf(
+    db,
+    sql`WITH upserted_session AS (${session.getSQL()}) ${visitor.getSQL()}`,
+  );
+  const sessionInternal = group.some((draft) => draft.flags.internal);
+  return {
+    visitorInternal: row ? row.is_internal === true : sessionInternal,
+    sessionInternal,
+  };
 }
 
 async function markInternal(db: Database, group: EventDraft[]) {
@@ -319,7 +340,8 @@ async function groupIssue(db: Database, group: EventDraft[]) {
   const last = group.at(-1);
   if (!first?.issue || !last?.issue) return;
   const releases = group.map((draft) => draft.issue?.release).filter((release) => release);
-  const result: unknown = await db.execute(
+  const [row] = await rowsOf(
+    db,
     sql`
     INSERT INTO issues (project_id, fingerprint, title, culprit, level, count, visitors, first_seen, last_seen,
       first_release, last_release, minute_start, minute_count)
@@ -352,11 +374,6 @@ async function groupIssue(db: Database, group: EventDraft[]) {
       updated_at = now()
     RETURNING id, minute_count`,
   );
-  const rows =
-    typeof result === "object" && result !== null && "rows" in result && Array.isArray(result.rows)
-      ? (result.rows as { id: unknown; minute_count: unknown }[])
-      : [];
-  const [row] = rows;
   if (!row) return;
   const issueId = BigInt(String(row.id));
   const before = Number(row.minute_count) - group.length;
@@ -412,15 +429,15 @@ async function groupIssues(db: Database, drafts: EventDraft[]) {
   for (const group of issueGroups(counted)) await groupIssue(db, group);
 }
 
-async function upsertVitals(db: Database, drafts: EventDraft[]) {
+function vitalsUpsert(db: Database, drafts: EventDraft[]) {
   const latest = new Map<string, VitalRow>();
   for (const row of drafts.map(vitalRow)) {
     if (!row) continue;
     const seen = latest.get(row.id);
     if (!seen || seen.ts <= row.ts) latest.set(row.id, row);
   }
-  if (latest.size === 0) return;
-  await db
+  if (latest.size === 0) return null;
+  return db
     .insert(webVitals)
     .values([...latest.values()])
     .onConflictDoUpdate({
@@ -435,13 +452,29 @@ async function upsertVitals(db: Database, drafts: EventDraft[]) {
     });
 }
 
+async function insertRows(db: Database, drafts: EventDraft[]) {
+  const insert = db
+    .insert(events)
+    .values(drafts.map(toEventRow))
+    .onConflictDoNothing({ target: events.fingerprint })
+    .returning({ id: events.fingerprint });
+  const vitals = vitalsUpsert(db, drafts);
+  if (!vitals) return new Set((await insert).map((row) => row.id));
+  const rows = await rowsOf(
+    db,
+    sql`WITH upserted_vitals AS (${vitals.getSQL()}) ${insert.getSQL()}`,
+  );
+  return new Set(rows.map((row) => String(row.fingerprint)));
+}
+
 /**
  * @name drizzleStore
  * @description An `EventStore` on any Drizzle Postgres database. Events go in one multi-row insert
  * per batch with `ON CONFLICT DO NOTHING` on the event id, writing the v2 columns plus the legacy
- * `type`, `meta` and `device_type` values the v1 dashboard reads. Sessions and visitors are
- * upserted once per session; a visitor marked internal makes that session's new events internal.
- * Human `web_vital` events also go to `web_vitals`, one row per metric id with its latest value.
+ * `type`, `meta` and `device_type` values the v1 dashboard reads. Human `web_vital` events also go
+ * to `web_vitals` in that same statement, one row per metric id with its latest value. The session
+ * and its visitor are upserted in one statement per session; a visitor marked internal makes that
+ * session's new events internal.
  * Newly stored `error` events are grouped into `issues` by fingerprint, except those from bots and
  * localhost, which are stored without an issue: counts, visitors, releases
  * and a resolved issue reopening as a regression; a muted issue reopens once its date passes or
@@ -455,21 +488,12 @@ export function drizzleStore(db: Database): EventStore {
   return {
     insertEvents: async (drafts) => {
       try {
-        const rows = await db
-          .insert(events)
-          .values(drafts.map(toEventRow))
-          .onConflictDoNothing({ target: events.fingerprint })
-          .returning({ id: events.fingerprint });
-        const inserted = new Set(rows.map((row) => row.id));
+        const inserted = await insertRows(db, drafts);
         await groupIssues(
           db,
           drafts.filter(
             (draft) => draft.issue && inserted.has(draft.event.id) && countsAsIssue(draft),
           ),
-        );
-        await upsertVitals(
-          db,
-          drafts.filter((draft) => inserted.has(draft.event.id)),
         );
         const ids = drafts.map((draft) => draft.event.id);
         return ok({
@@ -483,9 +507,8 @@ export function drizzleStore(db: Database): EventStore {
     upsertSessions: async (drafts) => {
       try {
         for (const group of groupBySession(drafts)) {
-          const session = await upsertSession(db, group);
-          const visitorInternal = await upsertVisitor(db, group, session.inserted);
-          if (visitorInternal && !session.internal) await markInternal(db, group);
+          const upserted = await upsertSessionAndVisitor(db, group);
+          if (upserted.visitorInternal && !upserted.sessionInternal) await markInternal(db, group);
         }
         return ok(undefined);
       } catch (error) {
