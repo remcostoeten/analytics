@@ -77,7 +77,7 @@ The first allowed login to sign in becomes the owner. Later logins see their rol
 
 ## 7. Schedule the jobs
 
-The hosted nightly `rollup` and `cleanup` runs are paused until migration 0043 and the matching API are live. On your own install, apply that migration and deploy that API before you schedule them.
+Apply every migration and deploy the matching API before you schedule `rollup` and `cleanup`. They delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`.
 
 Four routes keep the data in shape. Call each one with `Authorization: Bearer <CRON_SECRET>`:
 
