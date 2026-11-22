@@ -97,10 +97,10 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 | When (UTC) | Job |
 | --- | --- |
 | Hourly at minute 7 | `alerts` |
-| Paused | `rollup` and `cleanup` run only when started by hand |
+| Daily 02:17 | `rollup`, then `cleanup` |
 | Mondays 04:43 | `crux` |
 
-Do not restore the nightly `rollup` and `cleanup` schedule until migration 0043 is applied and `v2.ingestion` and then `v2.dashboard` are deployed. An older API still deletes by the old rules. After that, the jobs delete analytics data, logs and alert deliveries only for projects with `retentionEnabled` on, past their `retentionDays`. The migration turns that on only for projects whose `retentionDays` is not 90. They also delete rate limit rows, expired widget tokens and the rows of projects an admin deleted.
+Both jobs delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`. `cleanup` also removes day-old rate limit rows, expired widget tokens and the rows of projects an admin deleted. A failed `rollup` skips `cleanup` that night.
 
 Until both are set, the workflow only prints a notice. A job that is not configured on the API, such as `crux` without `CRUX_API_KEY` or `alerts` without `alerts()` in `apps/api/analytics.config.ts`, is reported as a notice rather than a failure.
 

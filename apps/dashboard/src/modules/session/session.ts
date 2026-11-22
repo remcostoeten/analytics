@@ -33,17 +33,7 @@ async function askSession(): Promise<Result<AuthSession, string>> {
   }
 }
 
-/**
- * @name readSessionResult
- * @description Like `readSession`, but a failed API call comes back as an error instead of a
- * signed-out answer, so a page can tell an API outage from a visitor who is not signed in. A
- * failed call is not cached.
- *
- * @example
- * const answer = await readSessionResult();
- * if (!answer.ok) return <p>{answer.error}</p>;
- */
-export async function readSessionResult(): Promise<Result<AuthSession, string>> {
+async function readSessionResult(): Promise<Result<AuthSession, string>> {
   const jar = await cookies();
   return hasSessionCookie(jar.toString()) ? askSession() : ok(signedOut);
 }

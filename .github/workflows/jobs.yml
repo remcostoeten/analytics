@@ -3,6 +3,7 @@ name: jobs
 on:
   schedule:
     - cron: "7 * * * *"
+    - cron: "17 2 * * *"
     - cron: "43 4 * * 1"
   workflow_dispatch:
     inputs:
@@ -39,6 +40,7 @@ jobs:
         run: |
           case "$SCHEDULE" in
             "7 * * * *") jobs="alerts" ;;
+            "17 2 * * *") jobs="rollup cleanup" ;;
             "43 4 * * 1") jobs="crux" ;;
             *) jobs="$CHOSEN" ;;
           esac
@@ -61,6 +63,10 @@ jobs:
               echo "::notice::$job is not configured on the API yet"
             elif [ "$code" != "200" ]; then
               status=1
+            fi
+            if [ "$job" = "rollup" ] && [ "$code" != "200" ]; then
+              echo "::warning::Skipping the remaining jobs because rollup did not finish"
+              break
             fi
           done
           exit "$status"
