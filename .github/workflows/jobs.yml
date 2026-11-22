@@ -64,5 +64,9 @@ jobs:
             elif [ "$code" != "200" ]; then
               status=1
             fi
+            if [ "$job" = "rollup" ] && [ "$code" != "200" ]; then
+              echo "::warning::Skipping the remaining jobs because rollup did not finish"
+              break
+            fi
           done
           exit "$status"

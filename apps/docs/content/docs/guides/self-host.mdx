@@ -77,7 +77,7 @@ The first allowed login to sign in becomes the owner. Later logins see their rol
 
 ## 7. Schedule the jobs
 
-Apply every migration and deploy the matching API before you schedule `rollup` and `cleanup`. They delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`.
+Apply every migration and deploy the matching API before you schedule `rollup` and `cleanup`. They delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`. `cleanup` also removes day-old rate limit rows, expired widget tokens and the rows of projects an admin deleted. A failed `rollup` skips `cleanup` that night.
 
 Four routes keep the data in shape. Call each one with `Authorization: Bearer <CRON_SECRET>`:
 

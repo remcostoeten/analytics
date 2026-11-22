@@ -100,7 +100,7 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 | Daily 02:17 | `rollup`, then `cleanup` |
 | Mondays 04:43 | `crux` |
 
-Both jobs delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`.
+Both jobs delete analytics data only for projects with automatic deletion switched on, past that project's `retentionDays`. `cleanup` also removes day-old rate limit rows, expired widget tokens and the rows of projects an admin deleted. A failed `rollup` skips `cleanup` that night.
 
 Until both are set, the workflow only prints a notice. A job that is not configured on the API, such as `crux` without `CRUX_API_KEY` or `alerts` without `alerts()` in `apps/api/analytics.config.ts`, is reported as a notice rather than a failure.
 
