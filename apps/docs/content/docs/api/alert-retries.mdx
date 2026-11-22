@@ -34,4 +34,4 @@ The config only needs what differs from the defaults. A channel's own `retry` ov
 - A target whose last delivery failed has `state: "failing"` and the error in `stateReason`.
 - `GET /v2/projects/:project/alerts/deliveries?status=pending` lists deliveries waiting for a retry with their `attempts`, `lastError` and `nextAttemptAt`; `status=failed` lists the ones that ran out.
 - `GET /v2/admin/alerts/status` counts pending deliveries and names the failing targets across projects.
-- The cleanup job removes sent deliveries after 30 days and failed ones after 90.
+- The cleanup job removes sent and failed deliveries past `retentionDays` on a project with `retentionEnabled` on. Otherwise they are kept. Pending deliveries are never removed.

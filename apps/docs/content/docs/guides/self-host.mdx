@@ -77,12 +77,14 @@ The first allowed login to sign in becomes the owner. Later logins see their rol
 
 ## 7. Schedule the jobs
 
+The hosted nightly `rollup` and `cleanup` runs are paused until migration 0043 and the matching API are live. On your own install, apply that migration and deploy that API before you schedule them.
+
 Four routes keep the data in shape. Call each one with `Authorization: Bearer <CRON_SECRET>`:
 
 | Route | When | Does |
 | --- | --- | --- |
-| `POST /v2/admin/jobs/rollup` | Daily | Scores the previous day's sessions for bots, rolls speed data into daily percentiles, and drops raw speed rows past 30 days |
-| `POST /v2/admin/jobs/cleanup` | Daily, after `rollup` | Deletes events, sessions and speed rows past each project's `retentionDays` |
+| `POST /v2/admin/jobs/rollup` | Daily | Scores the previous day's sessions for bots, rolls speed data into daily percentiles, and drops raw speed rows past `retentionDays` for projects with `retentionEnabled` on |
+| `POST /v2/admin/jobs/cleanup` | Daily, after `rollup` | Permanently deletes events, sessions, speed rows, logs and alert deliveries past `retentionDays` for projects with `retentionEnabled` on. Other projects keep them. Also removes rate limit rows, expired widget tokens and the rows of deleted projects |
 | `POST /v2/admin/jobs/alerts` | Hourly | Sends new issues, regressions and other alerts to the project's targets |
 | `POST /v2/admin/jobs/crux` | Weekly, optional | Compares speed with the Chrome UX Report |
 

@@ -186,7 +186,7 @@ describe("drizzleAlerts", () => {
     expect(replaced.ok ? replaced.value.removed : null).toEqual(["mail"]);
   });
 
-  test("cleanup removes old sent and failed deliveries", async () => {
+  test("cleanup removes finished deliveries only past a set retention", async () => {
     await store.syncTargets(project, [mailTarget]);
     await store.queue([event("iss_9"), event("iss_10")], ["mail"], now);
     await database.query(
@@ -197,11 +197,16 @@ describe("drizzleAlerts", () => {
       "UPDATE alert_deliveries SET status = 'failed', created_at = $1::timestamptz - interval '31 days' WHERE subject_id = 'iss_10'",
       [now.toISOString()],
     );
-    const cleaned = await drizzleOps(db).cleanup(now, 1000);
-    expect(cleaned.ok ? cleaned.value.rowsDeleted : null).toBe(1);
-    const left = await database.query<{ subject_id: string }>(
-      "SELECT subject_id FROM alert_deliveries",
+    const kept = await drizzleOps(db).cleanup(now, 1000);
+    expect(kept.ok ? kept.value.rowsDeleted : null).toBe(0);
+    await database.query(
+      "UPDATE projects SET retention_days = 30, retention_enabled = true WHERE id = $1",
+      [project],
     );
-    expect(left.rows).toEqual([{ subject_id: "iss_10" }]);
+    const cleaned = await drizzleOps(db).cleanup(now, 1000);
+    await database.query("UPDATE projects SET retention_enabled = false WHERE id = $1", [project]);
+    expect(cleaned.ok ? cleaned.value.rowsDeleted : null).toBe(2);
+    const left = await database.query("SELECT subject_id FROM alert_deliveries");
+    expect(left.rows).toEqual([]);
   });
 });

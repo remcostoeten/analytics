@@ -136,7 +136,7 @@ Recordings do not go in Postgres. Neon storage would fill up and every replay re
 
 - **Chunks** go to S3-compatible storage (Cloudflare R2 by default, which has free egress) at `replays/<project>/<session>/<seq>.json.gz`.
 - **Metadata** goes in a `replay_sessions` table: project, session, visitor, start, duration, chunk count, bytes, page count, error count, rage click count, first path and device. Totals are derived from a `replay_chunks` row per chunk, and the nightly job reconciles objects that have no row after a failed write.
-- **Retention**: 30 days, or the project's `retentionDays` when shorter. The nightly job deletes objects and rows per project, and a 30-day R2 lifecycle rule is only a backstop. Deleting a project removes its replay objects and rows before its tombstone.
+- **Retention**: no default and no fixed limit. Recordings are deleted only past `retentionDays` on a project with `retentionEnabled` on (decision 46). The cleanup job deletes objects and rows per project, and the bucket has no R2 lifecycle rule. Deleting a project removes its replay objects and rows before its tombstone.
 - **Caps**: a per-project daily byte cap so one runaway page cannot fill the bucket. Past it the route answers 429 and the client stops for that session.
 - **Self-hosting**: replay stays off until `REPLAY_BUCKET` and its credentials are set.
 

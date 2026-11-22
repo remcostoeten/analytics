@@ -185,6 +185,7 @@ export const projects = pgTable("projects", {
   publicKey: text("public_key").notNull().unique(),
   secretKeyHash: text("secret_key_hash").notNull(),
   retentionDays: integer("retention_days").notNull().default(90),
+  retentionEnabled: boolean("retention_enabled").notNull().default(false),
   orgId: text("org_id").references(() => authOrganization.id, { onDelete: "set null" }),
   sqlEnabled: boolean("sql_enabled").notNull().default(true),
   widgetReports: boolean("widget_reports").notNull().default(false),

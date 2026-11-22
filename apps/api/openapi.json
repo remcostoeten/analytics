@@ -1550,6 +1550,7 @@
                             "https://portal.example.nl"
                           ],
                           "retentionDays": 90,
+                          "retentionEnabled": false,
                           "publicKey": "pk_live_a81d44e0",
                           "keyUsage": {
                             "public": {
@@ -1592,6 +1593,7 @@
                               "debugConsole",
                               "allowedOrigins",
                               "retentionDays",
+                              "retentionEnabled",
                               "publicKey",
                               "keyUsage",
                               "createdAt",
@@ -1652,8 +1654,12 @@
                               "retentionDays": {
                                 "minimum": 1,
                                 "maximum": 3650,
-                                "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                                "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                                 "type": "integer"
+                              },
+                              "retentionEnabled": {
+                                "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                                "type": "boolean"
                               },
                               "publicKey": {
                                 "minLength": 1,
@@ -1944,8 +1950,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -2012,8 +2022,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -2080,8 +2094,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -2109,6 +2127,7 @@
                           "https://docs.remcostoeten.nl"
                         ],
                         "retentionDays": 90,
+                        "retentionEnabled": false,
                         "publicKey": "pk_live_c07b19e2",
                         "keyUsage": {
                           "public": {
@@ -2148,6 +2167,7 @@
                             "debugConsole",
                             "allowedOrigins",
                             "retentionDays",
+                            "retentionEnabled",
                             "publicKey",
                             "keyUsage",
                             "createdAt",
@@ -2213,8 +2233,12 @@
                             "retentionDays": {
                               "minimum": 1,
                               "maximum": 3650,
-                              "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                              "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                               "type": "integer"
+                            },
+                            "retentionEnabled": {
+                              "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                              "type": "boolean"
                             },
                             "publicKey": {
                               "minLength": 1,
@@ -2453,6 +2477,7 @@
                             "debugConsole",
                             "allowedOrigins",
                             "retentionDays",
+                            "retentionEnabled",
                             "publicKey",
                             "keyUsage",
                             "createdAt",
@@ -2513,8 +2538,12 @@
                             "retentionDays": {
                               "minimum": 1,
                               "maximum": 3650,
-                              "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                              "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                               "type": "integer"
+                            },
+                            "retentionEnabled": {
+                              "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                              "type": "boolean"
                             },
                             "publicKey": {
                               "minLength": 1,
@@ -2801,8 +2830,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -2860,8 +2893,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -2919,8 +2956,12 @@
                   "retentionDays": {
                     "minimum": 1,
                     "maximum": 3650,
-                    "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                    "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                     "type": "integer"
+                  },
+                  "retentionEnabled": {
+                    "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                    "type": "boolean"
                   }
                 }
               }
@@ -3024,8 +3065,12 @@
                             "retentionDays": {
                               "minimum": 1,
                               "maximum": 3650,
-                              "description": "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+                              "description": "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
                               "type": "integer"
+                            },
+                            "retentionEnabled": {
+                              "description": "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
+                              "type": "boolean"
                             }
                           }
                         }
@@ -3742,7 +3787,7 @@
                             },
                             "since": {
                               "format": "date-time",
-                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer.",
                               "type": "string"
                             },
                             "secretKey": {
@@ -3840,7 +3885,7 @@
     "/v2/projects/{project}/keys/check": {
       "post": {
         "summary": "Check the keys",
-        "description": "Reports whether events were accepted with the current public key since it was generated, within the 7 days the log keeps, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
+        "description": "Reports whether events were accepted with the current public key since it was generated, within the last 7 days, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
         "tags": [
           "Projects"
         ],
@@ -4005,7 +4050,7 @@
                             },
                             "since": {
                               "format": "date-time",
-                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+                              "description": "Where the counts start: when the public key was generated, or 7 days back when that is longer.",
                               "type": "string"
                             },
                             "secretKey": {
@@ -30329,7 +30374,7 @@
     "/v2/admin/jobs/rollup": {
       "post": {
         "summary": "Roll up speed",
-        "description": "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+        "description": "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past `retentionDays` for projects with `retentionEnabled` on. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -30504,7 +30549,7 @@
     "/v2/admin/jobs/cleanup": {
       "post": {
         "summary": "Delete expired rows",
-        "description": "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and ingest and sign-in rate limit rows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+        "description": "For projects with `retentionEnabled` on, deletes events, sessions, raw speed rows, log lines and finished alert deliveries older than `retentionDays`, up to 50,000 of each per run. Other projects keep them. Also deletes expired widget tokens, ingest and sign-in rate limit rows older than a day and the rows of deleted projects; `rowsDeleted` is the total. Needs the cron secret.",
         "tags": [
           "Jobs"
         ],
@@ -35421,7 +35466,7 @@
     "/v2/projects/{project}/logs": {
       "get": {
         "summary": "Log stream",
-        "description": "Every ingest and engine decision that is not a plain accepted event: rejected events with their code and field, duplicates, rate limited requests, bot verdicts from `suspect` up, one line per accepted batch, job runs and the SDK's own reports. Without `after` the last 100 lines; with it the newer lines as soon as they arrive or an empty page after 25 seconds; `Accept: text/event-stream` streams them. Filter with `level`, `kind`, `source`, `visitor` and `q`. Lines are kept for 7 days and never hold IP addresses, emails or prop values.",
+        "description": "Every ingest and engine decision that is not a plain accepted event: rejected events with their code and field, duplicates, rate limited requests, bot verdicts from `suspect` up, one line per accepted batch, job runs and the SDK's own reports. Without `after` the last 100 lines; with it the newer lines as soon as they arrive or an empty page after 25 seconds; `Accept: text/event-stream` streams them. Filter with `level`, `kind`, `source`, `visitor` and `q`. Lines are deleted only past `retentionDays` on a project with `retentionEnabled` on, and never hold IP addresses, emails or prop values.",
         "tags": [
           "Dev widget"
         ],

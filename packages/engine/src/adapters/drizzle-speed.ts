@@ -123,7 +123,8 @@ function percentileOf(percentile: number) {
  * rating counts, a zero-filled hourly or daily series, values per route or per path and the
  * selectors behind slow values, all over human traffic only and split by production and preview;
  * and the daily `rollup_vitals` job, which rolls up production rows only and drops raw rows past
- * the retention cut-off. Days before the scope's `rawFrom` come from `rollup_vitals`, with each
+ * the `retention_days` of projects with `retention_enabled` on. A rerun never replaces a day with
+ * fewer samples, so a day retention trimmed keeps its rollup. Days before the scope's `rawFrom` come from `rollup_vitals`, with each
  * day's value read from a log-spaced histogram (2% steps) stored with the rollup and merged across
  * days, routes and devices, so ranges older than the raw retention still answer within about 1%.
  * Days rolled up before the histogram existed fall back to their stored percentile averaged
@@ -349,7 +350,7 @@ export function drizzleSpeed(db: Database): SpeedStore {
           total: numeric(counts?.total),
         };
       }),
-    rollup: (from, to, keepAfter) =>
+    rollup: (from, to, now) =>
       attempt("Could not roll up speed", async () => {
         const written = await selectRows(
           db,
@@ -386,11 +387,15 @@ export function drizzleSpeed(db: Database): SpeedStore {
               p95 = excluded.p95, p99 = excluded.p99, good = excluded.good,
               needs_improvement = excluded.needs_improvement, poor = excluded.poor,
               buckets = excluded.buckets
+            WHERE excluded.samples >= rollup_vitals.samples
             RETURNING 1`,
         );
         const deleted = await selectRows(
           db,
-          sql`DELETE FROM web_vitals WHERE ts < ${keepAfter.toISOString()}::timestamptz RETURNING 1`,
+          sql`DELETE FROM web_vitals w USING projects p
+            WHERE p.id = w.project_id AND p.retention_enabled
+              AND w.ts < ${now.toISOString()}::timestamptz - make_interval(days => p.retention_days)
+            RETURNING 1`,
         );
         return { rowsWritten: written.length, rowsDeleted: deleted.length };
       }),

@@ -78,7 +78,7 @@ export function logsModule(
       detail: {
         summary: "Log stream",
         description:
-          "Every ingest and engine decision that is not a plain accepted event: rejected events with their code and field, duplicates, rate limited requests, bot verdicts from `suspect` up, one line per accepted batch, job runs and the SDK's own reports. Without `after` the last 100 lines; with it the newer lines as soon as they arrive or an empty page after 25 seconds; `Accept: text/event-stream` streams them. Filter with `level`, `kind`, `source`, `visitor` and `q`. Lines are kept for 7 days and never hold IP addresses, emails or prop values.",
+          "Every ingest and engine decision that is not a plain accepted event: rejected events with their code and field, duplicates, rate limited requests, bot verdicts from `suspect` up, one line per accepted batch, job runs and the SDK's own reports. Without `after` the last 100 lines; with it the newer lines as soon as they arrive or an empty page after 25 seconds; `Accept: text/event-stream` streams them. Filter with `level`, `kind`, `source`, `visitor` and `q`. Lines are deleted only past `retentionDays` on a project with `retentionEnabled` on, and never hold IP addresses, emails or prop values.",
         tags,
       },
     })

@@ -20,6 +20,7 @@ export type ProjectRecord = {
   debugConsole: boolean;
   allowedOrigins: string[];
   retentionDays: number;
+  retentionEnabled: boolean;
   publicKey: string;
   publicKeyUsedAt: Nullable<Date>;
   publicKeyUsedOrigin: Nullable<string>;
@@ -56,6 +57,7 @@ export type NewProject = {
   publicVisitorData: boolean;
   allowedOrigins: string[];
   retentionDays: number;
+  retentionEnabled: boolean;
   publicKey: string;
   secretKeyHash: string;
   orgId: Nullable<string>;
@@ -72,6 +74,7 @@ export type ProjectPatch = Partial<
     | "debugConsole"
     | "allowedOrigins"
     | "retentionDays"
+    | "retentionEnabled"
   >
 >;
 

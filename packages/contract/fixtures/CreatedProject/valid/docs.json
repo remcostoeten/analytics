@@ -12,6 +12,7 @@
       "https://docs.remcostoeten.nl"
     ],
     "retentionDays": 90,
+    "retentionEnabled": false,
     "publicKey": "pk_live_c07b19e2",
     "keyUsage": {
       "public": {

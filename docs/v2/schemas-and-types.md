@@ -168,6 +168,7 @@ export type Project = Entity & {
   publicVisitorData: boolean;
   allowedOrigins: string[];
   retentionDays: number;
+  retentionEnabled: boolean;
   publicKey: string;
 };
 
@@ -347,6 +348,7 @@ CREATE TABLE IF NOT EXISTS projects (
   public_key text NOT NULL UNIQUE,
   secret_key_hash text NOT NULL,
   retention_days integer NOT NULL DEFAULT 90,
+  retention_enabled boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

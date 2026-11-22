@@ -30,6 +30,7 @@ const project = {
   publicVisitorData: false,
   allowedOrigins: ["https://docs.remcostoeten.nl"],
   retentionDays: 90,
+  retentionEnabled: false,
   publicKey: "pk_test_docs",
   secretKeyHash: "hash-of-secret",
   orgId: null,

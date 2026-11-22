@@ -22,6 +22,7 @@ type Draft = {
   name: string;
   visibility: Project["visibility"];
   allowedOrigins: string[];
+  retentionEnabled: boolean;
   retentionDays: string;
   publicVisitorData: boolean;
   sqlEnabled: boolean;
@@ -34,6 +35,7 @@ function draftOf(project: Project): Draft {
     name: project.name,
     visibility: project.visibility,
     allowedOrigins: project.allowedOrigins,
+    retentionEnabled: project.retentionEnabled,
     retentionDays: String(project.retentionDays),
     publicVisitorData: project.publicVisitorData,
     sqlEnabled: project.sqlEnabled,
@@ -49,8 +51,11 @@ function changesOf(project: Project, draft: Draft): UpdateProject {
   if (draft.visibility !== project.visibility) changes.visibility = draft.visibility;
   if (draft.allowedOrigins.join("\n") !== project.allowedOrigins.join("\n"))
     changes.allowedOrigins = draft.allowedOrigins;
+  if (draft.retentionEnabled !== project.retentionEnabled)
+    changes.retentionEnabled = draft.retentionEnabled;
   const retention = Number(draft.retentionDays);
-  if (retention !== project.retentionDays) changes.retentionDays = retention;
+  if (draft.retentionEnabled && retention !== project.retentionDays)
+    changes.retentionDays = retention;
   if (draft.publicVisitorData !== project.publicVisitorData)
     changes.publicVisitorData = draft.publicVisitorData;
   if (draft.sqlEnabled !== project.sqlEnabled) changes.sqlEnabled = draft.sqlEnabled;
@@ -129,28 +134,42 @@ export function ProjectSettingsForm({ project }: Props) {
             onChange={(allowedOrigins) => setDraft({ ...draft, allowedOrigins })}
           />
         </Field>
-        <Field
-          label="Retention"
-          htmlFor="retentionDays"
-          tip="How many days of visits are kept. A scheduled cleanup deletes older data from the database for good, so it disappears from your charts. It only runs if something calls the cleanup job on a schedule."
-          error={errors.retentionDays}
-          hint="Events and sessions older than this are deleted by the cleanup job."
-        >
-          <div className="flex items-center gap-2">
-            <input
-              id="retentionDays"
-              className="control max-w-28 font-mono"
-              type="number"
-              min={1}
-              max={3650}
-              required
-              value={draft.retentionDays}
-              aria-invalid={errors.retentionDays ? "true" : undefined}
-              onChange={(event) => setDraft({ ...draft, retentionDays: event.target.value })}
-            />
-            <span className="text-muted text-sm">days</span>
-          </div>
-        </Field>
+      </section>
+      <section className="grid gap-3">
+        <h3 className="text-sm font-medium">Data retention</h3>
+        <div className="settings-group">
+          <SwitchRow
+            id="retentionEnabled"
+            label="Automatic deletion"
+            tip="Off keeps all of this project's data. On makes the cleanup and rollup jobs permanently delete its events, sessions, speed samples, logs and alert history older than the chosen number of days. Deleted data cannot be restored."
+            hint="Off by default. Turning this on permanently deletes data older than the chosen days."
+            checked={draft.retentionEnabled}
+            onChange={(retentionEnabled) => setDraft({ ...draft, retentionEnabled })}
+          />
+        </div>
+        {draft.retentionEnabled ? (
+          <Field
+            label="Keep data for"
+            htmlFor="retentionDays"
+            error={errors.retentionDays}
+            hint="Data older than this is permanently deleted and cannot be restored."
+          >
+            <div className="flex items-center gap-2">
+              <input
+                id="retentionDays"
+                className="control max-w-28 font-mono [--control-focus-background:color-mix(in_srgb,var(--accent)_10%,var(--surface))] [--control-focus-shadow:0_1px_2px_rgb(60_30_10/0.04)]"
+                type="number"
+                min={1}
+                max={3650}
+                required
+                value={draft.retentionDays}
+                aria-invalid={errors.retentionDays ? "true" : undefined}
+                onChange={(event) => setDraft({ ...draft, retentionDays: event.target.value })}
+              />
+              <span className="text-muted text-sm">days</span>
+            </div>
+          </Field>
+        ) : null}
       </section>
       <section className="grid gap-3">
         <h3 className="text-sm font-medium">Access</h3>

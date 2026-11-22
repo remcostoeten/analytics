@@ -28,7 +28,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects` | public | Public projects for anyone; all projects for admins, filterable with `visibility=public\|private` |
 | POST | `/v2/projects` | admin | Create a project |
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
-| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `allowedOrigins`, `retentionDays` |
+| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `allowedOrigins`, `retentionDays`, `retentionEnabled` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
 | GET | `/v2/projects/:project/keys` | admin | When the current keys were generated and the last key check |
 | POST | `/v2/projects/:project/keys/check` | admin | Check the keys and store the result; an optional `secretKey` is compared by hash |
@@ -699,6 +699,7 @@ Sign-in starts at the Better Auth GitHub route and ends in a `302` back to the d
       "publicVisitorData": false,
       "allowedOrigins": ["https://portal.example.nl"],
       "retentionDays": 90,
+      "retentionEnabled": false,
       "publicKey": "pk_live_a81d44e0",
       "createdAt": "2026-01-11T09:30:00.000Z",
       "updatedAt": "2026-08-02T12:00:00.000Z"
@@ -724,6 +725,7 @@ request
     "publicVisitorData": false,
     "allowedOrigins": ["https://docs.remcostoeten.nl"],
     "retentionDays": 90,
+    "retentionEnabled": false,
     "publicKey": "pk_live_c07b19e2",
     "secretKey": "sk_live_5d0e7c1f9a2b4c6d8e0f",
     "createdAt": "2026-09-27T16:41:00.000Z",
@@ -758,6 +760,8 @@ request
 { "data": { "id": "client-portal", "visibility": "public", "publicVisitorData": false, "retentionDays": 180, "updatedAt": "2026-09-27T16:42:00.000Z" } }
 ```
 
+`retentionEnabled` and `retentionDays` are optional and change independently; a field left out keeps its value. `retentionDays` is 1 to 3650 and 90 by default, and sending it alone deletes nothing. With `retentionEnabled: true` the jobs permanently delete that project's events, sessions, raw speed rows, logs and finished alert deliveries older than `retentionDays`. It is `false` by default.
+
 `POST /v2/projects/docs/keys` as admin
 
 ```json
@@ -780,7 +784,7 @@ request
 { "data": { "publicKeyCreatedAt": "2026-09-27T16:43:00.000Z", "secretKeyCreatedAt": "2026-09-20T09:12:00.000Z", "check": { "checkedAt": "2026-10-24T08:30:00.000Z", "state": "connected", "accepted": 412, "rejected": 0, "since": "2026-10-17T08:30:00.000Z", "secretKey": "matches" } } }
 ```
 
-`state` is `connected` when the ingest log holds accepted events since the public key was generated, `rejected` when events arrived and none were accepted, and `waiting` when none arrived. Counts cover the 7 days the log keeps, so `since` is never older than that. The body is optional: without `secretKey` the result is `not-tested`, because only the secret key's hash is stored. A sent secret key is compared by hash and never stored. Rotating a key stamps its generation time and clears the stored check.
+`state` is `connected` when the ingest log holds accepted events since the public key was generated, `rejected` when events arrived and none were accepted, and `waiting` when none arrived. Counts cover the last 7 days, so `since` is never older than that. The body is optional: without `secretKey` the result is `not-tested`, because only the secret key's hash is stored. A sent secret key is compared by hash and never stored. Rotating a key stamps its generation time and clears the stored check.
 
 `DELETE /v2/projects/docs` as owner
 
@@ -1070,9 +1074,9 @@ request
 
 These counters come from Postgres, not instance memory, so they are correct across serverless instances. `ingest` counts requests to `/v2/events` per hour; `bots` counts stored events scored 50 or more; `jobs` holds each job's last run; `speedChecks` holds the last Chrome UX Report comparison per project and metric, where `gap` is `|ours - crux| / crux` and a gap over 0.25 is `flagged`. `ours` is null under 20 samples and `crux` is null when Google has no data for the origin.
 
-`POST /v2/admin/jobs/cleanup` deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens, ingest and sign-in rate limit rows older than a day, and the rows of deleted projects, up to 50,000 per table per run, freeing the project id once none remain. Every job run also writes a `jobs` line to each project's log. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
+`POST /v2/admin/jobs/cleanup` deletes events, sessions, raw speed rows, log lines and finished alert deliveries older than `retentionDays` on projects with `retentionEnabled` on, up to 50,000 of each per run, and deletes none of them for other projects. It also deletes expired widget tokens, ingest and sign-in rate limit rows older than a day, and the rows of deleted projects, up to 50,000 per table per run, freeing the project id once none remain. Every job run also writes a `jobs` line to each project's log. `POST /v2/admin/jobs/crux` needs `CRUX_API_KEY` and is meant to run weekly. A job that fails or is not configured answers the error envelope (503 for a missing setting) and is recorded as `failed` with its message.
 
-`POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past 30 days, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
+`POST /v2/admin/jobs/rollup?days=8` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals`, drops raw speed rows past `retentionDays` for projects with `retentionEnabled` on, and runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day. Each reason is added once, so a rerun changes nothing. `rowsWritten` counts rollup rows plus events the session signals raised.
 
 ```json
 200 OK
@@ -1081,7 +1085,7 @@ These counters come from Postgres, not instance memory, so they are correct acro
 
 ### Speed insights
 
-Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `environment=production|preview|all` (default production), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`. Raw speed rows are kept 30 days; days before that come from the daily rollup, where each day keeps a log-spaced histogram (2% steps) per route, device and metric. Percentiles over those days merge the histograms, so they land within about 1% of the exact value; days rolled up before the histogram existed fall back to the sample-weighted mean of their stored percentiles. The rollup has no page, country or selector, so `filter[page]`, `filter[country]` and `/speed/elements` cover the last 30 days only, and `/speed/routes` leaves out rolled-up samples without a route. `/speed/timeseries` takes `interval=hour|day` (default day); hourly series cover at most 7 days and raw rows only. `/speed/routes` takes `group=route|path` (default route; `path` covers raw rows only) and `minShare` (default 0.005), which leaves out entries with under that share of the samples, as Vercel hides URLs under 0.5% of visits; `minShare=0` keeps them all. The rollup holds production rows only, so `environment=preview` covers the last 30 days.
+Four more routes at the `project` access level, all taking `device=mobile|desktop|all` (mobile includes tablets; default all), `environment=production|preview|all` (default production), `percentile=50|75|90|95|99` (default 75), the date range, and `filter[route]`, `filter[page]` and `filter[country]`: `/v2/projects/:project/speed`, `/speed/timeseries?metric=`, `/speed/routes` and `/speed/elements?metric=`. Without the project prefix they cover every readable project. Speed is human traffic only, and a value, rating or score under 20 samples is `null`; each metric carries its `samples`. Speed reads use raw rows for the last 30 days; days before that come from the daily rollup, where each day keeps a log-spaced histogram (2% steps) per route, device and metric. Percentiles over those days merge the histograms, so they land within about 1% of the exact value; days rolled up before the histogram existed fall back to the sample-weighted mean of their stored percentiles. The rollup has no page, country or selector, so `filter[page]`, `filter[country]` and `/speed/elements` cover the last 30 days only, and `/speed/routes` leaves out rolled-up samples without a route. `/speed/timeseries` takes `interval=hour|day` (default day); hourly series cover at most 7 days and raw rows only. `/speed/routes` takes `group=route|path` (default route; `path` covers raw rows only) and `minShare` (default 0.005), which leaves out entries with under that share of the samples, as Vercel hides URLs under 0.5% of visits; `minShare=0` keeps them all. The rollup holds production rows only, so `environment=preview` covers the last 30 days.
 
 Each metric's percentile is scored 0 to 100 on a log-normal curve where the good threshold scores 90 and the poor threshold 50, and the score is LCP 30%, INP 30%, CLS 25% and FCP 15% of those (TTFB is shown, not scored); metrics without enough samples drop out and the weights of the rest are scaled up. With the values below, LCP 2710 ms scores 86, INP 140 ms 96, CLS 0.06 98 and FCP 1520 ms 96, so the score is 0.3 × 86 + 0.3 × 96 + 0.25 × 98 + 0.15 × 96 = 93.5, shown as 94.
 
@@ -1248,7 +1252,7 @@ Each metric's percentile is scored 0 to 100 on a log-normal curve where the good
 }
 ```
 
-`POST /v2/admin/jobs/rollup?days=2` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` (p50 to p99 and rating counts per project, day, route, device and metric), drops raw speed rows older than 30 days, and runs the session bot signals over the previous UTC day.
+`POST /v2/admin/jobs/rollup?days=2` with the cron secret rolls the last `days` UTC days of `web_vitals` into `rollup_vitals` (p50 to p99 and rating counts per project, day, route, device and metric), drops raw speed rows past `retentionDays` for projects with `retentionEnabled` on, and runs the session bot signals over the previous UTC day.
 
 ### Issues
 

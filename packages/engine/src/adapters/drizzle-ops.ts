@@ -9,9 +9,6 @@ import { attempt, numeric, selectRows, textual } from "./drizzle-rows";
 
 const topReasons = 5;
 const rateLimitDays = 1;
-const sentDays = 30;
-const failedDays = 90;
-const logDays = 7;
 const dayMs = 24 * 60 * 60 * 1000;
 
 function hourOf(at: Date) {
@@ -71,11 +68,10 @@ async function purgeDeletedProjects(db: Database, batch: number) {
 /**
  * @name drizzleOps
  * @description The `OpsStore` on Postgres: hourly ingest counters, the job history, bot and
- * ingest numbers since a moment, retention cleanup of events and sessions past each project's
- * `retention_days` in batches, alert deliveries sent over 30 days ago or failed over 90 days ago,
- * log lines older than 7 days, expired widget tokens, sign-in rate limit rows older than a day,
- * and the rows of deleted projects until none
- * are left, the session layer of bot detection over a range, and the Chrome UX Report checks.
+ * ingest numbers since a moment, retention cleanup in batches of events, sessions, speed
+ * rows, log lines and finished alert deliveries past `retention_days` for projects with
+ * `retention_enabled` on (others keep them), expired widget tokens, rate limit rows older than a day, and the
+ * rows of deleted projects until none are left, the session layer of bot detection over a range, and the Chrome UX Report checks.
  *
  * @example
  * await drizzleOps(db).metrics(new Date(Date.now() - 86_400_000));
@@ -182,7 +178,7 @@ export function drizzleOps(db: Database): OpsStore {
           db,
           sql`DELETE FROM events WHERE id IN (
               SELECT e.id FROM events e JOIN projects p ON p.id = e.project_id
-              WHERE e.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
+              WHERE p.retention_enabled AND e.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
               LIMIT ${batch})
             RETURNING id`,
         );
@@ -190,7 +186,7 @@ export function drizzleOps(db: Database): OpsStore {
           db,
           sql`DELETE FROM sessions WHERE id IN (
               SELECT s.id FROM sessions s JOIN projects p ON p.id = s.project_id
-              WHERE s.last_event_at < ${at}::timestamptz - make_interval(days => p.retention_days)
+              WHERE p.retention_enabled AND s.last_event_at < ${at}::timestamptz - make_interval(days => p.retention_days)
               LIMIT ${batch})
             RETURNING id`,
         );
@@ -198,7 +194,7 @@ export function drizzleOps(db: Database): OpsStore {
           db,
           sql`DELETE FROM web_vitals WHERE id IN (
               SELECT w.id FROM web_vitals w JOIN projects p ON p.id = w.project_id
-              WHERE w.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
+              WHERE p.retention_enabled AND w.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
               LIMIT ${batch})
             RETURNING id`,
         );
@@ -216,15 +212,21 @@ export function drizzleOps(db: Database): OpsStore {
         );
         const deliveries = await selectRows(
           db,
-          sql`DELETE FROM alert_deliveries
-            WHERE (status = 'sent' AND created_at < ${at}::timestamptz - make_interval(days => ${sentDays}))
-              OR (status = 'failed' AND created_at < ${at}::timestamptz - make_interval(days => ${failedDays}))
+          sql`DELETE FROM alert_deliveries WHERE id IN (
+              SELECT d.id FROM alert_deliveries d
+              JOIN alert_targets t ON t.id = d.target_id
+              JOIN projects p ON p.id = t.project_id
+              WHERE p.retention_enabled AND d.status IN ('sent', 'failed')
+                AND d.created_at < ${at}::timestamptz - make_interval(days => p.retention_days)
+              LIMIT ${batch})
             RETURNING id`,
         );
         const lines = await selectRows(
           db,
           sql`DELETE FROM logs WHERE id IN (
-              SELECT id FROM logs WHERE ts < ${at}::timestamptz - make_interval(days => ${logDays})
+              SELECT l.id FROM logs l JOIN projects p ON p.id = l.project
+              WHERE p.retention_enabled
+                AND l.ts < ${at}::timestamptz - make_interval(days => p.retention_days)
               LIMIT ${batch})
             RETURNING id`,
         );

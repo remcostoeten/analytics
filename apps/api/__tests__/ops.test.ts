@@ -123,9 +123,9 @@ beforeAll(async () => {
   );
   if (!report.ok) throw new Error(report.error.message);
   await database.query(
-    `INSERT INTO projects (id, name, domain, public_key, secret_key_hash, allowed_origins, retention_days) VALUES
-      ('alpha', 'alpha', 'alpha.test', 'pk_test_alpha', 'x', '{https://alpha.test}', 90),
-      ('beta', 'beta', 'beta.test', 'pk_test_beta', 'y', '{https://beta.test}', 90)`,
+    `INSERT INTO projects (id, name, domain, public_key, secret_key_hash, allowed_origins, retention_days, retention_enabled) VALUES
+      ('alpha', 'alpha', 'alpha.test', 'pk_test_alpha', 'x', '{https://alpha.test}', 90, true),
+      ('beta', 'beta', 'beta.test', 'pk_test_beta', 'y', '{https://beta.test}', 90, true)`,
   );
   await database.query(
     "INSERT INTO api_tokens (id, name, token_hash, scope, project_ids) VALUES ('tok_admin', 'admin', $1, 'admin', NULL), ('tok_reader', 'reader', $2, 'read', NULL)",

@@ -37,7 +37,11 @@ const RetentionDays = Type.Integer({
   minimum: 1,
   maximum: 3650,
   description:
-    "Days events and sessions are kept before the cleanup job deletes them; 90 by default.",
+    "Days of data to keep when `retentionEnabled` is on; 90 by default. Setting this alone deletes nothing.",
+});
+const RetentionEnabled = Type.Boolean({
+  description:
+    "Turns on automatic deletion. When on, the jobs permanently delete this project's events, sessions, speed rows, logs and finished alert deliveries older than `retentionDays`. Off by default.",
 });
 const PublicVisitorData = Type.Boolean({
   description:
@@ -108,6 +112,7 @@ export const Project = Type.Object(
     debugConsole: DebugConsole,
     allowedOrigins: AllowedOrigins,
     retentionDays: RetentionDays,
+    retentionEnabled: RetentionEnabled,
     publicKey: PublicKey,
     keyUsage: KeyUsage,
     createdAt: Timestamp,
@@ -158,6 +163,7 @@ export const CreateProject = Type.Object(
     publicVisitorData: Type.Optional(PublicVisitorData),
     allowedOrigins: Type.Optional(AllowedOrigins),
     retentionDays: Type.Optional(RetentionDays),
+    retentionEnabled: Type.Optional(RetentionEnabled),
   },
   { examples: [createProject] },
 );
@@ -190,6 +196,7 @@ export const UpdateProject = Type.Object(
     debugConsole: Type.Optional(DebugConsole),
     allowedOrigins: Type.Optional(AllowedOrigins),
     retentionDays: Type.Optional(RetentionDays),
+    retentionEnabled: Type.Optional(RetentionEnabled),
   },
   {
     minProperties: 1,
@@ -213,6 +220,7 @@ export const UpdatedProject = Type.Object(
           "debugConsole",
           "allowedOrigins",
           "retentionDays",
+          "retentionEnabled",
         ]),
       ),
     ]),
@@ -281,7 +289,7 @@ export const KeyCheck = Type.Object(
     since: Type.String({
       format: "date-time",
       description:
-        "Where the counts start: when the public key was generated, or 7 days back when that is longer, since log lines are kept for 7 days.",
+        "Where the counts start: when the public key was generated, or 7 days back when that is longer.",
     }),
     secretKey: SecretKeyCheck,
   },

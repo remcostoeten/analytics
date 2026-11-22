@@ -238,6 +238,7 @@
   color: var(--fg);
   box-shadow: 0 1px 2px rgb(60 30 10 / 0.04);
   transition:
+    background-color 120ms ease-out,
     border-color 120ms ease-out,
     box-shadow 120ms ease-out;
   &::placeholder {
@@ -250,7 +251,8 @@
   &:focus-within:not(:has(.tag-remove:focus-visible)) {
     outline: none;
     border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+    background: var(--control-focus-background, var(--surface));
+    box-shadow: var(--control-focus-shadow, 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent));
   }
   &[aria-invalid="true"] {
     border-color: var(--err);
