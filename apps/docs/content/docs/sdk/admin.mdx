@@ -273,6 +273,7 @@ type ReadOptions = {
 | `timeseries(project, { metric, interval?, compare?, ...ReadOptions })` | `GET /v2/projects/:project/timeseries` |
 | `breakdown(project, dimension, { metrics?, limit?, cursor?, ...ReadOptions }?)` | `GET /v2/projects/:project/breakdown/:dimension` |
 | `lifecycle(project, { interval?, ...ReadOptions }?)` | `GET /v2/projects/:project/lifecycle` |
+| `stickiness(project, { interval?, ...ReadOptions }?)` | `GET /v2/projects/:project/stickiness` |
 | `issues(project, { status?, limit?, cursor? }?)` | `GET /v2/projects/:project/issues` |
 
 ```ts

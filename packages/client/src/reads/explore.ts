@@ -9,6 +9,7 @@ import type {
   PathsResponse,
   RetentionInterval,
   RetentionResponse,
+  StickinessInterval,
   StickinessResponse,
 } from "@spoar/contract";
 
@@ -21,6 +22,8 @@ export type RetentionOptions = { interval?: RetentionInterval };
 
 export type LifecycleOptions = { interval?: LifecycleInterval };
 
+export type StickinessOptions = { interval?: StickinessInterval };
+
 export type HeatmapOptions = { metric?: HeatmapMetric; timezone?: string };
 
 export type MapOptions = Page & { level?: MapLevel };
@@ -29,7 +32,7 @@ export type ExploreReads = {
   paths: (page: string, options?: PathsOptions) => ClientResult<PathsResponse>;
   retention: (options?: RetentionOptions) => ClientResult<RetentionResponse>;
   lifecycle: (options?: LifecycleOptions) => ClientResult<LifecycleResponse>;
-  stickiness: () => ClientResult<StickinessResponse>;
+  stickiness: (options?: StickinessOptions) => ClientResult<StickinessResponse>;
   heatmap: (options?: HeatmapOptions) => ClientResult<HeatmapResponse>;
   map: (options?: MapOptions) => ClientResult<MapResponse>;
 };
@@ -73,8 +76,12 @@ export function exploreReads(send: Send, state: ScopeState): ExploreReads {
         path: `${base}/lifecycle`,
         query: { ...query, interval: options.interval },
       }),
-    stickiness: () =>
-      send.json<StickinessResponse>({ method: "GET", path: `${base}/stickiness`, query }),
+    stickiness: (options = {}) =>
+      send.json<StickinessResponse>({
+        method: "GET",
+        path: `${base}/stickiness`,
+        query: { ...query, interval: options.interval },
+      }),
     heatmap: (options = {}) =>
       send.json<HeatmapResponse>({
         method: "GET",

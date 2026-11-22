@@ -89,6 +89,20 @@ export type LifecyclePeriod = {
 
 export type ActiveDays = { days: number; visitors: number };
 
+export type StickinessInterval = "week" | "month";
+
+export type ActivePeriodDays = ActiveDays & { period: Date };
+
+export type StickinessPeriods = { overall: ActiveDays[]; periods: ActivePeriodDays[] };
+
+export type DiscoveryScope = { projectId: ProjectID; from: Date; to: Date; limit: number };
+
+export type DiscoveryPage = {
+  rows: { value: string; count: number }[];
+  total: number;
+  sampled: boolean;
+};
+
 export type HeatMetric = "visitors" | "pageviews";
 
 export type HeatCell = { weekday: number; hour: number; value: number };
@@ -122,6 +136,9 @@ export type ReadStore = {
   retention: (scope: ReadScope, interval: "week" | "month") => Read<Cohort[]>;
   lifecycle: (scope: ReadScope, interval: LifecycleInterval) => Read<LifecyclePeriod[]>;
   stickiness: (scope: ReadScope) => Read<ActiveDays[]>;
+  stickinessPeriods: (scope: ReadScope, interval: StickinessInterval) => Read<StickinessPeriods>;
+  eventNames: (scope: DiscoveryScope) => Read<DiscoveryPage>;
+  propKeys: (scope: DiscoveryScope, event: string | null) => Read<DiscoveryPage>;
   heatmap: (scope: ReadScope, metric: HeatMetric, timezone: string) => Read<HeatCell[]>;
   places: (
     scope: ReadScope,

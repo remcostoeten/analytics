@@ -8,6 +8,7 @@ import type {
   LifecycleOptions,
   Metric,
   ReadOptions,
+  StickinessOptions,
   TimeseriesOptions,
 } from "@spoar/client";
 import type {
@@ -15,6 +16,7 @@ import type {
   IssueList,
   LifecycleResponse,
   StatsResponse,
+  StickinessResponse,
   TimeseriesResponse,
 } from "@spoar/contract";
 
@@ -28,6 +30,8 @@ export type AdminBreakdownOptions = ReadOptions & BreakdownOptions;
 
 export type AdminLifecycleOptions = ReadOptions & LifecycleOptions;
 
+export type AdminStickinessOptions = ReadOptions & StickinessOptions;
+
 export type ReadsAdmin<Projects extends string> = {
   stats: (project: Projects, options?: AdminReadOptions) => AdminResult<StatsResponse>;
   timeseries: (
@@ -40,6 +44,10 @@ export type ReadsAdmin<Projects extends string> = {
     options?: AdminBreakdownOptions,
   ) => AdminResult<BreakdownResponse>;
   lifecycle: (project: Projects, options?: AdminLifecycleOptions) => AdminResult<LifecycleResponse>;
+  stickiness: (
+    project: Projects,
+    options?: AdminStickinessOptions,
+  ) => AdminResult<StickinessResponse>;
   issues: (project: Projects, options?: IssuesOptions) => AdminResult<IssueList>;
 };
 
@@ -78,6 +86,8 @@ export function createAdmin<Projects extends string = string>(
       client.project(project).apply(scope).breakdown(dimension, { metrics, limit, cursor }),
     lifecycle: (project, { interval, ...scope } = {}) =>
       client.project(project).apply(scope).lifecycle({ interval }),
+    stickiness: (project, { interval, ...scope } = {}) =>
+      client.project(project).apply(scope).stickiness({ interval }),
     issues: (project, options = {}) => client.project(project).issues(options),
     alerts: client.alerts,
     annotations: client.annotations,

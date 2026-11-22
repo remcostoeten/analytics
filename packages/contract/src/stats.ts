@@ -429,6 +429,25 @@ export const StickinessRow = Type.Object({
 });
 export type StickinessRow = Static<typeof StickinessRow>;
 
+export const StickinessInterval = oneOf(["week", "month"], {
+  description:
+    "Adds `periods`, one histogram per calendar `week` (Monday start, UTC) or `month`. Without it the answer covers the whole range only.",
+});
+export type StickinessInterval = Static<typeof StickinessInterval>;
+
+export const StickinessPeriod = Type.Object({
+  period: Type.String({ format: "date-time", description: "Start of the period." }),
+  data: Type.Array(StickinessRow, {
+    description: "One row per day count, from 1 to the days of the period inside the range.",
+  }),
+  visitors: Type.Integer({ minimum: 0, description: "Visitors active in this period." }),
+  averageDays: Type.Number({
+    minimum: 0,
+    description: "Average active days per visitor in this period, to two decimals.",
+  }),
+});
+export type StickinessPeriod = Static<typeof StickinessPeriod>;
+
 export const StickinessResponse = Type.Object({
   data: Type.Array(StickinessRow, {
     description: "One row per day count, from 1 to the most any visitor reached, zero-filled.",
@@ -438,9 +457,52 @@ export const StickinessResponse = Type.Object({
     minimum: 0,
     description: "Average active days per visitor, to two decimals.",
   }),
+  interval: Type.Optional(StickinessInterval),
+  periods: Type.Optional(
+    Type.Array(StickinessPeriod, {
+      description:
+        "With `interval`: each period from the first with a visitor to the end of the range.",
+    }),
+  ),
   ...Scope,
 });
 export type StickinessResponse = Static<typeof StickinessResponse>;
+
+const DiscoveryFields = {
+  total: Type.Integer({ minimum: 0, description: "Distinct values found, before `limit`." }),
+  sampled: Type.Boolean({
+    description:
+      "True when the window held more events than one read scans (100,000 for names, 20,000 for keys, 5,000 for the keys of one event); counts then cover the newest events only.",
+  }),
+  range: Range,
+};
+
+export const EventNamesResponse = Type.Object({
+  data: Type.Array(
+    Type.Object({
+      name: Type.String({ description: "The event name." }),
+      count: Type.Integer({ minimum: 0, description: "Events with this name." }),
+    }),
+    { description: "Most used first." },
+  ),
+  ...DiscoveryFields,
+});
+export type EventNamesResponse = Static<typeof EventNamesResponse>;
+
+export const PropKeysResponse = Type.Object({
+  data: Type.Array(
+    Type.Object({
+      key: Type.String({ description: "The prop key, usable as `prop:<key>`." }),
+      count: Type.Integer({ minimum: 0, description: "Events carrying this key." }),
+    }),
+    { description: "Most used first." },
+  ),
+  event: Type.Union([Type.String(), Type.Null()], {
+    description: "The event name the keys are limited to, or null for every event.",
+  }),
+  ...DiscoveryFields,
+});
+export type PropKeysResponse = Static<typeof PropKeysResponse>;
 
 export const HeatmapMetric = oneOf(["visitors", "pageviews"], {
   description: "What each cell counts: `visitors` (the default) or `pageviews`.",

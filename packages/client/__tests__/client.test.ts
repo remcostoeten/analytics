@@ -115,6 +115,9 @@ describe("read terminals", () => {
     await reads.retention({ interval: "month" });
     await reads.lifecycle({ interval: "week" });
     await reads.stickiness();
+    await reads.stickiness({ interval: "month" });
+    await reads.eventNames({ limit: 20 });
+    await reads.propKeys({ event: "signup", limit: 10 });
     await reads.heatmap({ metric: "pageviews", timezone: "Europe/Amsterdam" });
     await reads.map({ level: "city", limit: 100 });
     expect(api.paths()).toEqual([
@@ -126,6 +129,9 @@ describe("read terminals", () => {
       "/v2/projects/skriuw/retention?period=7d&interval=month",
       "/v2/projects/skriuw/lifecycle?period=7d&interval=week",
       "/v2/projects/skriuw/stickiness?period=7d",
+      "/v2/projects/skriuw/stickiness?period=7d&interval=month",
+      "/v2/projects/skriuw/events/names?limit=20",
+      "/v2/projects/skriuw/props/keys?limit=10&event=signup",
       "/v2/projects/skriuw/heatmap?period=7d&metric=pageviews&timezone=Europe/Amsterdam",
       "/v2/projects/skriuw/map?period=7d&level=city&limit=100",
     ]);

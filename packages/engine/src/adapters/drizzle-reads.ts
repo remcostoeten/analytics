@@ -5,6 +5,7 @@ import type { Metric, ReadScope, ReadStore } from "../ports";
 import { aggregateQuery } from "../reads/aggregate";
 import { conversionScope, scopedEvents } from "../reads/scope";
 import type { Database } from "./drizzle";
+import { discoveryReads } from "./drizzle-discovery";
 import { exploreReads } from "./drizzle-explore";
 import { attempt, numeric, rounded, selectRows, textual } from "./drizzle-rows";
 import type { Row } from "./drizzle-rows";
@@ -160,5 +161,6 @@ export function drizzleReads(db: Database): ReadStore {
         };
       }),
     ...exploreReads(db),
+    ...discoveryReads(db),
   };
 }

@@ -256,6 +256,7 @@ describe("admin reads", () => {
     await client.timeseries("remcostoeten.nl", { metric: "visitors", interval: "day" });
     await client.breakdown("remcostoeten.nl", "prop:plan", { metrics: ["visitors"], limit: 5 });
     await client.lifecycle("remcostoeten.nl", { interval: "month" });
+    await client.stickiness("remcostoeten.nl", { interval: "week" });
     await client.issues("remcostoeten.nl", { status: "open", cursor: "10" });
     expect(
       api.calls.map((call) => decodeURIComponent(`${call.url.pathname}${call.url.search}`)),
@@ -264,6 +265,7 @@ describe("admin reads", () => {
       "/v2/projects/remcostoeten.nl/timeseries?metric=visitors&interval=day",
       "/v2/projects/remcostoeten.nl/breakdown/prop:plan?metrics=visitors&limit=5",
       "/v2/projects/remcostoeten.nl/lifecycle?interval=month",
+      "/v2/projects/remcostoeten.nl/stickiness?interval=week",
       "/v2/projects/remcostoeten.nl/issues?status=open&cursor=10",
     ]);
     expect(api.calls.every((call) => call.method === "GET")).toBe(true);
