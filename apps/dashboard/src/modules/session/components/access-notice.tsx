@@ -2,10 +2,21 @@ import { redirect } from "next/navigation";
 
 import type { Access } from "../session";
 
-type Props = { access: Exclude<Access, { state: "admin" }> };
+type Props = { access: Exclude<Access, { state: "admin" }>; from: string };
 
-export function AccessNotice({ access }: Props) {
-  if (access.state === "signed-out") redirect("/sign-in");
+export function AccessNotice({ access, from }: Props) {
+  if (access.state === "signed-out") redirect(`/sign-in?next=${encodeURIComponent(from)}`);
+  if (access.state === "unavailable") {
+    return (
+      <section className="card grid max-w-xl gap-3 p-5">
+        <h1 className="text-base font-medium">Could not check your session</h1>
+        <p className="text-muted text-sm">
+          The API did not answer, so you are not signed out. Reload to try again.{" "}
+          <code className="font-mono text-xs">{access.message}</code>
+        </p>
+      </section>
+    );
+  }
   const { user, role } = access.session;
   return (
     <section className="card grid max-w-xl gap-3 p-5">

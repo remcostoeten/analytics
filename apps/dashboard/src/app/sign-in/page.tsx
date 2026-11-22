@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { returnPath } from "@/modules/session/return-path";
 import { SignInButton } from "@/modules/session/components/sign-in-button";
 import { readSession } from "@/modules/session/session";
 import { siteUrl } from "@/shared/config/site";
@@ -9,12 +10,17 @@ import { Logo } from "@/shared/ui/logo";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-type Props = { searchParams: Promise<{ error?: string | string[] }> };
+type Props = { searchParams: Promise<{ error?: string | string[]; next?: string | string[] }> };
 
-async function SignedInRedirect() {
-  const session = await readSession();
-  if (session.user !== null) redirect("/");
+async function SignedInRedirect({ searchParams }: Props) {
+  const [session, { next }] = await Promise.all([readSession(), searchParams]);
+  if (session.user !== null) redirect(returnPath(next) || "/");
   return null;
+}
+
+async function SignIn({ searchParams }: Props) {
+  const { next } = await searchParams;
+  return <SignInButton next={returnPath(next)} />;
 }
 
 async function RefusedNotice({ searchParams }: Props) {
@@ -60,11 +66,13 @@ export default function Page({ searchParams }: Props) {
           </header>
 
           <Suspense fallback={null}>
-            <SignedInRedirect />
+            <SignedInRedirect searchParams={searchParams} />
             <RefusedNotice searchParams={searchParams} />
           </Suspense>
 
-          <SignInButton />
+          <Suspense fallback={<SignInButton next="" />}>
+            <SignIn searchParams={searchParams} />
+          </Suspense>
 
           <p className="mt-6 text-center font-serif text-sm text-muted">
             No access yet?{" "}

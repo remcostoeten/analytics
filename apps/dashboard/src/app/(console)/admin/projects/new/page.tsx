@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "New project" };
 
 export default async function Page() {
   const access = await readAccess();
-  if (access.state !== "admin") return <AccessNotice access={access} />;
+  if (access.state !== "admin") return <AccessNotice access={access} from="/admin/projects/new" />;
   return (
     <>
       <Heading title="New project" />

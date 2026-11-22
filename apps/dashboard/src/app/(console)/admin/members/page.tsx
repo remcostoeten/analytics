@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Members" };
 
 export default async function Page() {
   const access = await readAccess();
-  if (access.state !== "admin") return <AccessNotice access={access} />;
+  if (access.state !== "admin") return <AccessNotice access={access} from="/admin/members" />;
   if (access.session.role !== "owner") {
     return (
       <section className="card grid max-w-xl gap-3 p-5">

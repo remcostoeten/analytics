@@ -17,7 +17,7 @@ function withSettings(project: Project | PublicProject): project is Project {
 
 export default async function Page() {
   const access = await readAccess();
-  if (access.state !== "admin") return <AccessNotice access={access} />;
+  if (access.state !== "admin") return <AccessNotice access={access} from="/admin/projects" />;
   const listed = await listProjects();
   if (!listed.ok) {
     return <p className="text-err text-sm">Could not list projects: {listed.error}</p>;
