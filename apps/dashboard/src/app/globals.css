@@ -49,6 +49,9 @@
     --json-string: #1a7f5a;
     --json-number: #b8410a;
     --json-literal: #1f94bd;
+    --sparkle-peach: color-mix(in oklab, var(--series-1) 40%, var(--peach));
+    --sparkle-lilac: color-mix(in oklab, var(--link) 40%, var(--lilac));
+    --sparkle-haze: 0.5;
     --sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif;
     --mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -80,6 +83,9 @@
     --json-string: #7fd6a9;
     --json-number: #ff9a66;
     --json-literal: #6cc3e6;
+    --sparkle-peach: color-mix(in oklab, var(--peach) 72%, var(--fg));
+    --sparkle-lilac: color-mix(in oklab, var(--lilac) 70%, var(--fg));
+    --sparkle-haze: 0.82;
     color-scheme: dark;
   }
 
@@ -1406,6 +1412,7 @@
 
 .metric-card {
   display: grid;
+  overflow: hidden;
   gap: 0.375rem;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1512,76 +1519,123 @@
 }
 
 .dot-spark {
-  --dot-0: color-mix(in oklab, var(--map-land) 85%, var(--surface));
-  --dot-1: color-mix(in oklab, var(--series-1) 28%, var(--map-land));
-  --dot-2: color-mix(in oklab, var(--series-1) 46%, var(--map-land));
-  --dot-3: color-mix(in oklab, var(--series-1) 64%, var(--map-land));
-  --dot-4: color-mix(in oklab, var(--series-1) 82%, var(--map-land));
-  --dot-5: var(--series-1);
-  container-type: inline-size;
+  position: relative;
+  z-index: 0;
+  display: block;
   height: 2rem;
+  pointer-events: none;
+}
 
-  & svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-  & path {
-    fill: none;
-    stroke-width: 3px;
-    stroke-linecap: round;
-    vector-effect: non-scaling-stroke;
-  }
-  & svg[data-columns="52"] {
-    display: none;
-  }
-
-  @container (min-width: 300px) {
-    & svg[data-columns="32"] {
-      display: none;
-    }
-    & svg[data-columns="52"] {
-      display: block;
-    }
-  }
+.sparkle-dots {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  display: block;
+  width: calc(100% + 24px);
+  height: 56px;
 
   @media (prefers-reduced-motion: no-preference) {
-    & svg {
-      animation: dot-spark-reveal 420ms steps(8, end) both;
-    }
-    & .dot-step-0 {
-      transition: stroke 160ms var(--ease-out);
+    animation: dot-spark-reveal 420ms steps(8, end) both;
+  }
+}
+
+.sparkle-haze {
+  position: absolute;
+  inset: -20px -14px -13px;
+  opacity: var(--sparkle-haze, 0.82);
+  filter: blur(9px);
+  pointer-events: none;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: sparkle-haze-in 700ms var(--ease-out) 420ms both;
+  }
+
+  :is(a, button):hover > .dot-spark & * {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & * {
+      animation: none;
     }
   }
 }
 
-.metric-card:hover .dot-step-0,
-.kpi-tile:hover .dot-step-0 {
-  stroke: color-mix(in oklab, var(--series-1) 12%, var(--dot-0));
+.sparkle-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: sparkle-breathe var(--breath, 8s) ease-in-out infinite alternate;
 }
 
-.dot-step-0 {
-  stroke: var(--dot-0);
+.sparkle-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--c) 62%, transparent),
+    transparent
+  );
+  opacity: var(--o);
+  animation: sparkle-drift var(--dur) ease-in-out var(--delay) infinite alternate;
 }
-.dot-step-1 {
-  stroke: var(--dot-1);
+
+.sparkle-bokeh {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--c);
+  opacity: 0;
+  animation: sparkle-bokeh var(--dur) ease-in-out var(--delay) infinite;
 }
-.dot-step-2 {
-  stroke: var(--dot-2);
+
+.metric-card > :not(.dot-spark),
+.kpi-tile > :not(.dot-spark) {
+  position: relative;
+  z-index: 1;
 }
-.dot-step-3 {
-  stroke: var(--dot-3);
+
+@keyframes sparkle-haze-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: var(--sparkle-haze, 0.82);
+  }
 }
-.dot-step-4 {
-  stroke: var(--dot-4);
+
+@keyframes sparkle-breathe {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
 }
-.dot-step-5 {
-  stroke: var(--dot-5);
+
+@keyframes sparkle-drift {
+  0% {
+    transform: translate3d(calc(var(--dx) * -1), calc(var(--dy) * -1), 0);
+    opacity: calc(var(--o) * 0.4);
+  }
+  55% {
+    opacity: var(--o);
+  }
+  100% {
+    transform: translate3d(var(--dx), var(--dy), 0);
+    opacity: calc(var(--o) * 0.62);
+  }
 }
-.dot-spark .dot-latest {
-  stroke: var(--dot-5);
-  stroke-width: 5px;
+
+@keyframes sparkle-bokeh {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  42%,
+  58% {
+    opacity: var(--o);
+  }
 }
 
 @keyframes dot-spark-reveal {
