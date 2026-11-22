@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "API tokens" };
 
 export default async function Page() {
   const access = await readAccess();
-  if (access.state !== "admin") return <AccessNotice access={access} />;
+  if (access.state !== "admin") return <AccessNotice access={access} from="/admin/tokens" />;
   const [listed, projects] = await Promise.all([listTokens(), listProjects()]);
   if (!listed.ok) {
     return <p className="text-err text-sm">Could not list tokens: {listed.error.message}</p>;

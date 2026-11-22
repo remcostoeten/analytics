@@ -45,9 +45,11 @@ async function KeyCheckSection({ project }: { project: string }) {
 }
 
 export default async function Page({ params }: Props) {
-  const access = await readAccess();
-  if (access.state !== "admin") return <AccessNotice access={access} />;
   const { project: id } = await params;
+  const access = await readAccess();
+  if (access.state !== "admin") {
+    return <AccessNotice access={access} from={`/admin/projects/${id}`} />;
+  }
   const found = await readProject(decodeURIComponent(id));
   if (!found.ok) {
     if (found.error.code === "NOT_FOUND") notFound();

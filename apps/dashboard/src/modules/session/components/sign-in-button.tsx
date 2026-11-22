@@ -35,7 +35,9 @@ function Spinner() {
   );
 }
 
-export function SignInButton() {
+type Props = { next: string };
+
+export function SignInButton({ next }: Props) {
   const [state, setState] = useState<SignInState>("idle");
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function SignInButton() {
         if (state === "busy") return;
         setState("busy");
         const home = `${window.location.origin}${basePath}`;
-        const started = await startSignIn(home, `${home}/sign-in`);
+        const started = await startSignIn(`${home}${next}`, `${home}/sign-in`);
         if (!started.ok) {
           setState("error");
           notify.error(started.error);
