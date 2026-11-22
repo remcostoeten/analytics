@@ -3,7 +3,6 @@ name: jobs
 on:
   schedule:
     - cron: "7 * * * *"
-    - cron: "17 2 * * *"
     - cron: "43 4 * * 1"
   workflow_dispatch:
     inputs:
@@ -40,7 +39,6 @@ jobs:
         run: |
           case "$SCHEDULE" in
             "7 * * * *") jobs="alerts" ;;
-            "17 2 * * *") jobs="rollup cleanup" ;;
             "43 4 * * 1") jobs="crux" ;;
             *) jobs="$CHOSEN" ;;
           esac

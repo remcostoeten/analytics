@@ -97,7 +97,7 @@ GitHub, Settings, Environments, `production`: add the variable `API_URL` (`https
 | When (UTC) | Job |
 | --- | --- |
 | Hourly at minute 7 | `alerts` |
-| Daily 02:17 | `rollup`, then `cleanup` |
+| Paused | `rollup` and `cleanup` run only when started by hand, so nothing is deleted automatically |
 | Mondays 04:43 | `crux` |
 
 Until both are set, the workflow only prints a notice. A job that is not configured on the API, such as `crux` without `CRUX_API_KEY` or `alerts` without `alerts()` in `apps/api/analytics.config.ts`, is reported as a notice rather than a failure.
