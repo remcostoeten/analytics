@@ -116,7 +116,9 @@ Added routes, all under `/v2/projects/:project` with the shared query parameters
 | GET | `/paths?page=/pricing` | project | The pages visitors went to next from a page, or came from with `direction=previous`, with counts and drop-off |
 | GET | `/retention?interval=week` | project | Cohorts by first visit week or month and the share returning in each later period |
 | GET | `/lifecycle?interval=week` | project | Visitors per day, week or month split into new, returning, resurrected and dormant |
-| GET | `/stickiness` | project | How many visitors were active on 1, 2, 3 and more days in the range |
+| GET | `/stickiness?interval=week` | project | How many visitors were active on 1, 2, 3 and more days in the range, and with `interval` per week or month |
+| GET | `/events/names` | project | Distinct event names of the last 30 days with counts, for autocomplete |
+| GET | `/props/keys?event=signup` | project | Distinct event prop keys of the last 30 days with counts, optionally for one event |
 | GET | `/heatmap` | project | Visitors or pageviews by weekday and hour of day, in the project's or a given timezone |
 | GET | `/map?level=city` | project | Visitor counts per country, region or city with coordinates for a map |
 | GET | `/realtime/events` | project | Incoming events for the live view, with the same filters: long-polling with `after`, or server-sent events with `Accept: text/event-stream`. Visitor and session ids need `detail` |
@@ -128,7 +130,7 @@ All six take the shared range, traffic and filter parameters, and answer without
 - `paths` follows the pageviews of `page` inside each session: `direction=next` (default) gives the page viewed right after it, `previous` the one right before. `dropOff` counts the views that ended the session, or for `previous`, started it. Shares are of `views`. `page` is the query parameter because `from` is the range start.
 - `retention` groups visitors by the `week` (default, Monday start, UTC) or `month` of their first visit in the range, and counts how many were active in each later period up to the end of the range. Offset 0 is the cohort itself.
 - `lifecycle` splits each `day`, `week` (default, Monday start, UTC) or `month` of the range: `new` visitors were first seen ever in that period, `returning` ones were also active in the period before, `resurrected` ones were seen before but not in the period before, and `dormant` ones were active in the period before and not in this one. The period before the range counts for the first period.
-- `stickiness` counts visitors by the number of distinct UTC days they were active in the range, from 1 to the most any visitor reached, with each count's share and the average.
+- `stickiness` counts visitors by the number of distinct UTC days they were active in the range, from 1 to the most any visitor reached, with each count's share and the average. `interval=week` (Monday start, UTC) or `month` keeps that answer and adds `periods`: the same histogram per calendar period, from the first period with a visitor to the end of the range, each running from 1 to the days of that period inside the range.
 - `heatmap` has all 168 cells, weekday 1 (Monday) to 7 and hour 0 to 23, counting `metric=visitors` (default) or `pageviews` in `timezone` (IANA, default UTC).
 - `map` counts visitors per `level=country` (default), `region` or `city`, with the average of their geo lookup coordinates rounded to two decimals, paged like a breakdown.
 
@@ -346,6 +348,30 @@ All six take the shared range, traffic and filter parameters, and answer without
   "traffic": "human",
   "environment": "production",
   "filters": {}
+}
+```
+
+### Event names and prop keys
+
+`events/names` and `props/keys` feed autocomplete in a query builder. They exist per project only, need `project` access like the other aggregate reads, and always cover the last 30 days of human production traffic.
+
+- `limit` is 1 to 500, default 100. `total` is the number of distinct values found before the limit.
+- `props/keys?event=<name>` keeps one event. Keys are the ones `prop:<key>` accepts. Fields the SDK stores next to props (`eventName`, `screenSize`, `viewport`, `timezone`, `connectionType`, `release`, the `utm*` fields, `browser`, `browserVersion`, `os`, `osVersion` and `$groups`) are left out, also when a prop has that name.
+- `events/names` scans at most the newest 100,000 events and `props/keys` the newest 20,000, or 5,000 with `event`. `sampled: true` means the window held more, and the counts then cover those newest events only, so a rarely used key can be missing.
+
+`GET /v2/projects/remcostoeten.nl/props/keys?event=signup&limit=2`
+
+```json
+200 OK
+{
+  "data": [
+    { "key": "plan", "count": 412 },
+    { "key": "source", "count": 97 }
+  ],
+  "event": "signup",
+  "total": 5,
+  "sampled": false,
+  "range": { "from": "2026-08-28T16:40:00.000Z", "to": "2026-09-27T16:40:00.000Z" }
 }
 ```
 

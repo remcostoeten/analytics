@@ -1,12 +1,14 @@
 import type {
   ActiveVisitors,
   AnnotationList,
+  EventNamesResponse,
   LineKind,
   LineLevel,
   LiveSessions,
   LogList,
   Overview,
   ProjectBreakdownResponse,
+  PropKeysResponse,
   QueryParams,
   QueryResult,
 } from "@spoar/contract";
@@ -20,6 +22,10 @@ import type { ClientError, ClientResult, Metric, Page, ScopeState, Send } from "
 export type LiveRowsOptions = { limit?: number };
 
 export type LogsOptions = { level?: LineLevel; kind?: LineKind; q?: string };
+
+export type EventNamesOptions = { limit?: number };
+
+export type PropKeysOptions = EventNamesOptions & { event?: string };
 
 export type LiveVisitorsOptions = LiveRowsOptions & { everyMs?: number; signal?: AbortSignal };
 
@@ -48,6 +54,8 @@ export type ProjectOnlyReads = {
   overview: () => ClientResult<Overview>;
   logs: (options?: LogsOptions) => ClientResult<LogList>;
   annotations: (options?: Page) => ClientResult<AnnotationList>;
+  eventNames: (options?: EventNamesOptions) => ClientResult<EventNamesResponse>;
+  propKeys: (options?: PropKeysOptions) => ClientResult<PropKeysResponse>;
   query: (sql: string, params?: QueryParams) => ClientResult<QueryResult>;
 };
 
@@ -63,7 +71,7 @@ export type AllOnlyReads = {
  * @description The terminals that exist only under `/v2/projects/:project`: the live visitor and
  * session rows, `liveVisitors` as an async iterable that reads `realtime/visitors` every
  * `everyMs` (5 seconds by default) until the signal aborts or a call fails, the dev widget's
- * `overview` and `logs` (the last 100 engine decisions, filtered by level, kind or message text), the `annotations` that overlap the scope's range, and SQL over the project's views.
+ * `overview` and `logs` (the last 100 engine decisions, filtered by level, kind or message text), the `annotations` that overlap the scope's range, the `eventNames` and `propKeys` of the last 30 days for autocomplete, and SQL over the project's views.
  *
  * @example
  * const reads = projectOnlyReads(send, { project: "skriuw", period: "7d", filter: {} });
@@ -114,6 +122,18 @@ export function projectOnlyReads(send: Send, state: ScopeState): ProjectOnlyRead
         method: "GET",
         path: `${base}/annotations`,
         query: { from, to, period, limit: options.limit, cursor: options.cursor },
+      }),
+    eventNames: (options = {}) =>
+      send.json<EventNamesResponse>({
+        method: "GET",
+        path: `${base}/events/names`,
+        query: { limit: options.limit },
+      }),
+    propKeys: (options = {}) =>
+      send.json<PropKeysResponse>({
+        method: "GET",
+        path: `${base}/props/keys`,
+        query: { limit: options.limit, event: options.event },
       }),
     query: (sql, params) =>
       send.json<QueryResult>({

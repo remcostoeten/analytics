@@ -40,6 +40,10 @@ function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
     : sql`((extract(year FROM ${later}) - extract(year FROM ${earlier})) * 12 + extract(month FROM ${later}) - extract(month FROM ${earlier}))::int`;
 }
 
+function activeDays(row: Row) {
+  return { days: numeric(row.days), visitors: numeric(row.visitors) };
+}
+
 /**
  * @name exploreReads
  * @description The exploration reads of the `ReadStore`: page paths, retention cohorts, the
@@ -52,7 +56,10 @@ function periodOffset(interval: "week" | "month", later: SQL, earlier: SQL) {
  */
 export function exploreReads(
   db: Database,
-): Pick<ReadStore, "paths" | "retention" | "lifecycle" | "stickiness" | "heatmap" | "places"> {
+): Pick<
+  ReadStore,
+  "paths" | "retention" | "lifecycle" | "stickiness" | "stickinessPeriods" | "heatmap" | "places"
+> {
   return {
     paths: (scope, page, direction) =>
       attempt("Could not read the paths", async () => {
@@ -177,6 +184,36 @@ export function exploreReads(
             SELECT days, count(*) AS visitors FROM days GROUP BY 1 ORDER BY 1`,
         );
         return rows.map((row) => ({ days: numeric(row.days), visitors: numeric(row.visitors) }));
+      }),
+    stickinessPeriods: (scope, interval) =>
+      attempt("Could not read the stickiness", async () => {
+        const unit = sql.raw(`'${interval}'`);
+        const rows = await selectRows(
+          db,
+          sql`WITH scoped AS (${scopedEvents(scope, sql`1`, [])}),
+            active AS MATERIALIZED (
+              SELECT DISTINCT project_id, visitor_id, (ts AT TIME ZONE 'UTC')::date AS day
+              FROM scoped WHERE visitor_id IS NOT NULL
+            ),
+            per_period AS (
+              SELECT project_id, visitor_id, date_trunc(${unit}, day::timestamp) AS period, count(*) AS days
+              FROM active GROUP BY 1, 2, 3
+            ),
+            overall AS (
+              SELECT project_id, visitor_id, count(*) AS days FROM active GROUP BY 1, 2
+            )
+            SELECT (period AT TIME ZONE 'UTC') AS period, days, count(*) AS visitors
+            FROM per_period GROUP BY 1, 2
+            UNION ALL
+            SELECT NULL::timestamptz, days, count(*) FROM overall GROUP BY 2
+            ORDER BY 1 NULLS FIRST, 2`,
+        );
+        return {
+          overall: rows.filter((row) => row.period === null).map(activeDays),
+          periods: rows
+            .filter((row) => row.period !== null)
+            .map((row) => ({ ...activeDays(row), period: new Date(textual(row.period)) })),
+        };
       }),
     heatmap: (scope, metric, timezone) =>
       attempt("Could not read the heatmap", async () => {

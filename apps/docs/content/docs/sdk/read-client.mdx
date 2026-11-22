@@ -243,7 +243,7 @@ paths(page: string, options?: Page & { direction?: PathDirection }): Result<Path
 ```ts
 retention(options?: { interval?: Interval }): Result<RetentionResponse>
 lifecycle(options?: { interval?: Interval }): Result<LifecycleResponse>
-stickiness(): Result<StickinessResponse>
+stickiness(options?: { interval?: "week" | "month" }): Result<StickinessResponse>
 ```
 
 ### heatmap and map

@@ -251,6 +251,9 @@ describe("composeOverview", () => {
     retention: async () => ok([]),
     lifecycle: async () => ok([]),
     stickiness: async () => ok([]),
+    stickinessPeriods: async () => ok({ overall: [], periods: [] }),
+    eventNames: async () => ok({ rows: [], total: 0, sampled: false }),
+    propKeys: async () => ok({ rows: [], total: 0, sampled: false }),
     heatmap: async () => ok([]),
     places: async () => ok({ rows: [], total: 0, scopeVisitors: 0 }),
   };

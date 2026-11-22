@@ -50,7 +50,10 @@ export type {
   Bucket,
   BuiltInMetric,
   ActiveDays,
+  ActivePeriodDays,
   Cohort,
+  DiscoveryPage,
+  DiscoveryScope,
   HeatCell,
   HeatMetric,
   Headline,
@@ -68,6 +71,8 @@ export type {
   ReadScope,
   ReadStore,
   Realtime,
+  StickinessInterval,
+  StickinessPeriods,
   Traffic,
 } from "./reads";
 export type {

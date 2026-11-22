@@ -1,13 +1,15 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { PGlite } from "@electric-sql/pglite";
 import {
   BreakdownResponse,
   EventList,
+  EventNamesResponse,
   HeatmapResponse,
   LiveEvents,
   MapResponse,
   PathsResponse,
+  PropKeysResponse,
   RetentionResponse,
   LifecycleResponse,
   StickinessResponse,
@@ -18,6 +20,7 @@ import { pgliteAccess, pgliteAdapters } from "@spoar/engine/adapters/pglite";
 import { webCryptoHasher } from "@spoar/engine/adapters/system";
 import { runMigrations } from "@spoar/engine/db/migrate";
 import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
+import type { StickinessPeriod } from "@spoar/contract";
 import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
@@ -338,6 +341,132 @@ describe("stickiness", () => {
     });
     const everywhere = await body(`/v2/stickiness?${month}`, StickinessResponse, admin);
     expect(everywhere.visitors).toBe(4);
+    expect(sticky.interval).toBeUndefined();
+    expect(sticky.periods).toBeUndefined();
+  });
+
+  test("interval=week adds a seven-day histogram per week, keeping the whole range", async () => {
+    const sticky = await body(
+      `/v2/projects/site/stickiness?${month}&interval=week`,
+      StickinessResponse,
+    );
+    expect(sticky).toMatchObject({ interval: "week", visitors: 3, averageDays: 1.33 });
+    const periods = sticky.periods as StickinessPeriod[];
+    expect(periods.map((period) => [period.period, period.visitors])).toEqual([
+      ["2026-09-07T00:00:00.000Z", 2],
+      ["2026-09-14T00:00:00.000Z", 2],
+      ["2026-09-21T00:00:00.000Z", 0],
+    ]);
+    expect(periods.every((period) => period.data.length === 7)).toBe(true);
+    expect(periods[0]?.data[0]).toEqual({ days: 1, visitors: 2, share: 1 });
+    expect(periods[2]?.averageDays).toBe(0);
+  });
+
+  test("interval=month counts days per month, up to the days inside the range", async () => {
+    const sticky = await body(
+      `/v2/projects/site/stickiness?${month}&interval=month`,
+      StickinessResponse,
+    );
+    const [september] = sticky.periods as StickinessPeriod[];
+    expect(september).toMatchObject({
+      period: "2026-09-01T00:00:00.000Z",
+      visitors: 3,
+      averageDays: 1.33,
+    });
+    expect(september?.data).toHaveLength(27);
+    expect(september?.data[1]).toEqual({ days: 2, visitors: 1, share: 0.333 });
+  });
+
+  test("filters narrow the histograms and an unknown interval is rejected", async () => {
+    const sticky = await body(
+      `/v2/projects/site/stickiness?${month}&interval=week&filter[country]=US`,
+      StickinessResponse,
+    );
+    expect(sticky).toMatchObject({ visitors: 1, filters: { country: "US" } });
+    expect((sticky.periods as StickinessPeriod[]).map((period) => period.visitors)).toEqual([1, 0]);
+    expect((await call(`/v2/projects/site/stickiness?${month}&interval=day`)).status).toBe(400);
+  });
+});
+
+describe("discovery", () => {
+  const insert = `INSERT INTO events (project_id, type, name, ts, received_at, path, host, fingerprint, bot_score, is_preview, meta)
+    VALUES ('catalog', 'custom', $1, $2, $2, '/', 'catalog.test', $3, $4, $5, $6)`;
+
+  beforeAll(async () => {
+    await database.query(
+      `INSERT INTO projects (id, name, domain, visibility, public_key, secret_key_hash)
+       VALUES ('catalog', 'catalog', 'catalog.test', 'public', 'pk_test_catalog', 'z')`,
+    );
+    const rows: [string | null, string, number, boolean, string][] = [
+      ["signup", "2026-09-20T10:00:00Z", 0, false, '{"plan":"pro","eventName":"signup"}'],
+      ["signup", "2026-09-21T10:00:00Z", 0, false, '{"plan":"free","browser":"Firefox"}'],
+      ["purchase", "2026-09-22T10:00:00Z", 0, false, '{"plan":"pro","amount":5}'],
+      [null, "2026-09-23T10:00:00Z", 0, false, '{"eventName":"signup","source":"v1"}'],
+      ["crawl", "2026-09-24T10:00:00Z", 90, false, '{"botOnly":true}'],
+      ["staging", "2026-09-24T11:00:00Z", 0, true, '{"previewOnly":true}'],
+      ["expired", "2026-08-01T10:00:00Z", 0, false, '{"oldKey":true}'],
+    ];
+    for (const [index, [name, ts, score, preview, meta]] of rows.entries()) {
+      await database.query(insert, [name, ts, `catalog${index}`, score, preview, meta]);
+    }
+  });
+
+  afterAll(async () => {
+    await database.query("DELETE FROM events WHERE project_id = 'catalog'");
+    await database.query("DELETE FROM projects WHERE id = 'catalog'");
+  });
+
+  test("event names of the last 30 days, human production traffic, most used first", async () => {
+    const names = await body("/v2/projects/catalog/events/names", EventNamesResponse);
+    expect(names).toMatchObject({
+      data: [
+        { name: "signup", count: 3 },
+        { name: "purchase", count: 1 },
+      ],
+      total: 2,
+      sampled: false,
+      range: { from: "2026-08-28T16:40:00.000Z", to: "2026-09-27T16:40:00.000Z" },
+    });
+  });
+
+  test("limit caps the rows but not the total", async () => {
+    const names = await body("/v2/projects/catalog/events/names?limit=1", EventNamesResponse);
+    expect(names.data).toEqual([{ name: "signup", count: 3 }]);
+    expect(names.total).toBe(2);
+    expect((await call("/v2/projects/catalog/events/names?limit=501")).status).toBe(400);
+  });
+
+  test("prop keys leave out the fields stored next to props", async () => {
+    const keys = await body("/v2/projects/catalog/props/keys", PropKeysResponse);
+    expect(keys).toMatchObject({
+      data: [
+        { key: "plan", count: 3 },
+        { key: "amount", count: 1 },
+        { key: "source", count: 1 },
+      ],
+      event: null,
+      total: 3,
+      sampled: false,
+    });
+  });
+
+  test("prop keys for one event include its legacy rows without a name", async () => {
+    const keys = await body("/v2/projects/catalog/props/keys?event=signup", PropKeysResponse);
+    expect(keys).toMatchObject({
+      data: [
+        { key: "plan", count: 2 },
+        { key: "source", count: 1 },
+      ],
+      event: "signup",
+      total: 2,
+    });
+  });
+
+  test("private projects answer 404 to anonymous callers and 200 to a token", async () => {
+    for (const route of ["events/names", "props/keys"]) {
+      expect((await call(`/v2/projects/hidden/${route}`)).status).toBe(404);
+      expect((await call(`/v2/projects/hidden/${route}`, admin)).status).toBe(200);
+    }
   });
 });
 

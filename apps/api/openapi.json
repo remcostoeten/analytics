@@ -7709,7 +7709,7 @@
     "/v2/projects/{project}/stickiness": {
       "get": {
         "summary": "Visitors by days active",
-        "description": "How many visitors were active on 1, 2, 3 and more distinct UTC days in the range, with shares and the average.",
+        "description": "How many visitors were active on 1, 2, 3 and more distinct UTC days in the range, with shares and the average. `interval=week` or `month` adds one histogram per period as `periods`.",
         "tags": [
           "Reads"
         ],
@@ -7812,6 +7812,19 @@
                 }
               }
             }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month"
+              ],
+              "description": "Adds `periods`, one histogram per calendar `week` (Monday start, UTC) or `month`. Without it the answer covers the whole range only."
+            }
           }
         ],
         "responses": {
@@ -7870,6 +7883,74 @@
                       "minimum": 0,
                       "description": "Average active days per visitor, to two decimals.",
                       "type": "number"
+                    },
+                    "interval": {
+                      "type": "string",
+                      "enum": [
+                        "week",
+                        "month"
+                      ],
+                      "description": "Adds `periods`, one histogram per calendar `week` (Monday start, UTC) or `month`. Without it the answer covers the whole range only."
+                    },
+                    "periods": {
+                      "description": "With `interval`: each period from the first with a visitor to the end of the range.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "period",
+                          "data",
+                          "visitors",
+                          "averageDays"
+                        ],
+                        "properties": {
+                          "period": {
+                            "format": "date-time",
+                            "description": "Start of the period.",
+                            "type": "string"
+                          },
+                          "data": {
+                            "description": "One row per day count, from 1 to the days of the period inside the range.",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "days",
+                                "visitors",
+                                "share"
+                              ],
+                              "properties": {
+                                "days": {
+                                  "minimum": 1,
+                                  "description": "Distinct UTC days active in the range.",
+                                  "type": "integer"
+                                },
+                                "visitors": {
+                                  "minimum": 0,
+                                  "description": "Visitors active on exactly that many days.",
+                                  "type": "integer"
+                                },
+                                "share": {
+                                  "minimum": 0,
+                                  "maximum": 1,
+                                  "description": "`visitors` as a share of all visitors, to three decimals.",
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          },
+                          "visitors": {
+                            "minimum": 0,
+                            "description": "Visitors active in this period.",
+                            "type": "integer"
+                          },
+                          "averageDays": {
+                            "minimum": 0,
+                            "description": "Average active days per visitor in this period, to two decimals.",
+                            "type": "number"
+                          }
+                        }
+                      }
                     },
                     "range": {
                       "description": "The time range the numbers cover, in UTC.",
@@ -8006,6 +8087,435 @@
           }
         },
         "operationId": "getV2ProjectsByProjectStickiness"
+      }
+    },
+    "/v2/projects/{project}/events/names": {
+      "get": {
+        "summary": "Event names for autocomplete",
+        "description": "Distinct event names of the last 30 days with counts, most used first, from human production traffic. Reads at most the newest 100,000 events and sets `sampled` when it reached that cap.",
+        "tags": [
+          "Reads"
+        ],
+        "security": [
+          {},
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "description": "The project id, as listed by `GET /v2/projects`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "description": "Values to return, 1 to 500; default 100.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 500,
+                  "description": "Values to return, 1 to 500; default 100.",
+                  "type": "integer"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "total",
+                    "sampled",
+                    "range"
+                  ],
+                  "properties": {
+                    "data": {
+                      "description": "Most used first.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "count"
+                        ],
+                        "properties": {
+                          "name": {
+                            "description": "The event name.",
+                            "type": "string"
+                          },
+                          "count": {
+                            "minimum": 0,
+                            "description": "Events with this name.",
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "minimum": 0,
+                      "description": "Distinct values found, before `limit`.",
+                      "type": "integer"
+                    },
+                    "sampled": {
+                      "description": "True when the window held more events than one read scans (100,000 for names, 20,000 for keys, 5,000 for the keys of one event); counts then cover the newest events only.",
+                      "type": "boolean"
+                    },
+                    "range": {
+                      "description": "The time range the numbers cover, in UTC.",
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to"
+                      ],
+                      "properties": {
+                        "from": {
+                          "format": "date-time",
+                          "description": "Start of the range, inclusive.",
+                          "type": "string"
+                        },
+                        "to": {
+                          "format": "date-time",
+                          "description": "End of the range, exclusive.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectEventsNames"
+      }
+    },
+    "/v2/projects/{project}/props/keys": {
+      "get": {
+        "summary": "Prop keys for autocomplete",
+        "description": "Distinct event prop keys of the last 30 days with counts, optionally for one `event`, from human production traffic. Reads at most the newest 20,000 events, or 5,000 for one event, and sets `sampled` when it reached that cap.",
+        "tags": [
+          "Reads"
+        ],
+        "security": [
+          {},
+          {
+            "apiToken": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "description": "The project id, as listed by `GET /v2/projects`.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "description": "Values to return, 1 to 500; default 100.",
+              "anyOf": [
+                {
+                  "format": "integer",
+                  "default": 0,
+                  "type": "string"
+                },
+                {
+                  "minimum": 1,
+                  "maximum": 500,
+                  "description": "Values to return, 1 to 500; default 100.",
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          {
+            "name": "event",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Keep one event name.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "event",
+                    "total",
+                    "sampled",
+                    "range"
+                  ],
+                  "properties": {
+                    "data": {
+                      "description": "Most used first.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "key",
+                          "count"
+                        ],
+                        "properties": {
+                          "key": {
+                            "description": "The prop key, usable as `prop:<key>`.",
+                            "type": "string"
+                          },
+                          "count": {
+                            "minimum": 0,
+                            "description": "Events carrying this key.",
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "event": {
+                      "description": "The event name the keys are limited to, or null for every event.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "total": {
+                      "minimum": 0,
+                      "description": "Distinct values found, before `limit`.",
+                      "type": "integer"
+                    },
+                    "sampled": {
+                      "description": "True when the window held more events than one read scans (100,000 for names, 20,000 for keys, 5,000 for the keys of one event); counts then cover the newest events only.",
+                      "type": "boolean"
+                    },
+                    "range": {
+                      "description": "The time range the numbers cover, in UTC.",
+                      "type": "object",
+                      "required": [
+                        "from",
+                        "to"
+                      ],
+                      "properties": {
+                        "from": {
+                          "format": "date-time",
+                          "description": "Start of the range, inclusive.",
+                          "type": "string"
+                        },
+                        "to": {
+                          "format": "date-time",
+                          "description": "End of the range, exclusive.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The error envelope every failed request answers with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getV2ProjectsByProjectPropsKeys"
       }
     },
     "/v2/projects/{project}/heatmap": {
@@ -21952,6 +22462,19 @@
                 }
               }
             }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month"
+              ],
+              "description": "Adds `periods`, one histogram per calendar `week` (Monday start, UTC) or `month`. Without it the answer covers the whole range only."
+            }
           }
         ],
         "responses": {
@@ -22010,6 +22533,74 @@
                       "minimum": 0,
                       "description": "Average active days per visitor, to two decimals.",
                       "type": "number"
+                    },
+                    "interval": {
+                      "type": "string",
+                      "enum": [
+                        "week",
+                        "month"
+                      ],
+                      "description": "Adds `periods`, one histogram per calendar `week` (Monday start, UTC) or `month`. Without it the answer covers the whole range only."
+                    },
+                    "periods": {
+                      "description": "With `interval`: each period from the first with a visitor to the end of the range.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "period",
+                          "data",
+                          "visitors",
+                          "averageDays"
+                        ],
+                        "properties": {
+                          "period": {
+                            "format": "date-time",
+                            "description": "Start of the period.",
+                            "type": "string"
+                          },
+                          "data": {
+                            "description": "One row per day count, from 1 to the days of the period inside the range.",
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "days",
+                                "visitors",
+                                "share"
+                              ],
+                              "properties": {
+                                "days": {
+                                  "minimum": 1,
+                                  "description": "Distinct UTC days active in the range.",
+                                  "type": "integer"
+                                },
+                                "visitors": {
+                                  "minimum": 0,
+                                  "description": "Visitors active on exactly that many days.",
+                                  "type": "integer"
+                                },
+                                "share": {
+                                  "minimum": 0,
+                                  "maximum": 1,
+                                  "description": "`visitors` as a share of all visitors, to three decimals.",
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          },
+                          "visitors": {
+                            "minimum": 0,
+                            "description": "Visitors active in this period.",
+                            "type": "integer"
+                          },
+                          "averageDays": {
+                            "minimum": 0,
+                            "description": "Average active days per visitor in this period, to two decimals.",
+                            "type": "number"
+                          }
+                        }
+                      }
                     },
                     "range": {
                       "description": "The time range the numbers cover, in UTC.",

@@ -64,7 +64,8 @@ Every terminal is named after its route and takes only that route's own options;
 | `liveEvents({ signal })` | an async iterable over `realtime/events`, following the cursor |
 | `liveVisitors({ everyMs, limit, signal })` | on a project, an async iterable over `realtime/visitors`, read every 5 seconds by default |
 | `paths(page, { direction, limit, cursor })` | `paths` |
-| `retention({ interval })`, `lifecycle({ interval })`, `stickiness()` | `retention`, `lifecycle`, `stickiness` |
+| `retention({ interval })`, `lifecycle({ interval })`, `stickiness({ interval })` | `retention`, `lifecycle`, `stickiness` |
+| `eventNames({ limit })`, `propKeys({ event, limit })` (one project) | `events/names`, `props/keys` |
 | `heatmap({ metric, timezone })`, `map({ level, limit, cursor })` | `heatmap`, `map` |
 | `speed(...)`, `speedTimeseries(...)`, `speedRoutes(...)`, `speedElements(...)` | `speed/*` |
 | `issues({ status, limit, cursor })` | `issues` |

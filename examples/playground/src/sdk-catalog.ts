@@ -603,6 +603,14 @@ export const sdkMethods: SdkMethod[] = [
     (kit) => adminCall(kit.admin().lifecycle(kit.project)),
   ),
   admin(
+    "stickiness",
+    "stickiness(project, options?)",
+    "Visitors by days active, per week or month with `interval`.",
+    `await admin.stickiness("PROJECT", { interval: "week" });`,
+    false,
+    (kit) => adminCall(kit.admin().stickiness(kit.project, { interval: "week" })),
+  ),
+  admin(
     "issues",
     "issues(project, options?)",
     "Error issues, newest first.",

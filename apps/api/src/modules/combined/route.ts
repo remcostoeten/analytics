@@ -64,6 +64,7 @@ import {
   heatmapQuery,
   issuesQuery,
   lifecycleQuery,
+  stickinessQuery,
   listQuery,
   liveEventsQuery,
   mapQuery,
@@ -481,7 +482,7 @@ export function combinedModule(deps: AccessDeps, options: ReadsOptions, docsBase
       },
     })
     .get("/stickiness", explore(stickiness), {
-      query: scopeQuery,
+      query: stickinessQuery,
       access: "public",
       response: { 200: StickinessResponse, ...responses },
       detail: {

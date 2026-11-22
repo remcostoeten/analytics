@@ -1,10 +1,12 @@
 import {
   BreakdownResponse,
+  EventNamesResponse,
   HeatmapResponse,
   LiveEvents,
   MapResponse,
   PathsResponse,
   ProjectParams,
+  PropKeysResponse,
   RealtimeResponse,
   RetentionResponse,
   LifecycleResponse,
@@ -22,6 +24,7 @@ import { canReadDetail } from "../../access/rules";
 import type { AccessDeps, Caller } from "../../access/types";
 import { access } from "../../plugins/access";
 import { errorResponses } from "../../plugins/error-responses";
+import { eventNames, propKeys } from "./discovery";
 import { heatmap, lifecycle, paths, places, retention, stickiness } from "./explore";
 import { download } from "./export";
 import type { Listing } from "./export";
@@ -33,14 +36,17 @@ import { breakdown, readScope, realtime, stats, timeseries } from "./service";
 import {
   breakdownParams,
   breakdownQuery,
+  eventNamesQuery,
   heatmapQuery,
   lifecycleQuery,
   liveEventsQuery,
   mapQuery,
   pathsQuery,
+  propKeysQuery,
   realtimeQuery,
   retentionQuery,
   scopeQuery,
+  stickinessQuery,
   timeseriesQuery,
 } from "./query";
 
@@ -52,7 +58,7 @@ const readResponses = { ...errorResponses, 429: errorResponses[400] };
 /**
  * @name readsModule
  * @description The aggregate reads under `/v2/projects/:project`: `stats`, `timeseries`,
- * `breakdown/:dimension`, `paths`, `retention`, `lifecycle`, `stickiness`, `heatmap`, `map`, `realtime` and the live feed
+ * `breakdown/:dimension`, `paths`, `retention`, `lifecycle`, `stickiness`, `heatmap`, `map`, the autocomplete lists `events/names` and `props/keys`, `realtime` and the live feed
  * `realtime/events`, all at the `project` level; the feed adds visitor and session ids only with
  * `detail` access. Public projects answer with
  * `Cache-Control: public, s-maxage=60`, private ones with `private, max-age=60` (`realtime`
@@ -264,16 +270,54 @@ export function readsModule(deps: AccessDeps, options: ReadsOptions, docsBase: s
     })
     .get("/projects/:project/stickiness", explore(stickiness), {
       params: ProjectParams,
-      query: scopeQuery,
+      query: stickinessQuery,
       access: "project",
       response: { 200: StickinessResponse, ...readResponses },
       detail: {
         summary: "Visitors by days active",
         description:
-          "How many visitors were active on 1, 2, 3 and more distinct UTC days in the range, with shares and the average.",
+          "How many visitors were active on 1, 2, 3 and more distinct UTC days in the range, with shares and the average. `interval=week` or `month` adds one histogram per period as `periods`.",
         tags,
       },
     })
+    .get(
+      "/projects/:project/events/names",
+      ({ request, caller, project, set }) =>
+        answer(request, caller, project, set, (params, id) =>
+          eventNames(options.store, id, params, options.clock()),
+        ),
+      {
+        params: ProjectParams,
+        query: eventNamesQuery,
+        access: "project",
+        response: { 200: EventNamesResponse, ...readResponses },
+        detail: {
+          summary: "Event names for autocomplete",
+          description:
+            "Distinct event names of the last 30 days with counts, most used first, from human production traffic. Reads at most the newest 100,000 events and sets `sampled` when it reached that cap.",
+          tags,
+        },
+      },
+    )
+    .get(
+      "/projects/:project/props/keys",
+      ({ request, caller, project, set }) =>
+        answer(request, caller, project, set, (params, id) =>
+          propKeys(options.store, id, params, options.clock()),
+        ),
+      {
+        params: ProjectParams,
+        query: propKeysQuery,
+        access: "project",
+        response: { 200: PropKeysResponse, ...readResponses },
+        detail: {
+          summary: "Prop keys for autocomplete",
+          description:
+            "Distinct event prop keys of the last 30 days with counts, optionally for one `event`, from human production traffic. Reads at most the newest 20,000 events, or 5,000 for one event, and sets `sampled` when it reached that cap.",
+          tags,
+        },
+      },
+    )
     .get("/projects/:project/heatmap", explore(heatmap), {
       params: ProjectParams,
       query: heatmapQuery,

@@ -14,6 +14,7 @@ import {
   SpeedEnvironment,
   SpeedGroup,
   SpeedInterval,
+  StickinessInterval,
   TimeseriesQuery,
   VitalMetric,
 } from "@spoar/contract";
@@ -120,6 +121,48 @@ export const lifecycleQuery = Type.Composite([
   scopeQuery,
   Type.Object({ interval: Type.Optional(LifecycleInterval) }),
 ]);
+
+/**
+ * @name stickinessQuery
+ * @description `scopeQuery` plus the optional `interval`, `week` or `month`, which adds one
+ * histogram per period.
+ *
+ * @example
+ * app.get("/projects/:project/stickiness", handler, { query: stickinessQuery });
+ */
+export const stickinessQuery = Type.Composite([
+  scopeQuery,
+  Type.Object({ interval: Type.Optional(StickinessInterval) }),
+]);
+
+const discoveryLimit = t.Integer({
+  minimum: 1,
+  maximum: 500,
+  description: "Values to return, 1 to 500; default 100.",
+});
+
+/**
+ * @name eventNamesQuery
+ * @description The event name list's query: `limit`. The window is always the last 30 days.
+ *
+ * @example
+ * app.get("/projects/:project/events/names", handler, { query: eventNamesQuery });
+ */
+export const eventNamesQuery = Type.Object({ limit: Type.Optional(discoveryLimit) });
+
+/**
+ * @name propKeysQuery
+ * @description The prop key list's query: `limit` and an optional `event` name.
+ *
+ * @example
+ * app.get("/projects/:project/props/keys", handler, { query: propKeysQuery });
+ */
+export const propKeysQuery = Type.Object({
+  limit: Type.Optional(discoveryLimit),
+  event: Type.Optional(
+    Type.String({ minLength: 1, maxLength: 200, description: "Keep one event name." }),
+  ),
+});
 
 /**
  * @name heatmapQuery

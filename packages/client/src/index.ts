@@ -51,14 +51,17 @@ export type {
   MapOptions,
   PathsOptions,
   RetentionOptions,
+  StickinessOptions,
 } from "./reads/explore";
 export type { AllReads, AllScope, ProjectReads, ProjectScope } from "./reads/index";
 export type { IssueReads, IssuesOptions, ProjectIssueReads } from "./reads/issues";
 export type {
   AllOnlyReads,
+  EventNamesOptions,
   LiveRowsOptions,
   LiveVisitorsOptions,
   ProjectOnlyReads,
+  PropKeysOptions,
 } from "./reads/project";
 export type { SpeedListOptions, SpeedOptions, SpeedReads } from "./reads/speed";
 export { scopeKey, toQuery } from "./scope";
