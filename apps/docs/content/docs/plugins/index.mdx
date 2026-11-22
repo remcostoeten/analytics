@@ -28,6 +28,7 @@ Every event a plugin sends goes through the same consent, opt-out and `beforeSen
 | [`scrollDepth()`](/docs/plugins/scroll-depth) | `scroll_depth` with the deepest percentage reached on a page | The page height and scroll position |
 | [`engagement()`](/docs/plugins/engagement) | `engagement` with the milliseconds a page was visible | `document.visibilityState` |
 | [`clicks()`](/docs/plugins/clicks) | `click` for elements with `data-spoar-click` | Clicks on the document |
+| [`autocapture(options?)`](/docs/plugins/autocapture) | `autocapture` for clicks and submits, with opt-in `change` and `rage` kinds | Clicks, submits and changes on the document, never input values |
 | [`outboundLinks()`](/docs/plugins/outbound-links) | `outbound_click` for other hosts and `file_download` for files | Clicks on the document, compared by host |
 | [`forms()`](/docs/plugins/forms) | `form_submit` with the form id and action path | `submit` on the document |
 | [`errors()`](/docs/plugins/errors) | `error` for uncaught errors and rejections, with breadcrumbs | `window` errors and `unhandledrejection`, and a wrapped `fetch` |
@@ -39,7 +40,7 @@ Every event a plugin sends goes through the same consent, opt-out and `beforeSen
 
 ## Bundle sizes
 
-Each plugin, bundled alone and gzipped, stays under 0.6 KB, except `errors` (0.7 KB) and `speedInsights` (2.5 KB).
+Each plugin, bundled alone and gzipped, stays under 0.6 KB, except `errors` (0.7 KB), `autocapture` (1.25 KB) and `speedInsights` (2.5 KB).
 
 ## Writing a plugin
 

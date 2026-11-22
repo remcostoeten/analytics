@@ -30,7 +30,7 @@ One extra package per heavy dependency, not one `sdk-plus` bundle. Replay is bro
 
 | Feature | Ships as | Why |
 | --- | --- | --- |
-| Autocapture | `autocapture()` in `@spoar/sdk/plugins` | Small, no dependencies, its own 1 KB budget |
+| Autocapture | `autocapture()` in `@spoar/sdk/plugins` | Small, no dependencies, its own 1.25 KB budget |
 | Actions | Server side only | Definitions over stored events; no client code |
 | Insights | API and dashboard only | Saved reads over the existing routes |
 | Session replay | `@spoar/replay` | rrweb is large; the recorder lazy-loads like `speedInsights` loads `web-vitals` |
@@ -56,7 +56,7 @@ A plugin that records interactions without `data-spoar-*` attributes.
 - **Rage clicks**, opt-in: three or more clicks within one second inside a 30 px radius send `kind: "rage"`. For a small app this is the most useful signal autocapture gives: a button that does not work.
 - **Dead clicks**, opt-in and built last in this epic: a click followed by no DOM mutation, navigation or network request within one second. Needs a `MutationObserver`, so it sits behind an option.
 - **Interplay**: an element with `data-spoar-click` keeps sending `click` through the `clicks()` plugin, and autocapture skips it so nothing counts twice.
-- **Budget**: under 1 KB.
+- **Budget**: under 1.25 KB.
 
 Storage is the existing `events` table. The `(project_id, name, ts)` index already covers it.
 

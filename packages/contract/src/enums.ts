@@ -126,9 +126,23 @@ export const builtInEvents = [
   "identify",
   "group",
   "experiment_exposure",
+  "autocapture",
 ] as const;
 export const BuiltInEvent = oneOf(builtInEvents);
 export type BuiltInEvent = Static<typeof BuiltInEvent>;
+
+export const AutocaptureKind = oneOf(["click", "submit", "change", "rage"]);
+export type AutocaptureKind = Static<typeof AutocaptureKind>;
+
+export const AutocaptureProps = Type.Object({
+  kind: AutocaptureKind,
+  selector: Type.String(),
+  tag: Type.String(),
+  text: Type.Optional(Type.String({ maxLength: 64 })),
+  href: Type.Optional(Type.String()),
+  route: Type.String(),
+});
+export type AutocaptureProps = Static<typeof AutocaptureProps>;
 
 export const EventName = Type.String({ minLength: 1, maxLength: 64 });
 export type EventName = BuiltInEvent | (string & {});

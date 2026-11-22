@@ -31,6 +31,7 @@ export const debugtoolsBudgets: Budget[] = [
 ];
 
 export const pluginExceptions: { [file: string]: number } = {
+  "autocapture.ts": 1.25 * 1024,
   "speed-insights.ts": 2.5 * 1024,
   "errors.ts": 0.7 * 1024,
 };

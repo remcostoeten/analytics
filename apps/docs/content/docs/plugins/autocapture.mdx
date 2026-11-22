@@ -1,0 +1,63 @@
+---
+title: autocapture
+description: One autocapture event for clicks and form submits, without marking up elements.
+---
+
+Import from `@spoar/sdk/plugins`. Runs in the browser and listens on the document in the capture phase.
+
+```ts
+import { createAnalytics } from "@spoar/sdk";
+import { autocapture } from "@spoar/sdk/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  endpoint: "/_ra",
+  plugins: [autocapture()],
+});
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kinds` | `("click" \| "submit" \| "change" \| "rage")[]` | `["click", "submit"]` | The kinds to record. The list replaces the default, so keep `click` and `submit` when adding another kind |
+
+```ts
+autocapture({ kinds: ["click", "submit", "rage"] });
+```
+
+## Sends
+
+One event name, `autocapture`, with these props:
+
+| Prop | Value |
+| --- | --- |
+| `kind` | `click`, `submit`, `change` or `rage` |
+| `selector` | A short CSS path that prefers `id`, `data-testid` and `name` over position |
+| `tag` | The lowercase tag name |
+| `text` | Trimmed text content, at most 64 characters. Only on `click` and `rage` |
+| `href` | The path of a link or form action, without host, query or hash. Token-like segments become `:redacted` |
+| `route` | The route template when an adapter set one, otherwise the redacted page path |
+
+## Kinds
+
+- `click`: clicks on `a`, `button`, `[role=button]`, `input[type=submit]`, `summary` and `label`.
+- `submit`: form submits.
+- `change`: changes to `input`, `select` and `textarea`. Opt-in.
+- `rage`: three or more clicks on an interactive element within one second inside a 30 px radius. Sends one event per burst. Opt-in.
+
+## What is never recorded
+
+- Input values, including the value of a submit input and the options of a select.
+- Anything inside `[data-spoar-ignore]` or a `contenteditable` region.
+- Password fields, and fields with `autocomplete` set to `email`, `tel`, `cc-*`, a name, an address, a username or a one-time code, along with the labels that point at them.
+- The `text` of anything inside or containing `[data-spoar-mask]`.
+- Elements with `data-spoar-click`, which the [`clicks()`](/docs/plugins/clicks) plugin already sends, so nothing counts twice.
+
+```html
+<div data-spoar-ignore>Not recorded</div>
+<button data-spoar-mask>Recorded without its text</button>
+```
+
+Redaction covers the `href` and `route` props. The event's own page path is sent as usual, so set a route template or use `beforeSend` on pages whose URL holds a token.
