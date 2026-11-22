@@ -216,7 +216,15 @@ describe("ingest", () => {
        VALUES ('expired-vital', $1, '2025-01-01T00:00:00Z', 'lcp', 900, 'good', '/', 'mobile')`,
       [project.id],
     );
+    await database.query(
+      "UPDATE projects SET retention_days = 365, retention_enabled = true WHERE id = $1",
+      [project.id],
+    );
     const cleaned = await drizzleOps(drizzle(database)).cleanup(now, 1000);
+    await database.query(
+      "UPDATE projects SET retention_days = 90, retention_enabled = false WHERE id = $1",
+      [project.id],
+    );
     expect(cleaned.ok).toBe(true);
     const rows = await database.query("SELECT id FROM web_vitals WHERE id = 'expired-vital'");
     expect(rows.rows).toEqual([]);
@@ -291,10 +299,14 @@ describe("reads", () => {
   test("the rollup writes daily percentiles and drops raw rows past the cut-off", async () => {
     const before = await speed.summary(month, 75);
     exactLcp = before.ok ? (before.value.find((row) => row.metric === "lcp")?.value ?? 0) : 0;
+    await database.query(
+      `INSERT INTO projects (id, name, domain, public_key, secret_key_hash, retention_days, retention_enabled)
+       VALUES ('site', 'site', 'site', 'pk_site', 'unused', 1, true)`,
+    );
     const result = await speed.rollup(
       new Date("2026-09-01T00:00:00Z"),
       new Date("2026-09-04T00:00:00Z"),
-      new Date("2026-09-03T00:00:00Z"),
+      new Date("2026-09-04T00:00:00Z"),
     );
     expect(result.ok ? result.value.rowsWritten : null).toBe(3);
     const rolled = await database.query<{ route: string; samples: number; p75: number }>(

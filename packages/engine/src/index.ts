@@ -68,7 +68,7 @@ export {
   vitalThresholds,
 } from "./speed/score";
 export type { VitalName, VitalRating } from "./speed/score";
-export { rawVitalDays, rawVitalsFrom } from "./speed/retention";
+export { rawVitalsFrom } from "./speed/retention";
 export { parseStack } from "./errors/stack";
 export type { Frame } from "./errors/stack";
 export { defaultOrigins, envBlock, suggestProjectId } from "./projects/setup";

@@ -26,6 +26,7 @@ const site: ProjectRecord = {
   debugConsole: false,
   allowedOrigins: [],
   retentionDays: 365,
+  retentionEnabled: false,
   publicKey: "pk_site",
   publicKeyUsedAt: null,
   publicKeyUsedOrigin: null,

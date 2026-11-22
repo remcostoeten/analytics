@@ -1,5 +1,5 @@
 import { JobResult } from "@spoar/contract";
-import { engineError, jobLine, rawVitalDays } from "@spoar/engine";
+import { engineError, jobLine } from "@spoar/engine";
 import type {
   EngineError,
   IssueStore,
@@ -53,9 +53,10 @@ function startOfDay(at: Date) {
  * @name jobsModule
  * @description Scheduled jobs behind the cron secret, each recorded in the job history:
  * `rollup?days=2` runs the session layer of bot detection over the previous UTC day, then rolls
- * the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops raw speed rows past 30
- * days, and with alerts on queues speed drops; `cleanup` deletes events, sessions and raw speed rows past each project's retention,
- * 50,000 of each per run, plus week-old log lines, expired widget tokens and day-old rate limit rows; `alerts` queues new
+ * the last `days` UTC days of `web_vitals` into `rollup_vitals` and drops raw speed rows past the
+ * retention of projects with it on, and with alerts on queues speed drops; `cleanup` deletes events, sessions, raw speed rows,
+ * log lines and finished alert deliveries past a project's retention, 50,000 of each per run, only when `retentionEnabled` is
+ * on, plus expired widget tokens, day-old rate limit rows and the rows of deleted projects; `alerts` queues new
  * issues and regressions and sends due deliveries to the alert targets; `crux` compares each
  * project's p75 with the Chrome UX Report. With `logs`, every run also writes a `jobs` line to
  * each project's log.
@@ -158,11 +159,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
           const from = new Date(to.getTime() - days * dayMs);
           const scored = await scoreYesterday(now);
           if (!scored.ok) return scored;
-          const result = await options.speed.rollup(
-            from,
-            to,
-            new Date(now.getTime() - rawVitalDays * dayMs),
-          );
+          const result = await options.speed.rollup(from, to, now);
           if (!result.ok) return result;
           const slower = await queueSpeedDrops(now);
           if (!slower.ok) return slower;
@@ -187,7 +184,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Roll up speed",
           description:
-            "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past 30 days. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
+            "Runs the session bot signals (`session_velocity`, `ip_fanout`) over the previous UTC day first, which adds each reason once, so a rerun changes nothing, and copies session bot scores onto their speed rows. Then writes daily p50 to p99 and rating counts per project, route, device and metric and drops raw speed rows past `retentionDays` for projects with `retentionEnabled` on. With `alerts()` in the config it then queues speed drops (yesterday's Real Experience Score against the 7 days before it) for the next alerts run to send. `rowsWritten` counts rollup rows plus events the session signals raised. Needs the cron secret.",
           tags,
         },
       },
@@ -204,7 +201,7 @@ export function jobsModule(deps: AccessDeps, options: JobsOptions, docsBase: str
         detail: {
           summary: "Delete expired rows",
           description:
-            "Deletes events, sessions and raw speed rows older than each project's `retentionDays`, up to 50,000 of each per run, log lines older than 7 days, expired widget tokens and ingest and sign-in rate limit rows older than a day; `rowsDeleted` is the total. Needs the cron secret.",
+            "For projects with `retentionEnabled` on, deletes events, sessions, raw speed rows, log lines and finished alert deliveries older than `retentionDays`, up to 50,000 of each per run. Other projects keep them. Also deletes expired widget tokens, ingest and sign-in rate limit rows older than a day and the rows of deleted projects; `rowsDeleted` is the total. Needs the cron secret.",
           tags,
         },
       },

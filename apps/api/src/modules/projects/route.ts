@@ -204,7 +204,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string, logs: Nullabl
         detail: {
           summary: "Check the keys",
           description:
-            "Reports whether events were accepted with the current public key since it was generated, within the 7 days the log keeps, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
+            "Reports whether events were accepted with the current public key since it was generated, within the last 7 days, and stores the result. A secret key in the body is compared by hash and never stored; without one the secret key is `not-tested`, since only its hash is kept.",
           tags,
         },
       },

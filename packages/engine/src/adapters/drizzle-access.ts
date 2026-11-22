@@ -65,6 +65,7 @@ const projectColumns = {
   debugConsole: projects.debugConsole,
   allowedOrigins: projects.allowedOrigins,
   retentionDays: projects.retentionDays,
+  retentionEnabled: projects.retentionEnabled,
   publicKey: projects.publicKey,
   publicKeyUsedAt: projects.publicKeyUsedAt,
   publicKeyUsedOrigin: projects.publicKeyUsedOrigin,

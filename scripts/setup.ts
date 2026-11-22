@@ -102,6 +102,7 @@ export async function createFirstProject(
     publicVisitorData: false,
     allowedOrigins: defaultOrigins(project.domain),
     retentionDays: 90,
+    retentionEnabled: false,
     publicKey,
     secretKeyHash: await webCryptoHasher().sha256(secretKey),
     orgId: organizations.length > 0 ? organizationId : null,

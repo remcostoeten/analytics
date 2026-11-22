@@ -13,6 +13,7 @@
         "https://portal.example.nl"
       ],
       "retentionDays": 90,
+      "retentionEnabled": false,
       "publicKey": "pk_live_a81d44e0",
       "keyUsage": {
         "public": {

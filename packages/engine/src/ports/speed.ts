@@ -58,9 +58,5 @@ export type SpeedStore = {
     minSamples: number,
     page: { limit: number; offset: number },
   ) => Read<{ rows: ElementStat[]; total: number }>;
-  rollup: (
-    from: Date,
-    to: Date,
-    keepAfter: Date,
-  ) => Read<{ rowsWritten: number; rowsDeleted: number }>;
+  rollup: (from: Date, to: Date, now: Date) => Read<{ rowsWritten: number; rowsDeleted: number }>;
 };

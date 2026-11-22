@@ -733,7 +733,7 @@ describe("GET /v2/projects/:project/overview", () => {
 });
 
 describe("cleanup", () => {
-  test("drops log lines older than 7 days and expired widget tokens, and logs the run", async () => {
+  test("keeps log lines without retention, drops expired widget tokens, and logs the run", async () => {
     await database.query(
       `INSERT INTO logs (project, ts, level, kind, source, message) VALUES ($1, '2026-09-25T00:00:00Z', 'info', 'jobs', 'cron', 'old')`,
       [project],
@@ -749,7 +749,7 @@ describe("cleanup", () => {
     );
     expect(response.status).toBe(200);
     const old = await database.query("SELECT id FROM logs WHERE message = 'old'");
-    expect(old.rows).toHaveLength(0);
+    expect(old.rows).toHaveLength(1);
     const expired = await database.query("SELECT id FROM api_tokens WHERE id = 'tok_expired'");
     expect(expired.rows).toHaveLength(0);
     const jobs = await body(`/v2/projects/${project}/logs?kind=jobs`, LogList, admin);

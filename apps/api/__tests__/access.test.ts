@@ -342,6 +342,34 @@ describe("admin", () => {
     );
   });
 
+  test("PATCH changes retention days and the switch separately", async () => {
+    async function stored() {
+      const rows = await database.query<{ retention_days: number; retention_enabled: boolean }>(
+        "SELECT retention_days, retention_enabled FROM projects WHERE id = 'open'",
+      );
+      return rows.rows[0];
+    }
+    await database.query("UPDATE projects SET retention_enabled = false WHERE id = 'open'");
+    const days = await json(
+      await call(api, "PATCH", "/v2/projects/open", owner, { retentionDays: 45 }),
+    );
+    expect((days.data as Json).retentionDays).toBe(45);
+    expect((days.data as Json).retentionEnabled).toBeUndefined();
+    expect(await stored()).toEqual({ retention_days: 45, retention_enabled: false });
+    const enabled = await json(
+      await call(api, "PATCH", "/v2/projects/open", owner, { retentionEnabled: true }),
+    );
+    expect((enabled.data as Json).retentionEnabled).toBe(true);
+    expect((enabled.data as Json).retentionDays).toBeUndefined();
+    expect(await stored()).toEqual({ retention_days: 45, retention_enabled: true });
+    await call(api, "PATCH", "/v2/projects/open", owner, { name: "Open" });
+    expect(await stored()).toEqual({ retention_days: 45, retention_enabled: true });
+    await call(api, "PATCH", "/v2/projects/open", owner, { retentionEnabled: false });
+    expect(await stored()).toEqual({ retention_days: 45, retention_enabled: false });
+    expect(await status("PATCH", "/v2/projects/open", owner, { retentionDays: null })).toBe(400);
+    expect(await status("PATCH", "/v2/projects/open", owner, { retentionDays: 3651 })).toBe(400);
+  });
+
   test("PATCH answers only the changed fields", async () => {
     const body = await json(
       await call(api, "PATCH", "/v2/projects/open", owner, { sqlEnabled: false }),
@@ -378,6 +406,7 @@ describe("admin", () => {
       visibility: "private",
       sqlEnabled: true,
       retentionDays: 90,
+      retentionEnabled: false,
     });
     expect(String(created.secretKey)).toStartWith("sk_live_");
     expect(String(created.publicKey)).toStartWith("pk_live_");

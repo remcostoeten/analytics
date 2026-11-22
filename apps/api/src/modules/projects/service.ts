@@ -29,7 +29,7 @@ import type { AccessDeps, Caller } from "../../access/types";
 
 type Created = Project & { secretKey: string };
 
-const logRetentionMs = 7 * 24 * 60 * 60 * 1000;
+const keyCheckWindowMs = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * @name publicShape
@@ -85,6 +85,7 @@ function adminShape(project: ProjectRecord): Project {
     debugConsole: project.debugConsole,
     allowedOrigins: project.allowedOrigins,
     retentionDays: project.retentionDays,
+    retentionEnabled: project.retentionEnabled,
     publicKey: project.publicKey,
     keyUsage: keyUsageOf(project),
     updatedAt: project.updatedAt.toISOString(),
@@ -150,6 +151,7 @@ export async function createProject(
     publicVisitorData: input.publicVisitorData ?? false,
     allowedOrigins: input.allowedOrigins ?? [],
     retentionDays: input.retentionDays ?? 90,
+    retentionEnabled: input.retentionEnabled ?? false,
     publicKey: randomSecret("pk_live_", 8),
     secretKeyHash: await deps.hasher.sha256(secretKey),
     orgId: organizationId,
@@ -187,6 +189,7 @@ export async function updateProject(
     ...(patch.debugConsole === undefined ? {} : { debugConsole: shaped.debugConsole }),
     ...(patch.allowedOrigins === undefined ? {} : { allowedOrigins: shaped.allowedOrigins }),
     ...(patch.retentionDays === undefined ? {} : { retentionDays: shaped.retentionDays }),
+    ...(patch.retentionEnabled === undefined ? {} : { retentionEnabled: shaped.retentionEnabled }),
     updatedAt: shaped.updatedAt,
   });
 }
@@ -267,8 +270,8 @@ export async function keyStatus(
 /**
  * @name checkKeys
  * @description Checks a project's keys and stores the result. The public key counts as connected
- * when the ingest log holds accepted events since it was generated, within the 7 days the log
- * keeps. A secret key sent with the check is compared by its sha256 hash and never stored; the
+ * when the ingest log holds accepted events since it was generated, within the last 7
+ * days. A secret key sent with the check is compared by its sha256 hash and never stored; the
  * stored hash cannot be read back, so without one the secret key is `not-tested`.
  *
  * @example
@@ -286,7 +289,7 @@ export async function checkKeys(
   if (!state) return err(engineError("NOT_FOUND", "Project not found"));
   const now = deps.clock();
   const since = new Date(
-    Math.max(state.publicKeyCreatedAt.getTime(), now.getTime() - logRetentionMs),
+    Math.max(state.publicKeyCreatedAt.getTime(), now.getTime() - keyCheckWindowMs),
   );
   const totals = logs
     ? await logs.ingestTotals(id, since)
