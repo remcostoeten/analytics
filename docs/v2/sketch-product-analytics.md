@@ -36,7 +36,7 @@ One extra package per heavy dependency, not one `sdk-plus` bundle. Replay is bro
 | Session replay | `@spoar/replay` | rrweb is large; the recorder lazy-loads like `speedInsights` loads `web-vitals` |
 | LLM observability | `@spoar/llm` | Server-only wrappers around provider clients and the AI SDK |
 
-Both new packages register as ordinary plugins on the existing client, so consent, queueing, `ignoreSelf` and bot scoring apply without new code.
+`@spoar/replay` is a browser plugin on the existing client, so it reads consent, opt-out and `ignoreSelf` from it, and uploads over its own route. `@spoar/llm` is a server wrapper around `createServerAnalytics` and is not a browser plugin.
 
 ```ts
 import { createAnalytics } from "@spoar/sdk";
@@ -51,10 +51,10 @@ createAnalytics({ ...config, plugins: [autocapture(), replay({ sampleRate: 1 })]
 A plugin that records interactions without `data-spoar-*` attributes.
 
 - **What it records**: by default, clicks on interactive elements (`a`, `button`, `[role=button]`, `input[type=submit]`, `summary`, `label`) and form submits. Input changes, rage clicks and dead clicks are opt-in per kind. One event name, `autocapture`, with `kind` set to `click`, `submit`, `change`, `rage` or `dead`.
-- **Props**: `selector` (a short stable CSS path, preferring `id`, `data-testid` and `name` over nth-child), `tag`, `text` (trimmed visible text, at most 64 characters), `href` (path only, query stripped) and `route`.
-- **Never recorded**: input values, anything inside `[data-spoar-ignore]`, password fields, fields with `autocomplete` set to `email`, `tel`, `cc-*` or similar, and `contenteditable` regions.
+- **Props**: `selector` (a short stable CSS path, preferring `id`, `data-testid` and `name` over nth-child), `tag`, `text` (trimmed visible text, at most 64 characters), `href` (path only, query stripped, token-like segments replaced with `:redacted`) and `route`.
+- **Never recorded**: input values, anything inside `[data-spoar-ignore]`, password fields, fields with `autocomplete` set to `email`, `tel`, `cc-*` or similar, `contenteditable` regions, and the `text` of anything inside `[data-spoar-mask]`.
 - **Rage clicks**, opt-in: three or more clicks within one second inside a 30 px radius send `kind: "rage"`. For a small app this is the most useful signal autocapture gives: a button that does not work.
-- **Dead clicks**, later: a click followed by no DOM mutation, navigation or network request within one second. Needs a `MutationObserver`, so it sits behind an option.
+- **Dead clicks**, opt-in and built last in this epic: a click followed by no DOM mutation, navigation or network request within one second. Needs a `MutationObserver`, so it sits behind an option.
 - **Interplay**: an element with `data-spoar-click` keeps sending `click` through the `clicks()` plugin, and autocapture skips it so nothing counts twice.
 - **Budget**: under 1 KB.
 
@@ -66,7 +66,7 @@ Named definitions over stored events, made after the fact. They are what turns a
 
 ```ts
 type ActionMatcher =
-  | { event: string; props?: { [key: string]: string } }
+  | { event: string; props?: { [key: string]: PropValue } }
   | { autocapture: { selector?: string; text?: string; href?: string } }
   | { pageview: { path: string } };
 
@@ -77,7 +77,7 @@ type Action = Entity & {
 };
 ```
 
-- **Matching**: any matcher hits. `path`, `href` and `text` accept a glob, `selector` matches exactly or as a suffix. Matchers compile to a SQL `WHERE` clause at read time; at this traffic there is no reason to materialize.
+- **Matching**: any matcher hits. Prop values compare by JSON type, so `1` does not match `"1"`. `path`, `href` and `text` accept a glob, `selector` matches exactly or as a suffix. Matchers compile to a SQL `WHERE` clause at read time; at this traffic there is no reason to materialize.
 - **Reads**: `action` becomes a dimension and a filter, so `filter[action]=upgrade-click`, `breakdown/action` and `timeseries?filter[action]=...` work with no new routes.
 - **Routes**: `GET`, `POST`, `PATCH` and `DELETE` on `/v2/projects/:project/actions`, plus `actions` in the admin SDK.
 - **Dashboard**: "Create action from this" on any autocapture row in the event log, and later from a click in the replay player.
@@ -88,10 +88,10 @@ type Action = Entity & {
 
 The query engine is already there. What is missing is a way to build a read in the dashboard, save it and put several on a board.
 
-- **An insight is a saved read**: `kind` (`trend`, `breakdown`, `paths`, `retention`, `stickiness`, `lifecycle` or `sql`), the same query parameters the REST route takes stored as JSON, a chart type and a name. Running an insight calls the route it names, so access rules and caching come for free.
+- **An insight is a saved read**: `kind` (`trend`, `breakdown`, `paths`, `retention`, `stickiness`, `lifecycle` or `sql`), the same query parameters the REST route takes stored as JSON, a chart type and a name. Running an insight calls the route it names, so access rules and caching come for free. An insight of kind `sql` cannot go on a public board, because anonymous viewers have no SQL access.
 - **Boards**: an ordered list of insights with sizes. A project can mark a board as its public dashboard.
-- **Builder**: pick a metric, an event or action, filters and an optional breakdown. Autocomplete needs `GET /events/names` and `GET /props/keys`, which list distinct names and keys from the last 30 days.
-- **Two new reads**:
+- **Builder**: pick a metric, an event or action, filters and an optional breakdown. Autocomplete needs `GET /v2/projects/:project/events/names` and `GET /v2/projects/:project/props/keys`, which follow the project's read access and list distinct names and keys from the last 30 days.
+- **Two existing reads** to reuse:
   - `stickiness`: how many days in a week or month each visitor was active, as a histogram.
   - `lifecycle`: per interval, visitors who are new, returning, resurrected or gone dormant. The `visit_number` and `days_since_previous_visit` dimensions already do most of the work.
 - **Saved segments**, already the next item on the plan after Search Console, slot in here: an insight can reference a segment instead of repeating its filters.
@@ -116,7 +116,8 @@ replay({
 ```
 
 - Inputs are masked by default. Text is shown unless marked. Canvas, video and cross-origin iframes are not recorded.
-- Recording starts after consent and stops on `optOut()`, `reset()` and consent being revoked.
+- Recording starts after consent and stops on `optOut()`, `reset()` and consent being revoked. These checks run again after rrweb has loaded, so a revocation during the load cancels the start.
+- Do Not Track and Global Privacy Control turn recording off, as they do for events.
 - Sessions under `minDurationMs` are discarded client-side, which drops most bounces.
 - The `ignoreSelf` plugin also turns off recording, so your own visits are not stored.
 
@@ -125,17 +126,17 @@ replay({
 Replay data does not fit the event envelope: one session is tens to hundreds of KB, past the 60 KB beacon limit.
 
 - A separate route, `POST /v2/replay/:session/:seq`, takes gzip chunks compressed in the browser with `CompressionStream`.
-- A chunk is flushed every 10 seconds or at 256 KB, whichever comes first, and on `pagehide` with `fetch` and `keepalive`.
-- The public key and allowed origins apply as for events. Chunks for a project without replay on answer 403 so the client stops.
-- `seq` makes retries idempotent: the same key overwrites the same object.
+- A chunk is flushed every 10 seconds or at 56 KB compressed, whichever comes first, and on `pagehide` with `fetch` and `keepalive`. The size keeps every chunk inside the 64 KB keepalive limit.
+- The public key and allowed origins apply as for events, but `Origin` is a browser policy and not authentication, so the route also limits per IP and per session. Chunks for a project without replay on answer 403 so the client stops.
+- `seq` makes retries idempotent: the same key overwrites the same object, and the chunk row is an upsert on project, session and `seq`, so a retry never counts twice.
 
 ### Storage
 
 Recordings do not go in Postgres. Neon storage would fill up and every replay read would pull large rows through the pool.
 
 - **Chunks** go to S3-compatible storage (Cloudflare R2 by default, which has free egress) at `replays/<project>/<session>/<seq>.json.gz`.
-- **Metadata** goes in a `replay_sessions` table: project, session, visitor, start, duration, chunk count, bytes, page count, error count, rage click count, first path and device.
-- **Retention**: 30 days, or the project's `retentionDays` when shorter. An R2 lifecycle rule deletes the objects and the nightly job deletes the rows.
+- **Metadata** goes in a `replay_sessions` table: project, session, visitor, start, duration, chunk count, bytes, page count, error count, rage click count, first path and device. Totals are derived from a `replay_chunks` row per chunk, and the nightly job reconciles objects that have no row after a failed write.
+- **Retention**: 30 days, or the project's `retentionDays` when shorter. The nightly job deletes objects and rows per project, and a 30-day R2 lifecycle rule is only a backstop. Deleting a project removes its replay objects and rows before its tombstone.
 - **Caps**: a per-project daily byte cap so one runaway page cannot fill the bucket. Past it the route answers 429 and the client stops for that session.
 - **Self-hosting**: replay stays off until `REPLAY_BUCKET` and its credentials are set.
 
@@ -179,7 +180,7 @@ One `llm_generation` event per model call:
 - `trace` and `parent` ids so agent loops with several calls group under one request
 - the visitor and session when the call is forwarded from a request, as the server SDK already does
 
-Cost is computed on the server from a price table we keep in the repo, so a price change fixes old and new rows alike at read time.
+Cost is computed on the server from a price table we keep in the repo and stored on each call, so a later price change does not rewrite past spend.
 
 ### Prompts and responses
 
@@ -200,6 +201,10 @@ An `llm_calls` table with typed columns for tokens, latency and cost, so sums an
 3. **Insights and boards**. Mostly dashboard work on routes that exist.
 4. **LLM observability**. Server-only and reuses the server SDK; the price table is the only new upkeep.
 5. **Session replay**. New ingest route, object storage, retention job and player. Worth starting with a spike on rrweb's size and R2 cost per thousand sessions.
+
+## Open question
+
+Should replay mask all page text by default? The sketch shows text unless it is marked, which makes replays easier to read but can record personal data rendered on the page. Settle this before #243.
 
 ## Not in this scope
 
