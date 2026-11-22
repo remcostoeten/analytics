@@ -93,6 +93,7 @@ Import from `@spoar/sdk/plugins`; each is one file and none imports another.
 | `scrollDepth()` | `scroll_depth` with the deepest percentage reached |
 | `engagement()` | `engagement` with the milliseconds the page was visible |
 | `clicks()` | `click` for elements with `data-spoar-click`, plus their `data-spoar-prop-*` attributes |
+| `autocapture({ kinds })` | `autocapture` for clicks and submits, with opt-in `change` and `rage`, never input values |
 | `outboundLinks()` | `outbound_click` for other hosts and `file_download` by file extension |
 | `forms()` | `form_submit` with the form id and action path, nothing from the fields |
 | `errors()` | `error` for uncaught errors and rejections, with 20 scrubbed breadcrumbs |

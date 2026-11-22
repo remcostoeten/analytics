@@ -23,8 +23,16 @@ describe("measure", () => {
 describe("pluginBudgets", () => {
   test("gives each plugin file 0.6 KB unless it has an exception", () => {
     expect(
-      pluginBudgets(["index.ts", "speed-insights.ts", "clicks.ts", "errors.ts", "notes.md"]),
+      pluginBudgets([
+        "index.ts",
+        "speed-insights.ts",
+        "autocapture.ts",
+        "clicks.ts",
+        "errors.ts",
+        "notes.md",
+      ]),
     ).toEqual([
+      { file: "autocapture.ts", limitBytes: 1280 },
       { file: "clicks.ts", limitBytes: 614.4 },
       { file: "errors.ts", limitBytes: 716.8 },
       { file: "speed-insights.ts", limitBytes: 2560 },

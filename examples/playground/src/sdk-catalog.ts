@@ -314,6 +314,13 @@ export const sdkMethods: SdkMethod[] = [
   ),
   codeOnly(
     "@spoar/sdk/plugins",
+    "autocapture",
+    "autocapture(options?)",
+    "Sends `autocapture` for clicks and form submits, with `change` and `rage` as opt-in kinds. Input values are never read.",
+    `createAnalytics({ plugins: [autocapture({ kinds: ["click", "submit", "rage"] })] });`,
+  ),
+  codeOnly(
+    "@spoar/sdk/plugins",
     "outboundLinks",
     "outboundLinks()",
     "Sends `outbound_click` for links to another host and `file_download` for links to files such as pdf or zip.",

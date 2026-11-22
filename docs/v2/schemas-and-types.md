@@ -66,8 +66,18 @@ export type BotReason =
   | "client_no_input" | "session_velocity" | "ip_fanout";
 export type BuiltInEvent =
   | "pageview" | "web_vital" | "scroll_depth" | "engagement" | "click" | "outbound_click"
-  | "file_download" | "form_submit" | "error" | "not_found" | "identify" | "experiment_exposure";
+  | "file_download" | "form_submit" | "error" | "not_found" | "identify" | "experiment_exposure"
+  | "autocapture";
 export type EventName = BuiltInEvent | (string & {});
+export type AutocaptureKind = "click" | "submit" | "change" | "rage";
+export type AutocaptureProps = {
+  kind: AutocaptureKind;
+  selector: string;
+  tag: string;
+  text?: string;
+  href?: string;
+  route: string;
+};
 ```
 
 `ErrorCode`, `Dimension` and `Metric` are not written by hand: they are the key unions of the error catalog, the dimension registry and the metric registry, so adding an entry adds the type.

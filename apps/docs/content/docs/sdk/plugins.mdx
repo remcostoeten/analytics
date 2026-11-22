@@ -106,6 +106,18 @@ Sends `click` for elements with `data-spoar-click`. See [Clicks](/docs/plugins/c
 createAnalytics({ plugins: [clicks()] });
 ```
 
+### `autocapture()`
+
+```ts
+autocapture(options?: { kinds?: ("click" | "submit" | "change" | "rage")[] }): Plugin
+```
+
+Sends `autocapture` for clicks and form submits, with `change` and `rage` as opt-in kinds. It never records input values. See [Autocapture](/docs/plugins/autocapture).
+
+```ts
+createAnalytics({ plugins: [autocapture({ kinds: ["click", "submit", "rage"] })] });
+```
+
 ### `outboundLinks()`
 
 ```ts

@@ -1,3 +1,5 @@
+export { autocapture } from "./autocapture";
+export type { AutocaptureOptions } from "./autocapture";
 export { botSignals } from "./bot-signals";
 export { clicks } from "./clicks";
 export { engagement } from "./engagement";
