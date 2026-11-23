@@ -1,8 +1,8 @@
 # Deploying v2
 
-Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
+Everything below needs an account the agents cannot use: the Neon database, the Vercel team `remcostoetens-projects`, the Cloudflare account, GitHub settings, a GitHub OAuth app and Google Cloud. Each step is a few clicks; the repo does the rest.
 
-`./setup-vercel.sh` at the repo root does steps 1, 2, 5, 6, 7 and 8 in one run once step 4 is done: it creates the three projects, sets their variables and domains, starts a deploy, sets the ignored build step on the v1 projects and, when `gh` is signed in, fills the GitHub `production` environment. It needs `VERCEL_TOKEN`, `DATABASE_URL`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, keeps the generated secrets in `.env.deploy`, and is safe to rerun. `./setup-vercel.sh --help` lists the optional variables.
+`./setup-vercel.sh` at the repo root does steps 1, 2, 5, 6, 7 and 8 in one run once step 4 is done: it creates the three projects, sets their variables and domains, starts a deploy, sets the ignored build step on the v1 projects and, when `gh` is signed in, fills the GitHub `production` environment. It needs `VERCEL_TOKEN`, `DATABASE_URL`, `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, keeps the generated secrets in `.env.deploy`, and is safe to rerun. `./setup-vercel.sh --help` lists the optional variables. The script sets up the Vercel build of the API; the live API is the Worker from step 5, which it does not deploy.
 
 ## 1. Stop v1 building on every push
 
@@ -47,9 +47,21 @@ GitHub, Settings, Developer settings, OAuth Apps, New:
 
 Keep the client id and a new client secret.
 
-## 5. The API on Vercel
+## 5. The API on Cloudflare Workers
 
-Project `v2.ingestion` (already created; connect it to the repository `remcostoeten/analytics` under Settings, Git), root directory `apps/api`, framework Elysia. `apps/api/vercel.json` sets Bun, the build and the MaxMind files through a `builds` entry on `@vercel/backends`, so the Build and Development Settings in the dashboard do not apply to this project; the root directory and environment variables still do. Environment variables for Production:
+The Worker `spoar-api` serves `api.analytics.remcostoeten.nl`. `apps/api/cloudflare.config.ts` holds its name, domain and bindings. Sign in once with `cf auth login`, then deploy the checked out commit:
+
+```sh
+bun run --cwd apps/api deploy:worker
+```
+
+Every secret named in the config must exist on the Worker, and a deploy keeps their values. To set or change one, put the values in a file outside the repository and run `cf deploy --secrets-file <path>` from `apps/api`. A variable from the table below that is not in the config yet is added to its `env` first.
+
+Keep Bot Fight Mode off on the `remcostoeten.nl` zone. It cannot be exempted per path and answers 403 with a "Just a moment" page to calls from datacenter addresses, which include the dashboard's server and the GitHub runners of the `jobs` workflow.
+
+The Vercel project `v2.ingestion` builds the same app on `v2ingestion.vercel.app` and takes no production traffic. Its root directory is `apps/api`, and `apps/api/vercel.json` sets Bun, the build and the MaxMind files through a `builds` entry on `@vercel/backends`, so the Build and Development Settings in the dashboard do not apply to it.
+
+Variables:
 
 | Variable | Value |
 | --- | --- |
@@ -58,14 +70,14 @@ Project `v2.ingestion` (already created; connect it to the repository `remcostoe
 | `API_URL` | `https://api.analytics.remcostoeten.nl` |
 | `DASHBOARD_ORIGIN` | `https://docs.analytics.remcostoeten.nl`, the landing origin that serves the dashboard at `/dashboard` and the only origin allowed to sign in and call the API from a browser |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
-| `MAXMIND_LICENSE_KEY` | A free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
+| `MAXMIND_LICENSE_KEY` | Vercel build only: a free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
 | `MAIL_URL` | Optional: the SMTP server for mail alerts, such as `smtps://you%40gmail.com:<app password>@smtp.gmail.com:465`; without it mail targets stay `paused` |
 | `MAIL_FROM` | Optional: the sender of alert mail, such as `Analytics <you@gmail.com>`; with Gmail it must be the account's own address |
 | `INTERNAL_PROJECT_SECRET` | Optional: the secret key of a project that should collect the API's own errors |
 | `CRUX_API_KEY` | Optional: a Google Cloud API key with the Chrome UX Report API enabled |
 
-Add the domain `api.analytics.remcostoeten.nl`. Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true`.
+Check `https://api.analytics.remcostoeten.nl/v2/health` answers `ok: true`.
 
 ## 6. The docs site on Vercel
 
@@ -145,11 +157,13 @@ Then add the trusted publisher as above. The hand-published version gets no git 
 
 ## 11. Deploying on demand
 
+The live API is the Worker from step 5. After a change in `apps/api` or a package it uses, deploy it with `bun run --cwd apps/api deploy:worker`. The options below cover the Vercel projects only.
+
 Git deploys are off for all five Vercel projects: each `vercel.json` (`apps/api`, `apps/docs`, `apps/dashboard`, `v1/apps/ingestion`, `v1/apps/dashboard`) sets `"git": { "deploymentEnabled": false }`, so pushes and pull requests create no deployments and the free plan's deployment quota is spent only on purpose. Deploy a project when it should go live:
 
 - Vercel dashboard: open the project, Deployments, Create Deployment, and pick `master` (or a commit). It builds with the project's settings and, from `master`, goes to production.
-- CLI, from the repository root with the project linked: `vercel deploy --prod --cwd apps/api` (likewise `apps/docs`, `apps/dashboard`).
-- `bun run deploy`: fetches `origin/master`, shows each v2 project's live production deployment (state, commit, age, how many commits it is behind and how many touch its paths, and a newer failed or canceled attempt), asks which to deploy, confirms, starts production deploys of `master` and follows them until `READY` or `ERROR`. It reads `VERCEL_TOKEN`, or the token `vercel login` saved. `--status` only prints the table, `bun run deploy dashboard docs` skips the picker, `--yes` skips the confirmation, and `VERCEL_TEAM` overrides the team.
+- CLI, from the repository root with the project linked: `vercel deploy --prod --cwd apps/docs` (likewise `apps/dashboard`).
+- `bun run deploy`: fetches `origin/master`, shows each v2 Vercel project's live production deployment (state, commit, age, how many commits it is behind and how many touch its paths, and a newer failed or canceled attempt), asks which to deploy, confirms, starts production deploys of `master` and follows them until `READY` or `ERROR`. It reads `VERCEL_TOKEN`, or the token `vercel login` saved. `--status` only prints the table, `bun run deploy dashboard docs` skips the picker, `--yes` skips the confirmation, and `VERCEL_TEAM` overrides the team.
 
 To turn automatic deploys back on for one project, remove its `git` block.
 

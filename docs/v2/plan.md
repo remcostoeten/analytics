@@ -785,7 +785,7 @@ Only the published packages, `@spoar/sdk`, `@spoar/client` and `@spoar/debugtool
 1. `master` is the trunk. Every epic branches from `master` as `feature/*`, `fix/*` or `chore/*` and squash-merges back with green checks.
 2. v1 keeps serving production from `master`: the Vercel projects `ingestion` and `analytics` build from `v1/apps/ingestion` and `v1/apps/dashboard`. Their ignored build step should skip builds when nothing under `v1/` changed.
 3. v2 code never imports from `v1/`, so v2 epics cannot break production.
-4. `apps/api` deploys from `master` as the Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`; the v2 `apps/dashboard` gets its own project on `master` once it is built.
+4. `apps/api` deploys from `master` as the Cloudflare Worker `spoar-api` on `api.analytics.remcostoeten.nl` (decision 34); the v2 `apps/dashboard` gets its own project on `master` once it is built.
 5. The `@spoar` packages publish stable versions to the npm `latest` tag only. The `2.0.0-next.*` prereleases went out under `next` until October 2026, when Remco retired that tag and 2.0.0 became the first stable SDK release. 1.x lives on npm as `@remcostoeten/analytics`.
 6. When v2 replaces v1 in production, `v1/` is deleted in one pull request.
 

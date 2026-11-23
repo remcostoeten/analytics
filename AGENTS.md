@@ -5,7 +5,7 @@ Self-hosted, privacy-first web analytics, owned and designed by Remco. This repo
 ## Status
 
 - **v1 lives in `v1/` and is frozen.** Production runs it from `master`: the Hono ingestion, the Next dashboard, SDK 1.x and the demo database. No new features; fixes only when Remco asks. Its own guide is `v1/AGENTS.md`.
-- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` (Vercel project `v2.ingestion` on `api.analytics.remcostoeten.nl`) and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/client` publish stable versions to npm under the `latest` tag. The v2 dashboard (`apps/dashboard`, Next) runs from `master` as the Vercel project `v2.dashboard` and is served at `/dashboard` on the landing domain through a rewrite in `apps/docs` (decision 24). It has sign-in, the admin module for projects and keys, and the analytics views in Cloudflare's Web Analytics layout: overview, web analytics, speed, issues, realtime, logs, visitors with session trails, and chart annotations.
+- **v2 is being built at the repo root, on `master`.** The API runs in production from `master` as the Cloudflare Worker `spoar-api` on `api.analytics.remcostoeten.nl` and the docs site on `docs.analytics.remcostoeten.nl`. `@spoar/sdk` and `@spoar/client` publish stable versions to npm under the `latest` tag. The v2 dashboard (`apps/dashboard`, Next) runs from `master` as the Vercel project `v2.dashboard` and is served at `/dashboard` on the landing domain through a rewrite in `apps/docs` (decision 24). It has sign-in, the admin module for projects and keys, and the analytics views in Cloudflare's Web Analytics layout: overview, web analytics, speed, issues, realtime, logs, visitors with session trails, and chart annotations.
 - v2 code never imports from `v1/`. When v1 logic is reused, it is copied into the engine with its tests, so v1 keeps working untouched until it is removed.
 
 ## The plan
@@ -87,6 +87,7 @@ Today `v1/`, `apps/docs` (the Fumadocs site, with the API reference generated fr
 | `bun run changeset` | Adds a changeset; published packages release stable versions on `latest`, never prereleases |
 | `bun run release` | `scripts/publish.ts`: packs each public package with `bun pm pack` (with `publishConfig.exports` as `exports` and no `devDependencies`) and runs `npm publish --provenance --tag latest`, skipping prerelease versions and versions already on npm and carrying on past a failed package; `--dry-run` publishes nothing. `release.yml` runs it; agents never do |
 | `bun run deploy` | `scripts/deploy.ts`: shows each v2 Vercel project's live production deployment against `origin/master`, asks which to deploy, then starts production deploys of `master` and follows them to `READY` or `ERROR`; `--status` only prints, `--yes` skips the confirmation. |
+| `bun run --cwd apps/api deploy:worker` | `cf deploy` of the live API to the Cloudflare Worker `spoar-api`, from `apps/api/cloudflare.config.ts`. `bun run deploy` does not update it |
 | `bun run check` | typecheck, lint, format check, boundaries, deps, knip and tests |
 | `bun run test:e2e` | Playwright in `e2e/` against the built SDK, the API on PGlite, the `/_ra` proxy and a production build of the dashboard with the Next.js testing API exposed; build `packages/sdk` first, and on Linux without a display run it under `xvfb-run -a` for the headed project. `docs/release-checklist.md` is the manual browser and blocker matrix |
 | `bun run test` | `bun test` per workspace: the v1 workspaces one at a time, then the v2 ones and `e2e/parity` in parallel, so nothing slows the v1 PGlite suite past its 5 s timeouts |
@@ -108,7 +109,9 @@ Type-aware Oxlint ignores `ignorePatterns`, so `lint` names its folders explicit
 
 - Git deploys are off for every Vercel project (`"git": { "deploymentEnabled": false }` in each `vercel.json`), to stay inside the free plan's deployment quota. Remco deploys on demand from the Vercel dashboard or `vercel deploy --prod`; `docs/v2/deploy.md` section 11.
 - v1's Vercel projects are `ingestion` from `v1/apps/ingestion` and `analytics` (the dashboard) from `v1/apps/dashboard`.
-- `apps/api` is the Vercel project `v2.ingestion`, `apps/docs` is `v2.analytics-docs` and `apps/dashboard` is `v2.dashboard` (`docs/v2/deploy.md`).
+- `apps/api` serves `api.analytics.remcostoeten.nl` as the Cloudflare Worker `spoar-api`. After a change in `apps/api` or a package it uses, deploy it with `bun run --cwd apps/api deploy:worker`. The Vercel project `v2.ingestion` builds the same code on `v2ingestion.vercel.app` and takes no production traffic.
+- `apps/docs` is `v2.analytics-docs` and `apps/dashboard` is `v2.dashboard` (`docs/v2/deploy.md`).
+- Bot Fight Mode stays off on the `remcostoeten.nl` Cloudflare zone. It answers 403 to server calls to the API, which breaks the dashboard's admin pages and the scheduled jobs.
 
 <!-- BEGIN:turborepo-agent-rules -->
 

@@ -9,8 +9,8 @@
 	},
 	"scripts": {
 		"dev": "bun --watch src/server.ts",
-		"dev:worker": "wrangler dev",
-		"deploy:worker": "wrangler deploy",
+		"dev:worker": "cf dev",
+		"deploy:worker": "cf deploy",
 		"build": "bun scripts/download-geo.ts",
 		"typecheck": "tsgo --noEmit",
 		"test": "bun test --timeout 30000",
@@ -28,6 +28,7 @@
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "0.5.8",
-		"wrangler": "4.151.1"
+		"cf": "1.0.0-rc.2",
+		"wrangler": "4.166.0"
 	}
 }
