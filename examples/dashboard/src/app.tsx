@@ -8,8 +8,7 @@ import { Controls } from "./components/controls";
 import { CountryTable } from "./components/country-table";
 import { Realtime } from "./components/realtime";
 import { SettingsBar } from "./components/settings-bar";
-import { StatsTiles } from "./components/stats-tiles";
-import { TimeseriesChart } from "./components/timeseries-chart";
+import { Overview } from "./components/overview";
 import { useSettings } from "./settings";
 import { fromHash, toHash, withFilter, withoutFilter } from "./state";
 import type { ViewState } from "./state";
@@ -85,8 +84,7 @@ export function App() {
               onTraffic={onTraffic}
               onRemoveFilter={onRemoveFilter}
             />
-            <StatsTiles scope={scope} scopeKey={scopeKey} />
-            <TimeseriesChart scope={scope} scopeKey={scopeKey} />
+            <Overview scope={scope} scopeKey={scopeKey} />
             <div className="grid">
               {breakdowns.map((item) => (
                 <BreakdownTable

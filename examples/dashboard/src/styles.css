@@ -68,8 +68,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 code {
@@ -88,13 +87,18 @@ code {
 }
 
 .topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 28px;
-  padding: 10px 20px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
+}
+
+.topbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 20px;
 }
 
 .brand {
@@ -125,47 +129,97 @@ code {
   font-size: 12px;
 }
 
-.settings {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.settings label {
-  display: flex;
+.connection {
+  display: inline-flex;
   align-items: center;
+  gap: 10px;
   min-width: 0;
+  padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  transition:
+    background 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+.connection:hover,
+.connection:focus-visible,
+.connection[aria-expanded="true"] {
   background: var(--sunken);
-  transition: border-color 150ms var(--ease-out);
 }
 
-.settings label:focus-within {
-  border-color: var(--accent);
+.connection:focus-visible {
+  color: var(--accent);
 }
 
-.settings span {
-  flex: none;
-  padding: 0 4px 0 10px;
-  color: var(--muted);
+.connection-project {
+  overflow: hidden;
+  max-width: 220px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connection-host {
+  color: var(--faint);
+  font-family: var(--mono);
   font-size: 12px;
 }
 
-.settings input {
-  width: 100%;
-  min-width: 0;
-  padding: 7px 10px 7px 4px;
-  border: 0;
-  background: none;
-  font-family: var(--mono);
-  font-size: 12.5px;
+.chevron {
+  color: var(--muted);
+  font-size: 11px;
+  transition: transform 200ms var(--ease-out);
 }
 
-.settings input:focus-visible {
-  outline: none;
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 4px 20px 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.field input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--sunken);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  transition: border-color 150ms var(--ease-out);
+}
+
+.field input:focus-visible {
+  border-color: var(--accent);
+}
+
+.field-hint {
+  color: var(--faint);
+  font-size: 12px;
 }
 
 .main {
@@ -205,26 +259,6 @@ code {
   gap: 10px;
 }
 
-.select {
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.select span {
-  padding: 0 4px 0 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.select select {
-  padding: 7px 10px 7px 4px;
-  border: 0;
-  background: none;
-}
-
 .segmented {
   display: inline-flex;
   border: 1px solid var(--line);
@@ -234,15 +268,27 @@ code {
 }
 
 .segmented button {
-  padding: 7px 12px;
+  padding: 6px 12px;
   border: 0;
   background: none;
   color: var(--muted);
   font-size: 13px;
+  transition:
+    background 150ms var(--ease-out),
+    color 150ms var(--ease-out);
 }
 
 .segmented button + button {
   border-left: 1px solid var(--line);
+}
+
+.segmented button:hover {
+  color: var(--fg);
+}
+
+.segmented button:focus-visible {
+  background: var(--sunken);
+  color: var(--accent);
 }
 
 .segmented button.active {
@@ -280,7 +326,8 @@ code {
   font-size: 12px;
 }
 
-.chip:hover {
+.chip:hover,
+.chip:focus-visible {
   border-color: var(--accent);
 }
 
@@ -325,6 +372,10 @@ code {
 
 .ghost:hover {
   color: var(--fg);
+}
+
+.ghost:focus-visible {
+  color: var(--accent);
 }
 
 .ghost.warn {
@@ -373,31 +424,57 @@ code {
   }
 }
 
+.overview {
+  padding: 0;
+  overflow: hidden;
+}
+
 .tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0;
   margin: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .tile {
-  position: relative;
-  padding: 6px 16px 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  transition: background 150ms var(--ease-out);
 }
 
 .tile + .tile {
-  padding-left: 16px;
   border-left: 1px solid var(--line);
 }
 
-.tile dt {
-  color: var(--muted);
-  font-size: 13px;
+.tile:hover,
+.tile:focus-visible {
+  background: var(--sunken);
 }
 
-.tile dd {
-  margin: 2px 0 0;
-  font-size: 30px;
+.tile.active {
+  background: var(--accent-soft);
+}
+
+.tile-label {
+  color: var(--muted);
+  font-size: 13px;
+  transition: color 150ms var(--ease-out);
+}
+
+.tile.active .tile-label,
+.tile:focus-visible .tile-label {
+  color: var(--accent);
+}
+
+.tile-value {
+  font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -417,17 +494,131 @@ code {
   color: var(--err);
 }
 
+.chart-wrap {
+  padding: 16px 18px 14px;
+}
+
 .chart {
-  margin: 0;
+  position: relative;
+  transition: opacity 200ms var(--ease-out);
+  touch-action: pan-y;
+}
+
+.chart.is-loading {
+  opacity: 0.6;
 }
 
 .chart svg {
   display: block;
-  width: 100%;
-  height: auto;
 }
 
-.chart .grid {
+.chart .grid-line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart .axis {
+  fill: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.chart .line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart .line.current {
+  stroke: var(--accent);
+}
+
+.chart .line.previous {
+  stroke: var(--faint);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.chart .area-top {
+  stop-color: var(--accent);
+  stop-opacity: 0.2;
+}
+
+.chart .area-bottom {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+
+.chart .cursor {
+  stroke: var(--faint);
+  stroke-width: 1;
+}
+
+.chart .dot {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.tooltip {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12.5px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.tooltip-date {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tooltip-row.previous {
+  color: var(--muted);
+}
+
+.tooltip-row strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.legend::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-top: 2px solid var(--accent);
+}
+
+.legend.previous::before {
+  border-top: 2px dashed var(--faint);
+}
+
+.grid {
   stroke: var(--line);
   stroke-width: 1;
 }
@@ -512,7 +703,8 @@ code {
   font-size: 13.5px;
 }
 
-.breakdown-row:hover {
+.breakdown-row:hover,
+.breakdown-row:focus-visible {
   background: var(--sunken);
 }
 
@@ -669,13 +861,6 @@ code {
   font-size: 12px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeleton,
-  .pulse {
-    animation: none;
-  }
-}
-
 @media (max-width: 640px) {
   .main {
     padding: 16px 16px 56px;
@@ -685,17 +870,30 @@ code {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tile + .tile {
-    padding-left: 12px;
+  .tile {
+    padding: 12px 14px;
+  }
+
+  .tile:nth-child(even) {
+    border-left: 1px solid var(--line);
   }
 
   .tile:nth-child(odd) {
-    padding-left: 0;
     border-left: 0;
   }
 
-  .tile dd {
-    font-size: 24px;
+  .tile-value {
+    font-size: 22px;
+  }
+
+  .topbar-row,
+  .settings {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .connection-host {
+    display: none;
   }
 
   .grid.two {

@@ -19,6 +19,15 @@ const periodLabels: { [Key in Period]: string } = {
   all: "All time",
 };
 
+const periodShort: { [Key in Period]: string } = {
+  "24h": "24h",
+  "7d": "7d",
+  "30d": "30d",
+  "90d": "90d",
+  "12mo": "12mo",
+  all: "All",
+};
+
 export function Controls({ state, onPeriod, onTraffic, onRemoveFilter }: Props) {
   const filters = Object.entries(state.filters).filter(
     (entry): entry is [keyof Filters, string] => entry[1] !== undefined,
@@ -26,24 +35,23 @@ export function Controls({ state, onPeriod, onTraffic, onRemoveFilter }: Props) 
   return (
     <div className="controls">
       <div className="control-row">
-        <label className="select" htmlFor="period">
-          <span>Period</span>
-          <select
-            id="period"
-            value={state.period}
-            data-spoar-click="period"
-            onChange={(event) => {
-              const next = periods.find((period) => period === event.target.value);
-              if (next) onPeriod(next);
-            }}
-          >
-            {periods.map((period) => (
-              <option key={period} value={period}>
-                {periodLabels[period]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="segmented" role="group" aria-label="Period">
+          {periods.map((period) => (
+            <button
+              key={period}
+              type="button"
+              className={state.period === period ? "active" : ""}
+              aria-pressed={state.period === period}
+              aria-label={periodLabels[period]}
+              title={periodLabels[period]}
+              data-spoar-click="period"
+              data-spoar-prop-period={period}
+              onClick={() => onPeriod(period)}
+            >
+              {periodShort[period]}
+            </button>
+          ))}
+        </div>
         <div className="segmented" role="group" aria-label="Traffic">
           <button
             type="button"

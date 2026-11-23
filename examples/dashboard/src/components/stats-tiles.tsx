@@ -1,25 +1,17 @@
-import type { ProjectScope, StatsResponse } from "@spoar/client";
+import type { ProjectScope } from "@spoar/client";
 
-import { formatChange, formatCount, formatDuration, formatPercent } from "../format";
+import { formatChange } from "../format";
+import { metrics } from "../metrics";
+import type { Metric, MetricKey } from "../metrics";
 import { useRead } from "../use-read";
-import { ReadFrame } from "./read-frame";
+import { Failure } from "./read-frame";
 
-type Props = { scope: ProjectScope; scopeKey: string };
-
-type Tile = {
-  label: string;
-  metric: keyof StatsResponse["data"];
-  format: (value: number) => string;
-  invert?: boolean;
+type Props = {
+  scope: ProjectScope;
+  scopeKey: string;
+  selected: MetricKey;
+  onSelect: (metric: MetricKey) => void;
 };
-
-const tiles: Tile[] = [
-  { label: "Visitors", metric: "visitors", format: formatCount },
-  { label: "Sessions", metric: "sessions", format: formatCount },
-  { label: "Pageviews", metric: "pageviews", format: formatCount },
-  { label: "Bounce rate", metric: "bounceRate", format: formatPercent, invert: true },
-  { label: "Session duration", metric: "sessionDurationMs", format: formatDuration },
-];
 
 function direction(change: number | null, invert: boolean | undefined) {
   if (change === null || change === 0) return "flat";
@@ -27,41 +19,42 @@ function direction(change: number | null, invert: boolean | undefined) {
   return up !== Boolean(invert) ? "good" : "bad";
 }
 
-export function StatsTiles({ scope, scopeKey }: Props) {
+function tileLabel(metric: Metric) {
+  return `Chart ${metric.label.toLowerCase()}`;
+}
+
+export function StatsTiles({ scope, scopeKey, selected, onSelect }: Props) {
   const stats = useRead(() => scope.stats(), [scopeKey]);
+  if (stats.status === "error" && stats.value === null) {
+    return <Failure error={stats.error} onRetry={stats.retry} />;
+  }
   return (
-    <ReadFrame
-      title="Overview"
-      read={stats}
-      isEmpty={(value) => value.data.visitors.value === 0 && value.data.pageviews.value === 0}
-      empty="No traffic in this range."
-      skeleton={
-        <dl className="tiles">
-          {tiles.map((tile) => (
-            <div key={tile.metric} className="tile">
-              <dt>{tile.label}</dt>
-              <dd className="skeleton">0</dd>
-            </div>
-          ))}
-        </dl>
-      }
-    >
-      {(value) => (
-        <dl className="tiles">
-          {tiles.map((tile) => {
-            const compared = value.data[tile.metric];
-            return (
-              <div key={tile.metric} className="tile">
-                <dt>{tile.label}</dt>
-                <dd>{tile.format(compared.value)}</dd>
-                <span className={`change ${direction(compared.change, tile.invert)}`}>
-                  {formatChange(compared.change)}
-                </span>
-              </div>
-            );
-          })}
-        </dl>
-      )}
-    </ReadFrame>
+    <div className="tiles" role="group" aria-label="Metrics">
+      {metrics.map((metric) => {
+        const compared = stats.value?.data[metric.stat];
+        return (
+          <button
+            key={metric.key}
+            type="button"
+            className={`tile${selected === metric.key ? " active" : ""}`}
+            aria-pressed={selected === metric.key}
+            aria-label={tileLabel(metric)}
+            data-spoar-click="metric"
+            data-spoar-prop-metric={metric.key}
+            onClick={() => onSelect(metric.key)}
+          >
+            <span className="tile-label">{metric.label}</span>
+            <span className={`tile-value${compared ? "" : " skeleton"}`}>
+              {compared ? metric.format(compared.value) : "0"}
+            </span>
+            <span
+              className={`change ${compared ? direction(compared.change, metric.invert) : "skeleton"}`}
+            >
+              {compared ? formatChange(compared.change) : "+0%"}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
