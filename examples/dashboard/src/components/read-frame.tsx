@@ -12,7 +12,7 @@ type Props<Value> = {
   children: (value: Value) => ReactNode;
 };
 
-function Failure({ error, onRetry }: { error: ClientError; onRetry: () => void }) {
+export function Failure({ error, onRetry }: { error: ClientError; onRetry: () => void }) {
   return (
     <div className="failure" role="alert">
       <code>{error.code}</code>
