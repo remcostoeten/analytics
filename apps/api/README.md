@@ -1,6 +1,6 @@
 # apps/api
 
-The v2 API on Elysia, deployed to Vercel with the Bun runtime. See `docs/v2/api-reference.md` for the routes and `docs/decisions/0016-elysia-on-vercel.md` for why Elysia.
+The v2 API on Elysia. Production runs it as the Cloudflare Worker `spoar-api`, and a Vercel build of the same app runs on the Bun runtime. See `docs/v2/api-reference.md` for the routes and `docs/decisions/0016-elysia-on-vercel.md` for why Elysia.
 
 ## Routes so far
 
@@ -66,8 +66,8 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 - `bun run dev` serves on port 3100.
 - `bun run build` downloads the GeoLite2 City and ASN files into `data/`, from MaxMind when `MAXMIND_LICENSE_KEY` is set and from a community mirror otherwise.
 - `bun test` runs the integration tests through `app.handle` on PGlite, including a check that `openapi.json` matches the routes.
-- `bun run dev:worker` serves the Cloudflare Worker build through Wrangler, reading secrets from `.dev.vars`.
-- `bun run deploy:worker` deploys the Worker named in `wrangler.jsonc`. Set each variable from Environment with `wrangler secret put <NAME>` first.
+- `bun run dev:worker` serves the Cloudflare Worker build with `cf dev`, reading secrets from `.dev.vars`.
+- `bun run deploy:worker` deploys the checked out commit to the Worker in `cloudflare.config.ts` with `cf deploy`. Existing secrets stay; set new ones with `cf deploy --secrets-file <path>`.
 - `bun run openapi` writes the OpenAPI document to `openapi.json`; the docs site reads it and the `openapi` workflow fails a pull request that breaks it.
 
 ## Cloudflare Workers
@@ -76,4 +76,4 @@ Every response carries `x-request-id`, and every error uses the envelope `{ erro
 
 - Geo comes from Cloudflare's location for the connecting address, so `MAXMIND_LICENSE_KEY` and the `data/` files are not used. An event forwarded by a proxy, where the visitor's address is not the connecting one, gets no location.
 - The `live` WebSocket route is not served. The realtime HTTP routes still are.
-- The commit on the landing page comes from `WORKERS_CI_COMMIT_SHA` or `COMMIT_SHA`.
+- The commit on the landing page comes from `WORKERS_CI_COMMIT_SHA` or `COMMIT_SHA`, which `cloudflare.config.ts` sets at deploy time.

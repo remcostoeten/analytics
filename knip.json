@@ -10,9 +10,14 @@
   "workspaces": {
     "apps/api": {
       "entry": [
+        "cloudflare.config.ts",
         "src/index.ts",
         "src/server.ts",
+        "src/worker.ts",
         "scripts/*.ts"
+      ],
+      "ignoreDependencies": [
+        "wrangler"
       ]
     },
     "e2e": {
