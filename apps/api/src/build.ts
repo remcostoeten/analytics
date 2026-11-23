@@ -41,6 +41,21 @@ function logger(requestId: string) {
 }
 
 /**
+ * @name dashboardOrigins
+ * @description Splits `DASHBOARD_ORIGIN` on commas. The first origin is the one links and
+ * redirects point to; every origin may call the API with the session cookie.
+ *
+ * @example
+ * dashboardOrigins("https://docs.example.com, https://dashboard.example.com");
+ */
+export function dashboardOrigins(value: string | undefined) {
+  return (value ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+}
+
+/**
  * @name buildApi
  * @description Wires the API from environment variables for one host. The host supplies what
  * differs between runtimes: the geo source, the Elysia adapter, whether the `live` WebSocket is
@@ -72,7 +87,9 @@ export function buildApi(host: Host) {
   // Sessions signed with a guessable secret could be forged, so production refuses to start.
   if (production && authSecret.length < 32)
     throw new Error("Refusing to start: BETTER_AUTH_SECRET must be at least 32 characters.");
-  const dashboardOrigin = process.env.DASHBOARD_ORIGIN ?? null;
+  const [dashboardOrigin = null, ...dashboardAliases] = dashboardOrigins(
+    process.env.DASHBOARD_ORIGIN,
+  );
   const auth = createAuth({
     db: stores.db,
     members: stores.members,
@@ -83,7 +100,7 @@ export function buildApi(host: Host) {
       clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
     },
     cookieDomain: process.env.AUTH_COOKIE_DOMAIN || null,
-    trustedOrigins: dashboardOrigin ? [dashboardOrigin] : [],
+    trustedOrigins: dashboardOrigin ? [dashboardOrigin, ...dashboardAliases] : [],
     secure: production,
   });
   const members = cachedMembers(stores.members, () => clock.now(), accessCacheSeconds * 1000);
@@ -119,6 +136,7 @@ export function buildApi(host: Host) {
     logger,
     clock: () => clock.now(),
     dashboardOrigin,
+    dashboardAliases,
     docsBase: process.env.DOCS_BASE ?? "https://api.analytics.remcostoeten.nl/v2/openapi",
     geo: {
       city: host.geo.city,

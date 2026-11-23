@@ -50,6 +50,7 @@ export type AppOptions = {
   logger: (requestId: string) => Logger;
   clock: () => Date;
   dashboardOrigin: Nullable<string>;
+  dashboardAliases?: string[];
   docsBase: string;
   geo: { city: string | null; asn: string | null; loadMs: number };
   access: AccessDeps;
@@ -107,6 +108,7 @@ export function createApp(options: AppOptions) {
     .use(
       cors({
         dashboardOrigin: options.dashboardOrigin,
+        dashboardAliases: options.dashboardAliases,
         widgetOrigin: widget ? widgetOrigin : undefined,
       }),
     )

@@ -7,11 +7,12 @@ const widgetSession = "/v2/widget/session";
 
 export type CorsOptions = {
   dashboardOrigin: Nullable<string>;
+  dashboardAliases?: string[];
   widgetOrigin?: (origin: string, headers: Headers) => Promise<boolean>;
 };
 
 async function credentialed(request: Request, origin: string, options: CorsOptions) {
-  if (origin === options.dashboardOrigin) return true;
+  if (origin === options.dashboardOrigin || options.dashboardAliases?.includes(origin)) return true;
   const path = new URL(request.url).pathname;
   return path === widgetSession && options.widgetOrigin
     ? options.widgetOrigin(origin, request.headers)
@@ -20,12 +21,13 @@ async function credentialed(request: Request, origin: string, options: CorsOptio
 
 /**
  * @name cors
- * @description CORS for every route. The dashboard origin gets credentials, and so does any origin
- * that `widgetOrigin` accepts on `GET /v2/widget/session`, so the dev widget can send the admin
- * session cookie from a customer site; `widgetOrigin` also sees the headers, so a request without
- * the cookie costs no database read. Any other origin gets `*` without credentials, which is
- * what ingest and the bearer-token widget reads need, because the engine checks the origin
- * against the project key's allowed origins itself. Preflight requests answer 204 here.
+ * @description CORS for every route. The dashboard origin and its aliases get credentials, and so
+ * does any origin that `widgetOrigin` accepts on `GET /v2/widget/session`, so the dev widget can
+ * send the admin session cookie from a customer site; `widgetOrigin` also sees the headers, so a
+ * request without the cookie costs no database read. Any other origin gets `*` without
+ * credentials, which is what ingest and the bearer-token widget reads need, because the engine
+ * checks the origin against the project key's allowed origins itself. Preflight requests answer
+ * 204 here.
  *
  * @example
  * new Elysia().use(cors({ dashboardOrigin: "https://analytics.remcostoeten.nl" }));

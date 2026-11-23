@@ -68,7 +68,7 @@ Variables:
 | `DATABASE_URL` | The Neon connection string |
 | `IP_HASH_SECRET`, `BETTER_AUTH_SECRET`, `CRON_SECRET` | From step 2 |
 | `API_URL` | `https://api.analytics.remcostoeten.nl` |
-| `DASHBOARD_ORIGIN` | `https://docs.analytics.remcostoeten.nl`, the landing origin that serves the dashboard at `/dashboard` and the only origin allowed to sign in and call the API from a browser |
+| `DASHBOARD_ORIGIN` | `https://docs.analytics.remcostoeten.nl,https://dashboard.analytics.remcostoeten.nl`: a comma-separated list of the origins allowed to sign in and call the API from a browser with the session cookie. The first, the landing origin that serves the dashboard at `/dashboard`, is where links and redirects point. Any origin left out gets `*` without credentials, and the dashboard's reads fail there with "Failed to fetch" |
 | `AUTH_COOKIE_DOMAIN` | `.remcostoeten.nl` |
 | `MAXMIND_LICENSE_KEY` | Vercel build only: a free GeoLite2 license key from maxmind.com; the build downloads the geo files with it and checks their checksum |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 4 |
