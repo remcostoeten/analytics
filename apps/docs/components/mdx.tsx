@@ -6,6 +6,8 @@ import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
+import { GameQuery } from "@/components/blog/game-query";
+import { PostDiff } from "@/components/blog/post-diff";
 import { DashboardPreview } from "@/components/dashboard-preview";
 import { DevWidgetToggle } from "@/components/dev-widget";
 import { Flow, FlowNode } from "@/components/flow";
@@ -25,7 +27,9 @@ export function getMDXComponents(components?: MDXComponents) {
     DevWidgetToggle,
     Flow,
     FlowNode,
+    GameQuery,
     LiveRead,
+    PostDiff,
     Step,
     StepDiff,
     Steps,

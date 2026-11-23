@@ -1,0 +1,446 @@
+---
+title: How a party game sends its own data to Spoar
+description: One custom event from a multiplayer game, followed through retries, a counting bug, SQL, and the line between analytics and your own database.
+date: 2026-11-23
+category: Case study
+banner: A party game on Spoar
+docs: /docs/guides/custom-events
+---
+
+remcosecondos is a Dutch party game for phones. One player describes five words in 30 seconds, their team shouts guesses, and the game runs until a team reaches the target score or ten rounds are over.
+
+Spoar already counted the visitors. That told me people opened the game and nothing about whether they played it. I wanted three numbers: how many games get finished, how many rounds they last, and how long they take.
+
+Spoar has no screen where you register an event first. An event is a name you pick and up to 25 flat props, and the API stores it on the first send. This post follows one event, `game_completed`, from the type to the chart, including the bug that made my count wrong and the data I decided to keep out of Spoar.
+
+## What Spoar knew before the first custom event
+
+The browser SDK sends one `pageview` per page. This is the request body for the sign-up page:
+
+```json
+{
+  "v": 1,
+  "sentAt": "2026-11-23T12:43:07.800Z",
+  "events": [
+    {
+      "id": "019ab0f2-6c58-7d10-9a42-3e1f7b20c8d4",
+      "name": "pageview",
+      "ts": "2026-11-23T12:43:05.120Z",
+      "visitor": "6f1c2a90-4b7e-4d13-8c55-91e0ab37d2f6",
+      "session": "b83e07d1-92c4-4fa6-a1d8-07c5e6f4312b",
+      "page": {
+        "path": "/sign-up",
+        "route": "/sign-up",
+        "title": "Account maken | remcosecondos",
+        "referrer": "https://example.com/"
+      },
+      "props": {},
+      "context": {
+        "screen": "1280x720",
+        "viewport": "1280x720",
+        "lang": "nl-NL",
+        "tz": "Europe/Amsterdam",
+        "connection": "4g"
+      }
+    }
+  ]
+}
+```
+
+The visitor and session are random ids from browser storage, and Spoar sets no cookies. On ingest, the API adds the country, region, city, network, browser, OS, device, channel, and a bot score. It stores a daily salted hash in place of the IP address.
+
+That describes traffic well and a game badly. A group of six produces six visitors whether they play ten rounds or close the tab in the lobby.
+
+## How the game runs
+
+A room is one Cloudflare Durable Object: a small server with its own storage, one per room code. Every phone keeps a WebSocket open to it, and the room checks each tap before it changes the game.
+
+<Flow>
+  <FlowNode label="Phone">Sends a command over a WebSocket</FlowNode>
+  <FlowNode label="Room">Checks it and updates the game</FlowNode>
+  <FlowNode label="Room storage">Holds the game and the pending event</FlowNode>
+  <FlowNode label="Spoar">Stores the event once</FlowNode>
+</Flow>
+
+A game moves through four phases: `turn-ready`, `turn-running`, `review`, and `finished`. The room is the one place that sees each move once, and that decides where the event has to come from.
+
+## Decide what the event holds
+
+I started from the questions and gave each one a prop:
+
+| Prop | Type | Question it answers |
+| --- | --- | --- |
+| `players` | number | How large are the groups that finish a game? |
+| `rounds` | number | How far do games get? |
+| `duration_seconds` | number | How long does a game take? |
+
+All three are numbers because the API can sum and average numeric props. The unit is in the name, so a chart never leaves you guessing whether `duration` means seconds or milliseconds. Names, room codes, words, and scores stay out.
+
+The event starts as a TypeScript type. The browser and server clients both accept it, so a misspelled name or a missing prop fails the build.
+
+`features/analytics/events/game-events.ts`:
+
+```ts
+export type GameEvents = {
+  game_completed: {
+    players: number;
+    rounds: number;
+    duration_seconds: number;
+  };
+};
+```
+
+## Send it from the server
+
+The obvious place for `track` is the end screen. Every phone shows that screen, so a game with six players stores six events, and a phone that locked during the last turn stores none.
+
+<PostDiff id="end-screen" />
+
+The room sends the event instead, with the server client:
+
+<PostDiff id="server-client" />
+
+Without a `visitor` or `session`, the server client sends both as `server`. That fits this event, because it describes a game and no player is attached to it. This is everything Spoar receives for one finished game:
+
+```json
+{
+  "v": 1,
+  "sentAt": "2026-11-23T20:15:00.120Z",
+  "events": [
+    {
+      "id": "019ab2c4-7e10-7c3a-9f21-5d0e8a41b6c7",
+      "name": "game_completed",
+      "ts": "2026-11-23T20:15:00.100Z",
+      "visitor": "server",
+      "session": "server",
+      "page": { "path": "/" },
+      "props": { "players": 6, "rounds": 8, "duration_seconds": 480 }
+    }
+  ]
+}
+```
+
+The game uses three credentials, and each stays where its job is:
+
+| Credential | Lives in | Does |
+| --- | --- | --- |
+| Public key, `pk_` | The browser | Sends pageviews from the allowed origin |
+| Secret key, `sk_` | The Worker | Sends `game_completed` |
+| API token | The Worker | Reads the numbers for the admin page |
+
+## Load the secrets when you need them
+
+Cloudflare doesn't expose Worker secrets while it starts the module. The game validates its environment when `env` is imported, so a top-level import of the analytics code fails at startup. The send function imports it at the moment it runs.
+
+<PostDiff id="lazy-env" />
+
+## Make a retry safe
+
+The server client doesn't retry. It returns `{ ok: false }` and leaves the next step to you. A retry has its own trap, because every `track` call creates a new event id. If the API stored the event and the answer got lost, the retry stores a second game.
+
+The API drops any event whose id it already has, so the fix is one id per game. The client has no option for that id, so a small `fetch` wrapper replaces it in the request body. The function also returns what should happen next:
+
+<PostDiff id="stable-id" />
+
+| Result | When | What the room does |
+| --- | --- | --- |
+| `sent` | The API accepted the event | Removes it from the queue |
+| `skipped` | Spoar isn't configured | Removes it from the queue |
+| `rejected` | The API refused the event as invalid | Logs an error and removes it |
+| `retry` | Any other failure | Tries again later |
+
+A rejected event gets no retry, because the same body fails the same way every time.
+
+## Write the event in the game's transaction
+
+A direct call from the room loses the event if the Worker stops before the request finishes. The room now writes the event to its own storage, in the same transaction as the game state. Either both are saved or neither is.
+
+<PostDiff id="outbox" />
+
+An alarm on the Durable Object sends whatever is due. Each failure doubles the wait:
+
+| Attempt | Waits before sending |
+| --- | --- |
+| 1 | Nothing |
+| 2 | 30 seconds |
+| 3 | 1 minute |
+| 4 | 2 minutes |
+| 5 | 4 minutes |
+| 6 | 8 minutes |
+| 7 | 16 minutes |
+| 8 | 32 minutes |
+
+That covers a Spoar outage of about an hour. After the eighth failure the room logs an error and drops the event.
+
+Rooms also delete themselves, when the last player leaves or after six hours without activity. A game can end a moment before that happens, so the delete keeps the queue and sets a new alarm for it:
+
+```ts
+export async function destroyRoom(storage: RoomStorage) {
+  const pending = readOutbox(storage.kv);
+  await storage.deleteAlarm();
+  await storage.deleteAll();
+  writeOutbox(storage.kv, pending);
+  await scheduleRoom(storage, false, null);
+}
+```
+
+## The bug in my count
+
+My first version counted every game that reached `finished`. A game also ends when one player leaves a team of two and too few teams remain, so each walkout added a `game_completed`. The chart went up when people quit.
+
+The fix cancels the run before the event is queued. `queueFinishedGame` skips a game without a run, so the event now means the game reached its goal.
+
+<PostDiff id="abandoned-game" />
+
+## Read the numbers back
+
+Every numeric prop works as a metric, summed or averaged, and every prop works as a breakdown. `@spoar/client` reads them with one shared filter:
+
+```ts
+import { createClient } from "@spoar/client";
+
+const api = createClient({
+  endpoint: "https://api.example.com",
+  token: process.env.SPOAR_TOKEN,
+});
+
+const games = api.project("example.com").period("30d").where({ event: "game_completed" });
+
+const [finished, rounds, duration, groupSizes] = await Promise.all([
+  games.timeseries("events"),
+  games.timeseries("sum:prop.rounds"),
+  games.timeseries("avg:prop.duration_seconds"),
+  games.breakdown("prop:players", { limit: 10 }),
+]);
+```
+
+For a question the client has no call for, the [SQL console](/docs/api/sql) reads the same events. This query needs a token with the `sql` scope and returns the average game length per group size:
+
+```sql
+SELECT
+  (props->>'players')::int AS players,
+  count(*) AS games,
+  round(avg((props->>'duration_seconds')::int)) AS seconds
+FROM events
+WHERE name = 'game_completed' AND ts >= :from AND ts < :to
+GROUP BY players
+ORDER BY players;
+```
+
+I didn't plan for that question when I wrote the event. The props were already there, so it took one query.
+
+This is what those reads look like for a month of games, with made-up numbers. Pick a query and run it. Save keeps it in your browser here. With a token, the same name and SQL go to `POST /v2/queries`, and `GET /v2/queries` lists them again.
+
+<GameQuery />
+
+## Add a prop without a migration
+
+Spoar keeps no schema for your props, so a new prop needs no migration and no setting. To split games by their goal, you change the type and pass the value:
+
+<PostDiff id="add-prop" />
+
+Events from before the change have no `goal`, and SQL returns `null` for them. Wrap it in `coalesce(props->>'goal', 'unknown')` if you want them in their own group.
+
+## Where Spoar stops
+
+The next questions were about people and cards: which duo wins most, which word nobody guesses, and how many seconds a card takes. A `card_guessed` event per card would answer the word question. The duo question needs a user id on every event and joins across them, and I don't want user ids in my analytics.
+
+So each question goes to the store that fits it:
+
+| Question | Stored in | Reason |
+| --- | --- | --- |
+| How many games get finished? | Spoar | An anonymous count |
+| How fast do pages load? | Spoar | Web Vitals per route |
+| Which frontend errors happen? | Spoar | Scrubbed error events |
+| Which duo wins most? | Postgres | Needs accounts and joins |
+| Which word is hardest? | Postgres | Needs cards joined to turns |
+| Do players come back? | Postgres | Needs one id per account over time |
+
+The game's own database holds one row per game, team, player, turn, and card:
+
+```text
+game
+├─ game_team
+│  └─ game_player ──> user
+└─ game_turn ──> game_team, game_player (describer)
+   └─ game_turn_word
+```
+
+The room already receives every tap, so it keeps a small ledger next to the game. When a word changes during a turn, the ledger stores the time, and unmarking the word clears it again:
+
+```ts
+markedAt: turn.markedAt.map((at, index) => {
+  if (next.marked[index] === previous.marked[index]) return at;
+  return next.marked[index] ? now : null;
+}),
+```
+
+The time per card is the gap between two marks. When the game ends, the room writes the whole ledger to Postgres in one transaction, with the same retry pattern as the Spoar event. Best duos are then a self join:
+
+```sql
+SELECT
+  first_user.name AS first,
+  second_user.name AS second,
+  count(*) AS games,
+  count(*) FILTER (WHERE team.won) AS wins,
+  avg(team.score) AS average_score
+FROM game_player a
+JOIN game_player b ON b.team_id = a.team_id AND a.user_id < b.user_id
+JOIN game_team team ON team.id = a.team_id
+JOIN game g ON g.id = a.game_id AND g.status = 'completed'
+JOIN "user" first_user ON first_user.id = a.user_id
+JOIN "user" second_user ON second_user.id = b.user_id
+GROUP BY first_user.id, first_user.name, second_user.id, second_user.name
+ORDER BY games DESC, wins DESC;
+```
+
+The two systems share one id. A game's row in Postgres and its `game_completed` event use the same UUID, so you can match them without sending a player to Spoar.
+
+<PostDiff id="shared-id" />
+
+Guests can play without an account. When a guest signs up, their games move to the new account before the guest user is deleted, so retention doesn't count one person twice:
+
+```ts
+anonymous({
+  generateName: () => GUEST_NAME,
+  onLinkAccount: ({ anonymousUser, newUser }) =>
+    moveGuestStats(anonymousUser.user.id, newUser.user.id),
+}),
+```
+
+I also built a "who guessed this" button for the review screen and removed it the same day. It added a tap to a 30-second game, so the stats stop at the team.
+
+## Add speed and errors with two plugins
+
+The browser client takes plugins for data you don't want to write yourself. `speedInsights` sends LCP, INP, CLS, FCP, and TTFB. `errors` sends uncaught errors with query strings, emails, and long tokens scrubbed from the message and stack.
+
+<PostDiff id="plugins" />
+
+## Test it without polluting your data
+
+I check the real request in a browser before I trust a chart. Playwright can catch it and answer locally, so nothing reaches the API:
+
+```ts
+import { expect, test } from "@playwright/test";
+
+test("sends a pageview", async ({ context, page }) => {
+  const events: { name: string }[] = [];
+
+  await context.addInitScript(() => {
+    navigator.sendBeacon = (url, body) => {
+      void fetch(url, { method: "POST", body, keepalive: true });
+      return true;
+    };
+  });
+  await context.route("**/v2/events**", async (route) => {
+    events.push(...JSON.parse(route.request().postData() ?? "{}").events);
+    await route.fulfill({ status: 202, json: { accepted: 1, duplicates: 0, rejected: [] } });
+  });
+
+  await page.goto("/sign-up");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { get: () => "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+
+  await expect.poll(() => events.map((event) => event.name)).toContain("pageview");
+});
+```
+
+The `sendBeacon` override is there because of my first attempt. The SDK uses `sendBeacon` when a page is hidden, Playwright's route doesn't catch it, and one test pageview reached the real project. The bot score flagged it, so reports on human traffic leave it out.
+
+A later run captured nothing at all. The test browser was Brave, which has Global Privacy Control on, and the SDK drops every browser event while that signal is set. Server events such as `game_completed` still arrive, so a finished game counts even when the players' browsers send nothing.
+
+## Every way to send your own data
+
+`game_completed` uses the server client. The same event model works from the browser, your markup, a plugin, or any program that can post JSON:
+
+<Tabs items={["Browser", "Every event", "Markup", "Users", "Plugin", "HTTP"]}>
+  <Tab value="Browser">
+    ```ts
+    analytics.track("room_created", { goal: "points-30", capacity: 8 });
+    ```
+  </Tab>
+  <Tab value="Every event">
+    Registered props are added to every later event and count toward the 25.
+
+    ```ts
+    analytics.register({ appVersion: "2.4.0" });
+    ```
+  </Tab>
+  <Tab value="Markup">
+    With the [`clicks`](/docs/plugins/clicks) plugin, a click sends `{ label: "rematch", position: "end-screen" }`.
+
+    ```html
+    <button data-spoar-click="rematch" data-spoar-prop-position="end-screen">Play again</button>
+    ```
+  </Tab>
+  <Tab value="Users">
+    `identify` links the current visitor to your own user id. Call it only if you want that link.
+
+    ```ts
+    analytics.identify("user_123", { plan: "pro" });
+    ```
+  </Tab>
+  <Tab value="Plugin">
+    A plugin can change or drop every event before it leaves the browser. This one removes room codes from paths.
+
+    ```ts
+    import { definePlugin } from "@spoar/sdk";
+
+    export function hideRoomCodes() {
+      return definePlugin({
+        name: "hide-room-codes",
+        setup: (client) =>
+          client.beforeSend((event) => ({
+            ...event,
+            page: {
+              ...event.page,
+              path: event.page.path.replace(/^\/(join|room)\/[^/]+/, "/$1/[code]"),
+            },
+          })),
+      });
+    }
+    ```
+  </Tab>
+  <Tab value="HTTP">
+    Any language can send an event with the secret key. Generate a new UUID per event and reuse it on a retry.
+
+    ```bash
+    curl -X POST https://api.example.com/v2/events \
+      -H "authorization: Bearer $SPOAR_SECRET" \
+      -H "content-type: application/json" \
+      -d '{
+        "v": 1,
+        "sentAt": "2026-11-23T20:15:00.000Z",
+        "events": [{
+          "id": "019ab2c4-7e10-7c3a-9f21-5d0e8a41b6c7",
+          "name": "game_completed",
+          "ts": "2026-11-23T20:15:00.000Z",
+          "visitor": "server",
+          "session": "server",
+          "page": { "path": "/" },
+          "props": { "players": 6, "rounds": 8, "duration_seconds": 480 }
+        }]
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Limits to plan around
+
+You choose the event names and props. The API checks each event against these limits:
+
+| Limit | Value |
+| --- | --- |
+| Event name | 1 to 64 characters |
+| Props per event | 25 |
+| Prop key | 255 characters |
+| String value | 255 characters |
+| Prop values | Strings, numbers, booleans, or `null` |
+| Events per request | 50 |
+| Request body | 60 KB |
+
+Nested objects and arrays don't fit in a prop. Flatten them, or keep them in your own database and send the id.
+
+`game_completed` holds three numbers and a stable id. Everything else the game knows stays in its own database, and the two meet on that id.

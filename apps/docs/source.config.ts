@@ -42,6 +42,19 @@ export const posts = defineCollections({
   }),
 });
 
+export const blogPosts = defineCollections({
+  type: "doc",
+  dir: "content/blog",
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z.iso.date(),
+    category: z.enum(["Case study"]),
+    banner: z.string().max(40).optional(),
+    docs: z.string().startsWith("/").optional(),
+  }),
+});
+
 export default defineConfig({
   mdxOptions: {
     rehypeCodeOptions: { themes: codeThemes },

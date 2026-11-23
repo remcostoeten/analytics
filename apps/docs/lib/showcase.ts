@@ -12,6 +12,7 @@ import { cacheLife } from "next/cache";
 import { apiEndpoint } from "./api-endpoint";
 import { siteProject } from "./site-project";
 import { showcaseReads, showcaseWindow } from "./showcase-period";
+import { sortByPageviews } from "./showcase-sort";
 
 export type Showcase = {
   project: string;
@@ -98,8 +99,8 @@ export async function readShowcase(): Promise<Showcase> {
 /**
  * @name readProjects
  * @description Every public project on the API with its visitors, pageviews, change against the
- * 30 days before and visitors per day over the last 30 days, plus the list response as the API
- * sent it, cached for a minute. An empty list means the API gave no answer.
+ * 30 days before and visitors per day over the last 30 days, ordered by pageviews, plus the list
+ * response as the API sent it, cached for a minute. An empty list means the API gave no answer.
  *
  * @example
  * const { projects, list } = await readProjects();
@@ -133,5 +134,5 @@ export async function readProjects(): Promise<ShowcaseProjects> {
       };
     }),
   );
-  return { projects, list: list.value };
+  return { projects: sortByPageviews(projects), list: list.value };
 }
