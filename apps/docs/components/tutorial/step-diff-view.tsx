@@ -21,6 +21,7 @@ export type PreloadedChange = {
 
 type Props = {
   changes: PreloadedChange[];
+  showSummary?: boolean;
 };
 
 type DiffStyle = "unified" | "split";
@@ -57,15 +58,19 @@ function Note({ text }: { text: string }) {
   );
 }
 
-export function StepDiffView({ changes }: Props) {
+export function StepDiffView({ changes, showSummary = true }: Props) {
   const [diffStyle, setDiffStyle] = useState<DiffStyle>("unified");
   const added = changes.filter((change) => change.added).length;
   return (
     <section className="not-prose my-6 flex flex-col gap-3">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <p className="m-0 font-mono text-[0.72rem] text-muted">
-          {changes.length} {changes.length === 1 ? "file" : "files"}, {added} new
-        </p>
+        {showSummary ? (
+          <p className="m-0 font-mono text-[0.72rem] text-muted">
+            {changes.length} {changes.length === 1 ? "file" : "files"}, {added} new
+          </p>
+        ) : (
+          <span />
+        )}
         <div role="group" aria-label="Diff layout" className="flex rounded-md border border-line">
           {styles.map((style) => (
             <button

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { listBlogPosts } from "@/lib/blog";
 import { listPosts } from "@/lib/changelog";
 import { listExamples } from "@/lib/examples";
 import { source } from "@/lib/source";
@@ -24,6 +25,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/query`,
       changeFrequency: "monthly",
       priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/changelog`,
@@ -53,11 +59,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  const blogRoutes: MetadataRoute.Sitemap = listBlogPosts().map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.date),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   const exampleRoutes: MetadataRoute.Sitemap = listExamples().map((example) => ({
     url: `${baseUrl}/examples/${example.slug}`,
     changeFrequency: "monthly",
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...docRoutes, ...changelogRoutes, ...exampleRoutes];
+  return [...staticRoutes, ...docRoutes, ...blogRoutes, ...changelogRoutes, ...exampleRoutes];
 }

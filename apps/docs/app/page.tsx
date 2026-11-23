@@ -40,6 +40,8 @@ import { stagger } from "@/components/landing/stagger";
 import { InstallVisual, ProxyVisual, ReadVisual } from "@/components/landing/step-visuals";
 import { VitalsScene } from "@/components/landing/vitals-live";
 import { Logo } from "@/components/logo";
+import { listBlogPosts } from "@/lib/blog";
+import { blogClick } from "@/lib/blog-tracking";
 import { accountHintScript } from "@/lib/account";
 import { apiEndpoint } from "@/lib/api-endpoint";
 import { dashboardUrl } from "@/lib/dashboard-url";
@@ -285,6 +287,7 @@ async function readSnippet() {
 
 export default async function HomePage() {
   const example = await readSnippet();
+  const [latestPost] = listBlogPosts();
   return (
     <div className={`landing ${serif.variable} flex min-h-screen flex-col bg-surface text-fg`}>
       <script
@@ -298,6 +301,21 @@ export default async function HomePage() {
       <header className="hero-wash relative isolate flex overflow-x-clip flex-col items-center px-4 pt-32 text-center sm:pt-40">
         <span aria-hidden="true" className="hero-blob hero-blob-a" />
         <span aria-hidden="true" className="hero-blob hero-blob-b" />
+        {latestPost?.banner ? (
+          <Link
+            href={`/blog/${latestPost.slug}`}
+            {...blogClick("blog-post", latestPost.slug, "home-banner")}
+            className="hero-rise group -mt-8 mb-6 inline-flex max-w-full items-center gap-2.5 rounded-full border border-line bg-surface/70 py-1 pr-3.5 pl-1 backdrop-blur-sm transition-[border-color,background-color] duration-150 hover:border-fg/30 hover:bg-surface focus-visible:border-accent focus-visible:bg-surface focus-visible:outline-none sm:-mt-12 sm:mb-7"
+          >
+            <span className="caps shrink-0 rounded-full bg-fg px-2.5 py-1 text-[0.62rem] text-bg">
+              {latestPost.category}
+            </span>
+            <span className="min-w-0 truncate font-serif text-[0.92rem] text-fg">
+              {latestPost.banner}
+            </span>
+            <ArrowIcon className="size-3.5 shrink-0 text-muted transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:text-fg group-focus-visible:text-accent" />
+          </Link>
+        ) : null}
         <h1 className="hero-rise font-serif max-w-4xl text-[3rem] leading-[1.02] font-light tracking-[-0.02em] text-fg sm:text-[4.6rem] lg:text-[5.5rem]">
           Web analytics on your own Postgres
         </h1>
@@ -466,6 +484,27 @@ export default async function HomePage() {
           <CodeWindow title="lib/analytics.ts" lang="ts" code={example} mark={[11]} />
         </div>
       </section>
+
+      {latestPost ? (
+        <section className="container-land py-10 sm:py-14">
+          <Link
+            href={`/blog/${latestPost.slug}`}
+            {...blogClick("blog-post", latestPost.slug, "home-teaser")}
+            className="reveal group grid gap-4 border-y border-line py-8 md:grid-cols-[180px_1fr_auto] md:items-center md:gap-8"
+          >
+            <span className="caps text-muted">{latestPost.category}</span>
+            <span className="flex max-w-2xl flex-col gap-2">
+              <span className="font-serif text-[1.6rem] leading-[1.15] font-light tracking-[-0.01em] group-hover:underline sm:text-[1.9rem]">
+                {latestPost.title}
+              </span>
+              <span className="font-serif text-[0.95rem] leading-relaxed text-muted">
+                {latestPost.description}
+              </span>
+            </span>
+            <ArrowIcon className="size-4 text-muted" />
+          </Link>
+        </section>
+      ) : null}
 
       <section className="container-land py-10">
         <div className="reveal-scale dark-shell grain-host relative overflow-hidden rounded-[28px] px-6 py-16 text-center sm:px-12 sm:py-20">

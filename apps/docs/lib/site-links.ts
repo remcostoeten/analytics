@@ -14,7 +14,7 @@ export function siteLinks() {
     { label: "Query", href: "/query" },
   ];
   if (listExamples().length > 0) links.push({ label: "Examples", href: "/examples" });
-  links.push({ label: "Changelog", href: "/changelog" });
+  links.push({ label: "Blog", href: "/blog" }, { label: "Changelog", href: "/changelog" });
   links.push(
     { label: "Dashboard", href: dashboardUrl(), external: true },
     { label: "GitHub", href: githubUrl, external: true },
