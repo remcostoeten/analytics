@@ -11,6 +11,7 @@ import { runMigrations } from "@spoar/engine/db/migrate";
 import { migrationsDirectory, readMigrations } from "@spoar/engine/db/migration-files";
 
 import { createApp } from "../src/app";
+import { dashboardOrigins } from "../src/build";
 import { openGeo } from "../src/geo";
 
 const now = new Date("2026-09-28T12:00:00.000Z");
@@ -58,6 +59,7 @@ function app(limit = 1000) {
     logger: () => logs,
     clock: () => clock.now(),
     dashboardOrigin: "https://dashboard.example.test",
+    dashboardAliases: ["https://alias.example.test"],
     docsBase,
     geo: { city: geo.city, asn: geo.asn, loadMs: geo.loadMs },
     access: {
@@ -306,6 +308,26 @@ describe("CORS", () => {
       "https://dashboard.example.test",
     );
     expect(response.headers.get("access-control-allow-credentials")).toBe("true");
+  });
+
+  test("a dashboard alias gets credentials", async () => {
+    const response = await api.handle(
+      new Request("http://localhost/v2/health", {
+        headers: { origin: "https://alias.example.test" },
+      }),
+    );
+    expect(response.headers.get("access-control-allow-origin")).toBe("https://alias.example.test");
+    expect(response.headers.get("access-control-allow-credentials")).toBe("true");
+  });
+});
+
+describe("dashboardOrigins", () => {
+  test("splits on commas, trims and drops trailing slashes", () => {
+    expect(dashboardOrigins(" https://a.test/, https://b.test ,")).toEqual([
+      "https://a.test",
+      "https://b.test",
+    ]);
+    expect(dashboardOrigins(undefined)).toEqual([]);
   });
 });
 
