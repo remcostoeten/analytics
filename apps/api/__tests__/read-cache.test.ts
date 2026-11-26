@@ -24,6 +24,8 @@ const site: ProjectRecord = {
   sqlEnabled: false,
   widgetReports: false,
   debugConsole: false,
+  replayEnabled: false,
+  llmEnabled: false,
   allowedOrigins: [],
   retentionDays: 365,
   retentionEnabled: false,

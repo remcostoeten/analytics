@@ -145,7 +145,7 @@ export function projectsModule(deps: AccessDeps, docsBase: string, logs: Nullabl
         detail: {
           summary: "Change project settings",
           description:
-            "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, allowed origins and retention.",
+            "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `replayEnabled`, `llmEnabled`, allowed origins and retention.",
           tags,
         },
       },

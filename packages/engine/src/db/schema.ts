@@ -190,6 +190,8 @@ export const projects = pgTable("projects", {
   sqlEnabled: boolean("sql_enabled").notNull().default(true),
   widgetReports: boolean("widget_reports").notNull().default(false),
   debugConsole: boolean("debug_console").notNull().default(false),
+  replayEnabled: boolean("replay_enabled").notNull().default(false),
+  llmEnabled: boolean("llm_enabled").notNull().default(false),
   publicKeyUsedAt: timestamp("public_key_used_at", { withTimezone: true }),
   publicKeyUsedOrigin: text("public_key_used_origin"),
   secretKeyUsedAt: timestamp("secret_key_used_at", { withTimezone: true }),

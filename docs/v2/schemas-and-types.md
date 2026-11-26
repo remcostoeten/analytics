@@ -169,6 +169,8 @@ export type Project = Entity & {
   allowedOrigins: string[];
   retentionDays: number;
   retentionEnabled: boolean;
+  replayEnabled: boolean;
+  llmEnabled: boolean;
   publicKey: string;
 };
 

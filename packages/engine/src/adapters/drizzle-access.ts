@@ -63,6 +63,8 @@ const projectColumns = {
   sqlEnabled: projects.sqlEnabled,
   widgetReports: projects.widgetReports,
   debugConsole: projects.debugConsole,
+  replayEnabled: projects.replayEnabled,
+  llmEnabled: projects.llmEnabled,
   allowedOrigins: projects.allowedOrigins,
   retentionDays: projects.retentionDays,
   retentionEnabled: projects.retentionEnabled,

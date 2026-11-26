@@ -377,6 +377,31 @@ describe("admin", () => {
     expect(body.data).toEqual({ id: "open", sqlEnabled: false, updatedAt: expect.any(String) });
   });
 
+  test("PATCH turns replay and LLM observability on and off, both off by default", async () => {
+    async function stored() {
+      const rows = await database.query<{ replay_enabled: boolean; llm_enabled: boolean }>(
+        "SELECT replay_enabled, llm_enabled FROM projects WHERE id = 'open'",
+      );
+      return rows.rows[0];
+    }
+    expect(await stored()).toEqual({ replay_enabled: false, llm_enabled: false });
+    const replay = await json(
+      await call(api, "PATCH", "/v2/projects/open", owner, { replayEnabled: true }),
+    );
+    expect(replay.data).toEqual({ id: "open", replayEnabled: true, updatedAt: expect.any(String) });
+    expect(await stored()).toEqual({ replay_enabled: true, llm_enabled: false });
+    await call(api, "PATCH", "/v2/projects/open", owner, { llmEnabled: true });
+    expect(await stored()).toEqual({ replay_enabled: true, llm_enabled: true });
+    const listed = await json(await call(api, "GET", "/v2/projects/open", owner));
+    expect(listed.data).toMatchObject({ replayEnabled: true, llmEnabled: true });
+    await call(api, "PATCH", "/v2/projects/open", owner, {
+      replayEnabled: false,
+      llmEnabled: false,
+    });
+    expect(await stored()).toEqual({ replay_enabled: false, llm_enabled: false });
+    expect(await status("PATCH", "/v2/projects/open", owner, { replayEnabled: "yes" })).toBe(400);
+  });
+
   test.each([
     ["anonymous", anonymous, 401],
     ["an admin limited to listed projects", admin, 403],

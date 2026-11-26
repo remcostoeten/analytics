@@ -28,7 +28,7 @@ A private project answers 404, not 403, to callers without access, so its name d
 | GET | `/v2/projects` | public | Public projects for anyone; all projects for admins, filterable with `visibility=public\|private` |
 | POST | `/v2/projects` | admin | Create a project |
 | GET | `/v2/projects/:project` | project | Name, domain, visibility, created date |
-| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `allowedOrigins`, `retentionDays`, `retentionEnabled` |
+| PATCH | `/v2/projects/:project` | admin | Change name, `visibility`, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `replayEnabled`, `llmEnabled`, `allowedOrigins`, `retentionDays`, `retentionEnabled` |
 | POST | `/v2/projects/:project/keys` | admin | Rotate the public or secret key; the secret is returned once |
 | GET | `/v2/projects/:project/keys` | admin | When the current keys were generated and the last key check |
 | POST | `/v2/projects/:project/keys/check` | admin | Check the keys and store the result; an optional `secretKey` is compared by hash |
@@ -761,6 +761,8 @@ request
 ```
 
 `retentionEnabled` and `retentionDays` are optional and change independently; a field left out keeps its value. `retentionDays` is 1 to 3650 and 90 by default, and sending it alone deletes nothing. With `retentionEnabled: true` the jobs permanently delete that project's events, sessions, raw speed rows, logs and finished alert deliveries older than `retentionDays`. It is `false` by default.
+
+`replayEnabled` and `llmEnabled` turn on session replay and LLM observability for the project. Both are `false` by default. While one is off, its ingest route refuses data with `403`, so the client stops sending.
 
 `POST /v2/projects/docs/keys` as admin
 

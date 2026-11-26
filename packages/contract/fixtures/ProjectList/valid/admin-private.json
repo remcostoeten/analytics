@@ -9,6 +9,8 @@
       "sqlEnabled": true,
       "widgetReports": false,
       "debugConsole": false,
+      "replayEnabled": false,
+      "llmEnabled": false,
       "allowedOrigins": [
         "https://portal.example.nl"
       ],

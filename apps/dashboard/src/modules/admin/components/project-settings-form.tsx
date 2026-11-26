@@ -28,6 +28,8 @@ type Draft = {
   sqlEnabled: boolean;
   widgetReports: boolean;
   debugConsole: boolean;
+  replayEnabled: boolean;
+  llmEnabled: boolean;
 };
 
 function draftOf(project: Project): Draft {
@@ -41,6 +43,8 @@ function draftOf(project: Project): Draft {
     sqlEnabled: project.sqlEnabled,
     widgetReports: project.widgetReports,
     debugConsole: project.debugConsole,
+    replayEnabled: project.replayEnabled,
+    llmEnabled: project.llmEnabled,
   };
 }
 
@@ -61,6 +65,8 @@ function changesOf(project: Project, draft: Draft): UpdateProject {
   if (draft.sqlEnabled !== project.sqlEnabled) changes.sqlEnabled = draft.sqlEnabled;
   if (draft.widgetReports !== project.widgetReports) changes.widgetReports = draft.widgetReports;
   if (draft.debugConsole !== project.debugConsole) changes.debugConsole = draft.debugConsole;
+  if (draft.replayEnabled !== project.replayEnabled) changes.replayEnabled = draft.replayEnabled;
+  if (draft.llmEnabled !== project.llmEnabled) changes.llmEnabled = draft.llmEnabled;
   return changes;
 }
 
@@ -197,6 +203,27 @@ export function ProjectSettingsForm({ project }: Props) {
             hint="Admins may open the debug console with Ctrl+Shift+K on sites that render <Analytics debugConsole />. Its SQL tab needs the SQL console on."
             checked={draft.debugConsole}
             onChange={(debugConsole) => setDraft({ ...draft, debugConsole })}
+          />
+        </div>
+      </section>
+      <section className="grid gap-3">
+        <h3 className="text-sm font-medium">Features</h3>
+        <div className="settings-group">
+          <SwitchRow
+            id="replayEnabled"
+            label="Session replay"
+            tip="Records what visitors saw on your site so you can play a visit back next to its events. Needs the @spoar/replay package on the site, and a visitor's consent. Form inputs are hidden in recordings."
+            hint="Off by default. While off, replay recordings are refused."
+            checked={draft.replayEnabled}
+            onChange={(replayEnabled) => setDraft({ ...draft, replayEnabled })}
+          />
+          <SwitchRow
+            id="llmEnabled"
+            label="LLM observability"
+            tip="Stores the cost, duration and errors of the language model calls your app makes through @spoar/llm. Your provider key never leaves your app."
+            hint="Off by default. While off, LLM call telemetry is refused."
+            checked={draft.llmEnabled}
+            onChange={(llmEnabled) => setDraft({ ...draft, llmEnabled })}
           />
         </div>
       </section>
