@@ -1,0 +1,10 @@
+---
+title: Switches for session replay and LLM observability
+description: Projects have a Features section where session replay and LLM observability are turned on, both off by default.
+date: 2026-11-26
+label: improvement
+---
+
+Project settings in the dashboard have a new **Features** section with two switches: **Session replay** and **LLM observability**. Both are off by default. The API fields are `replayEnabled` and `llmEnabled` on `PATCH /v2/projects/:project`.
+
+The switches come before the features. Session replay arrives as `@spoar/replay`, which records only on a project with the switch on and only after a visitor's consent, with inputs and page text masked by default. LLM observability arrives as `@spoar/llm` and records the cost, duration and errors of your app's own model calls, without your provider key leaving the app. While a switch is off, its ingest refuses the data.
