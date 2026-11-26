@@ -110,12 +110,13 @@ replay({
   sampleRate: 1,
   minDurationMs: 3000,
   maskAllInputs: true,
+  maskAllText: true,
   maskTextSelector: "[data-spoar-mask]",
   blockSelector: "[data-spoar-block]",
 });
 ```
 
-- Inputs are masked by default. Text is shown unless marked. Canvas, video and cross-origin iframes are not recorded.
+- Inputs and all page text are masked by default, so personal data rendered on the page is not recorded. `maskAllText: false` shows text, with `maskTextSelector` still masking marked elements. While `maskAllText` is on, `data-spoar-unmask` shows a marked subtree, such as navigation. rrweb 2.2 has no unmask selector, so the plugin passes `maskTextSelector: "*"` and a `maskTextFn` that returns the original text inside `[data-spoar-unmask]`. Canvas, video and cross-origin iframes are not recorded.
 - Recording starts after consent and stops on `optOut()`, `reset()` and consent being revoked. These checks run again after rrweb has loaded, so a revocation during the load cancels the start.
 - Do Not Track and Global Privacy Control turn recording off, as they do for events.
 - Sessions under `minDurationMs` are discarded client-side, which drops most bounces.
@@ -134,15 +135,15 @@ Replay data does not fit the event envelope: one session is tens to hundreds of 
 
 Recordings do not go in Postgres. Neon storage would fill up and every replay read would pull large rows through the pool.
 
-- **Chunks** go to S3-compatible storage (Cloudflare R2 by default, which has free egress) at `replays/<project>/<session>/<seq>.json.gz`.
+- **Chunks** go to object storage at `replays/<project>/<session>/<seq>.json.gz`. The API reaches it through a `ReplayStore` port with two adapters: an R2 binding on the Cloudflare Worker, which needs no credentials, and an S3-compatible adapter for the Vercel build and self-hosting.
 - **Metadata** goes in a `replay_sessions` table: project, session, visitor, start, duration, chunk count, bytes, page count, error count, rage click count, first path and device. Totals are derived from a `replay_chunks` row per chunk, and the nightly job reconciles objects that have no row after a failed write.
 - **Retention**: no default and no fixed limit. Recordings are deleted only past `retentionDays` on a project with `retentionEnabled` on (decision 46). The cleanup job deletes objects and rows per project, and the bucket has no R2 lifecycle rule. Deleting a project removes its replay objects and rows before its tombstone.
 - **Caps**: a per-project daily byte cap so one runaway page cannot fill the bucket. Past it the route answers 429 and the client stops for that session.
-- **Self-hosting**: replay stays off until `REPLAY_BUCKET` and its credentials are set.
+- **Self-hosting**: replay stays off until a bucket is configured: the `REPLAY_BUCKET` binding on the Worker, or `REPLAY_BUCKET` with its S3 endpoint and credentials elsewhere. Without one the replay routes answer 503 and the dashboard hides replay.
 
 ### Player
 
-- A replay page in the dashboard plays the chunks with the rrweb replayer.
+- A replay page in the dashboard plays the chunks with the rrweb replayer. It fetches each chunk from an authorized API route that streams the object, so access checks stay in one place and no signed URL can leak. The replayer is about 87 KB gzipped and loads only on that page.
 - The timeline below it shows the session's own events from `sessions/:session/events`: pageviews, autocapture clicks, rage clicks, errors and web vitals. Clicking one seeks to it.
 - Entry points: the visitor detail, the session trail, an issue ("3 replays contain this error") and the replay list filtered by `has_errors`, `has_rage_clicks`, page or device.
 - Replays are visitor-level data, so they follow the existing rule: admin or read token, and never public, even when `publicVisitorData` is on.
@@ -200,11 +201,7 @@ An `llm_calls` table with typed columns for tokens, latency and cost, so sums an
 2. **Actions**. Makes autocapture readable and reuses the read routes.
 3. **Insights and boards**. Mostly dashboard work on routes that exist.
 4. **LLM observability**. Server-only and reuses the server SDK; the price table is the only new upkeep.
-5. **Session replay**. New ingest route, object storage, retention job and player. Worth starting with a spike on rrweb's size and R2 cost per thousand sessions.
-
-## Open question
-
-Should replay mask all page text by default? The sketch shows text unless it is marked, which makes replays easier to read but can record personal data rendered on the page. Settle this before #243.
+5. **Session replay**. New ingest route, object storage, retention job and player. Worth starting with a spike on chunk sizes and R2 cost per thousand sessions. The rrweb 2.2.2 recorder is about 23 KB gzipped and loads only once recording starts.
 
 ## Not in this scope
 
