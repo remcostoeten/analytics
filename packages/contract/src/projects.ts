@@ -59,6 +59,14 @@ const DebugConsole = Type.Boolean({
   description:
     "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
 });
+const ReplayEnabled = Type.Boolean({
+  description:
+    "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+});
+const LlmEnabled = Type.Boolean({
+  description:
+    "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
+});
 const PublicKey = Type.String({
   minLength: 1,
   description:
@@ -110,6 +118,8 @@ export const Project = Type.Object(
     sqlEnabled: SqlEnabled,
     widgetReports: WidgetReports,
     debugConsole: DebugConsole,
+    replayEnabled: ReplayEnabled,
+    llmEnabled: LlmEnabled,
     allowedOrigins: AllowedOrigins,
     retentionDays: RetentionDays,
     retentionEnabled: RetentionEnabled,
@@ -194,6 +204,8 @@ export const UpdateProject = Type.Object(
     sqlEnabled: Type.Optional(SqlEnabled),
     widgetReports: Type.Optional(WidgetReports),
     debugConsole: Type.Optional(DebugConsole),
+    replayEnabled: Type.Optional(ReplayEnabled),
+    llmEnabled: Type.Optional(LlmEnabled),
     allowedOrigins: Type.Optional(AllowedOrigins),
     retentionDays: Type.Optional(RetentionDays),
     retentionEnabled: Type.Optional(RetentionEnabled),
@@ -218,6 +230,8 @@ export const UpdatedProject = Type.Object(
           "sqlEnabled",
           "widgetReports",
           "debugConsole",
+          "replayEnabled",
+          "llmEnabled",
           "allowedOrigins",
           "retentionDays",
           "retentionEnabled",

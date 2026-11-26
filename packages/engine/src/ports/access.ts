@@ -18,6 +18,8 @@ export type ProjectRecord = {
   sqlEnabled: boolean;
   widgetReports: boolean;
   debugConsole: boolean;
+  replayEnabled: boolean;
+  llmEnabled: boolean;
   allowedOrigins: string[];
   retentionDays: number;
   retentionEnabled: boolean;
@@ -72,6 +74,8 @@ export type ProjectPatch = Partial<
     | "sqlEnabled"
     | "widgetReports"
     | "debugConsole"
+    | "replayEnabled"
+    | "llmEnabled"
     | "allowedOrigins"
     | "retentionDays"
     | "retentionEnabled"

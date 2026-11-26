@@ -1546,6 +1546,8 @@
                           "sqlEnabled": true,
                           "widgetReports": false,
                           "debugConsole": false,
+                          "replayEnabled": false,
+                          "llmEnabled": false,
                           "allowedOrigins": [
                             "https://portal.example.nl"
                           ],
@@ -1591,6 +1593,8 @@
                               "sqlEnabled",
                               "widgetReports",
                               "debugConsole",
+                              "replayEnabled",
+                              "llmEnabled",
                               "allowedOrigins",
                               "retentionDays",
                               "retentionEnabled",
@@ -1641,6 +1645,14 @@
                               },
                               "debugConsole": {
                                 "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                                "type": "boolean"
+                              },
+                              "replayEnabled": {
+                                "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                                "type": "boolean"
+                              },
+                              "llmEnabled": {
+                                "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
                                 "type": "boolean"
                               },
                               "allowedOrigins": {
@@ -2123,6 +2135,8 @@
                         "sqlEnabled": true,
                         "widgetReports": false,
                         "debugConsole": false,
+                        "replayEnabled": false,
+                        "llmEnabled": false,
                         "allowedOrigins": [
                           "https://docs.remcostoeten.nl"
                         ],
@@ -2165,6 +2179,8 @@
                             "sqlEnabled",
                             "widgetReports",
                             "debugConsole",
+                            "replayEnabled",
+                            "llmEnabled",
                             "allowedOrigins",
                             "retentionDays",
                             "retentionEnabled",
@@ -2220,6 +2236,14 @@
                             },
                             "debugConsole": {
                               "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "replayEnabled": {
+                              "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                              "type": "boolean"
+                            },
+                            "llmEnabled": {
+                              "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -2475,6 +2499,8 @@
                             "sqlEnabled",
                             "widgetReports",
                             "debugConsole",
+                            "replayEnabled",
+                            "llmEnabled",
                             "allowedOrigins",
                             "retentionDays",
                             "retentionEnabled",
@@ -2525,6 +2551,14 @@
                             },
                             "debugConsole": {
                               "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "replayEnabled": {
+                              "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                              "type": "boolean"
+                            },
+                            "llmEnabled": {
+                              "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
@@ -2749,7 +2783,7 @@
       },
       "patch": {
         "summary": "Change project settings",
-        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, allowed origins and retention.",
+        "description": "Name, visibility, `publicVisitorData`, `sqlEnabled`, `widgetReports`, `debugConsole`, `replayEnabled`, `llmEnabled`, allowed origins and retention.",
         "tags": [
           "Projects"
         ],
@@ -2819,6 +2853,14 @@
                     "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                     "type": "boolean"
                   },
+                  "replayEnabled": {
+                    "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                    "type": "boolean"
+                  },
+                  "llmEnabled": {
+                    "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
+                    "type": "boolean"
+                  },
                   "allowedOrigins": {
                     "description": "Origins that may send events with the public key, matched exactly, such as `https://remcostoeten.nl`. An empty list allows every origin.",
                     "type": "array",
@@ -2882,6 +2924,14 @@
                     "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
                     "type": "boolean"
                   },
+                  "replayEnabled": {
+                    "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                    "type": "boolean"
+                  },
+                  "llmEnabled": {
+                    "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
+                    "type": "boolean"
+                  },
                   "allowedOrigins": {
                     "description": "Origins that may send events with the public key, matched exactly, such as `https://remcostoeten.nl`. An empty list allows every origin.",
                     "type": "array",
@@ -2943,6 +2993,14 @@
                   },
                   "debugConsole": {
                     "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                    "type": "boolean"
+                  },
+                  "replayEnabled": {
+                    "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                    "type": "boolean"
+                  },
+                  "llmEnabled": {
+                    "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
                     "type": "boolean"
                   },
                   "allowedOrigins": {
@@ -3052,6 +3110,14 @@
                             },
                             "debugConsole": {
                               "description": "Lets project admins open the debug console on the project's own sites through `GET /v2/widget/connect` and `GET /v2/widget/session`. Off by default.",
+                              "type": "boolean"
+                            },
+                            "replayEnabled": {
+                              "description": "Turns on session replay for this project. Replay ingest is refused while it is off, so `@spoar/replay` records nothing. Off by default.",
+                              "type": "boolean"
+                            },
+                            "llmEnabled": {
+                              "description": "Turns on LLM observability for this project. LLM telemetry is refused while it is off. Off by default.",
                               "type": "boolean"
                             },
                             "allowedOrigins": {
