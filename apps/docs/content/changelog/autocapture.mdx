@@ -6,7 +6,7 @@ label: feature
 docs: /docs/plugins/autocapture
 ---
 
-The `autocapture()` plugin in `@spoar/sdk/plugins` records clicks and form submits on its own. Each one is an `autocapture` event with the element's kind, a short CSS selector, its tag, up to 64 characters of text and the path of a link or form action.
+The `autocapture()` plugin in `@spoar/sdk/plugins` records clicks and form submits on its own. Each one is an `autocapture` event with the kind, a short CSS selector, the tag and the path of a link or form action. Clicks also carry up to 64 characters of the element's visible text.
 
 ```ts
 import { createAnalytics } from "@spoar/sdk";
@@ -19,4 +19,4 @@ export const analytics = createAnalytics({
 });
 ```
 
-Input changes and rage clicks are opt-in with `kinds`. Input values are never recorded, and neither are password fields, personal autocomplete fields or anything inside `[data-spoar-ignore]`. `[data-spoar-mask]` keeps an element's text out of the event.
+Input changes and rage clicks are opt-in with `kinds`. Input values are never recorded, and neither are password fields, personal autocomplete fields or anything inside `[data-spoar-ignore]`. `[data-spoar-mask]` keeps an element's text out of the event, so mark buttons and links that show visitor-entered text.

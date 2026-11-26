@@ -8,6 +8,6 @@ docs: /docs/guides/self-host
 
 Nothing is deleted automatically anymore unless an admin turns it on. Each project has an **Automatic deletion** switch under **Data retention** in its settings, off by default, with the number of days to keep next to it.
 
-With the switch off, a project keeps all of its events, sessions, speed samples, logs and alert history. With it on, the nightly jobs permanently delete that project's rows older than the chosen days. Setting the days alone deletes nothing.
+With the switch off, a project keeps all of its events, sessions, speed samples, logs and alert history. With it on, the nightly jobs permanently delete that project's events, sessions, raw speed samples, logs and sent or failed alert deliveries older than the chosen days. Daily speed rollups and pending alert deliveries are kept. Setting the days alone deletes nothing.
 
 Projects that already had a retention other than the default 90 days had the switch turned on when the change shipped, since an admin chose those values. The API field is `retentionEnabled` on `PATCH /v2/projects/:project`.

@@ -6,11 +6,13 @@ label: feature
 docs: /docs/api/mcp
 ---
 
-The API serves a [Model Context Protocol](https://modelcontextprotocol.io) server at `POST /v2/mcp`. Connect a client with an API token and it gets a tool per read route: stats, time series, breakdowns, speed, issues and realtime.
+The API serves a [Model Context Protocol](https://modelcontextprotocol.io) server at `POST /v2/mcp`. Connect a client with an API token and it gets tools for the main reads: projects, stats, time series, breakdowns, speed, issues, realtime and key status.
+
+Keep the token in an environment variable rather than typing it into the command:
 
 ```bash
 claude mcp add --transport http spoar https://api.analytics.remcostoeten.nl/v2/mcp \
-  --header "Authorization: Bearer at_live_..."
+  --header "Authorization: Bearer $SPOAR_TOKEN"
 ```
 
 The tools follow the token's scope. A `read` token gets the reads, a `sql` token adds the SQL console, and an `admin` token adds creating projects, rotating keys and managing tokens. Every call runs the matching API route with that token, so access works the same as in the API.
