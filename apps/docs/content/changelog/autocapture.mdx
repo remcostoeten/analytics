@@ -1,0 +1,22 @@
+---
+title: Autocapture
+description: One plugin records clicks and form submits without marking up elements, and never records what visitors type.
+date: 2026-11-22
+label: feature
+docs: /docs/plugins/autocapture
+---
+
+The `autocapture()` plugin in `@spoar/sdk/plugins` records clicks and form submits on its own. Each one is an `autocapture` event with the element's kind, a short CSS selector, its tag, up to 64 characters of text and the path of a link or form action.
+
+```ts
+import { createAnalytics } from "@spoar/sdk";
+import { autocapture } from "@spoar/sdk/plugins";
+
+export const analytics = createAnalytics({
+  project: "example.com",
+  key: "pk_...",
+  plugins: [autocapture()],
+});
+```
+
+Input changes and rage clicks are opt-in with `kinds`. Input values are never recorded, and neither are password fields, personal autocomplete fields or anything inside `[data-spoar-ignore]`. `[data-spoar-mask]` keeps an element's text out of the event.
