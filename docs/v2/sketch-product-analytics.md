@@ -116,7 +116,8 @@ replay({
 });
 ```
 
-- Inputs and all page text are masked by default, so personal data rendered on the page is not recorded. `maskAllText: false` shows text, with `maskTextSelector` still masking marked elements. While `maskAllText` is on, `data-spoar-unmask` shows a marked subtree, such as navigation. rrweb 2.2 has no unmask selector, so the plugin passes `maskTextSelector: "*"` and a `maskTextFn` that returns the original text inside `[data-spoar-unmask]`. Canvas, video and cross-origin iframes are not recorded.
+- Inputs and all page text are masked by default, so personal data rendered as text on the page is not recorded. This covers replay recordings only; what `autocapture()` stores is set by its own rules. `maskAllText: false` shows text, with `maskTextSelector` still masking marked elements. While `maskAllText` is on, `data-spoar-unmask` shows a marked subtree, such as navigation. rrweb 2.2 has no unmask selector, so the plugin passes `maskTextSelector: "*"` and a `maskTextFn` that returns the original text inside `[data-spoar-unmask]`. Canvas, video and cross-origin iframes are not recorded.
+- Attributes and URLs can carry personal data that text masking does not reach. Before a chunk is compressed, the plugin rewrites the recorded events: page URLs in meta events and every URL-valued attribute (`href`, `src`, `srcset`, `action`, `formaction`, `poster`, `cite`, `data`) lose their query and hash and have token-like path segments replaced, as `autocapture()` does for `href`. While `maskAllText` is on, `title`, `alt`, `placeholder` and `aria-label` values are masked like text, and `value` attributes are always dropped.
 - Recording starts after consent and stops on `optOut()`, `reset()` and consent being revoked. These checks run again after rrweb has loaded, so a revocation during the load cancels the start.
 - Do Not Track and Global Privacy Control turn recording off, as they do for events.
 - Sessions under `minDurationMs` are discarded client-side, which drops most bounces.
@@ -135,18 +136,18 @@ Replay data does not fit the event envelope: one session is tens to hundreds of 
 
 Recordings do not go in Postgres. Neon storage would fill up and every replay read would pull large rows through the pool.
 
-- **Chunks** go to object storage at `replays/<project>/<session>/<seq>.json.gz`. The API reaches it through a `ReplayStore` port with two adapters: an R2 binding on the Cloudflare Worker, which needs no credentials, and an S3-compatible adapter for the Vercel build and self-hosting.
+- **Chunks** go to object storage at `replays/<project>/<session>/<seq>.json.gz`. The API reaches it through a `ReplayStore` port with two adapters: an R2 binding on the Cloudflare Worker, which needs no credentials, and an S3-compatible adapter for the Vercel build and self-hosting. The bucket must be private, with no public access and no custom public domain; only the API's binding or credentials read it.
 - **Metadata** goes in a `replay_sessions` table: project, session, visitor, start, duration, chunk count, bytes, page count, error count, rage click count, first path and device. Totals are derived from a `replay_chunks` row per chunk, and the nightly job reconciles objects that have no row after a failed write.
-- **Retention**: no default and no fixed limit. Recordings are deleted only past `retentionDays` on a project with `retentionEnabled` on (decision 46). The cleanup job deletes objects and rows per project, and the bucket has no R2 lifecycle rule. Deleting a project removes its replay objects and rows before its tombstone.
+- **Retention**: no default and no fixed limit. Recordings are deleted only past `retentionDays` on a project with `retentionEnabled` on (decision 46). The cleanup job deletes objects and rows per project, and the bucket has no R2 lifecycle rule. Deleting a project removes its replay objects and rows before its tombstone. The ingest route refuses chunks for a project that has a tombstone, and the nightly reconcile also deletes objects under a deleted project's prefix, so a chunk written during the deletion does not outlive it. The tombstone stays until a sweep that starts at least a day after the deletion finds the prefix empty, so a late write still meets a tombstone.
 - **Caps**: a per-project daily byte cap so one runaway page cannot fill the bucket. Past it the route answers 429 and the client stops for that session.
 - **Self-hosting**: replay stays off until a bucket is configured: the `REPLAY_BUCKET` binding on the Worker, or `REPLAY_BUCKET` with its S3 endpoint and credentials elsewhere. Without one the replay routes answer 503 and the dashboard hides replay.
 
 ### Player
 
-- A replay page in the dashboard plays the chunks with the rrweb replayer. It fetches each chunk from an authorized API route that streams the object, so access checks stay in one place and no signed URL can leak. The replayer is about 87 KB gzipped and loads only on that page.
+- A replay page in the dashboard plays the chunks with the rrweb replayer. It fetches each chunk from `GET /v2/projects/:project/replays/:session/chunks/:seq`, which streams the object, so access checks stay in one place and no signed URL can leak. The route answers `application/gzip` with `private, no-store` and checks that the session belongs to the project in the path. The replayer is about 87 KB gzipped and loads only on that page.
 - The timeline below it shows the session's own events from `sessions/:session/events`: pageviews, autocapture clicks, rage clicks, errors and web vitals. Clicking one seeks to it.
 - Entry points: the visitor detail, the session trail, an issue ("3 replays contain this error") and the replay list filtered by `has_errors`, `has_rage_clicks`, page or device.
-- Replays are visitor-level data, so they follow the existing rule: admin or read token, and never public, even when `publicVisitorData` is on.
+- Replays are visitor-level data, and stricter than other detail reads: a member whose role may read the project's visitor-level data or a token with read access to the project, and never anonymous, even on a public project with `publicVisitorData` on. The replay routes use their own check instead of the visitor-data one, so `publicVisitorData` never opens them.
 
 ### Privacy
 
