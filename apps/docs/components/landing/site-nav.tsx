@@ -13,6 +13,7 @@ import {
   storeAccount,
 } from "@/lib/account";
 import type { Account } from "@/lib/account";
+import { dashboardUrl } from "@/lib/dashboard-url";
 
 import { AccountMenu } from "./account-menu";
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
@@ -99,9 +100,9 @@ export function SiteNav({ links, loginHref }: Props) {
               </span>
             </>
           )}
-          <Link href="/docs/getting-started/quick-start" className="pill-dark whitespace-nowrap">
+          <a href={dashboardUrl()} className="pill-dark whitespace-nowrap">
             Insight Dashboard
-          </Link>
+          </a>
           <button
             type="button"
             aria-label="Toggle dark mode"
