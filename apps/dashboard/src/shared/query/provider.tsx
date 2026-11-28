@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { watchPageFocus } from "./focus";
+import { retryUnreached } from "./retry";
 
 type Props = { children: ReactNode };
 
@@ -20,6 +21,7 @@ function createQueryClient() {
         gcTime: keepMs,
         retry: false,
         refetchOnWindowFocus: false,
+        persister: (read, context) => retryUnreached(() => read(context)),
       },
     },
   });
