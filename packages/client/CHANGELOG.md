@@ -1,5 +1,13 @@
 # @spoar/client
 
+## 2.2.0
+
+### Minor Changes
+
+- 780f9ab: Add `eventNames` and `propKeys` to the project scope for the new discovery routes, an `interval` option on `stickiness`, and `stickiness` on the admin client.
+- 8dbfaa1: Projects gain `retentionEnabled`, a boolean that is off by default. Automatic deletion runs only when it is on, past `retentionDays`. Sending `retentionDays` alone never turns deletion on, and its type and default of 90 are unchanged.
+- 019ae2a: Projects gain `replayEnabled` and `llmEnabled`, both off by default. They turn on session replay and LLM observability per project and are set with `PATCH /v2/projects/:project`.
+
 ## 2.1.0
 
 ### Minor Changes
