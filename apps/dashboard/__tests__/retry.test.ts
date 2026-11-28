@@ -29,7 +29,7 @@ test("returns the failure after waiting longer than the 10 s block", async () =>
   const run = script(blocked);
   expect(await retryUnreached(run.read, run.wait)).toEqual(blocked);
   expect(run.calls()).toBe(3);
-  expect(run.waited.reduce((total, delay) => total + delay, 0)).toBeGreaterThan(10_000);
+  expect(run.waited).toEqual([3000, 8000]);
 });
 
 test("leaves other failures alone", async () => {

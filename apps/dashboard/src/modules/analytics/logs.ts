@@ -3,6 +3,8 @@ import type { EventRow, Interval, TimeseriesPoint, TrafficFilter } from "@spoar/
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
 
+import { retryUnreached } from "@/shared/query/retry";
+
 import type { FilterDimension } from "./view-state";
 
 export type Outcome = "human" | "bot" | "internal";
@@ -90,7 +92,7 @@ export async function readOutcomes(
   const reads = await Promise.all(
     outcomes.map(async (entry) => ({
       entry,
-      read: await scope.traffic(entry.traffic).timeseries("pageviews"),
+      read: await retryUnreached(() => scope.traffic(entry.traffic).timeseries("pageviews")),
     })),
   );
   const failed = reads.find(({ read }) => !read.ok);

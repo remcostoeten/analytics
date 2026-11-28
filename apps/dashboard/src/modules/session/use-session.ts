@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { browserClient } from "@/shared/api/browser-client";
 import { useHydrated } from "@/shared/query/hydrated";
+import { retryUnreached } from "@/shared/query/retry";
 
 const sessionKey = ["spoar", "session"] as const;
 
@@ -26,7 +27,7 @@ export function useSessionRead(): SessionRead {
   const read = useQuery({
     queryKey: sessionKey,
     queryFn: async () => {
-      const result = await browserClient().system.session();
+      const result = await retryUnreached(() => browserClient().system.session());
       return result.ok ? result.value : signedOut;
     },
     staleTime: sessionStaleMs,

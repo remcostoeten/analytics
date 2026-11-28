@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { browserClient } from "@/shared/api/browser-client";
 import { useHydrated } from "@/shared/query/hydrated";
+import { retryUnreached } from "@/shared/query/retry";
 
 export const projectsKey = ["spoar", "projects"] as const;
 
@@ -30,7 +31,7 @@ export function useProjects(): ProjectsRead {
   const read = useQuery({
     queryKey: projectsKey,
     queryFn: async (): Promise<ProjectsData> => {
-      const listed = await browserClient().projects.list();
+      const listed = await retryUnreached(() => browserClient().projects.list());
       return listed.ok ? ok(listed.value.data) : err(listed.error.message);
     },
     staleTime: projectsStaleMs,

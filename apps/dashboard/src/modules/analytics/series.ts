@@ -3,6 +3,8 @@ import type { BreakdownResponse, TimeseriesResponse } from "@spoar/contract";
 import { err, ok } from "@spoar/shared/result";
 import type { Result } from "@spoar/shared/result";
 
+import { retryUnreached } from "@/shared/query/retry";
+
 import type { MetricView } from "./metrics";
 import type { FilterDimension, ViewFilters } from "./view-state";
 
@@ -22,14 +24,16 @@ export async function readSplitSeries(
   dimension: FilterDimension,
   limit: number,
 ): Promise<Result<SplitSeries[], string>> {
-  const top = await scope.breakdown(dimension, { limit, metrics: [view.count] });
+  const top = await retryUnreached(() =>
+    scope.breakdown(dimension, { limit, metrics: [view.count] }),
+  );
   if (!top.ok) return err(top.error.message);
   const rows = top.value.data.filter((row) => row.value !== "");
   const series = await Promise.all(
     rows.map(async (row) => {
       const filter: ViewFilters = {};
       filter[dimension] = row.value;
-      const read = await scope.where(filter).timeseries(view.series);
+      const read = await retryUnreached(() => scope.where(filter).timeseries(view.series));
       const total = row[view.count] ?? null;
       return read.ok
         ? ok({ value: row.value, total, series: read.value })
@@ -55,6 +59,6 @@ export async function readTopList(
   count: MetricView["count"],
   limit: number,
 ): Promise<Result<BreakdownResponse, string>> {
-  const read = await scope.breakdown(dimension, { limit, metrics: [count] });
+  const read = await retryUnreached(() => scope.breakdown(dimension, { limit, metrics: [count] }));
   return read.ok ? ok(read.value) : err(read.error.message);
 }
